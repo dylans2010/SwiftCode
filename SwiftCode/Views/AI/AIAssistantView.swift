@@ -448,7 +448,7 @@ struct AIAssistantView: View {
     }
 
     private func executeAgentLoop() async {
-        let systemPrompt = AgentToolService.shared.buildSystemPrompt()
+        let systemPrompt = AgentToolService.buildSystemPrompt()
 
         for iteration in 1...maxAgentIterations {
             await MainActor.run {

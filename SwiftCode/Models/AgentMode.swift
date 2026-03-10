@@ -41,7 +41,7 @@ enum AgentMode: String, CaseIterable, Identifiable {
             return "You are an expert Swift/SwiftUI developer. Analyze the provided error or code and identify the root cause. Provide a clear fix with explanation. Format code blocks with ```swift."
         case .agent:
             // Dynamic system prompt built by AgentToolService
-            return AgentToolService.shared.buildSystemPrompt()
+            return AgentToolService.buildSystemPrompt()
         }
     }
 }

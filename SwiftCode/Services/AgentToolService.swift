@@ -33,7 +33,7 @@ final class AgentToolService {
 
     // MARK: - System Prompt
 
-    func buildSystemPrompt() -> String {
+    nonisolated static func buildSystemPrompt() -> String {
         let toolDocs = AgentTool.all
             .map { $0.promptDescription }
             .joined(separator: "\n\n")
