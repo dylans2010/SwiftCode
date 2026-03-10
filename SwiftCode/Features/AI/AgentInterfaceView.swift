@@ -705,7 +705,7 @@ struct AgentInterfaceView: View {
                 .textCase(.uppercase)
 
             TextField(
-                "What should Agent build?"
+                "What should Agent build?",
                 text: $goalText,
                 axis: .vertical
             )
