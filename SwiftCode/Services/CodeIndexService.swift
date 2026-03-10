@@ -15,13 +15,10 @@ final class CodeIndexService: ObservableObject {
 
     func indexProject(at directoryURL: URL) {
         isIndexing = true
-        let url = directoryURL
-        Task.detached { [weak self] in
-            let results = Self.scanDirectory(url)
-            await MainActor.run {
-                self?.entries = results
-                self?.isIndexing = false
-            }
+        Task { @MainActor in
+            let results = await Self.scanDirectory(directoryURL)
+            self.entries = results
+            self.isIndexing = false
         }
     }
 
@@ -34,16 +31,12 @@ final class CodeIndexService: ObservableObject {
     // MARK: - Search
 
     func searchProject(query: String, at directoryURL: URL) async -> [SearchResult] {
-        let url = directoryURL
-        let q = query
-        return await Task.detached {
-            Self.searchFiles(query: q, in: url)
-        }.value
+        return await Self.searchFiles(query: query, in: directoryURL)
     }
 
     // MARK: - Scanning
 
-    private static func scanDirectory(_ url: URL) -> [IndexEntry] {
+    private static func scanDirectory(_ url: URL) async -> [IndexEntry] {
         let fm = FileManager.default
         var results: [IndexEntry] = []
 
@@ -112,7 +105,7 @@ final class CodeIndexService: ObservableObject {
 
     // MARK: - Full Text Search
 
-    private static func searchFiles(query: String, in directoryURL: URL) -> [SearchResult] {
+    private static func searchFiles(query: String, in directoryURL: URL) async -> [SearchResult] {
         let fm = FileManager.default
         var results: [SearchResult] = []
         let lowercaseQuery = query.lowercased()
