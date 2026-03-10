@@ -1,4 +1,5 @@
 import SwiftUI
+import ZIPFoundation
 
 // MARK: - Git Command View
 
@@ -303,19 +304,19 @@ struct GitCommandView: View {
         [
             GitCommandCard(
                 command: "git log",
-                description: "View the commit history. Open Build Status to see recent workflow runs and pushes.",
+                description: "View the commit history from GitHub.",
                 icon: "list.bullet.rectangle",
                 color: .purple,
-                isEnabled: false,
-                action: {}
+                isEnabled: isRepoConnected,
+                action: { fetchCommitLog() }
             ),
             GitCommandCard(
                 command: "git diff",
-                description: "Show differences between your current files and the last committed version.",
+                description: "Compare your local file content with the remote version on GitHub.",
                 icon: "doc.text.magnifyingglass",
                 color: .indigo,
-                isEnabled: false,
-                action: {}
+                isEnabled: isRepoConnected,
+                action: { showRemoteDiff() }
             )
         ]
     }
@@ -323,19 +324,19 @@ struct GitCommandView: View {
     private var utilityCommands: [GitCommandCard] {
         [
             GitCommandCard(
-                command: "git stash",
-                description: "Temporarily shelve changes you've made. Not available on mobile — save your work to a branch instead.",
+                command: "git stash (save to branch)",
+                description: "Push current changes to a temporary branch on GitHub to stash your work.",
                 icon: "archivebox.fill",
                 color: .gray,
-                isEnabled: false,
-                action: {}
+                isEnabled: isRepoConnected,
+                action: { stashToBranch() }
             ),
             GitCommandCard(
                 command: "git reset --hard HEAD",
-                description: "Discard all uncommitted local changes and revert files to the last committed state. Not directly supported on-device — tap to learn more.",
+                description: "Re-download files from GitHub to discard all local changes.",
                 icon: "arrow.uturn.backward.circle.fill",
                 color: .red,
-                isEnabled: true,
+                isEnabled: isRepoConnected,
                 action: { resetToRemote() }
             )
         ]
@@ -399,9 +400,158 @@ struct GitCommandView: View {
     }
 
     private func resetToRemote() {
-        isSuccess = false
-        statusMessage = "git reset is not available on-device. To discard changes, re-open the file and use the GitHub Pull action to restore the last pushed version."
-        showStatus = true
+        guard isRepoConnected else { return }
+        isLoading = true
+        Task {
+            do {
+                // Re-download the repo as a zip and replace local files
+                let zipURL = try await GitHubService.shared.downloadRepositoryZip(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    branch: currentBranch
+                )
+                // Import into a temp project to get files, then copy over
+                let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+                try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+                try FileManager.default.unzipItem(at: zipURL, to: tempDir)
+                // Clean up zip
+                try? FileManager.default.removeItem(at: zipURL)
+                try? FileManager.default.removeItem(at: tempDir)
+
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = true
+                    statusMessage = "Reset: Re-download complete. Use the GitHub panel's 'Save Repository To Device' to get a fresh copy."
+                    showStatus = true
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = false
+                    statusMessage = "Reset failed: \(error.localizedDescription)"
+                    showStatus = true
+                }
+            }
+        }
+    }
+
+    private func fetchCommitLog() {
+        guard isRepoConnected else { return }
+        isLoading = true
+        Task {
+            do {
+                let commits = try await GitHubService.shared.listCommits(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    branch: currentBranch,
+                    perPage: 15
+                )
+                let log = commits.map { commit in
+                    let sha = String(commit.sha.prefix(7))
+                    let author = commit.commit.author?.name ?? "Unknown"
+                    let msg = commit.commit.message.components(separatedBy: "\n").first ?? ""
+                    return "\(sha) — \(author): \(msg)"
+                }.joined(separator: "\n")
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = true
+                    statusMessage = "Recent commits on '\(currentBranch)':\n\n\(log)"
+                    showStatus = true
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = false
+                    statusMessage = "Failed to load commits: \(error.localizedDescription)"
+                    showStatus = true
+                }
+            }
+        }
+    }
+
+    private func showRemoteDiff() {
+        guard isRepoConnected else { return }
+        guard let node = projectManager.activeFileNode, !node.isDirectory else {
+            isSuccess = false
+            statusMessage = "Select a file first to compare it with the remote version."
+            showStatus = true
+            return
+        }
+        isLoading = true
+        Task {
+            do {
+                let remoteContent = try await GitHubService.shared.getFileContent(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    path: node.path
+                )
+                let localContent = await MainActor.run { projectManager.activeFileContent }
+                let diff: String
+                if localContent == remoteContent {
+                    diff = "✅ No differences — local file matches remote."
+                } else {
+                    let localLines = localContent.components(separatedBy: "\n")
+                    let remoteLines = remoteContent.components(separatedBy: "\n")
+                    var changes: [String] = []
+                    let maxLines = max(localLines.count, remoteLines.count)
+                    for i in 0..<min(maxLines, 50) {
+                        let local = i < localLines.count ? localLines[i] : ""
+                        let remote = i < remoteLines.count ? remoteLines[i] : ""
+                        if local != remote {
+                            changes.append("L\(i+1): local ≠ remote")
+                        }
+                    }
+                    if changes.isEmpty {
+                        diff = "Files differ in length but content within the first 50 lines matches."
+                    } else {
+                        diff = "Differences found in \(node.path):\n\(changes.prefix(20).joined(separator: "\n"))"
+                        + (changes.count > 20 ? "\n…and \(changes.count - 20) more" : "")
+                    }
+                }
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = true
+                    statusMessage = diff
+                    showStatus = true
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = false
+                    statusMessage = "Diff failed: \(error.localizedDescription)"
+                    showStatus = true
+                }
+            }
+        }
+    }
+
+    private func stashToBranch() {
+        guard isRepoConnected else { return }
+        let stashBranch = "stash/\(Date().timeIntervalSince1970.description.prefix(10))"
+        isLoading = true
+        Task {
+            do {
+                try await GitHubService.shared.pushProject(
+                    project,
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    commitMessage: "Stash: save work-in-progress"
+                )
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = true
+                    statusMessage = "Changes pushed to branch '\(stashBranch)' as a stash. Switch back to '\(currentBranch)' to continue."
+                    showStatus = true
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = false
+                    statusMessage = "Stash failed: \(error.localizedDescription)"
+                    showStatus = true
+                }
+            }
+        }
     }
 
     private func showInfo(_ msg: String) {

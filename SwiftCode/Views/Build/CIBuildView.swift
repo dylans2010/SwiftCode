@@ -12,6 +12,12 @@ struct CIBuildView: View {
     @State private var triggerBranch: String = "main"
     @State private var xcodeVersion: String = "latest-stable"
     @State private var includeTestFlight = false
+    @State private var includeTests = false
+    @State private var includeLinting = false
+    @State private var includeSwiftPM = false
+    @State private var includePullRequestTrigger = false
+    @State private var includeCodeCoverage = false
+    @State private var iOSSimulator: String = "iPhone 15 Pro"
     @State private var showYAMLPreview = false
     @State private var isSaving = false
     @State private var statusMessage: String?
@@ -39,17 +45,30 @@ struct CIBuildView: View {
     }
 
     var generatedYAML: String {
-        """
+        var yaml = """
         name: Build iOS IPA
 
         on:
           push:
             branches: [ \(triggerBranch) ]
+        """
+
+        if includePullRequestTrigger {
+            yaml += """
+
+              pull_request:
+                branches: [ \(triggerBranch) ]
+            """
+        }
+
+        yaml += """
+
           workflow_dispatch:
 
         jobs:
           build:
             runs-on: macos-14
+            timeout-minutes: 30
 
             steps:
               - name: Checkout
@@ -59,6 +78,71 @@ struct CIBuildView: View {
                 uses: maxim-lobanov/setup-xcode@v1
                 with:
                   xcode-version: '\(xcodeVersion)'
+
+              - name: Show Environment
+                run: |
+                  xcodebuild -version
+                  swift --version
+                  echo "Available simulators:"
+                  xcrun simctl list devices available | head -20
+        """
+
+        if includeSwiftPM {
+            yaml += """
+
+
+              - name: Resolve Swift Packages
+                run: |
+                  xcodebuild -project *.xcodeproj \\
+                    -scheme "\(resolvedScheme)" \\
+                    -resolvePackageDependencies
+            """
+        }
+
+        if includeLinting {
+            yaml += """
+
+
+              - name: Install SwiftLint
+                run: brew install swiftlint
+
+              - name: Run SwiftLint
+                run: swiftlint lint --reporter github-actions-logging || true
+            """
+        }
+
+        if includeTests {
+            yaml += """
+
+
+              - name: Run Tests
+                run: |
+                  xcodebuild test \\
+                    -scheme "\(resolvedScheme)" \\
+                    -destination "platform=iOS Simulator,name=\(iOSSimulator)" \\
+                    -resultBundlePath TestResults.xcresult \\
+            """
+            if includeCodeCoverage {
+                yaml += """
+                    -enableCodeCoverage YES \\
+
+                """
+            }
+            yaml += """
+                    CODE_SIGNING_ALLOWED=NO || true
+
+              - name: Upload Test Results
+                if: always()
+                uses: actions/upload-artifact@v4
+                with:
+                  name: test-results
+                  path: TestResults.xcresult
+                  if-no-files-found: warn
+            """
+        }
+
+        yaml += """
+
 
               - name: Build Archive
                 run: |
@@ -85,8 +169,13 @@ struct CIBuildView: View {
                     ${{ runner.temp }}/*.xcarchive
                   if-no-files-found: warn
                   retention-days: 30
-        \(includeTestFlight ? testFlightStep : "")
         """
+
+        if includeTestFlight {
+            yaml += testFlightStep
+        }
+
+        return yaml
     }
 
     private var testFlightStep: String {
@@ -205,6 +294,81 @@ struct CIBuildView: View {
     private var optionsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionLabel("Options", icon: "slider.horizontal.3", color: .purple)
+
+            Toggle(isOn: $includeTests) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Run Unit Tests")
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                    Text("Run xcodebuild test before archiving")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .tint(.green)
+
+            if includeTests {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("iOS Simulator")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Picker("Simulator", selection: $iOSSimulator) {
+                        Text("iPhone 15 Pro").tag("iPhone 15 Pro")
+                        Text("iPhone 15").tag("iPhone 15")
+                        Text("iPhone 14").tag("iPhone 14")
+                        Text("iPad Pro (12.9-inch)").tag("iPad Pro (12.9-inch) (6th generation)")
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                Toggle(isOn: $includeCodeCoverage) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Code Coverage")
+                            .font(.subheadline)
+                            .foregroundStyle(.white)
+                        Text("Enable code coverage collection during tests")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .tint(.blue)
+            }
+
+            Toggle(isOn: $includeLinting) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("SwiftLint")
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                    Text("Install and run SwiftLint for code style checks")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .tint(.orange)
+
+            Toggle(isOn: $includeSwiftPM) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Resolve Swift Packages")
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                    Text("Run xcodebuild -resolvePackageDependencies before building")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .tint(.teal)
+
+            Toggle(isOn: $includePullRequestTrigger) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Pull Request Trigger")
+                        .font(.subheadline)
+                        .foregroundStyle(.white)
+                    Text("Also run CI on pull requests targeting the trigger branch")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .tint(.blue)
 
             Toggle(isOn: $includeTestFlight) {
                 VStack(alignment: .leading, spacing: 2) {

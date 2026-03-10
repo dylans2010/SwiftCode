@@ -6,7 +6,7 @@ final class OpenRouterService {
     static let shared = OpenRouterService()
     private init() {}
 
-    private let baseURL = URL(string: "https://openrouter.ai/api/v1/chat/completions")!
+    private let baseURL = URL(string: "https://openrouter.ai/api/v1")!
 
     // MARK: - Chat Completion (non-streaming)
 
@@ -42,10 +42,15 @@ final class OpenRouterService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch let urlError as URLError {
+            throw OpenRouterError.networkError(code: urlError.code.rawValue, description: urlError.localizedDescription)
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw OpenRouterError.invalidResponse
+            throw OpenRouterError.invalidResponse(detail: "Response was not an HTTP response.")
         }
 
         guard httpResponse.statusCode == 200 else {
@@ -53,11 +58,18 @@ final class OpenRouterService {
             throw OpenRouterError.apiError(statusCode: httpResponse.statusCode, body: errorBody)
         }
 
-        let decoded = try JSONDecoder().decode(OpenRouterResponse.self, from: data)
-        guard let content = decoded.choices.first?.message.content else {
+        do {
+            let decoded = try JSONDecoder().decode(OpenRouterResponse.self, from: data)
+            guard let content = decoded.choices.first?.message.content else {
+                throw OpenRouterError.emptyResponse
+            }
+            return content
+        } catch is OpenRouterError {
             throw OpenRouterError.emptyResponse
+        } catch {
+            let raw = String(data: data, encoding: .utf8) ?? "<binary>"
+            throw OpenRouterError.decodingError(detail: error.localizedDescription, rawBody: raw)
         }
-        return content
     }
 
     // MARK: - Streaming Chat Completion
@@ -79,6 +91,7 @@ final class OpenRouterService {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("SwiftCode iOS App", forHTTPHeaderField: "X-Title")
+        request.setValue("https://github.com/swiftcode/app", forHTTPHeaderField: "HTTP-Referer")
 
         var apiMessages: [[String: String]] = [
             ["role": "system", "content": systemPrompt]
@@ -95,11 +108,27 @@ final class OpenRouterService {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        let (stream, response) = try await URLSession.shared.bytes(for: request)
+        let stream: URLSession.AsyncBytes
+        let response: URLResponse
+        do {
+            (stream, response) = try await URLSession.shared.bytes(for: request)
+        } catch let urlError as URLError {
+            throw OpenRouterError.networkError(code: urlError.code.rawValue, description: urlError.localizedDescription)
+        }
 
-        guard let httpResponse = response as? HTTPURLResponse,
-              httpResponse.statusCode == 200 else {
-            throw OpenRouterError.invalidResponse
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw OpenRouterError.invalidResponse(detail: "Response was not an HTTP response.")
+        }
+
+        guard httpResponse.statusCode == 200 else {
+            // Collect the body for better error reporting
+            var bodyData = Data()
+            for try await byte in stream {
+                bodyData.append(byte)
+                if bodyData.count > 4096 { break }
+            }
+            let errorBody = String(data: bodyData, encoding: .utf8) ?? "Unknown error"
+            throw OpenRouterError.apiError(statusCode: httpResponse.statusCode, body: errorBody)
         }
 
         for try await line in stream.lines {
@@ -175,20 +204,36 @@ private struct OpenRouterModelsResponse: Decodable {
 
 enum OpenRouterError: LocalizedError {
     case missingAPIKey
-    case invalidResponse
+    case invalidResponse(detail: String)
     case emptyResponse
     case apiError(statusCode: Int, body: String)
+    case networkError(code: Int, description: String)
+    case decodingError(detail: String, rawBody: String)
 
     var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            return "No OpenRouter API key found. Please add your key in Settings."
-        case .invalidResponse:
-            return "Received an invalid response from the API."
+            return "[OR-001] No OpenRouter API key found. Please add your key in Settings."
+        case .invalidResponse(let detail):
+            return "[OR-002] Invalid response from the API: \(detail)"
         case .emptyResponse:
-            return "The AI returned an empty response."
+            return "[OR-003] The AI returned an empty response."
         case let .apiError(code, body):
-            return "API error \(code): \(body)"
+            let hint: String
+            switch code {
+            case 401: hint = "Invalid API key. Check your OpenRouter key in Settings."
+            case 402: hint = "Insufficient credits on your OpenRouter account."
+            case 403: hint = "Access denied. The selected model may require a paid plan."
+            case 404: hint = "Model not found. The selected model ID may be invalid."
+            case 429: hint = "Rate limited. Please wait a moment and try again."
+            case 500...599: hint = "OpenRouter server error. Try again later."
+            default: hint = body
+            }
+            return "[OR-\(code)] API error \(code): \(hint)"
+        case let .networkError(code, description):
+            return "[OR-NET-\(code)] Network error: \(description)"
+        case let .decodingError(detail, _):
+            return "[OR-004] Failed to decode API response: \(detail)"
         }
     }
 }

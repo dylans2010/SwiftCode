@@ -13,6 +13,7 @@ struct BuildStatusView: View {
     @State private var selectedRun: WorkflowRun?
     @State private var logsText: String?
     @State private var showLogs = false
+    @State private var autoRefreshTimer: Timer?
 
     private var hasToken: Bool {
         !(KeychainService.shared.get(forKey: KeychainService.githubToken) ?? "").isEmpty
@@ -57,7 +58,19 @@ struct BuildStatusView: View {
             .sheet(isPresented: $showLogs) {
                 logsSheet
             }
-            .onAppear { loadData() }
+            .onAppear {
+                loadData()
+                // Auto-refresh every 15 seconds if there are in-progress builds
+                autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
+                    if workflowRuns.contains(where: { $0.isRunning }) {
+                        loadData()
+                    }
+                }
+            }
+            .onDisappear {
+                autoRefreshTimer?.invalidate()
+                autoRefreshTimer = nil
+            }
         }
     }
 
@@ -228,14 +241,42 @@ struct BuildStatusView: View {
     private func loadData() {
         guard !owner.isEmpty, !repo.isEmpty else { return }
         isLoading = true
+        errorMessage = nil
         Task {
-            async let runs = (try? GitHubService.shared.listWorkflowRuns(owner: owner, repo: repo)) ?? []
-            async let rels = (try? GitHubService.shared.listReleases(owner: owner, repo: repo)) ?? []
-            let (r, l) = await (runs, rels)
-            await MainActor.run {
-                workflowRuns = r
-                releases = l
-                isLoading = false
+            do {
+                async let runsResult = GitHubService.shared.listWorkflowRuns(owner: owner, repo: repo)
+                async let relsResult = GitHubService.shared.listReleases(owner: owner, repo: repo)
+
+                let fetchedRuns: [WorkflowRun]
+                let fetchedReleases: [GitHubRelease]
+                do {
+                    fetchedRuns = try await runsResult
+                } catch {
+                    fetchedRuns = []
+                    await MainActor.run {
+                        errorMessage = "Workflow runs: \(error.localizedDescription)"
+                    }
+                }
+                do {
+                    fetchedReleases = try await relsResult
+                } catch {
+                    fetchedReleases = []
+                    if await MainActor.run(body: { errorMessage }) == nil {
+                        await MainActor.run {
+                            errorMessage = "Releases: \(error.localizedDescription)"
+                        }
+                    }
+                }
+
+                await MainActor.run {
+                    workflowRuns = fetchedRuns
+                    releases = fetchedReleases
+                    isLoading = false
+                    if let msg = errorMessage {
+                        self.errorMessage = msg
+                        showError = true
+                    }
+                }
             }
         }
     }

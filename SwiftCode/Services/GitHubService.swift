@@ -23,6 +23,52 @@ final class GitHubService {
         return request
     }
 
+    // MARK: - Validate & Fetch Repository Info
+
+    /// Validates whether a GitHub repository URL points to a real repo and returns its details.
+    func validateAndFetchRepo(owner: String, repo: String) async throws -> GitHubRepoDetail {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(GitHubRepoDetail.self, from: data)
+    }
+
+    // MARK: - List Commits
+
+    func listCommits(owner: String, repo: String, branch: String = "main", perPage: Int = 10) async throws -> [GitHubCommit] {
+        guard token != nil else { throw GitHubError.missingToken }
+        var components = URLComponents(url: baseURL.appendingPathComponent("repos/\(owner)/\(repo)/commits"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [
+            URLQueryItem(name: "sha", value: branch),
+            URLQueryItem(name: "per_page", value: "\(perPage)")
+        ]
+        let request = authorizedRequest(url: components.url!)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode([GitHubCommit].self, from: data)
+    }
+
+    // MARK: - Get Repository Tree (for file listing)
+
+    func getRepoTree(owner: String, repo: String, branch: String = "main") async throws -> [GitHubTreeEntry] {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/trees/\(branch)")
+        var components = URLComponents(url: url, resolvingAgainstBaseURL: false)!
+        components.queryItems = [URLQueryItem(name: "recursive", value: "1")]
+        let request = authorizedRequest(url: components.url!)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        let decoded = try JSONDecoder().decode(GitHubTreeResponse.self, from: data)
+        return decoded.tree
+    }
+
     // MARK: - Auth Check
 
     func getAuthenticatedUser() async throws -> GitHubUser {
@@ -341,6 +387,69 @@ struct GitHubAsset: Identifiable, Decodable {
     let name: String
     let browserDownloadUrl: String
     let size: Int
+}
+
+struct GitHubRepoDetail: Decodable, Identifiable {
+    let id: Int
+    let name: String
+    let fullName: String
+    let htmlUrl: String
+    let cloneUrl: String
+    let description: String?
+    let language: String?
+    let stargazersCount: Int
+    let forksCount: Int
+    let openIssuesCount: Int
+    let defaultBranch: String
+    let isPrivate: Bool
+    let createdAt: Date?
+    let updatedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, language
+        case fullName = "fullName"
+        case htmlUrl = "htmlUrl"
+        case cloneUrl = "cloneUrl"
+        case stargazersCount = "stargazersCount"
+        case forksCount = "forksCount"
+        case openIssuesCount = "openIssuesCount"
+        case defaultBranch = "defaultBranch"
+        case isPrivate = "private"
+        case createdAt = "createdAt"
+        case updatedAt = "updatedAt"
+    }
+}
+
+struct GitHubCommit: Identifiable, Decodable {
+    let sha: String
+    let commit: CommitDetail
+    let htmlUrl: String?
+
+    var id: String { sha }
+
+    struct CommitDetail: Decodable {
+        let message: String
+        let author: AuthorInfo?
+
+        struct AuthorInfo: Decodable {
+            let name: String?
+            let date: Date?
+        }
+    }
+}
+
+struct GitHubTreeResponse: Decodable {
+    let sha: String
+    let tree: [GitHubTreeEntry]
+}
+
+struct GitHubTreeEntry: Identifiable, Decodable {
+    let path: String
+    let type: String
+    let sha: String
+    let size: Int?
+
+    var id: String { sha + path }
 }
 
 // MARK: - Errors

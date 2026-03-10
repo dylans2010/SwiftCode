@@ -1,8 +1,55 @@
 import SwiftUI
 
+// MARK: - Chat History Manager
+
+@MainActor
+final class ChatHistoryManager: ObservableObject {
+    static let shared = ChatHistoryManager()
+    @Published var sessions: [ChatSession] = []
+
+    private static let storageKey = "com.swiftcode.chatHistory"
+
+    struct ChatSession: Identifiable, Codable {
+        var id: UUID = UUID()
+        var title: String
+        var messages: [AIMessage]
+        var mode: String
+        var createdAt: Date = Date()
+    }
+
+    private init() {
+        loadSessions()
+    }
+
+    func saveSession(title: String, messages: [AIMessage], mode: String) {
+        let session = ChatSession(title: title, messages: messages, mode: mode)
+        sessions.insert(session, at: 0)
+        if sessions.count > 50 { sessions = Array(sessions.prefix(50)) }
+        persist()
+    }
+
+    func deleteSession(_ session: ChatSession) {
+        sessions.removeAll { $0.id == session.id }
+        persist()
+    }
+
+    private func persist() {
+        if let data = try? JSONEncoder().encode(sessions) {
+            UserDefaults.standard.set(data, forKey: Self.storageKey)
+        }
+    }
+
+    private func loadSessions() {
+        guard let data = UserDefaults.standard.data(forKey: Self.storageKey),
+              let decoded = try? JSONDecoder().decode([ChatSession].self, from: data) else { return }
+        sessions = decoded
+    }
+}
+
 struct AIAssistantView: View {
     @EnvironmentObject private var projectManager: ProjectManager
     @EnvironmentObject private var settings: AppSettings
+    @StateObject private var chatHistory = ChatHistoryManager.shared
 
     @State private var messages: [AIMessage] = []
     @State private var inputText = ""
@@ -15,6 +62,7 @@ struct AIAssistantView: View {
     @State private var scrollProxy: ScrollViewProxy?
     @State private var agentIterationCount = 0
     @State private var showCustomModelSheet = false
+    @State private var showChatHistory = false
     @State private var customModelDraft = ""
     private let maxAgentIterations = 15
 
@@ -43,7 +91,10 @@ struct AIAssistantView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.purple.opacity(0.08))
+                .background(
+                    LinearGradient(colors: [.purple.opacity(0.15), .cyan.opacity(0.08)],
+                                   startPoint: .leading, endPoint: .trailing)
+                )
 
                 Divider().opacity(0.3)
             }
@@ -93,12 +144,40 @@ struct AIAssistantView: View {
             // Input
             inputArea
         }
-        .background(Color(red: 0.12, green: 0.12, blue: 0.16))
+        .background(
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.08, green: 0.06, blue: 0.18),
+                        Color(red: 0.10, green: 0.10, blue: 0.16),
+                        Color(red: 0.06, green: 0.10, blue: 0.14)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                // Subtle radial glow
+                RadialGradient(
+                    colors: [.purple.opacity(0.08), .clear],
+                    center: .topTrailing,
+                    startRadius: 50,
+                    endRadius: 400
+                )
+                RadialGradient(
+                    colors: [.cyan.opacity(0.06), .clear],
+                    center: .bottomLeading,
+                    startRadius: 50,
+                    endRadius: 350
+                )
+            }
+        )
         .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
             Button("OK") {}
         } message: { msg in Text(msg) }
         .sheet(isPresented: $showCustomModelSheet) {
             customModelSheet
+        }
+        .sheet(isPresented: $showChatHistory) {
+            chatHistorySheet
         }
     }
 
@@ -107,11 +186,29 @@ struct AIAssistantView: View {
     private var assistantHeader: some View {
         HStack {
             Image(systemName: selectedMode == .agent ? "cpu.fill" : "sparkles")
-                .foregroundStyle(selectedMode == .agent ? .cyan : .purple)
+                .foregroundStyle(
+                    LinearGradient(colors: selectedMode == .agent ? [.cyan, .blue] : [.purple, .pink],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
             Text(selectedMode == .agent ? "AI Agent" : "AI Assistant")
                 .font(.headline)
                 .foregroundStyle(.white)
             Spacer()
+
+            // Chat History
+            Button {
+                // Save current session before viewing history
+                if !messages.isEmpty {
+                    let title = messages.first(where: { $0.role == "user" })?.content.prefix(40) ?? "Chat"
+                    chatHistory.saveSession(title: String(title), messages: messages, mode: selectedMode.rawValue)
+                }
+                showChatHistory = true
+            } label: {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
 
             // Context toggle (hidden in agent mode – agent uses its own tools)
             if selectedMode != .agent {
@@ -137,6 +234,7 @@ struct AIAssistantView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
     }
 
     private var modePicker: some View {
@@ -157,10 +255,20 @@ struct AIAssistantView: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(
-                            selectedMode == mode
-                                ? Color.purple.opacity(0.6)
-                                : Color.white.opacity(0.06),
+                            Group {
+                                if selectedMode == mode {
+                                    LinearGradient(colors: [.purple, .blue.opacity(0.8)],
+                                                   startPoint: .leading, endPoint: .trailing)
+                                        .opacity(0.6)
+                                } else {
+                                    Color.white.opacity(0.06)
+                                }
+                            },
                             in: Capsule()
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(selectedMode == mode ? .white.opacity(0.2) : .clear, lineWidth: 1)
                         )
                         .foregroundStyle(selectedMode == mode ? .white : .secondary)
                     }
@@ -170,13 +278,16 @@ struct AIAssistantView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
+        .background(.ultraThinMaterial)
     }
 
     private var emptyStateView: some View {
         VStack(spacing: 12) {
             Image(systemName: selectedMode.icon)
                 .font(.system(size: 36))
-                .foregroundStyle(.purple.opacity(0.7))
+                .foregroundStyle(
+                    LinearGradient(colors: [.purple, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+                )
             Text(selectedMode.rawValue)
                 .font(.headline)
                 .foregroundStyle(.white)
@@ -187,6 +298,19 @@ struct AIAssistantView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 40)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(
+                            LinearGradient(colors: [.purple.opacity(0.3), .cyan.opacity(0.2)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: 1
+                        )
+                )
+        )
+        .padding(.horizontal, 4)
     }
 
     private var loadingIndicator: some View {
@@ -199,6 +323,7 @@ struct AIAssistantView: View {
                 .foregroundStyle(.secondary)
         }
         .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var inputArea: some View {
@@ -287,14 +412,27 @@ struct AIAssistantView: View {
                         .background(.clear)
                 }
                 .padding(4)
-                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(
+                            LinearGradient(colors: [.purple.opacity(0.3), .blue.opacity(0.2)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing),
+                            lineWidth: 1
+                        )
+                )
 
                 Button {
                     sendMessage()
                 } label: {
                     Image(systemName: isLoading ? "stop.circle.fill" : "arrow.up.circle.fill")
                         .font(.title2)
-                        .foregroundStyle(isLoading ? .red : (inputText.isEmpty ? .secondary : (selectedMode == .agent ? .cyan : .purple)))
+                        .foregroundStyle(
+                            isLoading ? AnyShapeStyle(.red) :
+                            inputText.isEmpty ? AnyShapeStyle(.secondary) :
+                            AnyShapeStyle(LinearGradient(colors: selectedMode == .agent ? [.cyan, .blue] : [.purple, .pink],
+                                                          startPoint: .topLeading, endPoint: .bottomTrailing))
+                        )
                 }
                 .buttonStyle(.plain)
                 .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isLoading)
@@ -378,6 +516,113 @@ struct AIAssistantView: View {
         .preferredColorScheme(.dark)
     }
 
+    // MARK: - Chat History Sheet
+
+    private var chatHistorySheet: some View {
+        NavigationStack {
+            ZStack {
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.08, green: 0.06, blue: 0.18),
+                        Color(red: 0.10, green: 0.10, blue: 0.16)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+
+                if chatHistory.sessions.isEmpty {
+                    VStack(spacing: 16) {
+                        Image(systemName: "bubble.left.and.bubble.right")
+                            .font(.system(size: 48))
+                            .foregroundStyle(
+                                LinearGradient(colors: [.purple.opacity(0.5), .cyan.opacity(0.5)],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                            )
+                        Text("No Chat History")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        Text("Your past conversations will appear here.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 10) {
+                            ForEach(chatHistory.sessions) { session in
+                                Button {
+                                    messages = session.messages
+                                    if let mode = AgentMode.allCases.first(where: { $0.rawValue == session.mode }) {
+                                        selectedMode = mode
+                                    }
+                                    showChatHistory = false
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "bubble.left.fill")
+                                            .foregroundStyle(
+                                                LinearGradient(colors: [.purple, .blue],
+                                                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                                            )
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text(session.title)
+                                                .font(.subheadline.weight(.medium))
+                                                .foregroundStyle(.white)
+                                                .lineLimit(2)
+                                                .multilineTextAlignment(.leading)
+                                            HStack(spacing: 6) {
+                                                Text(session.mode)
+                                                    .font(.caption2)
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(.purple.opacity(0.3), in: Capsule())
+                                                    .foregroundStyle(.purple)
+                                                Text(session.createdAt, style: .relative)
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.secondary)
+                                                Text("·")
+                                                    .foregroundStyle(.secondary)
+                                                Text("\(session.messages.count) messages")
+                                                    .font(.caption2)
+                                                    .foregroundStyle(.secondary)
+                                            }
+                                        }
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .padding(12)
+                                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(.white.opacity(0.08), lineWidth: 1)
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        chatHistory.deleteSession(session)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
+                        }
+                        .padding()
+                    }
+                }
+            }
+            .navigationTitle("Chat History")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Done") { showChatHistory = false }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
     // MARK: - Actions
 
     private func sendMessage() {
@@ -421,6 +666,11 @@ struct AIAssistantView: View {
                     }
                     streamingResponse = ""
                     isLoading = false
+                    // Auto-save to chat history
+                    if messages.count >= 2 {
+                        let title = String(messages.first(where: { $0.role == "user" })?.content.prefix(60) ?? "Chat")
+                        chatHistory.saveSession(title: title, messages: messages, mode: selectedMode.rawValue)
+                    }
                 }
             } catch {
                 await MainActor.run {
@@ -622,7 +872,7 @@ struct MessageBubbleView: View {
     var body: some View {
         Group {
             if isToolCall {
-                // Tool-call indicator row
+                // Tool-call indicator row with glass effect
                 HStack(spacing: 6) {
                     Image(systemName: "wrench.and.screwdriver.fill")
                         .font(.caption2)
@@ -637,7 +887,15 @@ struct MessageBubbleView: View {
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 6)
-                .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(
+                            LinearGradient(colors: [.orange.opacity(0.3), .yellow.opacity(0.1)],
+                                           startPoint: .leading, endPoint: .trailing),
+                            lineWidth: 1
+                        )
+                )
             } else if isToolResult {
                 // Tool-result compact row
                 HStack(spacing: 6) {
@@ -652,12 +910,15 @@ struct MessageBubbleView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
             } else {
-                // Standard user / assistant bubble
+                // Standard user / assistant bubble with glass effects
                 HStack(alignment: .top, spacing: 8) {
                     if !isUser {
                         Image(systemName: "sparkles")
                             .font(.caption)
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(
+                                LinearGradient(colors: [.purple, .cyan],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                            )
                             .padding(.top, 4)
                     }
 
@@ -670,10 +931,22 @@ struct MessageBubbleView: View {
                                     .foregroundStyle(isUser ? .white : .primary)
                                     .padding(10)
                                     .background(
-                                        isUser
-                                            ? Color.purple.opacity(0.5)
-                                            : Color.white.opacity(0.07),
+                                        Group {
+                                            if isUser {
+                                                LinearGradient(
+                                                    colors: [.purple.opacity(0.6), .blue.opacity(0.4)],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            } else {
+                                                Color.white.opacity(0.07)
+                                            }
+                                        },
                                         in: RoundedRectangle(cornerRadius: 12)
+                                    )
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(.white.opacity(isUser ? 0.15 : 0.06), lineWidth: 1)
                                     )
                             case .code(let lang):
                                 CodeBlockView(
