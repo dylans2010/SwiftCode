@@ -59,7 +59,7 @@ enum AgentExecutionMode: String, CaseIterable {
 
     var description: String {
         switch self {
-        case .assistant: return "Text suggestions only"
+        case .assistant: return "Text Suggestions Only"
         case .agent:     return "Tool calls with confirmation"
         case .autonomous: return "Fully automated execution"
         }
@@ -552,6 +552,7 @@ final class AgentController: ObservableObject {
 // MARK: - Main Agent Interface View
 
 struct AgentInterfaceView: View {
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var projectManager: ProjectManager
     @EnvironmentObject private var settings: AppSettings
     @StateObject private var controller = AgentController.shared
@@ -622,6 +623,13 @@ struct AgentInterfaceView: View {
 
     private var agentHeader: some View {
         HStack(spacing: 12) {
+            Button { dismiss() } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+
             VStack(alignment: .leading, spacing: 2) {
                 Text("SwiftCode Agent")
                     .font(.headline)

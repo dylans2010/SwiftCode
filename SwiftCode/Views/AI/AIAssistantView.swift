@@ -64,6 +64,7 @@ struct AIAssistantView: View {
     @State private var showCustomModelSheet = false
     @State private var showChatHistory = false
     @State private var customModelDraft = ""
+    @State private var showAgentInterface = false
     private let maxAgentIterations = 15
 
     var body: some View {
@@ -179,6 +180,11 @@ struct AIAssistantView: View {
         .sheet(isPresented: $showChatHistory) {
             chatHistorySheet
         }
+        .fullScreenCover(isPresented: $showAgentInterface) {
+            AgentInterfaceView()
+                .environmentObject(projectManager)
+                .environmentObject(settings)
+        }
     }
 
     // MARK: - Subviews
@@ -252,8 +258,12 @@ struct AIAssistantView: View {
 
     private func modeButton(for mode: AgentMode) -> some View {
         Button {
-            withAnimation(.spring(response: 0.3)) {
-                selectedMode = mode
+            if mode == .agent {
+                showAgentInterface = true
+            } else {
+                withAnimation(.spring(response: 0.3)) {
+                    selectedMode = mode
+                }
             }
         } label: {
             modePillLabel(for: mode)
@@ -557,6 +567,11 @@ struct AIAssistantView: View {
                                 Button {
                                     messages = session.messages
                                     if let mode = AgentMode.allCases.first(where: { $0.rawValue == session.mode }) {
+                                        if mode == .agent {
+                                            showChatHistory = false
+                                            showAgentInterface = true
+                                            return
+                                        }
                                         selectedMode = mode
                                     }
                                     showChatHistory = false
