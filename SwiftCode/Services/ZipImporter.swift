@@ -60,8 +60,9 @@ final class ZipImporter {
         let metadata = try encoder.encode(project)
         try metadata.write(to: destDir.appendingPathComponent("project.json"))
 
+        let finalProject = project
         await MainActor.run {
-            ProjectManager.shared.projects.insert(project, at: 0)
+            ProjectManager.shared.projects.insert(finalProject, at: 0)
         }
 
         return project
