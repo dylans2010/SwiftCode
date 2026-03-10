@@ -26,7 +26,7 @@ final class ZipImporter {
         let sanitized = sanitizeName(projectName)
 
         // Build destination project directory.
-        let destDir = ProjectManager.shared.projectsDirectory.appendingPathComponent(sanitized)
+        let destDir = await MainActor.run { ProjectManager.shared.projectsDirectory }.appendingPathComponent(sanitized)
         guard !fm.fileExists(atPath: destDir.path) else {
             throw ZipImporterError.projectAlreadyExists(name: sanitized)
         }
