@@ -5,13 +5,16 @@ import Combine
 final class ProjectManager: ObservableObject {
     static let shared = ProjectManager()
 
-    @Published var projects: [Project] = []
+    @Published var projects: [Project] = [] {
+        didSet { persistProjectList() }
+    }
     @Published var activeProject: Project?
     @Published var activeFileNode: FileNode?
     @Published var activeFileContent: String = ""
 
     private var autoSaveCancellable: AnyCancellable?
     private var pendingSave: DispatchWorkItem?
+    private static let projectListKey = "com.swiftcode.projectList"
 
     // MARK: - Directories
 
@@ -30,6 +33,25 @@ final class ProjectManager: ObservableObject {
         loadProjects()
     }
 
+    // MARK: - UserDefaults Persistence
+
+    /// Persist the project list to UserDefaults so the dashboard always shows projects.
+    private func persistProjectList() {
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        if let data = try? encoder.encode(projects) {
+            UserDefaults.standard.set(data, forKey: Self.projectListKey)
+        }
+    }
+
+    /// Load the project list from UserDefaults as a fallback when disk scan finds nothing.
+    private func loadProjectListFromDefaults() -> [Project] {
+        guard let data = UserDefaults.standard.data(forKey: Self.projectListKey) else { return [] }
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return (try? decoder.decode([Project].self, from: data)) ?? []
+    }
+
     // MARK: - Load Projects
 
     func loadProjects() {
@@ -38,7 +60,12 @@ final class ProjectManager: ObservableObject {
             at: projectsDirectory,
             includingPropertiesForKeys: [.isDirectoryKey],
             options: .skipsHiddenFiles
-        ) else { return }
+        ) else {
+            // If disk scan fails, restore from UserDefaults
+            let cached = loadProjectListFromDefaults()
+            if !cached.isEmpty { projects = cached }
+            return
+        }
 
         var loaded: [Project] = []
         for url in contents {
@@ -48,9 +75,23 @@ final class ProjectManager: ObservableObject {
                var project = try? JSONDecoder().decode(Project.self, from: data) {
                 project.files = buildFileTree(at: url, relativeTo: url)
                 loaded.append(project)
+            } else {
+                // Directory exists but has no project.json — create metadata so the project persists
+                let name = url.lastPathComponent
+                var project = Project(name: name)
+                project.files = buildFileTree(at: url, relativeTo: url)
+                try? saveMetadata(project)
+                loaded.append(project)
             }
         }
-        projects = loaded.sorted { $0.lastOpened > $1.lastOpened }
+
+        if loaded.isEmpty {
+            // Fallback: try to recover from UserDefaults if disk is empty
+            let cached = loadProjectListFromDefaults()
+            projects = cached.sorted { $0.lastOpened > $1.lastOpened }
+        } else {
+            projects = loaded.sorted { $0.lastOpened > $1.lastOpened }
+        }
     }
 
     // MARK: - Create Project

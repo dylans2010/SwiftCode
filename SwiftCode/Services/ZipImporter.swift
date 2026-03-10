@@ -38,15 +38,20 @@ final class ZipImporter {
         let extractedRoot = try findExtractedRoot(in: tempDir)
         let sanitized = sanitizeName(projectName)
 
-        // Build destination project directory.
-        let destDir = await MainActor.run { ProjectManager.shared.projectsDirectory }.appendingPathComponent(sanitized)
-        guard !fm.fileExists(atPath: destDir.path) else {
-            throw ZipImporterError.projectAlreadyExists(name: sanitized)
+        // Build destination project directory, handling name collisions.
+        let baseDir = await MainActor.run { ProjectManager.shared.projectsDirectory }
+        var finalName = sanitized
+        var destDir = baseDir.appendingPathComponent(finalName)
+        var counter = 2
+        while fm.fileExists(atPath: destDir.path) {
+            finalName = "\(sanitized) \(counter)"
+            destDir = baseDir.appendingPathComponent(finalName)
+            counter += 1
         }
 
         try copyContents(from: extractedRoot, to: destDir)
 
-        var project = Project(name: sanitized)
+        var project = Project(name: finalName)
         project.files = buildFileTree(at: destDir, relativeTo: destDir)
 
         // Save metadata using the same encoder pattern as ProjectManager
