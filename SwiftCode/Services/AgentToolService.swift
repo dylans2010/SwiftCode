@@ -210,8 +210,7 @@ final class AgentToolService {
             }
             let sourcePath = str("source"); let destPath = str("destination")
             do {
-                let content = try CodingManager.shared.readFile(at: sourcePath, in: project.directoryURL)
-                try CodingManager.shared.writeFile(content: content, at: destPath, in: project.directoryURL)
+                try CodingManager.shared.copyFile(from: sourcePath, to: destPath, in: project.directoryURL)
                 projectManager.refreshFileTree(for: project)
                 return .success(toolName, "Copied \(sourcePath) → \(destPath)")
             } catch { return .failure(toolName, error.localizedDescription) }

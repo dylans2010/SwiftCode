@@ -161,6 +161,22 @@ final class CodingManager: ObservableObject {
         return fm.fileExists(atPath: url.standardizedFileURL.path)
     }
 
+    // MARK: - Copy
+
+    /// Copy a file within a project directory.
+    func copyFile(from sourcePath: String, to destPath: String, in projectDir: URL) throws {
+        let srcURL = projectDir.appendingPathComponent(sourcePath).standardizedFileURL
+        let dstURL = projectDir.appendingPathComponent(destPath).standardizedFileURL
+        let projStd = projectDir.standardizedFileURL
+        guard srcURL.path.hasPrefix(projStd.path),
+              dstURL.path.hasPrefix(projStd.path) else {
+            throw CodingError.pathOutsideProject
+        }
+        let parent = dstURL.deletingLastPathComponent()
+        try fm.createDirectory(at: parent, withIntermediateDirectories: true)
+        try fm.copyItem(at: srcURL, to: dstURL)
+    }
+
     // MARK: - Convenience (project-name based)
 
     /// Resolve a project directory URL from a project name.
