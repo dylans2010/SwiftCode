@@ -98,8 +98,9 @@ final class GitHubService {
 
     func pushProject(_ project: Project, owner: String, repo: String, commitMessage: String) async throws {
         let allFiles = collectFiles(from: project.files)
+        let projectDir = await project.directoryURL
         for fileNode in allFiles {
-            let fileURL = project.directoryURL.appendingPathComponent(fileNode.path)
+            let fileURL = projectDir.appendingPathComponent(fileNode.path)
             guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
             let existingSHA = try? await getFileSHA(owner: owner, repo: repo, path: fileNode.path)
             try await pushFile(

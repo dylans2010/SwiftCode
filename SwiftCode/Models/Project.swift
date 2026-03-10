@@ -21,6 +21,7 @@ struct Project: Identifiable, Codable {
         self.description = ""
     }
 
+    @MainActor
     var directoryURL: URL {
         ProjectManager.shared.projectsDirectory.appendingPathComponent(name)
     }
