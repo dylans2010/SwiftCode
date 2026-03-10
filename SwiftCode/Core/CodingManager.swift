@@ -13,10 +13,15 @@ final class CodingManager: ObservableObject {
     /// Resolved root directory for all projects: Documents/Projects
     var projectsRoot: URL
 
+    /// Resolved root directory for CoreML models: Documents/Models
+    var modelsRoot: URL
+
     private init() {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         projectsRoot = docs.appendingPathComponent("Projects")
+        modelsRoot = docs.appendingPathComponent("Models")
         try? FileManager.default.createDirectory(at: projectsRoot, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: modelsRoot, withIntermediateDirectories: true)
     }
 
     /// Ensure the Projects directory exists. Called at app startup.
@@ -24,6 +29,59 @@ final class CodingManager: ObservableObject {
         if !fm.fileExists(atPath: projectsRoot.path) {
             try? fm.createDirectory(at: projectsRoot, withIntermediateDirectories: true)
         }
+    }
+
+    /// Ensure the Models directory exists. Called at app startup.
+    func ensureModelsDirectory() {
+        if !fm.fileExists(atPath: modelsRoot.path) {
+            try? fm.createDirectory(at: modelsRoot, withIntermediateDirectories: true)
+        }
+    }
+
+    /// List all CoreML model files (.mlmodel, .mlmodelc) in the Models directory.
+    func listModels() -> [URL] {
+        let extensions: Set<String> = ["mlmodel", "mlmodelc"]
+        guard let items = try? fm.contentsOfDirectory(
+            at: modelsRoot,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: .skipsHiddenFiles
+        ) else { return [] }
+        return items
+            .filter { extensions.contains($0.pathExtension.lowercased()) }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+    }
+
+    /// Import a CoreML model file into the Models directory.
+    func importModel(from sourceURL: URL) throws -> URL {
+        let fileName = sourceURL.lastPathComponent
+        guard !fileName.isEmpty, !fileName.contains("/"), !fileName.hasPrefix(".") else {
+            throw CodingError.pathOutsideProject
+        }
+        let destURL = modelsRoot.appendingPathComponent(fileName)
+        let resolvedDest = destURL.resolvingSymlinksInPath()
+        let resolvedRoot = modelsRoot.resolvingSymlinksInPath()
+        guard resolvedDest.path.hasPrefix(resolvedRoot.path + "/") || resolvedDest.path == resolvedRoot.path else {
+            throw CodingError.pathOutsideProject
+        }
+        if fm.fileExists(atPath: resolvedDest.path) {
+            try fm.removeItem(at: resolvedDest)
+        }
+        try fm.copyItem(at: sourceURL, to: resolvedDest)
+        return resolvedDest
+    }
+
+    /// Delete a CoreML model file from the Models directory.
+    func deleteModel(named name: String) throws {
+        guard !name.isEmpty, !name.contains("/"), !name.hasPrefix(".") else {
+            throw CodingError.pathOutsideProject
+        }
+        let url = modelsRoot.appendingPathComponent(name)
+        let resolvedURL = url.resolvingSymlinksInPath()
+        let resolvedRoot = modelsRoot.resolvingSymlinksInPath()
+        guard resolvedURL.path.hasPrefix(resolvedRoot.path + "/") else {
+            throw CodingError.pathOutsideProject
+        }
+        try fm.removeItem(at: resolvedURL)
     }
 
     // MARK: - Read

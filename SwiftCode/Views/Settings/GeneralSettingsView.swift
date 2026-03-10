@@ -369,6 +369,7 @@ struct GeneralSettingsView: View {
     @State private var showThemeSheet = false
     @State private var showGitHubConfigSheet = false
     @State private var showAgentConnectionsSheet = false
+    @State private var showCoreMLSheet = false
     @State private var showResetConfirmation = false
 
     var activeTheme: AppTheme {
@@ -382,6 +383,7 @@ struct GeneralSettingsView: View {
                 themesSection
                 gitHubSection
                 agentConnectionsSection
+                coreMLSection
                 appManagementSection
                 aboutSection
             }
@@ -407,6 +409,10 @@ struct GeneralSettingsView: View {
         }
         .sheet(isPresented: $showAgentConnectionsSheet) {
             AgentConnectionsView()
+                .environmentObject(settings)
+        }
+        .sheet(isPresented: $showCoreMLSheet) {
+            CoreMLSettingsView()
                 .environmentObject(settings)
         }
         .confirmationDialog(
@@ -534,6 +540,30 @@ struct GeneralSettingsView: View {
             Label("Agent Connections", systemImage: "puzzlepiece.extension.fill")
         } footer: {
             Text("Define custom tools the AI agent can call. Tools are registered immediately and available to the agent without app updates.")
+        }
+    }
+
+    private var coreMLSection: some View {
+        Section {
+            Button {
+                showCoreMLSheet = true
+            } label: {
+                HStack {
+                    Label("CoreML Integration", systemImage: "brain.head.profile")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Text(settings.coreMLEnabled ? "Enabled" : "Disabled")
+                        .foregroundStyle(settings.coreMLEnabled ? .green : .secondary)
+                        .font(.caption)
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                }
+            }
+        } header: {
+            Label("Local AI", systemImage: "brain.head.profile")
+        } footer: {
+            Text("Run AI models locally on device using CoreML for offline code completion and analysis.")
         }
     }
 
@@ -1410,5 +1440,205 @@ struct CustomToolEditorView: View {
             registry.connections.append(newConn)
         }
         dismiss()
+    }
+}
+
+// MARK: - CoreML Settings View
+
+struct CoreMLSettingsView: View {
+    @EnvironmentObject private var settings: AppSettings
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var codingManager = CodingManager.shared
+
+    @State private var importedModels: [URL] = []
+    @State private var showModelImporter = false
+    @State private var modelToDelete: URL?
+    @State private var showDeleteConfirmation = false
+    @State private var importError: String?
+    @State private var showImportError = false
+    @State private var deleteError: String?
+    @State private var showDeleteError = false
+
+    private static let coreMLExtensions: Set<String> = ["mlmodel", "mlmodelc", "mlpackage"]
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Toggle("Enable Local Inference", isOn: $settings.coreMLEnabled)
+                    if settings.coreMLEnabled {
+                        Toggle("Hybrid Mode (CoreML + API)", isOn: $settings.coreMLHybridMode)
+                    }
+                } header: {
+                    Label("CoreML", systemImage: "brain.head.profile")
+                } footer: {
+                    Text("When enabled, the agent uses an on-device CoreML model for code completion, analysis, and offline assistance.")
+                }
+
+                if settings.coreMLEnabled {
+                    Section {
+                        if importedModels.isEmpty {
+                            Text("No models imported")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(importedModels, id: \.lastPathComponent) { model in
+                                HStack {
+                                    Image(systemName: "cube.fill")
+                                        .foregroundStyle(.purple)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(model.lastPathComponent)
+                                            .font(.headline)
+                                        Text(model.pathExtension.uppercased())
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    if settings.coreMLSelectedModel == model.lastPathComponent {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                    }
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    settings.coreMLSelectedModel = model.lastPathComponent
+                                }
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        modelToDelete = model
+                                        showDeleteConfirmation = true
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                            }
+                        }
+
+                        Button {
+                            showModelImporter = true
+                        } label: {
+                            Label("Import .mlmodel", systemImage: "square.and.arrow.down")
+                        }
+                    } header: {
+                        Label("Imported Models", systemImage: "cube.fill")
+                    } footer: {
+                        Text("Models are stored in Documents/Models and are accessible from the Files app.")
+                    }
+
+                    Section {
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Text("Usage Limit")
+                                Spacer()
+                                Text("\(Int(settings.coreMLUsageLimit)) requests/session")
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                            }
+                            Slider(value: $settings.coreMLUsageLimit, in: 10...500, step: 10)
+                                .tint(.purple)
+                        }
+
+                        if !settings.coreMLSelectedModel.isEmpty {
+                            HStack {
+                                Text("Active Model")
+                                Spacer()
+                                Text(settings.coreMLSelectedModel)
+                                    .foregroundStyle(.secondary)
+                                    .font(.caption)
+                                    .lineLimit(1)
+                            }
+                        }
+                    } header: {
+                        Label("Configuration", systemImage: "slider.horizontal.3")
+                    }
+
+                    Section {
+                        Label("Local Code Completion", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Label("Code Analysis", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Label("Syntax Prediction", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Label("Project Summarization", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Label("Offline AI Assistance", systemImage: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                    } header: {
+                        Label("Supported Use Cases", systemImage: "list.bullet")
+                    } footer: {
+                        Text("These use cases are available when a compatible CoreML model is imported and local inference is enabled.")
+                    }
+                }
+            }
+            .navigationTitle("CoreML Integration")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+            .onAppear {
+                importedModels = codingManager.listModels()
+            }
+            .fileImporter(
+                isPresented: $showModelImporter,
+                allowedContentTypes: [.item],
+                allowsMultipleSelection: false
+            ) { result in
+                do {
+                    guard let url = try result.get().first else { return }
+                    let ext = url.pathExtension.lowercased()
+                    guard Self.coreMLExtensions.contains(ext) else {
+                        importError = "Only .mlmodel, .mlmodelc, and .mlpackage files are supported."
+                        showImportError = true
+                        return
+                    }
+                    let accessing = url.startAccessingSecurityScopedResource()
+                    defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+                    let imported = try codingManager.importModel(from: url)
+                    importedModels = codingManager.listModels()
+                    if settings.coreMLSelectedModel.isEmpty {
+                        settings.coreMLSelectedModel = imported.lastPathComponent
+                    }
+                } catch {
+                    importError = error.localizedDescription
+                    showImportError = true
+                }
+            }
+            .alert("Import Failed", isPresented: $showImportError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(importError ?? "An unknown error occurred.")
+            }
+            .confirmationDialog(
+                "Delete Model",
+                isPresented: $showDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete", role: .destructive) {
+                    if let model = modelToDelete {
+                        do {
+                            try codingManager.deleteModel(named: model.lastPathComponent)
+                            if settings.coreMLSelectedModel == model.lastPathComponent {
+                                settings.coreMLSelectedModel = ""
+                            }
+                            importedModels = codingManager.listModels()
+                        } catch {
+                            deleteError = error.localizedDescription
+                            showDeleteError = true
+                        }
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                if let name = modelToDelete?.lastPathComponent {
+                    Text("Delete \(name)? This cannot be undone.")
+                }
+            }
+            .alert("Delete Failed", isPresented: $showDeleteError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(deleteError ?? "An unknown error occurred.")
+            }
+        }
     }
 }

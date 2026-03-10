@@ -20,8 +20,12 @@
     <string>1</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
     <key>NSFileProviderDomainUsageDescription</key>
     <string>SwiftCode needs file access to read and write project source files.</string>
+    <key>UIFileSharingEnabled</key>
+    <true/>
     <key>UIApplicationSceneManifest</key>
     <dict>
         <key>UIApplicationSupportsMultipleScenes</key>

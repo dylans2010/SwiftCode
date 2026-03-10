@@ -44,6 +44,20 @@ class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(defaultGitHubRepo, forKey: "defaultGitHubRepo") }
     }
 
+    // MARK: - CoreML
+    @Published var coreMLEnabled: Bool {
+        didSet { UserDefaults.standard.set(coreMLEnabled, forKey: "coreMLEnabled") }
+    }
+    @Published var coreMLHybridMode: Bool {
+        didSet { UserDefaults.standard.set(coreMLHybridMode, forKey: "coreMLHybridMode") }
+    }
+    @Published var coreMLSelectedModel: String {
+        didSet { UserDefaults.standard.set(coreMLSelectedModel, forKey: "coreMLSelectedModel") }
+    }
+    @Published var coreMLUsageLimit: Double {
+        didSet { UserDefaults.standard.set(coreMLUsageLimit, forKey: "coreMLUsageLimit") }
+    }
+
     /// `true` when the user has chosen a custom OpenRouter model ID
     var isUsingCustomModel: Bool {
         !customModel.isEmpty && selectedModel == customModel
@@ -62,6 +76,10 @@ class AppSettings: ObservableObject {
         gitUserEmail = UserDefaults.standard.string(forKey: "gitUserEmail") ?? ""
         defaultBranch = UserDefaults.standard.string(forKey: "defaultBranch") ?? "main"
         defaultGitHubRepo = UserDefaults.standard.string(forKey: "defaultGitHubRepo") ?? ""
+        coreMLEnabled = UserDefaults.standard.object(forKey: "coreMLEnabled") as? Bool ?? false
+        coreMLHybridMode = UserDefaults.standard.object(forKey: "coreMLHybridMode") as? Bool ?? false
+        coreMLSelectedModel = UserDefaults.standard.string(forKey: "coreMLSelectedModel") ?? ""
+        coreMLUsageLimit = UserDefaults.standard.object(forKey: "coreMLUsageLimit") as? Double ?? 100
     }
 }
 
