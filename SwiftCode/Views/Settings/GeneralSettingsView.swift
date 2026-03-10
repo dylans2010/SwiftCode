@@ -775,7 +775,7 @@ struct AddEditAPIKeyView: View {
                     }
                 }
 
-                Section(header: Text("Key Value")) {
+                Section {
                     HStack {
                         Group {
                             if showKey {
@@ -796,6 +796,8 @@ struct AddEditAPIKeyView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                } header: {
+                    Text("Key Value")
                 } footer: {
                     Text("Keys are stored securely in the iOS Keychain.")
                 }
@@ -1317,13 +1319,15 @@ struct CustomToolEditorView: View {
                         .lineLimit(3)
                 }
 
-                Section(header: Text("Endpoint")) {
+                Section {
                     TextField("API Endpoint URL", text: $apiEndpoint)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                     TextField("Expected Output Description", text: $expectedOutput, axis: .vertical)
                         .lineLimit(2)
+                } header: {
+                    Text("Endpoint")
                 } footer: {
                     Text("The agent will send JSON POST requests to this URL with the parameters as the request body.")
                 }
