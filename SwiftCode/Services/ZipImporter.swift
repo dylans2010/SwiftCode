@@ -129,6 +129,8 @@ final class ZipImporter {
             options: .skipsHiddenFiles
         ) else { return [] }
 
+        let basePath = base.standardizedFileURL.path
+
         return contents
             .filter { $0.lastPathComponent != "project.json" }
             .sorted {
@@ -139,7 +141,10 @@ final class ZipImporter {
             }
             .map { childURL -> FileNode in
                 let isDir = (try? childURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-                let relativePath = childURL.path.replacingOccurrences(of: base.path + "/", with: "")
+                let childPath = childURL.standardizedFileURL.path
+                let relativePath = childPath.hasPrefix(basePath + "/")
+                    ? String(childPath.dropFirst(basePath.count + 1))
+                    : childURL.lastPathComponent
                 let node = FileNode(name: childURL.lastPathComponent, path: relativePath, isDirectory: isDir)
                 if isDir {
                     node.children = buildFileTree(at: childURL, relativeTo: base)

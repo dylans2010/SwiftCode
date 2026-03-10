@@ -309,20 +309,31 @@ jobs:
         guard let project = activeProject else { return }
 
         fileLoadError = nil
-
-        do {
-            let content = try CodingManager.shared.readFile(at: node.path, in: project.directoryURL)
-            activeFileContent = content
-        } catch {
-            activeFileContent = ""
-            fileLoadError = "Failed to load \(node.name): \(error.localizedDescription)"
-        }
-
         activeFileNode = node
 
         // Add to open tabs if not already present
         if !openFileTabs.contains(where: { $0.id == node.id }) {
             openFileTabs.append(node)
+        }
+
+        // Use CodeReaderManager to resolve the path relative to the Projects directory.
+        // This ensures correct path resolution after ZIP import or GitHub import, regardless
+        // of how the FileNode path was originally stored.
+        let projectName = project.name
+        let relativePath = node.path
+        let nodeName = node.name
+        Task { @MainActor in
+            do {
+                let content = try await CodeReaderManager.shared.readFileAsync(
+                    project: projectName,
+                    relativePath: relativePath
+                )
+                self.activeFileContent = content
+                self.fileLoadError = nil
+            } catch {
+                self.activeFileContent = ""
+                self.fileLoadError = "Failed to load \(nodeName): \(error.localizedDescription)"
+            }
         }
     }
 
@@ -433,6 +444,8 @@ struct \(structName): View {
             options: .skipsHiddenFiles
         ) else { return [] }
 
+        let basePath = base.standardizedFileURL.path
+
         return contents
             .filter { $0.lastPathComponent != "project.json" }
             .sorted {
@@ -443,7 +456,10 @@ struct \(structName): View {
             }
             .map { childURL -> FileNode in
                 let isDir = (try? childURL.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-                let relativePath = childURL.path.replacingOccurrences(of: base.path + "/", with: "")
+                let childPath = childURL.standardizedFileURL.path
+                let relativePath = childPath.hasPrefix(basePath + "/")
+                    ? String(childPath.dropFirst(basePath.count + 1))
+                    : childURL.lastPathComponent
                 let node = FileNode(name: childURL.lastPathComponent, path: relativePath, isDirectory: isDir)
                 if isDir {
                     node.children = buildFileTree(at: childURL, relativeTo: base)

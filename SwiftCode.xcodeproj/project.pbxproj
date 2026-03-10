@@ -52,6 +52,14 @@ AA00001000000000000005AA /* CodingManager.swift in Sources */ = {isa = PBXBuildF
 AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005BB /* ToolbarActionManager.swift */; };
 AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005CB /* SFSymbolBrowserView.swift */; };
 GS0000000000000000000001 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GS0000000000000000000002 /* GeneralSettingsView.swift */; };
+CR000000000000000000001A /* CodeReaderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CR000000000000000000001B /* CodeReaderManager.swift */; };
+CG000000000000000000002A /* GitHubImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CG000000000000000000002B /* GitHubImport.swift */; };
+BG000000000000000000002A /* GitHubAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000002B /* GitHubAuth.swift */; };
+BG000000000000000000003A /* GitHubAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000003B /* GitHubAPI.swift */; };
+BG000000000000000000004A /* GitHubImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000004B /* GitHubImport.swift */; };
+BG000000000000000000005A /* GitHubRepositoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000005B /* GitHubRepositoryManager.swift */; };
+BG000000000000000000006A /* GitHubBuilds.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000006B /* GitHubBuilds.swift */; };
+BG000000000000000000007A /* GitCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000007B /* GitCommands.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -101,6 +109,14 @@ AA00001000000000000005AB /* CodingManager.swift */ = {isa = PBXFileReference; la
 AA00001000000000000005BB /* ToolbarActionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarActionManager.swift; sourceTree = "<group>"; };
 AA00001000000000000005CB /* SFSymbolBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFSymbolBrowserView.swift; sourceTree = "<group>"; };
 GS0000000000000000000002 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+CR000000000000000000001B /* CodeReaderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReaderManager.swift; sourceTree = "<group>"; };
+CG000000000000000000002B /* GitHubImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubImport.swift; sourceTree = "<group>"; };
+BG000000000000000000002B /* GitHubAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAuth.swift; sourceTree = "<group>"; };
+BG000000000000000000003B /* GitHubAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAPI.swift; sourceTree = "<group>"; };
+BG000000000000000000004B /* GitHubImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubImport.swift; sourceTree = "<group>"; };
+BG000000000000000000005B /* GitHubRepositoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRepositoryManager.swift; sourceTree = "<group>"; };
+BG000000000000000000006B /* GitHubBuilds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubBuilds.swift; sourceTree = "<group>"; };
+BG000000000000000000007B /* GitCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitCommands.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -125,6 +141,7 @@ AA000010000000000000040F /* Views */,
 AA00001000000000000005FF /* Features */,
 AA0000100000000000000DFF /* Core */,
 AA0000100000000000000EFF /* UI */,
+BE000000000000000000001F /* Backend */,
 );
 path = SwiftCode;
 sourceTree = "<group>";
@@ -328,8 +345,26 @@ isa = PBXGroup;
 children = (
 AA00001000000000000005AB /* CodingManager.swift */,
 AA00001000000000000005BB /* ToolbarActionManager.swift */,
+CF000000000000000000001F /* FileSystem */,
+CG000000000000000000001F /* GitHub */,
 );
 path = Core;
+sourceTree = "<group>";
+};
+CF000000000000000000001F /* FileSystem */ = {
+isa = PBXGroup;
+children = (
+CR000000000000000000001B /* CodeReaderManager.swift */,
+);
+path = FileSystem;
+sourceTree = "<group>";
+};
+CG000000000000000000001F /* GitHub */ = {
+isa = PBXGroup;
+children = (
+CG000000000000000000002B /* GitHubImport.swift */,
+);
+path = GitHub;
 sourceTree = "<group>";
 };
 AA0000100000000000000EFF /* UI */ = {
@@ -354,6 +389,27 @@ children = (
 AA000001000000000000000F /* SwiftCode */,
 AA000001000000000000000C_PRODUCTS /* Products */,
 );
+sourceTree = "<group>";
+};
+BE000000000000000000001F /* Backend */ = {
+isa = PBXGroup;
+children = (
+BG000000000000000000001F /* GitHub */,
+);
+path = Backend;
+sourceTree = "<group>";
+};
+BG000000000000000000001F /* GitHub */ = {
+isa = PBXGroup;
+children = (
+BG000000000000000000002B /* GitHubAuth.swift */,
+BG000000000000000000003B /* GitHubAPI.swift */,
+BG000000000000000000004B /* GitHubImport.swift */,
+BG000000000000000000005B /* GitHubRepositoryManager.swift */,
+BG000000000000000000006B /* GitHubBuilds.swift */,
+BG000000000000000000007B /* GitCommands.swift */,
+);
+path = GitHub;
 sourceTree = "<group>";
 };
 /* End PBXGroup section */
@@ -485,6 +541,14 @@ AA00001000000000000005AA /* CodingManager.swift in Sources */,
 AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */,
 AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */,
 GS0000000000000000000001 /* GeneralSettingsView.swift in Sources */,
+CR000000000000000000001A /* CodeReaderManager.swift in Sources */,
+CG000000000000000000002A /* GitHubImport.swift in Sources */,
+BG000000000000000000002A /* GitHubAuth.swift in Sources */,
+BG000000000000000000003A /* GitHubAPI.swift in Sources */,
+BG000000000000000000004A /* GitHubImport.swift in Sources */,
+BG000000000000000000005A /* GitHubRepositoryManager.swift in Sources */,
+BG000000000000000000006A /* GitHubBuilds.swift in Sources */,
+BG000000000000000000007A /* GitCommands.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
