@@ -400,8 +400,9 @@ struct ReleaseRow: View {
             Spacer()
 
             // Download IPA if available
-            if let ipaAsset = release.assets.first(where: { $0.name.hasSuffix(".ipa") }) {
-                Link(destination: URL(string: ipaAsset.browserDownloadUrl)!) {
+            if let ipaAsset = release.assets.first(where: { $0.name.hasSuffix(".ipa") }),
+               let ipaURL = URL(string: ipaAsset.browserDownloadUrl) {
+                Link(destination: ipaURL) {
                     Label("IPA", systemImage: "arrow.down.circle.fill")
                         .font(.caption)
                         .padding(.horizontal, 10)
@@ -411,10 +412,12 @@ struct ReleaseRow: View {
                 }
             }
 
-            Link(destination: URL(string: release.htmlUrl)!) {
-                Image(systemName: "arrow.up.right.square")
-                    .foregroundStyle(.blue)
-                    .font(.caption)
+            if let releaseURL = URL(string: release.htmlUrl) {
+                Link(destination: releaseURL) {
+                    Image(systemName: "arrow.up.right.square")
+                        .foregroundStyle(.blue)
+                        .font(.caption)
+                }
             }
         }
         .padding(12)

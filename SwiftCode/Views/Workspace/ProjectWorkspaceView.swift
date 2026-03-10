@@ -45,8 +45,8 @@ struct ProjectWorkspaceView: View {
             .presentationDragIndicator(.visible)
         }
         // Auto-dismiss navigator when a file is selected
-        .onChange(of: projectManager.activeFileNode) { newNode in
-            if newNode != nil {
+        .onChange(of: projectManager.activeFileNode) {
+            if projectManager.activeFileNode != nil {
                 showNavigatorSheet = false
             }
         }

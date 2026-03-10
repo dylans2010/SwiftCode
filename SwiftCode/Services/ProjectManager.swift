@@ -26,7 +26,7 @@ final class ProjectManager: ObservableObject {
     }
 
     private func metadataURL(for project: Project) -> URL {
-        project.directoryURL.appendingPathComponent("project.json")
+        projectsDirectory.appendingPathComponent(project.name).appendingPathComponent("project.json")
     }
 
     private init() {
@@ -71,8 +71,10 @@ final class ProjectManager: ObservableObject {
         for url in contents {
             guard (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { continue }
             let metaURL = url.appendingPathComponent("project.json")
+            let decoder = JSONDecoder()
+            decoder.dateDecodingStrategy = .iso8601
             if let data = try? Data(contentsOf: metaURL),
-               var project = try? JSONDecoder().decode(Project.self, from: data) {
+               var project = try? decoder.decode(Project.self, from: data) {
                 project.files = buildFileTree(at: url, relativeTo: url)
                 loaded.append(project)
             } else {
