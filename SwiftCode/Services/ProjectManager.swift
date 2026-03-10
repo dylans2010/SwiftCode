@@ -19,10 +19,7 @@ final class ProjectManager: ObservableObject {
     // MARK: - Directories
 
     var projectsDirectory: URL {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let dir = docs.appendingPathComponent("Projects", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
+        CodingManager.shared.projectsRoot
     }
 
     private func metadataURL(for project: Project) -> URL {
@@ -132,6 +129,10 @@ final class ProjectManager: ObservableObject {
         let sourcesDir = dir.appendingPathComponent("Sources")
         try fm.createDirectory(at: sourcesDir, withIntermediateDirectories: true)
 
+        // Resources/
+        let resourcesDir = dir.appendingPathComponent("Resources")
+        try fm.createDirectory(at: resourcesDir, withIntermediateDirectories: true)
+
         // Sources/ContentView.swift
         let contentView = """
 import SwiftUI
@@ -182,6 +183,21 @@ Created with SwiftCode — an AI-powered iOS development environment.
 Edit your Swift files in the editor and use the AI assistant to generate, modify, or debug code.
 """
         try readme.write(to: dir.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
+
+        // Package.swift
+        let packageSwift = """
+// swift-tools-version: 5.9
+import PackageDescription
+
+let package = Package(
+    name: "\(projectName)",
+    platforms: [.iOS(.v17)],
+    targets: [
+        .executableTarget(name: "\(projectName)", path: "Sources")
+    ]
+)
+"""
+        try packageSwift.write(to: dir.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
 
         // .github/workflows/build.yml
         let workflowsDir = dir.appendingPathComponent(".github/workflows")
@@ -330,11 +346,6 @@ jobs:
     }
 
     func createFile(named name: String, inDirectory directoryPath: String?, project: Project, initialContent: String? = nil) throws {
-        let base = directoryPath.map { project.directoryURL.appendingPathComponent($0) } ?? project.directoryURL
-        let fileURL = base.appendingPathComponent(name)
-        guard !FileManager.default.fileExists(atPath: fileURL.path) else {
-            throw ProjectError.alreadyExists
-        }
         let content: String
         if let provided = initialContent {
             content = provided
@@ -343,7 +354,7 @@ jobs:
         } else {
             content = ""
         }
-        try content.write(to: fileURL, atomically: true, encoding: .utf8)
+        try CodingManager.shared.createFile(named: name, at: directoryPath, in: project.directoryURL, content: content)
         refreshFileTree(for: project)
     }
 
@@ -394,15 +405,12 @@ struct \(structName): View {
     }
 
     func createFolder(named name: String, inDirectory directoryPath: String?, project: Project) throws {
-        let base = directoryPath.map { project.directoryURL.appendingPathComponent($0) } ?? project.directoryURL
-        let folderURL = base.appendingPathComponent(name)
-        try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: false)
+        try CodingManager.shared.createDirectory(named: name, at: directoryPath, in: project.directoryURL)
         refreshFileTree(for: project)
     }
 
     func deleteNode(_ node: FileNode, project: Project) throws {
-        let url = project.directoryURL.appendingPathComponent(node.path)
-        try FileManager.default.removeItem(at: url)
+        try CodingManager.shared.deleteItem(at: node.path, in: project.directoryURL)
         if activeFileNode?.id == node.id {
             activeFileNode = nil
             activeFileContent = ""
@@ -411,11 +419,7 @@ struct \(structName): View {
     }
 
     func renameNode(_ node: FileNode, to newName: String, project: Project) throws {
-        let oldURL = project.directoryURL.appendingPathComponent(node.path)
-        let newPath = (node.path as NSString).deletingLastPathComponent.appending("/\(newName)")
-            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-        let newURL = project.directoryURL.appendingPathComponent(newPath)
-        try FileManager.default.moveItem(at: oldURL, to: newURL)
+        try CodingManager.shared.renameItem(at: node.path, to: newName, in: project.directoryURL)
         refreshFileTree(for: project)
     }
 
