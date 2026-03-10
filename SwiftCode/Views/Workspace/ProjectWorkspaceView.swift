@@ -3,11 +3,25 @@ import SwiftUI
 struct ProjectWorkspaceView: View {
     let project: Project
     @EnvironmentObject private var projectManager: ProjectManager
+    @StateObject private var toolbarManager = ToolbarManager.shared
+
+    // Sheet state
     @State private var showNavigatorSheet = false
     @State private var showAISheet = false
     @State private var showBuildStatus = false
     @State private var showGitHubSheet = false
     @State private var showSettingsSheet = false
+    @State private var showCodeSearch = false
+    @State private var showErrorsPanel = false
+    @State private var showDependencyManager = false
+    @State private var showCommandPalette = false
+    @State private var showGoToLine = false
+    @State private var showSymbolNavigator = false
+    @State private var showDiffViewer = false
+    @State private var showToolbarCustomization = false
+    @State private var showProjectSettings = false
+    @State private var showBuildLogs = false
+    @State private var showMinimapSettings = false
 
     var body: some View {
         ZStack {
@@ -28,7 +42,7 @@ struct ProjectWorkspaceView: View {
             }
         }
         .navigationBarHidden(true)
-        // File Navigator sheet (medium or full height)
+        // File Navigator sheet
         .sheet(isPresented: $showNavigatorSheet) {
             NavigationStack {
                 FileNavigatorView(project: project)
@@ -65,6 +79,64 @@ struct ProjectWorkspaceView: View {
         .sheet(isPresented: $showSettingsSheet) {
             SettingsView()
         }
+        // New sheets
+        .sheet(isPresented: $showCodeSearch) {
+            CodeSearchView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showErrorsPanel) {
+            ErrorsPanelView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showDependencyManager) {
+            DependencyManagerView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showCommandPalette) {
+            CommandPaletteView { action in
+                handleCommandAction(action)
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showGoToLine) {
+            GoToLineView { _ in }
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showSymbolNavigator) {
+            SymbolNavigatorView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showDiffViewer) {
+            DiffViewerView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showToolbarCustomization) {
+            ToolbarCustomizationView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showProjectSettings) {
+            ProjectSettingsView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showBuildLogs) {
+            BuildLogsView(owner: ownerFromRepo, repo: repoNameFromRepo)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showMinimapSettings) {
+            MinimapSettingsView()
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Toolbar
@@ -83,61 +155,94 @@ struct ProjectWorkspaceView: View {
 
             Divider().frame(height: 20)
 
-            // File Navigator
-            Button {
-                showNavigatorSheet = true
-            } label: {
-                Image(systemName: "folder.fill")
-                    .imageScale(.medium)
-                    .foregroundStyle(.orange)
+            // Scrollable enabled tools
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(toolbarManager.enabledTools) { tool in
+                        Button {
+                            handleToolbarAction(tool.id)
+                        } label: {
+                            Image(systemName: tool.icon)
+                                .imageScale(.medium)
+                                .foregroundStyle(iconColor(for: tool.id))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
-            .buttonStyle(.plain)
 
-            Text(project.name)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity)
+            Divider().frame(height: 20)
 
-            // Build Status
+            // Toolbar customization
             Button {
-                showBuildStatus = true
+                showToolbarCustomization = true
             } label: {
-                Image(systemName: "hammer.fill")
-                    .imageScale(.medium)
-                    .foregroundStyle(.orange)
-            }
-            .buttonStyle(.plain)
-
-            // GitHub
-            Button {
-                showGitHubSheet = true
-            } label: {
-                Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
-                    .imageScale(.large)
-                    .foregroundStyle(.blue)
-            }
-            .buttonStyle(.plain)
-
-            // AI Assistant
-            Button {
-                showAISheet = true
-            } label: {
-                Image(systemName: "sparkles")
-                    .imageScale(.medium)
-                    .foregroundStyle(.purple)
-            }
-            .buttonStyle(.plain)
-
-            // Settings
-            Button {
-                showSettingsSheet = true
-            } label: {
-                Image(systemName: "gearshape.fill")
+                Image(systemName: "slider.horizontal.3")
                     .imageScale(.medium)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
+        }
+    }
+
+    private func iconColor(for toolId: String) -> Color {
+        switch toolId {
+        case "file_navigator", "create_file", "create_folder": return .orange
+        case "ai_agent", "ai_code_gen", "ai_code_fix", "ai_refactor": return .purple
+        case "github_actions", "commit_changes", "push_repo", "pull_repo": return .blue
+        case "build_trigger", "build_status", "build_logs": return .orange
+        case "errors_viewer": return .red
+        case "dependency_manager", "install_dependency", "update_dependencies": return .teal
+        case "code_search", "symbol_navigator", "project_index", "go_to_line": return .cyan
+        default: return .secondary
+        }
+    }
+
+    // MARK: - Tool Actions
+
+    private func handleToolbarAction(_ toolId: String) {
+        switch toolId {
+        case "file_navigator": showNavigatorSheet = true
+        case "ai_agent": showAISheet = true
+        case "build_trigger", "build_status": showBuildStatus = true
+        case "github_actions": showGitHubSheet = true
+        case "code_search": showCodeSearch = true
+        case "errors_viewer": showErrorsPanel = true
+        case "dependency_manager", "install_dependency", "update_dependencies": showDependencyManager = true
+        case "command_palette": showCommandPalette = true
+        case "go_to_line": showGoToLine = true
+        case "symbol_navigator": showSymbolNavigator = true
+        case "diff_viewer": showDiffViewer = true
+        case "project_settings": showProjectSettings = true
+        case "build_logs": showBuildLogs = true
+        case "minimap_settings": showMinimapSettings = true
+        case "ai_code_gen", "ai_code_fix", "ai_refactor": showAISheet = true
+        case "commit_changes", "push_repo", "pull_repo": showGitHubSheet = true
+        case "create_file", "create_folder", "rename_file", "delete_file", "refactor_file":
+            showNavigatorSheet = true
+        case "project_index", "project_analyzer": showCodeSearch = true
+        default: break
+        }
+    }
+
+    // MARK: - Command Palette Actions
+
+    private func handleCommandAction(_ action: CommandPaletteView.CommandAction) {
+        switch action {
+        case .createFile, .createFolder: showNavigatorSheet = true
+        case .searchProject: showCodeSearch = true
+        case .runAgent: showAISheet = true
+        case .installDependency, .openDependencies: showDependencyManager = true
+        case .openSettings: showSettingsSheet = true
+        case .runBuild: showBuildStatus = true
+        case .goToLine: showGoToLine = true
+        case .openSymbolNav: showSymbolNavigator = true
+        case .openDiffViewer: showDiffViewer = true
+        case .openErrors: showErrorsPanel = true
+        case .openBuildLogs: showBuildLogs = true
+        case .customizeToolbar: showToolbarCustomization = true
+        case .openProjectSettings: showProjectSettings = true
+        case .openMinimap: showMinimapSettings = true
         }
     }
 

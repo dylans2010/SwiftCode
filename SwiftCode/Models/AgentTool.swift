@@ -33,6 +33,9 @@ enum AgentToolCategory: String, CaseIterable {
     case textUtils     = "Text & Strings"
     case utilities     = "Utilities"
     case project       = "Project"
+    case dependency    = "Dependency"
+    case build         = "Build"
+    case search        = "Search"
 
     var icon: String {
         switch self {
@@ -42,6 +45,9 @@ enum AgentToolCategory: String, CaseIterable {
         case .textUtils:    return "textformat"
         case .utilities:    return "wrench.and.screwdriver.fill"
         case .project:      return "cube.fill"
+        case .dependency:   return "shippingbox.fill"
+        case .build:        return "hammer.fill"
+        case .search:       return "magnifyingglass"
         }
     }
 }
@@ -79,7 +85,10 @@ extension AgentTool {
         codeGenTools +
         textTools +
         utilityTools +
-        projectTools
+        projectTools +
+        dependencyTools +
+        buildTools +
+        searchTools
 
     // MARK: File System (12)
 
@@ -624,6 +633,112 @@ extension AgentTool {
                       required: false, defaultValue: "")
             ],
             category: .project
+        ),
+    ]
+
+    // MARK: Dependency Tools (3)
+
+    static let dependencyTools: [AgentTool] = [
+        AgentTool(
+            id: "install_dependency",
+            displayName: "Install Dependency",
+            description: "Add a Swift Package dependency to the project's Package.swift",
+            parameters: [
+                .init(name: "name",    description: "Package name (e.g. Alamofire)"),
+                .init(name: "url",     description: "Git URL of the package"),
+                .init(name: "version", description: "Minimum version (e.g. 5.6.0)")
+            ],
+            category: .dependency
+        ),
+        AgentTool(
+            id: "remove_dependency",
+            displayName: "Remove Dependency",
+            description: "Remove a Swift Package dependency from the project's Package.swift",
+            parameters: [
+                .init(name: "name", description: "Package name to remove")
+            ],
+            category: .dependency
+        ),
+        AgentTool(
+            id: "update_dependency",
+            displayName: "Update Dependency",
+            description: "Update a dependency version in Package.swift",
+            parameters: [
+                .init(name: "name",        description: "Package name"),
+                .init(name: "new_version", description: "New minimum version")
+            ],
+            category: .dependency
+        ),
+    ]
+
+    // MARK: Build Tools (3)
+
+    static let buildTools: [AgentTool] = [
+        AgentTool(
+            id: "trigger_workflow",
+            displayName: "Trigger GitHub Workflow",
+            description: "Trigger a GitHub Actions workflow for the connected repository",
+            parameters: [
+                .init(name: "workflow", description: "Workflow file name (e.g. build.yml)", required: false, defaultValue: "build.yml")
+            ],
+            category: .build
+        ),
+        AgentTool(
+            id: "check_workflow_status",
+            displayName: "Check Workflow Status",
+            description: "Check the status of recent GitHub Actions workflow runs",
+            parameters: [],
+            category: .build
+        ),
+        AgentTool(
+            id: "get_build_logs",
+            displayName: "Get Build Logs",
+            description: "Retrieve logs from the most recent GitHub Actions build",
+            parameters: [
+                .init(name: "run_id", description: "Workflow run ID (optional, defaults to latest)", required: false, defaultValue: "")
+            ],
+            category: .build
+        ),
+    ]
+
+    // MARK: Search Tools (4)
+
+    static let searchTools: [AgentTool] = [
+        AgentTool(
+            id: "search_codebase",
+            displayName: "Search Codebase",
+            description: "Search the entire project codebase for a text pattern",
+            parameters: [
+                .init(name: "query", description: "Search query text")
+            ],
+            category: .search
+        ),
+        AgentTool(
+            id: "locate_function",
+            displayName: "Locate Function",
+            description: "Find where a specific function is defined in the project",
+            parameters: [
+                .init(name: "name", description: "Function name to locate")
+            ],
+            category: .search
+        ),
+        AgentTool(
+            id: "find_references",
+            displayName: "Find References",
+            description: "Find all references to a symbol across the project",
+            parameters: [
+                .init(name: "symbol", description: "Symbol name to find references for")
+            ],
+            category: .search
+        ),
+        AgentTool(
+            id: "analyze_symbols",
+            displayName: "Analyze Symbols",
+            description: "Analyze and list all symbols (functions, structs, classes, etc.) in a file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file to analyze")
+            ],
+            category: .search
         ),
     ]
 }

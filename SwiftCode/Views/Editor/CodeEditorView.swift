@@ -10,9 +10,21 @@ struct CodeEditorView: View {
     @State private var searchQuery = ""
     @State private var replaceText = ""
     @State private var wordWrap = true
+    @State private var showFileLoadError = false
+    @AppStorage("minimapEnabled") private var minimapEnabled = true
 
     var body: some View {
         VStack(spacing: 0) {
+            // File Tabs
+            if !projectManager.openFileTabs.isEmpty {
+                fileTabsBar
+            }
+
+            // Path Bar (breadcrumb)
+            if projectManager.activeFileNode != nil {
+                pathBar
+            }
+
             // Header
             editorHeader
 
@@ -26,25 +38,111 @@ struct CodeEditorView: View {
 
             // Editor or placeholder
             if projectManager.activeFileNode != nil {
-                TextEditorRepresentable(
-                    text: Binding(
-                        get: { projectManager.activeFileContent },
-                        set: { newValue in
-                            projectManager.activeFileContent = newValue
-                            if settings.autoSave {
-                                scheduleAutoSave(content: newValue)
+                HStack(spacing: 0) {
+                    TextEditorRepresentable(
+                        text: Binding(
+                            get: { projectManager.activeFileContent },
+                            set: { newValue in
+                                projectManager.activeFileContent = newValue
+                                if settings.autoSave {
+                                    scheduleAutoSave(content: newValue)
+                                }
                             }
-                        }
-                    ),
-                    wordWrap: wordWrap,
-                    searchQuery: showSearchBar ? searchQuery : ""
-                )
-                .background(Color(red: 0.11, green: 0.11, blue: 0.14))
+                        ),
+                        wordWrap: wordWrap,
+                        searchQuery: showSearchBar ? searchQuery : ""
+                    )
+                    .background(Color(red: 0.11, green: 0.11, blue: 0.14))
+                    .id(projectManager.activeFileNode?.id)
+
+                    // Minimap
+                    if minimapEnabled {
+                        MinimapView(content: projectManager.activeFileContent)
+                    }
+                }
             } else {
                 editorPlaceholder
             }
         }
         .background(Color(red: 0.11, green: 0.11, blue: 0.14))
+        .sheet(isPresented: $showFileLoadError) {
+            fileLoadErrorSheet
+        }
+        .onChange(of: projectManager.fileLoadError) {
+            if projectManager.fileLoadError != nil {
+                showFileLoadError = true
+            }
+        }
+    }
+
+    // MARK: - File Tabs Bar
+
+    private var fileTabsBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                ForEach(projectManager.openFileTabs) { tab in
+                    fileTab(tab)
+                }
+            }
+        }
+        .background(Color(red: 0.09, green: 0.09, blue: 0.12))
+    }
+
+    private func fileTab(_ node: FileNode) -> some View {
+        let isActive = projectManager.activeFileNode?.id == node.id
+        return HStack(spacing: 4) {
+            Image(systemName: node.icon)
+                .font(.system(size: 9))
+                .foregroundStyle(node.iconColor)
+            Text(node.name)
+                .font(.caption2)
+                .foregroundStyle(isActive ? .white : .secondary)
+                .lineLimit(1)
+            Button {
+                projectManager.closeTab(node)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 8))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(isActive ? Color.white.opacity(0.08) : Color.clear)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            projectManager.openFile(node)
+        }
+    }
+
+    // MARK: - Path Bar (Breadcrumb)
+
+    private var pathBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 2) {
+                if let project = projectManager.activeProject {
+                    Text(project.name)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let node = projectManager.activeFileNode {
+                    let components = node.path.components(separatedBy: "/")
+                    ForEach(Array(components.enumerated()), id: \.offset) { index, component in
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.tertiary)
+                        Text(component)
+                            .font(.caption2)
+                            .foregroundStyle(index == components.count - 1 ? .orange : .secondary)
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 4)
+        }
+        .background(Color(red: 0.12, green: 0.12, blue: 0.15))
     }
 
     // MARK: - Subviews
@@ -147,6 +245,37 @@ struct CodeEditorView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    private var fileLoadErrorSheet: some View {
+        NavigationStack {
+            VStack(spacing: 16) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 40))
+                    .foregroundStyle(.red)
+                Text("File Load Error")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text(projectManager.fileLoadError ?? "Unknown error")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 20)
+                Spacer()
+            }
+            .padding(.top, 30)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color(red: 0.10, green: 0.10, blue: 0.14))
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Dismiss") {
+                        projectManager.fileLoadError = nil
+                        showFileLoadError = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
     // MARK: - Actions
 
     @State private var pendingSaveTask: Task<Void, Never>?
@@ -169,6 +298,57 @@ struct CodeEditorView: View {
     }
 }
 
+// MARK: - Minimap View
+
+struct MinimapView: View {
+    let content: String
+    @AppStorage("minimapWidth") private var minimapWidth: Double = 60
+    @AppStorage("minimapOpacity") private var minimapOpacity: Double = 0.6
+
+    var body: some View {
+        GeometryReader { geo in
+            let lines = content.components(separatedBy: "\n")
+            let lineHeight: CGFloat = 2
+            let totalHeight = CGFloat(lines.count) * lineHeight
+
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(lines.prefix(2000).enumerated()), id: \.offset) { _, line in
+                        let width = min(CGFloat(line.count) * 0.5, minimapWidth - 4)
+                        RoundedRectangle(cornerRadius: 0.5)
+                            .fill(minimapColor(for: line))
+                            .frame(width: max(width, 0), height: lineHeight)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+                .padding(.horizontal, 2)
+                .padding(.vertical, 4)
+                .frame(height: max(totalHeight, geo.size.height))
+            }
+        }
+        .frame(width: minimapWidth)
+        .background(Color(red: 0.13, green: 0.13, blue: 0.17))
+        .opacity(minimapOpacity)
+    }
+
+    private func minimapColor(for line: String) -> Color {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.hasPrefix("//") || trimmed.hasPrefix("/*") {
+            return .green.opacity(0.4)
+        }
+        if trimmed.hasPrefix("import ") {
+            return .purple.opacity(0.4)
+        }
+        if trimmed.hasPrefix("func ") || trimmed.hasPrefix("struct ") || trimmed.hasPrefix("class ") {
+            return .blue.opacity(0.5)
+        }
+        if trimmed.isEmpty {
+            return .clear
+        }
+        return .white.opacity(0.25)
+    }
+}
+
 // MARK: - UITextView Representable
 
 struct TextEditorRepresentable: UIViewRepresentable {
@@ -176,8 +356,6 @@ struct TextEditorRepresentable: UIViewRepresentable {
     var wordWrap: Bool
     var searchQuery: String
 
-    // Returns a UIScrollView (the generic UIView type parameter) to support
-    // synchronized horizontal scrolling and line numbers side by side.
     func makeUIView(context: Context) -> UIScrollView {
         let scrollView = UIScrollView()
         scrollView.backgroundColor = UIColor(red: 0.11, green: 0.11, blue: 0.14, alpha: 1)
@@ -216,18 +394,26 @@ struct TextEditorRepresentable: UIViewRepresentable {
 
         scrollView.delegate = context.coordinator
 
+        // Load initial text
+        let highlighted = SyntaxHighlighter.shared.highlight(text)
+        textView.attributedText = highlighted
+
         return scrollView
     }
 
     func updateUIView(_ scrollView: UIScrollView, context: Context) {
         guard let textView = context.coordinator.textView else { return }
 
-        let highlighted = SyntaxHighlighter.shared.highlight(text)
-
+        // Always apply syntax highlighting when text changes
         if textView.attributedText.string != text {
+            let highlighted = SyntaxHighlighter.shared.highlight(text)
             let selectedRange = textView.selectedRange
             textView.attributedText = highlighted
-            textView.selectedRange = selectedRange
+            let clampedRange = NSRange(
+                location: min(selectedRange.location, text.count),
+                length: 0
+            )
+            textView.selectedRange = clampedRange
         }
 
         // Apply word wrap
