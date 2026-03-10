@@ -271,15 +271,11 @@ struct AIAssistantView: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(
-            Group {
-                if selectedMode == mode {
-                    LinearGradient(colors: [.purple, .blue.opacity(0.8)],
-                                   startPoint: .leading, endPoint: .trailing)
-                        .opacity(0.6)
-                } else {
-                    Color.white.opacity(0.06)
-                }
-            },
+            selectedMode == mode
+                ? AnyShapeStyle(LinearGradient(colors: [.purple, .blue.opacity(0.8)],
+                                               startPoint: .leading, endPoint: .trailing)
+                                    .opacity(0.6))
+                : AnyShapeStyle(Color.white.opacity(0.06)),
             in: Capsule()
         )
         .overlay(
@@ -977,17 +973,13 @@ struct MessageBubbleView: View {
             .foregroundStyle(isUser ? .white : .primary)
             .padding(10)
             .background(
-                Group {
-                    if isUser {
-                        LinearGradient(
-                            colors: [.purple.opacity(0.6), .blue.opacity(0.4)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    } else {
-                        Color.white.opacity(0.07)
-                    }
-                },
+                isUser
+                    ? AnyShapeStyle(LinearGradient(
+                        colors: [.purple.opacity(0.6), .blue.opacity(0.4)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ))
+                    : AnyShapeStyle(Color.white.opacity(0.07)),
                 in: RoundedRectangle(cornerRadius: 12)
             )
             .overlay(
