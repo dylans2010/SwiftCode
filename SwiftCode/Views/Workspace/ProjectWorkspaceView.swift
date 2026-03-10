@@ -144,12 +144,12 @@ struct ProjectWorkspaceView: View {
     // MARK: - Helpers
 
     private var ownerFromRepo: String {
-        guard let repo = project.githubRepo else { return "" }
+        guard let repo = (projectManager.activeProject ?? project).githubRepo else { return "" }
         return String(repo.split(separator: "/").first ?? "")
     }
 
     private var repoNameFromRepo: String {
-        guard let repo = project.githubRepo else { return "" }
+        guard let repo = (projectManager.activeProject ?? project).githubRepo else { return "" }
         return String(repo.split(separator: "/").last ?? "")
     }
 }

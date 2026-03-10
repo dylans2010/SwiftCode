@@ -14,6 +14,10 @@ struct BuildStatusView: View {
     @State private var logsText: String?
     @State private var showLogs = false
 
+    private var hasToken: Bool {
+        !(KeychainService.shared.get(forKey: KeychainService.githubToken) ?? "").isEmpty
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -24,6 +28,7 @@ struct BuildStatusView: View {
                 } else {
                     ScrollView {
                         VStack(spacing: 20) {
+                            repoHeaderSection
                             workflowRunsSection
                             releasesSection
                         }
@@ -43,7 +48,7 @@ struct BuildStatusView: View {
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
-                    .disabled(isLoading)
+                    .disabled(isLoading || owner.isEmpty || repo.isEmpty)
                 }
             }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
@@ -58,21 +63,81 @@ struct BuildStatusView: View {
 
     // MARK: - Subviews
 
-    private var noRepoView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "link.badge.plus")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary)
-            Text("No Repository Connected")
+    private var repoHeaderSection: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "externaldrive.connected.to.line.below.fill")
                 .font(.title3)
+                .foregroundStyle(.green)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(owner)/\(repo)")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white)
+                Text("Connected Repository")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if isLoading {
+                ProgressView().scaleEffect(0.8)
+            } else {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var noRepoView: some View {
+        VStack(spacing: 20) {
+            Image(systemName: hasToken ? "link.badge.plus" : "key.slash.fill")
+                .font(.system(size: 52))
+                .foregroundStyle(hasToken ? Color.orange : Color.red)
+
+            Text(hasToken ? "No Repository Connected" : "GitHub Not Configured")
+                .font(.title3.bold())
                 .foregroundStyle(.white)
-            Text("Connect a GitHub repository in the GitHub integration panel to view build status.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
+
+            Text(
+                hasToken
+                    ? "Open the GitHub panel (the ↺ button in the toolbar) and paste your repository URL to connect."
+                    : "Add your GitHub Personal Access Token in Settings, then connect a repository via the GitHub panel."
+            )
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 32)
+
+            VStack(spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "1.circle.fill").foregroundStyle(.orange)
+                    Text(hasToken ? "Tap the ↺ button in the workspace toolbar" : "Go to Settings → GitHub → add your token")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                HStack(spacing: 8) {
+                    Image(systemName: "2.circle.fill").foregroundStyle(.orange)
+                    Text(hasToken ? "Enter your repository URL (e.g. https://github.com/owner/repo)" : "Return here after connecting a repository")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding()
+            .background(.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+            .padding(.horizontal)
+
+            Button { dismiss() } label: {
+                Label("Close", systemImage: "xmark.circle")
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 10)
+                    .background(.white.opacity(0.1), in: Capsule())
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding()
     }
 
     private var workflowRunsSection: some View {

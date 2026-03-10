@@ -15,12 +15,20 @@ class AppSettings: ObservableObject {
     @Published var useDarkTheme: Bool {
         didSet { UserDefaults.standard.set(useDarkTheme, forKey: "useDarkTheme") }
     }
+    @Published var fileHeaderAuthor: String {
+        didSet { UserDefaults.standard.set(fileHeaderAuthor, forKey: "fileHeaderAuthor") }
+    }
+    @Published var fileHeaderCustomComment: String {
+        didSet { UserDefaults.standard.set(fileHeaderCustomComment, forKey: "fileHeaderCustomComment") }
+    }
 
     private init() {
         selectedModel = UserDefaults.standard.string(forKey: "selectedModel") ?? "anthropic/claude-3.5-sonnet"
         autoSave = UserDefaults.standard.object(forKey: "autoSave") as? Bool ?? true
         editorFontSize = UserDefaults.standard.object(forKey: "editorFontSize") as? Double ?? 14
         useDarkTheme = UserDefaults.standard.object(forKey: "useDarkTheme") as? Bool ?? true
+        fileHeaderAuthor = UserDefaults.standard.string(forKey: "fileHeaderAuthor") ?? ""
+        fileHeaderCustomComment = UserDefaults.standard.string(forKey: "fileHeaderCustomComment") ?? "Made with SwiftCode"
     }
 }
 
@@ -158,6 +166,35 @@ struct SettingsView: View {
                     Toggle("Dark Theme", isOn: $settings.useDarkTheme)
                 } header: {
                     Label("Editor", systemImage: "doc.text")
+                }
+
+                // File Template Settings
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Author Name")
+                            .font(.headline)
+                        Text("Used in the // Created by header of new Swift files.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    TextField("Your Name", text: $settings.fileHeaderAuthor)
+                        .autocorrectionDisabled()
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Custom Comment")
+                            .font(.headline)
+                        Text("Added as a second header comment in new Swift files.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    TextField("Made with SwiftCode", text: $settings.fileHeaderCustomComment)
+                        .autocorrectionDisabled()
+                } header: {
+                    Label("File Templates", systemImage: "doc.badge.plus")
+                } footer: {
+                    Text("New .swift files will include:\n// Created by <Author> on <Date>.\n// <Custom Comment>")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                 }
 
                 // About

@@ -52,12 +52,16 @@ struct ProjectsDashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar { toolbarContent }
             .sheet(isPresented: $showNewProjectSheet) { newProjectSheet }
-            .fileImporter(
-                isPresented: $showImportPicker,
-                allowedContentTypes: [UTType.zip],
-                allowsMultipleSelection: false
-            ) { result in
-                handleZipImport(result)
+            .sheet(isPresented: $showImportPicker) {
+                FileImporterRepresentableView(
+                    allowedContentTypes: [UTType.zip],
+                    allowsMultipleSelection: false
+                ) { urls in
+                    showImportPicker = false
+                    if let url = urls.first {
+                        handleZipImport(.success([url]))
+                    }
+                }
             }
             .sheet(isPresented: $showRenameSheet) { renameSheet }
             .sheet(isPresented: $showShareSheet) {
