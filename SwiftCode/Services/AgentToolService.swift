@@ -86,22 +86,20 @@ final class AgentToolService {
             guard let project = projectManager.activeProject else {
                 return .failure(toolName, "No project is currently open")
             }
-            let url = project.directoryURL.appendingPathComponent(str("path"))
-            guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            do {
+                let content = try CodingManager.shared.readFile(at: str("path"), in: project.directoryURL)
+                return .success(toolName, content)
+            } catch {
                 return .failure(toolName, "Cannot read file: \(str("path"))")
             }
-            return .success(toolName, content)
 
         case "write_file":
             guard let project = projectManager.activeProject else {
                 return .failure(toolName, "No project is currently open")
             }
             let path = str("path"); let content = str("content")
-            let url  = project.directoryURL.appendingPathComponent(path)
-            try? FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             do {
-                try content.write(to: url, atomically: true, encoding: .utf8)
+                try CodingManager.shared.writeFile(content: content, at: path, in: project.directoryURL)
                 projectManager.refreshFileTree(for: project)
                 if projectManager.activeFileNode?.path == path {
                     projectManager.activeFileContent = content
@@ -114,14 +112,15 @@ final class AgentToolService {
                 return .failure(toolName, "No project is currently open")
             }
             let path = str("path"); let content = str("content")
-            let url  = project.directoryURL.appendingPathComponent(path)
-            guard !FileManager.default.fileExists(atPath: url.path) else {
-                return .failure(toolName, "File already exists: \(path)")
-            }
-            try? FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let dirPath = (path as NSString).deletingLastPathComponent
+            let fileName = (path as NSString).lastPathComponent
             do {
-                try content.write(to: url, atomically: true, encoding: .utf8)
+                try CodingManager.shared.createFile(
+                    named: fileName,
+                    at: dirPath.isEmpty ? nil : dirPath,
+                    in: project.directoryURL,
+                    content: content
+                )
                 projectManager.refreshFileTree(for: project)
                 return .success(toolName, "Created file: \(path)")
             } catch { return .failure(toolName, error.localizedDescription) }
@@ -130,9 +129,8 @@ final class AgentToolService {
             guard let project = projectManager.activeProject else {
                 return .failure(toolName, "No project is currently open")
             }
-            let url = project.directoryURL.appendingPathComponent(str("path"))
             do {
-                try FileManager.default.removeItem(at: url)
+                try CodingManager.shared.deleteItem(at: str("path"), in: project.directoryURL)
                 projectManager.refreshFileTree(for: project)
                 return .success(toolName, "Deleted: \(str("path"))")
             } catch { return .failure(toolName, error.localizedDescription) }
@@ -165,20 +163,25 @@ final class AgentToolService {
             guard let project = projectManager.activeProject else {
                 return .failure(toolName, "No project is currently open")
             }
-            let url = project.directoryURL.appendingPathComponent(str("path"))
+            let path = str("path")
+            let dirPath = (path as NSString).deletingLastPathComponent
+            let folderName = (path as NSString).lastPathComponent
             do {
-                try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+                try CodingManager.shared.createDirectory(
+                    named: folderName,
+                    at: dirPath.isEmpty ? nil : dirPath,
+                    in: project.directoryURL
+                )
                 projectManager.refreshFileTree(for: project)
-                return .success(toolName, "Created directory: \(str("path"))")
+                return .success(toolName, "Created directory: \(path)")
             } catch { return .failure(toolName, error.localizedDescription) }
 
         case "delete_directory":
             guard let project = projectManager.activeProject else {
                 return .failure(toolName, "No project is currently open")
             }
-            let url = project.directoryURL.appendingPathComponent(str("path"))
             do {
-                try FileManager.default.removeItem(at: url)
+                try CodingManager.shared.deleteItem(at: str("path"), in: project.directoryURL)
                 projectManager.refreshFileTree(for: project)
                 return .success(toolName, "Deleted directory: \(str("path"))")
             } catch { return .failure(toolName, error.localizedDescription) }
@@ -188,10 +191,8 @@ final class AgentToolService {
                 return .failure(toolName, "No project is currently open")
             }
             let oldPath = str("old_path"); let newName = str("new_name")
-            let oldURL  = project.directoryURL.appendingPathComponent(oldPath)
-            let newURL  = oldURL.deletingLastPathComponent().appendingPathComponent(newName)
             do {
-                try FileManager.default.moveItem(at: oldURL, to: newURL)
+                try CodingManager.shared.renameItem(at: oldPath, to: newName, in: project.directoryURL)
                 projectManager.refreshFileTree(for: project)
                 return .success(toolName, "Renamed \(oldPath) → \(newName)")
             } catch { return .failure(toolName, error.localizedDescription) }
@@ -200,22 +201,19 @@ final class AgentToolService {
             guard let project = projectManager.activeProject else {
                 return .failure(toolName, "No project is currently open")
             }
-            let url    = project.directoryURL.appendingPathComponent(str("path"))
-            let exists = FileManager.default.fileExists(atPath: url.path)
+            let exists = CodingManager.shared.fileExists(at: str("path"), in: project.directoryURL)
             return .success(toolName, exists ? "true" : "false")
 
         case "copy_file":
             guard let project = projectManager.activeProject else {
                 return .failure(toolName, "No project is currently open")
             }
-            let src = project.directoryURL.appendingPathComponent(str("source"))
-            let dst = project.directoryURL.appendingPathComponent(str("destination"))
-            try? FileManager.default.createDirectory(
-                at: dst.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let sourcePath = str("source"); let destPath = str("destination")
             do {
-                try FileManager.default.copyItem(at: src, to: dst)
+                let content = try CodingManager.shared.readFile(at: sourcePath, in: project.directoryURL)
+                try CodingManager.shared.writeFile(content: content, at: destPath, in: project.directoryURL)
                 projectManager.refreshFileTree(for: project)
-                return .success(toolName, "Copied \(str("source")) → \(str("destination"))")
+                return .success(toolName, "Copied \(sourcePath) → \(destPath)")
             } catch { return .failure(toolName, error.localizedDescription) }
 
         case "get_file_info":
@@ -239,13 +237,10 @@ final class AgentToolService {
                 return .failure(toolName, "No project is currently open")
             }
             let path = str("path"); let extra = str("content")
-            let url  = project.directoryURL.appendingPathComponent(path)
-            guard var existing = try? String(contentsOf: url, encoding: .utf8) else {
-                return .failure(toolName, "Cannot read file: \(path)")
-            }
-            existing += extra
             do {
-                try existing.write(to: url, atomically: true, encoding: .utf8)
+                var existing = try CodingManager.shared.readFile(at: path, in: project.directoryURL)
+                existing += extra
+                try CodingManager.shared.writeFile(content: existing, at: path, in: project.directoryURL)
                 if projectManager.activeFileNode?.path == path {
                     projectManager.activeFileContent = existing
                 }
@@ -261,8 +256,7 @@ final class AgentToolService {
                 return .failure(toolName, "No project is currently open")
             }
             let path  = str("path"); let query = str("query")
-            let url   = project.directoryURL.appendingPathComponent(path)
-            guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            guard let content = try? CodingManager.shared.readFile(at: path, in: project.directoryURL) else {
                 return .failure(toolName, "Cannot read file: \(path)")
             }
             let matches = content.components(separatedBy: "\n")
@@ -291,14 +285,11 @@ final class AgentToolService {
                 return .failure(toolName, "No project is currently open")
             }
             let path = str("path"); let find = str("find"); let replace = str("replace")
-            let url  = project.directoryURL.appendingPathComponent(path)
-            guard var content = try? String(contentsOf: url, encoding: .utf8) else {
-                return .failure(toolName, "Cannot read file: \(path)")
-            }
-            let occurrences = content.components(separatedBy: find).count - 1
-            content = content.replacingOccurrences(of: find, with: replace)
             do {
-                try content.write(to: url, atomically: true, encoding: .utf8)
+                var content = try CodingManager.shared.readFile(at: path, in: project.directoryURL)
+                let occurrences = content.components(separatedBy: find).count - 1
+                content = content.replacingOccurrences(of: find, with: replace)
+                try CodingManager.shared.writeFile(content: content, at: path, in: project.directoryURL)
                 if projectManager.activeFileNode?.path == path {
                     projectManager.activeFileContent = content
                 }
@@ -310,8 +301,7 @@ final class AgentToolService {
             guard let project = projectManager.activeProject else {
                 return .failure(toolName, "No project is currently open")
             }
-            let url = project.directoryURL.appendingPathComponent(str("path"))
-            guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            guard let content = try? CodingManager.shared.readFile(at: str("path"), in: project.directoryURL) else {
                 return .failure(toolName, "Cannot read file: \(str("path"))")
             }
             return .success(toolName, "\(content.components(separatedBy: "\n").count) lines")
@@ -320,8 +310,7 @@ final class AgentToolService {
             guard let project = projectManager.activeProject else {
                 return .failure(toolName, "No project is currently open")
             }
-            let url = project.directoryURL.appendingPathComponent(str("path"))
-            guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+            guard let content = try? CodingManager.shared.readFile(at: str("path"), in: project.directoryURL) else {
                 return .failure(toolName, "Cannot read file: \(str("path"))")
             }
             let syms = extractSwiftSymbols(from: content)

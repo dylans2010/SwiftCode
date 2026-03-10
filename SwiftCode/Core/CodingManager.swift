@@ -8,17 +8,23 @@ final class CodingManager: ObservableObject {
 
     private let fm = FileManager.default
 
-    // MARK: - Projects Directory
+    // MARK: - Projects Root
 
-    /// Central project storage directory: Documents/Projects
-    var projectsBaseDirectory: URL {
-        let docs = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let dir = docs.appendingPathComponent("Projects", isDirectory: true)
-        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir
+    /// Resolved root directory for all projects: Documents/Projects
+    var projectsRoot: URL
+
+    private init() {
+        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        projectsRoot = docs.appendingPathComponent("Projects")
+        try? FileManager.default.createDirectory(at: projectsRoot, withIntermediateDirectories: true)
     }
 
-    private init() {}
+    /// Ensure the Projects directory exists. Called at app startup.
+    func ensureProjectsDirectory() {
+        if !fm.fileExists(atPath: projectsRoot.path) {
+            try? fm.createDirectory(at: projectsRoot, withIntermediateDirectories: true)
+        }
+    }
 
     // MARK: - Read
 
@@ -153,6 +159,92 @@ final class CodingManager: ObservableObject {
     func fileExists(at relativePath: String, in projectDir: URL) -> Bool {
         let url = projectDir.appendingPathComponent(relativePath)
         return fm.fileExists(atPath: url.standardizedFileURL.path)
+    }
+
+    // MARK: - Convenience (project-name based)
+
+    /// Resolve a project directory URL from a project name.
+    func projectDirectory(for projectName: String) -> URL {
+        projectsRoot.appendingPathComponent(projectName)
+    }
+
+    /// Read a file using project name instead of URL.
+    func readFile(at relativePath: String, in project: String) throws -> String {
+        try readFile(at: relativePath, in: projectDirectory(for: project))
+    }
+
+    /// Write a file using project name instead of URL.
+    func writeFile(content: String, to relativePath: String, in project: String) throws {
+        try writeFile(content: content, at: relativePath, in: projectDirectory(for: project))
+    }
+
+    /// Create a file at a relative path inside a named project.
+    func createFile(at relativePath: String, in project: String) throws {
+        let projectDir = projectDirectory(for: project)
+        let url = projectDir.appendingPathComponent(relativePath)
+        let standardized = url.standardizedFileURL
+        guard standardized.path.hasPrefix(projectDir.standardizedFileURL.path) else {
+            throw CodingError.pathOutsideProject
+        }
+        let parent = standardized.deletingLastPathComponent()
+        try fm.createDirectory(at: parent, withIntermediateDirectories: true)
+        if !fm.fileExists(atPath: standardized.path) {
+            try "".write(to: standardized, atomically: true, encoding: .utf8)
+        }
+    }
+
+    /// Delete a file at a relative path inside a named project.
+    func deleteFile(at relativePath: String, in project: String) throws {
+        try deleteItem(at: relativePath, in: projectDirectory(for: project))
+    }
+
+    /// Create a folder at a relative path inside a named project.
+    func createFolder(at relativePath: String, in project: String) throws {
+        let projectDir = projectDirectory(for: project)
+        let url = projectDir.appendingPathComponent(relativePath)
+        let standardized = url.standardizedFileURL
+        guard standardized.path.hasPrefix(projectDir.standardizedFileURL.path) else {
+            throw CodingError.pathOutsideProject
+        }
+        try fm.createDirectory(at: standardized, withIntermediateDirectories: true)
+    }
+
+    /// Delete a folder at a relative path inside a named project.
+    func deleteFolder(at relativePath: String, in project: String) throws {
+        try deleteItem(at: relativePath, in: projectDirectory(for: project))
+    }
+
+    /// Scan a named project and return its relative file paths.
+    func scanProject(projectName: String) -> [String] {
+        scanProjectFiles(in: projectDirectory(for: projectName))
+    }
+
+    /// Create a new project directory with default structure.
+    func createProject(named name: String) throws {
+        let projectDir = projectDirectory(for: name)
+        guard !fm.fileExists(atPath: projectDir.path) else {
+            throw CodingError.alreadyExists
+        }
+        try fm.createDirectory(at: projectDir, withIntermediateDirectories: true)
+
+        // Sources/
+        let sourcesDir = projectDir.appendingPathComponent("Sources")
+        try fm.createDirectory(at: sourcesDir, withIntermediateDirectories: true)
+
+        // Resources/
+        let resourcesDir = projectDir.appendingPathComponent("Resources")
+        try fm.createDirectory(at: resourcesDir, withIntermediateDirectories: true)
+    }
+
+    /// Import a zip project by extracting into the Projects directory.
+    func importProject(from zipURL: URL) throws -> URL {
+        let projectName = zipURL.deletingPathExtension().lastPathComponent
+        let projectDir = projectDirectory(for: projectName)
+        guard !fm.fileExists(atPath: projectDir.path) else {
+            throw CodingError.alreadyExists
+        }
+        try fm.createDirectory(at: projectDir, withIntermediateDirectories: true)
+        return projectDir
     }
 }
 
