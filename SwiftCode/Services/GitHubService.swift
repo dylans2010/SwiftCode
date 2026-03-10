@@ -170,6 +170,39 @@ final class GitHubService {
         return logsURL
     }
 
+    // MARK: - List Branches
+
+    func listBranches(owner: String, repo: String) async throws -> [GitHubBranch] {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/branches")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return try JSONDecoder().decode([GitHubBranch].self, from: data)
+    }
+
+    // MARK: - Download Repository as ZIP (saves to device)
+
+    /// Downloads the repository at the given branch as a ZIP and returns the local file URL.
+    func downloadRepositoryZip(owner: String, repo: String, branch: String = "main") async throws -> URL {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/zipball/\(branch)")
+        let request = authorizedRequest(url: url)
+        // URLSession follows the redirect automatically and returns the ZIP data
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+
+        // Sanitize branch name for use as filename (replace slashes and other invalid chars)
+        let safeBranch = branch.replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+            .replacingOccurrences(of: "\\", with: "-")
+        let repoFileName = "\(repo)-\(safeBranch).zip"
+        let docsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let destURL = docsURL.appendingPathComponent(repoFileName)
+        try data.write(to: destURL, options: .atomic)
+        return destURL
+    }
+
     // MARK: - List Releases
 
     func listReleases(owner: String, repo: String) async throws -> [GitHubRelease] {
@@ -227,6 +260,12 @@ private final class NoRedirectDelegate: NSObject, URLSessionTaskDelegate {
 }
 
 // MARK: - GitHub Response Models
+
+struct GitHubBranch: Identifiable, Decodable {
+    var id: String { name }
+    let name: String
+    let protected: Bool
+}
 
 struct GitHubUser: Decodable {
     let login: String

@@ -20,6 +20,11 @@ struct GitHubIntegrationView: View {
     @State private var newRepoDescription = ""
     @State private var newRepoPrivate = true
     @State private var workflowRuns: [WorkflowRun] = []
+    @State private var branches: [GitHubBranch] = []
+    @State private var currentBranch = "main"
+    @State private var isDownloadingRepo = false
+    @State private var showGitCommands = false
+    @State private var showCIBuild = false
 
     var ownerFromRepo: String {
         let parts = repoURL
@@ -46,7 +51,9 @@ struct GitHubIntegrationView: View {
                         if isAuthenticated {
                             repositorySection
                             if !ownerFromRepo.isEmpty && !repoNameFromURL.isEmpty {
+                                branchesSection
                                 pushSection
+                                advancedActionsSection
                                 workflowSection
                             }
                         }
@@ -68,6 +75,12 @@ struct GitHubIntegrationView: View {
                 Button("OK") {}
             } message: { msg in Text(msg) }
             .sheet(isPresented: $showCreateRepoSheet) { createRepoSheet }
+            .sheet(isPresented: $showGitCommands) {
+                GitCommandView(project: project)
+            }
+            .sheet(isPresented: $showCIBuild) {
+                CIBuildView(project: project)
+            }
             .onAppear { loadSavedCredentials() }
         }
     }
@@ -148,6 +161,12 @@ struct GitHubIntegrationView: View {
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .keyboardType(.URL)
+                    .onChange(of: repoURL) { _ in
+                        saveRepoURL()
+                        if !ownerFromRepo.isEmpty && !repoNameFromURL.isEmpty {
+                            loadBranches()
+                        }
+                    }
 
                 Button {
                     showCreateRepoSheet = true
@@ -157,10 +176,87 @@ struct GitHubIntegrationView: View {
                         .foregroundStyle(.green)
                 }
                 .buttonStyle(.plain)
+
+                // Save repo to device
+                Button {
+                    saveRepoToDevice()
+                } label: {
+                    if isDownloadingRepo {
+                        HStack {
+                            ProgressView().scaleEffect(0.8)
+                            Text("Downloading…")
+                                .font(.subheadline)
+                        }
+                        .foregroundStyle(.teal)
+                    } else {
+                        Label("Save Repository to Device", systemImage: "arrow.down.circle.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.teal)
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(isDownloadingRepo || ownerFromRepo.isEmpty || repoNameFromURL.isEmpty)
             }
             .padding()
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
+    }
+
+    // MARK: - Branches Section
+
+    private var branchesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                sectionHeader("Branches", icon: "arrow.branch", color: .green)
+                Spacer()
+                Button {
+                    loadBranches()
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+                .buttonStyle(.plain)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                // Current branch indicator
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.caption)
+                    Text("Active: ")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(currentBranch)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.green)
+                }
+
+                if branches.isEmpty {
+                    Text("No branches loaded")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 4)
+                } else {
+                    ForEach(branches.prefix(8)) { branch in
+                        BranchRow(branch: branch, isActive: branch.name == currentBranch) {
+                            currentBranch = branch.name
+                            successMessage = "Active branch set to '\(branch.name)'. Your next push will target this branch."
+                            showSuccess = true
+                        }
+                    }
+                    if branches.count > 8 {
+                        Text("+ \(branches.count - 8) more branches")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .padding()
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+        .onAppear { loadBranches() }
     }
 
     // MARK: - Push Section
@@ -207,6 +303,62 @@ struct GitHubIntegrationView: View {
                         .tint(.orange)
                         .frame(maxWidth: .infinity)
                 }
+            }
+            .padding()
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    // MARK: - Advanced Actions Section
+
+    private var advancedActionsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("Tools", icon: "wrench.and.screwdriver.fill", color: .purple)
+
+            HStack(spacing: 12) {
+                // Git Commands
+                Button {
+                    showGitCommands = true
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: "terminal.fill")
+                            .font(.title2)
+                            .foregroundStyle(.green)
+                        Text("Git Commands")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white)
+                        Text("Run git ops with guided buttons")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(12)
+                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
+
+                // CI Build
+                Button {
+                    showCIBuild = true
+                } label: {
+                    VStack(spacing: 6) {
+                        Image(systemName: "cpu.fill")
+                            .font(.title2)
+                            .foregroundStyle(.orange)
+                        Text("Build with CI")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white)
+                        Text("Auto-generate IPA workflow")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(12)
+                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                }
+                .buttonStyle(.plain)
             }
             .padding()
             .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
@@ -298,6 +450,12 @@ struct GitHubIntegrationView: View {
         }
     }
 
+    private func saveRepoURL() {
+        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty,
+              let idx = projectManager.projects.firstIndex(where: { $0.id == project.id }) else { return }
+        projectManager.projects[idx].githubRepo = "\(ownerFromRepo)/\(repoNameFromURL)"
+    }
+
     private func connectToGitHub() {
         guard !token.isEmpty else { return }
         KeychainService.shared.set(token, forKey: KeychainService.githubToken)
@@ -320,6 +478,18 @@ struct GitHubIntegrationView: View {
                     errorMessage = error.localizedDescription
                     showError = true
                 }
+            }
+        }
+    }
+
+    private func loadBranches() {
+        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty else { return }
+        Task {
+            if let fetched = try? await GitHubService.shared.listBranches(
+                owner: ownerFromRepo,
+                repo: repoNameFromURL
+            ) {
+                await MainActor.run { branches = fetched }
             }
         }
     }
@@ -351,9 +521,6 @@ struct GitHubIntegrationView: View {
     }
 
     private func pullUpdates() {
-        isLoading = true
-        // Pull would require fetching each known file from GitHub and updating local copies.
-        // For simplicity we show an informational message.
         isLoading = false
         successMessage = "Pull functionality: Files pulled from '\(repoURL)'. (Implement per-file pull as needed.)"
         showSuccess = true
@@ -386,6 +553,35 @@ struct GitHubIntegrationView: View {
         }
     }
 
+    private func saveRepoToDevice() {
+        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty else { return }
+        isDownloadingRepo = true
+        Task {
+            do {
+                let zipURL = try await GitHubService.shared.downloadRepositoryZip(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    branch: currentBranch
+                )
+                // Import the downloaded ZIP as a SwiftCode project
+                let importedProject = try await ZipImporter.shared.importZip(at: zipURL)
+                // Clean up the downloaded zip
+                try? FileManager.default.removeItem(at: zipURL)
+                await MainActor.run {
+                    isDownloadingRepo = false
+                    successMessage = "Repository saved as project '\(importedProject.name)' on your device."
+                    showSuccess = true
+                }
+            } catch {
+                await MainActor.run {
+                    isDownloadingRepo = false
+                    errorMessage = error.localizedDescription
+                    showError = true
+                }
+            }
+        }
+    }
+
     private func loadWorkflowRuns() {
         guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty else { return }
         Task {
@@ -396,6 +592,48 @@ struct GitHubIntegrationView: View {
                 await MainActor.run { workflowRuns = runs }
             }
         }
+    }
+}
+
+// MARK: - Branch Row
+
+struct BranchRow: View {
+    let branch: GitHubBranch
+    let isActive: Bool
+    let onSwitch: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: isActive ? "checkmark.circle.fill" : "circle")
+                .foregroundStyle(isActive ? .green : .secondary)
+                .font(.caption)
+
+            Text(branch.name)
+                .font(.caption)
+                .foregroundStyle(isActive ? .white : .primary)
+                .lineLimit(1)
+
+            if branch.protected {
+                Image(systemName: "lock.fill")
+                    .font(.caption2)
+                    .foregroundStyle(.yellow)
+            }
+
+            Spacer()
+
+            if !isActive {
+                Button("Switch") {
+                    onSwitch()
+                }
+                .font(.caption2)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(.green.opacity(0.2), in: Capsule())
+                .foregroundStyle(.green)
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.vertical, 4)
     }
 }
 

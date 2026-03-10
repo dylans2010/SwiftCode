@@ -12,6 +12,8 @@ struct ProjectsDashboardView: View {
     @State private var errorMessage: String?
     @State private var showError = false
     @State private var selectedProject: Project?
+    @State private var exportURL: URL?
+    @State private var showShareSheet = false
 
     private let columns = [
         GridItem(.adaptive(minimum: 200, maximum: 280), spacing: 20)
@@ -58,6 +60,11 @@ struct ProjectsDashboardView: View {
                 handleZipImport(result)
             }
             .sheet(isPresented: $showRenameSheet) { renameSheet }
+            .sheet(isPresented: $showShareSheet) {
+                if let url = exportURL {
+                    ShareSheet(activityItems: [url])
+                }
+            }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
                 Button("OK") {}
             } message: { msg in Text(msg) }
@@ -136,6 +143,12 @@ struct ProjectsDashboardView: View {
             }
         } label: {
             Label("Duplicate", systemImage: "doc.on.doc")
+        }
+
+        Button {
+            exportProject(project)
+        } label: {
+            Label("Export as ZIP", systemImage: "square.and.arrow.up")
         }
 
         Divider()
@@ -265,10 +278,38 @@ struct ProjectsDashboardView: View {
         }
     }
 
+    private func exportProject(_ project: Project) {
+        Task {
+            do {
+                let url = try await ZipImporter.shared.exportZip(for: project)
+                await MainActor.run {
+                    exportURL = url
+                    showShareSheet = true
+                }
+            } catch {
+                await MainActor.run { showError(error) }
+            }
+        }
+    }
+
     private func showError(_ error: Error) {
         errorMessage = error.localizedDescription
         showError = true
     }
+}
+
+// MARK: - Share Sheet (UIActivityViewController wrapper)
+
+import UIKit
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 // MARK: - Project Card

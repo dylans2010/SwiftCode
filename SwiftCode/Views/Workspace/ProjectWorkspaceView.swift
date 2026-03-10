@@ -3,15 +3,11 @@ import SwiftUI
 struct ProjectWorkspaceView: View {
     let project: Project
     @EnvironmentObject private var projectManager: ProjectManager
-    @State private var showNavigator = true
-    @State private var showAIAssistant = true
+    @State private var showNavigatorSheet = false
+    @State private var showAISheet = false
     @State private var showBuildStatus = false
     @State private var showGitHubSheet = false
     @State private var showSettingsSheet = false
-    @State private var navigatorWidth: CGFloat = 240
-    @State private var assistantWidth: CGFloat = 320
-    @State private var isDraggingLeft = false
-    @State private var isDraggingRight = false
 
     var body: some View {
         ZStack {
@@ -26,41 +22,40 @@ struct ProjectWorkspaceView: View {
 
                 Divider().opacity(0.3)
 
-                // Main content
-                GeometryReader { geo in
-                    HStack(spacing: 0) {
-                        // File Navigator
-                        if showNavigator {
-                            FileNavigatorView(project: project)
-                                .frame(width: navigatorWidth)
-                                .background(Color(red: 0.12, green: 0.12, blue: 0.16))
-
-                            // Drag handle
-                            ResizeDivider(isDragging: $isDraggingLeft) { delta in
-                                navigatorWidth = max(180, min(400, navigatorWidth + delta))
-                            }
-                        }
-
-                        // Code Editor
-                        CodeEditorView()
-                            .frame(maxWidth: .infinity)
-
-                        // AI Assistant
-                        if showAIAssistant {
-                            // Drag handle
-                            ResizeDivider(isDragging: $isDraggingRight) { delta in
-                                assistantWidth = max(260, min(500, assistantWidth - delta))
-                            }
-
-                            AIAssistantView()
-                                .frame(width: assistantWidth)
-                                .background(Color(red: 0.12, green: 0.12, blue: 0.16))
-                        }
-                    }
-                }
+                // Code Editor fills the full screen
+                CodeEditorView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationBarHidden(true)
+        // File Navigator sheet (medium or full height)
+        .sheet(isPresented: $showNavigatorSheet) {
+            NavigationStack {
+                FileNavigatorView(project: project)
+                    .background(Color(red: 0.12, green: 0.12, blue: 0.16))
+                    .navigationTitle("Files")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showNavigatorSheet = false }
+                        }
+                    }
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        // Auto-dismiss navigator when a file is selected
+        .onChange(of: projectManager.activeFileNode) { newNode in
+            if newNode != nil {
+                showNavigatorSheet = false
+            }
+        }
+        // AI Assistant sheet
+        .sheet(isPresented: $showAISheet) {
+            AIAssistantView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
         .sheet(isPresented: $showBuildStatus) {
             BuildStatusView(owner: ownerFromRepo, repo: repoNameFromRepo)
         }
@@ -75,7 +70,7 @@ struct ProjectWorkspaceView: View {
     // MARK: - Toolbar
 
     private var workspaceToolbar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             // Back
             Button {
                 projectManager.closeProject()
@@ -88,30 +83,29 @@ struct ProjectWorkspaceView: View {
 
             Divider().frame(height: 20)
 
-            // Toggle Navigator
+            // File Navigator
             Button {
-                withAnimation(.spring(response: 0.3)) { showNavigator.toggle() }
+                showNavigatorSheet = true
             } label: {
-                Image(systemName: "sidebar.left")
+                Image(systemName: "folder.fill")
                     .imageScale(.medium)
-                    .foregroundStyle(showNavigator ? .orange : .secondary)
+                    .foregroundStyle(.orange)
             }
             .buttonStyle(.plain)
 
             Text(project.name)
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white)
+                .lineLimit(1)
                 .frame(maxWidth: .infinity)
 
-            // Build
+            // Build Status
             Button {
                 showBuildStatus = true
             } label: {
-                Label("Build", systemImage: "hammer.fill")
-                    .font(.subheadline)
-                    .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(.orange.opacity(0.8), in: Capsule())
-                    .foregroundStyle(.white)
+                Image(systemName: "hammer.fill")
+                    .imageScale(.medium)
+                    .foregroundStyle(.orange)
             }
             .buttonStyle(.plain)
 
@@ -125,13 +119,13 @@ struct ProjectWorkspaceView: View {
             }
             .buttonStyle(.plain)
 
-            // Toggle AI
+            // AI Assistant
             Button {
-                withAnimation(.spring(response: 0.3)) { showAIAssistant.toggle() }
+                showAISheet = true
             } label: {
-                Image(systemName: "sidebar.right")
+                Image(systemName: "sparkles")
                     .imageScale(.medium)
-                    .foregroundStyle(showAIAssistant ? .purple : .secondary)
+                    .foregroundStyle(.purple)
             }
             .buttonStyle(.plain)
 
@@ -157,37 +151,5 @@ struct ProjectWorkspaceView: View {
     private var repoNameFromRepo: String {
         guard let repo = project.githubRepo else { return "" }
         return String(repo.split(separator: "/").last ?? "")
-    }
-}
-
-// MARK: - Resize Divider
-
-struct ResizeDivider: View {
-    @Binding var isDragging: Bool
-    let onDrag: (CGFloat) -> Void
-
-    @GestureState private var dragOffset: CGFloat = 0
-
-    var body: some View {
-        Rectangle()
-            .fill(isDragging ? Color.blue.opacity(0.5) : Color.white.opacity(0.08))
-            .frame(width: 4)
-            .gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { value in
-                        isDragging = true
-                        onDrag(value.translation.width)
-                    }
-                    .onEnded { _ in isDragging = false }
-            )
-            #if targetEnvironment(macCatalyst)
-        .onHover { hovering in
-                if hovering {
-                    NSCursor.resizeLeftRight.push()
-                } else {
-                    NSCursor.pop()
-                }
-            }
-        #endif
     }
 }

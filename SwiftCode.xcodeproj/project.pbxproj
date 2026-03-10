@@ -28,6 +28,8 @@ AA000010000000000000011A /* GitHubIntegrationView.swift in Sources */ = {isa = P
 AA000010000000000000012A /* BuildStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000012B /* BuildStatusView.swift */; };
 AA000010000000000000013A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000013B /* SettingsView.swift */; };
 AA000010000000000000014A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000014B /* Assets.xcassets */; };
+AA000010000000000000016A /* GitCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000016B /* GitCommandView.swift */; };
+AA000010000000000000017A /* CIBuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000017B /* CIBuildView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +55,8 @@ AA000010000000000000012B /* BuildStatusView.swift */ = {isa = PBXFileReference; 
 AA000010000000000000013B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 AA000010000000000000014B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 AA000010000000000000015B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+AA000010000000000000016B /* GitCommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitCommandView.swift; sourceTree = "<group>"; };
+AA000010000000000000017B /* CIBuildView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIBuildView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -160,6 +164,7 @@ AA000010000000000000046F /* GitHub */ = {
 isa = PBXGroup;
 children = (
 AA000010000000000000011B /* GitHubIntegrationView.swift */,
+AA000010000000000000016B /* GitCommandView.swift */,
 );
 path = GitHub;
 sourceTree = "<group>";
@@ -168,6 +173,7 @@ AA000010000000000000047F /* Build */ = {
 isa = PBXGroup;
 children = (
 AA000010000000000000012B /* BuildStatusView.swift */,
+AA000010000000000000017B /* CIBuildView.swift */,
 );
 path = Build;
 sourceTree = "<group>";
@@ -293,6 +299,8 @@ AA000010000000000000010A /* AIAssistantView.swift in Sources */,
 AA000010000000000000011A /* GitHubIntegrationView.swift in Sources */,
 AA000010000000000000012A /* BuildStatusView.swift in Sources */,
 AA000010000000000000013A /* SettingsView.swift in Sources */,
+AA000010000000000000016A /* GitCommandView.swift in Sources */,
+AA000010000000000000017A /* CIBuildView.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };

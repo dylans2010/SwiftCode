@@ -8,6 +8,19 @@ final class ZipImporter {
 
     private let fm = FileManager.default
 
+    // MARK: - Export
+
+    /// Exports an existing project directory as a .zip file and returns the local URL.
+    func exportZip(for project: Project) async throws -> URL {
+        let projectDir = await MainActor.run { project.directoryURL }
+        let zipName = "\(project.name).zip"
+        let destURL = fm.temporaryDirectory.appendingPathComponent(zipName)
+        // Remove old export if present
+        try? fm.removeItem(at: destURL)
+        try fm.zipItem(at: projectDir, to: destURL)
+        return destURL
+    }
+
     // MARK: - Import
 
     /// Import a zip file, creating a new project with the extracted contents.
