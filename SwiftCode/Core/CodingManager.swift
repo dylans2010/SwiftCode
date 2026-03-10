@@ -126,6 +126,7 @@ final class CodingManager: ObservableObject {
     // MARK: - Scan
 
     /// Scan the project directory and return a list of relative file paths.
+    /// Excludes `project.json` which is internal metadata used by ProjectManager.
     func scanProjectFiles(in projectDir: URL) -> [String] {
         var files: [String] = []
         guard let enumerator = fm.enumerator(

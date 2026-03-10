@@ -64,9 +64,21 @@ final class ToolbarManager: ObservableObject {
 
     private func loadTools() {
         if let data = UserDefaults.standard.data(forKey: Self.storageKey),
-           let decoded = try? JSONDecoder().decode([ToolbarTool].self, from: data),
-           decoded.count >= Self.defaultTools.count {
-            tools = decoded
+           let decoded = try? JSONDecoder().decode([ToolbarTool].self, from: data) {
+            // Merge persisted tools with defaults: keep user customization but add new tools
+            let decodedIds = Set(decoded.map(\.id))
+            let defaultIds = Set(Self.defaultTools.map(\.id))
+            if decodedIds.isSuperset(of: defaultIds) {
+                tools = decoded
+            } else {
+                // Add any new default tools that are missing from persisted state
+                var merged = decoded
+                for tool in Self.defaultTools where !decodedIds.contains(tool.id) {
+                    merged.append(tool)
+                }
+                tools = merged
+                persist()
+            }
         } else {
             tools = Self.defaultTools
         }

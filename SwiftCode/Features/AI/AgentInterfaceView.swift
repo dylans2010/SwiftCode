@@ -280,6 +280,11 @@ struct ToolRegistry {
     static var availableToolNames: [String] {
         tools.map(\.name)
     }
+
+    /// Format the registered tools for inclusion in the AI system prompt.
+    static func formatForPrompt() -> String {
+        tools.map { "- \($0.name): \($0.description) [\($0.category)]" }.joined(separator: "\n")
+    }
 }
 
 // MARK: - Agent Controller
@@ -561,7 +566,7 @@ final class AgentController: ObservableObject {
 
     private func buildSystemPrompt(context: String) -> String {
         let toolsSection = AgentToolService.buildSystemPrompt()
-        let registeredTools = ToolRegistry.tools.map { "- \($0.name): \($0.description) [\($0.category)]" }.joined(separator: "\n")
+        let registeredTools = ToolRegistry.formatForPrompt()
         return """
         You are SwiftCode Autonomous Agent — an AI-powered iOS development assistant.
 
