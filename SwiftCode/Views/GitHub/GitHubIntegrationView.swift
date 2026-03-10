@@ -25,6 +25,9 @@ struct GitHubIntegrationView: View {
     @State private var isDownloadingRepo = false
     @State private var showGitCommands = false
     @State private var showCIBuild = false
+    @State private var repoDetail: GitHubRepoDetail?
+    @State private var isValidatingRepo = false
+    @State private var repoValidationError: String?
 
     var ownerFromRepo: String {
         let parts = repoURL
@@ -156,17 +159,97 @@ struct GitHubIntegrationView: View {
                 Text("Repository URL")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("https://github.com/owner/repo", text: $repoURL)
-                    .textFieldStyle(.roundedBorder)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .keyboardType(.URL)
-                    .onChange(of: repoURL) { _ in
-                        saveRepoURL()
-                        if !ownerFromRepo.isEmpty && !repoNameFromURL.isEmpty {
-                            loadBranches()
+                HStack(spacing: 8) {
+                    TextField("https://github.com/owner/repo", text: $repoURL)
+                        .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .keyboardType(.URL)
+                        .onChange(of: repoURL) { _ in
+                            saveRepoURL()
+                            repoDetail = nil
+                            repoValidationError = nil
+                            if !ownerFromRepo.isEmpty && !repoNameFromURL.isEmpty {
+                                loadBranches()
+                            }
+                        }
+                    Button {
+                        validateRepoURL()
+                    } label: {
+                        if isValidatingRepo {
+                            ProgressView().scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "checkmark.shield.fill")
+                                .foregroundStyle(.green)
                         }
                     }
+                    .buttonStyle(.plain)
+                    .disabled(ownerFromRepo.isEmpty || repoNameFromURL.isEmpty || isValidatingRepo)
+                }
+
+                // Validation status
+                if let error = repoValidationError {
+                    HStack(spacing: 6) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+
+                // Repo info card
+                if let detail = repoDetail {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Image(systemName: detail.isPrivate ? "lock.fill" : "globe")
+                                .foregroundStyle(detail.isPrivate ? .yellow : .green)
+                                .font(.caption)
+                            Text(detail.fullName)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white)
+                            Spacer()
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.caption)
+                        }
+
+                        if let desc = detail.description, !desc.isEmpty {
+                            Text(desc)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+
+                        HStack(spacing: 16) {
+                            Label("\(detail.stargazersCount)", systemImage: "star.fill")
+                                .font(.caption)
+                                .foregroundStyle(.yellow)
+                            Label("\(detail.forksCount)", systemImage: "tuningfork")
+                                .font(.caption)
+                                .foregroundStyle(.blue)
+                            Label("\(detail.openIssuesCount)", systemImage: "exclamationmark.circle")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                            if let lang = detail.language {
+                                Label(lang, systemImage: "chevron.left.forwardslash.chevron.right")
+                                    .font(.caption)
+                                    .foregroundStyle(.purple)
+                            }
+                        }
+
+                        HStack(spacing: 8) {
+                            Text("Default branch:")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(detail.defaultBranch)
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.green)
+                        }
+                    }
+                    .padding(10)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                }
 
                 Button {
                     showCreateRepoSheet = true
@@ -590,6 +673,46 @@ struct GitHubIntegrationView: View {
                 repo: repoNameFromURL
             ) {
                 await MainActor.run { workflowRuns = runs }
+            }
+        }
+    }
+
+    private func validateRepoURL() {
+        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty else { return }
+        isValidatingRepo = true
+        repoValidationError = nil
+        repoDetail = nil
+        Task {
+            do {
+                let detail = try await GitHubService.shared.validateAndFetchRepo(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL
+                )
+                await MainActor.run {
+                    repoDetail = detail
+                    isValidatingRepo = false
+                    // Update the current branch to match the repo default
+                    currentBranch = detail.defaultBranch
+                }
+            } catch let error as GitHubError {
+                await MainActor.run {
+                    isValidatingRepo = false
+                    switch error {
+                    case .apiError(statusCode: 404, _):
+                        repoValidationError = "Repository not found. Check the URL and ensure you have access."
+                    case .apiError(statusCode: 403, _):
+                        repoValidationError = "Access denied. The repository may be private — check your token permissions."
+                    case .missingToken:
+                        repoValidationError = "No GitHub token set. Add one in Settings to access private repos."
+                    default:
+                        repoValidationError = error.localizedDescription
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    isValidatingRepo = false
+                    repoValidationError = error.localizedDescription
+                }
             }
         }
     }
