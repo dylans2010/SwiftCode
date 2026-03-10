@@ -194,7 +194,7 @@ struct AIAssistantView: View {
             ProgressView()
                 .scaleEffect(0.8)
                 .tint(selectedMode == .agent ? .cyan : .purple)
-            Text(selectedMode == .agent ? "Agent thinking…" : "Thinking…")
+            Text(selectedMode == .agent ? "Agent Thinking…" : "Thinking…")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }

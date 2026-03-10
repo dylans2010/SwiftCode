@@ -69,7 +69,7 @@ struct CodeEditorView: View {
                 .buttonStyle(.plain)
                 .keyboardShortcut("s", modifiers: .command)
             } else {
-                Text("No file selected")
+                Text("No File Selected")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                 Spacer()

@@ -6,7 +6,7 @@ final class OpenRouterService {
     static let shared = OpenRouterService()
     private init() {}
 
-    private let baseURL = URL(string: "https://openrouter.ai/api/v1")!
+    private let baseURL = URL(string: "https://openrouter.ai/api/v1/chat/completions")!
 
     // MARK: - Chat Completion (non-streaming)
 

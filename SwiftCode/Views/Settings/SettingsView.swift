@@ -64,7 +64,7 @@ struct SettingsView: View {
                             Text("OpenRouter API Key")
                                 .font(.headline)
                             if openRouterKey.isEmpty {
-                                Text("Not set")
+                                Text("Not Set")
                                     .font(.caption)
                                     .foregroundStyle(.red)
                             } else {
@@ -102,7 +102,7 @@ struct SettingsView: View {
                         }
                     }
 
-                    Picker("Default AI Model", selection: $settings.selectedModel) {
+                    Picker("Default Model", selection: $settings.selectedModel) {
                         ForEach(OpenRouterModel.defaults) { model in
                             Text(model.name).tag(model.id)
                         }
@@ -155,7 +155,7 @@ struct SettingsView: View {
                             Text("GitHub Personal Access Token")
                                 .font(.headline)
                             if githubToken.isEmpty {
-                                Text("Not set")
+                                Text("Not Set")
                                     .font(.caption)
                                     .foregroundStyle(.red)
                             } else {
@@ -198,7 +198,7 @@ struct SettingsView: View {
 
                 // Editor Settings
                 Section {
-                    Toggle("Auto-Save", isOn: $settings.autoSave)
+                    Toggle("Auto Save", isOn: $settings.autoSave)
 
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {

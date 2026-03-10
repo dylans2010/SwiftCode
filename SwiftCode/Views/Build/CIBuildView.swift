@@ -127,7 +127,7 @@ struct CIBuildView: View {
                     .padding()
                 }
             }
-            .navigationTitle("Build with CI")
+            .navigationTitle("Build With CI")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -165,7 +165,7 @@ struct CIBuildView: View {
                 Text("Automated IPA Builder")
                     .font(.headline)
                     .foregroundStyle(.white)
-                Text("Generates a GitHub Actions workflow that compiles your app and produces a downloadable .ipa artifact on every push.")
+                Text("Generates a GitHub Actions workflow that compiles your app and produces a downloadable .ipa file on every push.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -208,7 +208,7 @@ struct CIBuildView: View {
 
             Toggle(isOn: $includeTestFlight) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Upload to TestFlight")
+                    Text("Upload To TestFlight")
                         .font(.subheadline)
                         .foregroundStyle(.white)
                     Text("Requires App Store Connect API secrets in GitHub")
@@ -273,7 +273,7 @@ struct CIBuildView: View {
             sectionLabel("Required GitHub Secrets", icon: "lock.fill", color: .yellow)
 
             VStack(alignment: .leading, spacing: 6) {
-                secretRow("CERTIFICATES_P12", "Base64-encoded signing certificate")
+                secretRow("CERTIFICATES_P12", "Base64 encoded signing certificate")
                 secretRow("CERTIFICATES_P12_PASSWORD", "Certificate password")
                 secretRow("APPSTORE_ISSUER_ID", "App Store Connect issuer ID")
                 secretRow("APPSTORE_KEY_ID", "App Store Connect key ID")
@@ -325,11 +325,11 @@ struct CIBuildView: View {
         NavigationStack {
             Form {
                 Section("Commit Message") {
-                    TextField("Add CI workflow", text: $commitMessage)
+                    TextField("Add CI Workflow", text: $commitMessage)
                         .autocorrectionDisabled()
                 }
                 Section {
-                    Button("Push to GitHub") {
+                    Button("Push To GitHub") {
                         showGitHubPush = false
                         pushWorkflowToGitHub()
                     }

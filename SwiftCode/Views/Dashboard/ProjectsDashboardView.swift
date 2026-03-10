@@ -178,7 +178,7 @@ struct ProjectsDashboardView: View {
                     Text("Project Name")
                         .font(.headline)
                         .foregroundStyle(.secondary)
-                    TextField("My Awesome App", text: $newProjectName)
+                    TextField("Project App Name", text: $newProjectName)
                         .textFieldStyle(.roundedBorder)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.words)

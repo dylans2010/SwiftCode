@@ -7,7 +7,7 @@ struct GitHubIntegrationView: View {
 
     @State private var token: String = ""
     @State private var repoURL: String = ""
-    @State private var commitMessage: String = "Update from SwiftCode"
+    @State private var commitMessage: String = "Update From SwiftCode"
     @State private var isAuthenticated = false
     @State private var githubUser: GitHubUser?
     @State private var isLoading = false
@@ -131,7 +131,7 @@ struct GitHubIntegrationView: View {
                     Button {
                         connectToGitHub()
                     } label: {
-                        Label("Connect to GitHub", systemImage: "link")
+                        Label("Connect To GitHub", systemImage: "link")
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 10)
                             .background(.blue.opacity(0.7), in: RoundedRectangle(cornerRadius: 10))
@@ -189,7 +189,7 @@ struct GitHubIntegrationView: View {
                         }
                         .foregroundStyle(.teal)
                     } else {
-                        Label("Save Repository to Device", systemImage: "arrow.down.circle.fill")
+                        Label("Save Repository To Device", systemImage: "arrow.down.circle.fill")
                             .font(.subheadline)
                             .foregroundStyle(.teal)
                     }
@@ -234,7 +234,7 @@ struct GitHubIntegrationView: View {
                 }
 
                 if branches.isEmpty {
-                    Text("No branches loaded")
+                    Text("No Branches Loaded")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 4)
@@ -247,7 +247,7 @@ struct GitHubIntegrationView: View {
                         }
                     }
                     if branches.count > 8 {
-                        Text("+ \(branches.count - 8) more branches")
+                        Text("+ \(branches.count - 8) More Branches")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }
@@ -346,10 +346,10 @@ struct GitHubIntegrationView: View {
                         Image(systemName: "cpu.fill")
                             .font(.title2)
                             .foregroundStyle(.orange)
-                        Text("Build with CI")
+                        Text("Build With CI")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.white)
-                        Text("Auto-generate IPA workflow")
+                        Text("Auto generate IPA workflow")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
@@ -383,7 +383,7 @@ struct GitHubIntegrationView: View {
 
             VStack(spacing: 8) {
                 if workflowRuns.isEmpty {
-                    Text("No workflow runs found")
+                    Text("No Workflow Runs Found")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
@@ -408,7 +408,7 @@ struct GitHubIntegrationView: View {
                 Section("Repository Details") {
                     TextField("Repository Name", text: $newRepoName)
                         .autocorrectionDisabled()
-                    TextField("Description (optional)", text: $newRepoDescription)
+                    TextField("Description (Optional)", text: $newRepoDescription)
                     Toggle("Private", isOn: $newRepoPrivate)
                 }
             }
@@ -507,7 +507,7 @@ struct GitHubIntegrationView: View {
                 )
                 await MainActor.run {
                     isLoading = false
-                    successMessage = "Project pushed successfully!"
+                    successMessage = "Project Pushed Successfully!"
                     showSuccess = true
                 }
             } catch {

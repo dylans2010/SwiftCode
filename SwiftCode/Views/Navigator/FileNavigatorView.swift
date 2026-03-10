@@ -24,7 +24,7 @@ struct FileNavigatorView: View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Navigator")
+                Text("Files")
                     .font(.caption)
                     .fontWeight(.semibold)
                     .foregroundStyle(.secondary)
@@ -62,7 +62,7 @@ struct FileNavigatorView: View {
                 Image(systemName: "magnifyingglass")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                TextField("Search files...", text: $searchText)
+                TextField("Search Files", text: $searchText)
                     .font(.caption)
                     .autocorrectionDisabled()
                 if !searchText.isEmpty {
@@ -114,7 +114,7 @@ struct FileNavigatorView: View {
             Button("Cancel", role: .cancel) {}
         }
         .alert("New Folder", isPresented: $showNewFolderDialog) {
-            TextField("FolderName", text: $newItemName)
+            TextField("Folder Name", text: $newItemName)
                 .autocorrectionDisabled()
             Button("Create") { createItem() }
             Button("Cancel", role: .cancel) {}
