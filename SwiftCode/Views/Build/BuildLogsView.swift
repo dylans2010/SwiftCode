@@ -10,6 +10,14 @@ struct BuildLogsView: View {
     @State private var isLoading = false
     @State private var selectedRun: WorkflowRunInfo?
 
+    struct WorkflowRunInfo {
+        let runNumber: Int
+        let name: String?
+        let status: String
+        let conclusion: String?
+        let createdAt: Date
+    }
+
     struct BuildLogEntry: Identifiable {
         let id = UUID()
         let runNumber: Int
