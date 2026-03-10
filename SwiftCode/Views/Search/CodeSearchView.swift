@@ -111,7 +111,7 @@ struct CodeSearchView: View {
     }
 
     private func openResult(_ result: SearchResult) {
-        guard let project = projectManager.activeProject else { return }
+        guard projectManager.activeProject != nil else { return }
         let node = FileNode(name: result.fileName, path: result.filePath, isDirectory: false)
         projectManager.openFile(node)
         dismiss()
