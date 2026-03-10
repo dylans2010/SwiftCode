@@ -279,16 +279,50 @@ jobs:
         activeProject = nil
         activeFileNode = nil
         activeFileContent = ""
+        openFileTabs = []
+        fileLoadError = nil
     }
 
     // MARK: - File Operations
 
+    @Published var fileLoadError: String?
+    @Published var openFileTabs: [FileNode] = []
+
     func openFile(_ node: FileNode) {
         guard !node.isDirectory else { return }
         guard let project = activeProject else { return }
+
         let fileURL = project.directoryURL.appendingPathComponent(node.path)
-        activeFileContent = (try? String(contentsOf: fileURL, encoding: .utf8)) ?? ""
+        let standardized = fileURL.standardizedFileURL
+
+        fileLoadError = nil
+
+        do {
+            let content = try String(contentsOf: standardized, encoding: .utf8)
+            activeFileContent = content
+        } catch {
+            activeFileContent = ""
+            fileLoadError = "Failed to load \(node.name): \(error.localizedDescription)"
+        }
+
         activeFileNode = node
+
+        // Add to open tabs if not already present
+        if !openFileTabs.contains(where: { $0.id == node.id }) {
+            openFileTabs.append(node)
+        }
+    }
+
+    func closeTab(_ node: FileNode) {
+        openFileTabs.removeAll { $0.id == node.id }
+        if activeFileNode?.id == node.id {
+            if let last = openFileTabs.last {
+                openFile(last)
+            } else {
+                activeFileNode = nil
+                activeFileContent = ""
+            }
+        }
     }
 
     func saveCurrentFile(content: String) {

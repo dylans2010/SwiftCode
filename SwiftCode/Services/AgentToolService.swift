@@ -627,6 +627,141 @@ final class AgentToolService {
             projectManager.refreshFileTree(for: project)
             return .success(toolName, "Replaced in \(affected) file(s)")
 
+        // ──────────────────────────────────────────────────────────────
+        // MARK: Dependency Tools
+        // ──────────────────────────────────────────────────────────────
+
+        case "install_dependency":
+            guard let project = projectManager.activeProject else {
+                return .failure(toolName, "No project is currently open")
+            }
+            let name = str("name"); let url = str("url"); let version = str("version")
+            let packageURL = project.directoryURL.appendingPathComponent("Package.swift")
+            var content = (try? String(contentsOf: packageURL, encoding: .utf8)) ?? ""
+            let entry = ".package(url: \"\(url)\", from: \"\(version)\")"
+            if content.contains(url) {
+                return .failure(toolName, "Dependency \(name) already exists")
+            }
+            if content.isEmpty {
+                content = """
+                // swift-tools-version: 5.9
+                import PackageDescription
+
+                let package = Package(
+                    name: "\(project.name)",
+                    platforms: [.iOS(.v17)],
+                    dependencies: [
+                        \(entry)
+                    ],
+                    targets: [
+                        .executableTarget(name: "\(project.name)", path: "Sources")
+                    ]
+                )
+                """
+            } else if let range = content.range(of: "dependencies: [") {
+                content.insert(contentsOf: "\n        \(entry),", at: range.upperBound)
+            }
+            try? content.write(to: packageURL, atomically: true, encoding: .utf8)
+            projectManager.refreshFileTree(for: project)
+            return .success(toolName, "Added dependency \(name) (\(version))")
+
+        case "remove_dependency":
+            guard let project = projectManager.activeProject else {
+                return .failure(toolName, "No project is currently open")
+            }
+            let name = str("name")
+            let packageURL = project.directoryURL.appendingPathComponent("Package.swift")
+            guard var content = try? String(contentsOf: packageURL, encoding: .utf8) else {
+                return .failure(toolName, "Package.swift not found")
+            }
+            let pattern = #".*\.package\(url:.*\#(name).*\),?\n?"#
+            if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) {
+                content = regex.stringByReplacingMatches(in: content, range: NSRange(content.startIndex..., in: content), withTemplate: "")
+            }
+            try? content.write(to: packageURL, atomically: true, encoding: .utf8)
+            return .success(toolName, "Removed dependency \(name)")
+
+        case "update_dependency":
+            guard let project = projectManager.activeProject else {
+                return .failure(toolName, "No project is currently open")
+            }
+            let name = str("name"); let newVersion = str("new_version")
+            let packageURL = project.directoryURL.appendingPathComponent("Package.swift")
+            guard var content = try? String(contentsOf: packageURL, encoding: .utf8) else {
+                return .failure(toolName, "Package.swift not found")
+            }
+            let pattern = #"(\.package\(url:.*\#(name).*from:\s*")([^"]+)(")"#
+            if let regex = try? NSRegularExpression(pattern: pattern) {
+                content = regex.stringByReplacingMatches(in: content, range: NSRange(content.startIndex..., in: content), withTemplate: "$1\(newVersion)$3")
+            }
+            try? content.write(to: packageURL, atomically: true, encoding: .utf8)
+            return .success(toolName, "Updated \(name) to version \(newVersion)")
+
+        // ──────────────────────────────────────────────────────────────
+        // MARK: Build Tools
+        // ──────────────────────────────────────────────────────────────
+
+        case "trigger_workflow":
+            return .success(toolName, "Workflow trigger requested. Use GitHub integration to dispatch workflows.")
+
+        case "check_workflow_status":
+            return .success(toolName, "Use the Build Status panel to check workflow status.")
+
+        case "get_build_logs":
+            return .success(toolName, "Use the Build Logs panel to view detailed build logs.")
+
+        // ──────────────────────────────────────────────────────────────
+        // MARK: Search Tools
+        // ──────────────────────────────────────────────────────────────
+
+        case "search_codebase":
+            guard let project = projectManager.activeProject else {
+                return .failure(toolName, "No project is currently open")
+            }
+            let query = str("query")
+            var matches: [(String, Int, String)] = []
+            searchFiles(in: project.directoryURL, base: project.directoryURL, query: query, results: &matches)
+            if matches.isEmpty { return .success(toolName, "No results found for '\(query)'") }
+            let output = matches.prefix(30).map { "\($0.0):\($0.1) – \($0.2)" }.joined(separator: "\n")
+            return .success(toolName, "Found \(matches.count) result(s):\n\(output)")
+
+        case "locate_function":
+            guard let project = projectManager.activeProject else {
+                return .failure(toolName, "No project is currently open")
+            }
+            let name = str("name")
+            let pattern = "func \(name)"
+            var matches: [(String, Int, String)] = []
+            searchFiles(in: project.directoryURL, base: project.directoryURL, query: pattern, results: &matches)
+            if matches.isEmpty { return .success(toolName, "Function '\(name)' not found") }
+            let output = matches.map { "\($0.0):\($0.1) – \($0.2)" }.joined(separator: "\n")
+            return .success(toolName, output)
+
+        case "find_references":
+            guard let project = projectManager.activeProject else {
+                return .failure(toolName, "No project is currently open")
+            }
+            let symbol = str("symbol")
+            var matches: [(String, Int, String)] = []
+            searchFiles(in: project.directoryURL, base: project.directoryURL, query: symbol, results: &matches)
+            if matches.isEmpty { return .success(toolName, "No references found for '\(symbol)'") }
+            let output = matches.prefix(50).map { "\($0.0):\($0.1) – \($0.2)" }.joined(separator: "\n")
+            return .success(toolName, "Found \(matches.count) reference(s):\n\(output)")
+
+        case "analyze_symbols":
+            guard let project = projectManager.activeProject else {
+                return .failure(toolName, "No project is currently open")
+            }
+            let path = str("path")
+            let url = project.directoryURL.appendingPathComponent(path)
+            guard let content = try? String(contentsOf: url, encoding: .utf8) else {
+                return .failure(toolName, "Cannot read file: \(path)")
+            }
+            let symbols = CodeIndexService.shared.indexFile(content: content, filePath: path)
+            if symbols.isEmpty { return .success(toolName, "No symbols found in \(path)") }
+            let output = symbols.map { "\($0.kind.rawValue) \($0.name) (line \($0.lineNumber))" }.joined(separator: "\n")
+            return .success(toolName, "Symbols in \(path):\n\(output)")
+
         default:
             return .failure(toolName, "Unknown tool: \(toolName)")
         }
