@@ -131,10 +131,10 @@ struct AIAssistantView: View {
                     }
                     .padding(12)
                 }
-                .onChange(of: messages.count) { _ in
+                .onChange(of: messages.count) {
                     withAnimation { proxy.scrollTo("bottom") }
                 }
-                .onChange(of: streamingResponse) { _ in
+                .onChange(of: streamingResponse) {
                     withAnimation { proxy.scrollTo("streaming") }
                 }
             }
@@ -241,44 +241,52 @@ struct AIAssistantView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(AgentMode.allCases) { mode in
-                    Button {
-                        withAnimation(.spring(response: 0.3)) {
-                            selectedMode = mode
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: mode.icon)
-                                .font(.caption2)
-                            Text(mode.rawValue)
-                                .font(.caption)
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(
-                            Group {
-                                if selectedMode == mode {
-                                    LinearGradient(colors: [.purple, .blue.opacity(0.8)],
-                                                   startPoint: .leading, endPoint: .trailing)
-                                        .opacity(0.6)
-                                } else {
-                                    Color.white.opacity(0.06)
-                                }
-                            },
-                            in: Capsule()
-                        )
-                        .overlay(
-                            Capsule()
-                                .stroke(selectedMode == mode ? .white.opacity(0.2) : .clear, lineWidth: 1)
-                        )
-                        .foregroundStyle(selectedMode == mode ? .white : .secondary)
-                    }
-                    .buttonStyle(.plain)
+                    modeButton(for: mode)
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
         .background(.ultraThinMaterial)
+    }
+
+    private func modeButton(for mode: AgentMode) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.3)) {
+                selectedMode = mode
+            }
+        } label: {
+            modePillLabel(for: mode)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func modePillLabel(for mode: AgentMode) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: mode.icon)
+                .font(.caption2)
+            Text(mode.rawValue)
+                .font(.caption)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(
+            Group {
+                if selectedMode == mode {
+                    LinearGradient(colors: [.purple, .blue.opacity(0.8)],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .opacity(0.6)
+                } else {
+                    Color.white.opacity(0.06)
+                }
+            },
+            in: Capsule()
+        )
+        .overlay(
+            Capsule()
+                .stroke(selectedMode == mode ? .white.opacity(0.2) : .clear, lineWidth: 1)
+        )
+        .foregroundStyle(selectedMode == mode ? .white : .secondary)
     }
 
     private var emptyStateView: some View {
@@ -872,102 +880,120 @@ struct MessageBubbleView: View {
     var body: some View {
         Group {
             if isToolCall {
-                // Tool-call indicator row with glass effect
-                HStack(spacing: 6) {
-                    Image(systemName: "wrench.and.screwdriver.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                    Text(message.content.hasPrefix("🔧 ")
-                         ? String(message.content.dropFirst(3))
-                         : message.content)
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(.orange.opacity(0.9))
-                        .lineLimit(2)
-                    Spacer()
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(
-                            LinearGradient(colors: [.orange.opacity(0.3), .yellow.opacity(0.1)],
-                                           startPoint: .leading, endPoint: .trailing),
-                            lineWidth: 1
-                        )
-                )
+                toolCallView
             } else if isToolResult {
-                // Tool-result compact row
-                HStack(spacing: 6) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.green)
-                    Text("Tool result received")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    Spacer()
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 4)
+                toolResultView
             } else {
-                // Standard user / assistant bubble with glass effects
-                HStack(alignment: .top, spacing: 8) {
-                    if !isUser {
-                        Image(systemName: "sparkles")
-                            .font(.caption)
-                            .foregroundStyle(
-                                LinearGradient(colors: [.purple, .cyan],
-                                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                            )
-                            .padding(.top, 4)
-                    }
-
-                    VStack(alignment: isUser ? .trailing : .leading, spacing: 8) {
-                        ForEach(parseBlocks(message.content), id: \.id) { block in
-                            switch block.type {
-                            case .text:
-                                Text(block.content)
-                                    .font(.callout)
-                                    .foregroundStyle(isUser ? .white : .primary)
-                                    .padding(10)
-                                    .background(
-                                        Group {
-                                            if isUser {
-                                                LinearGradient(
-                                                    colors: [.purple.opacity(0.6), .blue.opacity(0.4)],
-                                                    startPoint: .topLeading,
-                                                    endPoint: .bottomTrailing
-                                                )
-                                            } else {
-                                                Color.white.opacity(0.07)
-                                            }
-                                        },
-                                        in: RoundedRectangle(cornerRadius: 12)
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(.white.opacity(isUser ? 0.15 : 0.06), lineWidth: 1)
-                                    )
-                            case .code(let lang):
-                                CodeBlockView(
-                                    code: block.content,
-                                    language: lang,
-                                    onInsert: { onInsertCode(block.content) }
-                                )
-                            }
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
-
-                    if isUser {
-                        Image(systemName: "person.circle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 4)
-                    }
-                }
+                messageBubble
             }
         }
+    }
+
+    private var toolCallView: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "wrench.and.screwdriver.fill")
+                .font(.caption2)
+                .foregroundStyle(.orange)
+            Text(message.content.hasPrefix("🔧 ")
+                 ? String(message.content.dropFirst(3))
+                 : message.content)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundStyle(.orange.opacity(0.9))
+                .lineLimit(2)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(
+                    LinearGradient(colors: [.orange.opacity(0.3), .yellow.opacity(0.1)],
+                                   startPoint: .leading, endPoint: .trailing),
+                    lineWidth: 1
+                )
+        )
+    }
+
+    private var toolResultView: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.caption2)
+                .foregroundStyle(.green)
+            Text("Tool result received")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 4)
+    }
+
+    private var messageBubble: some View {
+        HStack(alignment: .top, spacing: 8) {
+            if !isUser {
+                Image(systemName: "sparkles")
+                    .font(.caption)
+                    .foregroundStyle(
+                        LinearGradient(colors: [.purple, .cyan],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing)
+                    )
+                    .padding(.top, 4)
+            }
+
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 8) {
+                ForEach(parseBlocks(message.content), id: \.id) { block in
+                    blockView(for: block)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+
+            if isUser {
+                Image(systemName: "person.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func blockView(for block: ContentBlock) -> some View {
+        switch block.type {
+        case .text:
+            textBubble(content: block.content)
+        case .code(let lang):
+            CodeBlockView(
+                code: block.content,
+                language: lang,
+                onInsert: { onInsertCode(block.content) }
+            )
+        }
+    }
+
+    private func textBubble(content: String) -> some View {
+        Text(content)
+            .font(.callout)
+            .foregroundStyle(isUser ? .white : .primary)
+            .padding(10)
+            .background(
+                Group {
+                    if isUser {
+                        LinearGradient(
+                            colors: [.purple.opacity(0.6), .blue.opacity(0.4)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    } else {
+                        Color.white.opacity(0.07)
+                    }
+                },
+                in: RoundedRectangle(cornerRadius: 12)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(.white.opacity(isUser ? 0.15 : 0.06), lineWidth: 1)
+            )
     }
 
     // MARK: - Parse Blocks
