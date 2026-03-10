@@ -689,7 +689,7 @@ struct APIKeysManagementView: View {
                 Button("Cancel", role: .cancel) {}
             } message: {
                 if let name = entryToDelete?.name {
-                    Text("Delete "\(name)"? This cannot be undone.")
+                    Text("Delete \(name)? This cannot be undone.")
                 }
             }
         }
@@ -775,7 +775,7 @@ struct AddEditAPIKeyView: View {
                     }
                 }
 
-                Section("Key Value") {
+                Section(header: Text("Key Value")) {
                     HStack {
                         Group {
                             if showKey {
@@ -1317,7 +1317,7 @@ struct CustomToolEditorView: View {
                         .lineLimit(3)
                 }
 
-                Section("Endpoint") {
+                Section(header: Text("Endpoint")) {
                     TextField("API Endpoint URL", text: $apiEndpoint)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)

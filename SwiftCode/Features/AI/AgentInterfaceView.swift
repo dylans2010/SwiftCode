@@ -385,8 +385,8 @@ final class AgentController: ObservableObject {
                     systemPrompt: systemPrompt
                 ) { [weak self] token in
                     guard let self, !Task.isCancelled else { return }
-                    fullResponse += token
                     await MainActor.run {
+                        fullResponse += token
                         self.state.streamingThought += token
                     }
                 }
