@@ -65,7 +65,7 @@ final class ToolbarManager: ObservableObject {
     private func loadTools() {
         if let data = UserDefaults.standard.data(forKey: Self.storageKey),
            let decoded = try? JSONDecoder().decode([ToolbarTool].self, from: data),
-           decoded.count == Self.defaultTools.count {
+           decoded.count >= Self.defaultTools.count {
             tools = decoded
         } else {
             tools = Self.defaultTools
@@ -108,5 +108,6 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "build_logs", name: "Build Logs", icon: "doc.text.magnifyingglass", category: "Build", isEnabled: false, order: 27),
         ToolbarTool(id: "minimap_settings", name: "Minimap Settings", icon: "map.fill", category: "Editor", isEnabled: false, order: 28),
         ToolbarTool(id: "project_analyzer", name: "Project Analyzer", icon: "waveform.path.ecg", category: "Diagnostics", isEnabled: false, order: 29),
+        ToolbarTool(id: "sf_symbols_browser", name: "SF Symbols", icon: "square.grid.2x2.fill", category: "Tools", isEnabled: false, order: 30),
     ]
 }
