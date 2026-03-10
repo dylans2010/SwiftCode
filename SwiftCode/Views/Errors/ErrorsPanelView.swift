@@ -46,26 +46,47 @@ struct ErrorsPanelView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: error.severity.icon)
                                     .foregroundStyle(colorForSeverity(error.severity))
+                                    .font(.system(size: 14))
+                                    .frame(width: 20)
 
-                                VStack(alignment: .leading, spacing: 2) {
-                                    HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "doc.text")
+                                            .font(.system(size: 9))
+                                            .foregroundStyle(.secondary)
                                         Text(error.fileName)
                                             .font(.subheadline.weight(.medium))
                                             .foregroundStyle(.orange)
-                                        Text(":\(error.lineNumber)")
+                                        Text("line \(error.lineNumber)")
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(.cyan)
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 1)
+                                            .background(Color.cyan.opacity(0.15), in: RoundedRectangle(cornerRadius: 3))
                                     }
                                     Text(error.message)
-                                        .font(.caption)
-                                        .foregroundStyle(.white.opacity(0.8))
+                                        .font(.system(size: 13))
+                                        .foregroundStyle(.white.opacity(0.85))
                                         .lineLimit(2)
-                                    Text(error.source.rawValue)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
+                                    HStack(spacing: 6) {
+                                        Text(error.severity.rawValue)
+                                            .font(.caption2)
+                                            .foregroundStyle(colorForSeverity(error.severity))
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 1)
+                                            .background(colorForSeverity(error.severity).opacity(0.15), in: RoundedRectangle(cornerRadius: 3))
+                                        Text(error.source.rawValue)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        Text(error.filePath)
+                                            .font(.system(size: 9, design: .monospaced))
+                                            .foregroundStyle(.tertiary)
+                                            .lineLimit(1)
+                                    }
                                 }
                             }
-                            .padding(.vertical, 2)
+                            .padding(.vertical, 3)
                         }
                     }
                     .scrollContentBackground(.hidden)

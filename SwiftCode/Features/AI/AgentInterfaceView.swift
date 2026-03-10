@@ -246,6 +246,47 @@ private enum AgentSafetyValidator {
     }
 }
 
+// MARK: - Tool Registry
+
+/// Central registry of tools available to the agent for autonomous execution.
+struct ToolRegistry {
+    struct RegisteredTool {
+        let name: String
+        let description: String
+        let category: String
+    }
+
+    static let tools: [RegisteredTool] = [
+        RegisteredTool(name: "read_file", description: "Read the contents of a file", category: "File System"),
+        RegisteredTool(name: "write_file", description: "Write content to a file", category: "File System"),
+        RegisteredTool(name: "create_file", description: "Create a new file with content", category: "File System"),
+        RegisteredTool(name: "delete_file", description: "Delete a file from the project", category: "File System"),
+        RegisteredTool(name: "rename_file", description: "Rename a file in the project", category: "File System"),
+        RegisteredTool(name: "list_files", description: "List files in a directory", category: "File System"),
+        RegisteredTool(name: "search_codebase", description: "Search for text patterns across all project files", category: "Search"),
+        RegisteredTool(name: "find_in_project", description: "Find files matching a pattern", category: "Search"),
+        RegisteredTool(name: "install_dependency", description: "Install a Swift package dependency", category: "Dependency"),
+        RegisteredTool(name: "remove_dependency", description: "Remove a Swift package dependency", category: "Dependency"),
+        RegisteredTool(name: "trigger_build", description: "Trigger a project build", category: "Build"),
+        RegisteredTool(name: "get_build_status", description: "Get the current build status", category: "Build"),
+        RegisteredTool(name: "analyze_code_structure", description: "Analyze the code structure of a file", category: "Analysis"),
+        RegisteredTool(name: "get_project_info", description: "Get project metadata and file tree", category: "Project"),
+    ]
+
+    static func tool(named name: String) -> RegisteredTool? {
+        tools.first { $0.name == name }
+    }
+
+    static var availableToolNames: [String] {
+        tools.map(\.name)
+    }
+
+    /// Format the registered tools for inclusion in the AI system prompt.
+    static func formatForPrompt() -> String {
+        tools.map { "- \($0.name): \($0.description) [\($0.category)]" }.joined(separator: "\n")
+    }
+}
+
 // MARK: - Agent Controller
 
 @MainActor
@@ -525,6 +566,7 @@ final class AgentController: ObservableObject {
 
     private func buildSystemPrompt(context: String) -> String {
         let toolsSection = AgentToolService.buildSystemPrompt()
+        let registeredTools = ToolRegistry.formatForPrompt()
         return """
         You are SwiftCode Autonomous Agent — an AI-powered iOS development assistant.
 
@@ -532,8 +574,19 @@ final class AgentController: ObservableObject {
 
         \(toolsSection)
 
+        Registered Tools:
+        \(registeredTools)
+
         Here is your only project context:
         \(context)
+
+        Autonomous Execution Loop:
+        1. ANALYZE: Read the project structure and understand the codebase.
+        2. PLAN: Create a numbered plan (Step 1: …, Step 2: …).
+        3. EXECUTE: Execute one tool at a time using <tool_call> format.
+        4. VERIFY: Read tool results and verify correctness before proceeding.
+        5. REPEAT: Continue until the task is fully complete.
+        6. SUMMARIZE: When done, summarize without further tool calls.
 
         Instructions:
         1. Start by analysing the goal and writing a numbered plan (Step 1: …, Step 2: …).

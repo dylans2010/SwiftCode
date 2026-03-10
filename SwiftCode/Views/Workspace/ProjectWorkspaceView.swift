@@ -22,6 +22,7 @@ struct ProjectWorkspaceView: View {
     @State private var showProjectSettings = false
     @State private var showBuildLogs = false
     @State private var showMinimapSettings = false
+    @State private var showSFSymbolsBrowser = false
 
     var body: some View {
         ZStack {
@@ -137,6 +138,11 @@ struct ProjectWorkspaceView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showSFSymbolsBrowser) {
+            SFSymbolBrowserView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Toolbar
@@ -194,6 +200,7 @@ struct ProjectWorkspaceView: View {
         case "errors_viewer": return .red
         case "dependency_manager", "install_dependency", "update_dependencies": return .teal
         case "code_search", "symbol_navigator", "project_index", "go_to_line": return .cyan
+        case "sf_symbols_browser": return .indigo
         default: return .secondary
         }
     }
@@ -201,27 +208,29 @@ struct ProjectWorkspaceView: View {
     // MARK: - Tool Actions
 
     private func handleToolbarAction(_ toolId: String) {
-        switch toolId {
-        case "file_navigator": showNavigatorSheet = true
-        case "ai_agent": showAISheet = true
-        case "build_trigger", "build_status": showBuildStatus = true
-        case "github_actions": showGitHubSheet = true
-        case "code_search": showCodeSearch = true
-        case "errors_viewer": showErrorsPanel = true
-        case "dependency_manager", "install_dependency", "update_dependencies": showDependencyManager = true
-        case "command_palette": showCommandPalette = true
-        case "go_to_line": showGoToLine = true
-        case "symbol_navigator": showSymbolNavigator = true
-        case "diff_viewer": showDiffViewer = true
-        case "project_settings": showProjectSettings = true
-        case "build_logs": showBuildLogs = true
-        case "minimap_settings": showMinimapSettings = true
-        case "ai_code_gen", "ai_code_fix", "ai_refactor": showAISheet = true
-        case "commit_changes", "push_repo", "pull_repo": showGitHubSheet = true
-        case "create_file", "create_folder", "rename_file", "delete_file", "refactor_file":
-            showNavigatorSheet = true
-        case "project_index", "project_analyzer": showCodeSearch = true
-        default: break
+        guard let destination = ToolbarActionManager.shared.destination(for: toolId) else { return }
+        openSheet(for: destination)
+    }
+
+    private func openSheet(for destination: ToolbarActionManager.SheetDestination) {
+        switch destination {
+        case .fileNavigator: showNavigatorSheet = true
+        case .aiAgent: showAISheet = true
+        case .buildStatus: showBuildStatus = true
+        case .gitHub: showGitHubSheet = true
+        case .codeSearch: showCodeSearch = true
+        case .errorsPanel: showErrorsPanel = true
+        case .dependencyManager: showDependencyManager = true
+        case .commandPalette: showCommandPalette = true
+        case .goToLine: showGoToLine = true
+        case .symbolNavigator: showSymbolNavigator = true
+        case .diffViewer: showDiffViewer = true
+        case .toolbarCustomization: showToolbarCustomization = true
+        case .projectSettings: showProjectSettings = true
+        case .buildLogs: showBuildLogs = true
+        case .minimapSettings: showMinimapSettings = true
+        case .sfSymbolsBrowser: showSFSymbolsBrowser = true
+        case .settings: showSettingsSheet = true
         }
     }
 

@@ -64,9 +64,21 @@ final class ToolbarManager: ObservableObject {
 
     private func loadTools() {
         if let data = UserDefaults.standard.data(forKey: Self.storageKey),
-           let decoded = try? JSONDecoder().decode([ToolbarTool].self, from: data),
-           decoded.count == Self.defaultTools.count {
-            tools = decoded
+           let decoded = try? JSONDecoder().decode([ToolbarTool].self, from: data) {
+            // Merge persisted tools with defaults: keep user customization but add new tools
+            let decodedIds = Set(decoded.map(\.id))
+            let defaultIds = Set(Self.defaultTools.map(\.id))
+            if decodedIds.isSuperset(of: defaultIds) {
+                tools = decoded
+            } else {
+                // Add any new default tools that are missing from persisted state
+                var merged = decoded
+                for tool in Self.defaultTools where !decodedIds.contains(tool.id) {
+                    merged.append(tool)
+                }
+                tools = merged
+                persist()
+            }
         } else {
             tools = Self.defaultTools
         }
@@ -108,5 +120,6 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "build_logs", name: "Build Logs", icon: "doc.text.magnifyingglass", category: "Build", isEnabled: false, order: 27),
         ToolbarTool(id: "minimap_settings", name: "Minimap Settings", icon: "map.fill", category: "Editor", isEnabled: false, order: 28),
         ToolbarTool(id: "project_analyzer", name: "Project Analyzer", icon: "waveform.path.ecg", category: "Diagnostics", isEnabled: false, order: 29),
+        ToolbarTool(id: "sf_symbols_browser", name: "SF Symbols", icon: "square.grid.2x2.fill", category: "Tools", isEnabled: false, order: 30),
     ]
 }

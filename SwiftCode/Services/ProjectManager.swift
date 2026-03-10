@@ -20,7 +20,7 @@ final class ProjectManager: ObservableObject {
 
     var projectsDirectory: URL {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let dir = docs.appendingPathComponent("SwiftCodeProjects", isDirectory: true)
+        let dir = docs.appendingPathComponent("Projects", isDirectory: true)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         return dir
     }
@@ -292,13 +292,10 @@ jobs:
         guard !node.isDirectory else { return }
         guard let project = activeProject else { return }
 
-        let fileURL = project.directoryURL.appendingPathComponent(node.path)
-        let standardized = fileURL.standardizedFileURL
-
         fileLoadError = nil
 
         do {
-            let content = try String(contentsOf: standardized, encoding: .utf8)
+            let content = try CodingManager.shared.readFile(at: node.path, in: project.directoryURL)
             activeFileContent = content
         } catch {
             activeFileContent = ""
@@ -328,8 +325,7 @@ jobs:
     func saveCurrentFile(content: String) {
         guard let project = activeProject,
               let node = activeFileNode else { return }
-        let fileURL = project.directoryURL.appendingPathComponent(node.path)
-        try? content.write(to: fileURL, atomically: true, encoding: .utf8)
+        try? CodingManager.shared.writeFile(content: content, at: node.path, in: project.directoryURL)
         activeFileContent = content
     }
 
