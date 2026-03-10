@@ -48,6 +48,9 @@ AA00001000000000000004BA /* ErrorsPanelView.swift in Sources */ = {isa = PBXBuil
 AA00001000000000000004CA /* CodeSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000004CB /* CodeSearchView.swift */; };
 AA00001000000000000004DA /* ProjectSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000004DB /* ProjectSettingsView.swift */; };
 AA00001000000000000004EA /* ToolbarCustomizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000004EB /* ToolbarCustomizationView.swift */; };
+AA00001000000000000005AA /* CodingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005AB /* CodingManager.swift */; };
+AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005BB /* ToolbarActionManager.swift */; };
+AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005CB /* SFSymbolBrowserView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +96,9 @@ AA00001000000000000004BB /* ErrorsPanelView.swift */ = {isa = PBXFileReference; 
 AA00001000000000000004CB /* CodeSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeSearchView.swift; sourceTree = "<group>"; };
 AA00001000000000000004DB /* ProjectSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectSettingsView.swift; sourceTree = "<group>"; };
 AA00001000000000000004EB /* ToolbarCustomizationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarCustomizationView.swift; sourceTree = "<group>"; };
+AA00001000000000000005AB /* CodingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodingManager.swift; sourceTree = "<group>"; };
+AA00001000000000000005BB /* ToolbarActionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarActionManager.swift; sourceTree = "<group>"; };
+AA00001000000000000005CB /* SFSymbolBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFSymbolBrowserView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -115,6 +121,8 @@ AA000010000000000000020F /* Models */,
 AA000010000000000000030F /* Services */,
 AA000010000000000000040F /* Views */,
 AA00001000000000000005FF /* Features */,
+AA0000100000000000000DFF /* Core */,
+AA0000100000000000000EFF /* UI */,
 );
 path = SwiftCode;
 sourceTree = "<group>";
@@ -312,6 +320,31 @@ AA00001000000000000004EB /* ToolbarCustomizationView.swift */,
 path = Toolbar;
 sourceTree = "<group>";
 };
+AA0000100000000000000DFF /* Core */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000005AB /* CodingManager.swift */,
+AA00001000000000000005BB /* ToolbarActionManager.swift */,
+);
+path = Core;
+sourceTree = "<group>";
+};
+AA0000100000000000000EFF /* UI */ = {
+isa = PBXGroup;
+children = (
+AA0000100000000000000FFF /* Utilities */,
+);
+path = UI;
+sourceTree = "<group>";
+};
+AA0000100000000000000FFF /* Utilities */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000005CB /* SFSymbolBrowserView.swift */,
+);
+path = Utilities;
+sourceTree = "<group>";
+};
 AA000001000000000000000E /* MainGroup */ = {
 isa = PBXGroup;
 children = (
@@ -445,6 +478,9 @@ AA00001000000000000004BA /* ErrorsPanelView.swift in Sources */,
 AA00001000000000000004CA /* CodeSearchView.swift in Sources */,
 AA00001000000000000004DA /* ProjectSettingsView.swift in Sources */,
 AA00001000000000000004EA /* ToolbarCustomizationView.swift in Sources */,
+AA00001000000000000005AA /* CodingManager.swift in Sources */,
+AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */,
+AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
