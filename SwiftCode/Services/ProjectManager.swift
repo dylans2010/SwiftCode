@@ -256,14 +256,68 @@ jobs:
         activeFileContent = content
     }
 
-    func createFile(named name: String, inDirectory directoryPath: String?, project: Project) throws {
+    func createFile(named name: String, inDirectory directoryPath: String?, project: Project, initialContent: String? = nil) throws {
         let base = directoryPath.map { project.directoryURL.appendingPathComponent($0) } ?? project.directoryURL
         let fileURL = base.appendingPathComponent(name)
         guard !FileManager.default.fileExists(atPath: fileURL.path) else {
             throw ProjectError.alreadyExists
         }
-        try "".write(to: fileURL, atomically: true, encoding: .utf8)
+        let content: String
+        if let provided = initialContent {
+            content = provided
+        } else if name.hasSuffix(".swift") {
+            content = generateSwiftTemplate(for: name, in: project)
+        } else {
+            content = ""
+        }
+        try content.write(to: fileURL, atomically: true, encoding: .utf8)
         refreshFileTree(for: project)
+    }
+
+    private func generateSwiftTemplate(for name: String, in project: Project) -> String {
+        let settings = AppSettings.shared
+        let rawName = (name as NSString).deletingPathExtension
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .joined()
+        // Ensure the struct name starts with a letter (Swift identifier requirement)
+        let structName: String
+        if rawName.isEmpty || rawName.first?.isLetter == false {
+            structName = "UntitledView"
+        } else {
+            structName = rawName
+        }
+        let author = settings.fileHeaderAuthor.trimmingCharacters(in: .whitespacesAndNewlines)
+        let authorDisplay = author.isEmpty ? "User" : author
+        let customComment = settings.fileHeaderCustomComment.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeStyle = .none
+        let dateStr = dateFormatter.string(from: Date())
+
+        return """
+//  \(name)
+//  \(project.name)
+//
+//  Created by \(authorDisplay) on \(dateStr).
+//  \(customComment.isEmpty ? "Made with SwiftCode" : customComment)
+//
+
+import SwiftUI
+
+struct \(structName): View {
+    var body: some View {
+        VStack {
+            Text("Hello, World!")
+        }
+        .padding()
+    }
+}
+
+#Preview {
+    \(structName)()
+}
+"""
     }
 
     func createFolder(named name: String, inDirectory directoryPath: String?, project: Project) throws {
