@@ -78,7 +78,7 @@ struct ProjectWorkspaceView: View {
             GitHubIntegrationView(project: project)
         }
         .sheet(isPresented: $showSettingsSheet) {
-            SettingsView()
+            GeneralSettingsView()
         }
         // New sheets
         .sheet(isPresented: $showCodeSearch) {

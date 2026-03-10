@@ -763,7 +763,47 @@ final class AgentToolService {
             return .success(toolName, "Symbols in \(path):\n\(output)")
 
         default:
+            // Check if it's a user-defined custom tool from CustomToolRegistry
+            if let connection = CustomToolRegistry.shared.connections.first(where: { $0.agentToolID == toolName }) {
+                return await executeCustomConnection(connection, parameters: parameters)
+            }
             return .failure(toolName, "Unknown tool: \(toolName)")
+        }
+    }
+
+    // MARK: - Custom Tool Execution
+
+    private func executeCustomConnection(
+        _ connection: CustomAgentConnection,
+        parameters: [String: Any]
+    ) async -> AgentToolResult {
+        guard !connection.apiEndpoint.isEmpty,
+              let url = URL(string: connection.apiEndpoint) else {
+            return .failure(connection.agentToolID, "Invalid or missing API endpoint for tool '\(connection.name)'")
+        }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: parameters, options: [])
+        } catch {
+            return .failure(connection.agentToolID,
+                            "Tool '\(connection.name)' parameter serialization failed: \(error.localizedDescription)")
+        }
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard let httpResponse = response as? HTTPURLResponse else {
+                return .failure(connection.agentToolID, "Tool '\(connection.name)' returned a non-HTTP response")
+            }
+            guard (200..<300).contains(httpResponse.statusCode) else {
+                let body = String(data: data, encoding: .utf8) ?? ""
+                return .failure(connection.agentToolID,
+                                "Tool '\(connection.name)' returned HTTP \(httpResponse.statusCode): \(body)")
+            }
+            let resultText = String(data: data, encoding: .utf8) ?? "(empty response)"
+            return .success(connection.agentToolID, resultText)
+        } catch {
+            return .failure(connection.agentToolID, "Tool '\(connection.name)' request failed: \(error.localizedDescription)")
         }
     }
 

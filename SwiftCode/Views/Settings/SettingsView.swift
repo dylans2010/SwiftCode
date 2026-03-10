@@ -25,6 +25,25 @@ class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(fileHeaderCustomComment, forKey: "fileHeaderCustomComment") }
     }
 
+    // MARK: - Theme
+    @Published var selectedThemeID: String {
+        didSet { UserDefaults.standard.set(selectedThemeID, forKey: "selectedThemeID") }
+    }
+
+    // MARK: - Git / GitHub Configuration
+    @Published var gitUserName: String {
+        didSet { UserDefaults.standard.set(gitUserName, forKey: "gitUserName") }
+    }
+    @Published var gitUserEmail: String {
+        didSet { UserDefaults.standard.set(gitUserEmail, forKey: "gitUserEmail") }
+    }
+    @Published var defaultBranch: String {
+        didSet { UserDefaults.standard.set(defaultBranch, forKey: "defaultBranch") }
+    }
+    @Published var defaultGitHubRepo: String {
+        didSet { UserDefaults.standard.set(defaultGitHubRepo, forKey: "defaultGitHubRepo") }
+    }
+
     /// `true` when the user has chosen a custom OpenRouter model ID
     var isUsingCustomModel: Bool {
         !customModel.isEmpty && selectedModel == customModel
@@ -38,6 +57,11 @@ class AppSettings: ObservableObject {
         useDarkTheme = UserDefaults.standard.object(forKey: "useDarkTheme") as? Bool ?? true
         fileHeaderAuthor = UserDefaults.standard.string(forKey: "fileHeaderAuthor") ?? ""
         fileHeaderCustomComment = UserDefaults.standard.string(forKey: "fileHeaderCustomComment") ?? "Made with SwiftCode"
+        selectedThemeID = UserDefaults.standard.string(forKey: "selectedThemeID") ?? "dark"
+        gitUserName = UserDefaults.standard.string(forKey: "gitUserName") ?? ""
+        gitUserEmail = UserDefaults.standard.string(forKey: "gitUserEmail") ?? ""
+        defaultBranch = UserDefaults.standard.string(forKey: "defaultBranch") ?? "main"
+        defaultGitHubRepo = UserDefaults.standard.string(forKey: "defaultGitHubRepo") ?? ""
     }
 }
 

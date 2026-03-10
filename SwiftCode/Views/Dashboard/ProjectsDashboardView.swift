@@ -14,6 +14,7 @@ struct ProjectsDashboardView: View {
     @State private var selectedProject: Project?
     @State private var exportURL: URL?
     @State private var showShareSheet = false
+    @State private var showSettings = false
 
     private let columns = [
         GridItem(.adaptive(minimum: 200, maximum: 280), spacing: 20)
@@ -68,6 +69,10 @@ struct ProjectsDashboardView: View {
                 if let url = exportURL {
                     ShareSheet(activityItems: [url])
                 }
+            }
+            .sheet(isPresented: $showSettings) {
+                GeneralSettingsView()
+                    .environmentObject(AppSettings.shared)
             }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
                 Button("OK") {}
@@ -126,6 +131,13 @@ struct ProjectsDashboardView: View {
                 showNewProjectSheet = true
             } label: {
                 Label("New Project", systemImage: "plus")
+            }
+        }
+        ToolbarItemGroup(placement: .topBarLeading) {
+            Button {
+                showSettings = true
+            } label: {
+                Label("Settings", systemImage: "gear")
             }
         }
     }
