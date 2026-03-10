@@ -719,10 +719,10 @@ final class AgentToolService {
                 return .failure(toolName, "No project is currently open")
             }
             let query = str("query")
-            var matches: [(String, Int, String)] = []
+            var matches: [String] = []
             searchFiles(in: project.directoryURL, base: project.directoryURL, query: query, results: &matches)
             if matches.isEmpty { return .success(toolName, "No results found for '\(query)'") }
-            let output = matches.prefix(30).map { "\($0.0):\($0.1) – \($0.2)" }.joined(separator: "\n")
+            let output = matches.prefix(30).joined(separator: "\n")
             return .success(toolName, "Found \(matches.count) result(s):\n\(output)")
 
         case "locate_function":
@@ -731,10 +731,10 @@ final class AgentToolService {
             }
             let name = str("name")
             let pattern = "func \(name)"
-            var matches: [(String, Int, String)] = []
+            var matches: [String] = []
             searchFiles(in: project.directoryURL, base: project.directoryURL, query: pattern, results: &matches)
             if matches.isEmpty { return .success(toolName, "Function '\(name)' not found") }
-            let output = matches.map { "\($0.0):\($0.1) – \($0.2)" }.joined(separator: "\n")
+            let output = matches.joined(separator: "\n")
             return .success(toolName, output)
 
         case "find_references":
@@ -742,10 +742,10 @@ final class AgentToolService {
                 return .failure(toolName, "No project is currently open")
             }
             let symbol = str("symbol")
-            var matches: [(String, Int, String)] = []
+            var matches: [String] = []
             searchFiles(in: project.directoryURL, base: project.directoryURL, query: symbol, results: &matches)
             if matches.isEmpty { return .success(toolName, "No references found for '\(symbol)'") }
-            let output = matches.prefix(50).map { "\($0.0):\($0.1) – \($0.2)" }.joined(separator: "\n")
+            let output = matches.prefix(50).joined(separator: "\n")
             return .success(toolName, "Found \(matches.count) reference(s):\n\(output)")
 
         case "analyze_symbols":

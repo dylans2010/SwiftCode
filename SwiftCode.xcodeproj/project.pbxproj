@@ -33,6 +33,21 @@ AA000010000000000000017A /* CIBuildView.swift in Sources */ = {isa = PBXBuildFil
 AA000010000000000000018A /* FileImporterRepresentableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000018B /* FileImporterRepresentableView.swift */; };
 AA000010000000000000019A /* AgentTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000019B /* AgentTool.swift */; };
 AA00001000000000000001AA /* AgentToolService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000001AB /* AgentToolService.swift */; };
+AA00001000000000000001BA /* AgentInterfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000001BB /* AgentInterfaceView.swift */; };
+AA00001000000000000002BA /* CodeIndex.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000002BB /* CodeIndex.swift */; };
+AA00001000000000000002CA /* ToolbarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000002CB /* ToolbarItem.swift */; };
+AA00001000000000000002DA /* CodeIndexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000002DB /* CodeIndexService.swift */; };
+AA00001000000000000002EA /* BuildLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000002EB /* BuildLogsView.swift */; };
+AA00001000000000000002FA /* CommandPaletteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000002FB /* CommandPaletteView.swift */; };
+AA00001000000000000003BA /* DependencyManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000003BB /* DependencyManagerView.swift */; };
+AA00001000000000000003CA /* DiffViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000003CB /* DiffViewerView.swift */; };
+AA00001000000000000003DA /* GoToLineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000003DB /* GoToLineView.swift */; };
+AA00001000000000000003EA /* MinimapSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000003EB /* MinimapSettingsView.swift */; };
+AA00001000000000000003FA /* SymbolNavigatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000003FB /* SymbolNavigatorView.swift */; };
+AA00001000000000000004BA /* ErrorsPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000004BB /* ErrorsPanelView.swift */; };
+AA00001000000000000004CA /* CodeSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000004CB /* CodeSearchView.swift */; };
+AA00001000000000000004DA /* ProjectSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000004DB /* ProjectSettingsView.swift */; };
+AA00001000000000000004EA /* ToolbarCustomizationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000004EB /* ToolbarCustomizationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +78,21 @@ AA000010000000000000017B /* CIBuildView.swift */ = {isa = PBXFileReference; last
 AA000010000000000000018B /* FileImporterRepresentableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImporterRepresentableView.swift; sourceTree = "<group>"; };
 AA000010000000000000019B /* AgentTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTool.swift; sourceTree = "<group>"; };
 AA00001000000000000001AB /* AgentToolService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentToolService.swift; sourceTree = "<group>"; };
+AA00001000000000000001BB /* AgentInterfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentInterfaceView.swift; sourceTree = "<group>"; };
+AA00001000000000000002BB /* CodeIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeIndex.swift; sourceTree = "<group>"; };
+AA00001000000000000002CB /* ToolbarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarItem.swift; sourceTree = "<group>"; };
+AA00001000000000000002DB /* CodeIndexService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeIndexService.swift; sourceTree = "<group>"; };
+AA00001000000000000002EB /* BuildLogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildLogsView.swift; sourceTree = "<group>"; };
+AA00001000000000000002FB /* CommandPaletteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommandPaletteView.swift; sourceTree = "<group>"; };
+AA00001000000000000003BB /* DependencyManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DependencyManagerView.swift; sourceTree = "<group>"; };
+AA00001000000000000003CB /* DiffViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffViewerView.swift; sourceTree = "<group>"; };
+AA00001000000000000003DB /* GoToLineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoToLineView.swift; sourceTree = "<group>"; };
+AA00001000000000000003EB /* MinimapSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimapSettingsView.swift; sourceTree = "<group>"; };
+AA00001000000000000003FB /* SymbolNavigatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolNavigatorView.swift; sourceTree = "<group>"; };
+AA00001000000000000004BB /* ErrorsPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorsPanelView.swift; sourceTree = "<group>"; };
+AA00001000000000000004CB /* CodeSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeSearchView.swift; sourceTree = "<group>"; };
+AA00001000000000000004DB /* ProjectSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectSettingsView.swift; sourceTree = "<group>"; };
+AA00001000000000000004EB /* ToolbarCustomizationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarCustomizationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -84,6 +114,7 @@ AA000010000000000000015B /* Info.plist */,
 AA000010000000000000020F /* Models */,
 AA000010000000000000030F /* Services */,
 AA000010000000000000040F /* Views */,
+AA00001000000000000005FF /* Features */,
 );
 path = SwiftCode;
 sourceTree = "<group>";
@@ -95,6 +126,8 @@ AA000010000000000000003B /* Project.swift */,
 AA000010000000000000004B /* FileNode.swift */,
 AA000010000000000000005B /* AgentMode.swift */,
 AA000010000000000000019B /* AgentTool.swift */,
+AA00001000000000000002BB /* CodeIndex.swift */,
+AA00001000000000000002CB /* ToolbarItem.swift */,
 );
 path = Models;
 sourceTree = "<group>";
@@ -109,6 +142,7 @@ AA000010000000000000009B /* GitHubService.swift */,
 AA00001000000000000000AB /* ZipImporter.swift */,
 AA00001000000000000000BB /* SyntaxHighlighter.swift */,
 AA00001000000000000001AB /* AgentToolService.swift */,
+AA00001000000000000002DB /* CodeIndexService.swift */,
 );
 path = Services;
 sourceTree = "<group>";
@@ -125,6 +159,12 @@ AA000010000000000000046F /* GitHub */,
 AA000010000000000000047F /* Build */,
 AA000010000000000000048F /* Settings */,
 AA000010000000000000049F /* Utilities */,
+AA00001000000000000007FF /* CommandPalette */,
+AA00001000000000000008FF /* Dependencies */,
+AA00001000000000000009FF /* DiffViewer */,
+AA0000100000000000000AFF /* Errors */,
+AA0000100000000000000BFF /* Search */,
+AA0000100000000000000CFF /* Toolbar */,
 );
 path = Views;
 sourceTree = "<group>";
@@ -149,6 +189,9 @@ AA000010000000000000043F /* Editor */ = {
 isa = PBXGroup;
 children = (
 AA00001000000000000000EB /* CodeEditorView.swift */,
+AA00001000000000000003DB /* GoToLineView.swift */,
+AA00001000000000000003EB /* MinimapSettingsView.swift */,
+AA00001000000000000003FB /* SymbolNavigatorView.swift */,
 );
 path = Editor;
 sourceTree = "<group>";
@@ -183,6 +226,7 @@ isa = PBXGroup;
 children = (
 AA000010000000000000012B /* BuildStatusView.swift */,
 AA000010000000000000017B /* CIBuildView.swift */,
+AA00001000000000000002EB /* BuildLogsView.swift */,
 );
 path = Build;
 sourceTree = "<group>";
@@ -191,6 +235,7 @@ AA000010000000000000048F /* Settings */ = {
 isa = PBXGroup;
 children = (
 AA000010000000000000013B /* SettingsView.swift */,
+AA00001000000000000004DB /* ProjectSettingsView.swift */,
 );
 path = Settings;
 sourceTree = "<group>";
@@ -201,6 +246,70 @@ children = (
 AA000010000000000000018B /* FileImporterRepresentableView.swift */,
 );
 path = Utilities;
+sourceTree = "<group>";
+};
+AA00001000000000000005FF /* Features */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000006FF /* AI */,
+);
+path = Features;
+sourceTree = "<group>";
+};
+AA00001000000000000006FF /* AI */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000001BB /* AgentInterfaceView.swift */,
+);
+path = AI;
+sourceTree = "<group>";
+};
+AA00001000000000000007FF /* CommandPalette */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000002FB /* CommandPaletteView.swift */,
+);
+path = CommandPalette;
+sourceTree = "<group>";
+};
+AA00001000000000000008FF /* Dependencies */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000003BB /* DependencyManagerView.swift */,
+);
+path = Dependencies;
+sourceTree = "<group>";
+};
+AA00001000000000000009FF /* DiffViewer */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000003CB /* DiffViewerView.swift */,
+);
+path = DiffViewer;
+sourceTree = "<group>";
+};
+AA0000100000000000000AFF /* Errors */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000004BB /* ErrorsPanelView.swift */,
+);
+path = Errors;
+sourceTree = "<group>";
+};
+AA0000100000000000000BFF /* Search */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000004CB /* CodeSearchView.swift */,
+);
+path = Search;
+sourceTree = "<group>";
+};
+AA0000100000000000000CFF /* Toolbar */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000004EB /* ToolbarCustomizationView.swift */,
+);
+path = Toolbar;
 sourceTree = "<group>";
 };
 AA000001000000000000000E /* MainGroup */ = {
@@ -321,6 +430,21 @@ AA000010000000000000017A /* CIBuildView.swift in Sources */,
 AA000010000000000000018A /* FileImporterRepresentableView.swift in Sources */,
 AA000010000000000000019A /* AgentTool.swift in Sources */,
 AA00001000000000000001AA /* AgentToolService.swift in Sources */,
+AA00001000000000000001BA /* AgentInterfaceView.swift in Sources */,
+AA00001000000000000002BA /* CodeIndex.swift in Sources */,
+AA00001000000000000002CA /* ToolbarItem.swift in Sources */,
+AA00001000000000000002DA /* CodeIndexService.swift in Sources */,
+AA00001000000000000002EA /* BuildLogsView.swift in Sources */,
+AA00001000000000000002FA /* CommandPaletteView.swift in Sources */,
+AA00001000000000000003BA /* DependencyManagerView.swift in Sources */,
+AA00001000000000000003CA /* DiffViewerView.swift in Sources */,
+AA00001000000000000003DA /* GoToLineView.swift in Sources */,
+AA00001000000000000003EA /* MinimapSettingsView.swift in Sources */,
+AA00001000000000000003FA /* SymbolNavigatorView.swift in Sources */,
+AA00001000000000000004BA /* ErrorsPanelView.swift in Sources */,
+AA00001000000000000004CA /* CodeSearchView.swift in Sources */,
+AA00001000000000000004DA /* ProjectSettingsView.swift in Sources */,
+AA00001000000000000004EA /* ToolbarCustomizationView.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
