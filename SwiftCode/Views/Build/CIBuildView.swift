@@ -559,7 +559,7 @@ struct CIBuildView: View {
         Task {
             do {
                 let workflowsPath = ".github/workflows"
-                let projectDir = await project.directoryURL
+                let projectDir = project.directoryURL
                 let workflowsDir = projectDir.appendingPathComponent(workflowsPath)
                 try FileManager.default.createDirectory(
                     at: workflowsDir,
