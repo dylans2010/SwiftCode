@@ -165,7 +165,7 @@ struct GitHubIntegrationView: View {
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
-                        .onChange(of: repoURL) { _ in
+                        .onChange(of: repoURL) {
                             saveRepoURL()
                             repoDetail = nil
                             repoValidationError = nil
