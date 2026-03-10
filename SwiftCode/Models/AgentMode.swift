@@ -5,6 +5,7 @@ enum AgentMode: String, CaseIterable, Identifiable {
     case modify = "Modify"
     case refactor = "Refactor"
     case debug = "Debug"
+    case agent = "Agent"
 
     var id: String { rawValue }
 
@@ -14,6 +15,7 @@ enum AgentMode: String, CaseIterable, Identifiable {
         case .modify: return "Edit existing code with AI assistance"
         case .refactor: return "Analyze and improve project structure"
         case .debug: return "Analyze errors and propose fixes"
+        case .agent: return "Autonomous agent with \(AgentTool.all.count)+ tools"
         }
     }
 
@@ -23,6 +25,7 @@ enum AgentMode: String, CaseIterable, Identifiable {
         case .modify: return "pencil.circle.fill"
         case .refactor: return "arrow.triangle.2.circlepath.circle.fill"
         case .debug: return "ant.circle.fill"
+        case .agent: return "cpu.fill"
         }
     }
 
@@ -36,15 +39,25 @@ enum AgentMode: String, CaseIterable, Identifiable {
             return "You are an expert Swift/SwiftUI developer. Analyze the provided Swift code and suggest improvements for modularity, performance, and SwiftUI best practices. Format code blocks with ```swift."
         case .debug:
             return "You are an expert Swift/SwiftUI developer. Analyze the provided error or code and identify the root cause. Provide a clear fix with explanation. Format code blocks with ```swift."
+        case .agent:
+            // Dynamic system prompt built by AgentToolService
+            return AgentToolService.shared.buildSystemPrompt()
         }
     }
 }
 
 struct AIMessage: Identifiable, Codable {
     var id: UUID = UUID()
-    var role: String // "user" or "assistant"
+    var role: String // "user", "assistant", "tool_call", or "tool_result"
     var content: String
     var timestamp: Date = Date()
+
+    init(id: UUID = UUID(), role: String, content: String, timestamp: Date = Date()) {
+        self.id        = id
+        self.role      = role
+        self.content   = content
+        self.timestamp = timestamp
+    }
 }
 
 struct OpenRouterModel: Identifiable, Codable {

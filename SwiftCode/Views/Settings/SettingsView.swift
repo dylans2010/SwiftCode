@@ -6,6 +6,9 @@ class AppSettings: ObservableObject {
     @Published var selectedModel: String {
         didSet { UserDefaults.standard.set(selectedModel, forKey: "selectedModel") }
     }
+    @Published var customModel: String {
+        didSet { UserDefaults.standard.set(customModel, forKey: "customModel") }
+    }
     @Published var autoSave: Bool {
         didSet { UserDefaults.standard.set(autoSave, forKey: "autoSave") }
     }
@@ -22,8 +25,14 @@ class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(fileHeaderCustomComment, forKey: "fileHeaderCustomComment") }
     }
 
+    /// `true` when the user has chosen a custom OpenRouter model ID
+    var isUsingCustomModel: Bool {
+        !customModel.isEmpty && selectedModel == customModel
+    }
+
     private init() {
         selectedModel = UserDefaults.standard.string(forKey: "selectedModel") ?? "anthropic/claude-3.5-sonnet"
+        customModel   = UserDefaults.standard.string(forKey: "customModel") ?? ""
         autoSave = UserDefaults.standard.object(forKey: "autoSave") as? Bool ?? true
         editorFontSize = UserDefaults.standard.object(forKey: "editorFontSize") as? Double ?? 14
         useDarkTheme = UserDefaults.standard.object(forKey: "useDarkTheme") as? Bool ?? true
@@ -42,6 +51,8 @@ struct SettingsView: View {
     @State private var showGitHubToken = false
     @State private var keySaved = false
     @State private var tokenSaved = false
+    @State private var customModelInput: String = ""
+    @State private var customModelSaved = false
 
     var body: some View {
         NavigationStack {
@@ -94,6 +105,43 @@ struct SettingsView: View {
                     Picker("Default AI Model", selection: $settings.selectedModel) {
                         ForEach(OpenRouterModel.defaults) { model in
                             Text(model.name).tag(model.id)
+                        }
+                        if !settings.customModel.isEmpty {
+                            Text("Custom: \(settings.customModel)").tag(settings.customModel)
+                        }
+                    }
+
+                    // Custom model entry
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Custom OpenRouter Model")
+                                    .font(.headline)
+                                Text("Enter any valid OpenRouter model ID")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        TextField("e.g. mistralai/mistral-7b-instruct", text: $customModelInput)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .font(.system(.body, design: .monospaced))
+                        Button {
+                            let trimmed = customModelInput.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !trimmed.isEmpty else { return }
+                            settings.customModel   = trimmed
+                            settings.selectedModel = trimmed
+                            customModelSaved = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                customModelSaved = false
+                            }
+                        } label: {
+                            Label(
+                                customModelSaved ? "Saved & Selected!" : "Save & Use Custom Model",
+                                systemImage: customModelSaved ? "checkmark.circle.fill" : "cpu"
+                            )
+                            .foregroundStyle(customModelSaved ? .green : .purple)
                         }
                     }
                 } header: {
@@ -229,8 +277,9 @@ struct SettingsView: View {
                 }
             }
             .onAppear {
-                openRouterKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey) ?? ""
-                githubToken = KeychainService.shared.get(forKey: KeychainService.githubToken) ?? ""
+                openRouterKey  = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey) ?? ""
+                githubToken    = KeychainService.shared.get(forKey: KeychainService.githubToken) ?? ""
+                customModelInput = settings.customModel
             }
         }
     }

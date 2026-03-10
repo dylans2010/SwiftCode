@@ -31,6 +31,8 @@ AA000010000000000000014A /* Assets.xcassets in Resources */ = {isa = PBXBuildFil
 AA000010000000000000016A /* GitCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000016B /* GitCommandView.swift */; };
 AA000010000000000000017A /* CIBuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000017B /* CIBuildView.swift */; };
 AA000010000000000000018A /* FileImporterRepresentableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000018B /* FileImporterRepresentableView.swift */; };
+AA000010000000000000019A /* AgentTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000019B /* AgentTool.swift */; };
+AA00001000000000000001AA /* AgentToolService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000001AB /* AgentToolService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -59,6 +61,8 @@ AA000010000000000000015B /* Info.plist */ = {isa = PBXFileReference; lastKnownFi
 AA000010000000000000016B /* GitCommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitCommandView.swift; sourceTree = "<group>"; };
 AA000010000000000000017B /* CIBuildView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CIBuildView.swift; sourceTree = "<group>"; };
 AA000010000000000000018B /* FileImporterRepresentableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImporterRepresentableView.swift; sourceTree = "<group>"; };
+AA000010000000000000019B /* AgentTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTool.swift; sourceTree = "<group>"; };
+AA00001000000000000001AB /* AgentToolService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentToolService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -90,6 +94,7 @@ children = (
 AA000010000000000000003B /* Project.swift */,
 AA000010000000000000004B /* FileNode.swift */,
 AA000010000000000000005B /* AgentMode.swift */,
+AA000010000000000000019B /* AgentTool.swift */,
 );
 path = Models;
 sourceTree = "<group>";
@@ -103,6 +108,7 @@ AA000010000000000000008B /* OpenRouterService.swift */,
 AA000010000000000000009B /* GitHubService.swift */,
 AA00001000000000000000AB /* ZipImporter.swift */,
 AA00001000000000000000BB /* SyntaxHighlighter.swift */,
+AA00001000000000000001AB /* AgentToolService.swift */,
 );
 path = Services;
 sourceTree = "<group>";
@@ -313,6 +319,8 @@ AA000010000000000000013A /* SettingsView.swift in Sources */,
 AA000010000000000000016A /* GitCommandView.swift in Sources */,
 AA000010000000000000017A /* CIBuildView.swift in Sources */,
 AA000010000000000000018A /* FileImporterRepresentableView.swift in Sources */,
+AA000010000000000000019A /* AgentTool.swift in Sources */,
+AA00001000000000000001AA /* AgentToolService.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
