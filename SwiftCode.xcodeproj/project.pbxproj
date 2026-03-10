@@ -1,0 +1,510 @@
+// !$*UTF8*$!
+{
+archiveVersion = 1;
+classes = {
+};
+objectVersion = 56;
+objects = {
+
+/* Begin PBXBuildFile section */
+		ZIPFOUND000000000000003 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ZIPFOUND000000000000002 /* ZIPFoundation */; };
+AA000010000000000000001A /* SwiftCodeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000001B /* SwiftCodeApp.swift */; };
+AA000010000000000000002A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000002B /* ContentView.swift */; };
+AA000010000000000000003A /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000003B /* Project.swift */; };
+AA000010000000000000004A /* FileNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000004B /* FileNode.swift */; };
+AA000010000000000000005A /* AgentMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000005B /* AgentMode.swift */; };
+AA000010000000000000006A /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000006B /* KeychainService.swift */; };
+AA000010000000000000007A /* ProjectManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000007B /* ProjectManager.swift */; };
+AA000010000000000000008A /* OpenRouterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000008B /* OpenRouterService.swift */; };
+AA000010000000000000009A /* GitHubService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000009B /* GitHubService.swift */; };
+AA00001000000000000000AA /* ZipImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000000AB /* ZipImporter.swift */; };
+AA00001000000000000000BA /* SyntaxHighlighter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000000BB /* SyntaxHighlighter.swift */; };
+AA00001000000000000000CA /* ProjectsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000000CB /* ProjectsDashboardView.swift */; };
+AA00001000000000000000DA /* ProjectWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000000DB /* ProjectWorkspaceView.swift */; };
+AA00001000000000000000EA /* CodeEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000000EB /* CodeEditorView.swift */; };
+AA00001000000000000000FA /* FileNavigatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000000FB /* FileNavigatorView.swift */; };
+AA000010000000000000010A /* AIAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000010B /* AIAssistantView.swift */; };
+AA000010000000000000011A /* GitHubIntegrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000011B /* GitHubIntegrationView.swift */; };
+AA000010000000000000012A /* BuildStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000012B /* BuildStatusView.swift */; };
+AA000010000000000000013A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000013B /* SettingsView.swift */; };
+AA000010000000000000014A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000014B /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+AA000001000000000000000C /* SwiftCode.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SwiftCode.app; sourceTree = BUILT_PRODUCTS_DIR; };
+AA000010000000000000001B /* SwiftCodeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCodeApp.swift; sourceTree = "<group>"; };
+AA000010000000000000002B /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+AA000010000000000000003B /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
+AA000010000000000000004B /* FileNode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNode.swift; sourceTree = "<group>"; };
+AA000010000000000000005B /* AgentMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentMode.swift; sourceTree = "<group>"; };
+AA000010000000000000006B /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+AA000010000000000000007B /* ProjectManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectManager.swift; sourceTree = "<group>"; };
+AA000010000000000000008B /* OpenRouterService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenRouterService.swift; sourceTree = "<group>"; };
+AA000010000000000000009B /* GitHubService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubService.swift; sourceTree = "<group>"; };
+AA00001000000000000000AB /* ZipImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZipImporter.swift; sourceTree = "<group>"; };
+AA00001000000000000000BB /* SyntaxHighlighter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlighter.swift; sourceTree = "<group>"; };
+AA00001000000000000000CB /* ProjectsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectsDashboardView.swift; sourceTree = "<group>"; };
+AA00001000000000000000DB /* ProjectWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectWorkspaceView.swift; sourceTree = "<group>"; };
+AA00001000000000000000EB /* CodeEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeEditorView.swift; sourceTree = "<group>"; };
+AA00001000000000000000FB /* FileNavigatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileNavigatorView.swift; sourceTree = "<group>"; };
+AA000010000000000000010B /* AIAssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIAssistantView.swift; sourceTree = "<group>"; };
+AA000010000000000000011B /* GitHubIntegrationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubIntegrationView.swift; sourceTree = "<group>"; };
+AA000010000000000000012B /* BuildStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildStatusView.swift; sourceTree = "<group>"; };
+AA000010000000000000013B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+AA000010000000000000014B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+AA000010000000000000015B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+AA000001000000000000000C_PRODUCTS /* Products */ = {
+isa = PBXGroup;
+children = (
+AA000001000000000000000C /* SwiftCode.app */,
+);
+name = Products;
+sourceTree = "<group>";
+};
+AA000001000000000000000F /* SwiftCode */ = {
+isa = PBXGroup;
+children = (
+AA000010000000000000001B /* SwiftCodeApp.swift */,
+AA000010000000000000002B /* ContentView.swift */,
+AA000010000000000000014B /* Assets.xcassets */,
+AA000010000000000000015B /* Info.plist */,
+AA000010000000000000020F /* Models */,
+AA000010000000000000030F /* Services */,
+AA000010000000000000040F /* Views */,
+);
+path = SwiftCode;
+sourceTree = "<group>";
+};
+AA000010000000000000020F /* Models */ = {
+isa = PBXGroup;
+children = (
+AA000010000000000000003B /* Project.swift */,
+AA000010000000000000004B /* FileNode.swift */,
+AA000010000000000000005B /* AgentMode.swift */,
+);
+path = Models;
+sourceTree = "<group>";
+};
+AA000010000000000000030F /* Services */ = {
+isa = PBXGroup;
+children = (
+AA000010000000000000006B /* KeychainService.swift */,
+AA000010000000000000007B /* ProjectManager.swift */,
+AA000010000000000000008B /* OpenRouterService.swift */,
+AA000010000000000000009B /* GitHubService.swift */,
+AA00001000000000000000AB /* ZipImporter.swift */,
+AA00001000000000000000BB /* SyntaxHighlighter.swift */,
+);
+path = Services;
+sourceTree = "<group>";
+};
+AA000010000000000000040F /* Views */ = {
+isa = PBXGroup;
+children = (
+AA000010000000000000041F /* Dashboard */,
+AA000010000000000000042F /* Workspace */,
+AA000010000000000000043F /* Editor */,
+AA000010000000000000044F /* Navigator */,
+AA000010000000000000045F /* AI */,
+AA000010000000000000046F /* GitHub */,
+AA000010000000000000047F /* Build */,
+AA000010000000000000048F /* Settings */,
+);
+path = Views;
+sourceTree = "<group>";
+};
+AA000010000000000000041F /* Dashboard */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000000CB /* ProjectsDashboardView.swift */,
+);
+path = Dashboard;
+sourceTree = "<group>";
+};
+AA000010000000000000042F /* Workspace */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000000DB /* ProjectWorkspaceView.swift */,
+);
+path = Workspace;
+sourceTree = "<group>";
+};
+AA000010000000000000043F /* Editor */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000000EB /* CodeEditorView.swift */,
+);
+path = Editor;
+sourceTree = "<group>";
+};
+AA000010000000000000044F /* Navigator */ = {
+isa = PBXGroup;
+children = (
+AA00001000000000000000FB /* FileNavigatorView.swift */,
+);
+path = Navigator;
+sourceTree = "<group>";
+};
+AA000010000000000000045F /* AI */ = {
+isa = PBXGroup;
+children = (
+AA000010000000000000010B /* AIAssistantView.swift */,
+);
+path = AI;
+sourceTree = "<group>";
+};
+AA000010000000000000046F /* GitHub */ = {
+isa = PBXGroup;
+children = (
+AA000010000000000000011B /* GitHubIntegrationView.swift */,
+);
+path = GitHub;
+sourceTree = "<group>";
+};
+AA000010000000000000047F /* Build */ = {
+isa = PBXGroup;
+children = (
+AA000010000000000000012B /* BuildStatusView.swift */,
+);
+path = Build;
+sourceTree = "<group>";
+};
+AA000010000000000000048F /* Settings */ = {
+isa = PBXGroup;
+children = (
+AA000010000000000000013B /* SettingsView.swift */,
+);
+path = Settings;
+sourceTree = "<group>";
+};
+AA000001000000000000000E /* MainGroup */ = {
+isa = PBXGroup;
+children = (
+AA000001000000000000000F /* SwiftCode */,
+AA000001000000000000000C_PRODUCTS /* Products */,
+);
+sourceTree = "<group>";
+};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+AA000001000000000000000B /* SwiftCode */ = {
+isa = PBXNativeTarget;
+buildConfigurationList = AA000001000000000000000B_CL /* Build configuration list for PBXNativeTarget "SwiftCode" */;
+buildPhases = (
+AA000001000000000000000B_SRC /* Sources */,
+AA000001000000000000000B_RES /* Resources */,
+ZIPFOUND000000000000004 /* Frameworks */,
+);
+buildRules = (
+);
+dependencies = (
+);
+name = SwiftCode;
+packageProductDependencies = (
+ZIPFOUND000000000000002 /* ZIPFoundation */,
+);
+productName = SwiftCode;
+productReference = AA000001000000000000000C /* SwiftCode.app */;
+productType = "com.apple.product-type.application";
+};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+AA000001000000000000000A /* Project object */ = {
+isa = PBXProject;
+attributes = {
+BuildIndependentTargetsInParallel = 1;
+LastSwiftUpdateCheck = 1500;
+LastUpgradeCheck = 1500;
+TargetAttributes = {
+AA000001000000000000000B = {
+CreatedOnToolsVersion = 15.0;
+};
+};
+};
+buildConfigurationList = AA000001000000000000000A_CL /* Build configuration list for PBXProject "SwiftCode" */;
+compatibilityVersion = "Xcode 14.0";
+developmentRegion = en;
+hasScannedForEncodings = 0;
+knownRegions = (
+en,
+Base,
+);
+mainGroup = AA000001000000000000000E /* MainGroup */;
+productRefGroup = AA000001000000000000000C_PRODUCTS /* Products */;
+projectDirPath = "";
+projectRoot = "";
+packageReferences = (
+ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+);
+targets = (
+AA000001000000000000000B /* SwiftCode */,
+);
+};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+AA000001000000000000000B_RES /* Resources */ = {
+isa = PBXResourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+AA000010000000000000014A /* Assets.xcassets in Resources */,
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+ZIPFOUND000000000000004 /* Frameworks */ = {
+isa = PBXFrameworksBuildPhase;
+buildActionMask = 2147483647;
+files = (
+ZIPFOUND000000000000003 /* ZIPFoundation in Frameworks */,
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+AA000001000000000000000B_SRC /* Sources */ = {
+isa = PBXSourcesBuildPhase;
+buildActionMask = 2147483647;
+files = (
+AA000010000000000000001A /* SwiftCodeApp.swift in Sources */,
+AA000010000000000000002A /* ContentView.swift in Sources */,
+AA000010000000000000003A /* Project.swift in Sources */,
+AA000010000000000000004A /* FileNode.swift in Sources */,
+AA000010000000000000005A /* AgentMode.swift in Sources */,
+AA000010000000000000006A /* KeychainService.swift in Sources */,
+AA000010000000000000007A /* ProjectManager.swift in Sources */,
+AA000010000000000000008A /* OpenRouterService.swift in Sources */,
+AA000010000000000000009A /* GitHubService.swift in Sources */,
+AA00001000000000000000AA /* ZipImporter.swift in Sources */,
+AA00001000000000000000BA /* SyntaxHighlighter.swift in Sources */,
+AA00001000000000000000CA /* ProjectsDashboardView.swift in Sources */,
+AA00001000000000000000DA /* ProjectWorkspaceView.swift in Sources */,
+AA00001000000000000000EA /* CodeEditorView.swift in Sources */,
+AA00001000000000000000FA /* FileNavigatorView.swift in Sources */,
+AA000010000000000000010A /* AIAssistantView.swift in Sources */,
+AA000010000000000000011A /* GitHubIntegrationView.swift in Sources */,
+AA000010000000000000012A /* BuildStatusView.swift in Sources */,
+AA000010000000000000013A /* SettingsView.swift in Sources */,
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+AA000001000000000000000A_DEBUG /* Debug */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+ALWAYS_SEARCH_USER_PATHS = NO;
+ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+CLANG_ANALYZER_NONNULL = YES;
+CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+CLANG_ENABLE_MODULES = YES;
+CLANG_ENABLE_OBJC_ARC = YES;
+CLANG_ENABLE_OBJC_WEAK = YES;
+CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+CLANG_WARN_BOOL_CONVERSION = YES;
+CLANG_WARN_COMMA = YES;
+CLANG_WARN_CONSTANT_CONVERSION = YES;
+CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+CLANG_WARN_EMPTY_BODY = YES;
+CLANG_WARN_ENUM_CONVERSION = YES;
+CLANG_WARN_INFINITE_RECURSION = YES;
+CLANG_WARN_INT_CONVERSION = YES;
+CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+CLANG_WARN_STRICT_PROTOTYPES = YES;
+CLANG_WARN_SUSPICIOUS_MOVE = YES;
+CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+CLANG_WARN_UNREACHABLE_CODE = YES;
+CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+COPY_PHASE_STRIP = NO;
+DEBUG_INFORMATION_FORMAT = dwarf;
+ENABLE_STRICT_OBJC_MSGSEND = YES;
+ENABLE_TESTABILITY = YES;
+ENABLE_USER_SCRIPT_SANDBOXING = YES;
+GCC_C_LANGUAGE_STANDARD = gnu17;
+GCC_DYNAMIC_NO_PIC = NO;
+GCC_NO_COMMON_BLOCKS = YES;
+GCC_OPTIMIZATION_LEVEL = 0;
+GCC_PREPROCESSOR_DEFINITIONS = (
+"DEBUG=1",
+"$(inherited)",
+);
+GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+GCC_WARN_UNDECLARED_SELECTOR = YES;
+GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+GCC_WARN_UNUSED_FUNCTION = YES;
+GCC_WARN_UNUSED_VARIABLE = YES;
+IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+MTL_FAST_MATH = YES;
+ONLY_ACTIVE_ARCH = YES;
+SDKROOT = iphoneos;
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+};
+name = Debug;
+};
+AA000001000000000000000A_RELEASE /* Release */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+ALWAYS_SEARCH_USER_PATHS = NO;
+ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+CLANG_ANALYZER_NONNULL = YES;
+CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+CLANG_ENABLE_MODULES = YES;
+CLANG_ENABLE_OBJC_ARC = YES;
+CLANG_ENABLE_OBJC_WEAK = YES;
+CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+CLANG_WARN_BOOL_CONVERSION = YES;
+CLANG_WARN_COMMA = YES;
+CLANG_WARN_CONSTANT_CONVERSION = YES;
+CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+CLANG_WARN_EMPTY_BODY = YES;
+CLANG_WARN_ENUM_CONVERSION = YES;
+CLANG_WARN_INFINITE_RECURSION = YES;
+CLANG_WARN_INT_CONVERSION = YES;
+CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+CLANG_WARN_STRICT_PROTOTYPES = YES;
+CLANG_WARN_SUSPICIOUS_MOVE = YES;
+CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+CLANG_WARN_UNREACHABLE_CODE = YES;
+CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+COPY_PHASE_STRIP = NO;
+DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+ENABLE_NS_ASSERTIONS = NO;
+ENABLE_STRICT_OBJC_MSGSEND = YES;
+ENABLE_USER_SCRIPT_SANDBOXING = YES;
+GCC_C_LANGUAGE_STANDARD = gnu17;
+GCC_NO_COMMON_BLOCKS = YES;
+GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+GCC_WARN_UNDECLARED_SELECTOR = YES;
+GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+GCC_WARN_UNUSED_FUNCTION = YES;
+GCC_WARN_UNUSED_VARIABLE = YES;
+IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+MTL_ENABLE_DEBUG_INFO = NO;
+MTL_FAST_MATH = YES;
+SDKROOT = iphoneos;
+SWIFT_COMPILATION_MODE = wholemodule;
+SWIFT_OPTIMIZATION_LEVEL = "-O";
+VALIDATE_PRODUCT = YES;
+};
+name = Release;
+};
+AA000001000000000000000B_DEBUG /* Debug */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+CODE_SIGN_STYLE = Automatic;
+CURRENT_PROJECT_VERSION = 1;
+GENERATE_INFOPLIST_FILE = NO;
+INFOPLIST_FILE = SwiftCode/Info.plist;
+IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+LD_RUNPATH_SEARCH_PATHS = (
+"$(inherited)",
+"@executable_path/Frameworks",
+);
+MARKETING_VERSION = 1.0;
+PRODUCT_BUNDLE_IDENTIFIER = com.swiftcode.app;
+PRODUCT_NAME = SwiftCode;
+SWIFT_EMIT_LOC_STRINGS = YES;
+SWIFT_VERSION = 5.0;
+TARGETED_DEVICE_FAMILY = "1,2";
+};
+name = Debug;
+};
+AA000001000000000000000B_RELEASE /* Release */ = {
+isa = XCBuildConfiguration;
+buildSettings = {
+ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+CODE_SIGN_STYLE = Automatic;
+CURRENT_PROJECT_VERSION = 1;
+GENERATE_INFOPLIST_FILE = NO;
+INFOPLIST_FILE = SwiftCode/Info.plist;
+IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+LD_RUNPATH_SEARCH_PATHS = (
+"$(inherited)",
+"@executable_path/Frameworks",
+);
+MARKETING_VERSION = 1.0;
+PRODUCT_BUNDLE_IDENTIFIER = com.swiftcode.app;
+PRODUCT_NAME = SwiftCode;
+SWIFT_EMIT_LOC_STRINGS = YES;
+SWIFT_VERSION = 5.0;
+TARGETED_DEVICE_FAMILY = "1,2";
+};
+name = Release;
+};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+AA000001000000000000000A_CL /* Build configuration list for PBXProject "SwiftCode" */ = {
+isa = XCConfigurationList;
+buildConfigurations = (
+AA000001000000000000000A_DEBUG /* Debug */,
+AA000001000000000000000A_RELEASE /* Release */,
+);
+defaultConfigurationIsVisible = 0;
+defaultConfigurationName = Release;
+};
+AA000001000000000000000B_CL /* Build configuration list for PBXNativeTarget "SwiftCode" */ = {
+isa = XCConfigurationList;
+buildConfigurations = (
+AA000001000000000000000B_DEBUG /* Debug */,
+AA000001000000000000000B_RELEASE /* Release */,
+);
+defaultConfigurationIsVisible = 0;
+defaultConfigurationName = Release;
+};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+isa = XCRemoteSwiftPackageReference;
+repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+requirement = {
+kind = upToNextMajorVersion;
+minimumVersion = "0.9.0";
+};
+};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+ZIPFOUND000000000000002 /* ZIPFoundation */ = {
+isa = XCSwiftPackageProductDependency;
+package = ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+productName = ZIPFoundation;
+};
+/* End XCSwiftPackageProductDependency section */
+
+};
+rootObject = AA000001000000000000000A /* Project object */;
+}
