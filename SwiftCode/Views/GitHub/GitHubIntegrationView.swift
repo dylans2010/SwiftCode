@@ -354,6 +354,7 @@ struct GitHubIntegrationView: View {
         isLoading = true
         // Pull would require fetching each known file from GitHub and updating local copies.
         // For simplicity we show an informational message.
+        isLoading = false
         successMessage = "Pull functionality: Files pulled from '\(repoURL)'. (Implement per-file pull as needed.)"
         showSuccess = true
     }

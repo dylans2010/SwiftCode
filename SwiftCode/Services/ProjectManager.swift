@@ -99,7 +99,7 @@ struct ContentView: View {
             Image(systemName: "swift")
                 .imageScale(.large)
                 .foregroundStyle(.orange)
-            Text("\\(projectName)")
+            Text("\(projectName)")
                 .font(.title)
                 .bold()
         }

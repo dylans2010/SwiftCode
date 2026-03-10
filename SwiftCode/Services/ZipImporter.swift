@@ -1,4 +1,5 @@
 import Foundation
+import ZIPFoundation
 
 /// Handles importing a .zip archive and converting it into a SwiftCode project.
 final class ZipImporter {
@@ -48,18 +49,10 @@ final class ZipImporter {
         return project
     }
 
-    // MARK: - Unzip (using Process on simulator/macOS; fallback unzip command)
+    // MARK: - Unzip (using ZIPFoundation)
 
     private func unzip(_ zipURL: URL, to destination: URL) throws {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-        process.arguments = ["-q", zipURL.path, "-d", destination.path]
-        try process.run()
-        process.waitUntilExit()
-
-        guard process.terminationStatus == 0 else {
-            throw ZipImporterError.extractionFailed
-        }
+        try fm.unzipItem(at: zipURL, to: destination)
     }
 
     // MARK: - Find Root
@@ -138,6 +131,8 @@ final class ZipImporter {
 
     // MARK: - Helpers
 
+    private let maxProjectNameLength = 64
+
     private func sanitizeName(_ name: String) -> String {
         let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_ "))
         return name
@@ -146,7 +141,7 @@ final class ZipImporter {
             .map { String($0) }
             .joined()
             .trimmingCharacters(in: .whitespacesAndNewlines)
-            .prefix(64)
+            .prefix(maxProjectNameLength)
             .description
     }
 }

@@ -66,7 +66,7 @@ final class OpenRouterService {
         messages: [AIMessage],
         model: String,
         systemPrompt: String,
-        onToken: @escaping @Sendable (String) -> Void
+        onToken: @escaping @Sendable (String) async -> Void
     ) async throws {
         guard let apiKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey),
               !apiKey.isEmpty else {
@@ -111,7 +111,7 @@ final class OpenRouterService {
                   let chunk = try? JSONDecoder().decode(OpenRouterStreamChunk.self, from: data),
                   let token = chunk.choices.first?.delta.content else { continue }
 
-            onToken(token)
+            await onToken(token)
         }
     }
 

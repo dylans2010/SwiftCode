@@ -258,7 +258,7 @@ struct AIAssistantView: View {
                     model: settings.selectedModel,
                     systemPrompt: selectedMode.systemPrompt
                 ) { token in
-                    Task { @MainActor in
+                    await MainActor.run {
                         streamingResponse += token
                     }
                 }

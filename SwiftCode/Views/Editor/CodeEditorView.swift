@@ -176,6 +176,8 @@ struct TextEditorRepresentable: UIViewRepresentable {
     var wordWrap: Bool
     var searchQuery: String
 
+    // Returns a UIScrollView (the generic UIView type parameter) to support
+    // synchronized horizontal scrolling and line numbers side by side.
     func makeUIView(context: Context) -> UIScrollView {
         let scrollView = UIScrollView()
         scrollView.backgroundColor = UIColor(red: 0.11, green: 0.11, blue: 0.14, alpha: 1)

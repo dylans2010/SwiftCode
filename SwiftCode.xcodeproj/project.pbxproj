@@ -7,6 +7,7 @@ objectVersion = 56;
 objects = {
 
 /* Begin PBXBuildFile section */
+		ZIPFOUND000000000000003 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ZIPFOUND000000000000002 /* ZIPFoundation */; };
 AA000010000000000000001A /* SwiftCodeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000001B /* SwiftCodeApp.swift */; };
 AA000010000000000000002A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000002B /* ContentView.swift */; };
 AA000010000000000000003A /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000003B /* Project.swift */; };
@@ -196,12 +197,16 @@ buildConfigurationList = AA000001000000000000000B_CL /* Build configuration list
 buildPhases = (
 AA000001000000000000000B_SRC /* Sources */,
 AA000001000000000000000B_RES /* Resources */,
+ZIPFOUND000000000000004 /* Frameworks */,
 );
 buildRules = (
 );
 dependencies = (
 );
 name = SwiftCode;
+packageProductDependencies = (
+ZIPFOUND000000000000002 /* ZIPFoundation */,
+);
 productName = SwiftCode;
 productReference = AA000001000000000000000C /* SwiftCode.app */;
 productType = "com.apple.product-type.application";
@@ -233,6 +238,9 @@ mainGroup = AA000001000000000000000E /* MainGroup */;
 productRefGroup = AA000001000000000000000C_PRODUCTS /* Products */;
 projectDirPath = "";
 projectRoot = "";
+packageReferences = (
+ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+);
 targets = (
 AA000001000000000000000B /* SwiftCode */,
 );
@@ -249,6 +257,17 @@ AA000010000000000000014A /* Assets.xcassets in Resources */,
 runOnlyForDeploymentPostprocessing = 0;
 };
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+ZIPFOUND000000000000004 /* Frameworks */ = {
+isa = PBXFrameworksBuildPhase;
+buildActionMask = 2147483647;
+files = (
+ZIPFOUND000000000000003 /* ZIPFoundation in Frameworks */,
+);
+runOnlyForDeploymentPostprocessing = 0;
+};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 AA000001000000000000000B_SRC /* Sources */ = {
@@ -466,6 +485,25 @@ defaultConfigurationIsVisible = 0;
 defaultConfigurationName = Release;
 };
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+isa = XCRemoteSwiftPackageReference;
+repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+requirement = {
+kind = upToNextMajorVersion;
+minimumVersion = "0.9.0";
+};
+};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+ZIPFOUND000000000000002 /* ZIPFoundation */ = {
+isa = XCSwiftPackageProductDependency;
+package = ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+productName = ZIPFoundation;
+};
+/* End XCSwiftPackageProductDependency section */
 
 };
 rootObject = AA000001000000000000000A /* Project object */;
