@@ -48,7 +48,7 @@ struct ProjectsDashboardView: View {
                     }
                 }
             }
-            .navigationTitle("SwiftCode")
+            .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.large)
             .toolbar { toolbarContent }
             .sheet(isPresented: $showNewProjectSheet) { newProjectSheet }
@@ -152,7 +152,7 @@ struct ProjectsDashboardView: View {
         Button {
             exportProject(project)
         } label: {
-            Label("Export as ZIP", systemImage: "square.and.arrow.up")
+            Label("Export As ZIP", systemImage: "square.and.arrow.up")
         }
 
         Divider()
@@ -345,7 +345,7 @@ struct ProjectCardView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "doc.fill")
                         .font(.caption2)
-                    Text("\(project.fileCount) file\(project.fileCount == 1 ? "" : "s")")
+                    Text("\(project.fileCount) File\(project.fileCount == 1 ? "" : "s")")
                         .font(.caption)
                 }
                 .foregroundStyle(.secondary)

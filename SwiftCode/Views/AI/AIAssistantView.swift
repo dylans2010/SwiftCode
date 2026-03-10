@@ -84,7 +84,7 @@ struct AIAssistantView: View {
                     Image(systemName: "cpu.fill")
                         .font(.caption2)
                         .foregroundStyle(.purple)
-                    Text("Agent loop · iteration \(agentIterationCount)/\(maxAgentIterations)")
+                    Text("Agent Loop · Iteration \(agentIterationCount)/\(maxAgentIterations)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                     Spacer()

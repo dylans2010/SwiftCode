@@ -16,7 +16,7 @@ struct CommandPaletteView: View {
         case installDependency = "Install Dependency"
         case openSettings = "Open Settings"
         case runBuild = "Run Build"
-        case goToLine = "Go to Line"
+        case goToLine = "Go To Line"
         case openSymbolNav = "Symbol Navigator"
         case openDiffViewer = "Diff Viewer"
         case openErrors = "View Errors"
@@ -75,7 +75,7 @@ struct CommandPaletteView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "terminal.fill")
                         .foregroundStyle(.orange)
-                    TextField("Type a command...", text: $searchText)
+                    TextField("Type A Command...", text: $searchText)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                     if !searchText.isEmpty {

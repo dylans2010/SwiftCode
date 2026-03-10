@@ -19,7 +19,7 @@ struct GoToLineView: View {
                         .font(.system(size: 32))
                         .foregroundStyle(.orange)
 
-                    Text("Go to Line")
+                    Text("Go To Line")
                         .font(.title3.weight(.semibold))
                         .foregroundStyle(.white)
 
@@ -29,12 +29,12 @@ struct GoToLineView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    Text("Total lines: \(totalLines)")
+                    Text("Total Lines: \(totalLines)")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
 
-                TextField("Line number", text: $lineNumber)
+                TextField("Line Number", text: $lineNumber)
                     .keyboardType(.numberPad)
                     .font(.title2.monospaced())
                     .multilineTextAlignment(.center)

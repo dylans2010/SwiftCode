@@ -27,7 +27,7 @@ struct ProjectSettingsView: View {
                 }
 
                 Section("GitHub") {
-                    TextField("Repository (owner/repo)", text: $githubRepo)
+                    TextField("Repository (Owner/Repo)", text: $githubRepo)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 }

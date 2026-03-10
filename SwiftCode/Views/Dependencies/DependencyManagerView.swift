@@ -22,9 +22,9 @@ struct DependencyManagerView: View {
                         Image(systemName: "shippingbox")
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary.opacity(0.5))
-                        Text("No dependencies yet")
+                        Text("No Dependencies Yet")
                             .foregroundStyle(.secondary)
-                        Text("Add Swift Package dependencies to your project")
+                        Text("Add Swift Package dependencies to your project.")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }

@@ -29,9 +29,9 @@ struct DiffViewerView: View {
                         Image(systemName: "arrow.left.arrow.right")
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary.opacity(0.5))
-                        Text("No changes to display")
+                        Text("No Changes To Display")
                             .foregroundStyle(.secondary)
-                        Text("Edits to the current file will appear here")
+                        Text("Edits to the current file will appear here.")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }

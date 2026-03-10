@@ -16,7 +16,7 @@ struct CodeSearchView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
-                    TextField("Search functions, variables, files...", text: $searchQuery)
+                    TextField("Search Functions, Variables, Files...", text: $searchQuery)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .onSubmit { performSearch() }
@@ -44,7 +44,7 @@ struct CodeSearchView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary.opacity(0.5))
-                        Text("No results found")
+                        Text("No Results Found")
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -53,7 +53,7 @@ struct CodeSearchView: View {
                         Image(systemName: "doc.text.magnifyingglass")
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary.opacity(0.5))
-                        Text("Search across your entire project")
+                        Text("Search across your entire project.")
                             .foregroundStyle(.secondary)
                             .font(.subheadline)
                     }

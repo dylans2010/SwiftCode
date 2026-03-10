@@ -44,7 +44,7 @@ struct ToolbarCustomizationView: View {
                 }
 
                 Section {
-                    Button("Reset to Defaults") {
+                    Button("Reset To Defaults") {
                         toolbarManager.resetToDefaults()
                     }
                     .foregroundStyle(.red)

@@ -34,7 +34,7 @@ struct ErrorsPanelView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 40))
                             .foregroundStyle(.green.opacity(0.6))
-                        Text("No issues found")
+                        Text("No Issues Found")
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -151,7 +151,7 @@ struct ErrorsPanelView: View {
                         fileName: fileName,
                         filePath: relativePath,
                         lineNumber: i + 1,
-                        message: "Unexpected closing brace",
+                        message: "Unexpected Closing Brace",
                         severity: .error,
                         source: .syntaxAnalysis
                     ))
@@ -163,7 +163,7 @@ struct ErrorsPanelView: View {
                     fileName: fileName,
                     filePath: relativePath,
                     lineNumber: lines.count,
-                    message: "Expected \(braceCount) closing brace(s)",
+                    message: "Expected \(braceCount) Closing Brace(s)",
                     severity: .error,
                     source: .syntaxAnalysis
                 ))

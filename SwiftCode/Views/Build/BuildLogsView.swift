@@ -31,14 +31,14 @@ struct BuildLogsView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 if isLoading {
-                    ProgressView("Loading build logs...")
+                    ProgressView("Loading Build Logs...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if logs.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "doc.text.magnifyingglass")
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary.opacity(0.5))
-                        Text("No build logs available")
+                        Text("No Build Logs Available")
                             .foregroundStyle(.secondary)
                         if owner.isEmpty || repo.isEmpty {
                             Text("Connect a GitHub repository to view build logs")

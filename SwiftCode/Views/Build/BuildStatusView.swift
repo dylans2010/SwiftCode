@@ -167,7 +167,7 @@ struct BuildStatusView: View {
 
             VStack(spacing: 8) {
                 if workflowRuns.isEmpty && !isLoading {
-                    Text("No workflow runs found")
+                    Text("No Workflow Runs Found")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
@@ -194,7 +194,7 @@ struct BuildStatusView: View {
 
             VStack(spacing: 8) {
                 if releases.isEmpty && !isLoading {
-                    Text("No releases yet")
+                    Text("No Releases Yet")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity)
@@ -220,7 +220,7 @@ struct BuildStatusView: View {
                         .padding()
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    ProgressView("Loading logs...")
+                    ProgressView("Loading Logs...")
                         .padding()
                 }
             }
@@ -254,7 +254,7 @@ struct BuildStatusView: View {
                 } catch {
                     fetchedRuns = []
                     await MainActor.run {
-                        errorMessage = "Workflow runs: \(error.localizedDescription)"
+                        errorMessage = "Workflow Runs: \(error.localizedDescription)"
                     }
                 }
                 do {
