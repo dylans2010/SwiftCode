@@ -3,9 +3,13 @@ import UniformTypeIdentifiers
 
 struct ProjectsDashboardView: View {
     @EnvironmentObject private var projectManager: ProjectManager
+    @EnvironmentObject private var settings: AppSettings
+    @State private var showCreationSheet = false
     @State private var showNewProjectSheet = false
     @State private var newProjectName = ""
     @State private var showImportPicker = false
+    @State private var showGitHubImportSheet = false
+    @State private var githubImportURL = ""
     @State private var showRenameSheet = false
     @State private var projectToRename: Project?
     @State private var renameText = ""
@@ -15,10 +19,22 @@ struct ProjectsDashboardView: View {
     @State private var exportURL: URL?
     @State private var showShareSheet = false
     @State private var showSettings = false
+    @State private var isImporting = false
 
-    private let columns = [
-        GridItem(.adaptive(minimum: 200, maximum: 280), spacing: 20)
-    ]
+    private var gridColumns: [GridItem] {
+        [GridItem(.adaptive(minimum: 200, maximum: 280), spacing: 20)]
+    }
+
+    private var sortedProjects: [Project] {
+        switch settings.dashboardSortOrder {
+        case .name:
+            return projectManager.projects.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        case .lastOpened:
+            return projectManager.projects.sorted { $0.lastOpened > $1.lastOpened }
+        case .creationDate:
+            return projectManager.projects.sorted { $0.createdAt > $1.createdAt }
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -38,20 +54,32 @@ struct ProjectsDashboardView: View {
                     emptyStateView
                 } else {
                     ScrollView {
-                        LazyVGrid(columns: columns, spacing: 20) {
-                            ForEach(projectManager.projects) { project in
-                                ProjectCardView(project: project)
-                                    .onTapGesture { projectManager.openProject(project) }
-                                    .contextMenu { contextMenu(for: project) }
+                        if settings.dashboardLayout == .grid {
+                            LazyVGrid(columns: gridColumns, spacing: 20) {
+                                ForEach(sortedProjects) { project in
+                                    ProjectCardView(project: project, showIcon: settings.showProjectIcons)
+                                        .onTapGesture { projectManager.openProject(project) }
+                                        .contextMenu { contextMenu(for: project) }
+                                }
                             }
+                            .padding()
+                        } else {
+                            LazyVStack(spacing: 8) {
+                                ForEach(sortedProjects) { project in
+                                    ProjectListRowView(project: project, showIcon: settings.showProjectIcons, showPreview: settings.showFolderPreview)
+                                        .onTapGesture { projectManager.openProject(project) }
+                                        .contextMenu { contextMenu(for: project) }
+                                }
+                            }
+                            .padding()
                         }
-                        .padding()
                     }
                 }
             }
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.large)
             .toolbar { toolbarContent }
+            .sheet(isPresented: $showCreationSheet) { creationOptionsSheet }
             .sheet(isPresented: $showNewProjectSheet) { newProjectSheet }
             .sheet(isPresented: $showImportPicker) {
                 FileImporterRepresentableView(
@@ -64,6 +92,7 @@ struct ProjectsDashboardView: View {
                     }
                 }
             }
+            .sheet(isPresented: $showGitHubImportSheet) { gitHubImportSheet }
             .sheet(isPresented: $showRenameSheet) { renameSheet }
             .sheet(isPresented: $showShareSheet) {
                 if let url = exportURL {
@@ -92,26 +121,17 @@ struct ProjectsDashboardView: View {
             Text("No Projects Yet")
                 .font(.title2).bold()
                 .foregroundStyle(.white)
-            Text("Create a new project or import a zip archive\nto get started.")
+            Text("Create a new project, import a zip archive,\nor clone from GitHub to get started.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 16) {
                 Button {
-                    showNewProjectSheet = true
+                    showCreationSheet = true
                 } label: {
                     Label("New Project", systemImage: "plus.circle.fill")
                         .padding(.horizontal, 20).padding(.vertical, 10)
                         .background(.orange.opacity(0.8), in: Capsule())
-                        .foregroundStyle(.white)
-                }
-
-                Button {
-                    showImportPicker = true
-                } label: {
-                    Label("Import Zip", systemImage: "archivebox.fill")
-                        .padding(.horizontal, 20).padding(.vertical, 10)
-                        .background(.blue.opacity(0.6), in: Capsule())
                         .foregroundStyle(.white)
                 }
             }
@@ -123,12 +143,7 @@ struct ProjectsDashboardView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
             Button {
-                showImportPicker = true
-            } label: {
-                Label("Import", systemImage: "archivebox.fill")
-            }
-            Button {
-                showNewProjectSheet = true
+                showCreationSheet = true
             } label: {
                 Label("New Project", systemImage: "plus")
             }
@@ -140,6 +155,136 @@ struct ProjectsDashboardView: View {
                 Label("Settings", systemImage: "gear")
             }
         }
+    }
+
+    // MARK: - Creation Options Sheet
+
+    private var creationOptionsSheet: some View {
+        NavigationStack {
+            List {
+                Button {
+                    showCreationSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showNewProjectSheet = true
+                    }
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Create New Project")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            Text("Generate a default SwiftUI project structure")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "plus.rectangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.title3)
+                    }
+                }
+
+                Button {
+                    showCreationSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showImportPicker = true
+                    }
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Import From ZIP")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            Text("Extract a ZIP archive into a new project")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "archivebox.fill")
+                            .foregroundStyle(.blue)
+                            .font(.title3)
+                    }
+                }
+
+                Button {
+                    showCreationSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showGitHubImportSheet = true
+                    }
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Import From GitHub")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            Text("Download a repository archive from GitHub")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                            .foregroundStyle(.purple)
+                            .font(.title3)
+                    }
+                }
+            }
+            .navigationTitle("Create Project")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showCreationSheet = false }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    // MARK: - GitHub Import Sheet
+
+    private var gitHubImportSheet: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Image(systemName: "chevron.left.forwardslash.chevron.right")
+                    .font(.system(size: 60))
+                    .foregroundStyle(.purple)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Repository URL")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    TextField("https://github.com/owner/repo", text: $githubImportURL)
+                        .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                }
+                .padding(.horizontal)
+
+                if isImporting {
+                    ProgressView("Importing repository...")
+                        .padding()
+                }
+
+                Spacer()
+            }
+            .padding(.top, 32)
+            .navigationTitle("Import From GitHub")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        githubImportURL = ""
+                        showGitHubImportSheet = false
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Import") {
+                        importFromGitHub()
+                    }
+                    .disabled(githubImportURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isImporting)
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 
     @ViewBuilder
@@ -266,6 +411,29 @@ struct ProjectsDashboardView: View {
         }
     }
 
+    private func importFromGitHub() {
+        let url = githubImportURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !url.isEmpty else { return }
+        isImporting = true
+        Task {
+            do {
+                let project = try await GitHubImporter.shared.importRepository(from: url)
+                await MainActor.run {
+                    isImporting = false
+                    githubImportURL = ""
+                    showGitHubImportSheet = false
+                    projectManager.openProject(project)
+                }
+            } catch {
+                await MainActor.run {
+                    isImporting = false
+                    showGitHubImportSheet = false
+                    showError(error)
+                }
+            }
+        }
+    }
+
     private func renameProject() {
         guard let project = projectToRename else { return }
         do {
@@ -314,6 +482,64 @@ struct ProjectsDashboardView: View {
     }
 }
 
+// MARK: - Project List Row (for list layout)
+
+struct ProjectListRowView: View {
+    let project: Project
+    var showIcon: Bool = true
+    var showPreview: Bool = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            if showIcon {
+                Image(systemName: "swift")
+                    .font(.title3)
+                    .foregroundStyle(.orange)
+                    .frame(width: 32)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(project.name)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+
+                HStack(spacing: 8) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.fill")
+                            .font(.caption2)
+                        Text("\(project.fileCount) File\(project.fileCount == 1 ? "" : "s")")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.secondary)
+
+                    Text("·")
+                        .foregroundStyle(.secondary)
+
+                    Text(project.lastOpened, style: .relative)
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
+
+                if showPreview, let firstFile = project.files.first(where: { !$0.isDirectory }) {
+                    Text(firstFile.name)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer()
+
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(12)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+}
+
 // MARK: - Share Sheet (UIActivityViewController wrapper)
 
 import UIKit
@@ -332,14 +558,17 @@ struct ShareSheet: UIViewControllerRepresentable {
 
 struct ProjectCardView: View {
     let project: Project
+    var showIcon: Bool = true
     @State private var isHovered = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "swift")
-                    .font(.title2)
-                    .foregroundStyle(.orange)
+                if showIcon {
+                    Image(systemName: "swift")
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+                }
                 Spacer()
                 Text(project.lastOpened, style: .relative)
                     .font(.caption2)
