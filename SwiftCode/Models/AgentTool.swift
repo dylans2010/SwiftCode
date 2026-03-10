@@ -75,11 +75,11 @@ struct AgentTool: Identifiable {
     }
 }
 
-// MARK: - Tool Registry (59 tools total)
+// MARK: - Tool Registry (59 built-in tools + custom tools)
 
 extension AgentTool {
 
-    static let all: [AgentTool] =
+    static let builtIns: [AgentTool] =
         fileSystemTools +
         codeAnalysisTools +
         codeGenTools +
@@ -89,6 +89,11 @@ extension AgentTool {
         dependencyTools +
         buildTools +
         searchTools
+
+    /// All available tools, including user-defined custom tools from CustomToolRegistry.
+    static var all: [AgentTool] {
+        builtIns + CustomToolRegistry.shared.asAgentTools
+    }
 
     // MARK: File System (12)
 

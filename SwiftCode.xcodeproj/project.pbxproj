@@ -51,6 +51,7 @@ AA00001000000000000004EA /* ToolbarCustomizationView.swift in Sources */ = {isa 
 AA00001000000000000005AA /* CodingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005AB /* CodingManager.swift */; };
 AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005BB /* ToolbarActionManager.swift */; };
 AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005CB /* SFSymbolBrowserView.swift */; };
+GS0000000000000000000001 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GS0000000000000000000002 /* GeneralSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -99,6 +100,7 @@ AA00001000000000000004EB /* ToolbarCustomizationView.swift */ = {isa = PBXFileRe
 AA00001000000000000005AB /* CodingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodingManager.swift; sourceTree = "<group>"; };
 AA00001000000000000005BB /* ToolbarActionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarActionManager.swift; sourceTree = "<group>"; };
 AA00001000000000000005CB /* SFSymbolBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFSymbolBrowserView.swift; sourceTree = "<group>"; };
+GS0000000000000000000002 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -244,6 +246,7 @@ isa = PBXGroup;
 children = (
 AA000010000000000000013B /* SettingsView.swift */,
 AA00001000000000000004DB /* ProjectSettingsView.swift */,
+GS0000000000000000000002 /* GeneralSettingsView.swift */,
 );
 path = Settings;
 sourceTree = "<group>";
@@ -481,6 +484,7 @@ AA00001000000000000004EA /* ToolbarCustomizationView.swift in Sources */,
 AA00001000000000000005AA /* CodingManager.swift in Sources */,
 AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */,
 AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */,
+GS0000000000000000000001 /* GeneralSettingsView.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
