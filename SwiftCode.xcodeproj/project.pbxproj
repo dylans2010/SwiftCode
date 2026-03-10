@@ -53,7 +53,7 @@ AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */ = {isa = PB
 AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005CB /* SFSymbolBrowserView.swift */; };
 GS0000000000000000000001 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GS0000000000000000000002 /* GeneralSettingsView.swift */; };
 CR000000000000000000001A /* CodeReaderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CR000000000000000000001B /* CodeReaderManager.swift */; };
-CG000000000000000000002A /* GitHubImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = CG000000000000000000002B /* GitHubImport.swift */; };
+CG000000000000000000002A /* GitHubImportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CG000000000000000000002B /* GitHubImportManager.swift */; };
 BG000000000000000000002A /* GitHubAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000002B /* GitHubAuth.swift */; };
 BG000000000000000000003A /* GitHubAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000003B /* GitHubAPI.swift */; };
 BG000000000000000000004A /* GitHubImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000004B /* GitHubImport.swift */; };
@@ -110,7 +110,7 @@ AA00001000000000000005BB /* ToolbarActionManager.swift */ = {isa = PBXFileRefere
 AA00001000000000000005CB /* SFSymbolBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFSymbolBrowserView.swift; sourceTree = "<group>"; };
 GS0000000000000000000002 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
 CR000000000000000000001B /* CodeReaderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReaderManager.swift; sourceTree = "<group>"; };
-CG000000000000000000002B /* GitHubImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubImport.swift; sourceTree = "<group>"; };
+CG000000000000000000002B /* GitHubImportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubImportManager.swift; sourceTree = "<group>"; };
 BG000000000000000000002B /* GitHubAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAuth.swift; sourceTree = "<group>"; };
 BG000000000000000000003B /* GitHubAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAPI.swift; sourceTree = "<group>"; };
 BG000000000000000000004B /* GitHubImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubImport.swift; sourceTree = "<group>"; };
@@ -362,7 +362,7 @@ sourceTree = "<group>";
 CG000000000000000000001F /* GitHub */ = {
 isa = PBXGroup;
 children = (
-CG000000000000000000002B /* GitHubImport.swift */,
+CG000000000000000000002B /* GitHubImportManager.swift */,
 );
 path = GitHub;
 sourceTree = "<group>";
@@ -542,7 +542,7 @@ AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */,
 AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */,
 GS0000000000000000000001 /* GeneralSettingsView.swift in Sources */,
 CR000000000000000000001A /* CodeReaderManager.swift in Sources */,
-CG000000000000000000002A /* GitHubImport.swift in Sources */,
+CG000000000000000000002A /* GitHubImportManager.swift in Sources */,
 BG000000000000000000002A /* GitHubAuth.swift in Sources */,
 BG000000000000000000003A /* GitHubAPI.swift in Sources */,
 BG000000000000000000004A /* GitHubImport.swift in Sources */,
