@@ -60,8 +60,8 @@ enum AgentExecutionMode: String, CaseIterable {
     var description: String {
         switch self {
         case .assistant: return "Text Suggestions Only"
-        case .agent:     return "Tool calls with confirmation"
-        case .autonomous: return "Fully automated execution"
+        case .agent:     return "Tool Calls With Confirmation"
+        case .autonomous: return "Fully Automated Execution"
         }
     }
 
@@ -275,7 +275,7 @@ final class AgentController: ObservableObject {
         conversationHistory = []
         iterationCount = 0
 
-        state.addLog("Agent started. Goal: \(goal)")
+        state.addLog("Agent Started. Goal: \(goal)")
 
         activeTask = Task { [weak self] in
             guard let self else { return }
@@ -287,20 +287,20 @@ final class AgentController: ObservableObject {
         activeTask?.cancel()
         activeTask = nil
         state.status = .idle
-        state.addLog("Agent stopped by user.", level: .warning)
+        state.addLog("Agent Stopped By User.", level: .warning)
     }
 
     func pause() {
         activeTask?.cancel()
         activeTask = nil
         state.status = .paused
-        state.addLog("Agent paused.", level: .warning)
+        state.addLog("Agent Paused.", level: .warning)
     }
 
     func resume(projectManager: ProjectManager) {
         guard state.status == .paused else { return }
         state.status = .running
-        state.addLog("Agent resumed.")
+        state.addLog("Agent Resumed.")
         activeTask = Task { [weak self] in
             guard let self else { return }
             await self.runExecutionLoop(goal: self.state.currentGoal, projectManager: projectManager)
@@ -327,7 +327,7 @@ final class AgentController: ObservableObject {
         }
 
         state.status = .planning
-        state.addLog("Gathering project context…")
+        state.addLog("Gathering Project Context…")
 
         while !Task.isCancelled && iterationCount < maxIterations {
             guard state.status != .paused else { break }
@@ -368,7 +368,7 @@ final class AgentController: ObservableObject {
 
                 if toolCalls.isEmpty {
                     state.status = .completed
-                    state.addLog("Task completed successfully.", level: .success)
+                    state.addLog("Task Completed Successfully!", level: .success)
                     break
                 }
 
@@ -389,7 +389,7 @@ final class AgentController: ObservableObject {
 
         if iterationCount >= maxIterations && state.status == .running {
             state.status = .completed
-            state.addLog("Maximum iterations reached.", level: .warning)
+            state.addLog("Maximum Iterations Reached.", level: .warning)
         }
     }
 
@@ -495,7 +495,7 @@ final class AgentController: ObservableObject {
 
     private func gatherProjectContext(projectManager: ProjectManager) -> String {
         guard let project = projectManager.activeProject else {
-            return "No active project open."
+            return "No Active Project Open."
         }
         var ctx = "Project: \(project.name)\n"
         ctx += "Created: \(project.createdAt)\n\n"
@@ -532,7 +532,7 @@ final class AgentController: ObservableObject {
 
         \(toolsSection)
 
-        Project context:
+        Here is your only project context:
         \(context)
 
         Instructions:
@@ -540,11 +540,25 @@ final class AgentController: ObservableObject {
         2. Execute one tool at a time using the exact <tool_call> format shown above.
         3. Read tool results before proceeding to the next step.
         4. When the task is fully complete, summarise what was done WITHOUT any further tool calls.
+        5. Always include the full plan in every response.
+        6. Keep responses concise but complete.
+        7. Use the project context to inform your decisions.
+        8. If you encounter errors, explain them and suggest solutions.
+        9. Never modify files directly - always use the appropriate tool.
+        10. For file operations, always specify the full path relative to the project root.
+        11. When creating new files, include the full file path.
+        12. When editing files, specify the exact line numbers to modify.
+        13. For code generation, include the full code block with proper indentation.
+        14. If the user justs tells you to build an app without any other details/context, just build a simple app with it's full project setup, full code then reply to the user that the app is ready to run.
 
         Safety constraints:
         - Never delete the entire project directory.
         - Never access paths outside the project root.
         - Validate all parameters before execution.
+        - Confirm destructive operations before proceeding.
+        - Always check file existence before operations.
+        - Never execute commands that could compromise system security.
+        - Always verify paths before file operations.
         """
     }
 }
@@ -631,7 +645,7 @@ struct AgentInterfaceView: View {
             .buttonStyle(.plain)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("SwiftCode Agent")
+                Text("Agent (Beta)")
                     .font(.headline)
                     .foregroundColor(.white)
 
@@ -641,7 +655,7 @@ struct AgentInterfaceView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                     } else {
-                        Text("No project open")
+                        Text("No Project Open")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -691,7 +705,7 @@ struct AgentInterfaceView: View {
                 .textCase(.uppercase)
 
             TextField(
-                "Describe what you want the agent to do…",
+                "What should Agent build?,
                 text: $goalText,
                 axis: .vertical
             )
@@ -721,7 +735,7 @@ struct AgentInterfaceView: View {
             onExpand: { showTaskSheet = true }
         ) {
             if controller.state.tasks.isEmpty {
-                panelEmptyRow("No tasks yet")
+                panelEmptyRow("No Tasks Yet")
             } else {
                 ForEach(controller.state.tasks.prefix(5)) { task in
                     taskRow(task)
@@ -768,7 +782,7 @@ struct AgentInterfaceView: View {
             onExpand: { showPlanSheet = true }
         ) {
             if controller.state.plan.isEmpty {
-                panelEmptyRow("Plan will appear here once the agent starts")
+                panelEmptyRow("The plan that the agent creates will appear here.")
             } else {
                 ForEach(controller.state.plan.prefix(5)) { step in
                     planStepRow(step)
@@ -853,7 +867,7 @@ struct AgentInterfaceView: View {
             onExpand: { showProcessSheet = true }
         ) {
             if controller.state.process.isEmpty {
-                panelEmptyRow("Tool executions will appear here")
+                panelEmptyRow("Tool that the agent will execute will appear here")
             } else {
                 let recent = Array(controller.state.process.suffix(3).reversed())
                 ForEach(recent) { step in
@@ -907,7 +921,7 @@ struct AgentInterfaceView: View {
             onExpand: { showLogsSheet = true }
         ) {
             if controller.state.logs.isEmpty {
-                panelEmptyRow("Execution logs will appear here")
+                panelEmptyRow("Execution Logs Will Appear Here")
             } else {
                 let recent = Array(controller.state.logs.suffix(5).reversed())
                 ForEach(recent) { log in
@@ -1035,7 +1049,7 @@ struct AgentInterfaceView: View {
     }
 
     private func moreRow(_ count: Int) -> some View {
-        Text("+ \(count) more")
+        Text("+ \(count) More")
             .font(.caption2)
             .foregroundColor(.secondary)
             .frame(maxWidth: .infinity, alignment: .trailing)
