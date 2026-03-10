@@ -12,8 +12,9 @@ struct SwiftCodeApp: App {
                 .environmentObject(projectManager)
                 .environmentObject(settings)
                 .task {
-                    // Ensure the persistent Projects directory exists at launch
+                    // Ensure the persistent Projects and Models directories exist at launch
                     codingManager.ensureProjectsDirectory()
+                    codingManager.ensureModelsDirectory()
                 }
         }
     }
