@@ -380,6 +380,7 @@ struct GeneralSettingsView: View {
         NavigationStack {
             Form {
                 apiKeysSection
+                editorSection
                 themesSection
                 gitHubSection
                 agentConnectionsSection
@@ -516,6 +517,23 @@ struct GeneralSettingsView: View {
             Label("GitHub & Git", systemImage: "arrow.triangle.2.circlepath")
         } footer: {
             Text("Configure your GitHub token, Git identity, and default repository. These settings are shared across all projects.")
+        }
+    }
+
+    private var editorSection: some View {
+        Section {
+            Toggle(isOn: $settings.alwaysPinFilesView) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Always Pin Files View")
+                    Text("Keep the file navigator always visible in the code editor")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Label("Editor", systemImage: "pencil.and.outline")
+        } footer: {
+            Text("When enabled, the file navigator panel stays open by default whenever you open a project.")
         }
     }
 
