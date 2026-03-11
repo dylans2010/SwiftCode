@@ -3,7 +3,6 @@ import SwiftUI
 struct ProjectWorkspaceView: View {
     let project: Project
     @EnvironmentObject private var projectManager: ProjectManager
-    @StateObject private var toolbarManager = ToolbarManager.shared
 
     // Sheet state
     @State private var showNavigatorSheet = false
@@ -41,32 +40,23 @@ struct ProjectWorkspaceView: View {
         ZStack {
             Color(red: 0.10, green: 0.10, blue: 0.14).ignoresSafeArea()
 
-            HStack(spacing: 0) {
-                // Left Sidebar (Pinned Tools)
-                pinnedToolsSidebar
-                    .frame(width: 50)
+            VStack(spacing: 0) {
+                // Top Header (Project Info & Navigation)
+                projectHeader
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
                     .background(.ultraThinMaterial)
 
                 Divider().opacity(0.3)
 
-                VStack(spacing: 0) {
-                    // Top Header (Project Info & Navigation)
-                    projectHeader
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(.ultraThinMaterial)
+                // Horizontal toolbar at the top for iOS-friendly access
+                MainToolbarView()
 
-                    Divider().opacity(0.3)
+                Divider().opacity(0.3)
 
-                    // Toolbar moved to the top
-                    MainToolbarView()
-
-                    Divider().opacity(0.3)
-
-                    // Code Editor fills the available space
-                    CodeEditorView()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+                // Code Editor fills the available space
+                CodeEditorView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationBarHidden(true)
@@ -273,52 +263,7 @@ struct ProjectWorkspaceView: View {
         }
     }
 
-    private var pinnedToolsSidebar: some View {
-        VStack(spacing: 20) {
-            Spacer().frame(height: 40)
-
-            ForEach(toolbarManager.enabledTools) { tool in
-                Button {
-                    handleToolbarAction(tool.id)
-                } label: {
-                    Image(systemName: tool.icon)
-                        .font(.system(size: 20))
-                        .foregroundStyle(iconColor(for: tool.id))
-                }
-                .buttonStyle(.plain)
-            }
-
-            Spacer()
-        }
-        .padding(.vertical, 10)
-    }
-
-    private func iconColor(for toolId: String) -> Color {
-        switch toolId {
-        case "file_navigator", "create_file", "create_folder": return .orange
-        case "ai_agent", "ai_code_gen", "ai_code_fix", "ai_refactor": return .purple
-        case "github_actions", "commit_changes", "push_repo", "pull_repo",
-             "git_history": return .blue
-        case "build_trigger", "build_status", "build_logs", "terminal", "prepare_compile": return .orange
-        case "errors_viewer": return .red
-        case "dependency_manager", "install_dependency", "update_dependencies": return .teal
-        case "code_search", "symbol_navigator", "project_index", "go_to_line",
-             "symbol_outline": return .cyan
-        case "sf_symbols_browser": return .indigo
-        case "local_simulation": return .green
-        case "plugin_manager": return .pink
-        case "project_templates": return .mint
-        case "file_preview": return .yellow
-        default: return .secondary
-        }
-    }
-
     // MARK: - Tool Actions
-
-    private func handleToolbarAction(_ toolId: String) {
-        guard let destination = ToolbarActionManager.shared.destination(for: toolId) else { return }
-        openSheet(for: destination)
-    }
 
     private func openSheet(for destination: ToolbarActionManager.SheetDestination) {
         switch destination {
