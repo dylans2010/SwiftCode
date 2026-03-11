@@ -234,6 +234,7 @@ struct SettingsView: View {
     @State private var tokenSaved = false
     @State private var customModelInput: String = ""
     @State private var customModelSaved = false
+    @State private var showExtensions = false
 
     var body: some View {
         NavigationStack {
@@ -449,6 +450,20 @@ struct SettingsView: View {
                 } header: {
                     Label("About SwiftCode", systemImage: "info.circle")
                 }
+
+                // Extensions
+                Section {
+                    Button {
+                        showExtensions = true
+                    } label: {
+                        Label("Manage Extensions", systemImage: "puzzlepiece.extension.fill")
+                            .foregroundStyle(.orange)
+                    }
+                } header: {
+                    Label("Extensions", systemImage: "puzzlepiece.extension")
+                } footer: {
+                    Text("Install, enable, disable, or create custom extensions for SwiftCode.")
+                }
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -456,6 +471,9 @@ struct SettingsView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showExtensions) {
+                ExtensionsView()
             }
             .onAppear {
                 openRouterKey  = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey) ?? ""

@@ -227,6 +227,109 @@ final class GitHubService {
         return try JSONDecoder().decode([GitHubBranch].self, from: data)
     }
 
+    // MARK: - Create Branch
+
+    /// Creates a new branch from an existing branch's HEAD SHA.
+    /// PLACEHOLDER: Fetches the base branch SHA then POSTs a new ref.
+    func createBranch(owner: String, repo: String, branchName: String, fromBranch: String) async throws {
+        guard token != nil else { throw GitHubError.missingToken }
+
+        // Step 1: Resolve the base branch SHA.
+        // GET /repos/{owner}/{repo}/git/ref/heads/{fromBranch}
+        let refURL = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/ref/heads/\(fromBranch)")
+        let refRequest = authorizedRequest(url: refURL)
+        let (refData, refResponse) = try await URLSession.shared.data(for: refRequest)
+        try validateResponse(refResponse, data: refData)
+
+        struct RefResponse: Decodable {
+            struct RefObject: Decodable { let sha: String }
+            let object: RefObject
+        }
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        let refObj = try decoder.decode(RefResponse.self, from: refData)
+        let sha = refObj.object.sha
+
+        // Step 2: Create the new ref.
+        // POST /repos/{owner}/{repo}/git/refs
+        let createURL = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/refs")
+        var createRequest = authorizedRequest(url: createURL, method: "POST")
+        createRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = ["ref": "refs/heads/\(branchName)", "sha": sha]
+        createRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (createData, createResponse) = try await URLSession.shared.data(for: createRequest)
+        try validateResponse(createResponse, data: createData)
+    }
+
+    // MARK: - Delete Branch
+
+    /// Deletes a branch by removing its ref.
+    /// PLACEHOLDER: DELETE /repos/{owner}/{repo}/git/refs/heads/{branchName}
+    func deleteBranch(owner: String, repo: String, branchName: String) async throws {
+        guard token != nil else { throw GitHubError.missingToken }
+
+        guard let encoded = branchName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw GitHubError.invalidPath
+        }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/refs/heads/\(encoded)")
+        let request = authorizedRequest(url: url, method: "DELETE")
+        let (data, response) = try await URLSession.shared.data(for: request)
+        // 204 No Content is the expected success response for DELETE
+        guard let http = response as? HTTPURLResponse else { throw GitHubError.invalidResponse }
+        guard http.statusCode == 204 || (200...299).contains(http.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw GitHubError.apiError(statusCode: http.statusCode, body: body)
+        }
+    }
+
+    // MARK: - Create Pull Request
+
+    /// Creates a pull request on GitHub.
+    /// PLACEHOLDER: POST /repos/{owner}/{repo}/pulls
+    func createPullRequest(
+        owner: String,
+        repo: String,
+        title: String,
+        body: String,
+        head: String,
+        base: String,
+        reviewers: [String] = [],
+        labels: [String] = [],
+        milestone: String = "",
+        isDraft: Bool = false
+    ) async throws -> GitHubPullRequest {
+        guard token != nil else { throw GitHubError.missingToken }
+
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/pulls")
+        var request = authorizedRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let bodyDict: [String: Any] = [
+            "title": title,
+            "body": body,
+            "head": head,
+            "base": base,
+            "draft": isDraft
+        ]
+        // Reviewers and labels require separate API calls to add after PR creation.
+        // PLACEHOLDER: POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers
+        //              POST /repos/{owner}/{repo}/issues/{issue_number}/labels
+        _ = reviewers
+        _ = labels
+        _ = milestone
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: bodyDict)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(GitHubPullRequest.self, from: data)
+    }
+
     // MARK: - Download Repository as ZIP (saves to device)
 
     /// Downloads the repository at the given branch as a ZIP and returns the local file URL.
@@ -450,6 +553,22 @@ struct GitHubTreeEntry: Identifiable, Decodable {
     let size: Int?
 
     var id: String { sha + path }
+}
+
+// MARK: - Pull Request Model
+
+struct GitHubPullRequest: Identifiable, Decodable {
+    let id: Int
+    let number: Int
+    let title: String
+    let body: String?
+    let htmlUrl: String
+    let state: String
+
+    enum CodingKeys: String, CodingKey {
+        case id, number, title, body, state
+        case htmlUrl = "html_url"
+    }
 }
 
 // MARK: - Errors
