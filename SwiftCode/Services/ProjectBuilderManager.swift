@@ -17,6 +17,7 @@ final class ProjectBuilderManager {
         prepareXcodeFiles(projectDir: project.directoryURL, projectName: project.name)
     }
 
+    @MainActor
     func prepareXcodeFilesForImport(projectDir: URL, projectName: String) {
         prepareXcodeFiles(projectDir: projectDir, projectName: projectName)
     }

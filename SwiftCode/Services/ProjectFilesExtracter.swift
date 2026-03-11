@@ -2,8 +2,8 @@ import Foundation
 import ZIPFoundation
 
 /// Extracts generated project files from GitHub Actions artifacts and integrates them locally.
-final class ProjectFilesExtracter {
-    static let shared = ProjectFilesExtracter()
+public final class ProjectFilesExtracter {
+    public static let shared = ProjectFilesExtracter()
     private init() {}
 
     private let fm = FileManager.default

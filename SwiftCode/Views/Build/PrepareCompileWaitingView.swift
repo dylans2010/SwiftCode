@@ -89,6 +89,7 @@ struct PrepareCompileWaitingView: View {
 
     // MARK: - Preparation
 
+    @MainActor
     private func prepare() async {
         isPreparing = true
         errorMessage = nil
@@ -96,7 +97,7 @@ struct PrepareCompileWaitingView: View {
 
         do {
             // 0. Skip generation if artifacts already exist
-            let projectDir = await project.directoryURL
+            let projectDir = project.directoryURL
             let projectName = project.name
             if ProjectBuilderManager.shared.hasBuildArtifacts(in: projectDir, projectName: projectName) {
                 statusMessage = "Up to Date"
