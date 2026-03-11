@@ -1,9 +1,10 @@
 import UIKit
 
-/// Provides syntax-highlighted NSAttributedString for Swift source code.
+/// Provides syntax-highlighted NSAttributedString for source files.
+/// Supports Swift, shell scripts (.sh), JSON, property lists (.plist), and Markdown (.md).
 final class SyntaxHighlighter {
     static let shared = SyntaxHighlighter()
-    private init() { buildPatterns() }
+    private init() { buildAllPatterns() }
 
     // MARK: - Theme
 
@@ -31,77 +32,165 @@ final class SyntaxHighlighter {
         )
     }
 
-    // MARK: - Highlight
+    // MARK: - Pattern Storage
 
-    private var patterns: [(regex: NSRegularExpression, attribute: NSAttributedString.Key, color: (Theme) -> UIColor)] = []
-    private let font = UIFont(name: "Menlo", size: 14) ?? UIFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+    private typealias PatternEntry = (regex: NSRegularExpression,
+                                      captureGroup: Int,
+                                      color: (Theme) -> UIColor)
 
-    func highlight(_ source: String, theme: Theme = .dark) -> NSAttributedString {
+    private var swiftPatterns: [PatternEntry] = []
+    private var shellPatterns: [PatternEntry] = []
+    private var jsonPatterns: [PatternEntry] = []
+    private var plistPatterns: [PatternEntry] = []
+    private var markdownPatterns: [PatternEntry] = []
+
+    // MARK: - Highlight (entry point)
+
+    /// Highlights `source` using rules for the given file extension.
+    func highlight(_ source: String, fileExtension: String = "swift", theme: Theme = .dark) -> NSAttributedString {
+        let patterns = patternsForExtension(fileExtension)
+        return apply(patterns: patterns, to: source, theme: theme)
+    }
+
+    // MARK: - Apply Patterns
+
+    private func apply(patterns: [PatternEntry], to source: String, theme: Theme) -> NSAttributedString {
+        let font = TextLayoutEngine.editorFont()
+        let paragraphStyle = TextLayoutEngine.paragraphStyle()
         let result = NSMutableAttributedString(string: source)
         let range = NSRange(source.startIndex..., in: source)
 
-        // Base attributes
         result.addAttributes([
             .font: font,
-            .foregroundColor: theme.defaultText
+            .foregroundColor: theme.defaultText,
+            .paragraphStyle: paragraphStyle
         ], range: range)
 
-        // Apply each pattern in order
-        for pattern in patterns {
-            let matches = pattern.regex.matches(in: source, range: range)
+        for entry in patterns {
+            let matches = entry.regex.matches(in: source, range: range)
             for match in matches {
-                let matchRange = match.range(at: match.numberOfRanges > 1 ? 1 : 0)
+                let idx = match.numberOfRanges > entry.captureGroup ? entry.captureGroup : 0
+                let matchRange = match.range(at: idx)
                 guard matchRange.location != NSNotFound else { continue }
-                result.addAttribute(pattern.attribute, value: pattern.color(theme), range: matchRange)
+                result.addAttribute(.foregroundColor, value: entry.color(theme), range: matchRange)
             }
         }
-
         return result
+    }
+
+    // MARK: - Language Selection
+
+    private func patternsForExtension(_ ext: String) -> [PatternEntry] {
+        switch ext.lowercased() {
+        case "sh", "bash", "zsh": return shellPatterns
+        case "json": return jsonPatterns
+        case "plist": return plistPatterns
+        case "md", "markdown": return markdownPatterns
+        default: return swiftPatterns
+        }
     }
 
     // MARK: - Pattern Building
 
-    private func buildPatterns() {
-        // Comments — must come before other patterns
-        addPattern(#"(\/\/[^\n]*)"#, color: \.comment)
-        addPattern(#"(\/\*[\s\S]*?\*\/)"#, color: \.comment)
-
-        // String literals (including multi-line)
-        addPattern(#"(\"(?:[^\"\\]|\\.)*\")"#, color: \.string)
-        addPattern(#"(\"\"\"[\s\S]*?\"\"\")"#, color: \.string)
-
-        // Keywords
-        let keywords = [
-            "import", "struct", "class", "enum", "protocol", "extension",
-            "func", "var", "let", "if", "else", "for", "while", "return",
-            "switch", "case", "default", "break", "continue", "guard",
-            "in", "is", "as", "try", "catch", "throw", "throws", "rethrows",
-            "async", "await", "actor", "init", "deinit", "subscript",
-            "get", "set", "willSet", "didSet", "static", "final", "open",
-            "public", "private", "internal", "fileprivate", "override",
-            "mutating", "nonmutating", "lazy", "weak", "unowned",
-            "true", "false", "nil", "self", "super", "typealias",
-            "where", "some", "any", "inout", "defer"
-        ]
-        let keywordsPattern = "\\b(\(keywords.joined(separator: "|")))\\b"
-        addPattern(keywordsPattern, color: \.keyword)
-
-        // Types (capitalized identifiers)
-        addPattern(#"\b([A-Z][a-zA-Z0-9_]*)\b"#, color: \.type)
-
-        // Function names
-        addPattern(#"\bfunc\s+([a-zA-Z_][a-zA-Z0-9_]*)"#, color: \.function, captureGroup: 1)
-
-        // Attributes (@MainActor, @State, etc.)
-        addPattern(#"(@[a-zA-Z_][a-zA-Z0-9_]*)"#, color: \.attribute)
-
-        // Numeric literals
-        addPattern(#"\b(\d+\.?\d*(?:e[+-]?\d+)?)\b"#, color: \.number)
-        addPattern(#"\b(0x[0-9a-fA-F]+)\b"#, color: \.number)
+    private func buildAllPatterns() {
+        buildSwiftPatterns()
+        buildShellPatterns()
+        buildJSONPatterns()
+        buildPlistPatterns()
+        buildMarkdownPatterns()
     }
 
-    private func addPattern(_ pattern: String, color: @escaping (Theme) -> UIColor, captureGroup: Int = 0) {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]) else { return }
-        patterns.append((regex: regex, attribute: .foregroundColor, color: color))
+    // MARK: Swift
+
+    private func buildSwiftPatterns() {
+        var p: [PatternEntry] = []
+        add(#"(\/\/[^\n]*)"#, color: \.comment, to: &p)
+        add(#"(\/\*[\s\S]*?\*\/)"#, color: \.comment, to: &p)
+        add(#"(\"\"\"[\s\S]*?\"\"\")"#, color: \.string, to: &p)
+        add(#"(\"(?:[^\"\\]|\\.)*\")"#, color: \.string, to: &p)
+
+        let kw = ["import","struct","class","enum","protocol","extension",
+                  "func","var","let","if","else","for","while","return",
+                  "switch","case","default","break","continue","guard",
+                  "in","is","as","try","catch","throw","throws","rethrows",
+                  "async","await","actor","init","deinit","subscript",
+                  "get","set","willSet","didSet","static","final","open",
+                  "public","private","internal","fileprivate","override",
+                  "mutating","nonmutating","lazy","weak","unowned",
+                  "true","false","nil","self","super","typealias",
+                  "where","some","any","inout","defer"]
+        add("\\b(\(kw.joined(separator: "|")))\\b", color: \.keyword, to: &p)
+        add(#"\b([A-Z][a-zA-Z0-9_]*)\b"#, color: \.type, to: &p)
+        add(#"\bfunc\s+([a-zA-Z_][a-zA-Z0-9_]*)"#, color: \.function, captureGroup: 1, to: &p)
+        add(#"(@[a-zA-Z_][a-zA-Z0-9_]*)"#, color: \.attribute, to: &p)
+        add(#"\b(\d+\.?\d*(?:e[+-]?\d+)?)\b"#, color: \.number, to: &p)
+        add(#"\b(0x[0-9a-fA-F]+)\b"#, color: \.number, to: &p)
+        swiftPatterns = p
+    }
+
+    // MARK: Shell
+
+    private func buildShellPatterns() {
+        var p: [PatternEntry] = []
+        add(#"(#[^\n]*)"#, color: \.comment, to: &p)
+        add(#"(\"(?:[^\"\\]|\\.)*\")"#, color: \.string, to: &p)
+        add(#"('(?:[^'\\]|\\.)*')"#, color: \.string, to: &p)
+        let kw = ["if","then","else","elif","fi","for","while","do",
+                  "done","case","esac","in","function","return","exit",
+                  "local","export","source","true","false","echo","read"]
+        add("\\b(\(kw.joined(separator: "|")))\\b", color: \.keyword, to: &p)
+        let cmds = ["mkdir","cp","rm","cd","ls","cat","grep","sed","awk",
+                    "chmod","chown","curl","wget","git","brew","swift","xcodebuild"]
+        add("\\b(\(cmds.joined(separator: "|")))\\b", color: \.function, to: &p)
+        add(#"(\$\{?[A-Za-z_][A-Za-z0-9_]*\}?)"#, color: \.attribute, to: &p)
+        add(#"\b(\d+)\b"#, color: \.number, to: &p)
+        shellPatterns = p
+    }
+
+    // MARK: JSON
+
+    private func buildJSONPatterns() {
+        var p: [PatternEntry] = []
+        add(#"(\"(?:[^\"\\]|\\.)*\")"#, color: \.string, to: &p)
+        add(#"\b(true|false|null)\b"#, color: \.keyword, to: &p)
+        add(#"(-?\d+\.?\d*(?:[eE][+-]?\d+)?)"#, color: \.number, to: &p)
+        jsonPatterns = p
+    }
+
+    // MARK: Plist
+
+    private func buildPlistPatterns() {
+        var p: [PatternEntry] = []
+        add(#"(<!--[\s\S]*?-->)"#, color: \.comment, to: &p)
+        add(#"(<[^>]+>)"#, color: \.keyword, to: &p)
+        add(#">([^<]+)<"#, color: \.string, captureGroup: 1, to: &p)
+        plistPatterns = p
+    }
+
+    // MARK: Markdown
+
+    private func buildMarkdownPatterns() {
+        var p: [PatternEntry] = []
+        add(#"(^#{1,6}\s+[^\n]+)"#, color: \.keyword, to: &p, options: [.anchorsMatchLines])
+        add(#"(\*\*[^\*]+\*\*|__[^_]+__)"#, color: \.type, to: &p)
+        add(#"(\*[^\*\n]+\*|_[^_\n]+_)"#, color: \.function, to: &p)
+        add(#"(`[^`\n]+`)"#, color: \.string, to: &p)
+        add(#"(```[\s\S]*?```)"#, color: \.string, to: &p)
+        add(#"(\[[^\]]+\]\([^\)]+\))"#, color: \.attribute, to: &p)
+        add(#"(^>\s+[^\n]*)"#, color: \.comment, to: &p, options: [.anchorsMatchLines])
+        markdownPatterns = p
+    }
+
+    // MARK: - Helper
+
+    private func add(
+        _ pattern: String,
+        color: @escaping (Theme) -> UIColor,
+        captureGroup: Int = 0,
+        to list: inout [PatternEntry],
+        options: NSRegularExpression.Options = [.dotMatchesLineSeparators]
+    ) {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: options) else { return }
+        list.append((regex: regex, captureGroup: captureGroup, color: color))
     }
 }

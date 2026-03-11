@@ -35,6 +35,8 @@ final class ToolbarActionManager {
         case complexityAnalyzer
         case symbolOutline
         case localSimulation
+        case pluginManager
+        case projectTemplates
     }
 
     /// Returns the correct sheet destination for a toolbar tool ID.
@@ -105,6 +107,18 @@ final class ToolbarActionManager {
             return .symbolOutline
         case "local_simulation":
             return .localSimulation
+        case "terminal":
+            return .terminal
+        case "git_history":
+            return .gitHistory
+        case "project_templates":
+            return .projectTemplates
+        case "symbol_outline":
+            return .symbolOutline
+        case "plugin_manager":
+            return .pluginManager
+        case "file_preview":
+            return .filePreview
 
         default:
             return nil

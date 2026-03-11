@@ -67,6 +67,9 @@ SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */ = {isa
 CA0000000000000000000001A /* CodeStructureAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0000000000000000000001B /* CodeStructureAnalyzer.swift */; };
 CE0000000000000000000001A /* CodeExecutionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000000000000000000001B /* CodeExecutionManager.swift */; };
 CT0000000000000000000001A /* CodeColoringTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CT0000000000000000000001B /* CodeColoringTheme.swift */; };
+TLE000000000000000000001A /* TextLayoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = TLE000000000000000000001B /* TextLayoutEngine.swift */; };
+PMV000000000000000000001A /* PluginManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PMV000000000000000000001B /* PluginManagerView.swift */; };
+PTV000000000000000000001A /* ProjectTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PTV000000000000000000001B /* ProjectTemplateView.swift */; };
 CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CM0000000000000000000001B /* CodeEditorManagementView.swift */; };
 RM0000000000000000000001A /* CodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RM0000000000000000000001B /* CodeReviewManager.swift */; };
 RV0000000000000000000001A /* CodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RV0000000000000000000001B /* CodeReviewView.swift */; };
@@ -145,6 +148,9 @@ SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */ = {isa = PBXFileR
 CA0000000000000000000001B /* CodeStructureAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeStructureAnalyzer.swift; sourceTree = "<group>"; };
 CE0000000000000000000001B /* CodeExecutionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeExecutionManager.swift; sourceTree = "<group>"; };
 CT0000000000000000000001B /* CodeColoringTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeColoringTheme.swift; sourceTree = "<group>"; };
+TLE000000000000000000001B /* TextLayoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextLayoutEngine.swift; sourceTree = "<group>"; };
+PMV000000000000000000001B /* PluginManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginManagerView.swift; sourceTree = "<group>"; };
+PTV000000000000000000001B /* ProjectTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTemplateView.swift; sourceTree = "<group>"; };
 CM0000000000000000000001B /* CodeEditorManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeEditorManagementView.swift; sourceTree = "<group>"; };
 RM0000000000000000000001B /* CodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewManager.swift; sourceTree = "<group>"; };
 RV0000000000000000000001B /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewView.swift; sourceTree = "<group>"; };
@@ -321,6 +327,8 @@ children = (
 AA000010000000000000013B /* SettingsView.swift */,
 AA00001000000000000004DB /* ProjectSettingsView.swift */,
 GS0000000000000000000002 /* GeneralSettingsView.swift */,
+PMV000000000000000000001B /* PluginManagerView.swift */,
+PTV000000000000000000001B /* ProjectTemplateView.swift */,
 );
 path = Settings;
 sourceTree = "<group>";
@@ -418,6 +426,7 @@ SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */,
 CA0000000000000000000001B /* CodeStructureAnalyzer.swift */,
 CE0000000000000000000001B /* CodeExecutionManager.swift */,
 CT0000000000000000000001B /* CodeColoringTheme.swift */,
+TLE000000000000000000001B /* TextLayoutEngine.swift */,
 );
 path = EditorLogicFrameworks;
 sourceTree = "<group>";
@@ -635,6 +644,9 @@ SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */,
 CA0000000000000000000001A /* CodeStructureAnalyzer.swift in Sources */,
 CE0000000000000000000001A /* CodeExecutionManager.swift in Sources */,
 CT0000000000000000000001A /* CodeColoringTheme.swift in Sources */,
+TLE000000000000000000001A /* TextLayoutEngine.swift in Sources */,
+PMV000000000000000000001A /* PluginManagerView.swift in Sources */,
+PTV000000000000000000001A /* ProjectTemplateView.swift in Sources */,
 CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */,
 RM0000000000000000000001A /* CodeReviewManager.swift in Sources */,
 RV0000000000000000000001A /* CodeReviewView.swift in Sources */,

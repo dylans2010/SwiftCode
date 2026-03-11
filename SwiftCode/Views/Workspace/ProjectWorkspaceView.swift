@@ -32,6 +32,8 @@ struct ProjectWorkspaceView: View {
     @State private var showComplexityAnalyzer = false
     @State private var showSymbolOutline = false
     @State private var showLocalSimulation = false
+    @State private var showPluginManager = false
+    @State private var showProjectTemplates = false
 
     var body: some View {
         ZStack {
@@ -193,6 +195,16 @@ struct ProjectWorkspaceView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
         }
+        .sheet(isPresented: $showPluginManager) {
+            PluginManagerView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showProjectTemplates) {
+            ProjectTemplateView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Toolbar
@@ -245,13 +257,18 @@ struct ProjectWorkspaceView: View {
         switch toolId {
         case "file_navigator", "create_file", "create_folder": return .orange
         case "ai_agent", "ai_code_gen", "ai_code_fix", "ai_refactor": return .purple
-        case "github_actions", "commit_changes", "push_repo", "pull_repo": return .blue
-        case "build_trigger", "build_status", "build_logs": return .orange
+        case "github_actions", "commit_changes", "push_repo", "pull_repo",
+             "git_history": return .blue
+        case "build_trigger", "build_status", "build_logs", "terminal": return .orange
         case "errors_viewer": return .red
         case "dependency_manager", "install_dependency", "update_dependencies": return .teal
-        case "code_search", "symbol_navigator", "project_index", "go_to_line": return .cyan
+        case "code_search", "symbol_navigator", "project_index", "go_to_line",
+             "symbol_outline": return .cyan
         case "sf_symbols_browser": return .indigo
         case "local_simulation": return .green
+        case "plugin_manager": return .pink
+        case "project_templates": return .mint
+        case "file_preview": return .yellow
         default: return .secondary
         }
     }
@@ -290,6 +307,8 @@ struct ProjectWorkspaceView: View {
         case .complexityAnalyzer: showComplexityAnalyzer = true
         case .symbolOutline: showSymbolOutline = true
         case .localSimulation: showLocalSimulation = true
+        case .pluginManager: showPluginManager = true
+        case .projectTemplates: showProjectTemplates = true
         }
     }
 

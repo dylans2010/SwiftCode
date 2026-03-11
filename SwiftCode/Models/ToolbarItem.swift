@@ -122,5 +122,12 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "project_analyzer", name: "Project Analyzer", icon: "waveform.path.ecg", category: "Diagnostics", isEnabled: false, order: 29),
         ToolbarTool(id: "sf_symbols_browser", name: "SF Symbols", icon: "square.grid.2x2.fill", category: "Tools", isEnabled: false, order: 30),
         ToolbarTool(id: "local_simulation", name: "Preview", icon: "play.display", category: "Build", isEnabled: true, order: 10),
+        // New tools accessible from the Customize Toolbar panel
+        ToolbarTool(id: "terminal", name: "Terminal", icon: "terminal", category: "Build", isEnabled: false, order: 31),
+        ToolbarTool(id: "git_history", name: "Git History", icon: "clock.arrow.trianglehead.counterclockwise.rotate.90", category: "Git", isEnabled: false, order: 32),
+        ToolbarTool(id: "project_templates", name: "Project Templates", icon: "doc.on.doc.fill", category: "Project", isEnabled: false, order: 33),
+        ToolbarTool(id: "symbol_outline", name: "Symbol Outline", icon: "list.bullet.rectangle", category: "Navigation", isEnabled: false, order: 34),
+        ToolbarTool(id: "plugin_manager", name: "Plugin Manager", icon: "puzzlepiece.extension.fill", category: "Tools", isEnabled: false, order: 35),
+        ToolbarTool(id: "file_preview", name: "File Preview", icon: "eye.fill", category: "File", isEnabled: false, order: 36),
     ]
 }
