@@ -473,6 +473,8 @@ struct GitHubRepo: Decodable {
 }
 
 /// Lightweight summary of a user-accessible GitHub repository, used for the repo picker.
+/// CodingKeys use camelCase raw values so they match keys after `keyDecodingStrategy = .convertFromSnakeCase`
+/// converts the JSON snake_case keys (e.g. `full_name` → `fullName`).
 struct GitHubRepoSummary: Identifiable, Decodable {
     let id: Int
     let name: String

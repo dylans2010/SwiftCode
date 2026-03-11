@@ -297,12 +297,22 @@ struct CustomToolBuilderView: View {
         }
     }
 
+    /// Builds a human-readable description by combining the tool description,
+    /// any custom headers, and the request body template.
+    private func buildDescription() -> String {
+        var parts: [String] = []
+        if !toolDescription.isEmpty { parts.append(toolDescription) }
+        if !headers.isEmpty {
+            let headerLines = headers.map { "\($0.key): \($0.value)" }.joined(separator: "\n")
+            parts.append("Headers:\n\(headerLines)")
+        }
+        if !bodyTemplate.isEmpty { parts.append("Body:\n\(bodyTemplate)") }
+        return parts.joined(separator: "\n\n")
+    }
+
     private func saveTool() {
         let fullEndpoint = "\(httpMethod.rawValue) \(endpoint)"
-        let headerString = headers.map { "\($0.key): \($0.value)" }.joined(separator: "\n")
-        let combinedDescription = [toolDescription, headerString.isEmpty ? nil : "Headers:\n\(headerString)", bodyTemplate.isEmpty ? nil : "Body:\n\(bodyTemplate)"]
-            .compactMap { $0 }
-            .joined(separator: "\n\n")
+        let combinedDescription = buildDescription()
 
         registry.connections.append(CustomAgentConnection(
             name: toolName,

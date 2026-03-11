@@ -546,7 +546,7 @@ struct GeneralSettingsView: View {
         } header: {
             Label("Quick Setup", systemImage: "bolt.fill")
         } footer: {
-            Text("Configure your API keys and model directly here, or use API Keys below for more advanced management.")
+            Text("Configure your API keys and model directly here, or use the API Keys section for more advanced key management.")
         }
     }
 
