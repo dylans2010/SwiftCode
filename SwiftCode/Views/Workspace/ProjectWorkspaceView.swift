@@ -23,6 +23,14 @@ struct ProjectWorkspaceView: View {
     @State private var showBuildLogs = false
     @State private var showMinimapSettings = false
     @State private var showSFSymbolsBrowser = false
+    // New sheets
+    @State private var showTerminal = false
+    @State private var showCodeReview = false
+    @State private var showGitHistory = false
+    @State private var showFilePreview = false
+    @State private var showGitHubIssues = false
+    @State private var showComplexityAnalyzer = false
+    @State private var showSymbolOutline = false
 
     var body: some View {
         ZStack {
@@ -143,6 +151,42 @@ struct ProjectWorkspaceView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        // New feature sheets
+        .sheet(isPresented: $showTerminal) {
+            TerminalView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showCodeReview) {
+            CodeReviewView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showGitHistory) {
+            GitHistoryView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showFilePreview) {
+            FilePreviewView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showGitHubIssues) {
+            GitHubIssuesView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showComplexityAnalyzer) {
+            ComplexityAnalyzerView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showSymbolOutline) {
+            SymbolOutlineView()
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Toolbar
@@ -231,6 +275,13 @@ struct ProjectWorkspaceView: View {
         case .minimapSettings: showMinimapSettings = true
         case .sfSymbolsBrowser: showSFSymbolsBrowser = true
         case .settings: showSettingsSheet = true
+        case .terminal: showTerminal = true
+        case .codeReview: showCodeReview = true
+        case .gitHistory: showGitHistory = true
+        case .filePreview: showFilePreview = true
+        case .gitHubIssues: showGitHubIssues = true
+        case .complexityAnalyzer: showComplexityAnalyzer = true
+        case .symbolOutline: showSymbolOutline = true
         }
     }
 

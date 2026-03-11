@@ -65,7 +65,26 @@ struct AIAssistantView: View {
     @State private var showChatHistory = false
     @State private var customModelDraft = ""
     @State private var showAgentInterface = false
+    @State private var showSlashCommands = false
+    @State private var slashFilter = ""
     private let maxAgentIterations = 15
+
+    private let slashCommands: [(title: String, icon: String, description: String)] = [
+        ("run agent",           "cpu.fill",                   "Switch to Agent mode and run"),
+        ("search project",      "magnifyingglass",             "Search files in the project"),
+        ("generate code",       "wand.and.stars",              "Generate Swift code"),
+        ("fix errors",          "wrench.and.screwdriver.fill", "Fix errors in current file"),
+        ("install dependencies","shippingbox.fill",            "Manage package dependencies"),
+        ("run build",           "hammer.fill",                 "Trigger a build"),
+        ("review code",         "checklist",                   "AI code review"),
+        ("explain code",        "text.bubble.fill",            "Explain selected/current code"),
+        ("refactor",            "arrow.triangle.2.circlepath", "Refactor current file"),
+    ]
+
+    private var filteredSlashCommands: [(title: String, icon: String, description: String)] {
+        guard !slashFilter.isEmpty else { return slashCommands }
+        return slashCommands.filter { $0.title.localizedCaseInsensitiveContains(slashFilter) }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -74,8 +93,8 @@ struct AIAssistantView: View {
 
             Divider().opacity(0.3)
 
-            // Mode picker
-            modePicker
+            // Mode picker (compact dropdown)
+            modeDropdown
 
             Divider().opacity(0.3)
 
@@ -243,56 +262,53 @@ struct AIAssistantView: View {
         .background(.ultraThinMaterial)
     }
 
-    private var modePicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+    private var modeDropdown: some View {
+        HStack(spacing: 8) {
+            Menu {
                 ForEach(AgentMode.allCases) { mode in
-                    modeButton(for: mode)
+                    Button {
+                        if mode == .agent {
+                            showAgentInterface = true
+                        } else {
+                            withAnimation(.spring(response: 0.3)) { selectedMode = mode }
+                        }
+                    } label: {
+                        HStack {
+                            Image(systemName: mode.icon)
+                            Text(mode.rawValue)
+                            if selectedMode == mode {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
                 }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-        }
-        .background(.ultraThinMaterial)
-    }
-
-    private func modeButton(for mode: AgentMode) -> some View {
-        Button {
-            if mode == .agent {
-                showAgentInterface = true
-            } else {
-                withAnimation(.spring(response: 0.3)) {
-                    selectedMode = mode
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: selectedMode.icon)
+                        .font(.caption)
+                    Text(selectedMode.rawValue)
+                        .font(.caption.bold())
+                    Image(systemName: "chevron.down")
+                        .font(.caption2)
                 }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(
+                    LinearGradient(colors: [.purple.opacity(0.4), .blue.opacity(0.3)],
+                                   startPoint: .leading, endPoint: .trailing),
+                    in: Capsule()
+                )
+                .foregroundStyle(.white)
             }
-        } label: {
-            modePillLabel(for: mode)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func modePillLabel(for mode: AgentMode) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: mode.icon)
+            Spacer()
+            Text(selectedMode.description)
                 .font(.caption2)
-            Text(mode.rawValue)
-                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(
-            selectedMode == mode
-                ? AnyShapeStyle(LinearGradient(colors: [.purple, .blue.opacity(0.8)],
-                                               startPoint: .leading, endPoint: .trailing)
-                                    .opacity(0.6))
-                : AnyShapeStyle(Color.white.opacity(0.06)),
-            in: Capsule()
-        )
-        .overlay(
-            Capsule()
-                .stroke(selectedMode == mode ? .white.opacity(0.2) : .clear, lineWidth: 1)
-        )
-        .foregroundStyle(selectedMode == mode ? .white : .secondary)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
     }
 
     private var emptyStateView: some View {
@@ -411,30 +427,72 @@ struct AIAssistantView: View {
             }
 
             HStack(alignment: .bottom, spacing: 8) {
-                ZStack(alignment: .topLeading) {
-                    if inputText.isEmpty {
-                        Text(selectedMode == .agent ? "What should the agent do?" : "Ask the AI…")
-                            .font(.callout)
-                            .foregroundStyle(.tertiary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 10)
+                VStack(spacing: 0) {
+                    // Slash command tooltip (shown above input when user types /)
+                    if showSlashCommands && !filteredSlashCommands.isEmpty {
+                        VStack(alignment: .leading, spacing: 0) {
+                            ForEach(filteredSlashCommands, id: \.title) { cmd in
+                                Button {
+                                    applySlashCommand(cmd.title)
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: cmd.icon)
+                                            .font(.caption2)
+                                            .foregroundStyle(.purple)
+                                            .frame(width: 16)
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text("/\(cmd.title)")
+                                                .font(.caption.bold())
+                                                .foregroundStyle(.white)
+                                            Text(cmd.description)
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                }
+                                .buttonStyle(.plain)
+                                if cmd.title != filteredSlashCommands.last?.title {
+                                    Divider().opacity(0.2)
+                                }
+                            }
+                        }
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(.purple.opacity(0.3), lineWidth: 1))
+                        .padding(.bottom, 4)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    TextEditor(text: $inputText)
-                        .font(.callout)
-                        .frame(minHeight: 60, maxHeight: 120)
-                        .scrollContentBackground(.hidden)
-                        .background(.clear)
+
+                    ZStack(alignment: .topLeading) {
+                        if inputText.isEmpty {
+                            Text(selectedMode == .agent ? "What should the agent do?" : "Ask the AI… (type / for commands)")
+                                .font(.callout)
+                                .foregroundStyle(.tertiary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 10)
+                        }
+                        TextEditor(text: $inputText)
+                            .font(.callout)
+                            .frame(minHeight: 60, maxHeight: 120)
+                            .scrollContentBackground(.hidden)
+                            .background(.clear)
+                            .onChange(of: inputText) { _, newVal in
+                                handleInputChange(newVal)
+                            }
+                    }
+                    .padding(4)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(
+                                LinearGradient(colors: [.purple.opacity(0.3), .blue.opacity(0.2)],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing),
+                                lineWidth: 1
+                            )
+                    )
                 }
-                .padding(4)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10)
-                        .stroke(
-                            LinearGradient(colors: [.purple.opacity(0.3), .blue.opacity(0.2)],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing),
-                            lineWidth: 1
-                        )
-                )
 
                 Button {
                     sendMessage()
@@ -453,6 +511,48 @@ struct AIAssistantView: View {
             }
         }
         .padding(12)
+        .animation(.spring(response: 0.25), value: showSlashCommands)
+    }
+
+    private func handleInputChange(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("/") {
+            slashFilter = String(trimmed.dropFirst())
+            showSlashCommands = true
+        } else {
+            showSlashCommands = false
+            slashFilter = ""
+        }
+    }
+
+    private func applySlashCommand(_ command: String) {
+        showSlashCommands = false
+        slashFilter = ""
+        switch command {
+        case "run agent":
+            inputText = ""
+            showAgentInterface = true
+        case "search project":
+            inputText = "Search the project for: "
+        case "generate code":
+            inputText = "Generate Swift code for: "
+        case "fix errors":
+            let fileName = projectManager.activeFileNode?.name ?? "this file"
+            inputText = "Fix any errors or issues in \(fileName)"
+        case "install dependencies":
+            inputText = "Help me add a Swift package dependency for: "
+        case "run build":
+            inputText = "Help me set up the build workflow."
+        case "review code":
+            let fileName = projectManager.activeFileNode?.name ?? "current file"
+            inputText = "Review the code in \(fileName) and list any issues."
+        case "explain code":
+            inputText = "Explain what the current file does."
+        case "refactor":
+            inputText = "Refactor the current file for better readability and performance."
+        default:
+            inputText = "/\(command) "
+        }
     }
 
     // MARK: - Custom Model Sheet

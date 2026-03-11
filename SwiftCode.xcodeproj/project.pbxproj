@@ -61,6 +61,26 @@ BG000000000000000000005A /* GitHubRepositoryManager.swift in Sources */ = {isa =
 BG000000000000000000006A /* GitHubBuilds.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000006B /* GitHubBuilds.swift */; };
 BG000000000000000000007A /* GitCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000007B /* GitCommands.swift */; };
 BD000000000000000000001A /* BuildLogDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD000000000000000000001B /* BuildLogDecoder.swift */; };
+TV0000000000000000000001A /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TV0000000000000000000001B /* TerminalView.swift */; };
+AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AS0000000000000000000001B /* AISuggestionEngine.swift */; };
+SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */; };
+CA0000000000000000000001A /* CodeStructureAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0000000000000000000001B /* CodeStructureAnalyzer.swift */; };
+CE0000000000000000000001A /* CodeExecutionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000000000000000000001B /* CodeExecutionManager.swift */; };
+CT0000000000000000000001A /* CodeColoringTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CT0000000000000000000001B /* CodeColoringTheme.swift */; };
+CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CM0000000000000000000001B /* CodeEditorManagementView.swift */; };
+RM0000000000000000000001A /* CodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RM0000000000000000000001B /* CodeReviewManager.swift */; };
+RV0000000000000000000001A /* CodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RV0000000000000000000001B /* CodeReviewView.swift */; };
+GH0000000000000000000001A /* GitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GH0000000000000000000001B /* GitHistoryView.swift */; };
+PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PT0000000000000000000001B /* ProjectTemplateManager.swift */; };
+SO0000000000000000000001A /* SymbolOutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SO0000000000000000000001B /* SymbolOutlineView.swift */; };
+AM0000000000000000000001A /* AgentMemoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AM0000000000000000000001B /* AgentMemoryManager.swift */; };
+TM0000000000000000000001A /* AgentTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TM0000000000000000000001B /* AgentTaskManager.swift */; };
+TQ0000000000000000000001A /* AgentTaskQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = TQ0000000000000000000001B /* AgentTaskQueue.swift */; };
+LM0000000000000000000001A /* LocalModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = LM0000000000000000000001B /* LocalModelManager.swift */; };
+PM0000000000000000000001A /* PluginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PM0000000000000000000001B /* PluginManager.swift */; };
+FP0000000000000000000001A /* FilePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FP0000000000000000000001B /* FilePreviewView.swift */; };
+GI0000000000000000000001A /* GitHubIssuesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GI0000000000000000000001B /* GitHubIssuesView.swift */; };
+CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CX0000000000000000000001B /* ComplexityAnalyzerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -119,6 +139,26 @@ BG000000000000000000005B /* GitHubRepositoryManager.swift */ = {isa = PBXFileRef
 BG000000000000000000006B /* GitHubBuilds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubBuilds.swift; sourceTree = "<group>"; };
 BG000000000000000000007B /* GitCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitCommands.swift; sourceTree = "<group>"; };
 BD000000000000000000001B /* BuildLogDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildLogDecoder.swift; sourceTree = "<group>"; };
+TV0000000000000000000001B /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalView.swift; sourceTree = "<group>"; };
+AS0000000000000000000001B /* AISuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISuggestionEngine.swift; sourceTree = "<group>"; };
+SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightingEngine.swift; sourceTree = "<group>"; };
+CA0000000000000000000001B /* CodeStructureAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeStructureAnalyzer.swift; sourceTree = "<group>"; };
+CE0000000000000000000001B /* CodeExecutionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeExecutionManager.swift; sourceTree = "<group>"; };
+CT0000000000000000000001B /* CodeColoringTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeColoringTheme.swift; sourceTree = "<group>"; };
+CM0000000000000000000001B /* CodeEditorManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeEditorManagementView.swift; sourceTree = "<group>"; };
+RM0000000000000000000001B /* CodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewManager.swift; sourceTree = "<group>"; };
+RV0000000000000000000001B /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewView.swift; sourceTree = "<group>"; };
+GH0000000000000000000001B /* GitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHistoryView.swift; sourceTree = "<group>"; };
+PT0000000000000000000001B /* ProjectTemplateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTemplateManager.swift; sourceTree = "<group>"; };
+SO0000000000000000000001B /* SymbolOutlineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolOutlineView.swift; sourceTree = "<group>"; };
+AM0000000000000000000001B /* AgentMemoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentMemoryManager.swift; sourceTree = "<group>"; };
+TM0000000000000000000001B /* AgentTaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTaskManager.swift; sourceTree = "<group>"; };
+TQ0000000000000000000001B /* AgentTaskQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTaskQueue.swift; sourceTree = "<group>"; };
+LM0000000000000000000001B /* LocalModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelManager.swift; sourceTree = "<group>"; };
+PM0000000000000000000001B /* PluginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginManager.swift; sourceTree = "<group>"; };
+FP0000000000000000000001B /* FilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePreviewView.swift; sourceTree = "<group>"; };
+GI0000000000000000000001B /* GitHubIssuesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubIssuesView.swift; sourceTree = "<group>"; };
+CX0000000000000000000001B /* ComplexityAnalyzerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplexityAnalyzerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -172,6 +212,13 @@ AA00001000000000000000AB /* ZipImporter.swift */,
 AA00001000000000000000BB /* SyntaxHighlighter.swift */,
 AA00001000000000000001AB /* AgentToolService.swift */,
 AA00001000000000000002DB /* CodeIndexService.swift */,
+RM0000000000000000000001B /* CodeReviewManager.swift */,
+PT0000000000000000000001B /* ProjectTemplateManager.swift */,
+AM0000000000000000000001B /* AgentMemoryManager.swift */,
+TM0000000000000000000001B /* AgentTaskManager.swift */,
+TQ0000000000000000000001B /* AgentTaskQueue.swift */,
+LM0000000000000000000001B /* LocalModelManager.swift */,
+PM0000000000000000000001B /* PluginManager.swift */,
 );
 path = Services;
 sourceTree = "<group>";
@@ -221,6 +268,9 @@ AA00001000000000000000EB /* CodeEditorView.swift */,
 AA00001000000000000003DB /* GoToLineView.swift */,
 AA00001000000000000003EB /* MinimapSettingsView.swift */,
 AA00001000000000000003FB /* SymbolNavigatorView.swift */,
+CM0000000000000000000001B /* CodeEditorManagementView.swift */,
+SO0000000000000000000001B /* SymbolOutlineView.swift */,
+ELF00000000000000000001F /* EditorLogicFrameworks */,
 );
 path = Editor;
 sourceTree = "<group>";
@@ -237,6 +287,8 @@ AA000010000000000000045F /* AI */ = {
 isa = PBXGroup;
 children = (
 AA000010000000000000010B /* AIAssistantView.swift */,
+RV0000000000000000000001B /* CodeReviewView.swift */,
+CX0000000000000000000001B /* ComplexityAnalyzerView.swift */,
 );
 path = AI;
 sourceTree = "<group>";
@@ -246,6 +298,8 @@ isa = PBXGroup;
 children = (
 AA000010000000000000011B /* GitHubIntegrationView.swift */,
 AA000010000000000000016B /* GitCommandView.swift */,
+GH0000000000000000000001B /* GitHistoryView.swift */,
+GI0000000000000000000001B /* GitHubIssuesView.swift */,
 );
 path = GitHub;
 sourceTree = "<group>";
@@ -256,6 +310,7 @@ children = (
 AA000010000000000000012B /* BuildStatusView.swift */,
 AA000010000000000000017B /* CIBuildView.swift */,
 AA00001000000000000002EB /* BuildLogsView.swift */,
+TV0000000000000000000001B /* TerminalView.swift */,
 );
 path = Build;
 sourceTree = "<group>";
@@ -274,6 +329,7 @@ AA000010000000000000049F /* Utilities */ = {
 isa = PBXGroup;
 children = (
 AA000010000000000000018B /* FileImporterRepresentableView.swift */,
+FP0000000000000000000001B /* FilePreviewView.swift */,
 );
 path = Utilities;
 sourceTree = "<group>";
@@ -352,6 +408,18 @@ CF000000000000000000001F /* FileSystem */,
 CG000000000000000000001F /* GitHub */,
 );
 path = Core;
+sourceTree = "<group>";
+};
+ELF00000000000000000001F /* EditorLogicFrameworks */ = {
+isa = PBXGroup;
+children = (
+AS0000000000000000000001B /* AISuggestionEngine.swift */,
+SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */,
+CA0000000000000000000001B /* CodeStructureAnalyzer.swift */,
+CE0000000000000000000001B /* CodeExecutionManager.swift */,
+CT0000000000000000000001B /* CodeColoringTheme.swift */,
+);
+path = EditorLogicFrameworks;
 sourceTree = "<group>";
 };
 CF000000000000000000001F /* FileSystem */ = {
@@ -561,6 +629,26 @@ BG000000000000000000005A /* GitHubRepositoryManager.swift in Sources */,
 BG000000000000000000006A /* GitHubBuilds.swift in Sources */,
 BG000000000000000000007A /* GitCommands.swift in Sources */,
 BD000000000000000000001A /* BuildLogDecoder.swift in Sources */,
+TV0000000000000000000001A /* TerminalView.swift in Sources */,
+AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */,
+SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */,
+CA0000000000000000000001A /* CodeStructureAnalyzer.swift in Sources */,
+CE0000000000000000000001A /* CodeExecutionManager.swift in Sources */,
+CT0000000000000000000001A /* CodeColoringTheme.swift in Sources */,
+CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */,
+RM0000000000000000000001A /* CodeReviewManager.swift in Sources */,
+RV0000000000000000000001A /* CodeReviewView.swift in Sources */,
+GH0000000000000000000001A /* GitHistoryView.swift in Sources */,
+PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */,
+SO0000000000000000000001A /* SymbolOutlineView.swift in Sources */,
+AM0000000000000000000001A /* AgentMemoryManager.swift in Sources */,
+TM0000000000000000000001A /* AgentTaskManager.swift in Sources */,
+TQ0000000000000000000001A /* AgentTaskQueue.swift in Sources */,
+LM0000000000000000000001A /* LocalModelManager.swift in Sources */,
+PM0000000000000000000001A /* PluginManager.swift in Sources */,
+FP0000000000000000000001A /* FilePreviewView.swift in Sources */,
+GI0000000000000000000001A /* GitHubIssuesView.swift in Sources */,
+CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };

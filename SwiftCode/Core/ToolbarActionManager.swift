@@ -26,6 +26,14 @@ final class ToolbarActionManager {
         case minimapSettings
         case sfSymbolsBrowser
         case settings
+        // New destinations
+        case terminal
+        case codeReview
+        case gitHistory
+        case filePreview
+        case gitHubIssues
+        case complexityAnalyzer
+        case symbolOutline
     }
 
     /// Returns the correct sheet destination for a toolbar tool ID.
@@ -78,6 +86,22 @@ final class ToolbarActionManager {
         // File operations go to file navigator
         case "create_file", "create_folder", "rename_file", "delete_file", "refactor_file":
             return .fileNavigator
+
+        // New features
+        case "terminal":
+            return .terminal
+        case "code_review":
+            return .codeReview
+        case "git_history":
+            return .gitHistory
+        case "file_preview":
+            return .filePreview
+        case "github_issues":
+            return .gitHubIssues
+        case "complexity_analyzer":
+            return .complexityAnalyzer
+        case "symbol_outline":
+            return .symbolOutline
 
         default:
             return nil
