@@ -53,32 +53,32 @@ final class ProjectBuilderManager {
 
     // MARK: - Generation
 
+    @MainActor
     private func prepareXcodeFiles(projectDir: URL, projectName: String) {
         guard !hasBuildArtifacts(in: projectDir, projectName: projectName) else { return }
 
+        // Local generation is disabled in favor of GitHub Actions remote generation.
+        // This method now serves as a fallback or a way to ensure basic structure.
         do {
             try ensureSubdirectories(in: projectDir)
-
-            let generatedDir = projectDir.appendingPathComponent("Generated")
-            try fm.createDirectory(at: generatedDir, withIntermediateDirectories: true)
-
-            let infoPlistURL = generatedDir.appendingPathComponent("Info.plist")
-            try ensureInfoPlist(at: infoPlistURL, bundleName: projectName)
-
-            let swiftSources = collectSwiftFiles(in: projectDir)
-            let projectYAMLURL = projectDir.appendingPathComponent("project.yml")
-            let yaml = makeProjectYAML(
-                projectName: projectName,
-                projectDir: projectDir,
-                infoPlistURL: infoPlistURL,
-                swiftSourceFiles: swiftSources
-            )
-            try yaml.write(to: projectYAMLURL, atomically: true, encoding: .utf8)
-
-            try runXcodeGen(in: projectDir)
         } catch {
-            print("ProjectBuilderManager generation failed: \(error.localizedDescription)")
+            print("ProjectBuilderManager: Failed to ensure subdirectories: \(error.localizedDescription)")
         }
+    }
+
+    /// Triggers the remote project generation on GitHub.
+    @MainActor
+    func triggerRemoteGeneration(for project: Project) async throws {
+        guard let repoString = project.githubRepo else {
+            throw NSError(domain: "ProjectBuilderManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "Project is not linked to a GitHub repository."])
+        }
+
+        let (owner, repo) = try GitHubRepositoryManager.shared.parseRepoURL(repoString)
+
+        // Push all current files to the build-project branch
+        try await GitHubService.shared.pushProject(project, owner: owner, repo: repo, commitMessage: "Prepare project for remote generation")
+
+        // The GHA workflow will be triggered automatically by the push to 'build-project' branch.
     }
 
     // MARK: - Helpers
