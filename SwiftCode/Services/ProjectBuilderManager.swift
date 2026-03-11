@@ -27,10 +27,10 @@ final class ProjectBuilderManager {
     func prepareXcodeFiles(for project: Project) {
         let projectDir = project.directoryURL
         if hasXcodeProjectFiles(in: projectDir) {
-            // Existing files found — load and use them without regenerating.
+            // If either exists: do not generate new ones
             return
         }
-        generateXcodeProject(for: project)
+        generateXcodeProjectFiles(in: projectDir, projectName: project.name)
     }
 
     /// Call this when a ZIP-imported project directory has been set up.
@@ -70,6 +70,7 @@ final class ProjectBuilderManager {
             options: .skipsHiddenFiles
         ) else { return false }
 
+        // If either exists: load and continue using the existing project configuration.
         return contents.contains {
             $0.pathExtension == "xcodeproj" || $0.pathExtension == "xcworkspace"
         }
@@ -150,6 +151,9 @@ final class ProjectBuilderManager {
         pbxproj.add(object: projectConfigList)
 
         // --- Groups ---
+        // Ensure the directories exist first.
+        try ensureSubdirectories(in: projectDir)
+
         let sourcesGroup = PBXGroup(children: [], sourceTree: .group, name: "Sources")
         let viewsGroup = PBXGroup(children: [], sourceTree: .group, name: "Views")
         let featuresGroup = PBXGroup(children: [], sourceTree: .group, name: "Features")
@@ -166,6 +170,18 @@ final class ProjectBuilderManager {
         var buildFiles: [PBXBuildFile] = []
         for filePath in swiftFiles {
             let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+
+            // Determine target group based on path
+            let targetGroup: PBXGroup
+
+            if filePath.contains("Views/") {
+                targetGroup = viewsGroup
+            } else if filePath.contains("Features/") {
+                targetGroup = featuresGroup
+            } else {
+                targetGroup = sourcesGroup
+            }
+
             let fileRef = PBXFileReference(
                 sourceTree: .group,
                 name: fileName,
@@ -173,11 +189,27 @@ final class ProjectBuilderManager {
                 path: filePath
             )
             pbxproj.add(object: fileRef)
-            sourcesGroup.children.append(fileRef)
+            targetGroup.children.append(fileRef)
 
             let buildFile = PBXBuildFile(file: fileRef)
             pbxproj.add(object: buildFile)
             buildFiles.append(buildFile)
+        }
+
+        // Add Assets if they exist
+        let assetDirs = ["Assets.xcassets", "Assets"]
+        for assetDir in assetDirs {
+            if fm.fileExists(atPath: projectDir.appendingPathComponent(assetDir).path) {
+                let assetRef = PBXFileReference(
+                    sourceTree: .group,
+                    name: assetDir,
+                    lastKnownFileType: "folder.assetcatalog",
+                    path: assetDir
+                )
+                pbxproj.add(object: assetRef)
+                assetsGroup.children.append(assetRef)
+                break
+            }
         }
 
         // --- Product Reference ---
@@ -207,6 +239,9 @@ final class ProjectBuilderManager {
                 "SWIFT_VERSION": "5.0",
                 "PRODUCT_BUNDLE_IDENTIFIER": bundleID,
                 "PRODUCT_NAME": "$(TARGET_NAME)",
+                "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
+                "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/Frameworks",
+                "GENERATE_INFOPLIST_FILE": "YES",
             ]
         )
         let targetReleaseConfig = XCBuildConfiguration(
@@ -217,6 +252,9 @@ final class ProjectBuilderManager {
                 "SWIFT_VERSION": "5.0",
                 "PRODUCT_BUNDLE_IDENTIFIER": bundleID,
                 "PRODUCT_NAME": "$(TARGET_NAME)",
+                "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon",
+                "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/Frameworks",
+                "GENERATE_INFOPLIST_FILE": "YES",
             ]
         )
         pbxproj.add(object: targetDebugConfig)
@@ -436,6 +474,8 @@ final class ProjectBuilderManager {
         ])
         let workspace = XCWorkspace(data: workspaceData)
         try workspace.write(path: workspacePath)
+
+        // Inside create the file: contents.xcworkspacedata (Done by workspace.write)
     }
 
     // MARK: - File Collection
@@ -453,10 +493,13 @@ final class ProjectBuilderManager {
 
         for item in contents.sorted(by: { $0.lastPathComponent < $1.lastPathComponent }) {
             let isDir = (try? item.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
-            // Skip Xcode project/workspace directories to avoid infinite recursion.
-            if isDir && (item.pathExtension == "xcodeproj" || item.pathExtension == "xcworkspace") {
+
+            // Skip build artifacts and Xcode project/workspace directories.
+            let name = item.lastPathComponent
+            if isDir && (item.pathExtension == "xcodeproj" || item.pathExtension == "xcworkspace" || name == ".build") {
                 continue
             }
+
             if isDir {
                 results += collectSwiftFiles(in: item, relativeTo: base)
             } else if item.pathExtension == "swift" {
