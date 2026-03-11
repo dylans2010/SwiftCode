@@ -127,6 +127,9 @@ class AppSettings: ObservableObject {
     @Published var showFolderPreview: Bool {
         didSet { UserDefaults.standard.set(showFolderPreview, forKey: "showFolderPreview") }
     }
+    @Published var alwaysPinFilesView: Bool {
+        didSet { UserDefaults.standard.set(alwaysPinFilesView, forKey: "alwaysPinFilesView") }
+    }
 
     // MARK: - CoreML
     @Published var coreMLEnabled: Bool {
@@ -175,6 +178,7 @@ class AppSettings: ObservableObject {
         dashboardSortOrder = DashboardSortOrder(rawValue: UserDefaults.standard.string(forKey: "dashboardSortOrder") ?? "") ?? .lastOpened
         showProjectIcons = UserDefaults.standard.object(forKey: "showProjectIcons") as? Bool ?? true
         showFolderPreview = UserDefaults.standard.object(forKey: "showFolderPreview") as? Bool ?? false
+        alwaysPinFilesView = UserDefaults.standard.object(forKey: "alwaysPinFilesView") as? Bool ?? false
         coreMLEnabled = UserDefaults.standard.object(forKey: "coreMLEnabled") as? Bool ?? false
         coreMLHybridMode = UserDefaults.standard.object(forKey: "coreMLHybridMode") as? Bool ?? false
         coreMLSelectedModel = UserDefaults.standard.string(forKey: "coreMLSelectedModel") ?? ""

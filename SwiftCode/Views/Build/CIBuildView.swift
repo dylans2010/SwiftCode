@@ -427,8 +427,6 @@ struct CIBuildView: View {
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
-            .disabled(!isRepoConnected)
-            .opacity(isRepoConnected ? 1 : 0.5)
         }
     }
 
@@ -488,6 +486,15 @@ struct CIBuildView: View {
     private var pushWorkflowSheet: some View {
         NavigationStack {
             Form {
+                if !isRepoConnected {
+                    Section {
+                        Label("No repository connected to this project. Open GitHub settings for this project and connect a repository first.", systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                    } header: {
+                        Text("Repository Required")
+                    }
+                }
                 Section("Commit Message") {
                     TextField("Add CI Workflow", text: $commitMessage)
                         .autocorrectionDisabled()
@@ -497,8 +504,8 @@ struct CIBuildView: View {
                         showGitHubPush = false
                         pushWorkflowToGitHub()
                     }
-                    .foregroundStyle(.orange)
-                    .disabled(commitMessage.trimmingCharacters(in: .whitespaces).isEmpty)
+                    .foregroundStyle(isRepoConnected ? .orange : .secondary)
+                    .disabled(!isRepoConnected || commitMessage.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
             }
             .navigationTitle("Push Workflow")

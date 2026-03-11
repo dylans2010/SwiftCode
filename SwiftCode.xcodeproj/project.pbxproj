@@ -52,6 +52,7 @@ AA00001000000000000005AA /* CodingManager.swift in Sources */ = {isa = PBXBuildF
 AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005BB /* ToolbarActionManager.swift */; };
 AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000005CB /* SFSymbolBrowserView.swift */; };
 GS0000000000000000000001 /* GeneralSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GS0000000000000000000002 /* GeneralSettingsView.swift */; };
+		CTB00000000000000000001A /* CustomToolBuilderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CTB00000000000000000001B /* CustomToolBuilderView.swift */; };
 CR000000000000000000001A /* CodeReaderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CR000000000000000000001B /* CodeReaderManager.swift */; };
 CG000000000000000000002A /* GitHubImportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CG000000000000000000002B /* GitHubImportManager.swift */; };
 BG000000000000000000002A /* GitHubAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000002B /* GitHubAuth.swift */; };
@@ -146,6 +147,7 @@ AA00001000000000000005AB /* CodingManager.swift */ = {isa = PBXFileReference; la
 AA00001000000000000005BB /* ToolbarActionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarActionManager.swift; sourceTree = "<group>"; };
 AA00001000000000000005CB /* SFSymbolBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SFSymbolBrowserView.swift; sourceTree = "<group>"; };
 GS0000000000000000000002 /* GeneralSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralSettingsView.swift; sourceTree = "<group>"; };
+		CTB00000000000000000001B /* CustomToolBuilderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomToolBuilderView.swift; sourceTree = "<group>"; };
 CR000000000000000000001B /* CodeReaderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReaderManager.swift; sourceTree = "<group>"; };
 CG000000000000000000002B /* GitHubImportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubImportManager.swift; sourceTree = "<group>"; };
 BG000000000000000000002B /* GitHubAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAuth.swift; sourceTree = "<group>"; };
@@ -362,6 +364,7 @@ GS0000000000000000000002 /* GeneralSettingsView.swift */,
 PMV000000000000000000001B /* PluginManagerView.swift */,
 PTV000000000000000000001B /* ProjectTemplateView.swift */,
 EXM00000000000000000001F /* Extension Management */,
+CTM00000000000000000001F /* Custom Tools */,
 );
 path = Settings;
 sourceTree = "<group>";
@@ -373,6 +376,14 @@ CEV000000000000000000001B /* CreateExtensionView.swift */,
 EEV000000000000000000001B /* EditExtensionView.swift */,
 );
 path = "Extension Management";
+sourceTree = "<group>";
+};
+CTM00000000000000000001F /* Custom Tools */ = {
+isa = PBXGroup;
+children = (
+CTB00000000000000000001B /* CustomToolBuilderView.swift */,
+);
+path = "Custom Tools";
 sourceTree = "<group>";
 };
 AA000010000000000000049F /* Utilities */ = {
@@ -684,6 +695,7 @@ AA00001000000000000005AA /* CodingManager.swift in Sources */,
 AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */,
 AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */,
 GS0000000000000000000001 /* GeneralSettingsView.swift in Sources */,
+CTB00000000000000000001A /* CustomToolBuilderView.swift in Sources */,
 CR000000000000000000001A /* CodeReaderManager.swift in Sources */,
 CG000000000000000000002A /* GitHubImportManager.swift in Sources */,
 BG000000000000000000002A /* GitHubAuth.swift in Sources */,
