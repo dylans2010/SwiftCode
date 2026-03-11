@@ -68,7 +68,7 @@ struct BranchManagementView: View {
                 createBranchSheet
             }
             .confirmationDialog(
-                "Delete Branch "\(branchToDelete?.name ?? "")"?",
+                "Delete Branch \(branchToDelete?.name ?? "")?",
                 isPresented: $showDeleteConfirm,
                 titleVisibility: .visible
             ) {
@@ -246,7 +246,7 @@ struct BranchManagementView: View {
 
     private func switchTo(_ branch: GitHubBranch) {
         currentBranch = branch.name
-        showNotification("Switched to branch "\(branch.name)"", isError: false)
+        showNotification("Switched to branch \(branch.name)", isError: false)
     }
 
     private func createBranch() async {
@@ -268,7 +268,7 @@ struct BranchManagementView: View {
             )
             await loadBranches()
             currentBranch = name
-            showNotification("Branch "\(name)" created", isError: false)
+            showNotification("Branch \(name) created", isError: false)
         } catch {
             showNotification(error.localizedDescription, isError: true)
         }
@@ -286,7 +286,7 @@ struct BranchManagementView: View {
             if currentBranch == branch.name {
                 currentBranch = branches.first?.name ?? "main"
             }
-            showNotification("Branch "\(branch.name)" deleted", isError: false)
+            showNotification("Branch \(branch.name) deleted", isError: false)
         } catch {
             showNotification(error.localizedDescription, isError: true)
         }
