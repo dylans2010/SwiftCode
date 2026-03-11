@@ -25,12 +25,7 @@ final class ProjectBuilderManager {
     /// - Parameter project: The SwiftCode project to process.
     @MainActor
     func prepareXcodeFiles(for project: Project) {
-        let projectDir = project.directoryURL
-        if hasXcodeProjectFiles(in: projectDir) {
-            // If either exists: do not generate new ones
-            return
-        }
-        generateXcodeProjectFiles(in: projectDir, projectName: project.name)
+        prepareXcodeFilesInternal(projectDir: project.directoryURL, projectName: project.name)
     }
 
     /// Call this when a ZIP-imported project directory has been set up.
@@ -39,10 +34,36 @@ final class ProjectBuilderManager {
     ///   - projectDir: The root directory of the imported project.
     ///   - projectName: The name used for the generated project files.
     func prepareXcodeFilesForImport(projectDir: URL, projectName: String) {
-        if hasXcodeProjectFiles(in: projectDir) {
+        prepareXcodeFilesInternal(projectDir: projectDir, projectName: projectName)
+    }
+
+    /// Internal helper to handle project preparation using XcodeGen with a legacy fallback.
+    private func prepareXcodeFilesInternal(projectDir: URL, projectName: String) {
+        let xcodeProj = generatedXcodeProjPath(for: projectName)
+        let xcworkspace = generatedXcworkspacePath(for: projectName)
+
+        if hasXcodeProjectFiles(in: projectDir) || (fm.fileExists(atPath: xcodeProj.path) && fm.fileExists(atPath: xcworkspace.path)) {
             return
         }
-        generateXcodeProjectFiles(in: projectDir, projectName: projectName)
+
+        do {
+            try ensureLocalBuildingDirectories()
+            try generateProjectYaml(projectDir: projectDir, projectName: projectName)
+            try ensureInfoPlist()
+            try runXcodeGen()
+        } catch {
+            // Fallback to legacy generation if XcodeGen fails
+            generateXcodeProjectFiles(in: projectDir, projectName: projectName)
+        }
+    }
+
+    /// Ensures the Local Building and Generated directories exist.
+    private func ensureLocalBuildingDirectories() throws {
+        let localBuildingURL = getLocalBuildingURL()
+        let generatedURL = localBuildingURL.appendingPathComponent("Generated")
+        if !fm.fileExists(atPath: generatedURL.path) {
+            try fm.createDirectory(at: generatedURL, withIntermediateDirectories: true)
+        }
     }
 
     /// Call this when a user adds, removes, or renames files inside the project.
@@ -476,6 +497,152 @@ final class ProjectBuilderManager {
         try workspace.write(path: workspacePath)
 
         // Inside create the file: contents.xcworkspacedata (Done by workspace.write)
+    }
+
+    // MARK: - XcodeGen Configuration
+
+    /// Generates a `project.yml` file inside the Local Building folder.
+    private func generateProjectYaml(projectDir: URL, projectName: String) throws {
+        let localBuildingURL = getLocalBuildingURL()
+
+        let projectPath = Path(projectDir.standardized.path)
+        let buildingPath = Path(localBuildingURL.standardized.path)
+        let relPath = projectPath.relative(to: buildingPath).string
+
+        let sanitizedName = projectName.replacingOccurrences(of: " ", with: "")
+        let bundleId = "com.swiftcode.\(sanitizedName.lowercased())"
+
+        let yamlContent = """
+name: \(projectName)
+
+options:
+  bundleIdPrefix: com.swiftcode.\(sanitizedName.lowercased())
+  generateWorkspace: true
+  deploymentTarget:
+    iOS: "16.0"
+
+settings:
+  base:
+    SWIFT_VERSION: 5.0
+    IPHONEOS_DEPLOYMENT_TARGET: 16.0
+    TARGETED_DEVICE_FAMILY: "1,2"
+
+configs:
+  Debug: debug
+  Release: release
+
+targets:
+  \(projectName):
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - \(relPath)/Sources
+      - \(relPath)/Views
+      - \(relPath)/Features
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: \(bundleId)
+        INFOPLIST_FILE: Generated/Info.plist
+"""
+        let yamlURL = localBuildingURL.appendingPathComponent("project.yml")
+        try yamlContent.write(to: yamlURL, atomically: true, encoding: .utf8)
+    }
+
+    /// Returns the URL to the Local Building folder inside Documents.
+    func getLocalBuildingURL() -> URL {
+        let docs = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        return docs.appendingPathComponent("SwiftCode/Backend/Local Building")
+    }
+
+    /// Returns the expected path for the generated .xcodeproj.
+    func generatedXcodeProjPath(for projectName: String) -> URL {
+        getLocalBuildingURL().appendingPathComponent("\(projectName).xcodeproj")
+    }
+
+    /// Returns the expected path for the generated .xcworkspace.
+    func generatedXcworkspacePath(for projectName: String) -> URL {
+        getLocalBuildingURL().appendingPathComponent("\(projectName).xcworkspace")
+    }
+
+    /// Triggers XcodeGen to produce the project files.
+    private func runXcodeGen() throws {
+        #if os(macOS)
+        let localBuildingURL = getLocalBuildingURL()
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.currentDirectoryURL = localBuildingURL
+        process.arguments = [
+            "xcodegen",
+            "--spec", "project.yml",
+            "--project", "."
+        ]
+
+        try process.run()
+        process.waitUntilExit()
+
+        if process.terminationStatus != 0 {
+            throw NSError(domain: "ProjectBuilderManager", code: Int(process.terminationStatus), userInfo: [NSLocalizedDescriptionKey: "XcodeGen failed with status \(process.terminationStatus)"])
+        }
+        #else
+        // XcodeGen execution is only supported on macOS.
+        // On iOS, this would typically be handled by a remote build service.
+        throw NSError(domain: "ProjectBuilderManager", code: -1, userInfo: [NSLocalizedDescriptionKey: "XcodeGen is only supported on macOS."])
+        #endif
+    }
+
+    /// Automatically generates a minimal Info.plist if it does not exist.
+    private func ensureInfoPlist() throws {
+        let localBuildingURL = getLocalBuildingURL()
+        let generatedDir = localBuildingURL.appendingPathComponent("Generated")
+        if !fm.fileExists(atPath: generatedDir.path) {
+            try fm.createDirectory(at: generatedDir, withIntermediateDirectories: true)
+        }
+
+        let infoPlistURL = generatedDir.appendingPathComponent("Info.plist")
+        guard !fm.fileExists(atPath: infoPlistURL.path) else { return }
+
+        let content = """
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<true/>
+	</dict>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>
+"""
+        try content.write(to: infoPlistURL, atomically: true, encoding: .utf8)
     }
 
     // MARK: - File Collection

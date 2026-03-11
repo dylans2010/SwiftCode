@@ -39,7 +39,7 @@ struct PrepareCompileWaitingView: View {
                     Spacer()
                 }
             }
-            .navigationTitle("Prepare Compiling")
+            .navigationTitle("Preparing For Completion")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -64,12 +64,25 @@ struct PrepareCompileWaitingView: View {
         // Verify that both .xcodeproj and .xcworkspace exist before dismissing.
         let projectDir = await project.directoryURL
         let projectName = project.name
-        let xcodeProjPath = projectDir.appendingPathComponent("\(projectName).xcodeproj").path
-        let xcworkspacePath = projectDir.appendingPathComponent("\(projectName).xcworkspace").path
 
-        // Continuously check if the following exist: ProjectName.xcodeproj, ProjectName.xcworkspace
-        while !FileManager.default.fileExists(atPath: xcodeProjPath) ||
-              !FileManager.default.fileExists(atPath: xcworkspacePath) {
+        // Check both the project directory (legacy) and the Local Building folder (new)
+        let legacyProj = projectDir.appendingPathComponent("\(projectName).xcodeproj").path
+        let legacyWorkspace = projectDir.appendingPathComponent("\(projectName).xcworkspace").path
+
+        let newProj = await ProjectBuilderManager.shared.generatedXcodeProjPath(for: projectName).path
+        let newWorkspace = await ProjectBuilderManager.shared.generatedXcworkspacePath(for: projectName).path
+
+        // Continuously check if the files exist in either location
+        while true {
+            let legacyExists = FileManager.default.fileExists(atPath: legacyProj) &&
+                               FileManager.default.fileExists(atPath: legacyWorkspace)
+            let newExists = FileManager.default.fileExists(atPath: newProj) &&
+                            FileManager.default.fileExists(atPath: newWorkspace)
+
+            if legacyExists || newExists {
+                break
+            }
+
             try? await Task.sleep(for: .seconds(0.5))
             // Re-trigger preparation if files are still missing
             await ProjectBuilderManager.shared.prepareXcodeFiles(for: project)
