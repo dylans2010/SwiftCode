@@ -8,6 +8,7 @@ class ToolbarSettings: ObservableObject {
 
     @Published var wordWrap: Bool = false
     @Published var showSearchBar: Bool = false
+    @AppStorage("com.swiftcode.toolbar.showToolNames") var showToolNames: Bool = true
 
     private init() {}
 }

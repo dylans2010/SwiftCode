@@ -108,10 +108,12 @@ struct MainToolbarView: View {
                                     .font(.system(size: 16))
                                     .foregroundStyle(iconColor(for: tool.id))
 
-                                Text(tool.name)
-                                    .font(.system(size: 9, weight: .medium))
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
+                                if toolbarSettings.showToolNames {
+                                    Text(tool.name)
+                                        .font(.system(size: 9, weight: .medium))
+                                        .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                }
                             }
                             .frame(minWidth: 48)
                         }
