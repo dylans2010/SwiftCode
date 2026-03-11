@@ -423,9 +423,18 @@ struct TextEditorRepresentable: UIViewRepresentable {
         if wordWrap {
             textView.textContainer.lineBreakMode = .byWordWrapping
             textView.textContainer.widthTracksTextView = true
+            // Ensure lines wrap within the code column only; never bleed into gutter
+            textView.textContainer.size = CGSize(
+                width: TextLayoutEngine.codeColumnWidth(totalWidth: scrollView.bounds.width),
+                height: .greatestFiniteMagnitude
+            )
         } else {
             textView.textContainer.lineBreakMode = .byClipping
             textView.textContainer.widthTracksTextView = false
+            textView.textContainer.size = CGSize(
+                width: CGFloat.greatestFiniteMagnitude,
+                height: .greatestFiniteMagnitude
+            )
         }
 
         context.coordinator.updateLayout()

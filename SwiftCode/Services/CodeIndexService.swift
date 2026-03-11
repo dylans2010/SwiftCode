@@ -30,8 +30,20 @@ final class CodeIndexService: ObservableObject {
 
     // MARK: - Search
 
-    func searchProject(query: String, at directoryURL: URL) async -> [SearchResult] {
-        return await Self.searchFiles(query: query, in: directoryURL)
+    func searchProject(
+        query: String,
+        at directoryURL: URL,
+        caseSensitive: Bool = false,
+        useRegex: Bool = false,
+        fileExtension: String? = nil
+    ) async -> [SearchResult] {
+        return await Self.searchFiles(
+            query: query,
+            in: directoryURL,
+            caseSensitive: caseSensitive,
+            useRegex: useRegex,
+            fileExtension: fileExtension
+        )
     }
 
     // MARK: - Scanning
@@ -105,10 +117,15 @@ final class CodeIndexService: ObservableObject {
 
     // MARK: - Full Text Search
 
-    private static func searchFiles(query: String, in directoryURL: URL) async -> [SearchResult] {
+    private static func searchFiles(
+        query: String,
+        in directoryURL: URL,
+        caseSensitive: Bool = false,
+        useRegex: Bool = false,
+        fileExtension: String? = nil
+    ) async -> [SearchResult] {
         let fm = FileManager.default
         var results: [SearchResult] = []
-        let lowercaseQuery = query.lowercased()
 
         guard let enumerator = fm.enumerator(
             at: directoryURL,
@@ -116,10 +133,48 @@ final class CodeIndexService: ObservableObject {
             options: [.skipsHiddenFiles]
         ) else { return [] }
 
-        let textExtensions = Set(["swift", "json", "plist", "yml", "yaml", "md", "txt", "xml", "html", "css", "js"])
+        // Comprehensive list of searchable text file extensions
+        let allTextExtensions = Set([
+            "swift", "json", "plist", "yml", "yaml", "md", "txt", "xml",
+            "html", "css", "js", "ts", "tsx", "jsx", "py", "rb", "go",
+            "rs", "kt", "java", "c", "cpp", "h", "hpp", "m", "mm",
+            "sh", "bash", "zsh", "fish", "toml", "ini", "cfg", "conf",
+            "gradle", "podspec", "xcconfig", "gitignore", "dockerfile",
+            "graphql", "sql", "r", "pl", "php", "cs", "fs", "lua",
+            "dart", "scala", "clj", "ex", "exs", "erl", "hs", "elm"
+        ])
+
+        // Build a regex or plain search closure
+        let matchLine: (String) -> Bool
+        if useRegex {
+            let options: NSRegularExpression.Options = caseSensitive ? [] : .caseInsensitive
+            if let regex = try? NSRegularExpression(pattern: query, options: options) {
+                matchLine = { line in
+                    let range = NSRange(line.startIndex..., in: line)
+                    return regex.firstMatch(in: line, range: range) != nil
+                }
+            } else {
+                // Invalid regex — fall back to plain search
+                let lq = caseSensitive ? query : query.lowercased()
+                matchLine = { line in
+                    (caseSensitive ? line : line.lowercased()).contains(lq)
+                }
+            }
+        } else {
+            let lq = caseSensitive ? query : query.lowercased()
+            matchLine = { line in
+                (caseSensitive ? line : line.lowercased()).contains(lq)
+            }
+        }
 
         while let fileURL = enumerator.nextObject() as? URL {
-            guard textExtensions.contains(fileURL.pathExtension.lowercased()) else { continue }
+            let ext = fileURL.pathExtension.lowercased()
+            // Apply file extension filter if set
+            if let filterExt = fileExtension {
+                guard ext == filterExt else { continue }
+            } else {
+                guard allTextExtensions.contains(ext) else { continue }
+            }
             guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
 
             let relativePath = fileURL.path.replacingOccurrences(of: directoryURL.path + "/", with: "")
@@ -127,7 +182,7 @@ final class CodeIndexService: ObservableObject {
             let lines = content.components(separatedBy: "\n")
 
             for (lineIndex, line) in lines.enumerated() {
-                if line.lowercased().contains(lowercaseQuery) {
+                if matchLine(line) {
                     results.append(SearchResult(
                         fileName: fileName,
                         filePath: relativePath,
@@ -138,15 +193,19 @@ final class CodeIndexService: ObservableObject {
                 }
             }
 
-            // Also match file name
-            if fileName.lowercased().contains(lowercaseQuery) && !results.contains(where: { $0.filePath == relativePath }) {
-                results.append(SearchResult(
-                    fileName: fileName,
-                    filePath: relativePath,
-                    lineNumber: 1,
-                    snippet: fileName,
-                    matchRange: nil
-                ))
+            // Also match file name itself (only when using plain search)
+            if !useRegex {
+                let lq = caseSensitive ? query : query.lowercased()
+                let lname = caseSensitive ? fileName : fileName.lowercased()
+                if lname.contains(lq) && !results.contains(where: { $0.filePath == relativePath }) {
+                    results.append(SearchResult(
+                        fileName: fileName,
+                        filePath: relativePath,
+                        lineNumber: 1,
+                        snippet: fileName,
+                        matchRange: nil
+                    ))
+                }
             }
         }
 

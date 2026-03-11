@@ -391,6 +391,7 @@ struct GeneralSettingsView: View {
                 quickSetupSection
                 apiKeysSection
                 editorSection
+                dashboardSection
                 themesSection
                 gitHubSection
                 agentConnectionsSection
@@ -654,6 +655,68 @@ struct GeneralSettingsView: View {
             Label("Editor", systemImage: "pencil.and.outline")
         } footer: {
             Text("When enabled, the file navigator panel stays open by default whenever you open a project.")
+        }
+    }
+
+    private var dashboardSection: some View {
+        Section {
+            // Layout picker
+            Picker("Layout", selection: $settings.dashboardLayout) {
+                ForEach(DashboardLayout.allCases, id: \.self) { layout in
+                    Label(
+                        layout.rawValue,
+                        systemImage: layout == .grid ? "square.grid.2x2" : "list.bullet"
+                    ).tag(layout)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            // Sort order
+            Picker("Sort By", selection: $settings.dashboardSortOrder) {
+                ForEach(DashboardSortOrder.allCases, id: \.self) { order in
+                    Text(order.rawValue).tag(order)
+                }
+            }
+
+            Toggle(isOn: $settings.showProjectIcons) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Show Project Icons")
+                    Text("Display the Swift logo icon on each project card")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Toggle(isOn: $settings.showFileCount) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Show File Count")
+                    Text("Display the number of files on each project card")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Toggle(isOn: $settings.showLastOpenedTime) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Show Last Opened Time")
+                    Text("Display when each project was last opened")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Toggle(isOn: $settings.showFolderPreview) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Show Folder Preview")
+                    Text("Show the first file name as a preview in list layout")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } header: {
+            Label("Dashboard", systemImage: "rectangle.grid.2x2")
+        } footer: {
+            Text("Customize how your projects appear on the Home screen. Switch between grid cards and a compact list view.")
         }
     }
 

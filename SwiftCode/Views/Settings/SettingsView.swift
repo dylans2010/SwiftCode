@@ -130,6 +130,12 @@ class AppSettings: ObservableObject {
     @Published var alwaysPinFilesView: Bool {
         didSet { UserDefaults.standard.set(alwaysPinFilesView, forKey: "alwaysPinFilesView") }
     }
+    @Published var showFileCount: Bool {
+        didSet { UserDefaults.standard.set(showFileCount, forKey: "showFileCount") }
+    }
+    @Published var showLastOpenedTime: Bool {
+        didSet { UserDefaults.standard.set(showLastOpenedTime, forKey: "showLastOpenedTime") }
+    }
 
     // MARK: - CoreML
     @Published var coreMLEnabled: Bool {
@@ -179,6 +185,8 @@ class AppSettings: ObservableObject {
         showProjectIcons = UserDefaults.standard.object(forKey: "showProjectIcons") as? Bool ?? true
         showFolderPreview = UserDefaults.standard.object(forKey: "showFolderPreview") as? Bool ?? false
         alwaysPinFilesView = UserDefaults.standard.object(forKey: "alwaysPinFilesView") as? Bool ?? false
+        showFileCount = UserDefaults.standard.object(forKey: "showFileCount") as? Bool ?? true
+        showLastOpenedTime = UserDefaults.standard.object(forKey: "showLastOpenedTime") as? Bool ?? true
         coreMLEnabled = UserDefaults.standard.object(forKey: "coreMLEnabled") as? Bool ?? false
         coreMLHybridMode = UserDefaults.standard.object(forKey: "coreMLHybridMode") as? Bool ?? false
         coreMLSelectedModel = UserDefaults.standard.string(forKey: "coreMLSelectedModel") ?? ""
