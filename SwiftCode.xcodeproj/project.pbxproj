@@ -116,6 +116,7 @@ CB000000000000000000002A /* build.yml in Resources */ = {isa = PBXBuildFile; fil
 		AA0000100000000000000F2A /* ToolbarMinimizedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F2B /* ToolbarMinimizedView.swift */; };
 		AA0000100000000000000F2D /* MainToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F2C /* MainToolbarView.swift */; };
 		AA0000100000000000000F6D /* AgentModelCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F6C /* AgentModelCheck.swift */; };
+		AA00001000000000000003DC /* ToolbarSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000003DD /* ToolbarSettings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -229,6 +230,7 @@ CB000000000000000000001B /* build-project.yml */ = {isa = PBXFileReference; last
 		AA0000100000000000000F2B /* ToolbarMinimizedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarMinimizedView.swift; sourceTree = "<group>"; };
 		AA0000100000000000000F2C /* MainToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainToolbarView.swift; sourceTree = "<group>"; };
 CB000000000000000000002B /* build.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = build.yml; sourceTree = "<group>"; };
+AA00001000000000000003DD /* ToolbarSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarSettings.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -293,6 +295,7 @@ children = (
 				RPM000000000000000000001B /* RepoPermManager.swift */,
 				PBM000000000000000000001B /* ProjectBuilderManager.swift */,
 				AA0000100000000000000PFR /* ProjectFilesExtracter.swift */,
+				AA00001000000000000003DD /* ToolbarSettings.swift */,
 			);
 path = Services;
 sourceTree = "<group>";
@@ -848,6 +851,7 @@ files = (
 				PR0000000000000000000001A /* PullRequestView.swift in Sources */,
 				EX0000000000000000000001A /* ExtensionsView.swift in Sources */,
 				EM0000000000000000000001A /* ExtensionManager.swift in Sources */,
+				AA00001000000000000003DC /* ToolbarSettings.swift in Sources */,
 				CEV000000000000000000001A /* CreateExtensionView.swift in Sources */,
 				EEV000000000000000000001A /* EditExtensionView.swift in Sources */,
 				RPM000000000000000000001A /* RepoPermManager.swift in Sources */,

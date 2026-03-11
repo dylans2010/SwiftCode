@@ -184,7 +184,7 @@ struct LocalBuildView: View {
                     .padding(8)
                     .background(Color.black.opacity(0.3))
                     .cornerRadius(8)
-                    .onChange(of: buildService.buildLogs.count) { _ in
+                    .onChange(of: buildService.buildLogs.count) {
                         if let last = buildService.buildLogs.last {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
