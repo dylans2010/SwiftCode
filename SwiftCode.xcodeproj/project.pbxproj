@@ -61,6 +61,11 @@ BG000000000000000000005A /* GitHubRepositoryManager.swift in Sources */ = {isa =
 BG000000000000000000006A /* GitHubBuilds.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000006B /* GitHubBuilds.swift */; };
 BG000000000000000000007A /* GitCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000007B /* GitCommands.swift */; };
 BD000000000000000000001A /* BuildLogDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD000000000000000000001B /* BuildLogDecoder.swift */; };
+LS000000000000000000001A /* LocalRunManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000001B /* LocalRunManager.swift */; };
+LS000000000000000000002A /* PreviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000002B /* PreviewEngine.swift */; };
+LS000000000000000000003A /* PreviewHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000003B /* PreviewHostView.swift */; };
+LS000000000000000000004A /* ProjectAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000004B /* ProjectAnalyzer.swift */; };
+LS000000000000000000005A /* SwiftUIRuntimeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000005B /* SwiftUIRuntimeLoader.swift */; };
 TV0000000000000000000001A /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TV0000000000000000000001B /* TerminalView.swift */; };
 AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AS0000000000000000000001B /* AISuggestionEngine.swift */; };
 SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */; };
@@ -142,6 +147,11 @@ BG000000000000000000005B /* GitHubRepositoryManager.swift */ = {isa = PBXFileRef
 BG000000000000000000006B /* GitHubBuilds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubBuilds.swift; sourceTree = "<group>"; };
 BG000000000000000000007B /* GitCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitCommands.swift; sourceTree = "<group>"; };
 BD000000000000000000001B /* BuildLogDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildLogDecoder.swift; sourceTree = "<group>"; };
+LS000000000000000000001B /* LocalRunManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalRunManager.swift; sourceTree = "<group>"; };
+LS000000000000000000002B /* PreviewEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewEngine.swift; sourceTree = "<group>"; };
+LS000000000000000000003B /* PreviewHostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHostView.swift; sourceTree = "<group>"; };
+LS000000000000000000004B /* ProjectAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectAnalyzer.swift; sourceTree = "<group>"; };
+LS000000000000000000005B /* SwiftUIRuntimeLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIRuntimeLoader.swift; sourceTree = "<group>"; };
 TV0000000000000000000001B /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalView.swift; sourceTree = "<group>"; };
 AS0000000000000000000001B /* AISuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISuggestionEngine.swift; sourceTree = "<group>"; };
 SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightingEngine.swift; sourceTree = "<group>"; };
@@ -482,9 +492,22 @@ sourceTree = "<group>";
 BE000000000000000000001F /* Backend */ = {
 isa = PBXGroup;
 children = (
+LS000000000000000000001F /* Local Simulation */,
 BG000000000000000000001F /* GitHub */,
 );
 path = Backend;
+sourceTree = "<group>";
+};
+LS000000000000000000001F /* Local Simulation */ = {
+isa = PBXGroup;
+children = (
+LS000000000000000000001B /* LocalRunManager.swift */,
+LS000000000000000000002B /* PreviewEngine.swift */,
+LS000000000000000000003B /* PreviewHostView.swift */,
+LS000000000000000000004B /* ProjectAnalyzer.swift */,
+LS000000000000000000005B /* SwiftUIRuntimeLoader.swift */,
+);
+path = "Local Simulation";
 sourceTree = "<group>";
 };
 BG000000000000000000001F /* GitHub */ = {
@@ -638,6 +661,11 @@ BG000000000000000000005A /* GitHubRepositoryManager.swift in Sources */,
 BG000000000000000000006A /* GitHubBuilds.swift in Sources */,
 BG000000000000000000007A /* GitCommands.swift in Sources */,
 BD000000000000000000001A /* BuildLogDecoder.swift in Sources */,
+LS000000000000000000001A /* LocalRunManager.swift in Sources */,
+LS000000000000000000002A /* PreviewEngine.swift in Sources */,
+LS000000000000000000003A /* PreviewHostView.swift in Sources */,
+LS000000000000000000004A /* ProjectAnalyzer.swift in Sources */,
+LS000000000000000000005A /* SwiftUIRuntimeLoader.swift in Sources */,
 TV0000000000000000000001A /* TerminalView.swift in Sources */,
 AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */,
 SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */,
