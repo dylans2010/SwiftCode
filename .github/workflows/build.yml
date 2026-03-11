@@ -1,0 +1,71 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 'latest-stable'
+
+      - name: Show Environment
+        run: |
+          xcodebuild -version
+          swift --version
+          echo "Available simulators:"
+          xcrun simctl list devices available | head -20
+
+      - name: Debug - List Repository Structure
+        run: |
+          pwd
+          ls -la
+          find . -name "*.xcodeproj" -not -path "*/DerivedData/*"
+          find . -name "*.xcworkspace" -not -path "*/DerivedData/*"
+
+      - name: Build Archive
+        run: |
+          WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/DerivedData/*" | head -1)
+          XCODEPROJ=$(find . -name "*.xcodeproj" -not -path "*/DerivedData/*" | head -1)
+          if [ -n "$WORKSPACE" ]; then
+            PROJECT_ARG="-workspace $WORKSPACE"
+          elif [ -n "$XCODEPROJ" ]; then
+            PROJECT_ARG="-project $XCODEPROJ"
+          else
+            echo "Error: No .xcworkspace or .xcodeproj found in repository." >&2
+            exit 1
+          fi
+          xcodebuild archive \
+            $PROJECT_ARG \
+            -scheme "SwiftCode" \
+            -archivePath "$RUNNER_TEMP/SwiftCode.xcarchive" \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Package IPA
+        run: |
+          mkdir -p "$RUNNER_TEMP/ipa/Payload"
+          cp -R "$RUNNER_TEMP/SwiftCode.xcarchive/Products/Applications/"*.app \
+            "$RUNNER_TEMP/ipa/Payload/"
+          cd "$RUNNER_TEMP/ipa"
+          zip -r "SwiftCode.ipa" Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SwiftCode-IPA
+          path: $RUNNER_TEMP/ipa/SwiftCode.ipa
+          if-no-files-found: error
+          retention-days: 30
