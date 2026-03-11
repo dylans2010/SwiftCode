@@ -147,19 +147,31 @@ final class GitHubService {
     func pushProject(_ project: Project, owner: String, repo: String, commitMessage: String, branch: String? = nil) async throws {
         let allFiles = collectFiles(from: project.files)
         let projectDir = await project.directoryURL
+        var failedFiles: [(String, Error)] = []
+
         for fileNode in allFiles {
             let fileURL = projectDir.appendingPathComponent(fileNode.path)
-            guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
-            let existingSHA = try? await getFileSHA(owner: owner, repo: repo, path: fileNode.path, branch: branch)
-            try await pushFile(
-                owner: owner,
-                repo: repo,
-                path: fileNode.path,
-                content: content,
-                message: commitMessage,
-                sha: existingSHA,
-                branch: branch
-            )
+            do {
+                let content = try String(contentsOf: fileURL, encoding: .utf8)
+                let existingSHA = try? await getFileSHA(owner: owner, repo: repo, path: fileNode.path, branch: branch)
+                try await pushFile(
+                    owner: owner,
+                    repo: repo,
+                    path: fileNode.path,
+                    content: content,
+                    message: commitMessage,
+                    sha: existingSHA,
+                    branch: branch
+                )
+            } catch {
+                failedFiles.append((fileNode.path, error))
+            }
+        }
+
+        // If any files failed to push, throw an error with details
+        if !failedFiles.isEmpty {
+            let failureDetails = failedFiles.map { "\($0.0): \($0.1.localizedDescription)" }.joined(separator: "\n")
+            throw GitHubError.pushFailed(message: "Failed to push \(failedFiles.count) file(s):\n\(failureDetails)")
         }
     }
 
@@ -218,6 +230,8 @@ final class GitHubService {
 
         // This endpoint returns a redirect; capture the Location header.
         let session = URLSession(configuration: .default, delegate: NoRedirectDelegate(), delegateQueue: nil)
+        defer { session.invalidateAndCancel() }
+
         let (_, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 302,
@@ -754,6 +768,7 @@ enum GitHubError: LocalizedError {
     case noLogsAvailable
     case invalidPath
     case decodingFailed
+    case pushFailed(message: String)
 
     var errorDescription: String? {
         switch self {
@@ -769,6 +784,8 @@ enum GitHubError: LocalizedError {
             return "The file path is invalid."
         case .decodingFailed:
             return "Failed to decode file content from GitHub."
+        case .pushFailed(let message):
+            return message
         }
     }
 }

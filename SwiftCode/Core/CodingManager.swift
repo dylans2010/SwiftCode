@@ -89,8 +89,9 @@ final class CodingManager: ObservableObject {
     /// Read file content as a string.
     func readFile(at relativePath: String, in projectDir: URL) throws -> String {
         let url = projectDir.appendingPathComponent(relativePath)
-        let standardized = url.standardizedFileURL
-        guard standardized.path.hasPrefix(projectDir.standardizedFileURL.path) else {
+        let standardized = url.standardizedFileURL.resolvingSymlinksInPath()
+        let projectStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
+        guard standardized.path.hasPrefix(projectStd.path + "/") || standardized.path == projectStd.path else {
             throw CodingError.pathOutsideProject
         }
         return try String(contentsOf: standardized, encoding: .utf8)
@@ -98,9 +99,9 @@ final class CodingManager: ObservableObject {
 
     /// Read file content asynchronously.
     nonisolated func readFileAsync(at relativePath: String, in projectDir: URL) async throws -> String {
-        let url = projectDir.appendingPathComponent(relativePath).standardizedFileURL
-        let projectStd = projectDir.standardizedFileURL
-        guard url.path.hasPrefix(projectStd.path) else {
+        let url = projectDir.appendingPathComponent(relativePath).standardizedFileURL.resolvingSymlinksInPath()
+        let projectStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
+        guard url.path.hasPrefix(projectStd.path + "/") || url.path == projectStd.path else {
             throw CodingError.pathOutsideProject
         }
         let data = try Data(contentsOf: url)
@@ -115,8 +116,9 @@ final class CodingManager: ObservableObject {
     /// Write content to a file, creating intermediate directories if needed.
     func writeFile(content: String, at relativePath: String, in projectDir: URL) throws {
         let url = projectDir.appendingPathComponent(relativePath)
-        let standardized = url.standardizedFileURL
-        guard standardized.path.hasPrefix(projectDir.standardizedFileURL.path) else {
+        let standardized = url.standardizedFileURL.resolvingSymlinksInPath()
+        let projectStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
+        guard standardized.path.hasPrefix(projectStd.path + "/") || standardized.path == projectStd.path else {
             throw CodingError.pathOutsideProject
         }
         let parent = standardized.deletingLastPathComponent()
@@ -130,8 +132,9 @@ final class CodingManager: ObservableObject {
     func createFile(named name: String, at directoryPath: String?, in projectDir: URL, content: String = "") throws {
         let base = directoryPath.map { projectDir.appendingPathComponent($0) } ?? projectDir
         let fileURL = base.appendingPathComponent(name)
-        let standardized = fileURL.standardizedFileURL
-        guard standardized.path.hasPrefix(projectDir.standardizedFileURL.path) else {
+        let standardized = fileURL.standardizedFileURL.resolvingSymlinksInPath()
+        let projectStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
+        guard standardized.path.hasPrefix(projectStd.path + "/") || standardized.path == projectStd.path else {
             throw CodingError.pathOutsideProject
         }
         guard !fm.fileExists(atPath: standardized.path) else {
@@ -145,8 +148,9 @@ final class CodingManager: ObservableObject {
     func createDirectory(named name: String, at directoryPath: String?, in projectDir: URL) throws {
         let base = directoryPath.map { projectDir.appendingPathComponent($0) } ?? projectDir
         let folderURL = base.appendingPathComponent(name)
-        let standardized = folderURL.standardizedFileURL
-        guard standardized.path.hasPrefix(projectDir.standardizedFileURL.path) else {
+        let standardized = folderURL.standardizedFileURL.resolvingSymlinksInPath()
+        let projectStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
+        guard standardized.path.hasPrefix(projectStd.path + "/") || standardized.path == projectStd.path else {
             throw CodingError.pathOutsideProject
         }
         try fm.createDirectory(at: standardized, withIntermediateDirectories: false)
@@ -157,11 +161,12 @@ final class CodingManager: ObservableObject {
     /// Delete a file or directory.
     func deleteItem(at relativePath: String, in projectDir: URL) throws {
         let url = projectDir.appendingPathComponent(relativePath)
-        let standardized = url.standardizedFileURL
-        guard standardized.path.hasPrefix(projectDir.standardizedFileURL.path) else {
+        let standardized = url.standardizedFileURL.resolvingSymlinksInPath()
+        let projectStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
+        guard standardized.path.hasPrefix(projectStd.path + "/") || standardized.path == projectStd.path else {
             throw CodingError.pathOutsideProject
         }
-        guard standardized != projectDir.standardizedFileURL else {
+        guard standardized.path != projectStd.path else {
             throw CodingError.cannotDeleteRoot
         }
         try fm.removeItem(at: standardized)
@@ -176,12 +181,12 @@ final class CodingManager: ObservableObject {
         let newRelative = parentPath.isEmpty ? newName : "\(parentPath)/\(newName)"
         let newURL = projectDir.appendingPathComponent(newRelative)
 
-        let oldStd = oldURL.standardizedFileURL
-        let newStd = newURL.standardizedFileURL
-        let projStd = projectDir.standardizedFileURL
+        let oldStd = oldURL.standardizedFileURL.resolvingSymlinksInPath()
+        let newStd = newURL.standardizedFileURL.resolvingSymlinksInPath()
+        let projStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
 
-        guard oldStd.path.hasPrefix(projStd.path),
-              newStd.path.hasPrefix(projStd.path) else {
+        guard oldStd.path.hasPrefix(projStd.path + "/") || oldStd.path == projStd.path,
+              newStd.path.hasPrefix(projStd.path + "/") || newStd.path == projStd.path else {
             throw CodingError.pathOutsideProject
         }
         try fm.moveItem(at: oldStd, to: newStd)
@@ -223,11 +228,11 @@ final class CodingManager: ObservableObject {
 
     /// Copy a file within a project directory.
     func copyFile(from sourcePath: String, to destPath: String, in projectDir: URL) throws {
-        let srcURL = projectDir.appendingPathComponent(sourcePath).standardizedFileURL
-        let dstURL = projectDir.appendingPathComponent(destPath).standardizedFileURL
-        let projStd = projectDir.standardizedFileURL
-        guard srcURL.path.hasPrefix(projStd.path),
-              dstURL.path.hasPrefix(projStd.path) else {
+        let srcURL = projectDir.appendingPathComponent(sourcePath).standardizedFileURL.resolvingSymlinksInPath()
+        let dstURL = projectDir.appendingPathComponent(destPath).standardizedFileURL.resolvingSymlinksInPath()
+        let projStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
+        guard srcURL.path.hasPrefix(projStd.path + "/") || srcURL.path == projStd.path,
+              dstURL.path.hasPrefix(projStd.path + "/") || dstURL.path == projStd.path else {
             throw CodingError.pathOutsideProject
         }
         let parent = dstURL.deletingLastPathComponent()
@@ -256,8 +261,9 @@ final class CodingManager: ObservableObject {
     func createFile(at relativePath: String, in project: String) throws {
         let projectDir = projectDirectory(for: project)
         let url = projectDir.appendingPathComponent(relativePath)
-        let standardized = url.standardizedFileURL
-        guard standardized.path.hasPrefix(projectDir.standardizedFileURL.path) else {
+        let standardized = url.standardizedFileURL.resolvingSymlinksInPath()
+        let projectStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
+        guard standardized.path.hasPrefix(projectStd.path + "/") || standardized.path == projectStd.path else {
             throw CodingError.pathOutsideProject
         }
         let parent = standardized.deletingLastPathComponent()
@@ -276,8 +282,9 @@ final class CodingManager: ObservableObject {
     func createFolder(at relativePath: String, in project: String) throws {
         let projectDir = projectDirectory(for: project)
         let url = projectDir.appendingPathComponent(relativePath)
-        let standardized = url.standardizedFileURL
-        guard standardized.path.hasPrefix(projectDir.standardizedFileURL.path) else {
+        let standardized = url.standardizedFileURL.resolvingSymlinksInPath()
+        let projectStd = projectDir.standardizedFileURL.resolvingSymlinksInPath()
+        guard standardized.path.hasPrefix(projectStd.path + "/") || standardized.path == projectStd.path else {
             throw CodingError.pathOutsideProject
         }
         try fm.createDirectory(at: standardized, withIntermediateDirectories: true)

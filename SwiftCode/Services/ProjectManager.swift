@@ -244,10 +244,16 @@ jobs:
     // MARK: - Delete Project
 
     func deleteProject(_ project: Project) throws {
+        // First remove from file system
         try FileManager.default.removeItem(at: project.directoryURL)
+
+        // Only update UI state after successful deletion
         projects.removeAll { $0.id == project.id }
         if activeProject?.id == project.id {
             activeProject = nil
+            activeFileNode = nil
+            activeFileContent = ""
+            openFileTabs = []
         }
     }
 
@@ -326,9 +332,14 @@ jobs:
     @Published var openFileTabs: [FileNode] = []
     @Published var modifiedFilePaths: Set<String> = []
 
+    private var currentFileLoadTask: Task<Void, Never>?
+
     func openFile(_ node: FileNode) {
         guard !node.isDirectory else { return }
         guard let project = activeProject else { return }
+
+        // Cancel any in-flight file load to prevent race conditions
+        currentFileLoadTask?.cancel()
 
         fileLoadError = nil
         activeFileNode = node
@@ -344,15 +355,21 @@ jobs:
         let projectName = project.name
         let relativePath = node.path
         let nodeName = node.name
-        Task { @MainActor in
+        let nodeId = node.id
+
+        currentFileLoadTask = Task { @MainActor in
             do {
                 let content = try await CodeReaderManager.shared.readFileAsync(
                     project: projectName,
                     relativePath: relativePath
                 )
+                // Only update if this node is still the active one (user didn't switch away)
+                guard self.activeFileNode?.id == nodeId else { return }
                 self.activeFileContent = content
                 self.fileLoadError = nil
             } catch {
+                // Only update error if this node is still the active one
+                guard self.activeFileNode?.id == nodeId else { return }
                 self.activeFileContent = ""
                 self.fileLoadError = "Failed to load \(nodeName): \(error.localizedDescription)"
             }
@@ -374,9 +391,15 @@ jobs:
     func saveCurrentFile(content: String) {
         guard let project = activeProject,
               let node = activeFileNode else { return }
-        try? CodingManager.shared.writeFile(content: content, at: node.path, in: project.directoryURL)
-        activeFileContent = content
-        modifiedFilePaths.remove(node.path)
+        do {
+            try CodingManager.shared.writeFile(content: content, at: node.path, in: project.directoryURL)
+            activeFileContent = content
+            modifiedFilePaths.remove(node.path)
+            fileLoadError = nil
+        } catch {
+            // Keep the modified state and show error to user
+            fileLoadError = "Failed to save \(node.name): \(error.localizedDescription)"
+        }
     }
 
     func markFileModified(path: String) {

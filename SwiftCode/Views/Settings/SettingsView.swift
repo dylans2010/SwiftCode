@@ -33,48 +33,51 @@ enum DashboardSortOrder: String, Codable, CaseIterable {
     case creationDate = "Creation Date"
 }
 
+@MainActor
 class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
+    private var saveTask: Task<Void, Never>?
+
     @Published var selectedModel: String {
-        didSet { UserDefaults.standard.set(selectedModel, forKey: "selectedModel") }
+        didSet { debouncedSave("selectedModel", selectedModel) }
     }
     @Published var customModel: String {
-        didSet { UserDefaults.standard.set(customModel, forKey: "customModel") }
+        didSet { debouncedSave("customModel", customModel) }
     }
     @Published var autoSave: Bool {
-        didSet { UserDefaults.standard.set(autoSave, forKey: "autoSave") }
+        didSet { debouncedSave("autoSave", autoSave) }
     }
     @Published var editorFontSize: Double {
-        didSet { UserDefaults.standard.set(editorFontSize, forKey: "editorFontSize") }
+        didSet { debouncedSave("editorFontSize", editorFontSize) }
     }
     @Published var useDarkTheme: Bool {
-        didSet { UserDefaults.standard.set(useDarkTheme, forKey: "useDarkTheme") }
+        didSet { debouncedSave("useDarkTheme", useDarkTheme) }
     }
     @Published var fileHeaderAuthor: String {
-        didSet { UserDefaults.standard.set(fileHeaderAuthor, forKey: "fileHeaderAuthor") }
+        didSet { debouncedSave("fileHeaderAuthor", fileHeaderAuthor) }
     }
     @Published var fileHeaderCustomComment: String {
-        didSet { UserDefaults.standard.set(fileHeaderCustomComment, forKey: "fileHeaderCustomComment") }
+        didSet { debouncedSave("fileHeaderCustomComment", fileHeaderCustomComment) }
     }
 
     // MARK: - Theme
     @Published var selectedThemeID: String {
-        didSet { UserDefaults.standard.set(selectedThemeID, forKey: "selectedThemeID") }
+        didSet { debouncedSave("selectedThemeID", selectedThemeID) }
     }
 
     // MARK: - Git / GitHub Configuration
     @Published var gitUserName: String {
-        didSet { UserDefaults.standard.set(gitUserName, forKey: "gitUserName") }
+        didSet { debouncedSave("gitUserName", gitUserName) }
     }
     @Published var gitUserEmail: String {
-        didSet { UserDefaults.standard.set(gitUserEmail, forKey: "gitUserEmail") }
+        didSet { debouncedSave("gitUserEmail", gitUserEmail) }
     }
     @Published var defaultBranch: String {
-        didSet { UserDefaults.standard.set(defaultBranch, forKey: "defaultBranch") }
+        didSet { debouncedSave("defaultBranch", defaultBranch) }
     }
     @Published var defaultGitHubRepo: String {
-        didSet { UserDefaults.standard.set(defaultGitHubRepo, forKey: "defaultGitHubRepo") }
+        didSet { debouncedSave("defaultGitHubRepo", defaultGitHubRepo) }
     }
 
     // MARK: - Saved Repositories
@@ -91,64 +94,78 @@ class AppSettings: ObservableObject {
         }
     }
     @Published var startOnNewProject: Bool {
-        didSet { UserDefaults.standard.set(startOnNewProject, forKey: "startOnNewProject") }
+        didSet { debouncedSave("startOnNewProject", startOnNewProject) }
     }
 
     // MARK: - Extended Git Configuration
     @Published var sshKeyPath: String {
-        didSet { UserDefaults.standard.set(sshKeyPath, forKey: "sshKeyPath") }
+        didSet { debouncedSave("sshKeyPath", sshKeyPath) }
     }
     @Published var httpsAuthToken: String {
-        didSet { UserDefaults.standard.set(httpsAuthToken, forKey: "httpsAuthToken") }
+        didSet { debouncedSave("httpsAuthToken", httpsAuthToken) }
     }
     @Published var autoFetchRepositories: Bool {
-        didSet { UserDefaults.standard.set(autoFetchRepositories, forKey: "autoFetchRepositories") }
+        didSet { debouncedSave("autoFetchRepositories", autoFetchRepositories) }
     }
     @Published var autoPullBeforeCommit: Bool {
-        didSet { UserDefaults.standard.set(autoPullBeforeCommit, forKey: "autoPullBeforeCommit") }
+        didSet { debouncedSave("autoPullBeforeCommit", autoPullBeforeCommit) }
     }
     @Published var commitMessageTemplate: String {
-        didSet { UserDefaults.standard.set(commitMessageTemplate, forKey: "commitMessageTemplate") }
+        didSet { debouncedSave("commitMessageTemplate", commitMessageTemplate) }
     }
     @Published var workflowMonitoringEnabled: Bool {
-        didSet { UserDefaults.standard.set(workflowMonitoringEnabled, forKey: "workflowMonitoringEnabled") }
+        didSet { debouncedSave("workflowMonitoringEnabled", workflowMonitoringEnabled) }
     }
 
     // MARK: - Dashboard Customization
     @Published var dashboardLayout: DashboardLayout {
-        didSet { UserDefaults.standard.set(dashboardLayout.rawValue, forKey: "dashboardLayout") }
+        didSet { debouncedSave("dashboardLayout", dashboardLayout.rawValue) }
     }
     @Published var dashboardSortOrder: DashboardSortOrder {
-        didSet { UserDefaults.standard.set(dashboardSortOrder.rawValue, forKey: "dashboardSortOrder") }
+        didSet { debouncedSave("dashboardSortOrder", dashboardSortOrder.rawValue) }
     }
     @Published var showProjectIcons: Bool {
-        didSet { UserDefaults.standard.set(showProjectIcons, forKey: "showProjectIcons") }
+        didSet { debouncedSave("showProjectIcons", showProjectIcons) }
     }
     @Published var showFolderPreview: Bool {
-        didSet { UserDefaults.standard.set(showFolderPreview, forKey: "showFolderPreview") }
+        didSet { debouncedSave("showFolderPreview", showFolderPreview) }
     }
     @Published var alwaysPinFilesView: Bool {
-        didSet { UserDefaults.standard.set(alwaysPinFilesView, forKey: "alwaysPinFilesView") }
+        didSet { debouncedSave("alwaysPinFilesView", alwaysPinFilesView) }
     }
     @Published var showFileCount: Bool {
-        didSet { UserDefaults.standard.set(showFileCount, forKey: "showFileCount") }
+        didSet { debouncedSave("showFileCount", showFileCount) }
     }
     @Published var showLastOpenedTime: Bool {
-        didSet { UserDefaults.standard.set(showLastOpenedTime, forKey: "showLastOpenedTime") }
+        didSet { debouncedSave("showLastOpenedTime", showLastOpenedTime) }
     }
 
     // MARK: - CoreML
     @Published var coreMLEnabled: Bool {
-        didSet { UserDefaults.standard.set(coreMLEnabled, forKey: "coreMLEnabled") }
+        didSet { debouncedSave("coreMLEnabled", coreMLEnabled) }
     }
     @Published var coreMLHybridMode: Bool {
-        didSet { UserDefaults.standard.set(coreMLHybridMode, forKey: "coreMLHybridMode") }
+        didSet { debouncedSave("coreMLHybridMode", coreMLHybridMode) }
     }
     @Published var coreMLSelectedModel: String {
-        didSet { UserDefaults.standard.set(coreMLSelectedModel, forKey: "coreMLSelectedModel") }
+        didSet { debouncedSave("coreMLSelectedModel", coreMLSelectedModel) }
     }
     @Published var coreMLUsageLimit: Double {
-        didSet { UserDefaults.standard.set(coreMLUsageLimit, forKey: "coreMLUsageLimit") }
+        didSet { debouncedSave("coreMLUsageLimit", coreMLUsageLimit) }
+    }
+
+    // MARK: - Debounced Save
+
+    private func debouncedSave(_ key: String, _ value: Any) {
+        // Cancel previous save task
+        saveTask?.cancel()
+
+        // Schedule new save after a short delay to batch multiple changes
+        saveTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second
+            guard !Task.isCancelled else { return }
+            UserDefaults.standard.set(value, forKey: key)
+        }
     }
 
     /// `true` when the user has chosen a custom OpenRouter model ID
