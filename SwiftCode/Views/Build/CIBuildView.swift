@@ -45,157 +45,102 @@ struct CIBuildView: View {
     }
 
     var generatedYAML: String {
-        var yaml = """
-        name: Build iOS IPA
+        let bundlePath = Bundle.main.resourcePath ?? ""
+        let templatePath = bundlePath + "/SwiftCode/Backend/CI Building/build.yml"
+        let fallbackPath = "SwiftCode/Backend/CI Building/build.yml"
 
-        on:
+        var template: String = ""
+        if let content = try? String(contentsOfFile: templatePath, encoding: .utf8) {
+            template = content
+        } else if let content = try? String(contentsOfFile: fallbackPath, encoding: .utf8) {
+            template = content
+        } else {
+            return "Error: Could not load CI build template."
+        }
+
+        var yaml = template
+
+        // Replace base placeholders
+        yaml = yaml.replacingOccurrences(of: "{{SCHEME}}", with: resolvedScheme)
+        yaml = yaml.replacingOccurrences(of: "{{XCODE_VERSION}}", with: xcodeVersion)
+
+        // Handle Trigger placeholders
+        let pushTrigger = """
           push:
             branches: [ \(triggerBranch) ]
         """
+        yaml = yaml.replacingOccurrences(of: "{{ON_PUSH}}", with: pushTrigger)
 
-        if includePullRequestTrigger {
-            yaml += """
+        let prTrigger = includePullRequestTrigger ? """
+          pull_request:
+            branches: [ \(triggerBranch) ]
+        """ : ""
+        yaml = yaml.replacingOccurrences(of: "{{ON_PR}}", with: prTrigger)
 
-              pull_request:
-                branches: [ \(triggerBranch) ]
-            """
-        }
-
-        yaml += """
-
-          workflow_dispatch:
-
-        jobs:
-          build:
-            runs-on: macos-14
-            timeout-minutes: 30
-
-            steps:
-              - name: Checkout
-                uses: actions/checkout@v4
-
-              - name: Select Xcode
-                uses: maxim-lobanov/setup-xcode@v1
-                with:
-                  xcode-version: '\(xcodeVersion)'
-
-              - name: Show Environment
-                run: |
-                  xcodebuild -version
-                  swift --version
-                  echo "Available simulators:"
-                  xcrun simctl list devices available | head -20
-
-              - name: Debug - List Repository Structure
-                run: |
-                  pwd
-                  ls -la
-                  find . -name "*.xcodeproj" -not -path "*/DerivedData/*"
-                  find . -name "*.xcworkspace" -not -path "*/DerivedData/*"
-        """
+        // Handle optional steps
+        var stepsYaml = ""
 
         if includeSwiftPM {
-            yaml += """
+            stepsYaml += """
 
-
-              - name: Resolve Swift Packages
-                run: |
-                  WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/DerivedData/*" | head -1)
-                  XCODEPROJ=$(find . -name "*.xcodeproj" -not -path "*/DerivedData/*" | head -1)
-                  if [ -n "$WORKSPACE" ]; then
-                    PROJECT_ARG="-workspace $WORKSPACE"
-                  elif [ -n "$XCODEPROJ" ]; then
-                    PROJECT_ARG="-project $XCODEPROJ"
-                  else
-                    echo "Error: No .xcworkspace or .xcodeproj found in repository." >&2
-                    exit 1
-                  fi
-                  xcodebuild $PROJECT_ARG \\
-                    -scheme "\(resolvedScheme)" \\
-                    -resolvePackageDependencies
-        """
+      - name: Resolve Swift Packages
+        run: |
+          WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/DerivedData/*" | head -1)
+          XCODEPROJ=$(find . -name "*.xcodeproj" -not -path "*/DerivedData/*" | head -1)
+          if [ -n "$WORKSPACE" ]; then
+            PROJECT_ARG="-workspace $WORKSPACE"
+          elif [ -n "$XCODEPROJ" ]; then
+            PROJECT_ARG="-project $XCODEPROJ"
+          else
+            echo "Error: No .xcworkspace or .xcodeproj found in repository." >&2
+            exit 1
+          fi
+          xcodebuild $PROJECT_ARG \\
+            -scheme "\(resolvedScheme)" \\
+            -resolvePackageDependencies
+"""
         }
 
         if includeLinting {
-            yaml += """
+            stepsYaml += """
 
+      - name: Install SwiftLint
+        run: brew install swiftlint
 
-              - name: Install SwiftLint
-                run: brew install swiftlint
-
-              - name: Run SwiftLint
-                run: swiftlint lint --reporter github-actions-logging || true
-            """
+      - name: Run SwiftLint
+        run: swiftlint lint --reporter github-actions-logging || true
+"""
         }
 
         if includeTests {
-            yaml += """
+            var testRun = """
 
-
-              - name: Run Tests
-                run: |
-                  xcodebuild test \\
-                    -scheme "\(resolvedScheme)" \\
-                    -destination "platform=iOS Simulator,name=\(iOSSimulator)" \\
-                    -resultBundlePath TestResults.xcresult \\
-            """
+      - name: Run Tests
+        run: |
+          xcodebuild test \\
+            -scheme "\(resolvedScheme)" \\
+            -destination "platform=iOS Simulator,name=\(iOSSimulator)" \\
+            -resultBundlePath TestResults.xcresult \\
+"""
             if includeCodeCoverage {
-                yaml += """
-                    -enableCodeCoverage YES \\
-
-                """
+                testRun += "            -enableCodeCoverage YES \\\n"
             }
-            yaml += """
-                    CODE_SIGNING_ALLOWED=NO || true
+            testRun += "            CODE_SIGNING_ALLOWED=NO || true\n"
 
-              - name: Upload Test Results
-                if: always()
-                uses: actions/upload-artifact@v4
-                with:
-                  name: test-results
-                  path: TestResults.xcresult
-                  if-no-files-found: warn
-            """
+            testRun += """
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults.xcresult
+          if-no-files-found: warn
+"""
+            stepsYaml += testRun
         }
 
-        yaml += """
-
-
-              - name: Build Archive
-                run: |
-                  WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/DerivedData/*" | head -1)
-                  XCODEPROJ=$(find . -name "*.xcodeproj" -not -path "*/DerivedData/*" | head -1)
-                  if [ -n "$WORKSPACE" ]; then
-                    PROJECT_ARG="-workspace $WORKSPACE"
-                  elif [ -n "$XCODEPROJ" ]; then
-                    PROJECT_ARG="-project $XCODEPROJ"
-                  else
-                    echo "Error: No .xcworkspace or .xcodeproj found in repository." >&2
-                    exit 1
-                  fi
-                  xcodebuild archive \\
-                    $PROJECT_ARG \\
-                    -scheme "\(resolvedScheme)" \\
-                    -archivePath "$RUNNER_TEMP/\(resolvedScheme).xcarchive" \\
-                    -destination "generic/platform=iOS" \\
-                    CODE_SIGNING_ALLOWED=NO
-
-              - name: Package IPA
-                run: |
-                  mkdir -p "$RUNNER_TEMP/ipa/Payload"
-                  cp -R "$RUNNER_TEMP/\(resolvedScheme).xcarchive/Products/Applications/"*.app \\
-                    "$RUNNER_TEMP/ipa/Payload/"
-                  cd "$RUNNER_TEMP/ipa"
-                  zip -r "\(resolvedScheme).ipa" Payload
-
-              - name: Upload IPA Artifact
-                uses: actions/upload-artifact@v4
-                with:
-                  name: \(resolvedScheme)-IPA
-                  path: $RUNNER_TEMP/ipa/\(resolvedScheme).ipa
-                  if-no-files-found: error
-                  retention-days: 30
-        """
+        yaml = yaml.replacingOccurrences(of: "{{STEPS}}", with: stepsYaml)
 
         if includeTestFlight {
             yaml += testFlightStep
