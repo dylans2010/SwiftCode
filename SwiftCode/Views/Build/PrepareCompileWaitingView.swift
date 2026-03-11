@@ -57,6 +57,8 @@ struct PrepareCompileWaitingView: View {
 
     private func prepare() async {
         isPreparing = true
+
+        // Start the preparation process
         await ProjectBuilderManager.shared.prepareXcodeFiles(for: project)
 
         // Verify that both .xcodeproj and .xcworkspace exist before dismissing.
@@ -65,13 +67,16 @@ struct PrepareCompileWaitingView: View {
         let xcodeProjPath = projectDir.appendingPathComponent("\(projectName).xcodeproj").path
         let xcworkspacePath = projectDir.appendingPathComponent("\(projectName).xcworkspace").path
 
+        // Continuously check if the following exist: ProjectName.xcodeproj, ProjectName.xcworkspace
         while !FileManager.default.fileExists(atPath: xcodeProjPath) ||
               !FileManager.default.fileExists(atPath: xcworkspacePath) {
             try? await Task.sleep(for: .seconds(0.5))
+            // Re-trigger preparation if files are still missing
             await ProjectBuilderManager.shared.prepareXcodeFiles(for: project)
         }
 
         isPreparing = false
+        // The waiting view must only close after both files are successfully detected in the project directory.
         try? await Task.sleep(for: .seconds(0.5))
         dismiss()
     }
