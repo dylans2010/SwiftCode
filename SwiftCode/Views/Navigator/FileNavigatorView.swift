@@ -246,6 +246,13 @@ struct FileNodeRowView: View {
                     .foregroundStyle(isSelected ? .white : .primary)
                     .lineLimit(1)
 
+                // Modified indicator
+                if !node.isDirectory && projectManager.modifiedFilePaths.contains(node.path) {
+                    Circle()
+                        .fill(.orange)
+                        .frame(width: 6, height: 6)
+                }
+
                 Spacer()
             }
             .padding(.horizontal, 8)

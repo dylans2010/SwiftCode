@@ -324,6 +324,7 @@ jobs:
 
     @Published var fileLoadError: String?
     @Published var openFileTabs: [FileNode] = []
+    @Published var modifiedFilePaths: Set<String> = []
 
     func openFile(_ node: FileNode) {
         guard !node.isDirectory else { return }
@@ -375,6 +376,11 @@ jobs:
               let node = activeFileNode else { return }
         try? CodingManager.shared.writeFile(content: content, at: node.path, in: project.directoryURL)
         activeFileContent = content
+        modifiedFilePaths.remove(node.path)
+    }
+
+    func markFileModified(path: String) {
+        modifiedFilePaths.insert(path)
     }
 
     func createFile(named name: String, inDirectory directoryPath: String?, project: Project, initialContent: String? = nil) throws {
