@@ -1137,6 +1137,8 @@ struct GitHubConfigView: View {
     @State private var newRepoURL = ""
     @State private var newRepoBranch = "main"
 
+    @StateObject private var permManager = RepoPermManager.shared
+
     var body: some View {
         NavigationStack {
             Form {
@@ -1306,14 +1308,62 @@ struct GitHubConfigView: View {
 
                 // Repository Permissions
                 Section {
-                    Label("View Repository Permissions", systemImage: "person.2.fill")
-                        .foregroundStyle(.secondary)
-                        .font(.callout)
-                    Text("Permissions are determined by your GitHub token scopes.")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                    if permManager.isLoading {
+                        HStack(spacing: 10) {
+                            ProgressView()
+                            Text("Checking permissions…")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if permManager.hasChecked {
+                        if let error = permManager.errorMessage {
+                            Label(error, systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.red)
+                                .font(.caption)
+                        } else if permManager.permissions.isEmpty {
+                            Text("No scopes detected. Your token may have no listed scopes or uses fine-grained permissions.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(permManager.permissions) { perm in
+                                HStack(spacing: 12) {
+                                    Image(systemName: perm.icon)
+                                        .foregroundStyle(.blue)
+                                        .frame(width: 22)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(perm.scope)
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundStyle(.primary)
+                                            .fontDesign(.monospaced)
+                                        Text(perm.humanReadable)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .padding(.vertical, 2)
+                            }
+                        }
+                        Button {
+                            Task { await permManager.fetchPermissions() }
+                        } label: {
+                            Label("Re-check Permissions", systemImage: "arrow.clockwise")
+                                .font(.callout)
+                        }
+                    } else {
+                        Button {
+                            Task { await permManager.fetchPermissions() }
+                        } label: {
+                            Label("Check Permissions", systemImage: "checkmark.shield.fill")
+                                .foregroundStyle(.blue)
+                        }
+                        Text("Tap to inspect what scopes your current GitHub token has.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
                 } header: {
-                    Label("Permissions", systemImage: "lock.open.fill")
+                    Label("Repository Permissions", systemImage: "lock.open.fill")
+                } footer: {
+                    Text("Permissions are determined by your GitHub token's OAuth scopes.")
                 }
             }
             .navigationTitle("GitHub & Git Config")

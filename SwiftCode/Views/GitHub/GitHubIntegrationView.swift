@@ -19,6 +19,7 @@ struct GitHubIntegrationView: View {
     @State private var newRepoName = ""
     @State private var newRepoDescription = ""
     @State private var newRepoPrivate = true
+    @State private var createdRepoURL: String?
     @State private var workflowRuns: [WorkflowRun] = []
     @State private var branches: [GitHubBranch] = []
     @State private var currentBranch = "main"
@@ -28,6 +29,12 @@ struct GitHubIntegrationView: View {
     @State private var repoDetail: GitHubRepoDetail?
     @State private var isValidatingRepo = false
     @State private var repoValidationError: String?
+
+    // Repo Picker (Fetch)
+    @State private var showRepoPicker = false
+    @State private var isFetchingRepos = false
+    @State private var userRepos: [GitHubRepoSummary] = []
+    @State private var repoFetchError: String?
 
     // Navigation to modular GitHub views
     @State private var showBranchManagement = false
@@ -84,6 +91,7 @@ struct GitHubIntegrationView: View {
                 Button("OK") {}
             } message: { msg in Text(msg) }
             .sheet(isPresented: $showCreateRepoSheet) { createRepoSheet }
+            .sheet(isPresented: $showRepoPicker) { repoPickerSheet }
             .sheet(isPresented: $showGitCommands) {
                 GitCommandView(project: project)
             }
@@ -272,6 +280,19 @@ struct GitHubIntegrationView: View {
                                 loadBranches()
                             }
                         }
+                    // Fetch button – lists repos from the authenticated user
+                    Button {
+                        fetchUserRepos()
+                    } label: {
+                        if isFetchingRepos {
+                            ProgressView().scaleEffect(0.8)
+                        } else {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .foregroundStyle(.blue)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isFetchingRepos)
                     Button {
                         validateRepoURL()
                     } label: {
@@ -596,16 +617,129 @@ struct GitHubIntegrationView: View {
                     TextField("Description (Optional)", text: $newRepoDescription)
                     Toggle("Private", isOn: $newRepoPrivate)
                 }
+
+                if let url = createdRepoURL {
+                    Section("Repository Created") {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Label("Your new repository is ready!", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .font(.subheadline)
+                            Text(url)
+                                .font(.system(.caption, design: .monospaced))
+                                .foregroundStyle(.blue)
+                                .textSelection(.enabled)
+                            if let repoURL = URL(string: url) {
+                                Link(destination: repoURL) {
+                                    Label("Open in Browser", systemImage: "safari")
+                                        .font(.caption)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
             }
             .navigationTitle("Create Repository")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showCreateRepoSheet = false }
+                    Button("Cancel") {
+                        showCreateRepoSheet = false
+                        createdRepoURL = nil
+                        newRepoName = ""
+                        newRepoDescription = ""
+                        newRepoPrivate = true
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") { createRepository() }
-                        .disabled(newRepoName.isEmpty)
+                    if createdRepoURL == nil {
+                        Button("Create") { createRepository() }
+                            .disabled(newRepoName.isEmpty || isLoading)
+                    } else {
+                        Button("Done") {
+                            showCreateRepoSheet = false
+                            createdRepoURL = nil
+                            newRepoName = ""
+                            newRepoDescription = ""
+                            newRepoPrivate = true
+                        }
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    // MARK: - Repo Picker Sheet
+
+    private var repoPickerSheet: some View {
+        NavigationStack {
+            Group {
+                if isFetchingRepos {
+                    ProgressView("Loading repositories…")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let fetchError = repoFetchError {
+                    ContentUnavailableView(
+                        "Could Not Load Repositories",
+                        systemImage: "exclamationmark.triangle.fill",
+                        description: Text(fetchError)
+                    )
+                } else if userRepos.isEmpty {
+                    ContentUnavailableView(
+                        "No Repositories Found",
+                        systemImage: "folder.badge.questionmark",
+                        description: Text("No repositories are accessible with your current token.")
+                    )
+                } else {
+                    List(userRepos) { repo in
+                        Button {
+                            repoURL = repo.htmlUrl
+                            showRepoPicker = false
+                            repoDetail = nil
+                            repoValidationError = nil
+                            saveRepoURL()
+                            if !ownerFromRepo.isEmpty && !repoNameFromURL.isEmpty {
+                                loadBranches()
+                            }
+                        } label: {
+                            HStack(spacing: 12) {
+                                Image(systemName: repo.isPrivate ? "lock.fill" : "globe")
+                                    .foregroundStyle(repo.isPrivate ? .yellow : .green)
+                                    .frame(width: 20)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(repo.fullName)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.primary)
+                                    if let desc = repo.description, !desc.isEmpty {
+                                        Text(desc)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    }
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .font(.caption2)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+            .navigationTitle("Select Repository")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showRepoPicker = false }
+                }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        fetchUserRepos()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .disabled(isFetchingRepos)
                 }
             }
         }
@@ -713,7 +847,6 @@ struct GitHubIntegrationView: View {
 
     private func createRepository() {
         guard !newRepoName.isEmpty else { return }
-        showCreateRepoSheet = false
         isLoading = true
         Task {
             do {
@@ -724,15 +857,36 @@ struct GitHubIntegrationView: View {
                 )
                 await MainActor.run {
                     repoURL = repo.htmlUrl
+                    createdRepoURL = repo.htmlUrl
                     isLoading = false
-                    successMessage = "Repository '\(repo.name)' created!"
-                    showSuccess = true
+                    saveRepoURL()
                 }
             } catch {
                 await MainActor.run {
                     isLoading = false
                     errorMessage = error.localizedDescription
                     showError = true
+                }
+            }
+        }
+    }
+
+    private func fetchUserRepos() {
+        isFetchingRepos = true
+        repoFetchError = nil
+        Task {
+            do {
+                let repos = try await GitHubService.shared.listUserRepositories()
+                await MainActor.run {
+                    userRepos = repos
+                    isFetchingRepos = false
+                    showRepoPicker = true
+                }
+            } catch {
+                await MainActor.run {
+                    isFetchingRepos = false
+                    repoFetchError = error.localizedDescription
+                    showRepoPicker = true
                 }
             }
         }

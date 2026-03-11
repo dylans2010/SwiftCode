@@ -384,6 +384,24 @@ final class GitHubService {
         return string
     }
 
+    // MARK: - List User Repositories
+
+    /// Fetches repositories accessible to the authenticated user.
+    func listUserRepositories(perPage: Int = 100) async throws -> [GitHubRepoSummary] {
+        guard token != nil else { throw GitHubError.missingToken }
+        var components = URLComponents(url: baseURL.appendingPathComponent("user/repos"), resolvingAgainstBaseURL: false)!
+        components.queryItems = [
+            URLQueryItem(name: "sort", value: "updated"),
+            URLQueryItem(name: "per_page", value: "\(perPage)")
+        ]
+        let request = authorizedRequest(url: components.url!)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode([GitHubRepoSummary].self, from: data)
+    }
+
     // MARK: - Helpers
 
     private func validateResponse(_ response: URLResponse, data: Data) throws {
@@ -439,6 +457,23 @@ struct GitHubRepo: Decodable {
         case fullName = "full_name"
         case htmlUrl = "html_url"
         case cloneUrl = "clone_url"
+    }
+}
+
+/// Lightweight summary of a user-accessible GitHub repository, used for the repo picker.
+struct GitHubRepoSummary: Identifiable, Decodable {
+    let id: Int
+    let name: String
+    let fullName: String
+    let htmlUrl: String
+    let isPrivate: Bool
+    let description: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, description
+        case fullName = "full_name"
+        case htmlUrl = "html_url"
+        case isPrivate = "private"
     }
 }
 
