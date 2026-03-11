@@ -114,7 +114,7 @@ struct GitHubRemoteSetupView: View {
                     } label: {
                         HStack(spacing: 10) {
                             Image(systemName: repo.isPrivate ? "lock.fill" : "globe")
-                                .foregroundStyle(repo.isPrivate ? .secondary : .blue)
+                                .foregroundStyle(repo.isPrivate ? Color.secondary : Color.blue)
                                 .frame(width: 20)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(repo.fullName)

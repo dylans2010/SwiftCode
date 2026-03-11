@@ -57,9 +57,7 @@ struct PrepareCompileWaitingView: View {
 
     private func prepare() async {
         isPreparing = true
-        await Task.detached(priority: .userInitiated) {
-            ProjectBuilderManager.shared.prepareXcodeFiles(for: project)
-        }.value
+        await ProjectBuilderManager.shared.prepareXcodeFiles(for: project)
         isPreparing = false
         try? await Task.sleep(for: .seconds(0.5))
         dismiss()
