@@ -99,6 +99,8 @@ EM0000000000000000000001A /* ExtensionManager.swift in Sources */ = {isa = PBXBu
 CEV000000000000000000001A /* CreateExtensionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEV000000000000000000001B /* CreateExtensionView.swift */; };
 EEV000000000000000000001A /* EditExtensionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEV000000000000000000001B /* EditExtensionView.swift */; };
 RPM000000000000000000001A /* RepoPermManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RPM000000000000000000001B /* RepoPermManager.swift */; };
+PBM000000000000000000001A /* ProjectBuilderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PBM000000000000000000001B /* ProjectBuilderManager.swift */; };
+GRS000000000000000000001A /* GitHubRemoteSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRS000000000000000000001B /* GitHubRemoteSetupView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -195,6 +197,8 @@ EM0000000000000000000001B /* ExtensionManager.swift */ = {isa = PBXFileReference
 CEV000000000000000000001B /* CreateExtensionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateExtensionView.swift; sourceTree = "<group>"; };
 EEV000000000000000000001B /* EditExtensionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditExtensionView.swift; sourceTree = "<group>"; };
 RPM000000000000000000001B /* RepoPermManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoPermManager.swift; sourceTree = "<group>"; };
+PBM000000000000000000001B /* ProjectBuilderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBuilderManager.swift; sourceTree = "<group>"; };
+GRS000000000000000000001B /* GitHubRemoteSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRemoteSetupView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -257,6 +261,7 @@ LM0000000000000000000001B /* LocalModelManager.swift */,
 PM0000000000000000000001B /* PluginManager.swift */,
 EM0000000000000000000001B /* ExtensionManager.swift */,
 RPM000000000000000000001B /* RepoPermManager.swift */,
+PBM000000000000000000001B /* ProjectBuilderManager.swift */,
 );
 path = Services;
 sourceTree = "<group>";
@@ -288,6 +293,7 @@ AA000010000000000000041F /* Dashboard */ = {
 isa = PBXGroup;
 children = (
 AA00001000000000000000CB /* ProjectsDashboardView.swift */,
+GRS000000000000000000001B /* GitHubRemoteSetupView.swift */,
 );
 path = Dashboard;
 sourceTree = "<group>";
@@ -745,6 +751,8 @@ CEV000000000000000000001A /* CreateExtensionView.swift in Sources */,
 EEV000000000000000000001A /* EditExtensionView.swift in Sources */,
 RPM000000000000000000001A /* RepoPermManager.swift in Sources */,
 PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */,
+PBM000000000000000000001A /* ProjectBuilderManager.swift in Sources */,
+GRS000000000000000000001A /* GitHubRemoteSetupView.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
