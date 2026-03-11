@@ -129,11 +129,19 @@ final class ProjectManager: ObservableObject {
         let sourcesDir = dir.appendingPathComponent("Sources")
         try fm.createDirectory(at: sourcesDir, withIntermediateDirectories: true)
 
+        // Sources/Views/
+        let viewsDir = sourcesDir.appendingPathComponent("Views")
+        try fm.createDirectory(at: viewsDir, withIntermediateDirectories: true)
+
+        // Sources/Models/
+        let modelsDir = sourcesDir.appendingPathComponent("Models")
+        try fm.createDirectory(at: modelsDir, withIntermediateDirectories: true)
+
         // Resources/
         let resourcesDir = dir.appendingPathComponent("Resources")
         try fm.createDirectory(at: resourcesDir, withIntermediateDirectories: true)
 
-        // Sources/ContentView.swift
+        // Sources/Views/ContentView.swift
         let contentView = """
 import SwiftUI
 
@@ -155,10 +163,10 @@ struct ContentView: View {
     ContentView()
 }
 """
-        try contentView.write(to: sourcesDir.appendingPathComponent("ContentView.swift"), atomically: true, encoding: .utf8)
+        try contentView.write(to: viewsDir.appendingPathComponent("ContentView.swift"), atomically: true, encoding: .utf8)
 
-        // Sources/App.swift
-        let appSwift = """
+        // Sources/AppEntry.swift
+        let appEntry = """
 import SwiftUI
 
 @main
@@ -170,7 +178,20 @@ struct \(projectName.replacingOccurrences(of: " ", with: ""))App: App {
     }
 }
 """
-        try appSwift.write(to: sourcesDir.appendingPathComponent("App.swift"), atomically: true, encoding: .utf8)
+        try appEntry.write(to: sourcesDir.appendingPathComponent("AppEntry.swift"), atomically: true, encoding: .utf8)
+
+        // Assets.xcassets
+        let assetsDir = dir.appendingPathComponent("Assets.xcassets")
+        try fm.createDirectory(at: assetsDir, withIntermediateDirectories: true)
+        let assetsContents = """
+{
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
+"""
+        try assetsContents.write(to: assetsDir.appendingPathComponent("Contents.json"), atomically: true, encoding: .utf8)
 
         // README.md
         let readme = """

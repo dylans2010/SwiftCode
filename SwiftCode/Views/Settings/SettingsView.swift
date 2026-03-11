@@ -1,5 +1,38 @@
 import SwiftUI
 
+// MARK: - Saved Repository Model
+
+struct SavedRepository: Identifiable, Codable, Equatable {
+    var id: UUID
+    var name: String
+    var owner: String
+    var repositoryURL: String
+    var defaultBranch: String
+    var localProjectPath: String?
+
+    init(id: UUID = UUID(), name: String, owner: String, repositoryURL: String, defaultBranch: String = "main", localProjectPath: String? = nil) {
+        self.id = id
+        self.name = name
+        self.owner = owner
+        self.repositoryURL = repositoryURL
+        self.defaultBranch = defaultBranch
+        self.localProjectPath = localProjectPath
+    }
+}
+
+// MARK: - Dashboard Layout
+
+enum DashboardLayout: String, Codable, CaseIterable {
+    case grid = "Grid"
+    case list = "List"
+}
+
+enum DashboardSortOrder: String, Codable, CaseIterable {
+    case name = "Name"
+    case lastOpened = "Last Opened"
+    case creationDate = "Creation Date"
+}
+
 class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
@@ -44,6 +77,57 @@ class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(defaultGitHubRepo, forKey: "defaultGitHubRepo") }
     }
 
+    // MARK: - Saved Repositories
+    @Published var savedRepositories: [SavedRepository] = [] {
+        didSet { persistSavedRepositories() }
+    }
+    @Published var defaultRepositoryID: UUID? {
+        didSet {
+            if let id = defaultRepositoryID {
+                UserDefaults.standard.set(id.uuidString, forKey: "defaultRepositoryID")
+            } else {
+                UserDefaults.standard.removeObject(forKey: "defaultRepositoryID")
+            }
+        }
+    }
+    @Published var startOnNewProject: Bool {
+        didSet { UserDefaults.standard.set(startOnNewProject, forKey: "startOnNewProject") }
+    }
+
+    // MARK: - Extended Git Configuration
+    @Published var sshKeyPath: String {
+        didSet { UserDefaults.standard.set(sshKeyPath, forKey: "sshKeyPath") }
+    }
+    @Published var httpsAuthToken: String {
+        didSet { UserDefaults.standard.set(httpsAuthToken, forKey: "httpsAuthToken") }
+    }
+    @Published var autoFetchRepositories: Bool {
+        didSet { UserDefaults.standard.set(autoFetchRepositories, forKey: "autoFetchRepositories") }
+    }
+    @Published var autoPullBeforeCommit: Bool {
+        didSet { UserDefaults.standard.set(autoPullBeforeCommit, forKey: "autoPullBeforeCommit") }
+    }
+    @Published var commitMessageTemplate: String {
+        didSet { UserDefaults.standard.set(commitMessageTemplate, forKey: "commitMessageTemplate") }
+    }
+    @Published var workflowMonitoringEnabled: Bool {
+        didSet { UserDefaults.standard.set(workflowMonitoringEnabled, forKey: "workflowMonitoringEnabled") }
+    }
+
+    // MARK: - Dashboard Customization
+    @Published var dashboardLayout: DashboardLayout {
+        didSet { UserDefaults.standard.set(dashboardLayout.rawValue, forKey: "dashboardLayout") }
+    }
+    @Published var dashboardSortOrder: DashboardSortOrder {
+        didSet { UserDefaults.standard.set(dashboardSortOrder.rawValue, forKey: "dashboardSortOrder") }
+    }
+    @Published var showProjectIcons: Bool {
+        didSet { UserDefaults.standard.set(showProjectIcons, forKey: "showProjectIcons") }
+    }
+    @Published var showFolderPreview: Bool {
+        didSet { UserDefaults.standard.set(showFolderPreview, forKey: "showFolderPreview") }
+    }
+
     // MARK: - CoreML
     @Published var coreMLEnabled: Bool {
         didSet { UserDefaults.standard.set(coreMLEnabled, forKey: "coreMLEnabled") }
@@ -63,6 +147,10 @@ class AppSettings: ObservableObject {
         !customModel.isEmpty && selectedModel == customModel
     }
 
+    var defaultRepository: SavedRepository? {
+        savedRepositories.first { $0.id == defaultRepositoryID }
+    }
+
     private init() {
         selectedModel = UserDefaults.standard.string(forKey: "selectedModel") ?? "anthropic/claude-3.5-sonnet"
         customModel   = UserDefaults.standard.string(forKey: "customModel") ?? ""
@@ -76,10 +164,61 @@ class AppSettings: ObservableObject {
         gitUserEmail = UserDefaults.standard.string(forKey: "gitUserEmail") ?? ""
         defaultBranch = UserDefaults.standard.string(forKey: "defaultBranch") ?? "main"
         defaultGitHubRepo = UserDefaults.standard.string(forKey: "defaultGitHubRepo") ?? ""
+        startOnNewProject = UserDefaults.standard.object(forKey: "startOnNewProject") as? Bool ?? false
+        sshKeyPath = UserDefaults.standard.string(forKey: "sshKeyPath") ?? ""
+        httpsAuthToken = UserDefaults.standard.string(forKey: "httpsAuthToken") ?? ""
+        autoFetchRepositories = UserDefaults.standard.object(forKey: "autoFetchRepositories") as? Bool ?? false
+        autoPullBeforeCommit = UserDefaults.standard.object(forKey: "autoPullBeforeCommit") as? Bool ?? false
+        commitMessageTemplate = UserDefaults.standard.string(forKey: "commitMessageTemplate") ?? ""
+        workflowMonitoringEnabled = UserDefaults.standard.object(forKey: "workflowMonitoringEnabled") as? Bool ?? true
+        dashboardLayout = DashboardLayout(rawValue: UserDefaults.standard.string(forKey: "dashboardLayout") ?? "") ?? .grid
+        dashboardSortOrder = DashboardSortOrder(rawValue: UserDefaults.standard.string(forKey: "dashboardSortOrder") ?? "") ?? .lastOpened
+        showProjectIcons = UserDefaults.standard.object(forKey: "showProjectIcons") as? Bool ?? true
+        showFolderPreview = UserDefaults.standard.object(forKey: "showFolderPreview") as? Bool ?? false
         coreMLEnabled = UserDefaults.standard.object(forKey: "coreMLEnabled") as? Bool ?? false
         coreMLHybridMode = UserDefaults.standard.object(forKey: "coreMLHybridMode") as? Bool ?? false
         coreMLSelectedModel = UserDefaults.standard.string(forKey: "coreMLSelectedModel") ?? ""
         coreMLUsageLimit = UserDefaults.standard.object(forKey: "coreMLUsageLimit") as? Double ?? 100
+
+        // Load saved repositories
+        loadSavedRepositories()
+        if let idString = UserDefaults.standard.string(forKey: "defaultRepositoryID") {
+            defaultRepositoryID = UUID(uuidString: idString)
+        }
+    }
+
+    // MARK: - Saved Repositories Persistence
+
+    private static let savedReposKey = "savedRepositories"
+
+    private func persistSavedRepositories() {
+        if let data = try? JSONEncoder().encode(savedRepositories) {
+            UserDefaults.standard.set(data, forKey: Self.savedReposKey)
+        }
+    }
+
+    private func loadSavedRepositories() {
+        guard let data = UserDefaults.standard.data(forKey: Self.savedReposKey),
+              let decoded = try? JSONDecoder().decode([SavedRepository].self, from: data) else { return }
+        savedRepositories = decoded
+    }
+
+    func addRepository(_ repo: SavedRepository) {
+        savedRepositories.append(repo)
+        if savedRepositories.count == 1 {
+            defaultRepositoryID = repo.id
+        }
+    }
+
+    func removeRepository(_ repo: SavedRepository) {
+        savedRepositories.removeAll { $0.id == repo.id }
+        if defaultRepositoryID == repo.id {
+            defaultRepositoryID = savedRepositories.first?.id
+        }
+    }
+
+    func setDefaultRepository(_ repo: SavedRepository) {
+        defaultRepositoryID = repo.id
     }
 }
 
