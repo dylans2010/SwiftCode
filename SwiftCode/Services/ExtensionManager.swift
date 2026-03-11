@@ -16,6 +16,7 @@ struct ExtensionManifest: Identifiable, Codable, Equatable {
     var isInstalled: Bool
     var isEnabled: Bool
     var isUserCreated: Bool
+    var isDownloaded: Bool = true
 
     enum ExtensionCategory: String, Codable, CaseIterable, Identifiable {
         case editor        = "Editor"
@@ -296,6 +297,27 @@ final class ExtensionManager: ObservableObject {
         }
 
         extensions = found.sorted { $0.name < $1.name }
+    }
+
+    // MARK: - Download Extension
+
+    /// Marks an extension as downloaded, making it available for use.
+    func downloadExtension(_ ext: ExtensionManifest) {
+        guard let idx = extensions.firstIndex(where: { $0.id == ext.id }) else { return }
+        extensions[idx].isDownloaded = true
+        extensions[idx].isInstalled = true
+        extensions[idx].isEnabled = true
+        saveEnabledState(for: extensions[idx].id, enabled: true)
+    }
+
+    /// Downloads all extensions at once.
+    func downloadAllExtensions() {
+        for i in extensions.indices {
+            extensions[i].isDownloaded = true
+            extensions[i].isInstalled = true
+            extensions[i].isEnabled = true
+            saveEnabledState(for: extensions[i].id, enabled: true)
+        }
     }
 
     // MARK: - Enable / Disable

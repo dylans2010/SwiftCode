@@ -35,6 +35,7 @@ struct GitHubIntegrationView: View {
     @State private var isFetchingRepos = false
     @State private var userRepos: [GitHubRepoSummary] = []
     @State private var repoFetchError: String?
+    @State private var repoSearchQuery = ""
 
     // Navigation to modular GitHub views
     @State private var showBranchManagement = false
@@ -672,6 +673,14 @@ struct GitHubIntegrationView: View {
 
     // MARK: - Repo Picker Sheet
 
+    private var filteredRepos: [GitHubRepoSummary] {
+        if repoSearchQuery.isEmpty { return userRepos }
+        return userRepos.filter {
+            $0.fullName.localizedCaseInsensitiveContains(repoSearchQuery) ||
+            ($0.description ?? "").localizedCaseInsensitiveContains(repoSearchQuery)
+        }
+    }
+
     private var repoPickerSheet: some View {
         NavigationStack {
             Group {
@@ -690,11 +699,18 @@ struct GitHubIntegrationView: View {
                         systemImage: "folder.badge.questionmark",
                         description: Text("No repositories are accessible with your current token.")
                     )
+                } else if filteredRepos.isEmpty {
+                    ContentUnavailableView(
+                        "No Results",
+                        systemImage: "magnifyingglass",
+                        description: Text("No repositories match "\(repoSearchQuery)".")
+                    )
                 } else {
-                    List(userRepos) { repo in
+                    List(filteredRepos) { repo in
                         Button {
                             repoURL = repo.htmlUrl
                             showRepoPicker = false
+                            repoSearchQuery = ""
                             repoDetail = nil
                             repoValidationError = nil
                             saveRepoURL()
@@ -727,11 +743,15 @@ struct GitHubIntegrationView: View {
                     }
                 }
             }
+            .searchable(text: $repoSearchQuery, prompt: "Search repositories…")
             .navigationTitle("Select Repository")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showRepoPicker = false }
+                    Button("Cancel") {
+                        repoSearchQuery = ""
+                        showRepoPicker = false
+                    }
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button {

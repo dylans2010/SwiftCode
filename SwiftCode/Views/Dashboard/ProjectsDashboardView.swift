@@ -7,6 +7,7 @@ struct ProjectsDashboardView: View {
     @State private var showCreationSheet = false
     @State private var showNewProjectSheet = false
     @State private var newProjectName = ""
+    @State private var newProjectGithubRepo = ""
     @State private var showImportPicker = false
     @State private var showGitHubImportSheet = false
     @State private var githubImportURL = ""
@@ -57,18 +58,29 @@ struct ProjectsDashboardView: View {
                         if settings.dashboardLayout == .grid {
                             LazyVGrid(columns: gridColumns, spacing: 20) {
                                 ForEach(sortedProjects) { project in
-                                    ProjectCardView(project: project, showIcon: settings.showProjectIcons)
-                                        .onTapGesture { projectManager.openProject(project) }
-                                        .contextMenu { contextMenu(for: project) }
+                                    ProjectCardView(
+                                        project: project,
+                                        showIcon: settings.showProjectIcons,
+                                        showFileCount: settings.showFileCount,
+                                        showLastOpenedTime: settings.showLastOpenedTime
+                                    )
+                                    .onTapGesture { projectManager.openProject(project) }
+                                    .contextMenu { contextMenu(for: project) }
                                 }
                             }
                             .padding()
                         } else {
                             LazyVStack(spacing: 8) {
                                 ForEach(sortedProjects) { project in
-                                    ProjectListRowView(project: project, showIcon: settings.showProjectIcons, showPreview: settings.showFolderPreview)
-                                        .onTapGesture { projectManager.openProject(project) }
-                                        .contextMenu { contextMenu(for: project) }
+                                    ProjectListRowView(
+                                        project: project,
+                                        showIcon: settings.showProjectIcons,
+                                        showPreview: settings.showFolderPreview,
+                                        showFileCount: settings.showFileCount,
+                                        showLastOpenedTime: settings.showLastOpenedTime
+                                    )
+                                    .onTapGesture { projectManager.openProject(project) }
+                                    .contextMenu { contextMenu(for: project) }
                                 }
                             }
                             .padding()
@@ -326,31 +338,34 @@ struct ProjectsDashboardView: View {
 
     private var newProjectSheet: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Image(systemName: "swift")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.orange)
-
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Project Name")
-                        .font(.headline)
-                        .foregroundStyle(.secondary)
+            Form {
+                Section {
                     TextField("Project App Name", text: $newProjectName)
-                        .textFieldStyle(.roundedBorder)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.words)
+                } header: {
+                    Text("Project Name")
+                } footer: {
+                    Text("Choose a unique name for your project.")
                 }
-                .padding(.horizontal)
 
-                Spacer()
+                Section {
+                    TextField("owner/repo (optional)", text: $newProjectGithubRepo)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } header: {
+                    Label("Link GitHub Repository", systemImage: "chevron.left.forwardslash.chevron.right")
+                } footer: {
+                    Text("Enter owner/repo (e.g. apple/swift) to link a GitHub repository specific to this project. Overrides global settings. You can also link a repo later from the GitHub panel inside the project.")
+                }
             }
-            .padding(.top, 32)
             .navigationTitle("New Project")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         newProjectName = ""
+                        newProjectGithubRepo = ""
                         showNewProjectSheet = false
                     }
                 }
@@ -399,13 +414,26 @@ struct ProjectsDashboardView: View {
 
     private func createProject() {
         let name = newProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let repoInput = newProjectGithubRepo.trimmingCharacters(in: .whitespacesAndNewlines)
         do {
-            let project = try projectManager.createProject(name: name)
+            var project = try projectManager.createProject(name: name)
+            // Link project-specific GitHub repo if provided (overrides global setting)
+            if !repoInput.isEmpty {
+                let normalized = repoInput
+                    .replacingOccurrences(of: "https://github.com/", with: "")
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                if let idx = projectManager.projects.firstIndex(where: { $0.id == project.id }) {
+                    projectManager.projects[idx].githubRepo = normalized
+                    project = projectManager.projects[idx]
+                }
+            }
             newProjectName = ""
+            newProjectGithubRepo = ""
             showNewProjectSheet = false
             projectManager.openProject(project)
         } catch {
             newProjectName = ""
+            newProjectGithubRepo = ""
             showNewProjectSheet = false
             showError(error)
         }
@@ -488,6 +516,8 @@ struct ProjectListRowView: View {
     let project: Project
     var showIcon: Bool = true
     var showPreview: Bool = false
+    var showFileCount: Bool = true
+    var showLastOpenedTime: Bool = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -504,21 +534,29 @@ struct ProjectListRowView: View {
                     .foregroundStyle(.white)
                     .lineLimit(1)
 
-                HStack(spacing: 8) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "doc.fill")
-                            .font(.caption2)
-                        Text("\(project.fileCount) File\(project.fileCount == 1 ? "" : "s")")
-                            .font(.caption)
+                if showFileCount || showLastOpenedTime {
+                    HStack(spacing: 8) {
+                        if showFileCount {
+                            HStack(spacing: 4) {
+                                Image(systemName: "doc.fill")
+                                    .font(.caption2)
+                                Text("\(project.fileCount) File\(project.fileCount == 1 ? "" : "s")")
+                                    .font(.caption)
+                            }
+                            .foregroundStyle(.secondary)
+                        }
+
+                        if showFileCount && showLastOpenedTime {
+                            Text("·")
+                                .foregroundStyle(.secondary)
+                        }
+
+                        if showLastOpenedTime {
+                            Text(project.lastOpened, style: .relative)
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
                     }
-                    .foregroundStyle(.secondary)
-
-                    Text("·")
-                        .foregroundStyle(.secondary)
-
-                    Text(project.lastOpened, style: .relative)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                 }
 
                 if showPreview, let firstFile = project.files.first(where: { !$0.isDirectory }) {
@@ -559,6 +597,8 @@ struct ShareSheet: UIViewControllerRepresentable {
 struct ProjectCardView: View {
     let project: Project
     var showIcon: Bool = true
+    var showFileCount: Bool = true
+    var showLastOpenedTime: Bool = true
     @State private var isHovered = false
 
     var body: some View {
@@ -570,9 +610,11 @@ struct ProjectCardView: View {
                         .foregroundStyle(.orange)
                 }
                 Spacer()
-                Text(project.lastOpened, style: .relative)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                if showLastOpenedTime {
+                    Text(project.lastOpened, style: .relative)
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
+                }
             }
 
             Spacer()
@@ -583,13 +625,15 @@ struct ProjectCardView: View {
                     .foregroundStyle(.white)
                     .lineLimit(2)
 
-                HStack(spacing: 4) {
-                    Image(systemName: "doc.fill")
-                        .font(.caption2)
-                    Text("\(project.fileCount) File\(project.fileCount == 1 ? "" : "s")")
-                        .font(.caption)
+                if showFileCount {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.fill")
+                            .font(.caption2)
+                        Text("\(project.fileCount) File\(project.fileCount == 1 ? "" : "s")")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.secondary)
                 }
-                .foregroundStyle(.secondary)
             }
         }
         .padding(16)
