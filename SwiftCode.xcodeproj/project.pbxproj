@@ -101,6 +101,7 @@ EEV000000000000000000001A /* EditExtensionView.swift in Sources */ = {isa = PBXB
 RPM000000000000000000001A /* RepoPermManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RPM000000000000000000001B /* RepoPermManager.swift */; };
 PBM000000000000000000001A /* ProjectBuilderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PBM000000000000000000001B /* ProjectBuilderManager.swift */; };
 GRS000000000000000000001A /* GitHubRemoteSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRS000000000000000000001B /* GitHubRemoteSetupView.swift */; };
+AA0000100000000000000PFB /* ProjectFilesExtracter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000PFR /* ProjectFilesExtracter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -199,6 +200,7 @@ EEV000000000000000000001B /* EditExtensionView.swift */ = {isa = PBXFileReferenc
 RPM000000000000000000001B /* RepoPermManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepoPermManager.swift; sourceTree = "<group>"; };
 PBM000000000000000000001B /* ProjectBuilderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBuilderManager.swift; sourceTree = "<group>"; };
 GRS000000000000000000001B /* GitHubRemoteSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRemoteSetupView.swift; sourceTree = "<group>"; };
+AA0000100000000000000PFR /* ProjectFilesExtracter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFilesExtracter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -262,6 +264,7 @@ PM0000000000000000000001B /* PluginManager.swift */,
 EM0000000000000000000001B /* ExtensionManager.swift */,
 RPM000000000000000000001B /* RepoPermManager.swift */,
 PBM000000000000000000001B /* ProjectBuilderManager.swift */,
+AA0000100000000000000PFR /* ProjectFilesExtracter.swift */,
 );
 path = Services;
 sourceTree = "<group>";
@@ -753,6 +756,7 @@ RPM000000000000000000001A /* RepoPermManager.swift in Sources */,
 PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */,
 PBM000000000000000000001A /* ProjectBuilderManager.swift in Sources */,
 GRS000000000000000000001A /* GitHubRemoteSetupView.swift in Sources */,
+AA0000100000000000000PFB /* ProjectFilesExtracter.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
