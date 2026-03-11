@@ -104,6 +104,10 @@ GRS000000000000000000001A /* GitHubRemoteSetupView.swift in Sources */ = {isa = 
 AA0000100000000000000PFB /* ProjectFilesExtracter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000PFR /* ProjectFilesExtracter.swift */; };
 CB000000000000000000001A /* build-project.yml in Resources */ = {isa = PBXBuildFile; fileRef = CB000000000000000000001B /* build-project.yml */; };
 CB000000000000000000002A /* build.yml in Resources */ = {isa = PBXBuildFile; fileRef = CB000000000000000000002B /* build.yml */; };
+AA0000100000000000000F8A /* ModernGroupBoxStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F8B /* ModernGroupBoxStyle.swift */; };
+AA0000100000000000000F6A /* ChooseModelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F6B /* ChooseModelView.swift */; };
+AA0000100000000000000F4A /* PluginCodeCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F4B /* PluginCodeCreateView.swift */; };
+AA0000100000000000000F2A /* ToolbarMinimizedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F2B /* ToolbarMinimizedView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -204,6 +208,10 @@ PBM000000000000000000001B /* ProjectBuilderManager.swift */ = {isa = PBXFileRefe
 GRS000000000000000000001B /* GitHubRemoteSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRemoteSetupView.swift; sourceTree = "<group>"; };
 AA0000100000000000000PFR /* ProjectFilesExtracter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFilesExtracter.swift; sourceTree = "<group>"; };
 CB000000000000000000001B /* build-project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "build-project.yml"; sourceTree = "<group>"; };
+AA0000100000000000000F8B /* ModernGroupBoxStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernGroupBoxStyle.swift; sourceTree = "<group>"; };
+AA0000100000000000000F6B /* ChooseModelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChooseModelView.swift; sourceTree = "<group>"; };
+AA0000100000000000000F4B /* PluginCodeCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginCodeCreateView.swift; sourceTree = "<group>"; };
+AA0000100000000000000F2B /* ToolbarMinimizedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarMinimizedView.swift; sourceTree = "<group>"; };
 CB000000000000000000002B /* build.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = build.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -378,6 +386,7 @@ AA000010000000000000013B /* SettingsView.swift */,
 AA00001000000000000004DB /* ProjectSettingsView.swift */,
 GS0000000000000000000002 /* GeneralSettingsView.swift */,
 PMV000000000000000000001B /* PluginManagerView.swift */,
+AA0000100000000000000F4B /* PluginCodeCreateView.swift */,
 PTV000000000000000000001B /* ProjectTemplateView.swift */,
 EXM00000000000000000001F /* Extension Management */,
 CTM00000000000000000001F /* Custom Tools */,
@@ -423,6 +432,7 @@ AA00001000000000000006FF /* AI */ = {
 isa = PBXGroup;
 children = (
 AA00001000000000000001BB /* AgentInterfaceView.swift */,
+AA0000100000000000000F6B /* ChooseModelView.swift */,
 );
 path = AI;
 sourceTree = "<group>";
@@ -471,6 +481,7 @@ AA0000100000000000000CFF /* Toolbar */ = {
 isa = PBXGroup;
 children = (
 AA00001000000000000004EB /* ToolbarCustomizationView.swift */,
+AA0000100000000000000F2B /* ToolbarMinimizedView.swift */,
 );
 path = Toolbar;
 sourceTree = "<group>";
@@ -527,9 +538,18 @@ sourceTree = "<group>";
 AA0000100000000000000EFF /* UI */ = {
 isa = PBXGroup;
 children = (
+AA0000100000000000000F8F /* Styles */,
 AA0000100000000000000FFF /* Utilities */,
 );
 path = UI;
+sourceTree = "<group>";
+};
+AA0000100000000000000F8F /* Styles */ = {
+isa = PBXGroup;
+children = (
+AA0000100000000000000F8B /* ModernGroupBoxStyle.swift */,
+);
+path = Styles;
 sourceTree = "<group>";
 };
 AA0000100000000000000FFF /* Utilities */ = {
@@ -773,6 +793,10 @@ PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */,
 PBM000000000000000000001A /* ProjectBuilderManager.swift in Sources */,
 GRS000000000000000000001A /* GitHubRemoteSetupView.swift in Sources */,
 AA0000100000000000000PFB /* ProjectFilesExtracter.swift in Sources */,
+AA0000100000000000000F8A /* ModernGroupBoxStyle.swift in Sources */,
+AA0000100000000000000F6A /* ChooseModelView.swift in Sources */,
+AA0000100000000000000F4A /* PluginCodeCreateView.swift in Sources */,
+AA0000100000000000000F2A /* ToolbarMinimizedView.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
