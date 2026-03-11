@@ -155,16 +155,10 @@ final class CodeIndexService: ObservableObject {
                 }
             } else {
                 // Invalid regex — fall back to plain search
-                let lq = caseSensitive ? query : query.lowercased()
-                matchLine = { line in
-                    (caseSensitive ? line : line.lowercased()).contains(lq)
-                }
+                matchLine = Self.plainMatcher(query: query, caseSensitive: caseSensitive)
             }
         } else {
-            let lq = caseSensitive ? query : query.lowercased()
-            matchLine = { line in
-                (caseSensitive ? line : line.lowercased()).contains(lq)
-            }
+            matchLine = Self.plainMatcher(query: query, caseSensitive: caseSensitive)
         }
 
         while let fileURL = enumerator.nextObject() as? URL {
@@ -195,8 +189,8 @@ final class CodeIndexService: ObservableObject {
 
             // Also match file name itself (only when using plain search)
             if !useRegex {
-                let lq = caseSensitive ? query : query.lowercased()
                 let lname = caseSensitive ? fileName : fileName.lowercased()
+                let lq = caseSensitive ? query : query.lowercased()
                 if lname.contains(lq) && !results.contains(where: { $0.filePath == relativePath }) {
                     results.append(SearchResult(
                         fileName: fileName,
@@ -210,5 +204,11 @@ final class CodeIndexService: ObservableObject {
         }
 
         return results
+    }
+
+    /// Returns a closure that checks whether a line contains `query` using plain-text matching.
+    private static func plainMatcher(query: String, caseSensitive: Bool) -> (String) -> Bool {
+        let lq = caseSensitive ? query : query.lowercased()
+        return { line in (caseSensitive ? line : line.lowercased()).contains(lq) }
     }
 }

@@ -13,7 +13,13 @@ struct CodeSearchView: View {
     @State private var selectedFileExtension: String? = nil
     @FocusState private var searchFocused: Bool
 
-    private let fileExtensions = ["All", "swift", "json", "plist", "yml", "yaml", "md", "txt", "xml", "html", "css", "js", "ts", "py", "kt", "go", "rs"]
+    private let fileExtensions = [
+        "All", "swift", "json", "plist", "yml", "yaml", "md", "txt", "xml",
+        "html", "css", "js", "ts", "tsx", "jsx", "py", "rb", "go", "rs",
+        "kt", "java", "c", "cpp", "h", "hpp", "m", "mm", "sh", "bash",
+        "toml", "ini", "cfg", "conf", "gradle", "graphql", "sql", "dart",
+        "scala", "lua", "php", "cs", "ex", "elm"
+    ]
 
     var body: some View {
         NavigationStack {

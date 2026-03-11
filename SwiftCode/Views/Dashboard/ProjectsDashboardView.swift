@@ -356,7 +356,7 @@ struct ProjectsDashboardView: View {
                 } header: {
                     Label("Link GitHub Repository", systemImage: "chevron.left.forwardslash.chevron.right")
                 } footer: {
-                    Text("Enter an owner/repo identifier (e.g. apple/swift) to link a GitHub repository to this project. This repository is only used for this project and overrides any global setting. You can also link or create a repository later from the GitHub panel inside the project.")
+                    Text("Enter owner/repo (e.g. apple/swift) to link a GitHub repository specific to this project. Overrides global settings. You can also link a repo later from the GitHub panel inside the project.")
                 }
             }
             .navigationTitle("New Project")
