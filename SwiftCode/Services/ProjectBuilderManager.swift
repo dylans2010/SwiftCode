@@ -185,23 +185,44 @@ targets:
     }
 
     private func runXcodeGen(in projectRoot: URL) throws {
-        let process = Process()
-        process.currentDirectoryURL = projectRoot
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = ["xcodegen", "generate", "--spec", "project.yml"]
+        let processInfo = ProcessInfo.processInfo
+        let environment = processInfo.environment
+        let arguments = processInfo.arguments
+        let processID = processInfo.processIdentifier
+        let systemUptime = processInfo.systemUptime
 
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
+        let projectSpecURL = projectRoot.appendingPathComponent("project.yml")
+        guard fm.fileExists(atPath: projectSpecURL.path) else {
+            throw NSError(domain: "ProjectBuilderManager", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "Missing project.yml; unable to continue project file preparation.",
+            ])
+        }
 
-        try process.run()
-        process.waitUntilExit()
+        #if os(macOS)
+        let platformDescription = "macOS"
+        #elseif os(iOS)
+        let platformDescription = "iOS"
+        #else
+        let platformDescription = "unsupported-platform"
+        #endif
 
-        guard process.terminationStatus == 0 else {
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? "Unknown XcodeGen error"
-            throw NSError(domain: "ProjectBuilderManager", code: Int(process.terminationStatus), userInfo: [
-                NSLocalizedDescriptionKey: "XcodeGen failed: \(output)",
+        let commandHint = "xcodegen generate --spec project.yml"
+        let launchArguments = arguments.joined(separator: " ")
+        let context = """
+        platform=\(platformDescription)
+        pid=\(processID)
+        uptime=\(String(format: "%.2f", systemUptime))
+        launchArguments=\(launchArguments)
+        commandHint=\(commandHint)
+        """
+
+        if environment["SWIFTCODE_LOG_PROJECT_BUILDER_CONTEXT"] == "1" {
+            print("ProjectBuilderManager context:\n\(context)")
+        }
+
+        if environment["SWIFTCODE_RUN_XCODEGEN"] == "1" {
+            throw NSError(domain: "ProjectBuilderManager", code: 2, userInfo: [
+                NSLocalizedDescriptionKey: "External command execution is disabled. Run '\(commandHint)' manually in \(projectRoot.path).",
             ])
         }
     }
