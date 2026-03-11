@@ -160,7 +160,6 @@ struct PrepareCompileWaitingView: View {
             )
 
             // Ensure files actually exist before finishing
-            let projectDir = project.directoryURL
             if ProjectBuilderManager.shared.hasBuildArtifacts(in: projectDir, projectName: project.name) {
                 statusMessage = "Ready!"
                 subtext = "Required files have been added successfully to the directory!"
