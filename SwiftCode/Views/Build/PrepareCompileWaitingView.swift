@@ -9,6 +9,8 @@ struct PrepareCompileWaitingView: View {
     @State private var progress: Double = 0.0
     @State private var errorMessage: String?
     @State private var logs: String = ""
+    @State private var timeRemaining: String = "Calculating…"
+    @State private var startTime: Date?
 
     var body: some View {
         NavigationStack {
@@ -45,6 +47,14 @@ struct PrepareCompileWaitingView: View {
                                 .progressViewStyle(.linear)
                                 .padding(.horizontal, 48)
                                 .padding(.top, 16)
+
+                            // Show time remaining after artifacts start downloading (progress > 0.5)
+                            if progress > 0.5 {
+                                Text("Time Remaining: \(timeRemaining)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 4)
+                            }
                         }
 
                         if let error = errorMessage {
@@ -94,6 +104,7 @@ struct PrepareCompileWaitingView: View {
         isPreparing = true
         errorMessage = nil
         logs = ""
+        startTime = Date()
 
         do {
             // 0. Skip generation if artifacts already exist
@@ -133,6 +144,7 @@ struct PrepareCompileWaitingView: View {
                     Task { @MainActor in
                         self.progress = prog
                         self.subtext = status
+                        self.updateTimeRemaining(progress: prog)
                     }
                 },
                 logCallback: { newLogs in
@@ -143,7 +155,7 @@ struct PrepareCompileWaitingView: View {
             )
 
             statusMessage = "Ready!"
-            subtext = "Project files integrated successfully."
+            subtext = "Required files have been added successfully to the directory!"
             isPreparing = false
 
             try? await Task.sleep(for: .seconds(1.0))
@@ -154,6 +166,26 @@ struct PrepareCompileWaitingView: View {
             statusMessage = "Failed"
             errorMessage = error.localizedDescription
             subtext = "An error occurred during remote generation."
+        }
+    }
+
+    @MainActor
+    private func updateTimeRemaining(progress: Double) {
+        guard let start = startTime, progress > 0.0, progress < 1.0 else {
+            timeRemaining = "Calculating…"
+            return
+        }
+
+        let elapsed = Date().timeIntervalSince(start)
+        let estimatedTotal = elapsed / progress
+        let remaining = estimatedTotal - elapsed
+
+        if remaining < 60 {
+            timeRemaining = "\(Int(remaining))s"
+        } else {
+            let minutes = Int(remaining / 60)
+            let seconds = Int(remaining.truncatingRemainder(dividingBy: 60))
+            timeRemaining = "\(minutes)m \(seconds)s"
         }
     }
 }

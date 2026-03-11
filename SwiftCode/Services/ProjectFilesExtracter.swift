@@ -24,7 +24,7 @@ public final class ProjectFilesExtracter {
         progress: @escaping (Double, String) -> Void,
         logCallback: ((String) -> Void)? = nil
     ) async throws {
-        progress(0.1, "Waiting for workflow to start...")
+        progress(0.1, "Processing with GitHub Actions…")
 
         // 1. Find the recent workflow run
         var run: WorkflowRun?
@@ -43,20 +43,18 @@ public final class ProjectFilesExtracter {
             } else {
                 throw NSError(domain: "ProjectFilesExtracter", code: 1, userInfo: [NSLocalizedDescriptionKey: "Workflow run not found."])
             }
-            return
         }
 
         // 2. Poll for completion and fetch logs
-        progress(0.2, "Workflow running...")
-        var currentRun = activeRun
-        var _: Int?
+        progress(0.2, "Processing with GitHub Actions…")
+        var currentRun = run ?? activeRun
 
         while currentRun.isRunning {
             try await Task.sleep(for: .seconds(5))
 
             // Update run status
             currentRun = try await GitHubService.shared.getWorkflowRun(owner: owner, repo: repo, runID: currentRun.id)
-            progress(0.4, "Workflow status: \(currentRun.status.capitalized)...")
+            progress(0.4, "Processing with GitHub Actions…")
 
             // Try to fetch logs
             do {
@@ -75,32 +73,56 @@ public final class ProjectFilesExtracter {
             throw NSError(domain: "ProjectFilesExtracter", code: 2, userInfo: [NSLocalizedDescriptionKey: "Workflow failed with conclusion: \(currentRun.conclusion ?? "unknown")"])
         }
 
-        // 3. Find and download artifact
-        progress(0.6, "Downloading artifacts...")
-        let artifacts = try await GitHubService.shared.listWorkflowArtifacts(owner: owner, repo: repo, runID: currentRun.id)
-        guard let projectArtifact = artifacts.first(where: { $0.name == "xcode-project" }) else {
-            throw NSError(domain: "ProjectFilesExtracter", code: 3, userInfo: [NSLocalizedDescriptionKey: "Artifact 'xcode-project' not found."])
+        // 3. Find and download artifact with retry logic (up to 3 attempts)
+        progress(0.6, "Downloading CI artifacts…")
+        var zipData: Data?
+        var lastError: Error?
+
+        for attempt in 1...3 {
+            do {
+                let artifacts = try await GitHubService.shared.listWorkflowArtifacts(owner: owner, repo: repo, runID: currentRun.id)
+                guard let projectArtifact = artifacts.first(where: { $0.name == "generated-xcode-files" }) else {
+                    throw NSError(domain: "ProjectFilesExtracter", code: 3, userInfo: [NSLocalizedDescriptionKey: "Artifact 'generated-xcode-files' not found."])
+                }
+
+                zipData = try await GitHubService.shared.downloadArtifact(owner: owner, repo: repo, artifactID: projectArtifact.id)
+                break // Success, exit retry loop
+            } catch {
+                lastError = error
+                if attempt < 3 {
+                    progress(0.6, "Downloading CI artifacts… (Retry \(attempt)/3)")
+                    try await Task.sleep(for: .seconds(2))
+                }
+            }
         }
 
-        let zipData = try await GitHubService.shared.downloadArtifact(owner: owner, repo: repo, artifactID: projectArtifact.id)
+        guard let artifactData = zipData else {
+            throw lastError ?? NSError(domain: "ProjectFilesExtracter", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to download artifact after 3 attempts."])
+        }
 
-        // 4. Integrate into local project
-        progress(0.8, "Integrating files...")
-        try await integrate(zipData: zipData, into: project)
+        // 4. Extract and integrate into local project
+        progress(0.8, "Extracting Files…")
+        try await integrate(zipData: artifactData, into: project)
 
-        progress(1.0, "Integration complete!")
+        progress(1.0, "Required files have been added successfully to the directory!")
     }
 
     private func integrate(zipData: Data, into project: Project) async throws {
-        let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        defer { try? fm.removeItem(at: tempDir) }
+        // Store in SwiftCode/Backend/tmp/
+        let docsDir = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        let backendDir = docsDir.appendingPathComponent("SwiftCode/Backend")
+        let tmpDir = backendDir.appendingPathComponent("tmp")
+        try fm.createDirectory(at: tmpDir, withIntermediateDirectories: true)
 
-        let zipURL = tempDir.appendingPathComponent("artifacts.zip")
+        let zipURL = tmpDir.appendingPathComponent("generated-xcode-files.zip")
         try zipData.write(to: zipURL)
 
-        let extractionDir = tempDir.appendingPathComponent("extracted")
+        let extractionDir = tmpDir.appendingPathComponent("extracted-\(UUID().uuidString)")
         try fm.createDirectory(at: extractionDir, withIntermediateDirectories: true)
+        defer {
+            try? fm.removeItem(at: extractionDir)
+            try? fm.removeItem(at: zipURL) // Delete temporary zip after extraction
+        }
 
         // Use ZIPFoundation's unzipItem, which is compatible with iOS
         try fm.unzipItem(at: zipURL, to: extractionDir)
@@ -108,6 +130,7 @@ public final class ProjectFilesExtracter {
         let projectDir = await project.directoryURL
         let items = try fm.contentsOfDirectory(at: extractionDir, includingPropertiesForKeys: nil)
 
+        // Move extracted files to project directory
         for item in items {
             let destURL = projectDir.appendingPathComponent(item.lastPathComponent)
             if fm.fileExists(atPath: destURL.path) {
@@ -116,11 +139,25 @@ public final class ProjectFilesExtracter {
             try fm.moveItem(at: item, to: destURL)
         }
 
-        // Integrity check: verify that essential files are present
+        // Validate that required files exist
         let projectName = project.name
         let xcodeProj = projectDir.appendingPathComponent("\(projectName).xcodeproj")
-        guard fm.fileExists(atPath: xcodeProj.path) else {
-            throw NSError(domain: "ProjectFilesExtracter", code: 4, userInfo: [NSLocalizedDescriptionKey: "Integrity check failed: \(projectName).xcodeproj missing after extraction."])
+        let xcworkspace = projectDir.appendingPathComponent("\(projectName).xcworkspace")
+        let projectYML = projectDir.appendingPathComponent("project.yml")
+
+        var missingFiles: [String] = []
+        if !fm.fileExists(atPath: xcodeProj.path) {
+            missingFiles.append("\(projectName).xcodeproj")
+        }
+        if !fm.fileExists(atPath: xcworkspace.path) {
+            missingFiles.append("\(projectName).xcworkspace")
+        }
+        if !fm.fileExists(atPath: projectYML.path) {
+            missingFiles.append("project.yml")
+        }
+
+        guard missingFiles.isEmpty else {
+            throw NSError(domain: "ProjectFilesExtracter", code: 4, userInfo: [NSLocalizedDescriptionKey: "Integrity check failed: Missing files: \(missingFiles.joined(separator: ", "))"])
         }
 
         // Refresh the file tree

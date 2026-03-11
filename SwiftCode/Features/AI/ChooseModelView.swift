@@ -127,47 +127,38 @@ struct ChooseModelView: View {
         errorMessage = nil
 
         Task {
-            let originalKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey)
             do {
+                // Map our UI provider enum to AgentModelCheck provider
+                let provider: AgentModelCheck.AIProvider
                 switch selectedProvider {
-                case .openRouter:
-                    KeychainService.shared.set(apiKey, forKey: KeychainService.openRouterAPIKey)
-                    let models = try await OpenRouterService.shared.fetchModels()
-                    await MainActor.run {
-                        availableModels = models.map { $0.id }
-                        isLoadingModels = false
-                        if let key = originalKey {
-                             KeychainService.shared.set(key, forKey: KeychainService.openRouterAPIKey)
-                        }
-                    }
-                case .anthropic:
-                    // Simulated Anthropic fetch - in reality would use their API
-                    try await Task.sleep(nanoseconds: 500_000_000)
-                    await MainActor.run {
-                        availableModels = ["claude-3-5-sonnet-20240620", "claude-3-opus-20240229", "claude-3-haiku-20240307"]
-                        isLoadingModels = false
-                    }
-                case .openai:
-                    // Simulated OpenAI fetch
-                    try await Task.sleep(nanoseconds: 500_000_000)
-                    await MainActor.run {
-                        availableModels = ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
-                        isLoadingModels = false
-                    }
-                case .google:
-                    // Simulated Gemini fetch
-                    try await Task.sleep(nanoseconds: 500_000_000)
-                    await MainActor.run {
-                        availableModels = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.0-pro"]
-                        isLoadingModels = false
-                    }
+                case .openRouter: provider = .openRouter
+                case .anthropic: provider = .anthropic
+                case .openai: provider = .openai
+                case .google: provider = .google
+                }
+
+                // Fetch models using AgentModelCheck
+                let models = try await AgentModelCheck.shared.fetchSupportedModels(
+                    apiKey: apiKey,
+                    provider: provider
+                )
+
+                await MainActor.run {
+                    availableModels = models
+                    isLoadingModels = false
                 }
             } catch {
-                if let key = originalKey {
-                    KeychainService.shared.set(key, forKey: KeychainService.openRouterAPIKey)
-                }
                 await MainActor.run {
                     errorMessage = "Error fetching models: \(error.localizedDescription)"
+                    // Fall back to default models
+                    let provider: AgentModelCheck.AIProvider
+                    switch selectedProvider {
+                    case .openRouter: provider = .openRouter
+                    case .anthropic: provider = .anthropic
+                    case .openai: provider = .openai
+                    case .google: provider = .google
+                    }
+                    availableModels = provider.defaultModels
                     isLoadingModels = false
                 }
             }
@@ -180,42 +171,53 @@ struct ChooseModelView: View {
         errorMessage = nil
 
         Task {
-            let originalKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey)
-            do {
-                // For now, use OpenRouter as a proxy if possible, or simulate direct check
-                if selectedProvider == .openRouter {
-                    KeychainService.shared.set(apiKey, forKey: KeychainService.openRouterAPIKey)
+            // Map our UI provider enum to AgentModelCheck provider
+            let provider: AgentModelCheck.AIProvider
+            switch selectedProvider {
+            case .openRouter: provider = .openRouter
+            case .anthropic: provider = .anthropic
+            case .openai: provider = .openai
+            case .google: provider = .google
+            }
 
-                    let response = try await OpenRouterService.shared.chat(
-                        messages: [AIMessage(role: "user", content: "Hello from SwiftCode")],
-                        model: controller.selectedModel,
-                        systemPrompt: "You are a helpful assistant."
-                    )
+            // Test the model using AgentModelCheck
+            let result = await AgentModelCheck.shared.testModel(
+                apiKey: apiKey,
+                provider: provider,
+                model: controller.selectedModel
+            )
 
-                    await MainActor.run {
-                        testResult = "Success: Received response."
-                        isTesting = false
-                        if let key = originalKey {
-                             KeychainService.shared.set(key, forKey: KeychainService.openRouterAPIKey)
-                        }
+            await MainActor.run {
+                switch result.status {
+                case .success:
+                    var message = "Success: \(result.message)"
+                    if let latency = result.responseLatency {
+                        message += " (Response time: \(String(format: "%.2f", latency))s)"
                     }
-                } else {
-                    // Simulate success for other providers to demonstrate the UI flow
-                    try await Task.sleep(nanoseconds: 1_000_000_000)
-                    await MainActor.run {
-                        testResult = "Success: API connection verified for \(selectedProvider.rawValue)."
-                        isTesting = false
-                    }
-                }
-            } catch {
-                if let key = originalKey {
-                    KeychainService.shared.set(key, forKey: KeychainService.openRouterAPIKey)
-                }
-                await MainActor.run {
+                    testResult = message
+
+                case .invalid_key:
                     testResult = "Failed"
-                    errorMessage = "Test failed: \(error.localizedDescription)"
-                    isTesting = false
+                    errorMessage = "Invalid API Key: \(result.message)"
+
+                case .model_not_found:
+                    testResult = "Failed"
+                    errorMessage = "Model Not Found: \(result.message)"
+
+                case .rate_limited:
+                    testResult = "Failed"
+                    errorMessage = "Rate Limited: \(result.message)"
+
+                case .network_error:
+                    testResult = "Failed"
+                    errorMessage = "Network Error: \(result.message)"
+
+                case .unknown_error:
+                    testResult = "Failed"
+                    errorMessage = "Error: \(result.message)"
                 }
+
+                isTesting = false
             }
         }
     }
