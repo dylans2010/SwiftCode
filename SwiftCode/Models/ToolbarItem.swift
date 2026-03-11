@@ -129,5 +129,6 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "symbol_outline", name: "Symbol Outline", icon: "list.bullet.rectangle", category: "Navigation", isEnabled: false, order: 34),
         ToolbarTool(id: "plugin_manager", name: "Plugin Manager", icon: "puzzlepiece.extension.fill", category: "Tools", isEnabled: false, order: 35),
         ToolbarTool(id: "file_preview", name: "File Preview", icon: "eye.fill", category: "File", isEnabled: false, order: 36),
+        ToolbarTool(id: "prepare_compile", name: "Prepare Compiling", icon: "wrench.and.screwdriver", category: "Build", isEnabled: false, order: 37),
     ]
 }

@@ -34,6 +34,7 @@ struct ProjectWorkspaceView: View {
     @State private var showLocalSimulation = false
     @State private var showPluginManager = false
     @State private var showProjectTemplates = false
+    @State private var showPrepareCompile = false
 
     var body: some View {
         ZStack {
@@ -205,6 +206,11 @@ struct ProjectWorkspaceView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showPrepareCompile) {
+            PrepareCompileWaitingView(project: project)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
     }
 
     // MARK: - Toolbar
@@ -259,7 +265,7 @@ struct ProjectWorkspaceView: View {
         case "ai_agent", "ai_code_gen", "ai_code_fix", "ai_refactor": return .purple
         case "github_actions", "commit_changes", "push_repo", "pull_repo",
              "git_history": return .blue
-        case "build_trigger", "build_status", "build_logs", "terminal": return .orange
+        case "build_trigger", "build_status", "build_logs", "terminal", "prepare_compile": return .orange
         case "errors_viewer": return .red
         case "dependency_manager", "install_dependency", "update_dependencies": return .teal
         case "code_search", "symbol_navigator", "project_index", "go_to_line",
@@ -309,6 +315,7 @@ struct ProjectWorkspaceView: View {
         case .localSimulation: showLocalSimulation = true
         case .pluginManager: showPluginManager = true
         case .projectTemplates: showProjectTemplates = true
+        case .prepareCompiling: showPrepareCompile = true
         }
     }
 
