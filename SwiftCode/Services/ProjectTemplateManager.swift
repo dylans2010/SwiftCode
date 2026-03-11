@@ -140,6 +140,7 @@ let package = Package(
             ],
             tags: ["SwiftUI", "iOS", "App"]
         )
+    }
 
     private static var swiftPackage: ProjectTemplate {
         ProjectTemplate(
@@ -205,6 +206,7 @@ final class \(safeName)Tests: XCTestCase {
             ],
             tags: ["SPM", "Library", "Framework"]
         )
+    }
 
     private static var cliTool: ProjectTemplate {
         ProjectTemplate(
@@ -260,6 +262,7 @@ let package = Package(
             ],
             tags: ["CLI", "Terminal", "Tool"]
         )
+    }
 
     private static var emptyProject: ProjectTemplate {
         ProjectTemplate(
