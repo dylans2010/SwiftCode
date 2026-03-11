@@ -85,6 +85,13 @@ struct CIBuildView: View {
                   swift --version
                   echo "Available simulators:"
                   xcrun simctl list devices available | head -20
+
+              - name: Debug - List Repository Structure
+                run: |
+                  pwd
+                  ls -la
+                  find . -name "*.xcodeproj" -not -path "*/DerivedData/*"
+                  find . -name "*.xcworkspace" -not -path "*/DerivedData/*"
         """
 
         if includeSwiftPM {
@@ -93,10 +100,20 @@ struct CIBuildView: View {
 
               - name: Resolve Swift Packages
                 run: |
-                  xcodebuild -project *.xcodeproj \\
+                  WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/DerivedData/*" | head -1)
+                  XCODEPROJ=$(find . -name "*.xcodeproj" -not -path "*/DerivedData/*" | head -1)
+                  if [ -n "$WORKSPACE" ]; then
+                    PROJECT_ARG="-workspace $WORKSPACE"
+                  elif [ -n "$XCODEPROJ" ]; then
+                    PROJECT_ARG="-project $XCODEPROJ"
+                  else
+                    echo "Error: No .xcworkspace or .xcodeproj found in repository." >&2
+                    exit 1
+                  fi
+                  xcodebuild $PROJECT_ARG \\
                     -scheme "\(resolvedScheme)" \\
                     -resolvePackageDependencies
-            """
+        """
         }
 
         if includeLinting {
@@ -146,25 +163,36 @@ struct CIBuildView: View {
 
               - name: Build Archive
                 run: |
+                  WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/DerivedData/*" | head -1)
+                  XCODEPROJ=$(find . -name "*.xcodeproj" -not -path "*/DerivedData/*" | head -1)
+                  if [ -n "$WORKSPACE" ]; then
+                    PROJECT_ARG="-workspace $WORKSPACE"
+                  elif [ -n "$XCODEPROJ" ]; then
+                    PROJECT_ARG="-project $XCODEPROJ"
+                  else
+                    echo "Error: No .xcworkspace or .xcodeproj found in repository." >&2
+                    exit 1
+                  fi
                   xcodebuild archive \\
+                    $PROJECT_ARG \\
                     -scheme "\(resolvedScheme)" \\
-                    -archivePath "${{ runner.temp }}/\(resolvedScheme).xcarchive" \\
+                    -archivePath "$RUNNER_TEMP/\(resolvedScheme).xcarchive" \\
                     -destination "generic/platform=iOS" \\
                     CODE_SIGNING_ALLOWED=NO
 
               - name: Package IPA
                 run: |
-                  mkdir -p "${{ runner.temp }}/ipa/Payload"
-                  cp -R "${{ runner.temp }}/\(resolvedScheme).xcarchive/Products/Applications/"*.app \\
-                    "${{ runner.temp }}/ipa/Payload/"
-                  cd "${{ runner.temp }}/ipa"
+                  mkdir -p "$RUNNER_TEMP/ipa/Payload"
+                  cp -R "$RUNNER_TEMP/\(resolvedScheme).xcarchive/Products/Applications/"*.app \\
+                    "$RUNNER_TEMP/ipa/Payload/"
+                  cd "$RUNNER_TEMP/ipa"
                   zip -r "\(resolvedScheme).ipa" Payload
 
               - name: Upload IPA Artifact
                 uses: actions/upload-artifact@v4
                 with:
                   name: \(resolvedScheme)-IPA
-                  path: ${{ runner.temp }}/ipa/\(resolvedScheme).ipa
+                  path: $RUNNER_TEMP/ipa/\(resolvedScheme).ipa
                   if-no-files-found: error
                   retention-days: 30
         """
