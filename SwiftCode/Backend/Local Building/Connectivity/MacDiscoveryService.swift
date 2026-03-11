@@ -30,10 +30,10 @@ public final class MacDiscoveryService: NSObject, ObservableObject {
 
             let workItem = DispatchWorkItem {
                 self.discoveredMacs = results.compactMap { result in
-                    if case let .bonjour(service) = result.endpoint {
+                    if case let .service(name, _, _, _) = result.endpoint {
                         return DiscoveredMac(
-                            name: service.name,
-                            host: "\(service.name).local",
+                            name: name,
+                            host: "\(name).local",
                             port: 8080
                         )
                     }
