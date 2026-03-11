@@ -59,19 +59,46 @@ struct GitHubIntegrationView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.10, green: 0.10, blue: 0.14).ignoresSafeArea()
+                Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 20) {
-                        authSection
+                    VStack(spacing: 24) {
+                        GroupBox {
+                            authSection
+                        }
+                        .groupBoxStyle(ModernGroupBoxStyle())
+
                         if isAuthenticated {
-                            repositorySection
+                            GroupBox {
+                                repositorySection
+                            }
+                            .groupBoxStyle(ModernGroupBoxStyle())
+
                             if !ownerFromRepo.isEmpty && !repoNameFromURL.isEmpty {
-                                githubModulesSection
-                                branchesSection
-                                pushSection
-                                advancedActionsSection
-                                workflowSection
+                                GroupBox {
+                                    githubModulesSection
+                                }
+                                .groupBoxStyle(ModernGroupBoxStyle())
+
+                                GroupBox {
+                                    branchesSection
+                                }
+                                .groupBoxStyle(ModernGroupBoxStyle())
+
+                                GroupBox {
+                                    pushSection
+                                }
+                                .groupBoxStyle(ModernGroupBoxStyle())
+
+                                GroupBox {
+                                    advancedActionsSection
+                                }
+                                .groupBoxStyle(ModernGroupBoxStyle())
+
+                                GroupBox {
+                                    workflowSection
+                                }
+                                .groupBoxStyle(ModernGroupBoxStyle())
                             }
                         }
                     }
@@ -127,15 +154,20 @@ struct GitHubIntegrationView: View {
     // MARK: - Auth Section
 
     private var authSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             sectionHeader("Authentication", icon: "key.fill", color: .yellow)
 
             if let user = githubUser {
-                HStack(spacing: 12) {
-                    Image(systemName: "person.circle.fill")
-                        .font(.title2)
-                        .foregroundStyle(.blue)
-                    VStack(alignment: .leading) {
+                HStack(spacing: 16) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.blue.opacity(0.15))
+                            .frame(width: 48, height: 48)
+                        Image(systemName: "person.circle.fill")
+                            .font(.title2)
+                            .foregroundStyle(.blue)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
                         Text(user.name ?? user.login)
                             .font(.headline)
                             .foregroundStyle(.white)
@@ -144,22 +176,25 @@ struct GitHubIntegrationView: View {
                             .foregroundStyle(.secondary)
                     }
                     Spacer()
-                    Button("Sign Out") {
+                    Button {
                         KeychainService.shared.delete(forKey: KeychainService.githubToken)
                         isAuthenticated = false
                         githubUser = nil
                         token = ""
+                    } label: {
+                        Text("Sign Out")
+                            .font(.caption.bold())
+                            .foregroundStyle(.red)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.red.opacity(0.1), in: Capsule())
                     }
-                    .font(.caption)
-                    .foregroundStyle(.red)
                     .buttonStyle(.plain)
                 }
-                .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             } else {
-                VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 12) {
                     Text("Personal Access Token")
-                        .font(.caption)
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     SecureField("ghp_xxxxxxxxxxxx", text: $token)
                         .font(.system(.body, design: .monospaced))
@@ -171,16 +206,15 @@ struct GitHubIntegrationView: View {
                         connectToGitHub()
                     } label: {
                         Label("Connect To GitHub", systemImage: "link")
+                            .font(.subheadline.bold())
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(.blue.opacity(0.7), in: RoundedRectangle(cornerRadius: 10))
+                            .padding(.vertical, 12)
+                            .background(Color.blue, in: RoundedRectangle(cornerRadius: 10))
                             .foregroundStyle(.white)
                     }
                     .buttonStyle(.plain)
                     .disabled(token.isEmpty || isLoading)
                 }
-                .padding()
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
         }
     }
@@ -189,7 +223,7 @@ struct GitHubIntegrationView: View {
 
     /// Navigation hub for modular GitHub views: Branch Management, Commit History, Pull Requests.
     private var githubModulesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             sectionHeader("GitHub Modules", icon: "square.grid.2x2.fill", color: .purple)
 
             VStack(spacing: 0) {
@@ -224,7 +258,7 @@ struct GitHubIntegrationView: View {
                     showPullRequest = true
                 }
             }
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
     }
 
@@ -260,12 +294,12 @@ struct GitHubIntegrationView: View {
     // MARK: - Repository Section
 
     private var repositorySection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             sectionHeader("Repository", icon: "folder.fill.badge.gearshape", color: .blue)
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Repository URL")
-                    .font(.caption)
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
                     TextField("https://github.com/owner/repo", text: $repoURL)
@@ -412,7 +446,7 @@ struct GitHubIntegrationView: View {
     // MARK: - Branches Section
 
     private var branchesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 sectionHeader("Branches", icon: "arrow.branch", color: .green)
                 Spacer()
@@ -426,7 +460,7 @@ struct GitHubIntegrationView: View {
                 .buttonStyle(.plain)
             }
 
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 10) {
                 // Current branch indicator
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
@@ -460,8 +494,6 @@ struct GitHubIntegrationView: View {
                     }
                 }
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
         .onAppear { loadBranches() }
     }
@@ -469,12 +501,12 @@ struct GitHubIntegrationView: View {
     // MARK: - Push Section
 
     private var pushSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             sectionHeader("Sync", icon: "arrow.triangle.2.circlepath", color: .orange)
 
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 12) {
                 Text("Commit Message")
-                    .font(.caption)
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 TextField("Update from SwiftCode", text: $commitMessage)
                     .textFieldStyle(.roundedBorder)
@@ -484,9 +516,10 @@ struct GitHubIntegrationView: View {
                         pushProject()
                     } label: {
                         Label("Push", systemImage: "arrow.up.circle.fill")
+                            .font(.subheadline.bold())
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(.orange.opacity(0.7), in: RoundedRectangle(cornerRadius: 10))
+                            .padding(.vertical, 12)
+                            .background(Color.orange, in: RoundedRectangle(cornerRadius: 10))
                             .foregroundStyle(.white)
                     }
                     .buttonStyle(.plain)
@@ -496,9 +529,10 @@ struct GitHubIntegrationView: View {
                         pullUpdates()
                     } label: {
                         Label("Pull", systemImage: "arrow.down.circle.fill")
+                            .font(.subheadline.bold())
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 10)
-                            .background(.blue.opacity(0.7), in: RoundedRectangle(cornerRadius: 10))
+                            .padding(.vertical, 12)
+                            .background(Color.blue, in: RoundedRectangle(cornerRadius: 10))
                             .foregroundStyle(.white)
                     }
                     .buttonStyle(.plain)
@@ -511,15 +545,13 @@ struct GitHubIntegrationView: View {
                         .frame(maxWidth: .infinity)
                 }
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
     }
 
     // MARK: - Advanced Actions Section
 
     private var advancedActionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             sectionHeader("Tools", icon: "wrench.and.screwdriver.fill", color: .purple)
 
             HStack(spacing: 12) {
@@ -527,7 +559,7 @@ struct GitHubIntegrationView: View {
                 Button {
                     showGitCommands = true
                 } label: {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 8) {
                         Image(systemName: "terminal.fill")
                             .font(.title2)
                             .foregroundStyle(.green)
@@ -535,13 +567,14 @@ struct GitHubIntegrationView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.white)
                         Text("Run git ops with guided buttons")
-                            .font(.caption2)
+                            .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
+                            .lineLimit(2)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(12)
-                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                    .padding(14)
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
 
@@ -549,7 +582,7 @@ struct GitHubIntegrationView: View {
                 Button {
                     showCIBuild = true
                 } label: {
-                    VStack(spacing: 6) {
+                    VStack(spacing: 8) {
                         Image(systemName: "cpu.fill")
                             .font(.title2)
                             .foregroundStyle(.orange)
@@ -557,25 +590,24 @@ struct GitHubIntegrationView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.white)
                         Text("Auto generate IPA workflow")
-                            .font(.caption2)
+                            .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
+                            .lineLimit(2)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(12)
-                    .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                    .padding(14)
+                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
     }
 
     // MARK: - Workflow Section
 
     private var workflowSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 sectionHeader("Recent Builds", icon: "hammer.fill", color: .purple)
                 Spacer()
@@ -588,7 +620,7 @@ struct GitHubIntegrationView: View {
                 .buttonStyle(.plain)
             }
 
-            VStack(spacing: 8) {
+            VStack(spacing: 12) {
                 if workflowRuns.isEmpty {
                     Text("No Workflow Runs Found")
                         .font(.caption)
@@ -601,11 +633,10 @@ struct GitHubIntegrationView: View {
                     }
                 }
             }
-            .padding()
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
         }
         .onAppear { loadWorkflowRuns() }
     }
+
 
     // MARK: - Create Repo Sheet
 

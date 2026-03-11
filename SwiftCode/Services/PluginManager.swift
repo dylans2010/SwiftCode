@@ -112,6 +112,48 @@ final class PluginManager: ObservableObject {
         plugins.filter { $0.isEnabled && $0.capabilities.contains(capability) }
     }
 
+    // MARK: - Create User Plugin
+
+    func createPlugin(manifest: PluginManifest, mainCode: String) throws {
+        let pluginURL = pluginsDirectory.appendingPathComponent(manifest.id)
+        let fm = FileManager.default
+
+        try fm.createDirectory(at: pluginURL, withIntermediateDirectories: true)
+
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        let manifestData = try encoder.encode(manifest)
+        try manifestData.write(to: pluginURL.appendingPathComponent("plugin.json"))
+
+        try mainCode.write(
+            to: pluginURL.appendingPathComponent(manifest.entryPoint),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        Task { await scanPlugins() }
+    }
+
+    // MARK: - OS Version Fallbacks
+
+    func isPluginCompatible(_ manifest: PluginManifest) -> Bool {
+        // In a real environment, plugins might require specific APIs
+        // Check for minimum OS requirements if they were in the manifest
+
+        if #available(iOS 17.0, *) {
+            // iOS 17+ supports all current plugin capabilities
+            return true
+        } else if #available(iOS 16.0, *) {
+            // iOS 16 fallback: Disable advanced AI capabilities if they rely on iOS 17+ ML APIs
+            let isAIPlugin = manifest.capabilities.contains(.codeCompletion) || manifest.name.lowercased().contains("ai")
+            return !isAIPlugin
+        } else {
+            // iOS 15 or older: Only allow basic formatting and syntax highlighting
+            let basicCapabilities: Set<PluginManifest.Capability> = [.syntaxHighlight, .formatter]
+            return manifest.capabilities.allSatisfy { basicCapabilities.contains($0) }
+        }
+    }
+
     // MARK: - Preferences Persistence
 
     private static let enabledKey = "com.swiftcode.plugins.enabled"

@@ -33,17 +33,28 @@ struct BuildStatusView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.10, green: 0.10, blue: 0.14).ignoresSafeArea()
+                Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
 
                 if owner.isEmpty || repo.isEmpty {
                     noRepoView
                 } else {
                     ScrollView {
-                        VStack(spacing: 20) {
+                        VStack(spacing: 24) {
                             repoHeaderSection
-                            compileSection
-                            workflowRunsSection
-                            releasesSection
+                            GroupBox {
+                                compileSection
+                            }
+                            .groupBoxStyle(ModernGroupBoxStyle())
+
+                            GroupBox {
+                                workflowRunsSection
+                            }
+                            .groupBoxStyle(ModernGroupBoxStyle())
+
+                            GroupBox {
+                                releasesSection
+                            }
+                            .groupBoxStyle(ModernGroupBoxStyle())
                         }
                         .padding()
                     }
@@ -89,13 +100,18 @@ struct BuildStatusView: View {
     // MARK: - Subviews
 
     private var repoHeaderSection: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "externaldrive.connected.to.line.below.fill")
-                .font(.title3)
-                .foregroundStyle(.green)
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.green.opacity(0.15))
+                    .frame(width: 52, height: 52)
+                Image(systemName: "externaldrive.connected.to.line.below.fill")
+                    .font(.title2)
+                    .foregroundStyle(.green)
+            }
+            VStack(alignment: .leading, spacing: 4) {
                 Text("\(owner)/\(repo)")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.headline)
                     .foregroundStyle(.white)
                 Text("Connected Repository")
                     .font(.caption)
@@ -110,9 +126,9 @@ struct BuildStatusView: View {
                         Text("Actions")
                     }
                     .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.white.opacity(0.1), in: Capsule())
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.white.opacity(0.08), in: Capsule())
                     .foregroundStyle(.blue)
                 }
             }
@@ -122,17 +138,18 @@ struct BuildStatusView: View {
             } else {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
-                    .font(.caption)
+                    .font(.subheadline)
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Compile Section
 
     private var compileSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Label("Compile", systemImage: "play.fill")
                 .font(.headline)
                 .foregroundStyle(.white)
@@ -282,7 +299,7 @@ struct BuildStatusView: View {
     }
 
     private var workflowRunsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Label("Workflow Runs", systemImage: "hammer.fill")
                     .font(.headline)
@@ -293,7 +310,7 @@ struct BuildStatusView: View {
                 }
             }
 
-            VStack(spacing: 8) {
+            VStack(spacing: 12) {
                 if workflowRuns.isEmpty && !isLoading {
                     Text("No Workflow Runs Found")
                         .font(.caption)
@@ -310,17 +327,15 @@ struct BuildStatusView: View {
                 }
             }
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var releasesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Label("Releases", systemImage: "shippingbox.fill")
                 .font(.headline)
                 .foregroundStyle(.white)
 
-            VStack(spacing: 8) {
+            VStack(spacing: 12) {
                 if releases.isEmpty && !isLoading {
                     Text("No Releases Yet")
                         .font(.caption)
@@ -334,9 +349,8 @@ struct BuildStatusView: View {
                 }
             }
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
+
 
     private var logsSheet: some View {
         NavigationStack {
