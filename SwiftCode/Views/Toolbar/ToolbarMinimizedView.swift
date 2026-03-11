@@ -112,8 +112,3 @@ struct ToolbarExpandedPanelView: View {
     }
 }
 
-// MARK: - Notification Name
-
-extension Notification.Name {
-    static let toolbarToolActivated = Notification.Name("com.swiftcode.toolbarToolActivated")
-}

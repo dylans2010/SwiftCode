@@ -41,18 +41,32 @@ struct ProjectWorkspaceView: View {
         ZStack {
             Color(red: 0.10, green: 0.10, blue: 0.14).ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                // Toolbar
-                workspaceToolbar
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
+            HStack(spacing: 0) {
+                // Left Sidebar (Pinned Tools)
+                pinnedToolsSidebar
+                    .frame(width: 50)
                     .background(.ultraThinMaterial)
 
                 Divider().opacity(0.3)
 
-                // Code Editor fills the full screen
-                CodeEditorView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                VStack(spacing: 0) {
+                    // Top Header (Project Info & Navigation)
+                    projectHeader
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(.ultraThinMaterial)
+
+                    Divider().opacity(0.3)
+
+                    // Code Editor fills the available space
+                    ZStack(alignment: .bottom) {
+                        CodeEditorView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                        // Floating Main Toolbar at the bottom
+                        MainToolbarView()
+                    }
+                }
             }
         }
         .navigationBarHidden(true)
@@ -220,11 +234,10 @@ struct ProjectWorkspaceView: View {
         }
     }
 
-    // MARK: - Toolbar
+    // MARK: - UI Components
 
-    private var workspaceToolbar: some View {
-        HStack(spacing: 10) {
-            // Back
+    private var projectHeader: some View {
+        HStack(spacing: 12) {
             Button {
                 projectManager.closeProject()
             } label: {
@@ -234,36 +247,50 @@ struct ProjectWorkspaceView: View {
             }
             .buttonStyle(.plain)
 
-            Divider().frame(height: 20)
-
-            // Scrollable enabled tools
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(toolbarManager.enabledTools) { tool in
-                        Button {
-                            handleToolbarAction(tool.id)
-                        } label: {
-                            Image(systemName: tool.icon)
-                                .imageScale(.medium)
-                                .foregroundStyle(iconColor(for: tool.id))
-                        }
-                        .buttonStyle(.plain)
-                    }
+            VStack(alignment: .leading, spacing: 0) {
+                Text(project.name)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(.white)
+                if let branch = projectManager.activeProject?.githubRepo {
+                    Text(branch)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
 
-            Divider().frame(height: 20)
+            Spacer()
 
-            // Toolbar customization
+            // Toolbar customization moved here as a small gear
             Button {
                 showToolbarCustomization = true
             } label: {
-                Image(systemName: "slider.horizontal.3")
-                    .imageScale(.medium)
+                Image(systemName: "gearshape")
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
         }
+    }
+
+    private var pinnedToolsSidebar: some View {
+        VStack(spacing: 20) {
+            Spacer().frame(height: 40)
+
+            ForEach(toolbarManager.enabledTools) { tool in
+                Button {
+                    handleToolbarAction(tool.id)
+                } label: {
+                    Image(systemName: tool.icon)
+                        .font(.system(size: 20))
+                        .foregroundStyle(iconColor(for: tool.id))
+                }
+                .buttonStyle(.plain)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 10)
     }
 
     private func iconColor(for toolId: String) -> Color {

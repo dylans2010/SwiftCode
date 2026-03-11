@@ -57,7 +57,16 @@ final class ProjectTemplateManager: ObservableObject {
     // MARK: - Template Definitions
 
     private static func buildTemplates() -> [ProjectTemplate] {
-        [swiftUIApp, swiftPackage, cliTool, emptyProject, unitTestTarget]
+        [
+            swiftUIApp,
+            swiftPackage,
+            cliTool,
+            gameApp,
+            metalApp,
+            imessageApp,
+            emptyProject,
+            unitTestTarget
+        ]
     }
 
     // MARK: - SwiftUI App
@@ -277,6 +286,218 @@ let package = Package(
                 }
             ],
             tags: ["Empty", "Blank"]
+        )
+    }
+
+    // MARK: - Game App (SpriteKit)
+
+    private static var gameApp: ProjectTemplate {
+        ProjectTemplate(
+            id: "game_app",
+            name: "Game (SpriteKit)",
+            description: "A 2D game template using SpriteKit and SwiftUI's SpriteView.",
+            icon: "gamecontroller.fill",
+            iconColor: "purple",
+            files: [
+                .init(relativePath: "Sources/AppEntry.swift") { name in
+                    let safeName = name.replacingOccurrences(of: " ", with: "")
+                    return """
+import SwiftUI
+
+@main
+struct \(safeName)App: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+"""
+                },
+                .init(relativePath: "Sources/Views/ContentView.swift") { _ in
+                    """
+import SwiftUI
+import SpriteKit
+
+struct ContentView: View {
+    var scene: SKScene {
+        let scene = GameScene()
+        scene.size = CGSize(width: 300, height: 400)
+        scene.scaleMode = .resizeFill
+        return scene
+    }
+
+    var body: some View {
+        SpriteView(scene: scene)
+            .ignoresSafeArea()
+    }
+}
+"""
+                },
+                .init(relativePath: "Sources/Scenes/GameScene.swift") { _ in
+                    """
+import SpriteKit
+
+class GameScene: SKScene {
+    override func didMove(to view: SKView) {
+        let label = SKLabelNode(text: "Hello SpriteKit!")
+        label.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        addChild(label)
+    }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        for touch in touches {
+            let location = touch.location(in: self)
+            let box = SKSpriteNode(color: .orange, size: CGSize(width: 50, height: 50))
+            box.position = location
+            addChild(box)
+        }
+    }
+}
+"""
+                },
+                .init(relativePath: "Package.swift") { name in
+                    let safeName = name.replacingOccurrences(of: " ", with: "")
+                    return """
+// swift-tools-version: 5.9
+import PackageDescription
+
+let package = Package(
+    name: "\(safeName)",
+    platforms: [.iOS(.v17)],
+    targets: [
+        .executableTarget(name: "\(safeName)", path: "Sources")
+    ]
+)
+"""
+                }
+            ],
+            tags: ["Game", "SpriteKit", "SwiftUI"]
+        )
+    }
+
+    // MARK: - Metal App
+
+    private static var metalApp: ProjectTemplate {
+        ProjectTemplate(
+            id: "metal_app",
+            name: "Metal App",
+            description: "A high-performance graphics template using Metal and MTKView.",
+            icon: "sparkles",
+            iconColor: "indigo",
+            files: [
+                .init(relativePath: "Sources/AppEntry.swift") { name in
+                    let safeName = name.replacingOccurrences(of: " ", with: "")
+                    return """
+import SwiftUI
+
+@main
+struct \(safeName)App: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+    }
+}
+"""
+                },
+                .init(relativePath: "Sources/Views/ContentView.swift") { _ in
+                    """
+import SwiftUI
+import MetalKit
+
+struct ContentView: View {
+    var body: some View {
+        MetalView()
+            .ignoresSafeArea()
+    }
+}
+
+struct MetalView: UIViewRepresentable {
+    func makeUIView(context: Context) -> MTKView {
+        let mtkView = MTKView()
+        mtkView.device = MTLCreateSystemDefaultDevice()
+        mtkView.clearColor = MTLClearColor(red: 0.1, green: 0.1, blue: 0.2, alpha: 1.0)
+        return mtkView
+    }
+    func updateUIView(_ uiView: MTKView, context: Context) {}
+}
+"""
+                },
+                .init(relativePath: "Sources/Shaders.metal") { _ in
+                    """
+#include <metal_stdlib>
+using namespace metal;
+
+fragment float4 fragmentShader() {
+    return float4(1.0, 0.5, 0.2, 1.0);
+}
+"""
+                },
+                .init(relativePath: "Package.swift") { name in
+                    let safeName = name.replacingOccurrences(of: " ", with: "")
+                    return """
+// swift-tools-version: 5.9
+import PackageDescription
+
+let package = Package(
+    name: "\(safeName)",
+    platforms: [.iOS(.v17)],
+    targets: [
+        .executableTarget(name: "\(safeName)", path: "Sources")
+    ]
+)
+"""
+                }
+            ],
+            tags: ["Metal", "Graphics", "High Performance"]
+        )
+    }
+
+    // MARK: - iMessage App
+
+    private static var imessageApp: ProjectTemplate {
+        ProjectTemplate(
+            id: "imessage_app",
+            name: "iMessage App",
+            description: "A Messages extension template for building interactive apps in iMessage.",
+            icon: "bubble.left.fill",
+            iconColor: "green",
+            files: [
+                .init(relativePath: "Sources/MessagesViewController.swift") { _ in
+                    """
+import UIKit
+import Messages
+
+class MessagesViewController: MSMessagesAppViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        let label = UILabel()
+        label.text = "Hello iMessage!"
+        label.textAlignment = .center
+        label.frame = view.bounds
+        view.addSubview(label)
+    }
+}
+"""
+                },
+                .init(relativePath: "Package.swift") { name in
+                    let safeName = name.replacingOccurrences(of: " ", with: "")
+                    return """
+// swift-tools-version: 5.9
+import PackageDescription
+
+let package = Package(
+    name: "\(safeName)",
+    platforms: [.iOS(.v17)],
+    targets: [
+        .executableTarget(name: "\(safeName)", path: "Sources")
+    ]
+)
+"""
+                }
+            ],
+            tags: ["iMessage", "Extension", "Messages"]
         )
     }
 

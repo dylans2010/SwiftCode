@@ -376,36 +376,6 @@ struct TextEditorRepresentable: UIViewRepresentable {
         textView.textColor = UIColor(red: 0.85, green: 0.85, blue: 0.85, alpha: 1)
         textView.font = TextLayoutEngine.editorFont()
 
-        // Create keyboard toolbar
-        let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: 44))
-        toolbar.barStyle = .black
-        toolbar.isTranslucent = true
-
-        let allToolsButton = UIBarButtonItem(
-            image: UIImage(systemName: "square.grid.2x2.fill"),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.showAllTools)
-        )
-        allToolsButton.tintColor = .orange
-
-        let flexibleSpace = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-
-        let doneButton = UIBarButtonItem(
-            title: "Done",
-            style: .done,
-            target: context.coordinator,
-            action: #selector(Coordinator.dismissKeyboard)
-        )
-
-        // Add some common editor tools to the keyboard toolbar as well
-        let undoButton = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.backward"), style: .plain, target: context.coordinator, action: #selector(Coordinator.undoAction))
-        let redoButton = UIBarButtonItem(image: UIImage(systemName: "arrow.uturn.forward"), style: .plain, target: context.coordinator, action: #selector(Coordinator.redoAction))
-
-        toolbar.setItems([allToolsButton, flexibleSpace, undoButton, redoButton, flexibleSpace, doneButton], animated: false)
-        toolbar.sizeToFit()
-
-        textView.inputAccessoryView = toolbar
 
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
