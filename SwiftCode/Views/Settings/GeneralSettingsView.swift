@@ -1131,6 +1131,11 @@ struct GitHubConfigView: View {
     @State private var githubToken: String = ""
     @State private var showToken = false
     @State private var tokenSaved = false
+    @State private var showAddRepoSheet = false
+    @State private var newRepoName = ""
+    @State private var newRepoOwner = ""
+    @State private var newRepoURL = ""
+    @State private var newRepoBranch = "main"
 
     var body: some View {
         NavigationStack {
@@ -1211,6 +1216,105 @@ struct GitHubConfigView: View {
                 } footer: {
                     Text("These defaults are used when creating new projects or cloning repositories.")
                 }
+
+                // Saved Repositories
+                Section {
+                    if settings.savedRepositories.isEmpty {
+                        Text("No saved repositories")
+                            .foregroundStyle(.secondary)
+                            .font(.callout)
+                    } else {
+                        ForEach(settings.savedRepositories) { repo in
+                            HStack(spacing: 10) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(repo.name)
+                                        .font(.headline)
+                                    Text("\(repo.owner)/\(repo.name)")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    Text(repo.defaultBranch)
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                Spacer()
+                                if settings.defaultRepositoryID == repo.id {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                settings.setDefaultRepository(repo)
+                            }
+                            .swipeActions(edge: .trailing) {
+                                Button(role: .destructive) {
+                                    settings.removeRepository(repo)
+                                } label: {
+                                    Label("Remove", systemImage: "trash")
+                                }
+                            }
+                        }
+                    }
+
+                    Button {
+                        showAddRepoSheet = true
+                    } label: {
+                        Label("Add Repository", systemImage: "plus.circle")
+                    }
+
+                    Toggle("Start On New Project", isOn: $settings.startOnNewProject)
+                } header: {
+                    Label("Saved Repositories", systemImage: "bookmark.fill")
+                } footer: {
+                    Text("Saved repositories can be used to quickly initialize new projects. When 'Start On New Project' is enabled, the default repository will be used to initialize new projects.")
+                }
+
+                // SSH & HTTPS Authentication
+                Section {
+                    TextField("SSH Key Path", text: $settings.sshKeyPath)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                    TextField("HTTPS Auth Token", text: $settings.httpsAuthToken)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                } header: {
+                    Label("Authentication", systemImage: "lock.shield.fill")
+                } footer: {
+                    Text("Configure SSH key path or HTTPS authentication token for Git operations.")
+                }
+
+                // Advanced Git Options
+                Section {
+                    Toggle("Auto Fetch Repositories", isOn: $settings.autoFetchRepositories)
+                    Toggle("Auto Pull Before Commit", isOn: $settings.autoPullBeforeCommit)
+                    Toggle("Workflow Monitoring", isOn: $settings.workflowMonitoringEnabled)
+                } header: {
+                    Label("Git Automation", systemImage: "gearshape.2.fill")
+                } footer: {
+                    Text("Automatic fetch keeps your local copy in sync. Auto pull before commit prevents merge conflicts.")
+                }
+
+                // Commit Message Template
+                Section {
+                    TextField("e.g. [Feature] {message}", text: $settings.commitMessageTemplate)
+                        .autocorrectionDisabled()
+                } header: {
+                    Label("Commit Template", systemImage: "text.badge.checkmark")
+                } footer: {
+                    Text("Define a template for commit messages. Use {message} as a placeholder for the actual message.")
+                }
+
+                // Repository Permissions
+                Section {
+                    Label("View Repository Permissions", systemImage: "person.2.fill")
+                        .foregroundStyle(.secondary)
+                        .font(.callout)
+                    Text("Permissions are determined by your GitHub token scopes.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                } header: {
+                    Label("Permissions", systemImage: "lock.open.fill")
+                }
             }
             .navigationTitle("GitHub & Git Config")
             .navigationBarTitleDisplayMode(.inline)
@@ -1222,7 +1326,63 @@ struct GitHubConfigView: View {
             .onAppear {
                 githubToken = KeychainService.shared.get(forKey: KeychainService.githubToken) ?? ""
             }
+            .sheet(isPresented: $showAddRepoSheet) {
+                addRepositorySheet
+            }
         }
+    }
+
+    private var addRepositorySheet: some View {
+        NavigationStack {
+            Form {
+                Section("Repository Details") {
+                    TextField("Repository Name", text: $newRepoName)
+                        .autocorrectionDisabled()
+                    TextField("Owner", text: $newRepoOwner)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                    TextField("URL (e.g. https://github.com/owner/repo)", text: $newRepoURL)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                    TextField("Default Branch", text: $newRepoBranch)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                }
+            }
+            .navigationTitle("Add Repository")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        clearRepoForm()
+                        showAddRepoSheet = false
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") {
+                        let repo = SavedRepository(
+                            name: newRepoName.trimmingCharacters(in: .whitespacesAndNewlines),
+                            owner: newRepoOwner.trimmingCharacters(in: .whitespacesAndNewlines),
+                            repositoryURL: newRepoURL.trimmingCharacters(in: .whitespacesAndNewlines),
+                            defaultBranch: newRepoBranch.trimmingCharacters(in: .whitespacesAndNewlines)
+                        )
+                        settings.addRepository(repo)
+                        clearRepoForm()
+                        showAddRepoSheet = false
+                    }
+                    .disabled(newRepoName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                              newRepoOwner.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private func clearRepoForm() {
+        newRepoName = ""
+        newRepoOwner = ""
+        newRepoURL = ""
+        newRepoBranch = "main"
     }
 }
 

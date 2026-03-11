@@ -15,6 +15,17 @@ struct BuildStatusView: View {
     @State private var showLogs = false
     @State private var autoRefreshTimer: Timer?
 
+    // Compile action state
+    @State private var isCompiling = false
+    @State private var compileBuildStarted: Date?
+    @State private var compileStatus: String = ""
+    @State private var compileWorkflowStage: String = ""
+    @State private var compileResult: CompileResultStatus = .idle
+
+    enum CompileResultStatus: Equatable {
+        case idle, queued, running, success, failed
+    }
+
     private var hasToken: Bool {
         !(KeychainService.shared.get(forKey: KeychainService.githubToken) ?? "").isEmpty
     }
@@ -30,6 +41,7 @@ struct BuildStatusView: View {
                     ScrollView {
                         VStack(spacing: 20) {
                             repoHeaderSection
+                            compileSection
                             workflowRunsSection
                             releasesSection
                         }
@@ -62,7 +74,7 @@ struct BuildStatusView: View {
                 loadData()
                 // Auto-refresh every 15 seconds if there are in-progress builds
                 autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
-                    if workflowRuns.contains(where: { $0.isRunning }) {
+                    if workflowRuns.contains(where: { $0.isRunning }) || compileResult == .queued || compileResult == .running {
                         loadData()
                     }
                 }
@@ -100,6 +112,107 @@ struct BuildStatusView: View {
         }
         .padding()
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    // MARK: - Compile Section
+
+    private var compileSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Compile", systemImage: "play.fill")
+                .font(.headline)
+                .foregroundStyle(.white)
+
+            if compileResult != .idle {
+                VStack(alignment: .leading, spacing: 8) {
+                    if let started = compileBuildStarted {
+                        HStack {
+                            Text("Started:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(started, style: .time)
+                                .font(.caption)
+                                .foregroundStyle(.white)
+                        }
+                    }
+
+                    HStack {
+                        Text("Status:")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(compileStatusLabel)
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(compileStatusColor)
+                    }
+
+                    if !compileWorkflowStage.isEmpty {
+                        HStack {
+                            Text("Stage:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(compileWorkflowStage)
+                                .font(.caption)
+                                .foregroundStyle(.white)
+                        }
+                    }
+
+                    if let started = compileBuildStarted {
+                        HStack {
+                            Text("Duration:")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(started, style: .relative)
+                                .font(.caption)
+                                .foregroundStyle(.white)
+                        }
+                    }
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+            }
+
+            Button {
+                triggerCompile()
+            } label: {
+                HStack {
+                    if isCompiling {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .tint(.white)
+                    }
+                    Text(isCompiling ? "Compiling..." : "Compile")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(isCompiling ? Color.gray : Color.orange, in: RoundedRectangle(cornerRadius: 10))
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+            .disabled(isCompiling)
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var compileStatusLabel: String {
+        switch compileResult {
+        case .idle: return "Idle"
+        case .queued: return "Queued"
+        case .running: return "Running"
+        case .success: return "Success"
+        case .failed: return "Failed"
+        }
+    }
+
+    private var compileStatusColor: Color {
+        switch compileResult {
+        case .idle: return .secondary
+        case .queued: return .orange
+        case .running: return .yellow
+        case .success: return .green
+        case .failed: return .red
+        }
     }
 
     private var noRepoView: some View {
@@ -299,6 +412,82 @@ struct BuildStatusView: View {
                     logsText = "Error loading logs: \(error.localizedDescription)"
                 }
             }
+        }
+    }
+
+    // MARK: - Compile
+
+    private func triggerCompile() {
+        guard !owner.isEmpty, !repo.isEmpty else { return }
+        isCompiling = true
+        compileBuildStarted = Date()
+        compileResult = .queued
+        compileWorkflowStage = "Triggering workflow..."
+
+        Task {
+            do {
+                // Push changes first using GitCommands
+                if let project = await ProjectManager.shared.activeProject {
+                    compileWorkflowStage = "Pushing changes..."
+                    try await GitCommands.shared.push(
+                        project: project,
+                        commitMessage: "Build triggered from SwiftCode"
+                    )
+                }
+
+                await MainActor.run {
+                    compileResult = .running
+                    compileWorkflowStage = "Waiting for workflow..."
+                }
+
+                // Poll for the latest workflow run
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+                try await pollBuildStatus()
+            } catch {
+                await MainActor.run {
+                    compileResult = .failed
+                    compileWorkflowStage = "Error: \(error.localizedDescription)"
+                    isCompiling = false
+                }
+            }
+        }
+    }
+
+    private func pollBuildStatus() async throws {
+        var attempts = 0
+        let maxAttempts = 60 // Poll for up to ~5 minutes
+
+        while attempts < maxAttempts {
+            let runs = try await GitHubService.shared.listWorkflowRuns(owner: owner, repo: repo)
+
+            if let latestRun = runs.first {
+                await MainActor.run {
+                    workflowRuns = runs
+                    compileWorkflowStage = latestRun.name ?? "Build #\(latestRun.runNumber)"
+
+                    switch latestRun.status {
+                    case "queued":
+                        compileResult = .queued
+                    case "in_progress":
+                        compileResult = .running
+                    case "completed":
+                        compileResult = latestRun.conclusion == "success" ? .success : .failed
+                        isCompiling = false
+                        return
+                    default:
+                        compileResult = .running
+                    }
+                }
+            }
+
+            try await Task.sleep(nanoseconds: 5_000_000_000)
+            attempts += 1
+        }
+
+        await MainActor.run {
+            compileResult = .failed
+            compileWorkflowStage = "Polling timed out"
+            isCompiling = false
         }
     }
 }

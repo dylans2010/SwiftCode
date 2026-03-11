@@ -94,6 +94,22 @@ struct BuildLogsView: View {
     @State private var selectedRun: WorkflowRunInfo?
     @State private var filterLevel: StructuredLogEntry.LogLevel?
 
+    // AI Chat Assistant state
+    @State private var showAssistant = false
+    @State private var assistantMessages: [AssistantMessage] = []
+    @State private var isAnalyzing = false
+    @State private var rawLogsForAnalysis: String = ""
+
+    struct AssistantMessage: Identifiable {
+        let id = UUID()
+        let role: Role
+        let content: String
+
+        enum Role {
+            case system, user, assistant
+        }
+    }
+
     struct WorkflowRunInfo {
         let runNumber: Int
         let name: String?
@@ -218,14 +234,24 @@ struct BuildLogsView: View {
                     Button("Done") { dismiss() }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        loadLogs()
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
+                    HStack(spacing: 12) {
+                        Button {
+                            analyzeLogsWithAssistant()
+                        } label: {
+                            Image(systemName: "sparkles")
+                        }
+                        Button {
+                            loadLogs()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
                     }
                 }
             }
             .onAppear { loadLogs() }
+            .sheet(isPresented: $showAssistant) {
+                buildAssistantSheet
+            }
         }
     }
 
@@ -315,4 +341,192 @@ struct BuildLogsView: View {
             }
         }
     }
+
+    // MARK: - AI Build Assistant
+
+    private var buildAssistantSheet: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                if assistantMessages.isEmpty && !isAnalyzing {
+                    VStack(spacing: 16) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.purple)
+                        Text("Build Log Assistant")
+                            .font(.title3.bold())
+                            .foregroundStyle(.white)
+                        Text("Analyzes build logs to detect failures,\nexplain errors, and suggest fixes.")
+                            .multilineTextAlignment(.center)
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+
+                        Button {
+                            analyzeLogsWithAssistant()
+                        } label: {
+                            Label("Analyze Build Logs", systemImage: "wand.and.stars")
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 10)
+                                .background(.purple.opacity(0.3), in: Capsule())
+                                .foregroundStyle(.purple)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 12) {
+                            ForEach(assistantMessages) { message in
+                                assistantMessageBubble(message)
+                            }
+                            if isAnalyzing {
+                                HStack(spacing: 8) {
+                                    ProgressView()
+                                        .scaleEffect(0.8)
+                                    Text("Analyzing logs...")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding()
+                            }
+                        }
+                        .padding()
+                    }
+                }
+            }
+            .background(Color(red: 0.10, green: 0.10, blue: 0.14))
+            .navigationTitle("Build Assistant")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { showAssistant = false }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+    }
+
+    private func assistantMessageBubble(_ message: AssistantMessage) -> some View {
+        HStack {
+            if message.role == .user {
+                Spacer()
+            }
+
+            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    Image(systemName: message.role == .assistant ? "sparkles" : "person.fill")
+                        .font(.caption2)
+                        .foregroundStyle(message.role == .assistant ? .purple : .orange)
+                    Text(message.role == .assistant ? "Assistant" : "You")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                Text(message.content)
+                    .font(.system(size: 13))
+                    .foregroundStyle(.white.opacity(0.9))
+                    .padding(10)
+                    .background(
+                        message.role == .assistant
+                            ? Color.purple.opacity(0.15)
+                            : Color.orange.opacity(0.15),
+                        in: RoundedRectangle(cornerRadius: 12)
+                    )
+            }
+            .frame(maxWidth: 300, alignment: message.role == .user ? .trailing : .leading)
+
+            if message.role == .assistant {
+                Spacer()
+            }
+        }
+    }
+
+    private func analyzeLogsWithAssistant() {
+        showAssistant = true
+        isAnalyzing = true
+
+        var logContent = ""
+
+        if !logManager.entries.isEmpty {
+            logContent += "Local build log entries:\n"
+            for entry in logManager.entries.suffix(50) {
+                logContent += "[\(entry.level.rawValue)] [\(entry.category.rawValue)] \(entry.message)\n"
+                if let detail = entry.detail {
+                    logContent += "  Detail: \(detail)\n"
+                }
+            }
+        }
+
+        if !logs.isEmpty {
+            logContent += "\nCI Build runs:\n"
+            for log in logs.prefix(5) {
+                logContent += "Build #\(log.runNumber) - \(log.name) - Status: \(log.status)"
+                if let conclusion = log.conclusion {
+                    logContent += " - Result: \(conclusion)"
+                }
+                logContent += "\n"
+            }
+        }
+
+        if logContent.isEmpty {
+            logContent = "No build logs available to analyze."
+        }
+
+        assistantMessages.append(AssistantMessage(
+            role: .user,
+            content: "Analyze the current build logs and identify any issues."
+        ))
+
+        let decoded = BuildLogDecoder.shared.decode(logContent)
+        var analysis = ""
+
+        if decoded.hasFailures {
+            analysis += "Build Failure Detected\n\n"
+            analysis += "Found \(decoded.errorCount) error(s) and \(decoded.warningCount) warning(s).\n\n"
+
+            if !decoded.errors.isEmpty {
+                analysis += "Errors:\n"
+                for error in decoded.errors.prefix(10) {
+                    analysis += "• Line \(error.lineNumber): \(error.message)\n"
+                }
+                analysis += "\nSuggested fixes:\n"
+                analysis += "• Check the error messages above for specific file and line references\n"
+                analysis += "• Verify all dependencies are properly resolved\n"
+                analysis += "• Ensure the build scheme and target are correctly configured\n"
+                analysis += "• Check for syntax errors or missing imports in the referenced files\n"
+            }
+        } else if decoded.warningCount > 0 {
+            analysis += "Build completed with \(decoded.warningCount) warning(s).\n\n"
+            for warning in decoded.warnings.prefix(5) {
+                analysis += "• \(warning.message)\n"
+            }
+            analysis += "\nConsider addressing these warnings to improve code quality."
+        } else if !logContent.contains("No build logs") {
+            let failedBuilds = logs.filter { $0.conclusion == "failure" }
+            if !failedBuilds.isEmpty {
+                analysis += "Found \(failedBuilds.count) failed CI build(s).\n\n"
+                for build in failedBuilds.prefix(3) {
+                    analysis += "• Build #\(build.runNumber) (\(build.name)) - Failed\n"
+                }
+                analysis += "\nRecommendations:\n"
+                analysis += "• View the detailed logs for each failed build\n"
+                analysis += "• Check the workflow YAML configuration\n"
+                analysis += "• Verify environment and dependency setup\n"
+            } else {
+                analysis += "All recent builds appear successful. No issues detected.\n\n"
+                analysis += "Summary:\n"
+                analysis += "• \(decoded.entries.count) log lines analyzed\n"
+                analysis += "• \(decoded.compileStepCount) compile steps detected\n"
+                analysis += "• No errors or warnings found"
+            }
+        } else {
+            analysis = "No build logs available for analysis. Run a build first or connect a GitHub repository to view CI logs."
+        }
+
+        assistantMessages.append(AssistantMessage(
+            role: .assistant,
+            content: analysis
+        ))
+
+        isAnalyzing = false
+    }
+
 }
