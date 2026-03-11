@@ -69,7 +69,6 @@ final class ProjectTemplateManager: ObservableObject {
             description: "A full SwiftUI application with ContentView, App entry point, and basic navigation.",
             icon: "iphone",
             iconColor: "blue",
-            tags: ["SwiftUI", "iOS", "App"],
             files: [
                 .init(relativePath: "Sources/AppEntry.swift") { name in
                     let safeName = name.replacingOccurrences(of: " ", with: "")
@@ -138,11 +137,9 @@ let package = Package(
 )
 """
                 }
-            ]
+            ],
+            tags: ["SwiftUI", "iOS", "App"]
         )
-    }
-
-    // MARK: - Swift Package
 
     private static var swiftPackage: ProjectTemplate {
         ProjectTemplate(
@@ -151,7 +148,6 @@ let package = Package(
             description: "A Swift package with a library target, tests, and Package.swift.",
             icon: "shippingbox",
             iconColor: "orange",
-            tags: ["SPM", "Library", "Framework"],
             files: [
                 .init(relativePath: "Package.swift") { name in
                     let safeName = name.replacingOccurrences(of: " ", with: "")
@@ -206,11 +202,9 @@ final class \(safeName)Tests: XCTestCase {
 }
 """
                 }
-            ]
+            ],
+            tags: ["SPM", "Library", "Framework"]
         )
-    }
-
-    // MARK: - CLI Tool
 
     private static var cliTool: ProjectTemplate {
         ProjectTemplate(
@@ -219,7 +213,6 @@ final class \(safeName)Tests: XCTestCase {
             description: "A command-line Swift executable with argument parsing.",
             icon: "terminal",
             iconColor: "green",
-            tags: ["CLI", "Terminal", "Tool"],
             files: [
                 .init(relativePath: "Sources/main.swift") { name in
                     """
@@ -264,11 +257,9 @@ let package = Package(
 )
 """
                 }
-            ]
+            ],
+            tags: ["CLI", "Terminal", "Tool"]
         )
-    }
-
-    // MARK: - Empty Project
 
     private static var emptyProject: ProjectTemplate {
         ProjectTemplate(
@@ -277,12 +268,12 @@ let package = Package(
             description: "A blank project with just a README.",
             icon: "doc",
             iconColor: "gray",
-            tags: ["Empty", "Blank"],
             files: [
                 .init(relativePath: "README.md") { name in
                     "# \(name)\n\nA new Swift project created with SwiftCode.\n"
                 }
-            ]
+            ],
+            tags: ["Empty", "Blank"]
         )
     }
 
@@ -295,7 +286,6 @@ let package = Package(
             description: "XCTest-based unit test suite for an existing project.",
             icon: "checkmark.shield",
             iconColor: "cyan",
-            tags: ["Testing", "XCTest"],
             files: [
                 .init(relativePath: "Tests/AppTests.swift") { name in
                     let safeName = name.replacingOccurrences(of: " ", with: "")
@@ -325,7 +315,8 @@ final class \(safeName)Tests: XCTestCase {
 }
 """
                 }
-            ]
+            ],
+            tags: ["Testing", "XCTest"]
         )
     }
 }
