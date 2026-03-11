@@ -78,10 +78,190 @@ final class ExtensionManager: ObservableObject {
 
     private init() {
         ensureExtensionsDirectory()
+        seedBuiltInExtensions()
         Task { await scanExtensions() }
     }
 
-    // MARK: - Directory
+    // MARK: - Built-in Extensions
+
+    private var builtInManifests: [ExtensionManifest] {
+        [
+            ExtensionManifest(id: "swiftformatter", name: "Swift Formatter", version: "1.0.0",
+                description: "Automatically format Swift code on save using SwiftFormat rules.",
+                author: "SwiftCode", category: .editor,
+                capabilities: [.formatter], entryPoint: "SwiftFormatterExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "swiftlintrunner", name: "SwiftLint Runner", version: "1.0.0",
+                description: "Run SwiftLint inline and surface warnings/errors in the editor gutter.",
+                author: "SwiftCode", category: .tools,
+                capabilities: [.linter], entryPoint: "SwiftLintRunnerExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "gitblame", name: "Git Blame", version: "1.0.0",
+                description: "Show inline git blame annotations for each line of code.",
+                author: "SwiftCode", category: .tools,
+                capabilities: [.command], entryPoint: "GitBlameExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "colorpicker", name: "Color Picker", version: "1.0.0",
+                description: "Inline color swatches and a picker for UIColor/SwiftUI Color literals.",
+                author: "SwiftCode", category: .editor,
+                capabilities: [.command], entryPoint: "ColorPickerExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "snippetlibrary", name: "Snippet Library", version: "1.0.0",
+                description: "Manage and insert reusable code snippets with tab-expansion.",
+                author: "SwiftCode", category: .editor,
+                capabilities: [.fileTemplate], entryPoint: "SnippetLibraryExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "markdownpreview", name: "Markdown Preview", version: "1.0.0",
+                description: "Live side-by-side preview for Markdown files.",
+                author: "SwiftCode", category: .editor,
+                capabilities: [.syntaxHighlight], entryPoint: "MarkdownPreviewExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "jsonformatter", name: "JSON Formatter", version: "1.0.0",
+                description: "Pretty-print and validate JSON files with collapsible nodes.",
+                author: "SwiftCode", category: .editor,
+                capabilities: [.formatter], entryPoint: "JSONFormatterExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "regextester", name: "Regex Tester", version: "1.0.0",
+                description: "Test regular expressions interactively with match highlighting.",
+                author: "SwiftCode", category: .tools,
+                capabilities: [.command], entryPoint: "RegexTesterExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "darkprotheme", name: "Dark Pro Theme", version: "1.0.0",
+                description: "A professional dark theme inspired by VS Code Dark+.",
+                author: "SwiftCode", category: .themes,
+                capabilities: [.themeProvider], entryPoint: "DarkProThemeExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: false, isUserCreated: false),
+
+            ExtensionManifest(id: "nordtheme", name: "Nord Theme", version: "1.0.0",
+                description: "The popular Nord arctic color palette for comfortable night coding.",
+                author: "SwiftCode", category: .themes,
+                capabilities: [.themeProvider], entryPoint: "NordThemeExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: false, isUserCreated: false),
+
+            ExtensionManifest(id: "gruvboxtheme", name: "Gruvbox Theme", version: "1.0.0",
+                description: "Retro groove color scheme with warm tones.",
+                author: "SwiftCode", category: .themes,
+                capabilities: [.themeProvider], entryPoint: "GruvboxThemeExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: false, isUserCreated: false),
+
+            ExtensionManifest(id: "kotlinsupport", name: "Kotlin Support", version: "1.0.0",
+                description: "Syntax highlighting and basic IntelliSense for Kotlin files.",
+                author: "SwiftCode", category: .languages,
+                capabilities: [.languageSupport, .syntaxHighlight], entryPoint: "KotlinSupportExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "typescriptsupport", name: "TypeScript Support", version: "1.0.0",
+                description: "TypeScript and TSX syntax highlighting with type annotations.",
+                author: "SwiftCode", category: .languages,
+                capabilities: [.languageSupport, .syntaxHighlight], entryPoint: "TypeScriptSupportExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "pythonsupport", name: "Python Support", version: "1.0.0",
+                description: "Python 3 syntax highlighting, docstring templates, and snippet library.",
+                author: "SwiftCode", category: .languages,
+                capabilities: [.languageSupport, .syntaxHighlight, .fileTemplate], entryPoint: "PythonSupportExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "rustsupport", name: "Rust Support", version: "1.0.0",
+                description: "Rust syntax highlighting with ownership and lifetime hints.",
+                author: "SwiftCode", category: .languages,
+                capabilities: [.languageSupport, .syntaxHighlight], entryPoint: "RustSupportExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "gosupport", name: "Go Support", version: "1.0.0",
+                description: "Go syntax highlighting and gofmt integration.",
+                author: "SwiftCode", category: .languages,
+                capabilities: [.languageSupport, .syntaxHighlight, .formatter], entryPoint: "GoSupportExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "aidocgen", name: "AI Doc Generator", version: "1.0.0",
+                description: "Auto-generate Swift DocC documentation comments using AI.",
+                author: "SwiftCode", category: .ai,
+                capabilities: [.aiAssistant], entryPoint: "AIDocGenExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "airefactor", name: "AI Refactor", version: "1.0.0",
+                description: "AI-powered refactoring suggestions: extract method, rename, restructure.",
+                author: "SwiftCode", category: .ai,
+                capabilities: [.aiAssistant], entryPoint: "AIRefactorExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "unittestgen", name: "Unit Test Generator", version: "1.0.0",
+                description: "Generate XCTest unit tests for selected functions using AI.",
+                author: "SwiftCode", category: .testing,
+                capabilities: [.aiAssistant], entryPoint: "UnitTestGenExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "xcodebuildtool", name: "Xcode Build Tool", version: "1.0.0",
+                description: "Trigger xcodebuild commands and stream build logs to the console.",
+                author: "SwiftCode", category: .build,
+                capabilities: [.buildTool], entryPoint: "XcodeBuildToolExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "swiftpackagemanager", name: "Swift Package Manager", version: "1.0.0",
+                description: "Manage SPM dependencies: add, update, remove packages graphically.",
+                author: "SwiftCode", category: .build,
+                capabilities: [.buildTool], entryPoint: "SwiftPackageManagerExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "doccgenerator", name: "DocC Generator", version: "1.0.0",
+                description: "Build and preview Apple DocC documentation directly in the IDE.",
+                author: "SwiftCode", category: .tools,
+                capabilities: [.command], entryPoint: "DocCGeneratorExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "todohighlighter", name: "TODO Highlighter", version: "1.0.0",
+                description: "Highlight TODO, FIXME, MARK and HACK comments with color badges.",
+                author: "SwiftCode", category: .editor,
+                capabilities: [.syntaxHighlight], entryPoint: "TodoHighlighterExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "multicursor", name: "Multi-Cursor", version: "1.0.0",
+                description: "Edit multiple locations simultaneously with multi-cursor support.",
+                author: "SwiftCode", category: .editor,
+                capabilities: [.command], entryPoint: "MultiCursorExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+
+            ExtensionManifest(id: "codestats", name: "Code Stats", version: "1.0.0",
+                description: "Display line counts, complexity metrics, and language breakdown.",
+                author: "SwiftCode", category: .tools,
+                capabilities: [.command], entryPoint: "CodeStatsExtensionView.swift",
+                assetPaths: [], isInstalled: true, isEnabled: true, isUserCreated: false),
+        ]
+    }
+
+    /// Seeds built-in extensions into the Documents/Extensions folder on first launch.
+    /// Built-in extension folders are skipped individually if they already exist.
+    func seedBuiltInExtensions() {
+        let fm = FileManager.default
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+
+        for manifest in builtInManifests {
+            let folderURL = extensionsDirectory.appendingPathComponent(manifest.id)
+            guard !fm.fileExists(atPath: folderURL.path) else { continue }
+            do {
+                try fm.createDirectory(at: folderURL, withIntermediateDirectories: true)
+                let data = try encoder.encode(manifest)
+                try data.write(to: folderURL.appendingPathComponent("extension.json"))
+                let placeholder = "// \(manifest.name) Extension Entry Point\n// Category: \(manifest.category.rawValue)\n"
+                try placeholder.write(
+                    to: folderURL.appendingPathComponent(manifest.entryPoint),
+                    atomically: true, encoding: .utf8
+                )
+            } catch {
+                print("[ExtensionManager] Failed to seed \(manifest.id): \(error)")
+            }
+        }
+    }
 
     private func ensureExtensionsDirectory() {
         try? FileManager.default.createDirectory(
