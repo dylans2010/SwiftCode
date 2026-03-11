@@ -43,12 +43,13 @@ public final class ProjectFilesExtracter {
             } else {
                 throw NSError(domain: "ProjectFilesExtracter", code: 1, userInfo: [NSLocalizedDescriptionKey: "Workflow run not found."])
             }
+            return
         }
 
         // 2. Poll for completion and fetch logs
         progress(0.2, "Workflow running...")
         var currentRun = activeRun
-        var lastLogJobID: Int?
+        var _: Int?
 
         while currentRun.isRunning {
             try await Task.sleep(for: .seconds(5))
