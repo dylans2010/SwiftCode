@@ -11,6 +11,7 @@ final class SyntaxHighlightingEngine {
     // MARK: - Highlight
 
     /// Highlight `code` using the file extension to select the language rules.
+    @MainActor
     func highlight(_ code: String, fileExtension: String = "swift", theme: CodeColoringTheme = .dark) -> AttributedString {
         let tokens = tokenize(code, fileExtension: fileExtension)
         return buildAttributedString(from: tokens, theme: theme)
@@ -151,6 +152,7 @@ final class SyntaxHighlightingEngine {
 
     // MARK: - Attributed String Builder
 
+    @MainActor
     private func buildAttributedString(from tokens: [Token], theme: CodeColoringTheme) -> AttributedString {
         var result = AttributedString()
         let fontSize = CGFloat(AppSettings.shared.editorFontSize)

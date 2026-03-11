@@ -11,6 +11,7 @@ struct ChooseModelView: View {
     @State private var testResult: String?
     @State private var isTesting = false
     @State private var errorMessage: String?
+    @State private var lastCheckResult: AgentModelCheckResult?
 
     enum AIProvider: String, CaseIterable, Identifiable {
         case openRouter = "OpenRouter"
@@ -73,9 +74,28 @@ struct ChooseModelView: View {
                     .disabled(apiKey.isEmpty || controller.selectedModel.isEmpty || isTesting)
 
                     if let result = testResult {
-                        Text(result)
-                            .font(.caption)
-                            .foregroundStyle(result.contains("Success") ? .green : .red)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(result)
+                                .font(.caption.bold())
+                                .foregroundStyle(result.contains("Success") ? .green : .red)
+
+                            if let check = lastCheckResult {
+                                Text("Latency: \(String(format: "%.2f", check.latency))s")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+
+                                Text("Capabilities: \(check.modelCapability)")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+
+                                if !check.supportedModels.isEmpty {
+                                    Text("Supported Models: \(check.supportedModels.count)")
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
                     }
                 }
 
@@ -178,43 +198,34 @@ struct ChooseModelView: View {
         isTesting = true
         testResult = nil
         errorMessage = nil
+        lastCheckResult = nil
 
         Task {
-            let originalKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey)
-            do {
-                // For now, use OpenRouter as a proxy if possible, or simulate direct check
-                if selectedProvider == .openRouter {
-                    KeychainService.shared.set(apiKey, forKey: KeychainService.openRouterAPIKey)
+            let result = await AgentModelCheck.shared.checkModel(
+                provider: selectedProvider.rawValue,
+                apiKey: apiKey,
+                model: controller.selectedModel
+            )
 
-                    let response = try await OpenRouterService.shared.chat(
-                        messages: [AIMessage(role: "user", content: "Hello from SwiftCode")],
-                        model: controller.selectedModel,
-                        systemPrompt: "You are a helpful assistant."
-                    )
+            await MainActor.run {
+                lastCheckResult = result
+                isTesting = false
 
-                    await MainActor.run {
-                        testResult = "Success: Received response."
-                        isTesting = false
-                        if let key = originalKey {
-                             KeychainService.shared.set(key, forKey: KeychainService.openRouterAPIKey)
-                        }
-                    }
-                } else {
-                    // Simulate success for other providers to demonstrate the UI flow
-                    try await Task.sleep(nanoseconds: 1_000_000_000)
-                    await MainActor.run {
-                        testResult = "Success: API connection verified for \(selectedProvider.rawValue)."
-                        isTesting = false
-                    }
+                switch result.status {
+                case .success:
+                    testResult = "Success: Model verified."
+                case .invalid_key:
+                    testResult = "Failed: Invalid API Key."
+                case .model_not_found:
+                    testResult = "Failed: Model not found."
+                case .rate_limited:
+                    testResult = "Failed: Rate limited."
+                case .network_error:
+                    testResult = "Failed: Network error."
                 }
-            } catch {
-                if let key = originalKey {
-                    KeychainService.shared.set(key, forKey: KeychainService.openRouterAPIKey)
-                }
-                await MainActor.run {
-                    testResult = "Failed"
-                    errorMessage = "Test failed: \(error.localizedDescription)"
-                    isTesting = false
+
+                if result.status != .success {
+                    errorMessage = result.modelCapability
                 }
             }
         }

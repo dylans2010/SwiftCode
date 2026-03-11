@@ -7,6 +7,7 @@ struct PrepareCompileWaitingView: View {
     @State private var statusMessage = "Preparing For Completion"
     @State private var subtext = "SwiftCode is currently preparing your app so you can build it, please wait…"
     @State private var progress: Double = 0.0
+    @State private var timeRemaining: String?
     @State private var errorMessage: String?
     @State private var logs: String = ""
 
@@ -39,6 +40,13 @@ struct PrepareCompileWaitingView: View {
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
+
+                        if let time = timeRemaining, isPreparing {
+                            Text("Time Remaining: \(time)")
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                                .padding(.top, 4)
+                        }
 
                         if isPreparing {
                             ProgressView(value: progress, total: 1.0)
@@ -133,6 +141,15 @@ struct PrepareCompileWaitingView: View {
                     Task { @MainActor in
                         self.progress = prog
                         self.subtext = status
+
+                        // Show estimated time remaining when extraction starts
+                        if status == "Extracting Files…" {
+                            self.timeRemaining = "Less than 1 minute"
+                        } else if status == "Adding Files to App’s Directory…" {
+                            self.timeRemaining = "A few seconds"
+                        } else if prog >= 1.0 {
+                            self.timeRemaining = nil
+                        }
                     }
                 },
                 logCallback: { newLogs in
@@ -142,11 +159,17 @@ struct PrepareCompileWaitingView: View {
                 }
             )
 
-            statusMessage = "Ready!"
-            subtext = "Project files integrated successfully."
-            isPreparing = false
+            // Ensure files actually exist before finishing
+            let projectDir = project.directoryURL
+            if ProjectBuilderManager.shared.hasBuildArtifacts(in: projectDir, projectName: project.name) {
+                statusMessage = "Ready!"
+                subtext = "Required files have been added successfully to the directory!"
+                isPreparing = false
+            } else {
+                throw NSError(domain: "PrepareCompile", code: 2, userInfo: [NSLocalizedDescriptionKey: "Verification failed: Xcode files missing after integration."])
+            }
 
-            try? await Task.sleep(for: .seconds(1.0))
+            try? await Task.sleep(for: .seconds(1.5))
             dismiss()
 
         } catch {
