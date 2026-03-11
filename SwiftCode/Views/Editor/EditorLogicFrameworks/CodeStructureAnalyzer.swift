@@ -19,7 +19,7 @@ struct CodeSymbol: Identifiable, Equatable {
         case function     = "func"
         case variable     = "var"
         case constant     = "let"
-        case typealias    = "typealias"
+        case typeAlias    = "typealias"
 
         var icon: String {
             switch self {
@@ -31,7 +31,7 @@ struct CodeSymbol: Identifiable, Equatable {
             case .function:   return "function"
             case .variable:   return "v.square"
             case .constant:   return "c.square"
-            case .typealias:  return "t.square"
+            case .typeAlias:  return "t.square"
             }
         }
     }
@@ -86,7 +86,7 @@ final class CodeStructureAnalyzer {
             (#"(?:^|[\s]+)func\s+([A-Za-z_][A-Za-z0-9_]*)\s*[<(]"#,     .function),
             (#"(?:^|[\s]+)var\s+([A-Za-z_][A-Za-z0-9_]*)\s*[:{]"#,      .variable),
             (#"(?:^|[\s]+)let\s+([A-Za-z_][A-Za-z0-9_]*)\s*[:{=]"#,     .constant),
-            (#"(?:^|[\s]+)typealias\s+([A-Za-z_][A-Za-z0-9_]*)\s*="#,   .typealias),
+            (#"(?:^|[\s]+)typealias\s+([A-Za-z_][A-Za-z0-9_]*)\s*="#,   .typeAlias),
         ]
         return defs.compactMap { pattern, kind in
             guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }

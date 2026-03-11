@@ -237,7 +237,7 @@ struct FilePreviewView: View {
     // MARK: - Markdown Renderer
 
     private func parseMarkdown(_ text: String) -> AttributedString {
-        (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlinesOnlyPreservingWhitespace))) ?? AttributedString(text)
+        (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
     }
 
     // MARK: - Pretty JSON

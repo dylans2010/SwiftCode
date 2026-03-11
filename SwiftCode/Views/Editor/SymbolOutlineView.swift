@@ -195,7 +195,7 @@ struct SymbolOutlineView: View {
         case .function:    return .orange
         case .variable:    return .yellow
         case .constant:    return .mint
-        case .typealias:   return .indigo
+        case .typeAlias:   return .indigo
         }
     }
 }
