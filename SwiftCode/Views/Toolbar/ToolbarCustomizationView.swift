@@ -3,10 +3,39 @@ import SwiftUI
 struct ToolbarCustomizationView: View {
     @StateObject private var toolbarManager = ToolbarManager.shared
     @Environment(\.dismiss) private var dismiss
+    @State private var showExtensions = false
 
     var body: some View {
         NavigationStack {
             List {
+                // Extensions quick access
+                Section {
+                    Button {
+                        showExtensions = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "puzzlepiece.extension.fill")
+                                .foregroundStyle(.orange)
+                                .frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Manage Extensions")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.white)
+                                Text("Install, enable, or create extensions")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                } header: {
+                    Text("Extensions")
+                }
+
                 Section("Enabled Tools") {
                     ForEach(toolbarManager.enabledTools) { tool in
                         toolRow(tool)
@@ -58,6 +87,9 @@ struct ToolbarCustomizationView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showExtensions) {
+                ExtensionsView()
             }
         }
     }

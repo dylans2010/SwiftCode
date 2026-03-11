@@ -89,6 +89,13 @@ PM0000000000000000000001A /* PluginManager.swift in Sources */ = {isa = PBXBuild
 FP0000000000000000000001A /* FilePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FP0000000000000000000001B /* FilePreviewView.swift */; };
 GI0000000000000000000001A /* GitHubIssuesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GI0000000000000000000001B /* GitHubIssuesView.swift */; };
 CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CX0000000000000000000001B /* ComplexityAnalyzerView.swift */; };
+BM0000000000000000000001A /* BranchManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BM0000000000000000000001B /* BranchManagementView.swift */; };
+CH0000000000000000000001A /* CommitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CH0000000000000000000001B /* CommitHistoryView.swift */; };
+PR0000000000000000000001A /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PR0000000000000000000001B /* PullRequestView.swift */; };
+EX0000000000000000000001A /* ExtensionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EX0000000000000000000001B /* ExtensionsView.swift */; };
+EM0000000000000000000001A /* ExtensionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EM0000000000000000000001B /* ExtensionManager.swift */; };
+CEV000000000000000000001A /* CreateExtensionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEV000000000000000000001B /* CreateExtensionView.swift */; };
+EEV000000000000000000001A /* EditExtensionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEV000000000000000000001B /* EditExtensionView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -175,6 +182,13 @@ PM0000000000000000000001B /* PluginManager.swift */ = {isa = PBXFileReference; l
 FP0000000000000000000001B /* FilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePreviewView.swift; sourceTree = "<group>"; };
 GI0000000000000000000001B /* GitHubIssuesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubIssuesView.swift; sourceTree = "<group>"; };
 CX0000000000000000000001B /* ComplexityAnalyzerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplexityAnalyzerView.swift; sourceTree = "<group>"; };
+BM0000000000000000000001B /* BranchManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BranchManagementView.swift; sourceTree = "<group>"; };
+CH0000000000000000000001B /* CommitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommitHistoryView.swift; sourceTree = "<group>"; };
+PR0000000000000000000001B /* PullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestView.swift; sourceTree = "<group>"; };
+EX0000000000000000000001B /* ExtensionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionsView.swift; sourceTree = "<group>"; };
+EM0000000000000000000001B /* ExtensionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionManager.swift; sourceTree = "<group>"; };
+CEV000000000000000000001B /* CreateExtensionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateExtensionView.swift; sourceTree = "<group>"; };
+EEV000000000000000000001B /* EditExtensionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditExtensionView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -235,6 +249,7 @@ TM0000000000000000000001B /* AgentTaskManager.swift */,
 TQ0000000000000000000001B /* AgentTaskQueue.swift */,
 LM0000000000000000000001B /* LocalModelManager.swift */,
 PM0000000000000000000001B /* PluginManager.swift */,
+EM0000000000000000000001B /* ExtensionManager.swift */,
 );
 path = Services;
 sourceTree = "<group>";
@@ -257,6 +272,7 @@ AA00001000000000000009FF /* DiffViewer */,
 AA0000100000000000000AFF /* Errors */,
 AA0000100000000000000BFF /* Search */,
 AA0000100000000000000CFF /* Toolbar */,
+EX0000000000000000000001B /* ExtensionsView.swift */,
 );
 path = Views;
 sourceTree = "<group>";
@@ -316,6 +332,9 @@ AA000010000000000000011B /* GitHubIntegrationView.swift */,
 AA000010000000000000016B /* GitCommandView.swift */,
 GH0000000000000000000001B /* GitHistoryView.swift */,
 GI0000000000000000000001B /* GitHubIssuesView.swift */,
+BM0000000000000000000001B /* BranchManagementView.swift */,
+CH0000000000000000000001B /* CommitHistoryView.swift */,
+PR0000000000000000000001B /* PullRequestView.swift */,
 );
 path = GitHub;
 sourceTree = "<group>";
@@ -339,8 +358,18 @@ AA00001000000000000004DB /* ProjectSettingsView.swift */,
 GS0000000000000000000002 /* GeneralSettingsView.swift */,
 PMV000000000000000000001B /* PluginManagerView.swift */,
 PTV000000000000000000001B /* ProjectTemplateView.swift */,
+EXM00000000000000000001F /* Extension Management */,
 );
 path = Settings;
+sourceTree = "<group>";
+};
+EXM00000000000000000001F /* Extension Management */ = {
+isa = PBXGroup;
+children = (
+CEV000000000000000000001B /* CreateExtensionView.swift */,
+EEV000000000000000000001B /* EditExtensionView.swift */,
+);
+path = "Extension Management";
 sourceTree = "<group>";
 };
 AA000010000000000000049F /* Utilities */ = {
@@ -689,6 +718,13 @@ PM0000000000000000000001A /* PluginManager.swift in Sources */,
 FP0000000000000000000001A /* FilePreviewView.swift in Sources */,
 GI0000000000000000000001A /* GitHubIssuesView.swift in Sources */,
 CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */,
+BM0000000000000000000001A /* BranchManagementView.swift in Sources */,
+CH0000000000000000000001A /* CommitHistoryView.swift in Sources */,
+PR0000000000000000000001A /* PullRequestView.swift in Sources */,
+EX0000000000000000000001A /* ExtensionsView.swift in Sources */,
+EM0000000000000000000001A /* ExtensionManager.swift in Sources */,
+CEV000000000000000000001A /* CreateExtensionView.swift in Sources */,
+EEV000000000000000000001A /* EditExtensionView.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };

@@ -29,6 +29,11 @@ struct GitHubIntegrationView: View {
     @State private var isValidatingRepo = false
     @State private var repoValidationError: String?
 
+    // Navigation to modular GitHub views
+    @State private var showBranchManagement = false
+    @State private var showCommitHistory = false
+    @State private var showPullRequest = false
+
     var ownerFromRepo: String {
         let parts = repoURL
             .replacingOccurrences(of: "https://github.com/", with: "")
@@ -54,6 +59,7 @@ struct GitHubIntegrationView: View {
                         if isAuthenticated {
                             repositorySection
                             if !ownerFromRepo.isEmpty && !repoNameFromURL.isEmpty {
+                                githubModulesSection
                                 branchesSection
                                 pushSection
                                 advancedActionsSection
@@ -83,6 +89,27 @@ struct GitHubIntegrationView: View {
             }
             .sheet(isPresented: $showCIBuild) {
                 CIBuildView(project: project)
+            }
+            .sheet(isPresented: $showBranchManagement) {
+                BranchManagementView(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    currentBranch: $currentBranch
+                )
+            }
+            .sheet(isPresented: $showCommitHistory) {
+                CommitHistoryView(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    currentBranch: $currentBranch
+                )
+            }
+            .sheet(isPresented: $showPullRequest) {
+                PullRequestView(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    currentBranch: currentBranch
+                )
             }
             .onAppear { loadSavedCredentials() }
         }
@@ -147,6 +174,78 @@ struct GitHubIntegrationView: View {
                 .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
             }
         }
+    }
+
+    // MARK: - GitHub Modules Section
+
+    /// Navigation hub for modular GitHub views: Branch Management, Commit History, Pull Requests.
+    private var githubModulesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("GitHub Modules", icon: "square.grid.2x2.fill", color: .purple)
+
+            VStack(spacing: 0) {
+                moduleRow(
+                    title: "Branch Management",
+                    subtitle: "Switch, create, or delete branches",
+                    icon: "arrow.triangle.branch",
+                    color: .green
+                ) {
+                    showBranchManagement = true
+                }
+
+                Divider().opacity(0.15).padding(.leading, 52)
+
+                moduleRow(
+                    title: "Commit History",
+                    subtitle: "View history, amend, revert, cherry-pick",
+                    icon: "clock.arrow.circlepath",
+                    color: .orange
+                ) {
+                    showCommitHistory = true
+                }
+
+                Divider().opacity(0.15).padding(.leading, 52)
+
+                moduleRow(
+                    title: "Pull Requests",
+                    subtitle: "Create PRs with reviewers and labels",
+                    icon: "arrow.triangle.pull",
+                    color: .purple
+                ) {
+                    showPullRequest = true
+                }
+            }
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    private func moduleRow(title: String, subtitle: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(color)
+                    .frame(width: 32)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Repository Section
@@ -259,6 +358,9 @@ struct GitHubIntegrationView: View {
                         .foregroundStyle(.green)
                 }
                 .buttonStyle(.plain)
+                // Only show "Create Repository" when no repository is linked yet
+                .opacity(ownerFromRepo.isEmpty ? 1 : 0)
+                .disabled(!ownerFromRepo.isEmpty)
 
                 // Save repo to device
                 Button {
