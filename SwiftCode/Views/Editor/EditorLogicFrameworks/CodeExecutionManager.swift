@@ -67,17 +67,25 @@ final class CodeExecutionManager: ObservableObject {
     // MARK: - Syntax Check (lightweight)
 
     private func performSyntaxCheck(code: String) async -> ExecutionResult {
-        // Count braces as a trivial balance check
-        let opens  = code.filter { $0 == "{" }.count
-        let closes = code.filter { $0 == "}" }.count
+        // Count braces as a trivial balance check (single pass)
+        var opens = 0
+        var closes = 0
+        for ch in code {
+            if ch == "{" { opens += 1 }
+            else if ch == "}" { closes += 1 }
+        }
 
         if opens != closes {
             let diff = abs(opens - closes)
             return .failure(error: "Unbalanced braces detected (\(diff) mismatch). Check your code structure.")
         }
 
-        let parenO = code.filter { $0 == "(" }.count
-        let parenC = code.filter { $0 == ")" }.count
+        var parenO = 0
+        var parenC = 0
+        for ch in code {
+            if ch == "(" { parenO += 1 }
+            else if ch == ")" { parenC += 1 }
+        }
         if parenO != parenC {
             return .failure(error: "Unbalanced parentheses detected.")
         }

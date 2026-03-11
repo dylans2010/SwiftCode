@@ -52,6 +52,7 @@ struct GitHubIssuesView: View {
     @State private var newIssueTitle = ""
     @State private var newIssueBody = ""
     @State private var isCreating = false
+    @State private var filterTask: Task<Void, Never>?
 
     private var owner: String {
         guard let repo = projectManager.activeProject?.githubRepo else { return "" }
@@ -107,7 +108,10 @@ struct GitHubIssuesView: View {
             }
             .pickerStyle(.segmented)
             .frame(maxWidth: 180)
-            .onChange(of: filterState) { Task { await loadIssues() } }
+            .onChange(of: filterState) {
+                filterTask?.cancel()
+                filterTask = Task { await loadIssues() }
+            }
         }
         ToolbarItem(placement: .navigationBarTrailing) {
             HStack(spacing: 12) {

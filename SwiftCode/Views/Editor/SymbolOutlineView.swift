@@ -45,7 +45,7 @@ struct SymbolOutlineView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear { analyzeCurrentFile() }
-        .onChange(of: projectManager.activeFileContent) { analyzeCurrentFile() }
+        .onChange(of: projectManager.activeFileContent) { _, _ in analyzeCurrentFile() }
     }
 
     // MARK: - Kind Filter Bar

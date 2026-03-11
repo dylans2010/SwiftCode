@@ -186,6 +186,7 @@ public struct \(safeName) {
     public init() {}
 
     public func greet(name: String) -> String {
+        // \\(name) generates literal Swift interpolation \(name) in the output file
         "Hello from \(safeName), \\(name)!"
     }
 }

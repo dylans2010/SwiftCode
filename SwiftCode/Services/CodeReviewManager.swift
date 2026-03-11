@@ -76,6 +76,8 @@ final class CodeReviewManager: ObservableObject {
 
     private static let storageKey = "com.swiftcode.codeReviews"
 
+    // 8000 chars keeps the review prompt within typical model context windows
+    // while still covering most Swift source files. Increase if using models with larger context limits.
     private static let maxReviewCodeLength = 8000
 
     // MARK: - Review
