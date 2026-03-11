@@ -102,6 +102,21 @@ struct BuildStatusView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
+
+            if let actionsURL = URL(string: "https://github.com/\(owner)/\(repo)/actions") {
+                Link(destination: actionsURL) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.right.square")
+                        Text("Actions")
+                    }
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(.white.opacity(0.1), in: Capsule())
+                    .foregroundStyle(.blue)
+                }
+            }
+
             if isLoading {
                 ProgressView().scaleEffect(0.8)
             } else {

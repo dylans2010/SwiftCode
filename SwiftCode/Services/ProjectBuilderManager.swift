@@ -82,14 +82,11 @@ final class ProjectBuilderManager {
         // For the app itself it might be different, but here we can try to find it.
         // The user said it's in SwiftCode/Backend/CI Building/build-project.yml
 
-        let bundlePath = Bundle.main.resourcePath ?? ""
-        let templatePath = bundlePath + "/SwiftCode/Backend/CI Building/build-project.yml"
-
-        // Fallback for development environment
+        let templatePath = Bundle.main.path(forResource: "build-project", ofType: "yml")
         let fallbackPath = "SwiftCode/Backend/CI Building/build-project.yml"
 
         let workflowContent: String
-        if let content = try? String(contentsOfFile: templatePath, encoding: .utf8) {
+        if let path = templatePath, let content = try? String(contentsOfFile: path, encoding: .utf8) {
             workflowContent = content
         } else if let content = try? String(contentsOfFile: fallbackPath, encoding: .utf8) {
             workflowContent = content

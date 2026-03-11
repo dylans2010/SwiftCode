@@ -102,6 +102,8 @@ RPM000000000000000000001A /* RepoPermManager.swift in Sources */ = {isa = PBXBui
 PBM000000000000000000001A /* ProjectBuilderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PBM000000000000000000001B /* ProjectBuilderManager.swift */; };
 GRS000000000000000000001A /* GitHubRemoteSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GRS000000000000000000001B /* GitHubRemoteSetupView.swift */; };
 AA0000100000000000000PFB /* ProjectFilesExtracter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000PFR /* ProjectFilesExtracter.swift */; };
+CB000000000000000000001A /* build-project.yml in Resources */ = {isa = PBXBuildFile; fileRef = CB000000000000000000001B /* build-project.yml */; };
+CB000000000000000000002A /* build.yml in Resources */ = {isa = PBXBuildFile; fileRef = CB000000000000000000002B /* build.yml */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -201,6 +203,8 @@ RPM000000000000000000001B /* RepoPermManager.swift */ = {isa = PBXFileReference;
 PBM000000000000000000001B /* ProjectBuilderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBuilderManager.swift; sourceTree = "<group>"; };
 GRS000000000000000000001B /* GitHubRemoteSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRemoteSetupView.swift; sourceTree = "<group>"; };
 AA0000100000000000000PFR /* ProjectFilesExtracter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFilesExtracter.swift; sourceTree = "<group>"; };
+CB000000000000000000001B /* build-project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "build-project.yml"; sourceTree = "<group>"; };
+CB000000000000000000002B /* build.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = build.yml; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -549,8 +553,18 @@ isa = PBXGroup;
 children = (
 LS000000000000000000001F /* Local Simulation */,
 BG000000000000000000001F /* GitHub */,
+CB000000000000000000001F /* CI Building */,
 );
 path = Backend;
+sourceTree = "<group>";
+};
+CB000000000000000000001F /* CI Building */ = {
+isa = PBXGroup;
+children = (
+CB000000000000000000001B /* build-project.yml */,
+CB000000000000000000002B /* build.yml */,
+);
+path = "CI Building";
 sourceTree = "<group>";
 };
 LS000000000000000000001F /* Local Simulation */ = {
@@ -643,6 +657,8 @@ isa = PBXResourcesBuildPhase;
 buildActionMask = 2147483647;
 files = (
 AA000010000000000000014A /* Assets.xcassets in Resources */,
+CB000000000000000000001A /* build-project.yml in Resources */,
+CB000000000000000000002A /* build.yml in Resources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
