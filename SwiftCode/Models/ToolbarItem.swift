@@ -121,5 +121,6 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "minimap_settings", name: "Minimap Settings", icon: "map.fill", category: "Editor", isEnabled: false, order: 28),
         ToolbarTool(id: "project_analyzer", name: "Project Analyzer", icon: "waveform.path.ecg", category: "Diagnostics", isEnabled: false, order: 29),
         ToolbarTool(id: "sf_symbols_browser", name: "SF Symbols", icon: "square.grid.2x2.fill", category: "Tools", isEnabled: false, order: 30),
+        ToolbarTool(id: "local_simulation", name: "Preview", icon: "play.display", category: "Build", isEnabled: true, order: 10),
     ]
 }
