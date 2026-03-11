@@ -118,9 +118,6 @@ final class ProjectManager: ObservableObject {
         // Persist metadata
         try saveMetadata(project)
 
-        // Generate Xcode project files for the new project.
-        ProjectBuilderManager.shared.prepareXcodeFiles(for: project)
-
         projects.insert(project, at: 0)
         return project
     }
@@ -314,8 +311,6 @@ jobs:
         activeFileNode = nil
         activeFileContent = ""
 
-        // Ensure Xcode project files are present (generates if missing).
-        ProjectBuilderManager.shared.prepareXcodeFiles(for: updated)
     }
 
     func closeProject() {

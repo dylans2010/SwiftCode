@@ -27,14 +27,14 @@ final class ProjectBuilderManager {
     func prepareXcodeFiles(for project: Project) {
         let projectDir = project.directoryURL
         if hasXcodeProjectFiles(in: projectDir) {
-            // Existing files found — load and use them without regenerating.
+            // Rule: If either .xcodeproj or .xcworkspace exists, do not generate new ones.
             return
         }
         generateXcodeProject(for: project)
     }
 
     /// Call this when a ZIP-imported project directory has been set up.
-    /// Applies the same rules: skip generation if `.xcodeproj`/`.xcworkspace` already exist.
+    /// Applies the rule: skip generation if `.xcodeproj` or `.xcworkspace` already exist.
     /// - Parameters:
     ///   - projectDir: The root directory of the imported project.
     ///   - projectName: The name used for the generated project files.
@@ -62,7 +62,14 @@ final class ProjectBuilderManager {
 
     // MARK: - Detection
 
-    /// Returns `true` when the directory already contains a `.xcodeproj` or `.xcworkspace`.
+    /// Returns `true` when the directory contains BOTH ProjectName.xcodeproj and ProjectName.xcworkspace.
+    func hasBothProjectAndWorkspace(in directory: URL, projectName: String) -> Bool {
+        let xcodeProj = directory.appendingPathComponent("\(projectName).xcodeproj")
+        let xcworkspace = directory.appendingPathComponent("\(projectName).xcworkspace")
+        return fm.fileExists(atPath: xcodeProj.path) && fm.fileExists(atPath: xcworkspace.path)
+    }
+
+    /// Returns `true` when the directory already contains any `.xcodeproj` or `.xcworkspace`.
     func hasXcodeProjectFiles(in directory: URL) -> Bool {
         guard let contents = try? fm.contentsOfDirectory(
             at: directory,
@@ -173,11 +180,31 @@ final class ProjectBuilderManager {
                 path: filePath
             )
             pbxproj.add(object: fileRef)
-            sourcesGroup.children.append(fileRef)
+
+            // Organize into groups based on folder structure
+            if filePath.contains("Views/") {
+                viewsGroup.children.append(fileRef)
+            } else if filePath.contains("Features/") {
+                featuresGroup.children.append(fileRef)
+            } else {
+                sourcesGroup.children.append(fileRef)
+            }
 
             let buildFile = PBXBuildFile(file: fileRef)
             pbxproj.add(object: buildFile)
             buildFiles.append(buildFile)
+        }
+
+        // Add Assets.xcassets reference if it exists
+        if fm.fileExists(atPath: projectDir.appendingPathComponent("Assets.xcassets").path) {
+            let assetsRef = PBXFileReference(
+                sourceTree: .group,
+                name: "Assets.xcassets",
+                lastKnownFileType: "folder.assetcatalog",
+                path: "Assets.xcassets"
+            )
+            pbxproj.add(object: assetsRef)
+            assetsGroup.children.append(assetsRef)
         }
 
         // --- Product Reference ---
