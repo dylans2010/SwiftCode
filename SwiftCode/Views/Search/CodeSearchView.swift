@@ -82,7 +82,7 @@ struct CodeSearchView: View {
                             .foregroundStyle(.secondary.opacity(0.5))
                         Text("No Results Found")
                             .foregroundStyle(.secondary)
-                        Text("No matches for "\(searchQuery)" in the codebase.")
+                        Text("No matches for \(searchQuery) in the codebase.")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                             .multilineTextAlignment(.center)
