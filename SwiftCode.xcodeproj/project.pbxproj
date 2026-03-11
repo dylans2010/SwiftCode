@@ -60,6 +60,7 @@ BG000000000000000000004A /* GitHubImport.swift in Sources */ = {isa = PBXBuildFi
 BG000000000000000000005A /* GitHubRepositoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000005B /* GitHubRepositoryManager.swift */; };
 BG000000000000000000006A /* GitHubBuilds.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000006B /* GitHubBuilds.swift */; };
 BG000000000000000000007A /* GitCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000007B /* GitCommands.swift */; };
+BD000000000000000000001A /* BuildLogDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD000000000000000000001B /* BuildLogDecoder.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -117,6 +118,7 @@ BG000000000000000000004B /* GitHubImport.swift */ = {isa = PBXFileReference; las
 BG000000000000000000005B /* GitHubRepositoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRepositoryManager.swift; sourceTree = "<group>"; };
 BG000000000000000000006B /* GitHubBuilds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubBuilds.swift; sourceTree = "<group>"; };
 BG000000000000000000007B /* GitCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitCommands.swift; sourceTree = "<group>"; };
+BD000000000000000000001B /* BuildLogDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildLogDecoder.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -345,6 +347,7 @@ isa = PBXGroup;
 children = (
 AA00001000000000000005AB /* CodingManager.swift */,
 AA00001000000000000005BB /* ToolbarActionManager.swift */,
+BD000000000000000000001F /* BuildSystem */,
 CF000000000000000000001F /* FileSystem */,
 CG000000000000000000001F /* GitHub */,
 );
@@ -357,6 +360,14 @@ children = (
 CR000000000000000000001B /* CodeReaderManager.swift */,
 );
 path = FileSystem;
+sourceTree = "<group>";
+};
+BD000000000000000000001F /* BuildSystem */ = {
+isa = PBXGroup;
+children = (
+BD000000000000000000001B /* BuildLogDecoder.swift */,
+);
+path = BuildSystem;
 sourceTree = "<group>";
 };
 CG000000000000000000001F /* GitHub */ = {
@@ -549,6 +560,7 @@ BG000000000000000000004A /* GitHubImport.swift in Sources */,
 BG000000000000000000005A /* GitHubRepositoryManager.swift in Sources */,
 BG000000000000000000006A /* GitHubBuilds.swift in Sources */,
 BG000000000000000000007A /* GitCommands.swift in Sources */,
+BD000000000000000000001A /* BuildLogDecoder.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
