@@ -470,7 +470,7 @@ struct GeneralSettingsView: View {
                 .buttonStyle(.plain)
             }
             if showOpenRouterKey {
-                SecureField("sk-or-xxxxxxxxxxxx", text: $openRouterKey)
+                TextField("sk-or-xxxxxxxxxxxx", text: $openRouterKey)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .font(.system(.body, design: .monospaced))
@@ -510,7 +510,7 @@ struct GeneralSettingsView: View {
                 .buttonStyle(.plain)
             }
             if showGitHubToken {
-                SecureField("ghp_xxxxxxxxxxxx", text: $githubToken)
+                TextField("ghp_xxxxxxxxxxxx", text: $githubToken)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.never)
                     .font(.system(.body, design: .monospaced))
