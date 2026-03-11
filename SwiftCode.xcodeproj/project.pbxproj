@@ -8,8 +8,6 @@ objects = {
 
 /* Begin PBXBuildFile section */
 		ZIPFOUND000000000000003 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ZIPFOUND000000000000002 /* ZIPFoundation */; };
-		XCODEPROJ0000000000003 /* XcodeProj in Frameworks */ = {isa = PBXBuildFile; productRef = XCODEPROJ0000000000002 /* XcodeProj */; };
-		PATHKIT00000000000003 /* PathKit in Frameworks */ = {isa = PBXBuildFile; productRef = PATHKIT00000000000002 /* PathKit */; };
 AA000010000000000000001A /* SwiftCodeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000001B /* SwiftCodeApp.swift */; };
 AA000010000000000000002A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000002B /* ContentView.swift */; };
 AA000010000000000000003A /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000003B /* Project.swift */; };
@@ -595,8 +593,6 @@ dependencies = (
 name = SwiftCode;
 packageProductDependencies = (
 ZIPFOUND000000000000002 /* ZIPFoundation */,
-XCODEPROJ0000000000002 /* XcodeProj */,
-PATHKIT00000000000002 /* PathKit */,
 );
 productName = SwiftCode;
 productReference = AA000001000000000000000C /* SwiftCode.app */;
@@ -631,7 +627,6 @@ projectDirPath = "";
 projectRoot = "";
 packageReferences = (
 ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
-XCODEPROJ0000000000001 /* XCRemoteSwiftPackageReference "XcodeProj" */,
 );
 targets = (
 AA000001000000000000000B /* SwiftCode */,
@@ -656,8 +651,6 @@ isa = PBXFrameworksBuildPhase;
 buildActionMask = 2147483647;
 files = (
 ZIPFOUND000000000000003 /* ZIPFoundation in Frameworks */,
-XCODEPROJ0000000000003 /* XcodeProj in Frameworks */,
-PATHKIT00000000000003 /* PathKit in Frameworks */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };
@@ -962,14 +955,6 @@ kind = upToNextMajorVersion;
 minimumVersion = "0.9.0";
 };
 };
-XCODEPROJ0000000000001 /* XCRemoteSwiftPackageReference "XcodeProj" */ = {
-isa = XCRemoteSwiftPackageReference;
-repositoryURL = "https://github.com/tuist/XcodeProj.git";
-requirement = {
-kind = upToNextMajorVersion;
-minimumVersion = "8.0.0";
-};
-};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -977,16 +962,6 @@ ZIPFOUND000000000000002 /* ZIPFoundation */ = {
 isa = XCSwiftPackageProductDependency;
 package = ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 productName = ZIPFoundation;
-};
-XCODEPROJ0000000000002 /* XcodeProj */ = {
-isa = XCSwiftPackageProductDependency;
-package = XCODEPROJ0000000000001 /* XCRemoteSwiftPackageReference "XcodeProj" */;
-productName = XcodeProj;
-};
-PATHKIT00000000000002 /* PathKit */ = {
-isa = XCSwiftPackageProductDependency;
-package = XCODEPROJ0000000000001 /* XCRemoteSwiftPackageReference "XcodeProj" */;
-productName = PathKit;
 };
 /* End XCSwiftPackageProductDependency section */
 
