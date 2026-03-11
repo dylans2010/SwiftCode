@@ -78,7 +78,6 @@ final class ProjectBuilderManager {
         let branch = "build-project"
 
         // Load the build-project.yml content
-        let docsURL = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
         // Note: In Replit environment we should use the actual path.
         // For the app itself it might be different, but here we can try to find it.
         // The user said it's in SwiftCode/Backend/CI Building/build-project.yml

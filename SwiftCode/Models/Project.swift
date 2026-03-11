@@ -1,16 +1,16 @@
 import Foundation
 
-struct Project: Identifiable, Codable {
-    var id: UUID
-    var name: String
-    var createdAt: Date
-    var lastOpened: Date
-    var files: [FileNode]
-    var githubRepo: String?
-    var githubToken: String? // stored in keychain, not persisted here
-    var description: String
+public struct Project: Identifiable, Codable {
+    public var id: UUID
+    public var name: String
+    public var createdAt: Date
+    public var lastOpened: Date
+    public var files: [FileNode]
+    public var githubRepo: String?
+    public var githubToken: String? // stored in keychain, not persisted here
+    public var description: String
 
-    init(name: String) {
+    public init(name: String) {
         self.id = UUID()
         self.name = name
         self.createdAt = Date()
@@ -22,11 +22,11 @@ struct Project: Identifiable, Codable {
     }
 
     @MainActor
-    var directoryURL: URL {
+    public var directoryURL: URL {
         ProjectManager.shared.projectsDirectory.appendingPathComponent(name)
     }
 
-    var fileCount: Int {
+    public var fileCount: Int {
         countFiles(in: files)
     }
 

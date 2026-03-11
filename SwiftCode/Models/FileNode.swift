@@ -2,19 +2,19 @@ import Foundation
 import SwiftUI
 
 // Represents a file or folder in the project navigator
-class FileNode: Identifiable, ObservableObject, Codable {
-    var id: UUID
-    var name: String
-    var path: String // relative path from project root
-    var isDirectory: Bool
-    @Published var children: [FileNode]
-    @Published var isExpanded: Bool
+public class FileNode: Identifiable, ObservableObject, Codable {
+    public var id: UUID
+    public var name: String
+    public var path: String // relative path from project root
+    public var isDirectory: Bool
+    @Published public var children: [FileNode]
+    @Published public var isExpanded: Bool
 
-    enum CodingKeys: String, CodingKey {
+    public enum CodingKeys: String, CodingKey {
         case id, name, path, isDirectory, children
     }
 
-    init(name: String, path: String, isDirectory: Bool, children: [FileNode] = []) {
+    public init(name: String, path: String, isDirectory: Bool, children: [FileNode] = []) {
         self.id = UUID()
         self.name = name
         self.path = path
@@ -23,7 +23,7 @@ class FileNode: Identifiable, ObservableObject, Codable {
         self.isExpanded = false
     }
 
-    required init(from decoder: Decoder) throws {
+    public required init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(UUID.self, forKey: .id)
         name = try container.decode(String.self, forKey: .name)
@@ -33,7 +33,7 @@ class FileNode: Identifiable, ObservableObject, Codable {
         isExpanded = false
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
         try container.encode(name, forKey: .name)
@@ -42,11 +42,11 @@ class FileNode: Identifiable, ObservableObject, Codable {
         try container.encode(children, forKey: .children)
     }
 
-    var fileExtension: String {
+    public var fileExtension: String {
         (name as NSString).pathExtension.lowercased()
     }
 
-    var icon: String {
+    public var icon: String {
         if isDirectory { return "folder.fill" }
         switch fileExtension {
         case "swift": return "swift"
@@ -61,7 +61,7 @@ class FileNode: Identifiable, ObservableObject, Codable {
         }
     }
 
-    var iconColor: Color {
+    public var iconColor: Color {
         if isDirectory { return .blue }
         switch fileExtension {
         case "swift": return .orange
