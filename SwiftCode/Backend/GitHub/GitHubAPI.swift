@@ -141,6 +141,52 @@ final class GitHubAPIBackend {
         return logsURL
     }
 
+    // MARK: - Workflow Artifacts
+
+    func listWorkflowArtifacts(owner: String, repo: String, runID: Int) async throws -> [GitHubArtifact] {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/runs/\(runID)/artifacts")
+        let request = GitHubAuth.shared.authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return try snakeCaseDecoder().decode(GitHubArtifactsResponse.self, from: data).artifacts
+    }
+
+    func downloadArtifact(owner: String, repo: String, artifactID: Int) async throws -> Data {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/artifacts/\(artifactID)/zip")
+        let request = GitHubAuth.shared.authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return data
+    }
+
+    // MARK: - Workflow Jobs
+
+    func listWorkflowJobs(owner: String, repo: String, runID: Int) async throws -> [WorkflowJob] {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/runs/\(runID)/jobs")
+        let request = GitHubAuth.shared.authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return try snakeCaseDecoder().decode(WorkflowJobsResponse.self, from: data).jobs
+    }
+
+    func getJobLogs(owner: String, repo: String, jobID: Int) async throws -> String {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/jobs/\(jobID)/logs")
+        let request = GitHubAuth.shared.authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    // MARK: - Workflow Run (Single)
+
+    func getWorkflowRun(owner: String, repo: String, runID: Int) async throws -> WorkflowRun {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/runs/\(runID)")
+        let request = GitHubAuth.shared.authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return try snakeCaseDecoder().decode(WorkflowRun.self, from: data)
+    }
+
     // MARK: - Releases
 
     func listReleases(owner: String, repo: String) async throws -> [GitHubRelease] {

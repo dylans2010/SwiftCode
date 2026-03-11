@@ -216,6 +216,67 @@ final class GitHubService {
         return logsURL
     }
 
+    // MARK: - Workflow Artifacts
+
+    func listWorkflowArtifacts(owner: String, repo: String, runID: Int) async throws -> [GitHubArtifact] {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/runs/\(runID)/artifacts")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(GitHubArtifactsResponse.self, from: data).artifacts
+    }
+
+    func downloadArtifact(owner: String, repo: String, artifactID: Int) async throws -> Data {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/artifacts/\(artifactID)/zip")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return data
+    }
+
+    // MARK: - Workflow Jobs
+
+    func listWorkflowJobs(owner: String, repo: String, runID: Int) async throws -> [WorkflowJob] {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/runs/\(runID)/jobs")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(WorkflowJobsResponse.self, from: data).jobs
+    }
+
+    func getJobLogs(owner: String, repo: String, jobID: Int) async throws -> String {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/jobs/\(jobID)/logs")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    // MARK: - Workflow Run (Single)
+
+    func getWorkflowRun(owner: String, repo: String, runID: Int) async throws -> WorkflowRun {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/runs/\(runID)")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(WorkflowRun.self, from: data)
+    }
+
     // MARK: - List Branches
 
     func listBranches(owner: String, repo: String) async throws -> [GitHubBranch] {
@@ -507,6 +568,7 @@ struct WorkflowRun: Identifiable, Decodable {
     let createdAt: Date
     let updatedAt: Date
     let runNumber: Int
+    let headBranch: String?
 
     var statusBadge: String {
         switch conclusion ?? status {
@@ -619,6 +681,44 @@ struct GitHubPullRequest: Identifiable, Decodable {
 }
 
 // MARK: - Commit Detail Model
+
+struct GitHubArtifactsResponse: Decodable {
+    let artifacts: [GitHubArtifact]
+}
+
+struct GitHubArtifact: Identifiable, Decodable {
+    let id: Int
+    let name: String
+    let sizeInBytes: Int
+    let archiveDownloadUrl: String?
+    let expired: Bool
+}
+
+struct WorkflowJobsResponse: Decodable {
+    let jobs: [WorkflowJob]
+}
+
+struct WorkflowJob: Identifiable, Decodable {
+    let id: Int
+    let runId: Int
+    let status: String
+    let conclusion: String?
+    let startedAt: Date?
+    let completedAt: Date?
+    let name: String
+    let steps: [WorkflowStep]?
+
+    var isRunning: Bool {
+        status == "in_progress" || status == "queued"
+    }
+}
+
+struct WorkflowStep: Decodable {
+    let name: String
+    let status: String
+    let conclusion: String?
+    let number: Int
+}
 
 struct GitHubCommitDetailResponse: Decodable {
     let sha: String
