@@ -60,6 +60,12 @@ final class ZipImporter {
         let metadata = try encoder.encode(project)
         try metadata.write(to: destDir.appendingPathComponent("project.json"))
 
+        // Generate Xcode project files only if none were included in the ZIP.
+        ProjectBuilderManager.shared.prepareXcodeFilesForImport(
+            projectDir: destDir,
+            projectName: finalName
+        )
+
         let finalProject = project
         await MainActor.run {
             ProjectManager.shared.projects.insert(finalProject, at: 0)

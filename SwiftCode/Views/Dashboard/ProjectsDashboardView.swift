@@ -20,6 +20,8 @@ struct ProjectsDashboardView: View {
     @State private var exportURL: URL?
     @State private var showShareSheet = false
     @State private var showSettings = false
+    @State private var showGitHubRemoteSheet = false
+    @State private var pendingProjectForRemote: Project?
     @State private var isImporting = false
 
     private var gridColumns: [GridItem] {
@@ -114,6 +116,19 @@ struct ProjectsDashboardView: View {
             .sheet(isPresented: $showSettings) {
                 GeneralSettingsView()
                     .environmentObject(AppSettings.shared)
+            }
+            .sheet(isPresented: $showGitHubRemoteSheet) {
+                if let project = pendingProjectForRemote {
+                    GitHubRemoteSetupView(project: project) { configured in
+                        if let configured {
+                            projectManager.openProject(configured)
+                        } else {
+                            projectManager.openProject(project)
+                        }
+                        pendingProjectForRemote = nil
+                    }
+                    .environmentObject(projectManager)
+                }
             }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
                 Button("OK") {}
@@ -430,7 +445,19 @@ struct ProjectsDashboardView: View {
             newProjectName = ""
             newProjectGithubRepo = ""
             showNewProjectSheet = false
-            projectManager.openProject(project)
+
+            // Show GitHub remote setup dialog unless a repo was already specified.
+            // A short delay is needed to allow the outgoing sheet to finish dismissing
+            // before the new sheet is presented (SwiftUI restriction on sequential sheets).
+            let sheetPresentationDelay = 0.4
+            if repoInput.isEmpty {
+                pendingProjectForRemote = project
+                DispatchQueue.main.asyncAfter(deadline: .now() + sheetPresentationDelay) {
+                    showGitHubRemoteSheet = true
+                }
+            } else {
+                projectManager.openProject(project)
+            }
         } catch {
             newProjectName = ""
             newProjectGithubRepo = ""
@@ -450,6 +477,7 @@ struct ProjectsDashboardView: View {
                     isImporting = false
                     githubImportURL = ""
                     showGitHubImportSheet = false
+                    // GitHub-source imports: the repo is already configured as the remote.
                     projectManager.openProject(project)
                 }
             } catch {
@@ -480,7 +508,10 @@ struct ProjectsDashboardView: View {
             Task {
                 do {
                     let project = try await ZipImporter.shared.importZip(at: url)
-                    await MainActor.run { projectManager.openProject(project) }
+                    await MainActor.run {
+                        pendingProjectForRemote = project
+                        showGitHubRemoteSheet = true
+                    }
                 } catch {
                     await MainActor.run { showError(error) }
                 }

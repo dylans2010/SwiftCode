@@ -118,6 +118,9 @@ final class ProjectManager: ObservableObject {
         // Persist metadata
         try saveMetadata(project)
 
+        // Generate Xcode project files for the new project.
+        ProjectBuilderManager.shared.prepareXcodeFiles(for: project)
+
         projects.insert(project, at: 0)
         return project
     }
@@ -310,6 +313,9 @@ jobs:
         activeProject = updated
         activeFileNode = nil
         activeFileContent = ""
+
+        // Ensure Xcode project files are present (generates if missing).
+        ProjectBuilderManager.shared.prepareXcodeFiles(for: updated)
     }
 
     func closeProject() {
@@ -394,6 +400,9 @@ jobs:
         }
         try CodingManager.shared.createFile(named: name, at: directoryPath, in: project.directoryURL, content: content)
         refreshFileTree(for: project)
+        if let updated = projects.first(where: { $0.id == project.id }) {
+            ProjectBuilderManager.shared.updateProjectFiles(for: updated)
+        }
     }
 
     private func generateSwiftTemplate(for name: String, in project: Project) -> String {
@@ -454,11 +463,17 @@ struct \(structName): View {
             activeFileContent = ""
         }
         refreshFileTree(for: project)
+        if let updated = projects.first(where: { $0.id == project.id }) {
+            ProjectBuilderManager.shared.updateProjectFiles(for: updated)
+        }
     }
 
     func renameNode(_ node: FileNode, to newName: String, project: Project) throws {
         try CodingManager.shared.renameItem(at: node.path, to: newName, in: project.directoryURL)
         refreshFileTree(for: project)
+        if let updated = projects.first(where: { $0.id == project.id }) {
+            ProjectBuilderManager.shared.updateProjectFiles(for: updated)
+        }
     }
 
     // MARK: - File Tree
