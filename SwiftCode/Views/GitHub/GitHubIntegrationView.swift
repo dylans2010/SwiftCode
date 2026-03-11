@@ -703,7 +703,7 @@ struct GitHubIntegrationView: View {
                     ContentUnavailableView(
                         "No Results",
                         systemImage: "magnifyingglass",
-                        description: Text("No repositories match "\(repoSearchQuery)".")
+                        description: Text("No repositories match \(repoSearchQuery).")
                     )
                 } else {
                     List(filteredRepos) { repo in
