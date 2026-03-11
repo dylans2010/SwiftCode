@@ -51,6 +51,9 @@ final class CodeReaderManager {
         let url = fileURL(project: project, relativePath: relativePath)
 
         for attempt in 0...retryCount {
+            // Check for cancellation before each attempt
+            try Task.checkCancellation()
+
             if fm.fileExists(atPath: url.path) {
                 do {
                     let data = try Data(contentsOf: url)
@@ -58,6 +61,8 @@ final class CodeReaderManager {
                         throw CodeReaderError.encodingFailed(path: url.path)
                     }
                     return content
+                } catch is CancellationError {
+                    throw CancellationError()
                 } catch {
                     if attempt < retryCount {
                         // Brief pause before retry — allows indexing to complete
