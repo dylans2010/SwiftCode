@@ -372,6 +372,15 @@ struct GeneralSettingsView: View {
     @State private var showCoreMLSheet = false
     @State private var showResetConfirmation = false
 
+    // Quick Setup section state
+    @State private var openRouterKey: String = ""
+    @State private var githubToken: String = ""
+    @State private var showOpenRouterKey = false
+    @State private var showGitHubToken = false
+    @State private var keySaved = false
+    @State private var tokenSaved = false
+    @State private var showExtensions = false
+
     var activeTheme: AppTheme {
         themeManager.theme(for: settings.selectedThemeID) ?? AppTheme.dark
     }
@@ -379,6 +388,7 @@ struct GeneralSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                quickSetupSection
                 apiKeysSection
                 editorSection
                 themesSection
@@ -387,6 +397,10 @@ struct GeneralSettingsView: View {
                 coreMLSection
                 appManagementSection
                 aboutSection
+            }
+            .onAppear {
+                openRouterKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey) ?? ""
+                githubToken = KeychainService.shared.get(forKey: KeychainService.githubToken) ?? ""
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -416,6 +430,9 @@ struct GeneralSettingsView: View {
             CoreMLSettingsView()
                 .environmentObject(settings)
         }
+        .sheet(isPresented: $showExtensions) {
+            ExtensionsView()
+        }
         .confirmationDialog(
             "Reset SwiftCode",
             isPresented: $showResetConfirmation,
@@ -429,6 +446,109 @@ struct GeneralSettingsView: View {
     }
 
     // MARK: - Sections
+
+    private var quickSetupSection: some View {
+        Section {
+            // OpenRouter API Key
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("OpenRouter API Key")
+                        .font(.subheadline.weight(.medium))
+                    if openRouterKey.isEmpty {
+                        Text("Not configured").font(.caption).foregroundStyle(.red)
+                    } else {
+                        Text("Configured ✓").font(.caption).foregroundStyle(.green)
+                    }
+                }
+                Spacer()
+                Button {
+                    showOpenRouterKey.toggle()
+                } label: {
+                    Image(systemName: showOpenRouterKey ? "eye.slash" : "eye")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            if showOpenRouterKey {
+                SecureField("sk-or-xxxxxxxxxxxx", text: $openRouterKey)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .font(.system(.body, design: .monospaced))
+                Button {
+                    KeychainService.shared.set(openRouterKey, forKey: KeychainService.openRouterAPIKey)
+                    keySaved = true
+                    showOpenRouterKey = false
+                    Task {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        keySaved = false
+                    }
+                } label: {
+                    Label(keySaved ? "Saved!" : "Save Key",
+                          systemImage: keySaved ? "checkmark.circle.fill" : "key.fill")
+                        .foregroundStyle(keySaved ? .green : .orange)
+                }
+            }
+
+            // GitHub Token
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("GitHub Token")
+                        .font(.subheadline.weight(.medium))
+                    if githubToken.isEmpty {
+                        Text("Not configured").font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        Text("Configured ✓").font(.caption).foregroundStyle(.green)
+                    }
+                }
+                Spacer()
+                Button {
+                    showGitHubToken.toggle()
+                } label: {
+                    Image(systemName: showGitHubToken ? "eye.slash" : "eye")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            if showGitHubToken {
+                SecureField("ghp_xxxxxxxxxxxx", text: $githubToken)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .font(.system(.body, design: .monospaced))
+                Button {
+                    KeychainService.shared.set(githubToken, forKey: KeychainService.githubToken)
+                    tokenSaved = true
+                    showGitHubToken = false
+                    Task {
+                        try? await Task.sleep(nanoseconds: 2_000_000_000)
+                        tokenSaved = false
+                    }
+                } label: {
+                    Label(tokenSaved ? "Saved!" : "Save Token",
+                          systemImage: tokenSaved ? "checkmark.circle.fill" : "key.fill")
+                        .foregroundStyle(tokenSaved ? .green : .orange)
+                }
+            }
+
+            // AI Model Picker
+            Picker("AI Model", selection: $settings.selectedModel) {
+                ForEach(OpenRouterModel.defaults) { model in
+                    Text(model.name).tag(model.id)
+                }
+            }
+
+            // Extensions shortcut
+            Button {
+                showExtensions = true
+            } label: {
+                Label("Manage Extensions", systemImage: "puzzlepiece.extension.fill")
+                    .foregroundStyle(.orange)
+            }
+        } header: {
+            Label("Quick Setup", systemImage: "bolt.fill")
+        } footer: {
+            Text("Configure your API keys and model directly here, or use API Keys below for more advanced management.")
+        }
+    }
 
     private var apiKeysSection: some View {
         Section {
@@ -1551,6 +1671,7 @@ struct CustomToolEditorView: View {
     @State private var expectedOutput: String
     @State private var parameters: [CustomToolParameter]
     @State private var showAddParameter = false
+    @State private var showAdvancedBuilder = false
 
     var isEditing: Bool { connection != nil }
     var isValid: Bool {
@@ -1629,6 +1750,21 @@ struct CustomToolEditorView: View {
                         }
                     }
                 }
+
+                if !isEditing {
+                    Section {
+                        Button {
+                            showAdvancedBuilder = true
+                        } label: {
+                            Label("Build Tool from Scratch", systemImage: "wrench.and.screwdriver.fill")
+                                .foregroundStyle(.orange)
+                        }
+                    } header: {
+                        Text("Advanced")
+                    } footer: {
+                        Text("Build a fully custom tool with HTTP configuration, headers, body templates, and parameter definitions.")
+                    }
+                }
             }
             .navigationTitle(isEditing ? "Edit Tool" : "New Tool")
             .navigationBarTitleDisplayMode(.inline)
@@ -1640,6 +1776,9 @@ struct CustomToolEditorView: View {
                     Button(isEditing ? "Update" : "Add") { saveTool() }
                         .disabled(!isValid)
                 }
+            }
+            .sheet(isPresented: $showAdvancedBuilder) {
+                CustomToolBuilderView()
             }
         }
     }
