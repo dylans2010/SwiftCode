@@ -289,7 +289,7 @@ struct CommitHistoryView: View {
             Text("No Commits Found")
                 .font(.headline)
                 .foregroundStyle(.white)
-            Text("Branch "\(currentBranch)" has no commit history yet.")
+            Text("Branch \(currentBranch) has no commit history yet.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
