@@ -45,12 +45,11 @@ struct CIBuildView: View {
     }
 
     var generatedYAML: String {
-        let bundlePath = Bundle.main.resourcePath ?? ""
-        let templatePath = bundlePath + "/SwiftCode/Backend/CI Building/build.yml"
+        let templatePath = Bundle.main.path(forResource: "build", ofType: "yml")
         let fallbackPath = "SwiftCode/Backend/CI Building/build.yml"
 
         var template: String = ""
-        if let content = try? String(contentsOfFile: templatePath, encoding: .utf8) {
+        if let path = templatePath, let content = try? String(contentsOfFile: path, encoding: .utf8) {
             template = content
         } else if let content = try? String(contentsOfFile: fallbackPath, encoding: .utf8) {
             template = content
