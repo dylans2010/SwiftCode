@@ -68,6 +68,7 @@ LS000000000000000000003A /* PreviewHostView.swift in Sources */ = {isa = PBXBuil
 LS000000000000000000004A /* ProjectAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000004B /* ProjectAnalyzer.swift */; };
 LS000000000000000000005A /* SwiftUIRuntimeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000005B /* SwiftUIRuntimeLoader.swift */; };
 TV0000000000000000000001A /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TV0000000000000000000001B /* TerminalView.swift */; };
+PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PC0000000000000000000001B /* PrepareCompileWaitingView.swift */; };
 AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AS0000000000000000000001B /* AISuggestionEngine.swift */; };
 SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */; };
 CA0000000000000000000001A /* CodeStructureAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0000000000000000000001B /* CodeStructureAnalyzer.swift */; };
@@ -163,6 +164,7 @@ LS000000000000000000003B /* PreviewHostView.swift */ = {isa = PBXFileReference; 
 LS000000000000000000004B /* ProjectAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectAnalyzer.swift; sourceTree = "<group>"; };
 LS000000000000000000005B /* SwiftUIRuntimeLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIRuntimeLoader.swift; sourceTree = "<group>"; };
 TV0000000000000000000001B /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalView.swift; sourceTree = "<group>"; };
+PC0000000000000000000001B /* PrepareCompileWaitingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareCompileWaitingView.swift; sourceTree = "<group>"; };
 AS0000000000000000000001B /* AISuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISuggestionEngine.swift; sourceTree = "<group>"; };
 SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightingEngine.swift; sourceTree = "<group>"; };
 CA0000000000000000000001B /* CodeStructureAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeStructureAnalyzer.swift; sourceTree = "<group>"; };
@@ -351,6 +353,7 @@ AA000010000000000000012B /* BuildStatusView.swift */,
 AA000010000000000000017B /* CIBuildView.swift */,
 AA00001000000000000002EB /* BuildLogsView.swift */,
 TV0000000000000000000001B /* TerminalView.swift */,
+PC0000000000000000000001B /* PrepareCompileWaitingView.swift */,
 );
 path = Build;
 sourceTree = "<group>";
@@ -741,6 +744,7 @@ EM0000000000000000000001A /* ExtensionManager.swift in Sources */,
 CEV000000000000000000001A /* CreateExtensionView.swift in Sources */,
 EEV000000000000000000001A /* EditExtensionView.swift in Sources */,
 RPM000000000000000000001A /* RepoPermManager.swift in Sources */,
+PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */,
 );
 runOnlyForDeploymentPostprocessing = 0;
 };

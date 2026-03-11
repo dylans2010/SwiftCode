@@ -37,6 +37,7 @@ final class ToolbarActionManager {
         case localSimulation
         case pluginManager
         case projectTemplates
+        case prepareCompiling
     }
 
     /// Returns the correct sheet destination for a toolbar tool ID.
@@ -119,6 +120,8 @@ final class ToolbarActionManager {
             return .pluginManager
         case "file_preview":
             return .filePreview
+        case "prepare_compile":
+            return .prepareCompiling
 
         default:
             return nil
