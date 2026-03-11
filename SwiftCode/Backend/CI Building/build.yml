@@ -1,8 +1,8 @@
 name: Build iOS IPA
 
 on:
-  push:
-    branches: [ main ]
+{{ON_PUSH}}
+{{ON_PR}}
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
       - name: Select Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: 'latest-stable'
+          xcode-version: '{{XCODE_VERSION}}'
 
       - name: Show Environment
         run: |
@@ -34,7 +34,7 @@ jobs:
           ls -la
           find . -name "*.xcodeproj" -not -path "*/DerivedData/*"
           find . -name "*.xcworkspace" -not -path "*/DerivedData/*"
-
+{{STEPS}}
       - name: Build Archive
         run: |
           WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/DerivedData/*" | head -1)
@@ -49,23 +49,23 @@ jobs:
           fi
           xcodebuild archive \
             $PROJECT_ARG \
-            -scheme "SwiftCode" \
-            -archivePath "$RUNNER_TEMP/SwiftCode.xcarchive" \
+            -scheme "{{SCHEME}}" \
+            -archivePath "$RUNNER_TEMP/{{SCHEME}}.xcarchive" \
             -destination "generic/platform=iOS" \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Package IPA
         run: |
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
-          cp -R "$RUNNER_TEMP/SwiftCode.xcarchive/Products/Applications/"*.app \
+          cp -R "$RUNNER_TEMP/{{SCHEME}}.xcarchive/Products/Applications/"*.app \
             "$RUNNER_TEMP/ipa/Payload/"
           cd "$RUNNER_TEMP/ipa"
-          zip -r "SwiftCode.ipa" Payload
+          zip -r "{{SCHEME}}.ipa" Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SwiftCode-IPA
-          path: ${{ runner.temp }}/ipa/SwiftCode.ipa
+          name: {{SCHEME}}-IPA
+          path: ${{ runner.temp }}/ipa/{{SCHEME}}.ipa
           if-no-files-found: error
           retention-days: 30

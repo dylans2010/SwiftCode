@@ -75,9 +75,52 @@ final class ProjectBuilderManager {
         }
 
         let (owner, repo) = try GitHubRepositoryManager.shared.parseRepoURL(repoString)
+        let branch = "build-project"
 
-        // Push all current files to the build-project branch
-        try await GitHubService.shared.pushProject(project, owner: owner, repo: repo, commitMessage: "Prepare project for remote generation")
+        // Load the build-project.yml content
+        let docsURL = fm.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        // Note: In Replit environment we should use the actual path.
+        // For the app itself it might be different, but here we can try to find it.
+        // The user said it's in SwiftCode/Backend/CI Building/build-project.yml
+
+        let bundlePath = Bundle.main.resourcePath ?? ""
+        let templatePath = bundlePath + "/SwiftCode/Backend/CI Building/build-project.yml"
+
+        // Fallback for development environment
+        let fallbackPath = "SwiftCode/Backend/CI Building/build-project.yml"
+
+        let workflowContent: String
+        if let content = try? String(contentsOfFile: templatePath, encoding: .utf8) {
+            workflowContent = content
+        } else if let content = try? String(contentsOfFile: fallbackPath, encoding: .utf8) {
+            workflowContent = content
+        } else {
+            throw NSError(domain: "ProjectBuilderManager", code: 4, userInfo: [NSLocalizedDescriptionKey: "Could not find build-project.yml template."])
+        }
+
+        // 1. Ensure the build-project branch exists
+        do {
+            try await GitHubService.shared.createBranch(owner: owner, repo: repo, branchName: branch, fromBranch: "main")
+        } catch {
+            // Ignore error if branch already exists
+            print("ProjectBuilderManager: Branch \(branch) might already exist or error: \(error.localizedDescription)")
+        }
+
+        // 2. Push all current files to the build-project branch
+        try await GitHubService.shared.pushProject(project, owner: owner, repo: repo, commitMessage: "Prepare project for remote generation", branch: branch)
+
+        // 3. Push the workflow file to the branch
+        let workflowPath = ".github/workflows/build-project.yml"
+        let existingSHA = try? await GitHubService.shared.getFileSHA(owner: owner, repo: repo, path: workflowPath, branch: branch)
+        try await GitHubService.shared.pushFile(
+            owner: owner,
+            repo: repo,
+            path: workflowPath,
+            content: workflowContent,
+            message: "Add remote generation workflow",
+            sha: existingSHA,
+            branch: branch
+        )
 
         // The GHA workflow will be triggered automatically by the push to 'build-project' branch.
     }

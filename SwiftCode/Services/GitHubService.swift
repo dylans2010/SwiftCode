@@ -110,7 +110,8 @@ final class GitHubService {
         path: String,
         content: String,
         message: String,
-        sha: String? = nil
+        sha: String? = nil,
+        branch: String? = nil
     ) async throws {
         guard token != nil else { throw GitHubError.missingToken }
 
@@ -133,6 +134,7 @@ final class GitHubService {
             "content": base64Content
         ]
         if let sha { body["sha"] = sha }
+        if let branch { body["branch"] = branch }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -142,20 +144,21 @@ final class GitHubService {
 
     // MARK: - Push All Project Files
 
-    func pushProject(_ project: Project, owner: String, repo: String, commitMessage: String) async throws {
+    func pushProject(_ project: Project, owner: String, repo: String, commitMessage: String, branch: String? = nil) async throws {
         let allFiles = collectFiles(from: project.files)
         let projectDir = await project.directoryURL
         for fileNode in allFiles {
             let fileURL = projectDir.appendingPathComponent(fileNode.path)
             guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
-            let existingSHA = try? await getFileSHA(owner: owner, repo: repo, path: fileNode.path)
+            let existingSHA = try? await getFileSHA(owner: owner, repo: repo, path: fileNode.path, branch: branch)
             try await pushFile(
                 owner: owner,
                 repo: repo,
                 path: fileNode.path,
                 content: content,
                 message: commitMessage,
-                sha: existingSHA
+                sha: existingSHA,
+                branch: branch
             )
         }
     }
@@ -169,10 +172,19 @@ final class GitHubService {
 
     // MARK: - Get File SHA
 
-    func getFileSHA(owner: String, repo: String, path: String) async throws -> String? {
+    func getFileSHA(owner: String, repo: String, path: String, branch: String? = nil) async throws -> String? {
         guard let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else { return nil }
-        let url = baseURL
+        var url = baseURL
             .appendingPathComponent("repos/\(owner)/\(repo)/contents/\(encodedPath)")
+
+        if let branch {
+            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+            components?.queryItems = [URLQueryItem(name: "ref", value: branch)]
+            if let branchURL = components?.url {
+                url = branchURL
+            }
+        }
+
         let request = authorizedRequest(url: url)
         let (data, response) = try await URLSession.shared.data(for: request)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
