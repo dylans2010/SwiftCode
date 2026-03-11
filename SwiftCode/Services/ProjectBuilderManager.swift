@@ -21,6 +21,7 @@ final class ProjectBuilderManager {
     /// Call this when a project is created or opened.
     /// Scans for existing Xcode project files; only generates new ones if none are found.
     /// - Parameter project: The SwiftCode project to process.
+    @MainActor
     func prepareXcodeFiles(for project: Project) {
         let projectDir = project.directoryURL
         if hasXcodeProjectFiles(in: projectDir) {
@@ -45,6 +46,7 @@ final class ProjectBuilderManager {
     /// Call this when a user adds, removes, or renames files inside the project.
     /// Regenerates the source-file list inside the `.xcodeproj` so the target stays valid.
     /// - Parameter project: The SwiftCode project whose file tree changed.
+    @MainActor
     func updateProjectFiles(for project: Project) {
         let projectDir = project.directoryURL
         let xcodeProjectDir = projectDir.appendingPathComponent("\(project.name).xcodeproj")
@@ -74,6 +76,7 @@ final class ProjectBuilderManager {
     // MARK: - Generation
 
     /// Generates both `.xcodeproj` and `.xcworkspace` for a SwiftCode project.
+    @MainActor
     private func generateXcodeProject(for project: Project) {
         generateXcodeProjectFiles(in: project.directoryURL, projectName: project.name)
     }
