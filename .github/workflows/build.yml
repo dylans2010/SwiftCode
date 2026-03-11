@@ -66,6 +66,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SwiftCode-IPA
-          path: $RUNNER_TEMP/ipa/SwiftCode.ipa
+          path: ${{ runner.temp }}/ipa/SwiftCode.ipa
           if-no-files-found: error
           retention-days: 30
