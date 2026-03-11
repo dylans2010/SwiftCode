@@ -11,7 +11,7 @@ struct ChooseModelView: View {
     @State private var testResult: String?
     @State private var isTesting = false
     @State private var errorMessage: String?
-    @State private var lastCheckResult: AgentModelCheckResult?
+    @State private var lastCheckResult: AgentModelCheckResult? = nil
 
     enum AIProvider: String, CaseIterable, Identifiable {
         case openRouter = "OpenRouter"
@@ -61,7 +61,7 @@ struct ChooseModelView: View {
                     Text("Model Selection")
                 }
 
-                Section("Test Model") {
+                Section {
                     Button {
                         testModel()
                     } label: {
@@ -97,6 +97,8 @@ struct ChooseModelView: View {
                         }
                         .padding(.vertical, 4)
                     }
+                } header: {
+                    Text("Test Model")
                 }
 
                 if let error = errorMessage {
