@@ -28,18 +28,18 @@ public final class MacDiscoveryService: NSObject, ObservableObject {
         browser.browseResultsChangedHandler = { [weak self] results, changes in
             guard let self = self else { return }
 
-            DispatchQueue.main.async {
+            DispatchQueue.main.async(execute: {
                 self.discoveredMacs = results.compactMap { result in
                     if case let .bonjour(service) = result.endpoint {
                         return DiscoveredMac(
                             name: service.name,
                             host: "\(service.name).local",
-                            port: 8080 // Default port
+                            port: 8080
                         )
                     }
                     return nil
                 }
-            }
+            })
         }
 
         browser.start(queue: .main)
