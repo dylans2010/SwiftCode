@@ -129,7 +129,7 @@ struct PullRequestView: View {
             HStack {
                 Text(selection.wrappedValue.isEmpty ? "Select branch…" : selection.wrappedValue)
                     .font(.subheadline)
-                    .foregroundStyle(selection.wrappedValue.isEmpty ? .secondary : .white)
+                    .foregroundStyle(selection.wrappedValue.isEmpty ? Color.secondary : Color.white)
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.caption)

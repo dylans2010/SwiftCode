@@ -108,7 +108,7 @@ struct ExtensionsView: View {
                 EditExtensionView(extension: ext)
             }
             .confirmationDialog(
-                "Delete "\(extensionToDelete?.name ?? "")"?",
+                "Delete \(extensionToDelete?.name ?? "")?",
                 isPresented: $showDeleteConfirm,
                 titleVisibility: .visible
             ) {

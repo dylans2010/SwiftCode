@@ -383,7 +383,7 @@ struct CommitHistoryView: View {
         // PLACEHOLDER: Check for conflicts when applying the revert diff.
         let hasConflict = false // Replace with real conflict detection logic.
         if hasConflict {
-            conflictDetails = "Conflict while reverting "\(commit.commit.message)". Manual resolution required."
+            conflictDetails = "Conflict while reverting \(commit.commit.message). Manual resolution required."
             showConflictAlert = true
             return
         }
@@ -391,7 +391,7 @@ struct CommitHistoryView: View {
         // PLACEHOLDER: Create a revert commit via the GitHub API.
         // Normally requires computing the inverted diff and applying it.
         try? await Task.sleep(nanoseconds: 800_000_000)
-        showNotification("Revert of "\(String(commit.sha.prefix(8)))" created (placeholder)", isError: false)
+        showNotification("Revert of \(String(commit.sha.prefix(8))) created (placeholder)", isError: false)
         await loadHistory()
     }
 
@@ -404,14 +404,14 @@ struct CommitHistoryView: View {
         // PLACEHOLDER: Apply the commit diff to HEAD. Check for conflicts.
         let hasConflict = false // Replace with real conflict detection.
         if hasConflict {
-            conflictDetails = "Conflict cherry-picking "\(commit.commit.message)" onto "\(currentBranch)". Manual resolution required."
+            conflictDetails = "Conflict cherry-picking \(commit.commit.message) onto \(currentBranch). Manual resolution required."
             showConflictAlert = true
             return
         }
 
         // PLACEHOLDER: Commit the cherry-picked changes via the API.
         try? await Task.sleep(nanoseconds: 800_000_000)
-        showNotification("Cherry-picked "\(String(commit.sha.prefix(8)))" (placeholder)", isError: false)
+        showNotification("Cherry-picked \(String(commit.sha.prefix(8))) (placeholder)", isError: false)
         await loadHistory()
     }
 

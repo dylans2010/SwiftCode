@@ -82,7 +82,7 @@ struct EditExtensionView: View {
                 Button("OK") {}
             } message: { msg in Text(msg) }
             .confirmationDialog(
-                "Delete "\(name)"?",
+                "Delete \(name)?",
                 isPresented: $showDeleteConfirm,
                 titleVisibility: .visible
             ) {
