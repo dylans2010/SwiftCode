@@ -76,7 +76,7 @@ public class FileNode: Identifiable, ObservableObject, Codable {
 }
 
 extension FileNode: Equatable {
-    static func == (lhs: FileNode, rhs: FileNode) -> Bool {
+    public static func == (lhs: FileNode, rhs: FileNode) -> Bool {
         return lhs.id == rhs.id
     }
 }
