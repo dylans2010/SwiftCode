@@ -486,16 +486,13 @@ struct CommitDetailView: View {
                                 }
                             }
 
-                            if diffContent.isEmpty {
-                                Text("Diff preview not available.\n(PLACEHOLDER: Fetch /repos/{owner}/{repo}/commits/{sha} to retrieve file changes.)")
+                            if diffContent.isEmpty && !isLoadingDiff {
+                                Text("No diff available for this commit.")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .italic()
                             } else {
-                                Text(diffContent)
-                                    .font(.system(size: 11, design: .monospaced))
-                                    .foregroundStyle(.green)
-                                    .textSelection(.enabled)
+                                diffView
                             }
                         }
                     }
@@ -524,6 +521,36 @@ struct CommitDetailView: View {
         }
         .preferredColorScheme(.dark)
         .task { await loadDiff() }
+    }
+
+    private var diffView: some View {
+        LazyVStack(alignment: .leading, spacing: 2) {
+            ForEach(Array(diffContent.components(separatedBy: "\n").enumerated()), id: \.offset) { _, line in
+                if line.hasPrefix("+++") || line.hasPrefix("---") {
+                    Text(line)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.orange)
+                } else if line.hasPrefix("+") {
+                    Text(line)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.green)
+                } else if line.hasPrefix("-") {
+                    Text(line)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.red)
+                } else if line.hasPrefix("@@") {
+                    Text(line)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.blue)
+                } else {
+                    Text(line.isEmpty ? " " : line)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.primary)
+                }
+            }
+        }
+        .textSelection(.enabled)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func infoCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -559,11 +586,26 @@ struct CommitDetailView: View {
     private func loadDiff() async {
         isLoadingDiff = true
         defer { isLoadingDiff = false }
-        // PLACEHOLDER: Fetch commit details from GitHub API.
-        // GET /repos/{owner}/{repo}/commits/{sha} returns files with patch data.
-        // Parse the `patch` field of each changed file to display the diff.
-        try? await Task.sleep(nanoseconds: 500_000_000)
-        // diffContent = ... (populated from API response)
+        do {
+            let detail = try await GitHubService.shared.fetchCommitDetail(
+                owner: owner, repo: repo, sha: commit.sha
+            )
+            guard let files = detail.files, !files.isEmpty else {
+                diffContent = "No file changes in this commit."
+                return
+            }
+            var lines: [String] = []
+            for file in files {
+                lines.append("File: \(file.filename) [\(file.status)] (+\(file.additions), -\(file.deletions))")
+                if let patch = file.patch {
+                    lines.append(patch)
+                }
+                lines.append("")
+            }
+            diffContent = lines.joined(separator: "\n")
+        } catch {
+            diffContent = "Failed to load diff: \(error.localizedDescription)"
+        }
     }
 }
 

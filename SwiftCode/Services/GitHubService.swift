@@ -402,6 +402,18 @@ final class GitHubService {
         return try decoder.decode([GitHubRepoSummary].self, from: data)
     }
 
+    // MARK: - Fetch Commit Detail (for diff preview)
+    func fetchCommitDetail(owner: String, repo: String, sha: String) async throws -> GitHubCommitDetailResponse {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/commits/\(sha)")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        return try decoder.decode(GitHubCommitDetailResponse.self, from: data)
+    }
+
     // MARK: - Helpers
 
     private func validateResponse(_ response: URLResponse, data: Data) throws {
@@ -470,9 +482,7 @@ struct GitHubRepoSummary: Identifiable, Decodable {
     let description: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, description
-        case fullName = "full_name"
-        case htmlUrl = "html_url"
+        case id, name, description, fullName, htmlUrl
         case isPrivate = "private"
     }
 }
@@ -603,6 +613,21 @@ struct GitHubPullRequest: Identifiable, Decodable {
     enum CodingKeys: String, CodingKey {
         case id, number, title, body, state
         case htmlUrl = "html_url"
+    }
+}
+
+// MARK: - Commit Detail Model
+
+struct GitHubCommitDetailResponse: Decodable {
+    let sha: String
+    let files: [GitHubCommitFile]?
+
+    struct GitHubCommitFile: Decodable {
+        let filename: String
+        let status: String
+        let additions: Int
+        let deletions: Int
+        let patch: String?
     }
 }
 
