@@ -152,22 +152,20 @@ struct CIBuildView: View {
                     -destination "generic/platform=iOS" \\
                     CODE_SIGNING_ALLOWED=NO
 
-              - name: Export IPA
+              - name: Package IPA
                 run: |
-                  xcodebuild -exportArchive \\
-                    -archivePath "${{ runner.temp }}/\(resolvedScheme).xcarchive" \\
-                    -exportPath "${{ runner.temp }}/ipa" \\
-                    -exportOptionsPlist ExportOptions.plist \\
-                    || true
+                  mkdir -p "${{ runner.temp }}/ipa/Payload"
+                  cp -R "${{ runner.temp }}/\(resolvedScheme).xcarchive/Products/Applications/"*.app \\
+                    "${{ runner.temp }}/ipa/Payload/"
+                  cd "${{ runner.temp }}/ipa"
+                  zip -r "\(resolvedScheme).ipa" Payload
 
               - name: Upload IPA Artifact
                 uses: actions/upload-artifact@v4
                 with:
                   name: \(resolvedScheme)-IPA
-                  path: |
-                    ${{ runner.temp }}/ipa/*.ipa
-                    ${{ runner.temp }}/*.xcarchive
-                  if-no-files-found: warn
+                  path: ${{ runner.temp }}/ipa/\(resolvedScheme).ipa
+                  if-no-files-found: error
                   retention-days: 30
         """
 
