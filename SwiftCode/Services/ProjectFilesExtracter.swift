@@ -16,7 +16,7 @@ public final class ProjectFilesExtracter {
     ///   - branch: The branch the workflow was triggered on.
     ///   - progress: A closure called with progress updates (0.0 to 1.0) and status messages.
     ///   - logCallback: Optional closure to receive real-time logs.
-    func extractArtifacts(
+    public func extractArtifacts(
         for project: Project,
         owner: String,
         repo: String,
