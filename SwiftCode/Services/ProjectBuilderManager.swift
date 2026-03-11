@@ -1,3 +1,5 @@
+import XcodeProj
+import PathKit
 import Foundation
 
 // MARK: - ProjectBuilderManager
@@ -85,10 +87,7 @@ final class ProjectBuilderManager {
     private func generateXcodeProjectFiles(in projectDir: URL, projectName: String) {
         do {
             try ensureSubdirectories(in: projectDir)
-            let xcodeProjectDir = projectDir.appendingPathComponent("\(projectName).xcodeproj")
-            try fm.createDirectory(at: xcodeProjectDir, withIntermediateDirectories: true)
-            try writeProjectPBX(in: xcodeProjectDir, projectDir: projectDir, projectName: projectName)
-            try writeXcscheme(in: xcodeProjectDir, projectName: projectName)
+            try buildAndWriteXcodeProject(in: projectDir, projectName: projectName)
             try writeXcworkspace(in: projectDir, projectName: projectName)
         } catch {
             // Generation is best-effort; failures are non-fatal.
@@ -99,7 +98,7 @@ final class ProjectBuilderManager {
 
     /// Ensures the expected source/asset subdirectories exist without overwriting any files.
     private func ensureSubdirectories(in projectDir: URL) throws {
-        let subdirectories = ["Sources", "Sources/Views", "Sources/Features", "Assets"]
+        let subdirectories = ["Sources", "Views", "Features", "Assets"]
         for sub in subdirectories {
             let dir = projectDir.appendingPathComponent(sub)
             if !fm.fileExists(atPath: dir.path) {
@@ -108,227 +107,232 @@ final class ProjectBuilderManager {
         }
     }
 
-    // MARK: - project.pbxproj
+    // MARK: - Xcode Project Generation using XcodeProj
 
-    /// Writes a minimal but valid `project.pbxproj` that includes all Swift source files found
-    /// in the project directory under the main application target.
-    private func writeProjectPBX(in xcodeProjectDir: URL, projectDir: URL, projectName: String) throws {
-        let pbxURL = xcodeProjectDir.appendingPathComponent("project.pbxproj")
+    /// Generates a valid `.xcodeproj` bundle using the XcodeProj library.
+    /// Creates an iOS application target with all detected Swift source files
+    /// attached to the Compile Sources build phase.
+    private func buildAndWriteXcodeProject(in projectDir: URL, projectName: String) throws {
+        let xcodeProjectPath = Path(projectDir.appendingPathComponent("\(projectName).xcodeproj").path)
 
-        // Preserve existing file if present — only overwrite when genuinely missing.
-        guard !fm.fileExists(atPath: pbxURL.path) else { return }
+        // Preserve existing project if present.
+        guard !xcodeProjectPath.exists else { return }
 
+        let pbxproj = PBXProj()
+
+        // Collect Swift source files
         let swiftFiles = collectSwiftFiles(in: projectDir, relativeTo: projectDir)
-        let pbxContent = buildProjectPBX(projectName: projectName, swiftFiles: swiftFiles)
-        try pbxContent.write(to: pbxURL, atomically: true, encoding: .utf8)
-    }
 
-    /// Regenerates only the `project.pbxproj` for a project that already has an `.xcodeproj`.
-    /// Writes a new file to reflect current source files.
-    private func regenerateProjectPBX(in xcodeProjectDir: URL, projectDir: URL, projectName: String) {
-        let pbxURL = xcodeProjectDir.appendingPathComponent("project.pbxproj")
-        let swiftFiles = collectSwiftFiles(in: projectDir, relativeTo: projectDir)
-        let pbxContent = buildProjectPBX(projectName: projectName, swiftFiles: swiftFiles)
-        try? pbxContent.write(to: pbxURL, atomically: true, encoding: .utf8)
-    }
+        // --- Build Configurations (project-level) ---
+        let projectDebugConfig = XCBuildConfiguration(
+            name: "Debug",
+            buildSettings: [
+                "ALWAYS_SEARCH_USER_PATHS": "NO",
+                "IPHONEOS_DEPLOYMENT_TARGET": "16.0",
+                "SWIFT_VERSION": "5.0",
+            ]
+        )
+        let projectReleaseConfig = XCBuildConfiguration(
+            name: "Release",
+            buildSettings: [
+                "ALWAYS_SEARCH_USER_PATHS": "NO",
+                "IPHONEOS_DEPLOYMENT_TARGET": "16.0",
+                "SWIFT_VERSION": "5.0",
+            ]
+        )
+        pbxproj.add(object: projectDebugConfig)
+        pbxproj.add(object: projectReleaseConfig)
 
-    /// Builds a minimal `project.pbxproj` string referencing the given Swift source files.
-    private func buildProjectPBX(projectName: String, swiftFiles: [String]) -> String {
-        // Generate stable-ish UUIDs by hashing file paths so repeated regeneration
-        // keeps the same references and avoids unnecessary diffs.
-        let projectUUID    = deterministicUUID("project:\(projectName)")
-        let mainGroupUUID  = deterministicUUID("group:\(projectName)")
-        let sourcesGroupUUID = deterministicUUID("group:sources:\(projectName)")
-        let productsGroupUUID = deterministicUUID("group:products:\(projectName)")
-        let targetUUID     = deterministicUUID("target:\(projectName)")
-        let projectConfigListUUID = deterministicUUID("configlist:project:\(projectName)")
-        let targetConfigListUUID  = deterministicUUID("configlist:target:\(projectName)")
-        let debugConfigUUID = deterministicUUID("debug:\(projectName)")
-        let releaseConfigUUID = deterministicUUID("release:\(projectName)")
-        let productFileUUID = deterministicUUID("product:\(projectName)")
-        let sourcesBuildPhaseUUID = deterministicUUID("buildphase:sources:\(projectName)")
-        let frameworksBuildPhaseUUID = deterministicUUID("buildphase:frameworks:\(projectName)")
+        let projectConfigList = XCConfigurationList(
+            buildConfigurations: [projectDebugConfig, projectReleaseConfig],
+            defaultConfigurationName: "Release"
+        )
+        pbxproj.add(object: projectConfigList)
 
-        // Build file references and build file entries for each Swift source.
-        var fileRefSection = ""
-        var buildFileSection = ""
-        var sourcesBuildFiles: [String] = []
+        // --- Groups ---
+        let sourcesGroup = PBXGroup(children: [], sourceTree: .group, name: "Sources")
+        let viewsGroup = PBXGroup(children: [], sourceTree: .group, name: "Views")
+        let featuresGroup = PBXGroup(children: [], sourceTree: .group, name: "Features")
+        let assetsGroup = PBXGroup(children: [], sourceTree: .group, name: "Assets")
+        let productsGroup = PBXGroup(children: [], sourceTree: .group, name: "Products")
 
+        pbxproj.add(object: sourcesGroup)
+        pbxproj.add(object: viewsGroup)
+        pbxproj.add(object: featuresGroup)
+        pbxproj.add(object: assetsGroup)
+        pbxproj.add(object: productsGroup)
+
+        // --- File References & Build Files ---
+        var buildFiles: [PBXBuildFile] = []
         for filePath in swiftFiles {
-            let fileRefUUID = deterministicUUID("fileref:\(filePath)")
-            let buildFileUUID = deterministicUUID("buildfile:\(filePath)")
             let fileName = URL(fileURLWithPath: filePath).lastPathComponent
-            fileRefSection += """
-\t\t\(fileRefUUID) /* \(fileName) */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = \(fileName); sourceTree = "<group>"; };
-"""
-            buildFileSection += """
-\t\t\(buildFileUUID) /* \(fileName) in Sources */ = {isa = PBXBuildFile; fileRef = \(fileRefUUID) /* \(fileName) */; };
-"""
-            sourcesBuildFiles.append("\(buildFileUUID) /* \(fileName) in Sources */,")
+            let fileRef = PBXFileReference(
+                sourceTree: .group,
+                name: fileName,
+                lastKnownFileType: "sourcecode.swift",
+                path: filePath
+            )
+            pbxproj.add(object: fileRef)
+            sourcesGroup.children.append(fileRef)
+
+            let buildFile = PBXBuildFile(file: fileRef)
+            pbxproj.add(object: buildFile)
+            buildFiles.append(buildFile)
         }
 
-        let sourcesPhaseFiles = sourcesBuildFiles.map { "\t\t\t\t\($0)" }.joined(separator: "\n")
+        // --- Product Reference ---
+        let productRef = PBXFileReference(
+            sourceTree: .buildProductsDir,
+            explicitFileType: "wrapper.application",
+            path: "\(projectName).app",
+            includeInIndex: false
+        )
+        pbxproj.add(object: productRef)
+        productsGroup.children.append(productRef)
 
-        return """
-// !$*UTF8*$!
-{
-\tarchiveVersion = 1;
-\tclasses = {
-\t};
-\tobjectVersion = 56;
-\tobjects = {
+        // --- Build Phases ---
+        let sourcesBuildPhase = PBXSourcesBuildPhase(files: buildFiles)
+        pbxproj.add(object: sourcesBuildPhase)
 
-/* Begin PBXBuildFile section */
-\(buildFileSection)
-/* End PBXBuildFile section */
+        let frameworksBuildPhase = PBXFrameworksBuildPhase(files: [])
+        pbxproj.add(object: frameworksBuildPhase)
 
-/* Begin PBXFileReference section */
-\t\t\(productFileUUID) /* \(projectName).app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = \(projectName).app; sourceTree = BUILT_PRODUCTS_DIR; };
-\(fileRefSection)
-/* End PBXFileReference section */
+        // --- Target Build Configurations ---
+        let bundleID = "com.swiftcode.\(projectName.replacingOccurrences(of: " ", with: "").lowercased())"
+        let targetDebugConfig = XCBuildConfiguration(
+            name: "Debug",
+            buildSettings: [
+                "IPHONEOS_DEPLOYMENT_TARGET": "16.0",
+                "TARGETED_DEVICE_FAMILY": "1,2",
+                "SWIFT_VERSION": "5.0",
+                "PRODUCT_BUNDLE_IDENTIFIER": bundleID,
+                "PRODUCT_NAME": "$(TARGET_NAME)",
+            ]
+        )
+        let targetReleaseConfig = XCBuildConfiguration(
+            name: "Release",
+            buildSettings: [
+                "IPHONEOS_DEPLOYMENT_TARGET": "16.0",
+                "TARGETED_DEVICE_FAMILY": "1,2",
+                "SWIFT_VERSION": "5.0",
+                "PRODUCT_BUNDLE_IDENTIFIER": bundleID,
+                "PRODUCT_NAME": "$(TARGET_NAME)",
+            ]
+        )
+        pbxproj.add(object: targetDebugConfig)
+        pbxproj.add(object: targetReleaseConfig)
 
-/* Begin PBXFrameworksBuildPhase section */
-\t\t\(frameworksBuildPhaseUUID) /* Frameworks */ = {
-\t\t\tisa = PBXFrameworksBuildPhase;
-\t\t\tbuildActionMask = 2147483647;
-\t\t\tfiles = (
-\t\t\t);
-\t\t\trunOnlyForDeploymentPostprocessing = 0;
-\t\t};
-/* End PBXFrameworksBuildPhase section */
+        let targetConfigList = XCConfigurationList(
+            buildConfigurations: [targetDebugConfig, targetReleaseConfig],
+            defaultConfigurationName: "Release"
+        )
+        pbxproj.add(object: targetConfigList)
 
-/* Begin PBXGroup section */
-\t\t\(mainGroupUUID) = {
-\t\t\tisa = PBXGroup;
-\t\t\tchildren = (
-\t\t\t\t\(sourcesGroupUUID) /* Sources */,
-\t\t\t\t\(productsGroupUUID) /* Products */,
-\t\t\t);
-\t\t\tsourceTree = "<group>";
-\t\t};
-\t\t\(sourcesGroupUUID) /* Sources */ = {
-\t\t\tisa = PBXGroup;
-\t\t\tchildren = (
-\(swiftFiles.map { "\t\t\t\t\(deterministicUUID("fileref:\($0)")) /* \(URL(fileURLWithPath: $0).lastPathComponent) */," }.joined(separator: "\n"))
-\t\t\t);
-\t\t\tname = Sources;
-\t\t\tsourceTree = "<group>";
-\t\t};
-\t\t\(productsGroupUUID) /* Products */ = {
-\t\t\tisa = PBXGroup;
-\t\t\tchildren = (
-\t\t\t\t\(productFileUUID) /* \(projectName).app */,
-\t\t\t);
-\t\t\tname = Products;
-\t\t\tsourceTree = "<group>";
-\t\t};
-/* End PBXGroup section */
+        // --- Native Target ---
+        let target = PBXNativeTarget(
+            name: projectName,
+            buildConfigurationList: targetConfigList,
+            buildPhases: [sourcesBuildPhase, frameworksBuildPhase],
+            productName: projectName,
+            product: productRef,
+            productType: .application
+        )
+        pbxproj.add(object: target)
 
-/* Begin PBXNativeTarget section */
-\t\t\(targetUUID) /* \(projectName) */ = {
-\t\t\tisa = PBXNativeTarget;
-\t\t\tbuildConfigurationList = \(targetConfigListUUID) /* Build configuration list for PBXNativeTarget "\(projectName)" */;
-\t\t\tbuildPhases = (
-\t\t\t\t\(sourcesBuildPhaseUUID) /* Sources */,
-\t\t\t\t\(frameworksBuildPhaseUUID) /* Frameworks */,
-\t\t\t);
-\t\t\tbuildRules = (
-\t\t\t);
-\t\t\tdependencies = (
-\t\t\t);
-\t\t\tname = \(projectName);
-\t\t\tproductName = \(projectName);
-\t\t\tproductReference = \(productFileUUID) /* \(projectName).app */;
-\t\t\tproductType = "com.apple.product-type.application";
-\t\t};
-/* End PBXNativeTarget section */
+        // --- Main Group ---
+        let mainGroup = PBXGroup(
+            children: [sourcesGroup, viewsGroup, featuresGroup, assetsGroup, productsGroup],
+            sourceTree: .group
+        )
+        pbxproj.add(object: mainGroup)
 
-/* Begin PBXProject section */
-\t\t\(projectUUID) /* Project object */ = {
-\t\t\tisa = PBXProject;
-\t\t\tbuildConfigurationList = \(projectConfigListUUID) /* Build configuration list for PBXProject "\(projectName)" */;
-\t\t\tcompatibilityVersion = "Xcode 14.0";
-\t\t\tdevelopmentRegion = en;
-\t\t\thasScannedForEncodings = 0;
-\t\t\tknownRegions = (
-\t\t\t\ten,
-\t\t\t\tBase,
-\t\t\t);
-\t\t\tmainGroup = \(mainGroupUUID);
-\t\t\tproductRefGroup = \(productsGroupUUID) /* Products */;
-\t\t\tprojectDirPath = "";
-\t\t\tprojectRoot = "";
-\t\t\ttargets = (
-\t\t\t\t\(targetUUID) /* \(projectName) */,
-\t\t\t);
-\t\t};
-/* End PBXProject section */
+        // --- PBXProject ---
+        let project = PBXProject(
+            name: projectName,
+            buildConfigurationList: projectConfigList,
+            compatibilityVersion: "Xcode 14.0",
+            mainGroup: mainGroup,
+            targets: [target]
+        )
+        project.productRefGroup = productsGroup
+        pbxproj.add(object: project)
+        pbxproj.rootObject = project
 
-/* Begin PBXSourcesBuildPhase section */
-\t\t\(sourcesBuildPhaseUUID) /* Sources */ = {
-\t\t\tisa = PBXSourcesBuildPhase;
-\t\t\tbuildActionMask = 2147483647;
-\t\t\tfiles = (
-\(sourcesPhaseFiles)
-\t\t\t);
-\t\t\trunOnlyForDeploymentPostprocessing = 0;
-\t\t};
-/* End PBXSourcesBuildPhase section */
+        // --- Write .xcodeproj ---
+        let xcodeProj = XcodeProj(workspace: XCWorkspace(), pbxproj: pbxproj)
+        try xcodeProj.write(path: xcodeProjectPath)
 
-/* Begin XCBuildConfiguration section */
-\t\t\(debugConfigUUID) /* Debug */ = {
-\t\t\tisa = XCBuildConfiguration;
-\t\t\tbuildSettings = {
-\t\t\t\tALWAYS_SEARCH_USER_PATHS = NO;
-\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;
-\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = "com.swiftcode.\(projectName.replacingOccurrences(of: " ", with: "").lowercased())";
-\t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
-\t\t\t\tSWIFT_VERSION = 5.9;
-\t\t\t};
-\t\t\tname = Debug;
-\t\t};
-\t\t\(releaseConfigUUID) /* Release */ = {
-\t\t\tisa = XCBuildConfiguration;
-\t\t\tbuildSettings = {
-\t\t\t\tALWAYS_SEARCH_USER_PATHS = NO;
-\t\t\t\tIPHONEOS_DEPLOYMENT_TARGET = 17.0;
-\t\t\t\tPRODUCT_BUNDLE_IDENTIFIER = "com.swiftcode.\(projectName.replacingOccurrences(of: " ", with: "").lowercased())";
-\t\t\t\tPRODUCT_NAME = "$(TARGET_NAME)";
-\t\t\t\tSWIFT_VERSION = 5.9;
-\t\t\t};
-\t\t\tname = Release;
-\t\t};
-/* End XCBuildConfiguration section */
+        // --- Write shared scheme ---
+        try writeXcscheme(
+            in: projectDir.appendingPathComponent("\(projectName).xcodeproj"),
+            projectName: projectName,
+            targetUUID: target.uuid
+        )
+    }
 
-/* Begin XCConfigurationList section */
-\t\t\(projectConfigListUUID) /* Build configuration list for PBXProject "\(projectName)" */ = {
-\t\t\tisa = XCConfigurationList;
-\t\t\tbuildConfigurations = (
-\t\t\t\t\(debugConfigUUID) /* Debug */,
-\t\t\t\t\(releaseConfigUUID) /* Release */,
-\t\t\t);
-\t\t\tdefaultConfigurationIsVisible = 0;
-\t\t\tdefaultConfigurationName = Release;
-\t\t};
-\t\t\(targetConfigListUUID) /* Build configuration list for PBXNativeTarget "\(projectName)" */ = {
-\t\t\tisa = XCConfigurationList;
-\t\t\tbuildConfigurations = (
-\t\t\t\t\(debugConfigUUID) /* Debug */,
-\t\t\t\t\(releaseConfigUUID) /* Release */,
-\t\t\t);
-\t\t\tdefaultConfigurationIsVisible = 0;
-\t\t\tdefaultConfigurationName = Release;
-\t\t};
-/* End XCConfigurationList section */
-\t};
-\trootObject = \(projectUUID) /* Project object */;
-}
-"""
+    // MARK: - Regeneration
+
+    /// Reloads an existing `.xcodeproj`, updates the Swift file references
+    /// in the Sources group and Compile Sources build phase, then writes it back.
+    private func regenerateProjectPBX(in xcodeProjectDir: URL, projectDir: URL, projectName: String) {
+        do {
+            let projectPath = Path(xcodeProjectDir.path)
+            let xcodeProj = try XcodeProj(path: projectPath)
+            let pbxproj = xcodeProj.pbxproj
+            guard let rootProject = pbxproj.rootObject else { return }
+
+            let swiftFiles = collectSwiftFiles(in: projectDir, relativeTo: projectDir)
+
+            // Locate the Sources group.
+            guard let sourcesGroup = rootProject.mainGroup.children
+                .compactMap({ $0 as? PBXGroup })
+                .first(where: { $0.name == "Sources" })
+            else { return }
+
+            // Locate the native target and its sources build phase.
+            guard let target = pbxproj.nativeTargets.first(where: { $0.name == projectName }),
+                  let sourcesBuildPhase = try target.sourcesBuildPhase()
+            else { return }
+
+            // Remove old file references from group and build phase.
+            for child in sourcesGroup.children {
+                pbxproj.delete(object: child)
+            }
+            sourcesGroup.children.removeAll()
+
+            if let oldBuildFiles = sourcesBuildPhase.files {
+                for buildFile in oldBuildFiles {
+                    pbxproj.delete(object: buildFile)
+                }
+            }
+            sourcesBuildPhase.files?.removeAll()
+
+            // Add updated file references and build files.
+            for filePath in swiftFiles {
+                let fileName = URL(fileURLWithPath: filePath).lastPathComponent
+                let fileRef = PBXFileReference(
+                    sourceTree: .group,
+                    name: fileName,
+                    lastKnownFileType: "sourcecode.swift",
+                    path: filePath
+                )
+                pbxproj.add(object: fileRef)
+                sourcesGroup.children.append(fileRef)
+
+                let buildFile = PBXBuildFile(file: fileRef)
+                pbxproj.add(object: buildFile)
+                sourcesBuildPhase.files?.append(buildFile)
+            }
+
+            try xcodeProj.write(path: projectPath)
+        } catch {
+            // Regeneration failure is non-fatal.
+        }
     }
 
     // MARK: - .xcscheme
 
-    private func writeXcscheme(in xcodeProjectDir: URL, projectName: String) throws {
+    private func writeXcscheme(in xcodeProjectDir: URL, projectName: String, targetUUID: String) throws {
         let schemesDir = xcodeProjectDir
             .appendingPathComponent("xcshareddata")
             .appendingPathComponent("xcschemes")
@@ -337,7 +341,6 @@ final class ProjectBuilderManager {
         let schemeURL = schemesDir.appendingPathComponent("\(projectName).xcscheme")
         guard !fm.fileExists(atPath: schemeURL.path) else { return }
 
-        let targetUUID = deterministicUUID("target:\(projectName)")
         let scheme = """
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
@@ -421,23 +424,18 @@ final class ProjectBuilderManager {
 
     // MARK: - .xcworkspace
 
+    /// Creates the `.xcworkspace` bundle using PathKit, referencing the generated `.xcodeproj`.
     private func writeXcworkspace(in projectDir: URL, projectName: String) throws {
-        let workspaceDir = projectDir.appendingPathComponent("\(projectName).xcworkspace")
-        try fm.createDirectory(at: workspaceDir, withIntermediateDirectories: true)
+        let workspacePath = Path(projectDir.appendingPathComponent("\(projectName).xcworkspace").path)
 
-        let contentsURL = workspaceDir.appendingPathComponent("contents.xcworkspacedata")
-        guard !fm.fileExists(atPath: contentsURL.path) else { return }
+        // Preserve existing workspace if present.
+        guard !workspacePath.exists else { return }
 
-        let contents = """
-<?xml version="1.0" encoding="UTF-8"?>
-<Workspace
-   version = "1.0">
-   <FileRef
-      location = "group:\(projectName).xcodeproj">
-   </FileRef>
-</Workspace>
-"""
-        try contents.write(to: contentsURL, atomically: true, encoding: .utf8)
+        let workspaceData = XCWorkspaceData(children: [
+            .file(.init(location: .group("\(projectName).xcodeproj")))
+        ])
+        let workspace = XCWorkspace(data: workspaceData)
+        try workspace.write(path: workspacePath)
     }
 
     // MARK: - File Collection
@@ -470,20 +468,5 @@ final class ProjectBuilderManager {
             }
         }
         return results
-    }
-
-    // MARK: - Deterministic UUID Generation
-
-    /// Produces a deterministic 24-character hex string resembling a PBX UUID by hashing the key.
-    private func deterministicUUID(_ key: String) -> String {
-        var hash: UInt64 = 14695981039346656037
-        for byte in key.utf8 {
-            hash ^= UInt64(byte)
-            hash = hash &* 1099511628211
-        }
-        let hex = String(format: "%016llX", hash)
-        // Pad to 24 characters as PBX UUIDs are 24 hex chars.
-        let padded = (hex + hex).prefix(24)
-        return String(padded).uppercased()
     }
 }
