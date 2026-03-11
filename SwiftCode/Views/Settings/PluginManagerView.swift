@@ -5,6 +5,7 @@ import SwiftUI
 struct PluginManagerView: View {
     @StateObject private var pluginManager = PluginManager.shared
     @State private var showInstallHelp = false
+    @State private var showCreateView = false
 
     var body: some View {
         NavigationStack {
@@ -21,12 +22,24 @@ struct PluginManagerView: View {
             .navigationTitle("Plugin Manager")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Refresh") {
-                        Task { await pluginManager.scanPlugins() }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack {
+                        Button {
+                            showCreateView = true
+                        } label: {
+                            Image(systemName: "plus")
+                        }
+                        .foregroundStyle(.orange)
+
+                        Button("Refresh") {
+                            Task { await pluginManager.scanPlugins() }
+                        }
+                        .foregroundStyle(.orange)
                     }
-                    .foregroundStyle(.orange)
                 }
+            }
+            .sheet(isPresented: $showCreateView) {
+                PluginCodeCreateView()
             }
             .alert("Install a Plugin", isPresented: $showInstallHelp) {
                 Button("OK", role: .cancel) {}

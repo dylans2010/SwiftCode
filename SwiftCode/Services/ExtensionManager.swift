@@ -83,6 +83,15 @@ final class ExtensionManager: ObservableObject {
         Task { await scanExtensions() }
     }
 
+    /// Fetches all available extensions (both installed and remote placeholders).
+    /// In a real app, this might fetch from a remote API. For now, it combines
+    /// local extensions with potential remote ones.
+    func getAllAvailableExtensions() -> [ExtensionManifest] {
+        // This would typically merge locally scanned extensions with a remote registry.
+        // For this task, we'll ensure the `extensions` array represents all of them.
+        return extensions
+    }
+
     // MARK: - Built-in Extensions
 
     private var builtInManifests: [ExtensionManifest] {
@@ -283,17 +292,52 @@ final class ExtensionManager: ObservableObject {
             at: extensionsDirectory,
             includingPropertiesForKeys: [.isDirectoryKey],
             options: .skipsHiddenFiles
-        ) else { return }
+        ) else {
+            // If directory listing fails, just show built-ins as not downloaded
+            self.extensions = builtInManifests.map {
+                var m = $0
+                m.isDownloaded = false
+                m.isInstalled = false
+                m.isEnabled = false
+                return m
+            }
+            return
+        }
 
         var found: [ExtensionManifest] = []
-        for url in contents {
-            guard (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true else { continue }
-            let manifestURL = url.appendingPathComponent("extension.json")
-            guard let data = try? Data(contentsOf: manifestURL),
-                  var manifest = try? JSONDecoder().decode(ExtensionManifest.self, from: data) else { continue }
-            manifest.isInstalled = true
-            manifest.isEnabled = loadEnabledState(for: manifest.id)
+        let localIds = contents.map { $0.lastPathComponent }
+
+        // Add built-ins, checking if they are locally present
+        for var manifest in builtInManifests {
+            if localIds.contains(manifest.id) {
+                let manifestURL = extensionsDirectory.appendingPathComponent(manifest.id).appendingPathComponent("extension.json")
+                if let data = try? Data(contentsOf: manifestURL),
+                   let decoded = try? JSONDecoder().decode(ExtensionManifest.self, from: data) {
+                    manifest = decoded
+                }
+                manifest.isDownloaded = true
+                manifest.isInstalled = true
+                manifest.isEnabled = loadEnabledState(for: manifest.id)
+            } else {
+                manifest.isDownloaded = false
+                manifest.isInstalled = false
+                manifest.isEnabled = false
+            }
             found.append(manifest)
+        }
+
+        // Add any other local extensions that are not built-in
+        for url in contents {
+            let id = url.lastPathComponent
+            if !builtInManifests.contains(where: { $0.id == id }) {
+                let manifestURL = url.appendingPathComponent("extension.json")
+                guard let data = try? Data(contentsOf: manifestURL),
+                      var manifest = try? JSONDecoder().decode(ExtensionManifest.self, from: data) else { continue }
+                manifest.isDownloaded = true
+                manifest.isInstalled = true
+                manifest.isEnabled = loadEnabledState(for: manifest.id)
+                found.append(manifest)
+            }
         }
 
         extensions = found.sorted { $0.name < $1.name }
@@ -304,10 +348,18 @@ final class ExtensionManager: ObservableObject {
     /// Marks an extension as downloaded, making it available for use.
     func downloadExtension(_ ext: ExtensionManifest) {
         guard let idx = extensions.firstIndex(where: { $0.id == ext.id }) else { return }
-        extensions[idx].isDownloaded = true
-        extensions[idx].isInstalled = true
-        extensions[idx].isEnabled = true
-        saveEnabledState(for: extensions[idx].id, enabled: true)
+        // Simulate download delay
+        isLoading = true
+        Task {
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            await MainActor.run {
+                self.extensions[idx].isDownloaded = true
+                self.extensions[idx].isInstalled = true
+                self.extensions[idx].isEnabled = true
+                self.saveEnabledState(for: self.extensions[idx].id, enabled: true)
+                self.isLoading = false
+            }
+        }
     }
 
     /// Downloads all extensions at once.

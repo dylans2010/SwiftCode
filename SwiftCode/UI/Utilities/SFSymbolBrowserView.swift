@@ -23,32 +23,12 @@ final class SFSymbolStore: ObservableObject {
         guard let url = Bundle.main.url(forResource: "sf_symbols_full", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let names = try? JSONDecoder().decode([String].self, from: data) else {
-            // Fallback: a small built-in set if file is missing
-            allSymbols = fallbackSymbols.map { SFSymbolItem(id: $0) }
+            // If file is missing, we don't use fallbacks as per request
+            allSymbols = []
             return
         }
         allSymbols = names.map { SFSymbolItem(id: $0) }
     }
-
-    private let fallbackSymbols = [
-        "star", "star.fill", "heart", "heart.fill", "circle", "circle.fill",
-        "square", "square.fill", "triangle", "triangle.fill", "pencil",
-        "trash", "folder", "folder.fill", "doc", "doc.fill",
-        "gear", "gearshape", "gearshape.fill", "bell", "bell.fill",
-        "person", "person.fill", "house", "house.fill",
-        "magnifyingglass", "plus", "minus", "xmark", "checkmark",
-        "arrow.up", "arrow.down", "arrow.left", "arrow.right",
-        "bolt", "bolt.fill", "flame", "flame.fill",
-        "globe", "map", "location", "location.fill",
-        "lock", "lock.fill", "key", "key.fill",
-        "wifi", "network", "antenna.radiowaves.left.and.right",
-        "camera", "camera.fill", "photo", "photo.fill",
-        "swift", "terminal", "terminal.fill",
-        "hammer", "hammer.fill", "wrench", "wrench.fill",
-        "paintbrush", "paintbrush.fill", "paintpalette", "paintpalette.fill",
-        "sun.max", "sun.max.fill", "moon", "moon.fill",
-        "cloud", "cloud.fill", "sparkles", "wand.and.stars",
-    ]
 }
 
 // MARK: - Rendering Mode

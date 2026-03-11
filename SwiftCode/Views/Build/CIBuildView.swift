@@ -164,24 +164,29 @@ struct CIBuildView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.10, green: 0.10, blue: 0.14).ignoresSafeArea()
+                Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 24) {
                         // Header info
                         headerCard
 
-                        // Configuration
-                        configurationSection
+                        GroupBox {
+                            configurationSection
+                        }
+                        .groupBoxStyle(ModernGroupBoxStyle())
 
-                        // Options
-                        optionsSection
+                        GroupBox {
+                            optionsSection
+                        }
+                        .groupBoxStyle(ModernGroupBoxStyle())
 
-                        // Actions
                         actionsSection
 
-                        // Secrets note
-                        secretsInfoCard
+                        GroupBox {
+                            secretsInfoCard
+                        }
+                        .groupBoxStyle(ModernGroupBoxStyle())
                     }
                     .padding()
                 }
@@ -211,18 +216,18 @@ struct CIBuildView: View {
     // MARK: - Subviews
 
     private var headerCard: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             ZStack {
-                Circle()
-                    .fill(Color.orange.opacity(0.2))
-                    .frame(width: 50, height: 50)
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.orange.opacity(0.15))
+                    .frame(width: 56, height: 56)
                 Image(systemName: "cpu.fill")
-                    .font(.title2)
+                    .font(.title)
                     .foregroundStyle(.orange)
             }
             VStack(alignment: .leading, spacing: 4) {
                 Text("Automated IPA Builder")
-                    .font(.headline)
+                    .font(.title3.bold())
                     .foregroundStyle(.white)
                 Text("Generates a GitHub Actions workflow that compiles your app and produces a downloadable .ipa file on every push.")
                     .font(.caption)
@@ -231,21 +236,23 @@ struct CIBuildView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private var configurationSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             sectionLabel("Configuration", icon: "gearshape.fill", color: .blue)
 
-            VStack(spacing: 10) {
+            VStack(spacing: 14) {
                 labeledField("Xcode Scheme", placeholder: project.name, text: $schemeName)
                 labeledField("Bundle ID", placeholder: "com.company.app", text: $bundleID)
                 labeledField("Trigger Branch", placeholder: "main", text: $triggerBranch)
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("Xcode Version")
-                        .font(.caption)
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Picker("Xcode Version", selection: $xcodeVersion) {
                         Text("Latest Stable").tag("latest-stable")
@@ -257,30 +264,28 @@ struct CIBuildView: View {
                 }
             }
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 
     private var optionsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             sectionLabel("Options", icon: "slider.horizontal.3", color: .purple)
 
             Toggle(isOn: $includeTests) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Run Unit Tests")
-                        .font(.subheadline)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white)
                     Text("Run xcodebuild test before archiving")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
             .tint(.green)
 
             if includeTests {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("iOS Simulator")
-                        .font(.caption)
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Picker("Simulator", selection: $iOSSimulator) {
                         Text("iPhone 15 Pro").tag("iPhone 15 Pro")
@@ -294,10 +299,10 @@ struct CIBuildView: View {
                 Toggle(isOn: $includeCodeCoverage) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Code Coverage")
-                            .font(.subheadline)
+                            .font(.subheadline.weight(.medium))
                             .foregroundStyle(.white)
                         Text("Enable code coverage collection during tests")
-                            .font(.caption)
+                            .font(.caption2)
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -307,10 +312,10 @@ struct CIBuildView: View {
             Toggle(isOn: $includeLinting) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("SwiftLint")
-                        .font(.subheadline)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white)
                     Text("Install and run SwiftLint for code style checks")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -319,10 +324,10 @@ struct CIBuildView: View {
             Toggle(isOn: $includeSwiftPM) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Resolve Swift Packages")
-                        .font(.subheadline)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white)
                     Text("Run xcodebuild -resolvePackageDependencies before building")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -331,10 +336,10 @@ struct CIBuildView: View {
             Toggle(isOn: $includePullRequestTrigger) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Pull Request Trigger")
-                        .font(.subheadline)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white)
                     Text("Also run CI on pull requests targeting the trigger branch")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
@@ -343,17 +348,15 @@ struct CIBuildView: View {
             Toggle(isOn: $includeTestFlight) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Upload To TestFlight")
-                        .font(.subheadline)
+                        .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white)
                     Text("Requires App Store Connect API secrets in GitHub")
-                        .font(.caption)
+                        .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
             }
             .tint(.purple)
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
 
     private var actionsSection: some View {
@@ -401,10 +404,10 @@ struct CIBuildView: View {
     }
 
     private var secretsInfoCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             sectionLabel("Required GitHub Secrets", icon: "lock.fill", color: .yellow)
 
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 secretRow("CERTIFICATES_P12", "Base64 encoded signing certificate")
                 secretRow("CERTIFICATES_P12_PASSWORD", "Certificate password")
                 secretRow("APPSTORE_ISSUER_ID", "App Store Connect issuer ID")
@@ -417,9 +420,8 @@ struct CIBuildView: View {
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
+
 
     // MARK: - YAML Preview Sheet
 

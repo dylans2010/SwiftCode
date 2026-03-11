@@ -161,12 +161,12 @@ struct ExtensionsView: View {
 
     private var extensionList: some View {
         ScrollView {
-            VStack(spacing: 0) {
+            VStack(spacing: 16) {
                 // Category filter bar
                 categoryFilterBar
-                    .padding(.vertical, 8)
+                    .padding(.top, 8)
 
-                LazyVStack(spacing: 0) {
+                VStack(spacing: 0) {
                     ForEach(filteredExtensions) { ext in
                         ExtensionRow(
                             ext: ext,
@@ -182,10 +182,15 @@ struct ExtensionsView: View {
                                 showDemoSheet = true
                             }
                         )
-                        Divider().opacity(0.1).padding(.leading, 60)
+                        if ext != filteredExtensions.last {
+                            Divider().opacity(0.15).padding(.leading, 70)
+                        }
                     }
                 }
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .padding(.horizontal)
             }
+            .padding(.bottom, 20)
         }
     }
 
@@ -376,14 +381,14 @@ struct ExtensionRow: View {
     let onTryDemo: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             // Icon
             ZStack {
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 12)
                     .fill(categoryColor(ext.category).opacity(0.15))
-                    .frame(width: 40, height: 40)
+                    .frame(width: 48, height: 48)
                 Image(systemName: ext.category.icon)
-                    .font(.system(size: 18))
+                    .font(.title3)
                     .foregroundStyle(categoryColor(ext.category))
             }
 
@@ -391,31 +396,16 @@ struct ExtensionRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(ext.name)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.subheadline.bold())
                         .foregroundStyle(.white)
-                    Text("v\(ext.version)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(.secondary.opacity(0.15), in: Capsule())
-
-                    if ext.isUserCreated {
-                        Text("custom")
-                            .font(.caption2)
-                            .foregroundStyle(.purple)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(.purple.opacity(0.15), in: Capsule())
-                    }
 
                     if !ext.isDownloaded {
-                        Text("not downloaded")
-                            .font(.caption2)
+                        Text("Online")
+                            .font(.system(size: 8, weight: .bold))
                             .foregroundStyle(.orange)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 1)
-                            .background(.orange.opacity(0.15), in: Capsule())
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 2)
+                            .background(Color.orange.opacity(0.15), in: Capsule())
                     }
                 }
 
@@ -424,26 +414,18 @@ struct ExtensionRow: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
 
-                // Capabilities
-                if !ext.capabilities.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 4) {
-                            ForEach(ext.capabilities, id: \.self) { cap in
-                                Text(cap.rawValue)
-                                    .font(.caption2)
-                                    .foregroundStyle(.blue)
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 2)
-                                    .background(.blue.opacity(0.12), in: Capsule())
-                            }
-                        }
-                    }
+                HStack(spacing: 8) {
+                    Text("v\(ext.version)")
+                    Text("·")
+                    Text(ext.author)
                 }
+                .font(.system(size: 10))
+                .foregroundStyle(.tertiary)
             }
 
             Spacer()
 
-            // Toggle (only available when downloaded)
+            // Action
             if ext.isDownloaded {
                 Toggle("", isOn: .constant(ext.isEnabled))
                     .labelsHidden()
@@ -453,9 +435,15 @@ struct ExtensionRow: View {
                 Button {
                     onDownload()
                 } label: {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.title3)
-                        .foregroundStyle(.orange)
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.down.circle.fill")
+                        Text("Get")
+                            .font(.caption.bold())
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.orange, in: Capsule())
+                    .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
             }

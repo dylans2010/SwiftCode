@@ -35,6 +35,7 @@ struct ProjectWorkspaceView: View {
     @State private var showPluginManager = false
     @State private var showProjectTemplates = false
     @State private var showPrepareCompile = false
+    @State private var showAllToolsSheet = false
 
     var body: some View {
         ZStack {
@@ -210,6 +211,12 @@ struct ProjectWorkspaceView: View {
             PrepareCompileWaitingView(project: project)
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showAllToolsSheet) {
+            ToolbarExpandedPanelView(isPresented: $showAllToolsSheet)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowAllToolsPanel"))) { _ in
+            showAllToolsSheet = true
         }
     }
 
