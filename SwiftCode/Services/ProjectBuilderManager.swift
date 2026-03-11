@@ -14,33 +14,17 @@ final class ProjectBuilderManager {
 
     @MainActor
     func prepareXcodeFiles(for project: Project) {
-        let projectDir = project.directoryURL
-        if hasXcodeProjectFiles(in: projectDir) {
-            return
-        }
-
-        generateXcodeProjectFiles(in: projectDir, projectName: project.name)
+        prepareXcodeFiles(projectDir: project.directoryURL, projectName: project.name)
     }
 
     func prepareXcodeFilesForImport(projectDir: URL, projectName: String) {
-        if hasXcodeProjectFiles(in: projectDir) {
-            return
-        }
-
-        generateXcodeProjectFiles(in: projectDir, projectName: projectName)
+        prepareXcodeFiles(projectDir: projectDir, projectName: projectName)
     }
 
     @MainActor
     func updateProjectFiles(for project: Project) {
-        let projectDir = project.directoryURL
-        if hasXcodeProjectFiles(in: projectDir) {
-            return
-        }
-
-        generateXcodeProjectFiles(in: projectDir, projectName: project.name)
+        prepareXcodeFiles(projectDir: project.directoryURL, projectName: project.name)
     }
-
-    // MARK: - Detection
 
     func hasXcodeProjectFiles(in directory: URL) -> Bool {
         guard let contents = try? fm.contentsOfDirectory(
@@ -49,37 +33,49 @@ final class ProjectBuilderManager {
             options: .skipsHiddenFiles
         ) else { return false }
 
-        return contents.contains {
-            $0.pathExtension == "xcodeproj" || $0.pathExtension == "xcworkspace"
+        return contents.contains { $0.pathExtension == "xcodeproj" }
+    }
+
+    func hasBuildArtifacts(in projectDir: URL, projectName: String) -> Bool {
+        let xcodeProj = projectDir.appendingPathComponent("\(projectName).xcodeproj")
+        let workspace = projectDir.appendingPathComponent("\(projectName).xcworkspace")
+
+        if fm.fileExists(atPath: xcodeProj.path), fm.fileExists(atPath: workspace.path) {
+            return true
         }
+
+        // Xcode always stores an internal workspace within the project bundle.
+        let internalWorkspace = xcodeProj
+            .appendingPathComponent("project.xcworkspace")
+            .appendingPathComponent("contents.xcworkspacedata")
+        return fm.fileExists(atPath: xcodeProj.path) && fm.fileExists(atPath: internalWorkspace.path)
     }
 
     // MARK: - Generation
 
-    private func generateXcodeProjectFiles(in projectDir: URL, projectName: String) {
+    private func prepareXcodeFiles(projectDir: URL, projectName: String) {
+        guard !hasBuildArtifacts(in: projectDir, projectName: projectName) else { return }
+
         do {
             try ensureSubdirectories(in: projectDir)
 
-            let localBuildingDir = try ensureLocalBuildingDirectory()
-            let generatedDir = localBuildingDir.appendingPathComponent("Generated")
+            let generatedDir = projectDir.appendingPathComponent("Generated")
             try fm.createDirectory(at: generatedDir, withIntermediateDirectories: true)
 
             let infoPlistURL = generatedDir.appendingPathComponent("Info.plist")
             try ensureInfoPlist(at: infoPlistURL, bundleName: projectName)
 
             let swiftSources = collectSwiftFiles(in: projectDir)
-            let projectYAMLURL = localBuildingDir.appendingPathComponent("project.yml")
+            let projectYAMLURL = projectDir.appendingPathComponent("project.yml")
             let yaml = makeProjectYAML(
                 projectName: projectName,
                 projectDir: projectDir,
-                localBuildingDir: localBuildingDir,
                 infoPlistURL: infoPlistURL,
                 swiftSourceFiles: swiftSources
             )
             try yaml.write(to: projectYAMLURL, atomically: true, encoding: .utf8)
 
-            try runXcodeGen(specURL: projectYAMLURL, projectRoot: projectDir)
-            try writeXcworkspaceIfNeeded(in: projectDir, projectName: projectName)
+            try runXcodeGen(in: projectDir)
         } catch {
             print("ProjectBuilderManager generation failed: \(error.localizedDescription)")
         }
@@ -94,20 +90,6 @@ final class ProjectBuilderManager {
                 try fm.createDirectory(at: dir, withIntermediateDirectories: true)
             }
         }
-    }
-
-    private func ensureLocalBuildingDirectory() throws -> URL {
-        let cwd = URL(fileURLWithPath: fm.currentDirectoryPath)
-        let localBuildingDir = cwd
-            .appendingPathComponent("SwiftCode")
-            .appendingPathComponent("Backend")
-            .appendingPathComponent("Local Building")
-
-        if !fm.fileExists(atPath: localBuildingDir.path) {
-            try fm.createDirectory(at: localBuildingDir, withIntermediateDirectories: true)
-        }
-
-        return localBuildingDir
     }
 
     private func ensureInfoPlist(at url: URL, bundleName: String) throws {
@@ -134,14 +116,8 @@ final class ProjectBuilderManager {
     <string>1.0</string>
     <key>CFBundleVersion</key>
     <string>1</string>
-    <key>UILaunchStoryboardName</key>
-    <string></string>
-    <key>UIApplicationSceneManifest</key>
-    <dict/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
-    <key>UILaunchScreen</key>
-    <dict/>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
@@ -165,23 +141,16 @@ final class ProjectBuilderManager {
     private func makeProjectYAML(
         projectName: String,
         projectDir: URL,
-        localBuildingDir: URL,
         infoPlistURL: URL,
         swiftSourceFiles: [String]
     ) -> String {
-        let sourceEntries: [String]
+        let sourceEntries = swiftSourceFiles.isEmpty
+            ? ["Sources", "Views", "Features"]
+            : swiftSourceFiles
 
-        if swiftSourceFiles.isEmpty {
-            sourceEntries = ["Sources", "Views", "Features"].map {
-                "      - \(relativePath(from: localBuildingDir, to: projectDir.appendingPathComponent($0)))"
-            }
-        } else {
-            sourceEntries = swiftSourceFiles.map {
-                "      - \(relativePath(from: localBuildingDir, to: projectDir.appendingPathComponent($0)))"
-            }
-        }
-
+        let sourceLines = sourceEntries.map { "      - \($0)" }.joined(separator: "\n")
         let plistRelative = relativePath(from: projectDir, to: infoPlistURL)
+        let safeBundle = bundleIdentifierSuffix(for: projectName)
 
         return """
 name: \(projectName)
@@ -207,23 +176,19 @@ targets:
     platform: iOS
     deploymentTarget: "16.0"
     sources:
-\(sourceEntries.joined(separator: "\n"))
+\(sourceLines)
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.swiftcode.userproject
+        PRODUCT_BUNDLE_IDENTIFIER: com.swiftcode.userproject.\(safeBundle)
         INFOPLIST_FILE: \(plistRelative)
 """
     }
 
-    private func runXcodeGen(specURL: URL, projectRoot: URL) throws {
+    private func runXcodeGen(in projectRoot: URL) throws {
         let process = Process()
+        process.currentDirectoryURL = projectRoot
         process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = [
-            "xcodegen",
-            "generate",
-            "--spec", specURL.path,
-            "--project", projectRoot.path,
-        ]
+        process.arguments = ["xcodegen", "generate", "--spec", "project.yml"]
 
         let outputPipe = Pipe()
         process.standardOutput = outputPipe
@@ -239,27 +204,6 @@ targets:
                 NSLocalizedDescriptionKey: "XcodeGen failed: \(output)",
             ])
         }
-    }
-
-    private func writeXcworkspaceIfNeeded(in projectDir: URL, projectName: String) throws {
-        let workspaceURL = projectDir.appendingPathComponent("\(projectName).xcworkspace")
-        if fm.fileExists(atPath: workspaceURL.path) {
-            return
-        }
-
-        let dataURL = workspaceURL.appendingPathComponent("contents.xcworkspacedata")
-        try fm.createDirectory(at: workspaceURL, withIntermediateDirectories: true)
-
-        let xml = """
-<?xml version="1.0" encoding="UTF-8"?>
-<Workspace
-   version = "1.0">
-   <FileRef
-      location = "group:\(projectName).xcodeproj">
-   </FileRef>
-</Workspace>
-"""
-        try xml.write(to: dataURL, atomically: true, encoding: .utf8)
     }
 
     // MARK: - File Collection
@@ -299,6 +243,20 @@ targets:
         }
 
         return results
+    }
+
+    private func bundleIdentifierSuffix(for projectName: String) -> String {
+        let lowered = projectName.lowercased()
+        let cleaned = lowered.map { char -> Character in
+            if char.isLetter || char.isNumber {
+                return char
+            }
+            return "-"
+        }
+        let collapsed = String(cleaned)
+            .split(separator: "-", omittingEmptySubsequences: true)
+            .joined(separator: "-")
+        return collapsed.isEmpty ? "app" : collapsed
     }
 
     private func relativePath(from base: URL, to target: URL) -> String {

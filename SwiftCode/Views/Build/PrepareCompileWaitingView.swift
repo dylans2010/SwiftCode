@@ -61,17 +61,12 @@ struct PrepareCompileWaitingView: View {
         // Start the preparation process
         await ProjectBuilderManager.shared.prepareXcodeFiles(for: project)
 
-        // Verify that both .xcodeproj and .xcworkspace exist before dismissing.
+        // Verify project generation is complete before dismissing.
         let projectDir = await project.directoryURL
         let projectName = project.name
-        let xcodeProjPath = projectDir.appendingPathComponent("\(projectName).xcodeproj").path
-        let xcworkspacePath = projectDir.appendingPathComponent("\(projectName).xcworkspace").path
 
-        // Continuously check if the following exist: ProjectName.xcodeproj, ProjectName.xcworkspace
-        while !FileManager.default.fileExists(atPath: xcodeProjPath) ||
-              !FileManager.default.fileExists(atPath: xcworkspacePath) {
+        while !ProjectBuilderManager.shared.hasBuildArtifacts(in: projectDir, projectName: projectName) {
             try? await Task.sleep(for: .seconds(0.5))
-            // Re-trigger preparation if files are still missing
             await ProjectBuilderManager.shared.prepareXcodeFiles(for: project)
         }
 
