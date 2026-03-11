@@ -47,6 +47,11 @@ struct BuildStatusView: View {
                             .groupBoxStyle(ModernGroupBoxStyle())
 
                             GroupBox {
+                                localBuildSection
+                            }
+                            .groupBoxStyle(ModernGroupBoxStyle())
+
+                            GroupBox {
                                 workflowRunsSection
                             }
                             .groupBoxStyle(ModernGroupBoxStyle())
@@ -245,6 +250,35 @@ struct BuildStatusView: View {
         case .success: return .green
         case .failed: return .red
         }
+    }
+
+    private var localBuildSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Local Build", systemImage: "macmini.fill")
+                .font(.headline)
+                .foregroundStyle(.white)
+
+            Text("Build your app using a Mac on your local network.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            NavigationLink {
+                LocalBuildView()
+            } label: {
+                HStack {
+                    Image(systemName: "wifi")
+                    Text("Scan for Macs")
+                        .font(.subheadline.weight(.semibold))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(Color.blue, in: RoundedRectangle(cornerRadius: 10))
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
     }
 
     private var noRepoView: some View {

@@ -24,6 +24,13 @@
     <true/>
     <key>NSFileProviderDomainUsageDescription</key>
     <string>SwiftCode needs file access to read and write project source files.</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>This app uses the local network to discover nearby Macs for Local Build.</string>
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_swiftcodebuild._tcp</string>
+        <string>_swiftcode._tcp</string>
+    </array>
     <key>UIFileSharingEnabled</key>
     <true/>
     <key>UIApplicationSceneManifest</key>
