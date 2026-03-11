@@ -132,3 +132,9 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "prepare_compile", name: "Prepare Compiling", icon: "wrench.and.screwdriver", category: "Build", isEnabled: false, order: 37),
     ]
 }
+
+// MARK: - Notifications
+
+extension Notification.Name {
+    static let toolbarToolActivated = Notification.Name("com.swiftcode.toolbarToolActivated")
+}

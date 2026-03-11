@@ -443,90 +443,88 @@ struct BuildLogsView: View {
         showAssistant = true
         isAnalyzing = true
 
-        var logContent = ""
+        Task {
+            var logContent = ""
 
-        if !logManager.entries.isEmpty {
-            logContent += "Local build log entries:\n"
-            for entry in logManager.entries.suffix(50) {
-                logContent += "[\(entry.level.rawValue)] [\(entry.category.rawValue)] \(entry.message)\n"
-                if let detail = entry.detail {
-                    logContent += "  Detail: \(detail)\n"
-                }
-            }
-        }
-
-        if !logs.isEmpty {
-            logContent += "\nCI Build runs:\n"
-            for log in logs.prefix(5) {
-                logContent += "Build #\(log.runNumber) - \(log.name) - Status: \(log.status)"
-                if let conclusion = log.conclusion {
-                    logContent += " - Result: \(conclusion)"
+            // 1. Gather local logs
+            if !logManager.entries.isEmpty {
+                logContent += "--- LOCAL BUILD LOGS ---\n"
+                for entry in logManager.entries.suffix(50) {
+                    logContent += "[\(entry.level.rawValue)] [\(entry.category.rawValue)] \(entry.message)\n"
+                    if let detail = entry.detail {
+                        logContent += "  Detail: \(detail)\n"
+                    }
                 }
                 logContent += "\n"
             }
-        }
 
-        if logContent.isEmpty {
-            logContent = "No build logs available to analyze."
-        }
-
-        assistantMessages.append(AssistantMessage(
-            role: .user,
-            content: "Analyze the current build logs and identify any issues."
-        ))
-
-        let decoded = BuildLogDecoder.shared.decode(logContent)
-        var analysis = ""
-
-        if decoded.hasFailures {
-            analysis += "Build Failure Detected\n\n"
-            analysis += "Found \(decoded.errorCount) error(s) and \(decoded.warningCount) warning(s).\n\n"
-
-            if !decoded.errors.isEmpty {
-                analysis += "Errors:\n"
-                for error in decoded.errors.prefix(10) {
-                    analysis += "• Line \(error.lineNumber): \(error.message)\n"
+            // 2. Gather CI logs from GitHub Actions
+            if !owner.isEmpty && !repo.isEmpty {
+                do {
+                    let runs = try await GitHubService.shared.listWorkflowRuns(owner: owner, repo: repo)
+                    if let failedRun = runs.first(where: { $0.conclusion == "failure" }) {
+                        logContent += "--- GITHUB ACTIONS LOGS (Run #\(failedRun.runNumber)) ---\n"
+                        let jobs = try await GitHubService.shared.listWorkflowJobs(owner: owner, repo: repo, runID: failedRun.id)
+                        for job in jobs where job.conclusion == "failure" {
+                            logContent += "\nJob: \(job.name)\n"
+                            let logs = try await GitHubService.shared.getJobLogs(owner: owner, repo: repo, jobID: job.id)
+                            // Clean logs to remove noise (timestamps, etc. if possible, or just truncate)
+                            logContent += logs.suffix(10000) // Get the last 10k characters which usually contain the error
+                        }
+                    }
+                } catch {
+                    logContent += "\n[Note: Could not fetch CI logs: \(error.localizedDescription)]\n"
                 }
-                analysis += "\nSuggested fixes:\n"
-                analysis += "• Check the error messages above for specific file and line references\n"
-                analysis += "• Verify all dependencies are properly resolved\n"
-                analysis += "• Ensure the build scheme and target are correctly configured\n"
-                analysis += "• Check for syntax errors or missing imports in the referenced files\n"
             }
-        } else if decoded.warningCount > 0 {
-            analysis += "Build completed with \(decoded.warningCount) warning(s).\n\n"
-            for warning in decoded.warnings.prefix(5) {
-                analysis += "• \(warning.message)\n"
+
+            if logContent.isEmpty {
+                logContent = "No build logs available to analyze."
             }
-            analysis += "\nConsider addressing these warnings to improve code quality."
-        } else if !logContent.contains("No build logs") {
-            let failedBuilds = logs.filter { $0.conclusion == "failure" }
-            if !failedBuilds.isEmpty {
-                analysis += "Found \(failedBuilds.count) failed CI build(s).\n\n"
-                for build in failedBuilds.prefix(3) {
-                    analysis += "• Build #\(build.runNumber) (\(build.name)) - Failed\n"
+
+            await MainActor.run {
+                assistantMessages.append(AssistantMessage(
+                    role: .user,
+                    content: "Analyze the current build logs and identify any issues."
+                ))
+            }
+
+            // 3. Perform AI analysis using OpenRouter (Llama 3.3 70B)
+            do {
+                let systemPrompt = """
+                You are the SwiftCode Build Assistant, an expert in Swift, SwiftUI, and iOS development.
+                Your task is to analyze build logs (local and CI) to identify why a build failed.
+                Explain the root cause clearly and suggest specific code fixes or configuration changes.
+                If there are multiple errors, prioritize the first one that likely caused subsequent failures.
+                Be concise but thorough.
+                """
+
+                let messages = [
+                    AIMessage(role: "user", content: "Analyze these logs:\n\n\(logContent)")
+                ]
+
+                let analysis = try await OpenRouterService.shared.chat(
+                    messages: messages,
+                    model: "meta-llama/llama-3.3-70b-instruct:free",
+                    systemPrompt: systemPrompt
+                )
+
+                await MainActor.run {
+                    assistantMessages.append(AssistantMessage(
+                        role: .assistant,
+                        content: analysis
+                    ))
+                    isAnalyzing = false
                 }
-                analysis += "\nRecommendations:\n"
-                analysis += "• View the detailed logs for each failed build\n"
-                analysis += "• Check the workflow YAML configuration\n"
-                analysis += "• Verify environment and dependency setup\n"
-            } else {
-                analysis += "All recent builds appear successful. No issues detected.\n\n"
-                analysis += "Summary:\n"
-                analysis += "• \(decoded.entries.count) log lines analyzed\n"
-                analysis += "• \(decoded.compileStepCount) compile steps detected\n"
-                analysis += "• No errors or warnings found"
+            } catch {
+                await MainActor.run {
+                    assistantMessages.append(AssistantMessage(
+                        role: .assistant,
+                        content: "I encountered an error while analyzing the logs: \(error.localizedDescription)"
+                    ))
+                    isAnalyzing = false
+                }
             }
-        } else {
-            analysis = "No build logs available for analysis. Run a build first or connect a GitHub repository to view CI logs."
         }
-
-        assistantMessages.append(AssistantMessage(
-            role: .assistant,
-            content: analysis
-        ))
-
-        isAnalyzing = false
     }
 
 }
