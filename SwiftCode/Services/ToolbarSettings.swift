@@ -6,7 +6,7 @@ import Combine
 class ToolbarSettings: ObservableObject {
     static let shared = ToolbarSettings()
 
-    @Published var wordWrap: Bool = true
+    @Published var wordWrap: Bool = false
     @Published var showSearchBar: Bool = false
 
     private init() {}
