@@ -6,6 +6,8 @@ import SwiftUI
 // and frequent actions, positioned as a floating bar or bottom-docked.
 
 struct MainToolbarView: View {
+    @EnvironmentObject private var projectManager: ProjectManager
+    @EnvironmentObject private var toolbarSettings: ToolbarSettings
     @StateObject private var toolbarManager = ToolbarManager.shared
     @State private var showAllTools = false
 
@@ -15,7 +17,8 @@ struct MainToolbarView: View {
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        VStack(spacing: 0) {
+            HStack(spacing: 12) {
             // "All Tools" Button
             Button {
                 showAllTools.toggle()
@@ -27,6 +30,67 @@ struct MainToolbarView: View {
                     .background(Color.orange.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
             }
             .buttonStyle(.plain)
+
+            Divider()
+                .frame(height: 24)
+                .background(Color.white.opacity(0.1))
+
+            // Active File Info
+            if let node = projectManager.activeFileNode {
+                HStack(spacing: 8) {
+                    Image(systemName: node.icon)
+                        .foregroundStyle(node.iconColor)
+                        .font(.caption)
+                    Text(node.name)
+                        .font(.caption.bold())
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+            }
+
+            Divider()
+                .frame(height: 24)
+                .background(Color.white.opacity(0.1))
+
+            // Editor Controls
+            HStack(spacing: 12) {
+                // Save Button
+                Button {
+                    projectManager.saveCurrentFile(content: projectManager.activeFileContent)
+                } label: {
+                    Image(systemName: "checkmark.circle")
+                        .font(.system(size: 16))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Save (⌘S)")
+
+                // Word Wrap Toggle
+                Button {
+                    toolbarSettings.wordWrap.toggle()
+                } label: {
+                    Image(systemName: toolbarSettings.wordWrap ? "text.word.spacing" : "text.alignleft")
+                        .font(.system(size: 16))
+                        .foregroundStyle(toolbarSettings.wordWrap ? .orange : .secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Toggle Word Wrap")
+
+                // Search Toggle
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        toolbarSettings.showSearchBar.toggle()
+                    }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 16))
+                        .foregroundStyle(toolbarSettings.showSearchBar ? .orange : .secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Search")
+            }
 
             Divider()
                 .frame(height: 24)
@@ -60,15 +124,11 @@ struct MainToolbarView: View {
                 }
             }
         }
+        }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay(
-            Capsule()
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.25), radius: 10, x: 0, y: 5)
-        .padding(.bottom, 20)
+        .background(.ultraThinMaterial)
+        .overlay(Divider().opacity(0.3), alignment: .bottom)
         .sheet(isPresented: $showAllTools) {
             ToolbarExpandedPanelView(isPresented: $showAllTools)
                 .preferredColorScheme(.dark)

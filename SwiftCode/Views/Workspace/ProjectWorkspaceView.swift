@@ -58,14 +58,14 @@ struct ProjectWorkspaceView: View {
 
                     Divider().opacity(0.3)
 
-                    // Code Editor fills the available space
-                    ZStack(alignment: .bottom) {
-                        CodeEditorView()
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    // Toolbar moved to the top
+                    MainToolbarView()
 
-                        // Floating Main Toolbar at the bottom
-                        MainToolbarView()
-                    }
+                    Divider().opacity(0.3)
+
+                    // Code Editor fills the available space
+                    CodeEditorView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
         }

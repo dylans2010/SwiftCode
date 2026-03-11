@@ -6,10 +6,9 @@ import UIKit
 struct CodeEditorView: View {
     @EnvironmentObject private var projectManager: ProjectManager
     @EnvironmentObject private var settings: AppSettings
-    @State private var showSearchBar = false
+    @EnvironmentObject private var toolbarSettings: ToolbarSettings
     @State private var searchQuery = ""
     @State private var replaceText = ""
-    @State private var wordWrap = true
     @State private var showFileLoadError = false
     @AppStorage("minimapEnabled") private var minimapEnabled = true
 
@@ -25,13 +24,16 @@ struct CodeEditorView: View {
                 pathBar
             }
 
-            // Header (now optional or reduced since toolbar is on keyboard)
-            editorHeader
-
-            Divider().opacity(0.3)
+            // Background button for keyboard shortcut
+            Button("") {
+                projectManager.saveCurrentFile(content: projectManager.activeFileContent)
+            }
+            .keyboardShortcut("s", modifiers: .command)
+            .opacity(0)
+            .frame(width: 0, height: 0)
 
             // Search bar
-            if showSearchBar {
+            if toolbarSettings.showSearchBar {
                 searchBar
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
@@ -49,8 +51,8 @@ struct CodeEditorView: View {
                                 }
                             }
                         ),
-                        wordWrap: wordWrap,
-                        searchQuery: showSearchBar ? searchQuery : "",
+                        wordWrap: toolbarSettings.wordWrap,
+                        searchQuery: toolbarSettings.showSearchBar ? searchQuery : "",
                         fileExtension: projectManager.activeFileNode?.name.components(separatedBy: ".").last ?? "swift"
                     )
                     .background(Color(red: 0.11, green: 0.11, blue: 0.14))
@@ -148,58 +150,6 @@ struct CodeEditorView: View {
 
     // MARK: - Subviews
 
-    private var editorHeader: some View {
-        HStack(spacing: 12) {
-            if let node = projectManager.activeFileNode {
-                Image(systemName: node.icon)
-                    .foregroundStyle(node.iconColor)
-                    .font(.caption)
-                Text(node.name)
-                    .font(.caption)
-                    .foregroundStyle(.white)
-                Spacer()
-                Button {
-                    projectManager.saveCurrentFile(content: projectManager.activeFileContent)
-                } label: {
-                    Label("Save", systemImage: "checkmark.circle")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .keyboardShortcut("s", modifiers: .command)
-            } else {
-                Text("No File Selected")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                Spacer()
-            }
-
-            // Word wrap toggle
-            Button {
-                wordWrap.toggle()
-            } label: {
-                Image(systemName: wordWrap ? "text.word.spacing" : "text.alignleft")
-                    .font(.caption)
-                    .foregroundStyle(wordWrap ? .orange : .secondary)
-            }
-            .buttonStyle(.plain)
-
-            // Search toggle
-            Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showSearchBar.toggle()
-                }
-            } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.caption)
-                    .foregroundStyle(showSearchBar ? .orange : .secondary)
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-    }
-
     private var searchBar: some View {
         VStack(spacing: 4) {
             HStack(spacing: 8) {
@@ -208,7 +158,7 @@ struct CodeEditorView: View {
                     .font(.caption)
                     .autocorrectionDisabled()
                 Button("Done") {
-                    withAnimation { showSearchBar = false }
+                    withAnimation { toolbarSettings.showSearchBar = false }
                 }
                 .font(.caption)
                 .foregroundStyle(.orange)
