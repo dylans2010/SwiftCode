@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ToolbarCustomizationView: View {
     @StateObject private var toolbarManager = ToolbarManager.shared
+    @EnvironmentObject private var toolbarSettings: ToolbarSettings
     @Environment(\.dismiss) private var dismiss
     @State private var showExtensions = false
 
@@ -34,6 +35,12 @@ struct ToolbarCustomizationView: View {
                     .buttonStyle(.plain)
                 } header: {
                     Text("Extensions")
+                }
+
+
+                Section("Display") {
+                    Toggle("Show Tool Name", isOn: $toolbarSettings.showToolNames)
+                        .tint(.orange)
                 }
 
                 Section("Enabled Tools") {

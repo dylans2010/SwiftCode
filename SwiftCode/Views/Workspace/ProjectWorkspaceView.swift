@@ -51,6 +51,7 @@ struct ProjectWorkspaceView: View {
 
                 // Horizontal toolbar at the top for iOS-friendly access
                 MainToolbarView()
+                    .environmentObject(projectManager)
 
                 Divider().opacity(0.3)
 
@@ -219,6 +220,14 @@ struct ProjectWorkspaceView: View {
         .sheet(isPresented: $showAllToolsSheet) {
             ToolbarExpandedPanelView(isPresented: $showAllToolsSheet)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .toolbarToolActivated)) { notification in
+            guard
+                let toolId = notification.userInfo?["toolID"] as? String,
+                let destination = ToolbarActionManager.shared.destination(for: toolId)
+            else { return }
+
+            openSheet(for: destination)
+        }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowAllToolsPanel"))) { _ in
             showAllToolsSheet = true
         }
@@ -248,6 +257,9 @@ struct ProjectWorkspaceView: View {
                         .lineLimit(1)
                 }
             }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
 
             Spacer()
 
