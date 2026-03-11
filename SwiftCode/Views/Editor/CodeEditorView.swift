@@ -50,7 +50,8 @@ struct CodeEditorView: View {
                             }
                         ),
                         wordWrap: wordWrap,
-                        searchQuery: showSearchBar ? searchQuery : ""
+                        searchQuery: showSearchBar ? searchQuery : "",
+                        fileExtension: projectManager.activeFileNode?.name.components(separatedBy: ".").last ?? "swift"
                     )
                     .background(Color(red: 0.11, green: 0.11, blue: 0.14))
                     .id(projectManager.activeFileNode?.id)
@@ -355,6 +356,7 @@ struct TextEditorRepresentable: UIViewRepresentable {
     @Binding var text: String
     var wordWrap: Bool
     var searchQuery: String
+    var fileExtension: String = "swift"
 
     func makeUIView(context: Context) -> UIScrollView {
         let scrollView = UIScrollView()
@@ -367,13 +369,12 @@ struct TextEditorRepresentable: UIViewRepresentable {
         scrollView.addSubview(container)
 
         let lineNumbers = LineNumberView()
-        lineNumbers.translatesAutoresizingMaskIntoConstraints = false
         context.coordinator.lineNumberView = lineNumbers
 
         let textView = UITextView()
         textView.backgroundColor = .clear
         textView.textColor = UIColor(red: 0.85, green: 0.85, blue: 0.85, alpha: 1)
-        textView.font = UIFont(name: "Menlo", size: 14) ?? UIFont.monospacedSystemFont(ofSize: 14, weight: .regular)
+        textView.font = TextLayoutEngine.editorFont()
         textView.autocorrectionType = .no
         textView.autocapitalizationType = .none
         textView.spellCheckingType = .no
@@ -383,7 +384,9 @@ struct TextEditorRepresentable: UIViewRepresentable {
         textView.isScrollEnabled = false
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.delegate = context.coordinator
-        textView.textContainerInset = UIEdgeInsets(top: 12, left: 8, bottom: 12, right: 12)
+        // Inset: left padding keeps code clear of the gutter boundary
+        textView.textContainerInset = TextLayoutEngine.textContainerInset()
+        // No exclusion paths needed; the text view starts after the gutter in the layout
 
         container.addSubview(lineNumbers)
         container.addSubview(textView)
@@ -391,11 +394,12 @@ struct TextEditorRepresentable: UIViewRepresentable {
         context.coordinator.textView = textView
         context.coordinator.scrollView = scrollView
         context.coordinator.containerView = container
+        context.coordinator.fileExtension = fileExtension
 
         scrollView.delegate = context.coordinator
 
-        // Load initial text
-        let highlighted = SyntaxHighlighter.shared.highlight(text)
+        // Load initial text with syntax highlighting
+        let highlighted = SyntaxHighlighter.shared.highlight(text, fileExtension: fileExtension)
         textView.attributedText = highlighted
 
         return scrollView
@@ -404,16 +408,15 @@ struct TextEditorRepresentable: UIViewRepresentable {
     func updateUIView(_ scrollView: UIScrollView, context: Context) {
         guard let textView = context.coordinator.textView else { return }
 
-        // Always apply syntax highlighting when text changes
+        context.coordinator.fileExtension = fileExtension
+
+        // Apply syntax highlighting when text changes
         if textView.attributedText.string != text {
-            let highlighted = SyntaxHighlighter.shared.highlight(text)
-            let selectedRange = textView.selectedRange
+            let highlighted = SyntaxHighlighter.shared.highlight(text, fileExtension: fileExtension)
+            let savedRange = textView.selectedRange
             textView.attributedText = highlighted
-            let clampedRange = NSRange(
-                location: min(selectedRange.location, text.count),
-                length: 0
-            )
-            textView.selectedRange = clampedRange
+            let clampedLocation = min(savedRange.location, max(0, text.count))
+            textView.selectedRange = NSRange(location: clampedLocation, length: 0)
         }
 
         // Apply word wrap
@@ -434,6 +437,7 @@ struct TextEditorRepresentable: UIViewRepresentable {
 
     final class Coordinator: NSObject, UITextViewDelegate, UIScrollViewDelegate {
         var text: Binding<String>
+        var fileExtension: String = "swift"
         weak var textView: UITextView?
         weak var scrollView: UIScrollView?
         weak var containerView: UIView?
@@ -445,39 +449,61 @@ struct TextEditorRepresentable: UIViewRepresentable {
 
         func textViewDidChange(_ textView: UITextView) {
             text.wrappedValue = textView.text
+            // Re-apply syntax highlighting after edit
+            let highlighted = SyntaxHighlighter.shared.highlight(textView.text, fileExtension: fileExtension)
+            let savedRange = textView.selectedRange
+            textView.attributedText = highlighted
+            let clampedLocation = min(savedRange.location, max(0, textView.text.count))
+            textView.selectedRange = NSRange(location: clampedLocation, length: 0)
             updateLayout()
         }
 
         func updateLayout() {
-            guard let textView, let scrollView, let container, let lineNumbers = lineNumberView else { return }
+            guard let textView, let scrollView, let container = containerView,
+                  let lineNumbers = lineNumberView else { return }
 
-            let lineNumberWidth: CGFloat = 44
+            let gutterWidth = TextLayoutEngine.lineNumberColumnWidth
+            let availableWidth = TextLayoutEngine.codeColumnWidth(totalWidth: scrollView.bounds.width)
+
             let textSize = textView.sizeThatFits(CGSize(
-                width: max(scrollView.bounds.width - lineNumberWidth, 200),
+                width: availableWidth,
                 height: .greatestFiniteMagnitude
             ))
 
-            let contentWidth = max(textSize.width + lineNumberWidth, scrollView.bounds.width)
+            let contentWidth = max(textSize.width + gutterWidth, scrollView.bounds.width)
             let contentHeight = max(textSize.height, scrollView.bounds.height)
 
             container.frame = CGRect(x: 0, y: 0, width: contentWidth, height: contentHeight)
             scrollView.contentSize = container.frame.size
 
-            lineNumbers.frame = CGRect(x: 0, y: 0, width: lineNumberWidth, height: contentHeight)
-            textView.frame = CGRect(x: lineNumberWidth, y: 0, width: contentWidth - lineNumberWidth, height: contentHeight)
+            // Line number gutter: fixed width, full content height
+            lineNumbers.frame = CGRect(x: 0, y: 0, width: gutterWidth, height: contentHeight)
+            // Code region starts immediately after the gutter
+            textView.frame = CGRect(x: gutterWidth, y: 0,
+                                    width: contentWidth - gutterWidth,
+                                    height: contentHeight)
 
+            // Pass layout metrics to the line number view so it draws at exact positions
+            let font = textView.font ?? TextLayoutEngine.editorFont()
+            lineNumbers.lineHeight = font.lineHeight
+            lineNumbers.topInset = textView.textContainerInset.top
             lineNumbers.lineCount = textView.text.components(separatedBy: "\n").count
             lineNumbers.setNeedsDisplay()
         }
-
-        private var container: UIView? { containerView }
     }
 }
 
 // MARK: - Line Number View
 
+/// Read-only gutter that renders 1-based line numbers aligned with the code editor.
+/// The `lineHeight` and `topInset` properties must be set from the UITextView's
+/// font metrics to guarantee vertical alignment with the code text.
 final class LineNumberView: UIView {
     var lineCount: Int = 1
+    /// Must match the editor font's lineHeight.
+    var lineHeight: CGFloat = TextLayoutEngine.lineHeight()
+    /// Must match UITextView.textContainerInset.top.
+    var topInset: CGFloat = TextLayoutEngine.textContainerInset().top
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -487,16 +513,28 @@ final class LineNumberView: UIView {
     required init?(coder: NSCoder) { fatalError() }
 
     override func draw(_ rect: CGRect) {
+        let font = UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.monospacedSystemFont(ofSize: 11, weight: .regular),
+            .font: font,
             .foregroundColor: UIColor.gray.withAlphaComponent(0.6)
         ]
-        let lineHeight: CGFloat = 17.5
-        for i in 1...max(1, lineCount) {
+
+        // Draw a subtle right-edge separator line
+        let separatorX = bounds.width - 1
+        UIColor.white.withAlphaComponent(0.07).setFill()
+        UIRectFill(CGRect(x: separatorX, y: 0, width: 1, height: bounds.height))
+
+        let count = max(1, lineCount)
+        for i in 1...count {
             let label = "\(i)"
-            let size = label.size(withAttributes: attributes)
-            let x = bounds.width - size.width - 6
-            let y = CGFloat(i - 1) * lineHeight + 13
+            let labelSize = label.size(withAttributes: attributes)
+            // Right-align the number with 8pt right padding
+            let x = bounds.width - labelSize.width - 8
+            // Align baseline with the code line: topInset + (line-1) * lineHeight
+            // Drawing with `draw(at:)` places top-left of the glyph at the given point.
+            // Shift down by (lineHeight - labelSize.height) / 2 to vertically centre.
+            let codeLine_y = topInset + CGFloat(i - 1) * lineHeight
+            let y = codeLine_y + (lineHeight - labelSize.height) / 2
             label.draw(at: CGPoint(x: x, y: y), withAttributes: attributes)
         }
     }

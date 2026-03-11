@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Syntax Highlighting Engine
 // Wraps SyntaxHighlighter and adds multi-theme support.
+// Supports Swift, shell scripts, JSON, plist, and Markdown.
 
 final class SyntaxHighlightingEngine {
     static let shared = SyntaxHighlightingEngine()
@@ -9,15 +10,16 @@ final class SyntaxHighlightingEngine {
 
     // MARK: - Highlight
 
-    func highlight(_ code: String, language: String = "swift", theme: CodeColoringTheme = .dark) -> AttributedString {
-        let tokens = tokenize(code, language: language)
+    /// Highlight `code` using the file extension to select the language rules.
+    func highlight(_ code: String, fileExtension: String = "swift", theme: CodeColoringTheme = .dark) -> AttributedString {
+        let tokens = tokenize(code, fileExtension: fileExtension)
         return buildAttributedString(from: tokens, theme: theme)
     }
 
     // MARK: - Tokenizer
 
     private enum TokenKind {
-        case keyword, string, comment, number, type, function, punctuation, plain
+        case keyword, string, comment, number, type, function, variable, punctuation, plain
     }
 
     private struct Token {
@@ -25,31 +27,99 @@ final class SyntaxHighlightingEngine {
         let kind: TokenKind
     }
 
-    private func tokenize(_ code: String, language: String) -> [Token] {
-        guard language.lowercased() == "swift" else {
-            return [Token(text: code, kind: .plain)]
+    private func tokenize(_ code: String, fileExtension: String) -> [Token] {
+        let lang = fileExtension.lowercased()
+        switch lang {
+        case "sh", "bash", "zsh": return tokenizeShell(code)
+        case "json": return tokenizeJSON(code)
+        case "plist": return tokenizePlist(code)
+        case "md", "markdown": return tokenizeMarkdown(code)
+        default: return tokenizeSwift(code)
         }
+    }
 
-        var tokens: [Token] = []
-        var remaining = code
+    // MARK: - Swift Tokenizer
 
-        let keywordPattern = #"\b(import|class|struct|enum|protocol|extension|func|var|let|if|else|guard|return|switch|case|default|for|while|break|continue|throw|throws|try|catch|do|in|is|as|nil|true|false|self|super|init|deinit|get|set|willSet|didSet|override|final|open|public|internal|private|fileprivate|static|mutating|nonmutating|lazy|weak|unowned|some|any|typealias|associatedtype|where|subscript|operator|infix|prefix|postfix|async|await|actor)\b"#
+    private func tokenizeSwift(_ code: String) -> [Token] {
+        let keywordPattern = #"\b(import|class|struct|enum|protocol|extension|func|var|let|if|else|guard|return|switch|case|default|for|while|break|continue|throw|throws|try|catch|do|in|is|as|nil|true|false|self|super|init|deinit|get|set|willSet|didSet|override|final|open|public|internal|private|fileprivate|static|mutating|nonmutating|lazy|weak|unowned|some|any|typealias|associatedtype|where|subscript|operator|infix|prefix|postfix|async|await|actor|rethrows|defer|inout)\b"#
 
         let patterns: [(NSRegularExpression, TokenKind)] = [
             (try! NSRegularExpression(pattern: #"//[^\n]*"#), .comment),
             (try! NSRegularExpression(pattern: #"/\*[\s\S]*?\*/"#), .comment),
+            (try! NSRegularExpression(pattern: #""""[\s\S]*?""""#), .string),
             (try! NSRegularExpression(pattern: #""(?:[^"\\]|\\.)*""#), .string),
             (try! NSRegularExpression(pattern: keywordPattern), .keyword),
             (try! NSRegularExpression(pattern: #"\b[A-Z][a-zA-Z0-9_]*\b"#), .type),
             (try! NSRegularExpression(pattern: #"\b\d+\.?\d*\b"#), .number),
             (try! NSRegularExpression(pattern: #"\b[a-z_][a-zA-Z0-9_]*\s*(?=\()"#), .function),
         ]
+        return buildTokens(from: code, patterns: patterns)
+    }
+
+    // MARK: - Shell Tokenizer
+
+    private func tokenizeShell(_ code: String) -> [Token] {
+        let kwPattern = #"\b(if|then|else|elif|fi|for|while|do|done|case|esac|in|function|return|exit|local|export|source|true|false|echo|read)\b"#
+        let cmdPattern = #"\b(mkdir|cp|rm|cd|ls|cat|grep|sed|awk|chmod|chown|curl|wget|git|brew|swift|xcodebuild)\b"#
+
+        let patterns: [(NSRegularExpression, TokenKind)] = [
+            (try! NSRegularExpression(pattern: #"#[^\n]*"#), .comment),
+            (try! NSRegularExpression(pattern: #""(?:[^"\\]|\\.)*""#), .string),
+            (try! NSRegularExpression(pattern: #"'(?:[^'\\]|\\.)*'"#), .string),
+            (try! NSRegularExpression(pattern: kwPattern), .keyword),
+            (try! NSRegularExpression(pattern: cmdPattern), .function),
+            (try! NSRegularExpression(pattern: #"\$\{?[A-Za-z_][A-Za-z0-9_]*\}?"#), .variable),
+            (try! NSRegularExpression(pattern: #"\b\d+\b"#), .number),
+        ]
+        return buildTokens(from: code, patterns: patterns)
+    }
+
+    // MARK: - JSON Tokenizer
+
+    private func tokenizeJSON(_ code: String) -> [Token] {
+        let patterns: [(NSRegularExpression, TokenKind)] = [
+            (try! NSRegularExpression(pattern: #""(?:[^"\\]|\\.)*""#), .string),
+            (try! NSRegularExpression(pattern: #"\b(true|false|null)\b"#), .keyword),
+            (try! NSRegularExpression(pattern: #"-?\d+\.?\d*(?:[eE][+-]?\d+)?"#), .number),
+        ]
+        return buildTokens(from: code, patterns: patterns)
+    }
+
+    // MARK: - Plist Tokenizer
+
+    private func tokenizePlist(_ code: String) -> [Token] {
+        let patterns: [(NSRegularExpression, TokenKind)] = [
+            (try! NSRegularExpression(pattern: #"<!--[\s\S]*?-->"#), .comment),
+            (try! NSRegularExpression(pattern: #"<[^>]+>"#), .keyword),
+            (try! NSRegularExpression(pattern: #">([^<]+)<"#), .string),
+        ]
+        return buildTokens(from: code, patterns: patterns)
+    }
+
+    // MARK: - Markdown Tokenizer
+
+    private func tokenizeMarkdown(_ code: String) -> [Token] {
+        let patterns: [(NSRegularExpression, TokenKind)] = [
+            (try! NSRegularExpression(pattern: #"^#{1,6}\s+[^\n]+"#, options: .anchorsMatchLines), .keyword),
+            (try! NSRegularExpression(pattern: #"\*\*[^\*]+\*\*|__[^_]+__"#), .type),
+            (try! NSRegularExpression(pattern: #"\*[^\*\n]+\*|_[^_\n]+_"#), .function),
+            (try! NSRegularExpression(pattern: #"`[^`\n]+`"#), .string),
+            (try! NSRegularExpression(pattern: #"```[\s\S]*?```"#), .string),
+            (try! NSRegularExpression(pattern: #"\[[^\]]+\]\([^\)]+\)"#), .variable),
+            (try! NSRegularExpression(pattern: #"^>\s+[^\n]*"#, options: .anchorsMatchLines), .comment),
+        ]
+        return buildTokens(from: code, patterns: patterns)
+    }
+
+    // MARK: - Token Building (shared)
+
+    private func buildTokens(from code: String, patterns: [(NSRegularExpression, TokenKind)]) -> [Token] {
+        var tokens: [Token] = []
+        let nsCode = code as NSString
+        let fullRange = NSRange(location: 0, length: nsCode.length)
 
         var processedRanges: [NSRange] = []
         var allMatches: [(NSRange, TokenKind)] = []
-
-        let nsCode = code as NSString
-        let fullRange = NSRange(location: 0, length: nsCode.length)
 
         for (regex, kind) in patterns {
             let matches = regex.matches(in: code, range: fullRange)
@@ -64,7 +134,6 @@ final class SyntaxHighlightingEngine {
         }
 
         let sorted = allMatches.sorted { $0.0.location < $1.0.location }
-
         var cursor = 0
         for (range, kind) in sorted {
             if range.location > cursor {
@@ -77,19 +146,21 @@ final class SyntaxHighlightingEngine {
         if cursor < nsCode.length {
             tokens.append(Token(text: nsCode.substring(from: cursor), kind: .plain))
         }
-
         return tokens
     }
 
+    // MARK: - Attributed String Builder
+
     private func buildAttributedString(from tokens: [Token], theme: CodeColoringTheme) -> AttributedString {
         var result = AttributedString()
+        let fontSize = CGFloat(AppSettings.shared.editorFontSize)
         for token in tokens {
             var part = AttributedString(token.text)
             part.foregroundColor = color(for: token.kind, theme: theme)
             if case .keyword = token.kind {
-                part.font = .system(size: CGFloat(AppSettings.shared.editorFontSize), design: .monospaced).bold()
+                part.font = .system(size: fontSize, design: .monospaced).bold()
             } else {
-                part.font = .system(size: CGFloat(AppSettings.shared.editorFontSize), design: .monospaced)
+                part.font = .system(size: fontSize, design: .monospaced)
             }
             result.append(part)
         }
@@ -104,8 +175,10 @@ final class SyntaxHighlightingEngine {
         case .number:      return theme.numberColor
         case .type:        return theme.typeColor
         case .function:    return theme.functionColor
+        case .variable:    return theme.keywordColor.opacity(0.8)
         case .punctuation: return theme.plainColor
         case .plain:       return theme.plainColor
         }
     }
 }
+
