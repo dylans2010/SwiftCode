@@ -31,6 +31,7 @@ struct ProjectWorkspaceView: View {
     @State private var showGitHubIssues = false
     @State private var showComplexityAnalyzer = false
     @State private var showSymbolOutline = false
+    @State private var showLocalSimulation = false
 
     var body: some View {
         ZStack {
@@ -187,6 +188,11 @@ struct ProjectWorkspaceView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showLocalSimulation) {
+            PreviewHostView()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.hidden)
+        }
     }
 
     // MARK: - Toolbar
@@ -245,6 +251,7 @@ struct ProjectWorkspaceView: View {
         case "dependency_manager", "install_dependency", "update_dependencies": return .teal
         case "code_search", "symbol_navigator", "project_index", "go_to_line": return .cyan
         case "sf_symbols_browser": return .indigo
+        case "local_simulation": return .green
         default: return .secondary
         }
     }
@@ -282,6 +289,7 @@ struct ProjectWorkspaceView: View {
         case .gitHubIssues: showGitHubIssues = true
         case .complexityAnalyzer: showComplexityAnalyzer = true
         case .symbolOutline: showSymbolOutline = true
+        case .localSimulation: showLocalSimulation = true
         }
     }
 
