@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct BuildStatusView: View {
+    let project: Project
     let owner: String
     let repo: String
     @Environment(\.dismiss) private var dismiss
@@ -14,6 +15,9 @@ struct BuildStatusView: View {
     @State private var logsText: String?
     @State private var showLogs = false
     @State private var autoRefreshTimer: Timer?
+    @State private var showCIBuild = false
+    @State private var showPrepareCompile = false
+    @State private var showBuildGuide = false
 
     // Compile action state
     @State private var isCompiling = false
@@ -52,6 +56,16 @@ struct BuildStatusView: View {
                             .groupBoxStyle(ModernGroupBoxStyle())
 
                             GroupBox {
+                                ciBuildSection
+                            }
+                            .groupBoxStyle(ModernGroupBoxStyle())
+
+                            GroupBox {
+                                buildGuideSection
+                            }
+                            .groupBoxStyle(ModernGroupBoxStyle())
+
+                            GroupBox {
                                 workflowRunsSection
                             }
                             .groupBoxStyle(ModernGroupBoxStyle())
@@ -85,6 +99,17 @@ struct BuildStatusView: View {
             } message: { msg in Text(msg) }
             .sheet(isPresented: $showLogs) {
                 logsSheet
+            }
+            .sheet(isPresented: $showCIBuild) {
+                CIBuildView(project: project)
+            }
+            .sheet(isPresented: $showPrepareCompile) {
+                PrepareCompileWaitingView(project: project)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showBuildGuide) {
+                BuildGuideView()
             }
             .onAppear {
                 loadData()
@@ -279,6 +304,91 @@ struct BuildStatusView: View {
         }
         .padding()
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+
+
+    private var ciBuildSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Cloud Build (CI)", systemImage: "cpu.fill")
+                .font(.headline)
+                .foregroundStyle(.white)
+
+            Text("Prepare compilation assets or open CI workflow setup directly from Build Status.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 12) {
+                Button {
+                    showPrepareCompile = true
+                } label: {
+                    Label("Prepare Compiling", systemImage: "wrench.and.screwdriver")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.orange, in: RoundedRectangle(cornerRadius: 10))
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showCIBuild = true
+                } label: {
+                    Label("Build With CI", systemImage: "cpu")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(Color.purple, in: RoundedRectangle(cornerRadius: 10))
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var buildGuideSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Build Guide", systemImage: "book.fill")
+                .font(.headline)
+                .foregroundStyle(.white)
+
+            VStack(alignment: .leading, spacing: 8) {
+                guideStep(number: 1, text: "Connect a repository in GitHub view (owner/repo).")
+                guideStep(number: 2, text: "Run Prepare Compiling to stage certificates/profiles and validate setup.")
+                guideStep(number: 3, text: "Use Build With CI to generate or run workflow builds in GitHub Actions.")
+                guideStep(number: 4, text: "Monitor Workflow Runs and open logs until build succeeds.")
+                guideStep(number: 5, text: "Download artifacts or releases from this screen once complete.")
+            }
+
+            Button {
+                showBuildGuide = true
+            } label: {
+                Label("Open Guide View", systemImage: "book")
+                    .font(.subheadline.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .background(Color.indigo, in: RoundedRectangle(cornerRadius: 10))
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func guideStep(number: Int, text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "\(number).circle.fill")
+                .foregroundStyle(.orange)
+                .font(.caption)
+                .frame(width: 16)
+
+            Text(text)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private var noRepoView: some View {
@@ -674,5 +784,47 @@ struct ReleaseRow: View {
         }
         .padding(12)
         .background(.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+    }
+}
+
+
+struct BuildGuideView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section("SwiftCode Build Flow") {
+                    guideRow(1, "Connect your repository in the GitHub view.")
+                    guideRow(2, "Run Prepare Compiling to verify signing assets and build config.")
+                    guideRow(3, "Tap Build With CI to generate/run the workflow.")
+                    guideRow(4, "Use Build Status to monitor workflow progress and open logs.")
+                    guideRow(5, "Download artifacts/releases once the workflow completes.")
+                }
+
+                Section("Tips") {
+                    Text("If builds fail, inspect run logs first, then confirm repository secrets and signing files are valid.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .navigationTitle("Build Guide")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func guideRow(_ number: Int, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "\(number).circle.fill")
+                .foregroundStyle(.orange)
+            Text(text)
+                .font(.subheadline)
+        }
+        .padding(.vertical, 2)
     }
 }

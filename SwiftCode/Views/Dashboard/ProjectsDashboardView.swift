@@ -125,8 +125,10 @@ struct ProjectsDashboardView: View {
                     GitHubRemoteSetupView(project: project) { configured in
                         if let configured {
                             projectManager.openProject(configured)
+                            scheduleProjectTemplatesPresentation()
                         } else {
                             projectManager.openProject(project)
+                            scheduleProjectTemplatesPresentation()
                         }
                         pendingProjectForRemote = nil
                     }
@@ -544,6 +546,7 @@ struct ProjectsDashboardView: View {
                 }
             } else {
                 projectManager.openProject(project)
+                scheduleProjectTemplatesPresentation()
             }
         } catch {
             newProjectName = ""
@@ -655,6 +658,12 @@ struct ProjectsDashboardView: View {
     private func showError(_ error: Error) {
         errorMessage = error.localizedDescription
         showError = true
+    }
+
+    private func scheduleProjectTemplatesPresentation() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            NotificationCenter.default.post(name: .showProjectTemplatesOnOpen, object: nil)
+        }
     }
 }
 
