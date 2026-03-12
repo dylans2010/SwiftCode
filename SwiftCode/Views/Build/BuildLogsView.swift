@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Structured Log Entry
 
@@ -52,7 +53,10 @@ struct StructuredLogEntry: Identifiable {
             }
         }
     }
+
+
 }
+
 
 // MARK: - Build Log Manager
 
@@ -100,6 +104,8 @@ struct BuildLogsView: View {
     @State private var assistantMessages: [AssistantMessage] = []
     @State private var isAnalyzing = false
     @State private var rawLogsForAnalysis: String = ""
+    @State private var lastAnalysisPrompt: String = ""
+    @State private var copiedMessageID: UUID?
 
     struct AssistantMessage: Identifiable {
         let id = UUID()
@@ -400,6 +406,14 @@ struct BuildLogsView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { showAssistant = false }
                 }
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        regenerateAssistantAnalysis()
+                    } label: {
+                        Image(systemName: "arrow.clockwise")
+                    }
+                    .disabled(isAnalyzing || lastAnalysisPrompt.isEmpty)
+                }
             }
         }
         .presentationDetents([.medium, .large])
@@ -421,16 +435,31 @@ struct BuildLogsView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                Text(message.content)
-                    .font(.system(size: 13))
-                    .foregroundStyle(.white.opacity(0.9))
-                    .padding(10)
-                    .background(
-                        message.role == .assistant
-                            ? Color.purple.opacity(0.15)
-                            : Color.orange.opacity(0.15),
-                        in: RoundedRectangle(cornerRadius: 12)
-                    )
+                VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 6) {
+                    markdownText(message.content)
+                        .font(.system(size: 13))
+                        .foregroundStyle(.white.opacity(0.9))
+
+                    if message.role == .assistant {
+                        HStack(spacing: 10) {
+                            Button {
+                                copyAssistantMessage(message)
+                            } label: {
+                                Label(copiedMessageID == message.id ? "Copied" : "Copy", systemImage: copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
+                            }
+                            .font(.caption2)
+                            .buttonStyle(.plain)
+                            .foregroundStyle(copiedMessageID == message.id ? .green : .secondary)
+                        }
+                    }
+                }
+                .padding(10)
+                .background(
+                    message.role == .assistant
+                        ? Color.purple.opacity(0.15)
+                        : Color.orange.opacity(0.15),
+                    in: RoundedRectangle(cornerRadius: 12)
+                )
             }
             .frame(maxWidth: 300, alignment: message.role == .user ? .trailing : .leading)
 
@@ -443,6 +472,7 @@ struct BuildLogsView: View {
     private func analyzeLogsWithAssistant() {
         showAssistant = true
         isAnalyzing = true
+        copiedMessageID = nil
 
         Task {
             var logContent = ""
@@ -483,9 +513,11 @@ struct BuildLogsView: View {
             }
 
             await MainActor.run {
+                let prompt = "Analyze the current build logs and identify any issues."
+                lastAnalysisPrompt = prompt
                 assistantMessages.append(AssistantMessage(
                     role: .user,
-                    content: "Analyze the current build logs and identify any issues."
+                    content: prompt
                 ))
             }
 
@@ -523,6 +555,32 @@ struct BuildLogsView: View {
                         content: "I encountered an error while analyzing the logs: \(error.localizedDescription)"
                     ))
                     isAnalyzing = false
+                }
+            }
+        }
+    }
+
+
+    private func regenerateAssistantAnalysis() {
+        guard !isAnalyzing, !lastAnalysisPrompt.isEmpty else { return }
+        analyzeLogsWithAssistant()
+    }
+
+    private func markdownText(_ content: String) -> Text {
+        if let attributed = try? AttributedString(markdown: content) {
+            return Text(attributed)
+        }
+        return Text(content)
+    }
+
+    private func copyAssistantMessage(_ message: AssistantMessage) {
+        UIPasteboard.general.string = message.content
+        copiedMessageID = message.id
+        Task {
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            await MainActor.run {
+                if copiedMessageID == message.id {
+                    copiedMessageID = nil
                 }
             }
         }
