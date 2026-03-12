@@ -25,7 +25,6 @@ struct GitHubIntegrationView: View {
     @State private var currentBranch = "main"
     @State private var isDownloadingRepo = false
     @State private var showGitCommands = false
-    @State private var showCIBuild = false
     @State private var repoDetail: GitHubRepoDetail?
     @State private var isValidatingRepo = false
     @State private var repoValidationError: String?
@@ -122,9 +121,6 @@ struct GitHubIntegrationView: View {
             .sheet(isPresented: $showRepoPicker) { repoPickerSheet }
             .sheet(isPresented: $showGitCommands) {
                 GitCommandView(project: project)
-            }
-            .sheet(isPresented: $showCIBuild) {
-                CIBuildView(project: project)
             }
             .sheet(isPresented: $showBranchManagement) {
                 BranchManagementView(
@@ -406,6 +402,15 @@ struct GitHubIntegrationView: View {
                     .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
                 }
 
+                if let repositoryURL = URL(string: repoURL), !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty {
+                    Link(destination: repositoryURL) {
+                        Label("Open Repository", systemImage: "arrow.up.right.square")
+                            .font(.subheadline)
+                            .foregroundStyle(.blue)
+                    }
+                    .buttonStyle(.plain)
+                }
+
                 Button {
                     showCreateRepoSheet = true
                 } label: {
@@ -567,29 +572,6 @@ struct GitHubIntegrationView: View {
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.white)
                         Text("Run git ops with guided buttons")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(14)
-                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
-
-                // CI Build
-                Button {
-                    showCIBuild = true
-                } label: {
-                    VStack(spacing: 8) {
-                        Image(systemName: "cpu.fill")
-                            .font(.title2)
-                            .foregroundStyle(.orange)
-                        Text("Build With CI")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.white)
-                        Text("Auto generate IPA workflow")
                             .font(.system(size: 10))
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)

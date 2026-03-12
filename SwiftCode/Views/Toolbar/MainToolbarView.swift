@@ -136,17 +136,16 @@ struct MainToolbarView: View {
 
     private func iconColor(for toolId: String) -> Color {
         switch toolId {
-        case "file_navigator", "create_file", "create_folder": return .orange
-        case "ai_agent", "ai_code_gen", "ai_code_fix", "ai_refactor": return .purple
-        case "github_actions", "commit_changes", "push_repo", "pull_repo", "git_history": return .blue
-        case "build_trigger", "build_status", "build_logs", "terminal", "prepare_compile": return .orange
+        case "file_navigator": return .orange
+        case "ai_code_gen": return .purple
+        case "github_actions", "git_history": return .blue
+        case "build_trigger", "build_status", "build_logs", "terminal": return .orange
         case "errors_viewer": return .red
-        case "dependency_manager", "install_dependency", "update_dependencies": return .teal
+        case "dependency_manager", "install_dependency": return .teal
         case "code_search", "symbol_navigator", "project_index", "go_to_line", "symbol_outline": return .cyan
         case "sf_symbols_browser": return .indigo
         case "local_simulation": return .green
         case "plugin_manager": return .pink
-        case "project_templates": return .mint
         case "file_preview": return .yellow
         default: return .secondary
         }

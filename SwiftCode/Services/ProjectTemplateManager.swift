@@ -64,6 +64,11 @@ final class ProjectTemplateManager: ObservableObject {
             gameApp,
             metalApp,
             imessageApp,
+            watchApp,
+            widgetKitExtension,
+            visionOSApp,
+            serverAPI,
+            bluetoothUtility,
             emptyProject,
             unitTestTarget
         ]
@@ -498,6 +503,166 @@ let package = Package(
                 }
             ],
             tags: ["iMessage", "Extension", "Messages"]
+        )
+    }
+
+
+    // MARK: - watchOS App
+
+    private static var watchApp: ProjectTemplate {
+        ProjectTemplate(
+            id: "watch_app",
+            name: "watchOS App",
+            description: "A starter watchOS SwiftUI app with an app entry and simple interface.",
+            icon: "applewatch",
+            iconColor: "orange",
+            files: [
+                .init(relativePath: "Sources/WatchApp.swift") { name in
+                    let safeName = name.replacingOccurrences(of: " ", with: "")
+                    return """
+import SwiftUI
+
+@main
+struct \(safeName)WatchApp: App {
+    var body: some Scene {
+        WindowGroup {
+            Text("\(name) on watchOS")
+        }
+    }
+}
+"""
+                }
+            ],
+            tags: ["watchOS", "SwiftUI", "App"]
+        )
+    }
+
+    // MARK: - WidgetKit Extension
+
+    private static var widgetKitExtension: ProjectTemplate {
+        ProjectTemplate(
+            id: "widgetkit_extension",
+            name: "WidgetKit Extension",
+            description: "A timeline widget starter with entry and view.",
+            icon: "rectangle.grid.1x2.fill",
+            iconColor: "purple",
+            files: [
+                .init(relativePath: "Sources/Widget.swift") { _ in
+                    """
+import WidgetKit
+import SwiftUI
+
+struct SimpleEntry: TimelineEntry {
+    let date: Date
+}
+
+struct SampleWidgetEntryView: View {
+    var entry: SimpleEntry
+
+    var body: some View {
+        Text(entry.date, style: .time)
+    }
+}
+"""
+                }
+            ],
+            tags: ["WidgetKit", "iOS", "Extension"]
+        )
+    }
+
+    // MARK: - visionOS App
+
+    private static var visionOSApp: ProjectTemplate {
+        ProjectTemplate(
+            id: "visionos_app",
+            name: "visionOS App",
+            description: "A basic visionOS SwiftUI app scene template.",
+            icon: "visionpro",
+            iconColor: "blue",
+            files: [
+                .init(relativePath: "Sources/VisionEntry.swift") { name in
+                    let safeName = name.replacingOccurrences(of: " ", with: "")
+                    return """
+import SwiftUI
+
+@main
+struct \(safeName)VisionApp: App {
+    var body: some Scene {
+        WindowGroup {
+            Text("Welcome to \(name) on visionOS")
+        }
+    }
+}
+"""
+                }
+            ],
+            tags: ["visionOS", "SwiftUI", "Spatial"]
+        )
+    }
+
+    // MARK: - Server API
+
+    private static var serverAPI: ProjectTemplate {
+        ProjectTemplate(
+            id: "server_api",
+            name: "Server API",
+            description: "A lightweight Swift HTTP server starter using async networking.",
+            icon: "server.rack",
+            iconColor: "green",
+            files: [
+                .init(relativePath: "Sources/main.swift") { _ in
+                    """
+import Foundation
+
+@main
+struct ServerMain {
+    static func main() async {
+        print("Starting Swift API server...")
+        RunLoop.main.run()
+    }
+}
+"""
+                },
+                .init(relativePath: "README.md") { name in
+                    "# \(name) API\n\nRun this template as a foundation for a server-side Swift app."
+                }
+            ],
+            tags: ["Server", "API", "Backend"]
+        )
+    }
+
+    // MARK: - Bluetooth Utility
+
+    private static var bluetoothUtility: ProjectTemplate {
+        ProjectTemplate(
+            id: "bluetooth_utility",
+            name: "Bluetooth Utility",
+            description: "CoreBluetooth starter for scanning nearby peripherals.",
+            icon: "dot.radiowaves.left.and.right",
+            iconColor: "cyan",
+            files: [
+                .init(relativePath: "Sources/BluetoothManager.swift") { _ in
+                    """
+import CoreBluetooth
+
+final class BluetoothManager: NSObject, CBCentralManagerDelegate {
+    private var central: CBCentralManager!
+
+    override init() {
+        super.init()
+        central = CBCentralManager(delegate: self, queue: nil)
+    }
+
+    func centralManagerDidUpdateState(_ central: CBCentralManager) {
+        if central.state == .poweredOn {
+            central.scanForPeripherals(withServices: nil)
+        }
+    }
+}
+"""
+                }
+            ],
+            tags: ["CoreBluetooth", "Utility", "iOS"]
         )
     }
 

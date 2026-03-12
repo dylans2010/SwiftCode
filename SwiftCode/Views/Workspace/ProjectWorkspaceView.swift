@@ -33,7 +33,6 @@ struct ProjectWorkspaceView: View {
     @State private var showLocalSimulation = false
     @State private var showPluginManager = false
     @State private var showProjectTemplates = false
-    @State private var showPrepareCompile = false
     @State private var showAllToolsSheet = false
 
     var body: some View {
@@ -90,7 +89,7 @@ struct ProjectWorkspaceView: View {
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showBuildStatus) {
-            BuildStatusView(owner: ownerFromRepo, repo: repoNameFromRepo)
+            BuildStatusView(project: project, owner: ownerFromRepo, repo: repoNameFromRepo)
         }
         .sheet(isPresented: $showGitHubSheet) {
             GitHubIntegrationView(project: project)
@@ -212,11 +211,6 @@ struct ProjectWorkspaceView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
-        .sheet(isPresented: $showPrepareCompile) {
-            PrepareCompileWaitingView(project: project)
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
-        }
         .sheet(isPresented: $showAllToolsSheet) {
             ToolbarExpandedPanelView(isPresented: $showAllToolsSheet)
         }
@@ -227,6 +221,9 @@ struct ProjectWorkspaceView: View {
             else { return }
 
             openSheet(for: destination)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .showProjectTemplatesOnOpen)) { _ in
+            showProjectTemplates = true
         }
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowAllToolsPanel"))) { _ in
             showAllToolsSheet = true
@@ -305,8 +302,6 @@ struct ProjectWorkspaceView: View {
         case .symbolOutline: showSymbolOutline = true
         case .localSimulation: showLocalSimulation = true
         case .pluginManager: showPluginManager = true
-        case .projectTemplates: showProjectTemplates = true
-        case .prepareCompiling: showPrepareCompile = true
         }
     }
 
