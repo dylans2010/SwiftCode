@@ -1,5 +1,34 @@
 import Foundation
 
+enum GitHubReleaseCheckError: LocalizedError {
+    case invalidURL
+    case invalidResponse
+    case serverStatus(code: Int, message: String?)
+    case transportError(URLError)
+    case invalidData
+    case noBuildReleases
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "The GitHub updates URL is invalid."
+        case .invalidResponse:
+            return "Received an invalid response from GitHub."
+        case let .serverStatus(code, message):
+            if let message, !message.isEmpty {
+                return "GitHub returned HTTP \(code): \(message)"
+            }
+            return "GitHub returned HTTP \(code)."
+        case let .transportError(error):
+            return "Network error while checking GitHub updates: \(error.localizedDescription)"
+        case .invalidData:
+            return "GitHub returned data in an unexpected format."
+        case .noBuildReleases:
+            return "No valid build-* releases were found on GitHub."
+        }
+    }
+}
+
 struct GitHubReleaseCheckResult {
     let latestBuildNumber: Int
     let latestTag: String
@@ -22,35 +51,54 @@ final class GitHubReleaseCheck {
         components?.queryItems = [URLQueryItem(name: "per_page", value: "30")]
 
         guard let url = components?.url else {
-            throw URLError(.badURL)
+            throw GitHubReleaseCheckError.invalidURL
         }
 
         var request = URLRequest(url: url)
+        request.httpMethod = "GET"
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("SwiftCode", forHTTPHeaderField: "User-Agent")
+        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
 
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw URLError(.badServerResponse)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let urlError as URLError {
+            throw GitHubReleaseCheckError.transportError(urlError)
         }
 
-        let releases = try JSONDecoder().decode([GitHubReleaseDTO].self, from: data)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw GitHubReleaseCheckError.invalidResponse
+        }
 
-        let parsed = releases.compactMap { release -> (Int, GitHubReleaseDTO)? in
+        guard httpResponse.statusCode == 200 else {
+            let apiErrorMessage = try? JSONDecoder().decode(GitHubAPIErrorDTO.self, from: data).message
+            throw GitHubReleaseCheckError.serverStatus(code: httpResponse.statusCode, message: apiErrorMessage)
+        }
+
+        let releases: [GitHubReleaseDTO]
+        do {
+            releases = try JSONDecoder().decode([GitHubReleaseDTO].self, from: data)
+        } catch {
+            throw GitHubReleaseCheckError.invalidData
+        }
+
+        let stableReleases = releases.filter { !$0.draft && !$0.prerelease }
+
+        let parsed = stableReleases.compactMap { release -> (Int, GitHubReleaseDTO)? in
             guard let build = extractBuildNumber(from: release.tagName) else { return nil }
             return (build, release)
         }
 
         guard let latest = parsed.max(by: { $0.0 < $1.0 }) else {
-            throw NSError(domain: "GitHubReleaseCheck", code: 404, userInfo: [NSLocalizedDescriptionKey: "No build-* releases were found."])
+            throw GitHubReleaseCheckError.noBuildReleases
         }
 
         return GitHubReleaseCheckResult(
             latestBuildNumber: latest.0,
             latestTag: latest.1.tagName,
-            releaseURL: URL(string: latest.1.htmlURL)
+            releaseURL: latest.1.htmlURL.flatMap(URL.init(string:))
         )
     }
 
@@ -71,10 +119,18 @@ final class GitHubReleaseCheck {
 
 private struct GitHubReleaseDTO: Decodable {
     let tagName: String
-    let htmlURL: String
+    let htmlURL: String?
+    let draft: Bool
+    let prerelease: Bool
 
     enum CodingKeys: String, CodingKey {
         case tagName = "tag_name"
         case htmlURL = "html_url"
+        case draft
+        case prerelease
     }
+}
+
+private struct GitHubAPIErrorDTO: Decodable {
+    let message: String
 }
