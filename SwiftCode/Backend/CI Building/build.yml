@@ -21,51 +21,86 @@ jobs:
         with:
           xcode-version: '{{XCODE_VERSION}}'
 
+      - name: Resolve CI build configuration
+        id: ci_config
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          defaults = {
+            "platform": "iOS",
+            "deploymentTarget": "{{DEPLOYMENT_TARGET}}",
+            "targetDeviceFamily": "{{TARGETED_DEVICE_FAMILY}}",
+            "schemeName": "{{SCHEME}}",
+          }
+
+          config_path = Path('.swiftcode/ci-build-config.json')
+          config = defaults.copy()
+          if config_path.exists():
+            with config_path.open('r', encoding='utf-8') as fh:
+              loaded = json.load(fh)
+            config['platform'] = loaded.get('platform', config['platform'])
+            config['deploymentTarget'] = loaded.get('deploymentTarget', config['deploymentTarget'])
+            device_family = loaded.get('targetDeviceFamily', '')
+            map_family = {"iPhone": "1", "iPad": "2", "iPhone + iPad": "1,2"}
+            config['targetDeviceFamily'] = map_family.get(device_family, loaded.get('targetDeviceFamily', config['targetDeviceFamily']))
+            config['schemeName'] = loaded.get('schemeName', config['schemeName'])
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
+            out.write(f"platform={config['platform']}\n")
+            out.write(f"deployment_target={config['deploymentTarget']}\n")
+            out.write(f"target_device_family={config['targetDeviceFamily']}\n")
+            out.write(f"scheme={config['schemeName']}\n")
+          PY
+
       - name: Show Environment
         run: |
           xcodebuild -version
           swift --version
-          echo "Available simulators:"
-          xcrun simctl list devices available | head -20
+          echo "Platform: ${{ steps.ci_config.outputs.platform }}"
+          echo "Deployment Target: ${{ steps.ci_config.outputs.deployment_target }}"
+          echo "Target Device Family: ${{ steps.ci_config.outputs.target_device_family }}"
+          echo "Scheme: ${{ steps.ci_config.outputs.scheme }}"
 
-      - name: Debug - List Repository Structure
-        run: |
-          pwd
-          ls -la
-          find . -name "*.xcodeproj" -not -path "*/DerivedData/*"
-          find . -name "*.xcworkspace" -not -path "*/DerivedData/*"
-{{STEPS}}
-      - name: Build Archive
+      - name: Detect Xcode workspace/project
+        id: project
         run: |
           WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/DerivedData/*" | head -1)
           XCODEPROJ=$(find . -name "*.xcodeproj" -not -path "*/DerivedData/*" | head -1)
           if [ -n "$WORKSPACE" ]; then
-            PROJECT_ARG="-workspace $WORKSPACE"
+            echo "project_arg=-workspace $WORKSPACE" >> "$GITHUB_OUTPUT"
           elif [ -n "$XCODEPROJ" ]; then
-            PROJECT_ARG="-project $XCODEPROJ"
+            echo "project_arg=-project $XCODEPROJ" >> "$GITHUB_OUTPUT"
           else
             echo "Error: No .xcworkspace or .xcodeproj found in repository." >&2
             exit 1
           fi
+{{STEPS}}
+      - name: Build Archive
+        run: |
           xcodebuild archive \
-            $PROJECT_ARG \
-            -scheme "{{SCHEME}}" \
-            -archivePath "$RUNNER_TEMP/{{SCHEME}}.xcarchive" \
+            ${{ steps.project.outputs.project_arg }} \
+            -scheme "${{ steps.ci_config.outputs.scheme }}" \
+            -archivePath "$RUNNER_TEMP/${{ steps.ci_config.outputs.scheme }}.xcarchive" \
             -destination "generic/platform=iOS" \
+            IPHONEOS_DEPLOYMENT_TARGET=${{ steps.ci_config.outputs.deployment_target }} \
+            TARGETED_DEVICE_FAMILY=${{ steps.ci_config.outputs.target_device_family }} \
             CODE_SIGNING_ALLOWED=NO
 
       - name: Package IPA
         run: |
           mkdir -p "$RUNNER_TEMP/ipa/Payload"
-          cp -R "$RUNNER_TEMP/{{SCHEME}}.xcarchive/Products/Applications/"*.app \
+          cp -R "$RUNNER_TEMP/${{ steps.ci_config.outputs.scheme }}.xcarchive/Products/Applications/"*.app \
             "$RUNNER_TEMP/ipa/Payload/"
           cd "$RUNNER_TEMP/ipa"
-          zip -r "{{SCHEME}}.ipa" Payload
+          zip -r "${{ steps.ci_config.outputs.scheme }}.ipa" Payload
 
       - name: Upload IPA Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: {{SCHEME}}-IPA
-          path: ${{ runner.temp }}/ipa/{{SCHEME}}.ipa
+          name: ${{ steps.ci_config.outputs.scheme }}-IPA
+          path: ${{ runner.temp }}/ipa/${{ steps.ci_config.outputs.scheme }}.ipa
           if-no-files-found: error
           retention-days: 30
