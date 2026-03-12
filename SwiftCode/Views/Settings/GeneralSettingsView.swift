@@ -369,6 +369,7 @@ struct GeneralSettingsView: View {
     @State private var showThemeSheet = false
     @State private var showGitHubConfigSheet = false
     @State private var showAgentConnectionsSheet = false
+    @State private var showSkillsSheet = false
     @State private var showCoreMLSheet = false
     @State private var showResetConfirmation = false
 
@@ -395,6 +396,7 @@ struct GeneralSettingsView: View {
                 themesSection
                 gitHubSection
                 agentConnectionsSection
+                skillsSection
                 coreMLSection
                 appManagementSection
                 aboutSection
@@ -430,6 +432,9 @@ struct GeneralSettingsView: View {
         .sheet(isPresented: $showCoreMLSheet) {
             CoreMLSettingsView()
                 .environmentObject(settings)
+        }
+        .sheet(isPresented: $showSkillsSheet) {
+            SkillsView()
         }
         .sheet(isPresented: $showExtensions) {
             ExtensionsView()
@@ -768,6 +773,30 @@ struct GeneralSettingsView: View {
         }
     }
 
+    private var skillsSection: some View {
+        Section {
+            Button {
+                showSkillsSheet = true
+            } label: {
+                HStack {
+                    Label("Skills", systemImage: "brain")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Text("Agent Knowledge")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                }
+            }
+        } header: {
+            Label("Agent Skills", systemImage: "brain")
+        } footer: {
+            Text("Import zipped skills and browse built-in skill packs used by the agent while coding.")
+        }
+    }
+
     private var appManagementSection: some View {
         Section {
             Button(role: .destructive) {
@@ -817,14 +846,16 @@ struct GeneralSettingsView: View {
         ThemeManager.shared.reset()
         // 3. Clear custom agent tools
         CustomToolRegistry.shared.reset()
-        // 4. Clear UserDefaults
+        // 4. Clear uploaded agent skills
+        AgentSkillManager.shared.resetUploadedSkills()
+        // 5. Clear UserDefaults
         if let bundleID = Bundle.main.bundleIdentifier {
             UserDefaults.standard.removePersistentDomain(forName: bundleID)
         }
-        // 5. Clear keychain tokens
+        // 6. Clear keychain tokens
         KeychainService.shared.delete(forKey: KeychainService.openRouterAPIKey)
         KeychainService.shared.delete(forKey: KeychainService.githubToken)
-        // 6. Clear Documents directory
+        // 7. Clear Documents directory
         guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
         if let contents = try? FileManager.default.contentsOfDirectory(
             at: docs, includingPropertiesForKeys: nil
@@ -833,7 +864,7 @@ struct GeneralSettingsView: View {
                 try? FileManager.default.removeItem(at: url)
             }
         }
-        // 7. Clear active project state and reload
+        // 8. Clear active project state and reload
         ProjectManager.shared.activeProject = nil
         ProjectManager.shared.activeFileNode = nil
         ProjectManager.shared.activeFileContent = ""
