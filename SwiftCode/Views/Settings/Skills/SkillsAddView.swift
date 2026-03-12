@@ -45,9 +45,12 @@ struct SkillsAddView: View {
                 }
             }
         }
-        .fileImporter(isPresented: $showImporter, allowedContentTypes: [.zip], allowsMultipleSelection: false) { result in
-            switch result {
-            case .success(let urls):
+        .sheet(isPresented: $showImporter) {
+            FileImporterRepresentableView(
+                allowedContentTypes: [.zip],
+                allowsMultipleSelection: false
+            ) { urls in
+                showImporter = false
                 guard let url = urls.first else { return }
                 do {
                     try manager.importSkillArchive(at: url)
@@ -55,8 +58,6 @@ struct SkillsAddView: View {
                 } catch {
                     importError = error.localizedDescription
                 }
-            case .failure(let error):
-                importError = error.localizedDescription
             }
         }
     }
