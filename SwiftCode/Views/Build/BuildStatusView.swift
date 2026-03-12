@@ -37,43 +37,29 @@ struct BuildStatusView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.06, green: 0.07, blue: 0.12),
+                        Color(red: 0.08, green: 0.08, blue: 0.12),
+                        Color(red: 0.05, green: 0.05, blue: 0.08)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
 
                 if owner.isEmpty || repo.isEmpty {
                     noRepoView
                 } else {
                     ScrollView {
-                        VStack(spacing: 24) {
+                        VStack(spacing: 16) {
                             repoHeaderSection
-                            GroupBox {
-                                compileSection
-                            }
-                            .groupBoxStyle(ModernGroupBoxStyle())
-
-                            GroupBox {
-                                localBuildSection
-                            }
-                            .groupBoxStyle(ModernGroupBoxStyle())
-
-                            GroupBox {
-                                ciBuildSection
-                            }
-                            .groupBoxStyle(ModernGroupBoxStyle())
-
-                            GroupBox {
-                                buildGuideSection
-                            }
-                            .groupBoxStyle(ModernGroupBoxStyle())
-
-                            GroupBox {
-                                workflowRunsSection
-                            }
-                            .groupBoxStyle(ModernGroupBoxStyle())
-
-                            GroupBox {
-                                releasesSection
-                            }
-                            .groupBoxStyle(ModernGroupBoxStyle())
+                            compileSection
+                            localBuildSection
+                            ciBuildSection
+                            buildGuideSection
+                            workflowRunsSection
+                            releasesSection
                         }
                         .padding()
                     }
@@ -172,8 +158,7 @@ struct BuildStatusView: View {
             }
         }
         .padding()
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .buildStatusCard()
     }
 
     // MARK: - Compile Section
@@ -253,8 +238,7 @@ struct BuildStatusView: View {
             .buttonStyle(.plain)
             .disabled(isCompiling)
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .buildStatusCard()
     }
 
     private var compileStatusLabel: String {
@@ -302,8 +286,7 @@ struct BuildStatusView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .buildStatusCard()
     }
 
 
@@ -344,8 +327,7 @@ struct BuildStatusView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .buildStatusCard()
     }
 
     private var buildGuideSection: some View {
@@ -374,8 +356,7 @@ struct BuildStatusView: View {
             }
             .buttonStyle(.plain)
         }
-        .padding()
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+        .buildStatusCard()
     }
 
     private func guideStep(number: Int, text: String) -> some View {
@@ -826,5 +807,15 @@ struct BuildGuideView: View {
                 .font(.subheadline)
         }
         .padding(.vertical, 2)
+    }
+}
+
+
+private extension View {
+    func buildStatusCard() -> some View {
+        self
+            .padding()
+            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Color.white.opacity(0.06), lineWidth: 1))
     }
 }

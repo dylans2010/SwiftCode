@@ -295,7 +295,7 @@ final class AgentController: ObservableObject {
 
     @Published var state = AgentState()
     @Published var executionMode: AgentExecutionMode = .agent
-    @Published var selectedModel: String = "anthropic/claude-3.5-sonnet"
+    @Published var selectedModel: String = AppSettings.shared.selectedModel
 
     private var activeTask: Task<Void, Never>?
     private var conversationHistory: [AIMessage] = []
@@ -693,6 +693,18 @@ struct AgentInterfaceView: View {
         }
         .sheet(isPresented: $showChooseModel) {
             ChooseModelView(controller: controller)
+                .environmentObject(settings)
+        }
+        .onAppear {
+            if controller.selectedModel != settings.selectedModel {
+                controller.selectedModel = settings.selectedModel
+            }
+        }
+        .onChange(of: settings.selectedModel) {
+            controller.selectedModel = settings.selectedModel
+        }
+        .onChange(of: controller.selectedModel) {
+            settings.selectedModel = controller.selectedModel
         }
     }
 

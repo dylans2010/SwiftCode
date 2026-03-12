@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ChooseModelView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var settings: AppSettings
     @ObservedObject var controller: AgentController
 
     @State private var selectedProvider: AIProvider = .openRouter
@@ -13,6 +14,8 @@ struct ChooseModelView: View {
     @State private var errorMessage: String?
     @State private var lastCheckResult: AgentModelCheckResult? = nil
 
+    private let providerDefaultsKey = "ai.selectedProvider"
+
     enum AIProvider: String, CaseIterable, Identifiable {
         case openRouter = "OpenRouter"
         case anthropic = "Anthropic"
@@ -20,6 +23,15 @@ struct ChooseModelView: View {
         case google = "Gemini"
 
         var id: String { self.rawValue }
+
+        var keychainKey: String {
+            switch self {
+            case .openRouter: return KeychainService.openRouterAPIKey
+            case .anthropic: return "anthropic_api_key"
+            case .openai: return "openai_api_key"
+            case .google: return "gemini_api_key"
+            }
+        }
     }
 
     var body: some View {
@@ -32,6 +44,10 @@ struct ChooseModelView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .onChange(of: selectedProvider) {
+                        loadKeyForProvider()
+                        availableModels = []
+                    }
 
                     SecureField("API Key", text: $apiKey)
                         .autocorrectionDisabled()
@@ -42,13 +58,10 @@ struct ChooseModelView: View {
                     Button {
                         fetchModels()
                     } label: {
-                        if isLoadingModels {
-                            ProgressView().scaleEffect(0.8)
-                        } else {
-                            Text("Fetch Available Models")
-                        }
+                        if isLoadingModels { ProgressView().scaleEffect(0.8) }
+                        else { Text("Fetch Available Models") }
                     }
-                    .disabled(apiKey.isEmpty || isLoadingModels)
+                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoadingModels)
 
                     if !availableModels.isEmpty {
                         Picker("Model", selection: $controller.selectedModel) {
@@ -65,11 +78,8 @@ struct ChooseModelView: View {
                     Button {
                         testModel()
                     } label: {
-                        if isTesting {
-                            ProgressView().scaleEffect(0.8)
-                        } else {
-                            Text("Test Model")
-                        }
+                        if isTesting { ProgressView().scaleEffect(0.8) }
+                        else { Text("Test Model") }
                     }
                     .disabled(apiKey.isEmpty || controller.selectedModel.isEmpty || isTesting)
 
@@ -83,22 +93,15 @@ struct ChooseModelView: View {
                                 Text("Latency: \(String(format: "%.2f", check.latency))s")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
-
-                                Text("Capabilities: \(check.modelCapability)")
+                                Text("Details: \(check.modelCapability)")
                                     .font(.caption2)
                                     .foregroundStyle(.secondary)
-
-                                if !check.supportedModels.isEmpty {
-                                    Text("Supported Models: \(check.supportedModels.count)")
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
                             }
                         }
                         .padding(.vertical, 4)
                     }
                 } header: {
-                    Text("Test Model")
+                    Text("Validation")
                 }
 
                 if let error = errorMessage {
@@ -123,25 +126,27 @@ struct ChooseModelView: View {
                     .disabled(apiKey.isEmpty || controller.selectedModel.isEmpty)
                 }
             }
-            .onAppear {
-                loadCurrentSettings()
-            }
+            .onAppear { loadCurrentSettings() }
         }
     }
 
     private func loadCurrentSettings() {
-        // Load existing key for the selected provider if available
-        if selectedProvider == .openRouter {
-            apiKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey) ?? ""
+        if let saved = UserDefaults.standard.string(forKey: providerDefaultsKey),
+           let provider = AIProvider(rawValue: saved) {
+            selectedProvider = provider
         }
-        // In a real implementation, we would load for other providers too
+        loadKeyForProvider()
+    }
+
+    private func loadKeyForProvider() {
+        apiKey = KeychainService.shared.get(forKey: selectedProvider.keychainKey) ?? ""
     }
 
     private func saveSettings() {
-        if selectedProvider == .openRouter {
-            KeychainService.shared.set(apiKey, forKey: KeychainService.openRouterAPIKey)
-        }
-        // Save provider-specific settings to AppSettings or similar
+        let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        KeychainService.shared.set(trimmedKey, forKey: selectedProvider.keychainKey)
+        UserDefaults.standard.set(selectedProvider.rawValue, forKey: providerDefaultsKey)
+        settings.selectedModel = controller.selectedModel
     }
 
     private func fetchModels() {
@@ -149,45 +154,23 @@ struct ChooseModelView: View {
         errorMessage = nil
 
         Task {
-            let originalKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey)
             do {
-                switch selectedProvider {
-                case .openRouter:
-                    KeychainService.shared.set(apiKey, forKey: KeychainService.openRouterAPIKey)
+                KeychainService.shared.set(apiKey, forKey: selectedProvider.keychainKey)
+
+                if selectedProvider == .openRouter {
                     let models = try await OpenRouterService.shared.fetchModels()
                     await MainActor.run {
-                        availableModels = models.map { $0.id }
-                        isLoadingModels = false
-                        if let key = originalKey {
-                             KeychainService.shared.set(key, forKey: KeychainService.openRouterAPIKey)
-                        }
-                    }
-                case .anthropic:
-                    // Simulated Anthropic fetch - in reality would use their API
-                    try await Task.sleep(nanoseconds: 500_000_000)
-                    await MainActor.run {
-                        availableModels = ["claude-3-5-sonnet-20240620", "claude-3-opus-20240229", "claude-3-haiku-20240307"]
+                        availableModels = models.map(\.id)
                         isLoadingModels = false
                     }
-                case .openai:
-                    // Simulated OpenAI fetch
-                    try await Task.sleep(nanoseconds: 500_000_000)
+                } else {
                     await MainActor.run {
-                        availableModels = ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
-                        isLoadingModels = false
-                    }
-                case .google:
-                    // Simulated Gemini fetch
-                    try await Task.sleep(nanoseconds: 500_000_000)
-                    await MainActor.run {
-                        availableModels = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.0-pro"]
+                        availableModels = []
+                        errorMessage = "Live model listing is currently supported for OpenRouter. Save your provider key and enter a model ID manually."
                         isLoadingModels = false
                     }
                 }
             } catch {
-                if let key = originalKey {
-                    KeychainService.shared.set(key, forKey: KeychainService.openRouterAPIKey)
-                }
                 await MainActor.run {
                     errorMessage = "Error fetching models: \(error.localizedDescription)"
                     isLoadingModels = false
@@ -224,6 +207,8 @@ struct ChooseModelView: View {
                     testResult = "Failed: Rate limited."
                 case .network_error:
                     testResult = "Failed: Network error."
+                case .configuration_error:
+                    testResult = "Failed: Configuration mismatch."
                 }
 
                 if result.status != .success {

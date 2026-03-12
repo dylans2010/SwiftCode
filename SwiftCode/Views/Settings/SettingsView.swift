@@ -178,7 +178,7 @@ class AppSettings: ObservableObject {
     }
 
     private init() {
-        selectedModel = UserDefaults.standard.string(forKey: "selectedModel") ?? "anthropic/claude-3.5-sonnet"
+        selectedModel = UserDefaults.standard.string(forKey: "selectedModel") ?? OpenRouterModel.defaults.first?.id ?? ""
         customModel   = UserDefaults.standard.string(forKey: "customModel") ?? ""
         autoSave = UserDefaults.standard.object(forKey: "autoSave") as? Bool ?? true
         editorFontSize = UserDefaults.standard.object(forKey: "editorFontSize") as? Double ?? 14

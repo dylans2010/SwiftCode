@@ -6,6 +6,7 @@ enum ModelCheckStatus: String, Codable {
     case model_not_found
     case rate_limited
     case network_error
+    case configuration_error
 }
 
 struct AgentModelCheckResult: Codable {
@@ -19,32 +20,79 @@ final class AgentModelCheck {
     static let shared = AgentModelCheck()
     private init() {}
 
+    private let providerKeyStorageKey = "ai.selectedProvider"
+
     func checkModel(provider: String, apiKey: String, model: String) async -> AgentModelCheckResult {
         let startTime = Date()
+        let normalizedProvider = provider.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        let normalizedModel = model.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !normalizedProvider.isEmpty else {
+            return .init(status: .configuration_error, supportedModels: [], latency: 0, modelCapability: "Provider is missing.")
+        }
+
+        guard !normalizedModel.isEmpty else {
+            return .init(status: .configuration_error, supportedModels: [], latency: 0, modelCapability: "Model is missing.")
+        }
+
+        let expectedKey = keychainKey(for: normalizedProvider)
+        let storedProvider = UserDefaults.standard.string(forKey: providerKeyStorageKey)
+
+        // If provider changed but key was not updated for that provider, flag it immediately.
+        if let storedProvider, storedProvider != normalizedProvider,
+           let expectedKey, !KeychainService.shared.contains(key: expectedKey), !normalizedKey.isEmpty {
+            return .init(
+                status: .configuration_error,
+                supportedModels: [],
+                latency: Date().timeIntervalSince(startTime),
+                modelCapability: "Provider changed from \(storedProvider) to \(normalizedProvider), but no key is saved for the selected provider."
+            )
+        }
+
+        // If a key exists for selected provider but current input is empty, this is also a config mismatch.
+        if normalizedKey.isEmpty,
+           let expectedKey,
+           KeychainService.shared.contains(key: expectedKey) {
+            return .init(
+                status: .configuration_error,
+                supportedModels: [],
+                latency: Date().timeIntervalSince(startTime),
+                modelCapability: "An API key is saved for \(normalizedProvider), but no key is currently provided."
+            )
+        }
+
+        guard !normalizedKey.isEmpty else {
+            return .init(
+                status: .configuration_error,
+                supportedModels: [],
+                latency: Date().timeIntervalSince(startTime),
+                modelCapability: "API key is missing for \(normalizedProvider)."
+            )
+        }
 
         do {
-            switch provider {
+            switch normalizedProvider {
             case "OpenRouter":
-                return await checkOpenRouter(apiKey: apiKey, model: model, startTime: startTime)
+                return await checkOpenRouter(apiKey: normalizedKey, model: normalizedModel, startTime: startTime)
             case "Anthropic", "OpenAI", "Gemini":
-                // For now, simulate checks for other providers as requested
-                try await Task.sleep(nanoseconds: 1_000_000_000)
-                return AgentModelCheckResult(
+                // Validate config path for providers that are user-managed in this phase.
+                return .init(
                     status: .success,
-                    supportedModels: [model],
+                    supportedModels: [normalizedModel],
                     latency: Date().timeIntervalSince(startTime),
-                    modelCapability: "Verified API connection for \(provider)."
+                    modelCapability: "Provider configuration is valid. Live model validation is currently available for OpenRouter."
                 )
             default:
-                return AgentModelCheckResult(
-                    status: .network_error,
+                return .init(
+                    status: .configuration_error,
                     supportedModels: [],
-                    latency: 0,
-                    modelCapability: "Unknown provider"
+                    latency: Date().timeIntervalSince(startTime),
+                    modelCapability: "Unknown provider: \(normalizedProvider)"
                 )
             }
         } catch {
-            return AgentModelCheckResult(
+            return .init(
                 status: .network_error,
                 supportedModels: [],
                 latency: Date().timeIntervalSince(startTime),
@@ -53,10 +101,19 @@ final class AgentModelCheck {
         }
     }
 
+    private func keychainKey(for provider: String) -> String? {
+        switch provider {
+        case "OpenRouter": return KeychainService.openRouterAPIKey
+        case "Anthropic": return "anthropic_api_key"
+        case "OpenAI": return "openai_api_key"
+        case "Gemini": return "gemini_api_key"
+        default: return nil
+        }
+    }
+
     private func checkOpenRouter(apiKey: String, model: String, startTime: Date) async -> AgentModelCheckResult {
         let baseURL = URL(string: "https://openrouter.ai/api/v1")!
 
-        // 1. Fetch Models
         var modelsRequest = URLRequest(url: baseURL.appendingPathComponent("models"))
         modelsRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
 
@@ -83,7 +140,6 @@ final class AgentModelCheck {
             return AgentModelCheckResult(status: .model_not_found, supportedModels: supportedModels, latency: 0, modelCapability: "Model \(model) not found in your account.")
         }
 
-        // 2. Small Test Request
         var chatRequest = URLRequest(url: baseURL.appendingPathComponent("chat/completions"))
         chatRequest.httpMethod = "POST"
         chatRequest.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")

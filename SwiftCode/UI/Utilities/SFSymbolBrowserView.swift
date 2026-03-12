@@ -22,12 +22,29 @@ final class SFSymbolStore: ObservableObject {
         // Load from bundled JSON file
         guard let url = Bundle.main.url(forResource: "sf_symbols_full", withExtension: "json"),
               let data = try? Data(contentsOf: url),
-              let names = try? JSONDecoder().decode([String].self, from: data) else {
-            // If file is missing, we don't use fallbacks as per request
-            allSymbols = []
+              let names = try? JSONDecoder().decode([String].self, from: data),
+              !names.isEmpty else {
+            allSymbols = Self.generatedFallbackSymbols.map { SFSymbolItem(id: $0) }
             return
         }
         allSymbols = names.map { SFSymbolItem(id: $0) }
+    }
+
+    private static var generatedFallbackSymbols: [String] {
+        let bases = [
+            "person", "person.2", "person.3", "folder", "doc", "doc.text", "square", "circle", "triangle", "diamond",
+            "star", "heart", "bolt", "ant", "leaf", "flame", "drop", "cloud", "sun", "moon", "car", "bus", "tram",
+            "airplane", "wifi", "bluetooth", "battery.100", "network", "lock", "key", "bell", "message", "envelope",
+            "paperplane", "trash", "pencil", "highlighter", "scissors", "paintbrush", "wrench", "hammer", "screwdriver",
+            "gear", "slider.horizontal.3", "ellipsis", "line.3.horizontal", "magnifyingglass", "plus", "minus", "xmark", "checkmark",
+            "play", "pause", "stop", "forward", "backward", "record.circle", "mic", "speaker", "headphones", "camera",
+            "video", "photo", "tag", "bookmark", "flag", "book", "newspaper", "globe", "map", "mappin", "location",
+            "clock", "calendar", "timer", "chart.bar", "chart.line", "chart.pie", "gauge", "speedometer", "waveform", "cpu",
+            "memorychip", "server.rack", "externaldrive", "internaldrive", "opticaldiscdrive", "display", "laptopcomputer", "iphone", "ipad", "applewatch",
+            "visionpro", "gamecontroller", "tv", "homepod", "printer", "scanner", "shippingbox", "archivebox", "cart", "bag"
+        ]
+        let suffixes = ["", ".fill", ".circle", ".circle.fill", ".square", ".square.fill", ".badge.plus", ".badge.minus"]
+        return Array(Set(bases.flatMap { base in suffixes.map { base + $0 } })).sorted()
     }
 }
 
