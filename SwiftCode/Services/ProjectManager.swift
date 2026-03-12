@@ -72,6 +72,9 @@ final class ProjectManager: ObservableObject {
             decoder.dateDecodingStrategy = .iso8601
             if let data = try? Data(contentsOf: metaURL),
                var project = try? decoder.decode(Project.self, from: data) {
+                if project.ciBuildConfiguration == nil {
+                    project.ciBuildConfiguration = CIBuildConfiguration()
+                }
                 project.files = buildFileTree(at: url, relativeTo: url)
                 loaded.append(project)
             } else {
@@ -516,6 +519,16 @@ struct \(structName): View {
                 }
                 return node
             }
+    }
+
+    func updateCIBuildConfiguration(_ configuration: CIBuildConfiguration, for project: Project) {
+        guard let idx = projects.firstIndex(where: { $0.id == project.id }) else { return }
+        projects[idx].ciBuildConfiguration = configuration
+        try? saveMetadata(projects[idx])
+
+        if activeProject?.id == project.id {
+            activeProject?.ciBuildConfiguration = configuration
+        }
     }
 
     func refreshFileTree(for project: Project) {

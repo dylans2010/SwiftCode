@@ -9,6 +9,9 @@ struct CIBuildView: View {
 
     @State private var schemeName: String = ""
     @State private var bundleID: String = "com.example.myapp"
+    @State private var selectedPlatform: CIBuildConfiguration.Platform = .iOS
+    @State private var deploymentTarget: String = "16.0"
+    @State private var targetDeviceFamily: CIBuildConfiguration.DeviceFamily = .iPhoneAndIPad
     @State private var triggerBranch: String = "main"
     @State private var xcodeVersion: String = "latest-stable"
     @State private var includeTestFlight = false
@@ -44,6 +47,51 @@ struct CIBuildView: View {
         schemeName.trimmingCharacters(in: .whitespaces).isEmpty ? project.name : schemeName
     }
 
+    private let deploymentTargets: [String] = {
+        stride(from: 16.0, through: 18.0, by: 0.1).map { String(format: "%.1f", $0) }
+    }()
+
+    private var ciConfiguration: CIBuildConfiguration {
+        CIBuildConfiguration(
+            platform: selectedPlatform,
+            deploymentTarget: deploymentTarget,
+            targetDeviceFamily: targetDeviceFamily,
+            schemeName: resolvedScheme,
+            bundleIdentifier: bundleID.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
+    }
+
+    private var ciConfigJSON: String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        guard let data = try? encoder.encode(ciConfiguration),
+              let json = String(data: data, encoding: .utf8)
+        else { return "{}" }
+        return json
+    }
+
+    private var ciConfigPath: String { ".swiftcode/ci-build-config.json" }
+
+    private func validateConfiguration() -> String? {
+        if resolvedScheme.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Scheme name is required."
+        }
+
+        if selectedPlatform.rawValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Please select a platform."
+        }
+
+        guard let value = Double(deploymentTarget), value >= 16.0 else {
+            return "Deployment target must be 16.0 or later."
+        }
+
+        if targetDeviceFamily.rawValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Please select a target device family."
+        }
+
+        return nil
+    }
+
     var generatedYAML: String {
         let templatePath = Bundle.main.path(forResource: "build", ofType: "yml")
         let fallbackPath = "SwiftCode/Backend/CI Building/build.yml"
@@ -62,6 +110,9 @@ struct CIBuildView: View {
         // Replace base placeholders
         yaml = yaml.replacingOccurrences(of: "{{SCHEME}}", with: resolvedScheme)
         yaml = yaml.replacingOccurrences(of: "{{XCODE_VERSION}}", with: xcodeVersion)
+        yaml = yaml.replacingOccurrences(of: "{{PLATFORM}}", with: selectedPlatform.rawValue)
+        yaml = yaml.replacingOccurrences(of: "{{DEPLOYMENT_TARGET}}", with: deploymentTarget)
+        yaml = yaml.replacingOccurrences(of: "{{TARGETED_DEVICE_FAMILY}}", with: targetDeviceFamily.targetFamilyValue)
 
         // Handle Trigger placeholders
         let pushTrigger = """
@@ -208,7 +259,12 @@ struct CIBuildView: View {
                 Button("OK") {}
             } message: { msg in Text(msg) }
             .onAppear {
-                schemeName = project.name
+                let config = project.ciBuildConfiguration ?? CIBuildConfiguration()
+                schemeName = config.schemeName
+                bundleID = config.bundleIdentifier
+                selectedPlatform = config.platform
+                deploymentTarget = config.deploymentTarget
+                targetDeviceFamily = config.targetDeviceFamily
             }
         }
     }
@@ -243,11 +299,45 @@ struct CIBuildView: View {
 
     private var configurationSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            sectionLabel("Configuration", icon: "gearshape.fill", color: .blue)
+            sectionLabel("CI Build Configuration", icon: "gearshape.fill", color: .blue)
 
             VStack(spacing: 14) {
-                labeledField("Xcode Scheme", placeholder: project.name, text: $schemeName)
-                labeledField("Bundle ID", placeholder: "com.company.app", text: $bundleID)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Platform")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Picker("Platform", selection: $selectedPlatform) {
+                        Text("iOS").tag(CIBuildConfiguration.Platform.iOS)
+                        Text("iOS + iPadOS").tag(CIBuildConfiguration.Platform.iOSAndIPadOS)
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Deployment Target")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Picker("Deployment Target", selection: $deploymentTarget) {
+                        ForEach(deploymentTargets, id: \.self) { version in
+                            Text(version).tag(version)
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Target Device Family")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Picker("Target Device Family", selection: $targetDeviceFamily) {
+                        Text("iPhone").tag(CIBuildConfiguration.DeviceFamily.iPhone)
+                        Text("iPad").tag(CIBuildConfiguration.DeviceFamily.iPad)
+                        Text("iPhone + iPad").tag(CIBuildConfiguration.DeviceFamily.iPhoneAndIPad)
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                labeledField("Scheme Name", placeholder: "Test", text: $schemeName)
+                labeledField("Bundle Identifier", placeholder: "com.company.app", text: $bundleID)
                 labeledField("Trigger Branch", placeholder: "main", text: $triggerBranch)
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -363,6 +453,13 @@ struct CIBuildView: View {
         VStack(spacing: 10) {
             // Preview YAML
             Button {
+                if let validationError = validateConfiguration() {
+                    isSuccess = false
+                    statusMessage = validationError
+                    showStatus = true
+                    return
+                }
+                persistCIConfiguration()
                 showYAMLPreview = true
             } label: {
                 Label("Preview Workflow YAML", systemImage: "eye.fill")
@@ -375,6 +472,12 @@ struct CIBuildView: View {
 
             // Save to project
             Button {
+                if let validationError = validateConfiguration() {
+                    isSuccess = false
+                    statusMessage = validationError
+                    showStatus = true
+                    return
+                }
                 saveWorkflowToProject()
             } label: {
                 Label(
@@ -391,6 +494,13 @@ struct CIBuildView: View {
 
             // Push to GitHub
             Button {
+                if let validationError = validateConfiguration() {
+                    isSuccess = false
+                    statusMessage = validationError
+                    showStatus = true
+                    return
+                }
+                persistCIConfiguration()
                 showGitHubPush = true
             } label: {
                 Label("Push Workflow to GitHub", systemImage: "arrow.up.circle.fill")
@@ -533,6 +643,10 @@ struct CIBuildView: View {
 
     // MARK: - Actions
 
+    private func persistCIConfiguration() {
+        projectManager.updateCIBuildConfiguration(ciConfiguration, for: project)
+    }
+
     private func saveWorkflowToProject() {
         isSaving = true
         Task {
@@ -547,7 +661,16 @@ struct CIBuildView: View {
                 let yamlURL = workflowsDir.appendingPathComponent("build.yml")
                 try generatedYAML.write(to: yamlURL, atomically: true, encoding: .utf8)
 
+                let ciConfigDir = projectDir.appendingPathComponent(".swiftcode")
+                try FileManager.default.createDirectory(at: ciConfigDir, withIntermediateDirectories: true)
+                try ciConfigJSON.write(
+                    to: projectDir.appendingPathComponent(ciConfigPath),
+                    atomically: true,
+                    encoding: .utf8
+                )
+
                 await MainActor.run {
+                    persistCIConfiguration()
                     projectManager.refreshFileTree(for: project)
                     isSaving = false
                     isSuccess = true
@@ -583,7 +706,23 @@ struct CIBuildView: View {
                     message: commitMessage,
                     sha: existingSHA
                 )
+
+                let configSHA = try? await GitHubService.shared.getFileSHA(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    path: ciConfigPath
+                )
+                try await GitHubService.shared.pushFile(
+                    owner: ownerFromRepo,
+                    repo: repoNameFromURL,
+                    path: ciConfigPath,
+                    content: ciConfigJSON,
+                    message: commitMessage,
+                    sha: configSHA
+                )
+
                 await MainActor.run {
+                    persistCIConfiguration()
                     isSuccess = true
                     statusMessage = "Workflow pushed to GitHub! A new CI run will start on the next push to '\(triggerBranch)'."
                     showStatus = true
