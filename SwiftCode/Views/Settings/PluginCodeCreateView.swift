@@ -20,7 +20,7 @@ import SwiftUI
 
 struct AdvancedPlugin {
     func run(context: [String: Any]) {
-        print("Running advanced plugin with context: \(context)")
+        print("Running advanced plugin with context: \\(context)")
     }
 }
 """
@@ -30,105 +30,12 @@ struct AdvancedPlugin {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Plugin Metadata") {
-                    TextField("Plugin Name", text: $pluginName)
-                    TextField("Version", text: $pluginVersion)
-                    TextField("Minimum SwiftCode Version", text: $minimumVersion)
-                    TextField("Author", text: $pluginAuthor)
-                    TextField("Tags (comma separated)", text: $tagsText)
-                    TextField("Description", text: $pluginDescription, axis: .vertical)
-                        .lineLimit(3...5)
-                }
-
-                Section("Capabilities") {
-                    ForEach(PluginManifest.Capability.allCases, id: \.self) { capability in
-                        Toggle(capability.rawValue, isOn: Binding(
-                            get: { selectedCapabilities.contains(capability) },
-                            set: { isSelected in
-                                if isSelected { selectedCapabilities.insert(capability) }
-                                else { selectedCapabilities.remove(capability) }
-                            }
-                        ))
-                    }
-                }
-
-                Section("Tool Interop") {
-                    ForEach(availableTools, id: \.id) { tool in
-                        Toggle(tool.displayName, isOn: Binding(
-                            get: { selectedToolIDs.contains(tool.id) },
-                            set: { isSelected in
-                                if isSelected { selectedToolIDs.insert(tool.id) }
-                                else { selectedToolIDs.remove(tool.id) }
-                            }
-                        ))
-                    }
-                }
-
-                Section("Automation Steps") {
-                    if automationSteps.isEmpty {
-                        Text("No steps added yet")
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(automationSteps) { step in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(step.title).font(.subheadline.weight(.semibold))
-                            Text(step.instruction).font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                    Button {
-                        automationSteps.append(
-                            PluginAutomationStep(
-                                title: "Step \(automationSteps.count + 1)",
-                                instruction: "Describe what the plugin should do.",
-                                expectedOutput: "Expected result"
-                            )
-                        )
-                    } label: {
-                        Label("Add Step", systemImage: "plus.circle.fill")
-                    }
-                }
-
-                Section("Config Schema") {
-                    if configFields.isEmpty {
-                        Text("No config fields yet")
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(configFields) { field in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(field.title)
-                                Text("\(field.key) • \(field.type.rawValue)")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Text(field.isRequired ? "Required" : "Optional")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    Button {
-                        configFields.append(
-                            PluginConfigField(
-                                key: "new_field_\(configFields.count + 1)",
-                                title: "New Field",
-                                type: .string,
-                                defaultValue: "",
-                                isRequired: false
-                            )
-                        )
-                    } label: {
-                        Label("Add Config Field", systemImage: "slider.horizontal.3")
-                    }
-                }
-
-                Section("Implementation (main.swift)") {
-                    TextEditor(text: $mainCode)
-                        .font(.system(.body, design: .monospaced))
-                        .frame(minHeight: 280)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.none)
-                }
+                metadataSection
+                capabilitiesSection
+                toolInteropSection
+                automationSection
+                configSchemaSection
+                implementationSection
             }
             .navigationTitle("Create Plugin")
             .navigationBarTitleDisplayMode(.inline)
@@ -141,6 +48,118 @@ struct AdvancedPlugin {
                         .disabled(pluginName.isEmpty || pluginAuthor.isEmpty)
                 }
             }
+        }
+    }
+
+    private var metadataSection: some View {
+        Section("Plugin Metadata") {
+            TextField("Plugin Name", text: $pluginName)
+            TextField("Version", text: $pluginVersion)
+            TextField("Minimum SwiftCode Version", text: $minimumVersion)
+            TextField("Author", text: $pluginAuthor)
+            TextField("Tags (comma separated)", text: $tagsText)
+            TextField("Description", text: $pluginDescription, axis: .vertical)
+                .lineLimit(3...5)
+        }
+    }
+
+    private var capabilitiesSection: some View {
+        Section("Capabilities") {
+            ForEach(PluginManifest.Capability.allCases, id: \.self) { capability in
+                Toggle(capability.rawValue, isOn: Binding(
+                    get: { selectedCapabilities.contains(capability) },
+                    set: { isSelected in
+                        if isSelected { selectedCapabilities.insert(capability) }
+                        else { selectedCapabilities.remove(capability) }
+                    }
+                ))
+            }
+        }
+    }
+
+    private var toolInteropSection: some View {
+        Section("Tool Interop") {
+            ForEach(availableTools, id: \.id) { tool in
+                Toggle(tool.displayName, isOn: Binding(
+                    get: { selectedToolIDs.contains(tool.id) },
+                    set: { isSelected in
+                        if isSelected { selectedToolIDs.insert(tool.id) }
+                        else { selectedToolIDs.remove(tool.id) }
+                    }
+                ))
+            }
+        }
+    }
+
+    private var automationSection: some View {
+        Section("Automation Steps") {
+            if automationSteps.isEmpty {
+                Text("No steps added yet")
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(automationSteps) { step in
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(step.title).font(.subheadline.weight(.semibold))
+                    Text(step.instruction).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Button {
+                automationSteps.append(
+                    PluginAutomationStep(
+                        title: "Step \(automationSteps.count + 1)",
+                        instruction: "Describe what the plugin should do.",
+                        expectedOutput: "Expected result"
+                    )
+                )
+            } label: {
+                Label("Add Step", systemImage: "plus.circle.fill")
+            }
+        }
+    }
+
+    private var configSchemaSection: some View {
+        Section("Config Schema") {
+            if configFields.isEmpty {
+                Text("No config fields yet")
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(configFields) { field in
+                HStack {
+                    VStack(alignment: .leading) {
+                        Text(field.title)
+                        Text("\(field.key) • \(field.type.rawValue)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text(field.isRequired ? "Required" : "Optional")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Button {
+                configFields.append(
+                    PluginConfigField(
+                        key: "new_field_\(configFields.count + 1)",
+                        title: "New Field",
+                        type: .string,
+                        defaultValue: "",
+                        isRequired: false
+                    )
+                )
+            } label: {
+                Label("Add Config Field", systemImage: "slider.horizontal.3")
+            }
+        }
+    }
+
+    private var implementationSection: some View {
+        Section("Implementation (main.swift)") {
+            TextEditor(text: $mainCode)
+                .font(.system(.body, design: .monospaced))
+                .frame(minHeight: 280)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.none)
         }
     }
 
