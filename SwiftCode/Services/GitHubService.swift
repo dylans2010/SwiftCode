@@ -282,10 +282,26 @@ final class GitHubService {
     func getJobLogs(owner: String, repo: String, jobID: Int) async throws -> String {
         guard token != nil else { throw GitHubError.missingToken }
         let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/actions/jobs/\(jobID)/logs")
-        let request = authorizedRequest(url: url)
+        var request = authorizedRequest(url: url)
+        request.setValue("text/plain", forHTTPHeaderField: "Accept")
         let (data, response) = try await URLSession.shared.data(for: request)
         try validateResponse(response, data: data)
-        return String(data: data, encoding: .utf8) ?? ""
+
+        if let utf8 = String(data: data, encoding: .utf8), !utf8.isEmpty {
+            return sanitizeWorkflowLogs(utf8)
+        }
+
+        if let latin1 = String(data: data, encoding: .isoLatin1), !latin1.isEmpty {
+            return sanitizeWorkflowLogs(latin1)
+        }
+
+        return ""
+    }
+
+    private func sanitizeWorkflowLogs(_ raw: String) -> String {
+        raw
+            .replacingOccurrences(of: #"\u{001B}\[[0-9;]*[A-Za-z]"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: "\r", with: "")
     }
 
     // MARK: - Workflow Run (Single)

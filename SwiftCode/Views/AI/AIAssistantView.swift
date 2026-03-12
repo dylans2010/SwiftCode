@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Chat History Manager
 
@@ -67,6 +68,8 @@ struct AIAssistantView: View {
     @State private var showAgentInterface = false
     @State private var showSlashCommands = false
     @State private var slashFilter = ""
+    @State private var lastUserPrompt = ""
+    @State private var copiedMessageID: UUID?
     private let maxAgentIterations = 15
 
     private let slashCommands: [(title: String, icon: String, description: String)] = [
@@ -130,6 +133,8 @@ struct AIAssistantView: View {
                         ForEach(messages) { message in
                             MessageBubbleView(
                                 message: message,
+                                copiedMessageID: copiedMessageID,
+                                onCopy: copyMessage,
                                 onInsertCode: insertCodeToEditor
                             )
                         }
@@ -137,6 +142,8 @@ struct AIAssistantView: View {
                         if isLoading && !streamingResponse.isEmpty {
                             MessageBubbleView(
                                 message: AIMessage(role: "assistant", content: streamingResponse),
+                                copiedMessageID: copiedMessageID,
+                                onCopy: copyMessage,
                                 onInsertCode: insertCodeToEditor
                             )
                             .id("streaming")
@@ -249,7 +256,17 @@ struct AIAssistantView: View {
             }
 
             Button {
-                withAnimation { messages.removeAll(); agentIterationCount = 0 }
+                regenerateLastPrompt()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.caption)
+                    .foregroundStyle(lastUserPrompt.isEmpty || isLoading ? .secondary : .purple)
+            }
+            .buttonStyle(.plain)
+            .disabled(lastUserPrompt.isEmpty || isLoading)
+
+            Button {
+                withAnimation { messages.removeAll(); agentIterationCount = 0; lastUserPrompt = "" }
             } label: {
                 Image(systemName: "trash")
                     .font(.caption)
@@ -749,6 +766,9 @@ struct AIAssistantView: View {
         let prompt = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty else { return }
 
+        copiedMessageID = nil
+        lastUserPrompt = prompt
+
         if selectedMode == .agent {
             runAgentLoop(userPrompt: prompt)
         } else {
@@ -963,6 +983,29 @@ struct AIAssistantView: View {
     }
 
 
+
+    private func regenerateLastPrompt() {
+        guard !isLoading, !lastUserPrompt.isEmpty else { return }
+        if selectedMode == .agent {
+            runAgentLoop(userPrompt: lastUserPrompt)
+        } else {
+            runSingleChat(userPrompt: lastUserPrompt)
+        }
+    }
+
+    private func copyMessage(_ message: AIMessage) {
+        UIPasteboard.general.string = message.content
+        copiedMessageID = message.id
+        Task {
+            try? await Task.sleep(nanoseconds: 1_200_000_000)
+            await MainActor.run {
+                if copiedMessageID == message.id {
+                    copiedMessageID = nil
+                }
+            }
+        }
+    }
+
     private func insertCodeToEditor(_ code: String) {
         projectManager.activeFileContent = code
         projectManager.saveCurrentFile(content: code)
@@ -982,6 +1025,8 @@ struct AIAssistantView: View {
 
 struct MessageBubbleView: View {
     let message: AIMessage
+    let copiedMessageID: UUID?
+    let onCopy: (AIMessage) -> Void
     let onInsertCode: (String) -> Void
 
     private var isUser: Bool       { message.role == "user" }
@@ -1083,24 +1128,44 @@ struct MessageBubbleView: View {
     }
 
     private func textBubble(content: String) -> some View {
-        Text(content)
-            .font(.callout)
-            .foregroundStyle(isUser ? .white : .primary)
-            .padding(10)
-            .background(
-                isUser
-                    ? AnyShapeStyle(LinearGradient(
-                        colors: [.purple.opacity(0.6), .blue.opacity(0.4)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ))
-                    : AnyShapeStyle(Color.white.opacity(0.07)),
-                in: RoundedRectangle(cornerRadius: 12)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(.white.opacity(isUser ? 0.15 : 0.06), lineWidth: 1)
-            )
+        VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
+            markdownText(content)
+                .font(.callout)
+                .foregroundStyle(isUser ? .white : .primary)
+
+            if !isUser {
+                Button {
+                    onCopy(message)
+                } label: {
+                    Label(copiedMessageID == message.id ? "Copied" : "Copy", systemImage: copiedMessageID == message.id ? "checkmark" : "doc.on.doc")
+                        .font(.caption2)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(copiedMessageID == message.id ? .green : .secondary)
+            }
+        }
+        .padding(10)
+        .background(
+            isUser
+                ? AnyShapeStyle(LinearGradient(
+                    colors: [.purple.opacity(0.6), .blue.opacity(0.4)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ))
+                : AnyShapeStyle(Color.white.opacity(0.07)),
+            in: RoundedRectangle(cornerRadius: 12)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(.white.opacity(isUser ? 0.15 : 0.06), lineWidth: 1)
+        )
+    }
+
+    private func markdownText(_ content: String) -> Text {
+        if let attributed = try? AttributedString(markdown: content) {
+            return Text(attributed)
+        }
+        return Text(content)
     }
 
     // MARK: - Parse Blocks
