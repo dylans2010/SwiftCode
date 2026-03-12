@@ -1,13 +1,8 @@
 import SwiftUI
 
-// MARK: - GitHub Remote Setup View
-
-/// Presented after a project is created or imported via ZIP.
-/// Lets the user select an existing repository, create a new one, or skip.
 struct GitHubRemoteSetupView: View {
     let project: Project
-    /// Called when the user finishes setup.
-    /// The parameter is the updated project (with `githubRepo` set) or `nil` if skipped.
+    
     let onComplete: (Project?) -> Void
 
     @EnvironmentObject private var projectManager: ProjectManager
@@ -19,7 +14,6 @@ struct GitHubRemoteSetupView: View {
     @State private var repoLoadError: String?
     @State private var selectedRepo: GitHubRepoSummary?
 
-    // Create new repo fields
     @State private var newRepoName: String = ""
     @State private var newRepoDescription: String = ""
     @State private var newRepoIsPrivate = false
@@ -93,7 +87,7 @@ struct GitHubRemoteSetupView: View {
                 HStack {
                     ProgressView()
                         .padding(.trailing, 6)
-                    Text("Loading repositories…")
+                    Text("Loading Repositories…")
                         .foregroundStyle(.secondary)
                 }
             } else if let error = repoLoadError {
@@ -153,7 +147,7 @@ struct GitHubRemoteSetupView: View {
             TextField("Repository Name", text: $newRepoName)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
-            TextField("Description (optional)", text: $newRepoDescription)
+            TextField("Description (Optional)", text: $newRepoDescription)
                 .autocorrectionDisabled()
             Toggle("Private Repository", isOn: $newRepoIsPrivate)
         } header: {

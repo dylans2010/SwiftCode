@@ -1,16 +1,11 @@
 import Foundation
 
-/// Centralized HTTP layer for all GitHub API requests.
-///
-/// All requests are authenticated via GitHubAuth.shared.
-/// This backend layer is used by GitHubRepositoryManager, GitHubBuilds, and GitCommands.
 final class GitHubAPIBackend {
     static let shared = GitHubAPIBackend()
     private init() {}
 
     private let baseURL = URL(string: "https://api.github.com")!
 
-    // MARK: - Authenticated User
 
     func getAuthenticatedUser() async throws -> GitHubUser {
         let url = baseURL.appendingPathComponent("user")
@@ -20,7 +15,6 @@ final class GitHubAPIBackend {
         return try snakeCaseDecoder().decode(GitHubUser.self, from: data)
     }
 
-    // MARK: - Repository Metadata
 
     func getRepository(owner: String, repo: String) async throws -> GitHubRepoDetail {
         let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)")
@@ -30,7 +24,6 @@ final class GitHubAPIBackend {
         return try snakeCaseDecoder().decode(GitHubRepoDetail.self, from: data)
     }
 
-    // MARK: - Branches
 
     func listBranches(owner: String, repo: String) async throws -> [GitHubBranch] {
         let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/branches")

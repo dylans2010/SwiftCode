@@ -503,7 +503,7 @@ struct CIBuildView: View {
                 persistCIConfiguration()
                 showGitHubPush = true
             } label: {
-                Label("Push Workflow to GitHub", systemImage: "arrow.up.circle.fill")
+                Label("Push Workflow To GitHub", systemImage: "arrow.up.circle.fill")
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(.orange.opacity(0.7), in: RoundedRectangle(cornerRadius: 10))

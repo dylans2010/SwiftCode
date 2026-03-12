@@ -99,7 +99,7 @@ struct BuildStatusView: View {
             }
             .onAppear {
                 loadData()
-                // Auto-refresh every 15 seconds if there are in-progress builds
+
                 autoRefreshTimer = Timer.scheduledTimer(withTimeInterval: 15, repeats: true) { _ in
                     if workflowRuns.contains(where: { $0.isRunning }) || compileResult == .queued || compileResult == .running {
                         loadData()
@@ -263,7 +263,7 @@ struct BuildStatusView: View {
 
     private var localBuildSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label("Local Build", systemImage: "macmini.fill")
+            Label("Local Build (Beta)", systemImage: "macmini.fill")
                 .font(.headline)
                 .foregroundStyle(.white)
 
@@ -276,7 +276,7 @@ struct BuildStatusView: View {
             } label: {
                 HStack {
                     Image(systemName: "wifi")
-                    Text("Scan for Macs")
+                    Text("Scan For Macs")
                         .font(.subheadline.weight(.semibold))
                 }
                 .frame(maxWidth: .infinity)
@@ -576,22 +576,22 @@ struct BuildStatusView: View {
         isCompiling = true
         compileBuildStarted = Date()
         compileResult = .queued
-        compileWorkflowStage = "Triggering workflow..."
+        compileWorkflowStage = "Triggering Workflow..."
 
         Task {
             do {
                 // Push changes first using GitCommands
                 if let project = await ProjectManager.shared.activeProject {
-                    compileWorkflowStage = "Pushing changes..."
+                    compileWorkflowStage = "Pushing Changes..."
                     try await GitCommands.shared.push(
                         project: project,
-                        commitMessage: "Build triggered from SwiftCode"
+                        commitMessage: "Build Triggered From SwiftCode"
                     )
                 }
 
                 await MainActor.run {
                     compileResult = .running
-                    compileWorkflowStage = "Waiting for workflow..."
+                    compileWorkflowStage = "Waiting For Workflow..."
                 }
 
                 // Poll for the latest workflow run
@@ -640,7 +640,7 @@ struct BuildStatusView: View {
 
         await MainActor.run {
             compileResult = .failed
-            compileWorkflowStage = "Polling timed out"
+            compileWorkflowStage = "Polling Timed Out"
             isCompiling = false
         }
     }

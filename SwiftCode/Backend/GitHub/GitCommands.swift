@@ -1,27 +1,10 @@
 import Foundation
 
-/// Handles Git-style operations for projects: push, pull, commit, and branch management.
-///
-/// All operations read GitHub configuration (token, repository URL) from
-/// the active project and GeneralSettingsView's GitHub settings stored in AppSettings.
-///
-/// Push stages changed files, creates a commit, and pushes to the remote repository
-/// using the GitHub Contents API.
-///
-/// Pull downloads the latest file versions from the remote and merges them into the
-/// local project directory.
+
 final class GitCommands {
     static let shared = GitCommands()
     private init() {}
 
-    // MARK: - Push
-
-    /// Stage all changed files, create a commit, and push to the remote repository.
-    ///
-    /// - Parameters:
-    ///   - project: The local project to push.
-    ///   - commitMessage: The commit message.
-    /// - Throws: `GitCommandsError.missingRemote` if no GitHub repo is linked to the project.
     func push(project: Project, commitMessage: String) async throws {
         guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
             throw GitCommandsError.missingRemote
@@ -35,7 +18,7 @@ final class GitCommands {
         )
     }
 
-    /// Push a single file to the remote repository.
+
     func pushFile(path: String, content: String, commitMessage: String, project: Project) async throws {
         guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
             throw GitCommandsError.missingRemote
@@ -52,16 +35,7 @@ final class GitCommands {
         )
     }
 
-    // MARK: - Pull
-
-    /// Fetch remote changes and merge them into the local project.
-    ///
-    /// Each file in the remote repository tree is downloaded and written to disk.
-    /// Local files not present in the remote are preserved (non-destructive pull).
-    ///
-    /// - Parameters:
-    ///   - project: The local project to update.
-    ///   - branch: The remote branch to pull from (default: main).
+   
     func pull(project: Project, branch: String = "main") async throws {
         guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
             throw GitCommandsError.missingRemote
@@ -79,15 +53,11 @@ final class GitCommands {
             )
         }
 
-        // Refresh the file tree on the main actor after pulling
         await MainActor.run {
             ProjectManager.shared.refreshFileTree(for: project)
         }
     }
 
-    // MARK: - Branch Listing
-
-    /// List all branches for the repository linked to the project.
     func listBranches(for project: Project) async throws -> [GitHubBranch] {
         guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
             throw GitCommandsError.missingRemote
@@ -96,9 +66,7 @@ final class GitCommands {
         return try await GitHubAPIBackend.shared.listBranches(owner: owner, repo: repo)
     }
 
-    // MARK: - Recent Commits
 
-    /// Fetch recent commits for the project's linked repository.
     func recentCommits(for project: Project, branch: String = "main", count: Int = 20) async throws -> [GitHubCommit] {
         guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
             throw GitCommandsError.missingRemote
@@ -113,7 +81,6 @@ final class GitCommands {
     }
 }
 
-// MARK: - Errors
 
 enum GitCommandsError: LocalizedError {
     case missingRemote
