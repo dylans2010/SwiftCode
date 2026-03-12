@@ -372,6 +372,8 @@ struct GeneralSettingsView: View {
     @State private var showSkillsSheet = false
     @State private var showCoreMLSheet = false
     @State private var showResetConfirmation = false
+    @State private var showUpdatesSheet = false
+    @State private var showCreditsSheet = false
 
     // Quick Setup section state
     @State private var openRouterKey: String = ""
@@ -436,6 +438,12 @@ struct GeneralSettingsView: View {
         }
         .sheet(isPresented: $showSkillsSheet) {
             SkillsView()
+        }
+        .sheet(isPresented: $showUpdatesSheet) {
+            UpdatesView()
+        }
+        .sheet(isPresented: $showCreditsSheet) {
+            CreditsView()
         }
         .sheet(isPresented: $showExtensions) {
             ExtensionsView()
@@ -829,6 +837,7 @@ struct GeneralSettingsView: View {
 
     private static let openRouterURL = URL(string: "https://openrouter.ai")!
     private static let githubAPIDocsURL = URL(string: "https://docs.github.com/en/rest")!
+    private static let swiftCodeReleasesURL = URL(string: "https://github.com/dylans2010/SwiftCode/releases")!
 
     private var aboutSection: some View {
         Section {
@@ -841,6 +850,19 @@ struct GeneralSettingsView: View {
                 Text("Build")
                 Spacer()
                 Text("1").foregroundStyle(.secondary)
+            }
+            Button {
+                showUpdatesSheet = true
+            } label: {
+                Label("Check for Updates", systemImage: "arrow.triangle.2.circlepath.circle.fill")
+            }
+            Button {
+                showCreditsSheet = true
+            } label: {
+                Label("Credits", systemImage: "person.2.fill")
+            }
+            Link(destination: Self.swiftCodeReleasesURL) {
+                Label("SwiftCode Releases", systemImage: "sparkles")
             }
             Link(destination: Self.openRouterURL) {
                 Label("OpenRouter API", systemImage: "link")
