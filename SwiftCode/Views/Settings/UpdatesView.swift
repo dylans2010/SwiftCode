@@ -48,9 +48,14 @@ struct UpdatesView: View {
                             }
                         }
                     } else if let errorMessage {
-                        Text(errorMessage)
-                            .foregroundStyle(.red)
-                            .font(.subheadline)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Label("Update Check Failed", systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                                .font(.headline)
+                            Text(errorMessage)
+                                .foregroundStyle(.red)
+                                .font(.subheadline)
+                        }
                     } else {
                         Text("Tap the button below to check for new build-* releases.")
                             .foregroundStyle(.secondary)
@@ -83,7 +88,11 @@ struct UpdatesView: View {
             checkResult = try await GitHubReleaseCheck.shared.checkLatestBuild()
         } catch {
             checkResult = nil
-            errorMessage = "Unable to check updates. \(error.localizedDescription)"
+            if let checkError = error as? GitHubReleaseCheckError {
+                errorMessage = checkError.localizedDescription
+            } else {
+                errorMessage = "Unable to check updates. \(error.localizedDescription)"
+            }
         }
     }
 }
