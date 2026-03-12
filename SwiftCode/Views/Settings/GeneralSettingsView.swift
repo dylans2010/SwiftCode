@@ -1927,29 +1927,31 @@ struct CoreMLSettingsView: View {
             .onAppear {
                 importedModels = codingManager.listModels()
             }
-            .fileImporter(
-                isPresented: $showModelImporter,
-                allowedContentTypes: [.item],
-                allowsMultipleSelection: false
-            ) { result in
-                do {
-                    guard let url = try result.get().first else { return }
-                    let ext = url.pathExtension.lowercased()
-                    guard Self.coreMLExtensions.contains(ext) else {
-                        importError = "Only .mlmodel, .mlmodelc, and .mlpackage files are supported."
+            .sheet(isPresented: $showModelImporter) {
+                FileImporterRepresentableView(
+                    allowedContentTypes: [.item],
+                    allowsMultipleSelection: false
+                ) { urls in
+                    showModelImporter = false
+                    guard let url = urls.first else { return }
+                    do {
+                        let ext = url.pathExtension.lowercased()
+                        guard Self.coreMLExtensions.contains(ext) else {
+                            importError = "Only .mlmodel, .mlmodelc, and .mlpackage files are supported."
+                            showImportError = true
+                            return
+                        }
+                        let accessing = url.startAccessingSecurityScopedResource()
+                        defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+                        let imported = try codingManager.importModel(from: url)
+                        importedModels = codingManager.listModels()
+                        if settings.coreMLSelectedModel.isEmpty {
+                            settings.coreMLSelectedModel = imported.lastPathComponent
+                        }
+                    } catch {
+                        importError = error.localizedDescription
                         showImportError = true
-                        return
                     }
-                    let accessing = url.startAccessingSecurityScopedResource()
-                    defer { if accessing { url.stopAccessingSecurityScopedResource() } }
-                    let imported = try codingManager.importModel(from: url)
-                    importedModels = codingManager.listModels()
-                    if settings.coreMLSelectedModel.isEmpty {
-                        settings.coreMLSelectedModel = imported.lastPathComponent
-                    }
-                } catch {
-                    importError = error.localizedDescription
-                    showImportError = true
                 }
             }
             .alert("Import Failed", isPresented: $showImportError) {

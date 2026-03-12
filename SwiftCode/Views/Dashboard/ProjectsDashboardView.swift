@@ -11,6 +11,9 @@ struct ProjectsDashboardView: View {
     @State private var showImportPicker = false
     @State private var showGitHubImportSheet = false
     @State private var githubImportURL = ""
+    @State private var isFetchingGitHubRepos = false
+    @State private var fetchedGitHubRepos: [GitHubRepoSummary] = []
+    @State private var fetchGitHubReposError: String?
     @State private var showRenameSheet = false
     @State private var projectToRename: Project?
     @State private var renameText = ""
@@ -270,48 +273,132 @@ struct ProjectsDashboardView: View {
 
     private var gitHubImportSheet: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Image(systemName: "chevron.left.forwardslash.chevron.right")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.purple)
+            VStack(spacing: 20) {
+                HStack(spacing: 14) {
+                    Image(systemName: "chevron.left.forwardslash.chevron.right")
+                        .font(.title2)
+                        .foregroundStyle(.purple)
+                        .frame(width: 40, height: 40)
+                        .background(.purple.opacity(0.2), in: RoundedRectangle(cornerRadius: 12))
 
-                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Import from GitHub")
+                            .font(.headline)
+                            .foregroundStyle(.white)
+                        Text("Fetch your repositories or paste a direct URL.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
                     Text("Repository URL")
-                        .font(.headline)
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
-                    TextField("https://github.com/owner/repo", text: $githubImportURL)
-                        .textFieldStyle(.roundedBorder)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                }
-                .padding(.horizontal)
+                    HStack(spacing: 10) {
+                        Image(systemName: "link")
+                            .foregroundStyle(.secondary)
 
-                if isImporting {
-                    ProgressView("Importing repository...")
-                        .padding()
+                        TextField("https://github.com/owner/repo", text: $githubImportURL)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                            .keyboardType(.URL)
+
+                        Menu {
+                            if fetchedGitHubRepos.isEmpty {
+                                Text("No repositories loaded")
+                            } else {
+                                ForEach(fetchedGitHubRepos) { repo in
+                                    Button(repo.fullName) {
+                                        githubImportURL = repo.htmlUrl
+                                    }
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "list.bullet")
+                                .foregroundStyle(.purple)
+                        }
+                        .disabled(fetchedGitHubRepos.isEmpty)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 11)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(.white.opacity(0.15), lineWidth: 1)
+                    )
                 }
 
-                Spacer()
+                HStack {
+                    Button {
+                        fetchGitHubRepositories()
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isFetchingGitHubRepos {
+                                ProgressView()
+                                    .controlSize(.small)
+                                    .tint(.white)
+                            } else {
+                                Image(systemName: "arrow.down.circle.fill")
+                            }
+                            Text(isFetchingGitHubRepos ? "Fetching..." : "Fetch")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.purple)
+                    .disabled(isFetchingGitHubRepos || isImporting)
+
+                    Button {
+                        importFromGitHub()
+                    } label: {
+                        HStack(spacing: 8) {
+                            if isImporting {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Image(systemName: "square.and.arrow.down.fill")
+                            }
+                            Text("Import")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 11)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
+                    .disabled(githubImportURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isImporting || isFetchingGitHubRepos)
+                }
+
+                if let fetchGitHubReposError {
+                    Label(fetchGitHubReposError, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                Spacer(minLength: 0)
             }
-            .padding(.top, 32)
+            .padding(20)
             .navigationTitle("Import From GitHub")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        githubImportURL = ""
+                        resetGitHubImportState()
                         showGitHubImportSheet = false
                     }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Import") {
-                        importFromGitHub()
-                    }
-                    .disabled(githubImportURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isImporting)
+            }
+            .task {
+                if fetchedGitHubRepos.isEmpty {
+                    fetchGitHubRepositories()
                 }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 
     @ViewBuilder
@@ -475,7 +562,7 @@ struct ProjectsDashboardView: View {
                 let project = try await GitHubImporter.shared.importRepository(from: url)
                 await MainActor.run {
                     isImporting = false
-                    githubImportURL = ""
+                    resetGitHubImportState(clearFetchedRepos: false)
                     showGitHubImportSheet = false
                     // GitHub-source imports: the repo is already configured as the remote.
                     projectManager.openProject(project)
@@ -487,6 +574,36 @@ struct ProjectsDashboardView: View {
                     showError(error)
                 }
             }
+        }
+    }
+
+    private func fetchGitHubRepositories() {
+        isFetchingGitHubRepos = true
+        fetchGitHubReposError = nil
+        Task {
+            do {
+                let repos = try await GitHubService.shared.listUserRepositories()
+                await MainActor.run {
+                    fetchedGitHubRepos = repos
+                    isFetchingGitHubRepos = false
+                }
+            } catch {
+                await MainActor.run {
+                    fetchedGitHubRepos = []
+                    isFetchingGitHubRepos = false
+                    fetchGitHubReposError = error.localizedDescription
+                }
+            }
+        }
+    }
+
+    private func resetGitHubImportState(clearFetchedRepos: Bool = true) {
+        githubImportURL = ""
+        isImporting = false
+        isFetchingGitHubRepos = false
+        fetchGitHubReposError = nil
+        if clearFetchedRepos {
+            fetchedGitHubRepos = []
         }
     }
 
