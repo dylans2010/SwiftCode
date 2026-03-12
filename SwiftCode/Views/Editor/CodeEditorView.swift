@@ -353,9 +353,35 @@ struct CodeEditorView: View {
 
     private func formatCode() {
         let ext = projectManager.activeFileNode?.name.components(separatedBy: ".").last ?? "swift"
-        let formatted = CodeFormatter.shared.format(projectManager.activeFileContent, fileExtension: ext)
+        let formatted = EditorCodeFormatter.shared.format(projectManager.activeFileContent, fileExtension: ext)
         projectManager.activeFileContent = formatted
         projectManager.saveCurrentFile(content: formatted)
+    }
+}
+
+private final class EditorCodeFormatter {
+    static let shared = EditorCodeFormatter()
+
+    private init() {}
+
+    func format(_ code: String, fileExtension: String) -> String {
+        switch fileExtension.lowercased() {
+        case "json":
+            return formatJSON(code)
+        default:
+            return code
+        }
+    }
+
+    private func formatJSON(_ code: String) -> String {
+        guard let data = code.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data),
+              let formattedData = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
+              let formatted = String(data: formattedData, encoding: .utf8) else {
+            return code
+        }
+
+        return formatted
     }
 }
 
