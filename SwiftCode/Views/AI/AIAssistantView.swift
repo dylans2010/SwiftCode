@@ -260,7 +260,7 @@ struct AIAssistantView: View {
             } label: {
                 Image(systemName: "arrow.clockwise")
                     .font(.caption)
-                    .foregroundStyle(lastUserPrompt.isEmpty || isLoading ? .secondary : .purple)
+                    .foregroundStyle(lastUserPrompt.isEmpty || isLoading ? .secondary : Color.purple)
             }
             .buttonStyle(.plain)
             .disabled(lastUserPrompt.isEmpty || isLoading)
