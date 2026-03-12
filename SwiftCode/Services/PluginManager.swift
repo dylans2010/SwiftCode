@@ -2,24 +2,113 @@ import Foundation
 
 // MARK: - Plugin Manifest
 
+struct PluginToolBinding: Codable, Hashable {
+    var toolID: String
+    var usageDescription: String
+    var isRequired: Bool
+}
+
+struct PluginAutomationStep: Codable, Hashable, Identifiable {
+    var id: UUID = UUID()
+    var title: String
+    var instruction: String
+    var expectedOutput: String
+}
+
+struct PluginConfigField: Codable, Hashable, Identifiable {
+    enum FieldType: String, Codable, CaseIterable {
+        case string
+        case number
+        case boolean
+        case list
+    }
+
+    var id: UUID = UUID()
+    var key: String
+    var title: String
+    var type: FieldType
+    var defaultValue: String
+    var isRequired: Bool
+}
+
 struct PluginManifest: Identifiable, Codable {
     var id: String
     var name: String
     var version: String
     var description: String
     var author: String
-    var entryPoint: String        // relative path to main Swift file in the plugin
+    var entryPoint: String
     var capabilities: [Capability]
     var isEnabled: Bool = true
 
+    // Advanced plugin metadata
+    var tags: [String] = []
+    var minimumSwiftCodeVersion: String = "1.0.0"
+    var toolBindings: [PluginToolBinding] = []
+    var automationSteps: [PluginAutomationStep] = []
+    var configurationSchema: [PluginConfigField] = []
+
     enum Capability: String, Codable, CaseIterable {
-        case codeCompletion   = "codeCompletion"
-        case syntaxHighlight  = "syntaxHighlight"
-        case buildTool        = "buildTool"
-        case formatter        = "formatter"
-        case linter           = "linter"
-        case fileTemplate     = "fileTemplate"
-        case command          = "command"
+        case codeCompletion
+        case syntaxHighlight
+        case buildTool
+        case formatter
+        case linter
+        case fileTemplate
+        case command
+        case toolOrchestration
+        case workspaceAutomation
+        case contextualReasoning
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, version, description, author, entryPoint, capabilities, isEnabled
+        case tags, minimumSwiftCodeVersion, toolBindings, automationSteps, configurationSchema
+    }
+
+    init(id: String,
+         name: String,
+         version: String,
+         description: String,
+         author: String,
+         entryPoint: String,
+         capabilities: [Capability],
+         isEnabled: Bool = true,
+         tags: [String] = [],
+         minimumSwiftCodeVersion: String = "1.0.0",
+         toolBindings: [PluginToolBinding] = [],
+         automationSteps: [PluginAutomationStep] = [],
+         configurationSchema: [PluginConfigField] = []) {
+        self.id = id
+        self.name = name
+        self.version = version
+        self.description = description
+        self.author = author
+        self.entryPoint = entryPoint
+        self.capabilities = capabilities
+        self.isEnabled = isEnabled
+        self.tags = tags
+        self.minimumSwiftCodeVersion = minimumSwiftCodeVersion
+        self.toolBindings = toolBindings
+        self.automationSteps = automationSteps
+        self.configurationSchema = configurationSchema
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        version = try container.decode(String.self, forKey: .version)
+        description = try container.decode(String.self, forKey: .description)
+        author = try container.decode(String.self, forKey: .author)
+        entryPoint = try container.decode(String.self, forKey: .entryPoint)
+        capabilities = try container.decode([Capability].self, forKey: .capabilities)
+        isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
+        tags = try container.decodeIfPresent([String].self, forKey: .tags) ?? []
+        minimumSwiftCodeVersion = try container.decodeIfPresent(String.self, forKey: .minimumSwiftCodeVersion) ?? "1.0.0"
+        toolBindings = try container.decodeIfPresent([PluginToolBinding].self, forKey: .toolBindings) ?? []
+        automationSteps = try container.decodeIfPresent([PluginAutomationStep].self, forKey: .automationSteps) ?? []
+        configurationSchema = try container.decodeIfPresent([PluginConfigField].self, forKey: .configurationSchema) ?? []
     }
 }
 
@@ -43,15 +132,11 @@ final class PluginManager: ObservableObject {
         Task { await scanPlugins() }
     }
 
-    // MARK: - Directory
-
     private func ensurePluginsDirectory() {
         try? FileManager.default.createDirectory(
             at: pluginsDirectory, withIntermediateDirectories: true
         )
     }
-
-    // MARK: - Scan
 
     func scanPlugins() async {
         isLoading = true
@@ -71,7 +156,6 @@ final class PluginManager: ObservableObject {
             guard let data = try? Data(contentsOf: manifestURL),
                   var manifest = try? JSONDecoder().decode(PluginManifest.self, from: data) else { continue }
 
-            // Preserve enabled/disabled state from stored preferences
             manifest.isEnabled = loadEnabledState(for: manifest.id)
             found.append(manifest)
         }
@@ -79,15 +163,11 @@ final class PluginManager: ObservableObject {
         plugins = found.sorted { $0.name < $1.name }
     }
 
-    // MARK: - Enable / Disable
-
     func togglePlugin(_ plugin: PluginManifest) {
         guard let idx = plugins.firstIndex(where: { $0.id == plugin.id }) else { return }
         plugins[idx].isEnabled.toggle()
         saveEnabledState(for: plugins[idx].id, enabled: plugins[idx].isEnabled)
     }
-
-    // MARK: - Install from Directory
 
     func installPlugin(from sourceURL: URL) throws {
         let destURL = pluginsDirectory.appendingPathComponent(sourceURL.lastPathComponent)
@@ -98,21 +178,21 @@ final class PluginManager: ObservableObject {
         Task { await scanPlugins() }
     }
 
-    // MARK: - Uninstall
-
     func uninstallPlugin(_ plugin: PluginManifest) throws {
         let pluginURL = pluginsDirectory.appendingPathComponent(plugin.id)
         try FileManager.default.removeItem(at: pluginURL)
         plugins.removeAll { $0.id == plugin.id }
     }
 
-    // MARK: - Capabilities
-
     func plugins(with capability: PluginManifest.Capability) -> [PluginManifest] {
         plugins.filter { $0.isEnabled && $0.capabilities.contains(capability) }
     }
 
-    // MARK: - Create User Plugin
+    func toolAwarePlugins(for toolID: String) -> [PluginManifest] {
+        plugins.filter {
+            $0.isEnabled && $0.toolBindings.contains(where: { $0.toolID == toolID })
+        }
+    }
 
     func createPlugin(manifest: PluginManifest, mainCode: String) throws {
         let pluginURL = pluginsDirectory.appendingPathComponent(manifest.id)
@@ -134,27 +214,17 @@ final class PluginManager: ObservableObject {
         Task { await scanPlugins() }
     }
 
-    // MARK: - OS Version Fallbacks
-
     func isPluginCompatible(_ manifest: PluginManifest) -> Bool {
-        // In a real environment, plugins might require specific APIs
-        // Check for minimum OS requirements if they were in the manifest
-
         if #available(iOS 17.0, *) {
-            // iOS 17+ supports all current plugin capabilities
             return true
         } else if #available(iOS 16.0, *) {
-            // iOS 16 fallback: Disable advanced AI capabilities if they rely on iOS 17+ ML APIs
             let isAIPlugin = manifest.capabilities.contains(.codeCompletion) || manifest.name.lowercased().contains("ai")
             return !isAIPlugin
         } else {
-            // iOS 15 or older: Only allow basic formatting and syntax highlighting
             let basicCapabilities: Set<PluginManifest.Capability> = [.syntaxHighlight, .formatter]
             return manifest.capabilities.allSatisfy { basicCapabilities.contains($0) }
         }
     }
-
-    // MARK: - Preferences Persistence
 
     private static let enabledKey = "com.swiftcode.plugins.enabled"
 

@@ -117,6 +117,11 @@ CB000000000000000000002A /* build.yml in Resources */ = {isa = PBXBuildFile; fil
 		AA0000100000000000000F2D /* MainToolbarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F2C /* MainToolbarView.swift */; };
 		AA0000100000000000000F6D /* AgentModelCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F6C /* AgentModelCheck.swift */; };
 		AA00001000000000000003DC /* ToolbarSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000003DD /* ToolbarSettings.swift */; };
+		SK000000000000000000001A /* AgentSkillManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = SK000000000000000000001B /* AgentSkillManager.swift */; };
+		PS000000000000000000001A /* PresetAgentSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = PS000000000000000000001B /* PresetAgentSkills.swift */; };
+		SV000000000000000000001A /* SkillsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SV000000000000000000001B /* SkillsView.swift */; };
+		SA000000000000000000001A /* SkillsAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SA000000000000000000001B /* SkillsAddView.swift */; };
+		SI000000000000000000001A /* SkillsInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI000000000000000000001B /* SkillsInfoView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -231,6 +236,11 @@ CB000000000000000000001B /* build-project.yml */ = {isa = PBXFileReference; last
 		AA0000100000000000000F2C /* MainToolbarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainToolbarView.swift; sourceTree = "<group>"; };
 CB000000000000000000002B /* build.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = build.yml; sourceTree = "<group>"; };
 AA00001000000000000003DD /* ToolbarSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarSettings.swift; sourceTree = "<group>"; };
+SK000000000000000000001B /* AgentSkillManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSkillManager.swift; sourceTree = "<group>"; };
+PS000000000000000000001B /* PresetAgentSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetAgentSkills.swift; sourceTree = "<group>"; };
+SV000000000000000000001B /* SkillsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsView.swift; sourceTree = "<group>"; };
+SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsAddView.swift; sourceTree = "<group>"; };
+SI000000000000000000001B /* SkillsInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsInfoView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -296,6 +306,7 @@ children = (
 				PBM000000000000000000001B /* ProjectBuilderManager.swift */,
 				AA0000100000000000000PFR /* ProjectFilesExtracter.swift */,
 				AA00001000000000000003DD /* ToolbarSettings.swift */,
+				SK000000000000000000001B /* AgentSkillManager.swift */,
 			);
 path = Services;
 sourceTree = "<group>";
@@ -411,6 +422,7 @@ children = (
 				PTV000000000000000000001B /* ProjectTemplateView.swift */,
 				EXM00000000000000000001F /* Extension Management */,
 				CTM00000000000000000001F /* Custom Tools */,
+				SKV00000000000000000001F /* Skills */,
 			);
 path = Settings;
 sourceTree = "<group>";
@@ -432,6 +444,25 @@ children = (
 path = "Custom Tools";
 sourceTree = "<group>";
 };
+
+SKV00000000000000000001F /* Skills */ = {
+isa = PBXGroup;
+children = (
+				SV000000000000000000001B /* SkillsView.swift */,
+				SA000000000000000000001B /* SkillsAddView.swift */,
+				SI000000000000000000001B /* SkillsInfoView.swift */,
+			);
+path = Skills;
+sourceTree = "<group>";
+};
+AGSK0000000000000000001F /* Agent Skills */ = {
+isa = PBXGroup;
+children = (
+				PS000000000000000000001B /* PresetAgentSkills.swift */,
+			);
+path = "Agent Skills";
+sourceTree = "<group>";
+};
 AA000010000000000000049F /* Utilities */ = {
 isa = PBXGroup;
 children = (
@@ -445,6 +476,7 @@ AA00001000000000000005FF /* Features */ = {
 isa = PBXGroup;
 children = (
 				AA00001000000000000006FF /* AI */,
+				AGSK0000000000000000001F /* Agent Skills */,
 			);
 path = Features;
 sourceTree = "<group>";
@@ -865,6 +897,11 @@ files = (
 				AA0000100000000000000F2A /* ToolbarMinimizedView.swift in Sources */,
 				AA0000100000000000000F2D /* MainToolbarView.swift in Sources */,
 				AA0000100000000000000F6D /* AgentModelCheck.swift in Sources */,
+				SK000000000000000000001A /* AgentSkillManager.swift in Sources */,
+				PS000000000000000000001A /* PresetAgentSkills.swift in Sources */,
+				SV000000000000000000001A /* SkillsView.swift in Sources */,
+				SA000000000000000000001A /* SkillsAddView.swift in Sources */,
+				SI000000000000000000001A /* SkillsInfoView.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };

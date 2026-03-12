@@ -6,20 +6,26 @@ struct PluginCodeCreateView: View {
 
     @State private var pluginName = ""
     @State private var pluginVersion = "1.0.0"
+    @State private var minimumVersion = "1.0.0"
     @State private var pluginDescription = ""
     @State private var pluginAuthor = ""
+    @State private var tagsText = ""
     @State private var selectedCapabilities: Set<PluginManifest.Capability> = []
+    @State private var selectedToolIDs: Set<String> = []
+    @State private var automationSteps: [PluginAutomationStep] = []
+    @State private var configFields: [PluginConfigField] = []
     @State private var mainCode = """
 import Foundation
 import SwiftUI
 
-// Your Plugin Entry Point
-struct MyPlugin {
-    func run() {
-        print("Hello from my plugin!")
+struct AdvancedPlugin {
+    func run(context: [String: Any]) {
+        print("Running advanced plugin with context: \(context)")
     }
 }
 """
+
+    private var availableTools: [AgentTool] { AgentTool.all }
 
     var body: some View {
         NavigationStack {
@@ -27,30 +33,99 @@ struct MyPlugin {
                 Section("Plugin Metadata") {
                     TextField("Plugin Name", text: $pluginName)
                     TextField("Version", text: $pluginVersion)
+                    TextField("Minimum SwiftCode Version", text: $minimumVersion)
                     TextField("Author", text: $pluginAuthor)
+                    TextField("Tags (comma separated)", text: $tagsText)
                     TextField("Description", text: $pluginDescription, axis: .vertical)
                         .lineLimit(3...5)
                 }
 
                 Section("Capabilities") {
                     ForEach(PluginManifest.Capability.allCases, id: \.self) { capability in
-                        Toggle(capability.rawValue.capitalized, isOn: Binding(
+                        Toggle(capability.rawValue, isOn: Binding(
                             get: { selectedCapabilities.contains(capability) },
                             set: { isSelected in
-                                if isSelected {
-                                    selectedCapabilities.insert(capability)
-                                } else {
-                                    selectedCapabilities.remove(capability)
-                                }
+                                if isSelected { selectedCapabilities.insert(capability) }
+                                else { selectedCapabilities.remove(capability) }
                             }
                         ))
+                    }
+                }
+
+                Section("Tool Interop") {
+                    ForEach(availableTools, id: \.id) { tool in
+                        Toggle(tool.displayName, isOn: Binding(
+                            get: { selectedToolIDs.contains(tool.id) },
+                            set: { isSelected in
+                                if isSelected { selectedToolIDs.insert(tool.id) }
+                                else { selectedToolIDs.remove(tool.id) }
+                            }
+                        ))
+                    }
+                }
+
+                Section("Automation Steps") {
+                    if automationSteps.isEmpty {
+                        Text("No steps added yet")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(automationSteps) { step in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(step.title).font(.subheadline.weight(.semibold))
+                            Text(step.instruction).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    Button {
+                        automationSteps.append(
+                            PluginAutomationStep(
+                                title: "Step \(automationSteps.count + 1)",
+                                instruction: "Describe what the plugin should do.",
+                                expectedOutput: "Expected result"
+                            )
+                        )
+                    } label: {
+                        Label("Add Step", systemImage: "plus.circle.fill")
+                    }
+                }
+
+                Section("Config Schema") {
+                    if configFields.isEmpty {
+                        Text("No config fields yet")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(configFields) { field in
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(field.title)
+                                Text("\(field.key) • \(field.type.rawValue)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Text(field.isRequired ? "Required" : "Optional")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Button {
+                        configFields.append(
+                            PluginConfigField(
+                                key: "new_field_\(configFields.count + 1)",
+                                title: "New Field",
+                                type: .string,
+                                defaultValue: "",
+                                isRequired: false
+                            )
+                        )
+                    } label: {
+                        Label("Add Config Field", systemImage: "slider.horizontal.3")
                     }
                 }
 
                 Section("Implementation (main.swift)") {
                     TextEditor(text: $mainCode)
                         .font(.system(.body, design: .monospaced))
-                        .frame(minHeight: 300)
+                        .frame(minHeight: 280)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.none)
                 }
@@ -62,10 +137,8 @@ struct MyPlugin {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Create") {
-                        savePlugin()
-                    }
-                    .disabled(pluginName.isEmpty || pluginAuthor.isEmpty)
+                    Button("Create") { savePlugin() }
+                        .disabled(pluginName.isEmpty || pluginAuthor.isEmpty)
                 }
             }
         }
@@ -81,7 +154,17 @@ struct MyPlugin {
             author: pluginAuthor,
             entryPoint: "main.swift",
             capabilities: Array(selectedCapabilities),
-            isEnabled: true
+            isEnabled: true,
+            tags: tagsText
+                .split(separator: ",")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty },
+            minimumSwiftCodeVersion: minimumVersion,
+            toolBindings: selectedToolIDs.map {
+                PluginToolBinding(toolID: $0, usageDescription: "Linked in Create Plugin flow", isRequired: false)
+            },
+            automationSteps: automationSteps,
+            configurationSchema: configFields
         )
 
         do {
