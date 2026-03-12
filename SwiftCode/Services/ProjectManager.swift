@@ -112,8 +112,7 @@ final class ProjectManager: ObservableObject {
         var project = Project(name: sanitized)
         project.description = "A new SwiftCode project"
 
-        // Create default file structure
-        try createDefaultStructure(at: projectDir, projectName: sanitized)
+        // Keep new projects empty so template selection can scaffold content later.
 
         // Rebuild file tree
         project.files = buildFileTree(at: projectDir, relativeTo: projectDir)
@@ -125,124 +124,6 @@ final class ProjectManager: ObservableObject {
         return project
     }
 
-    private func createDefaultStructure(at dir: URL, projectName: String) throws {
-        let fm = FileManager.default
-
-        // Sources/
-        let sourcesDir = dir.appendingPathComponent("Sources")
-        try fm.createDirectory(at: sourcesDir, withIntermediateDirectories: true)
-
-        // Sources/Views/
-        let viewsDir = sourcesDir.appendingPathComponent("Views")
-        try fm.createDirectory(at: viewsDir, withIntermediateDirectories: true)
-
-        // Sources/Models/
-        let modelsDir = sourcesDir.appendingPathComponent("Models")
-        try fm.createDirectory(at: modelsDir, withIntermediateDirectories: true)
-
-        // Resources/
-        let resourcesDir = dir.appendingPathComponent("Resources")
-        try fm.createDirectory(at: resourcesDir, withIntermediateDirectories: true)
-
-        // Sources/Views/ContentView.swift
-        let contentView = """
-import SwiftUI
-
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "swift")
-                .imageScale(.large)
-                .foregroundStyle(.orange)
-            Text("\(projectName)")
-                .font(.title)
-                .bold()
-        }
-        .padding()
-    }
-}
-
-#Preview {
-    ContentView()
-}
-"""
-        try contentView.write(to: viewsDir.appendingPathComponent("ContentView.swift"), atomically: true, encoding: .utf8)
-
-        // Sources/AppEntry.swift
-        let appEntry = """
-import SwiftUI
-
-@main
-struct \(projectName.replacingOccurrences(of: " ", with: ""))App: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-    }
-}
-"""
-        try appEntry.write(to: sourcesDir.appendingPathComponent("AppEntry.swift"), atomically: true, encoding: .utf8)
-
-        // Assets.xcassets
-        let assetsDir = dir.appendingPathComponent("Assets.xcassets")
-        try fm.createDirectory(at: assetsDir, withIntermediateDirectories: true)
-        let assetsContents = """
-{
-  "info" : {
-    "author" : "xcode",
-    "version" : 1
-  }
-}
-"""
-        try assetsContents.write(to: assetsDir.appendingPathComponent("Contents.json"), atomically: true, encoding: .utf8)
-
-        // README.md
-        let readme = """
-# \(projectName)
-
-Created with SwiftCode — an AI-powered iOS development environment.
-
-## Getting Started
-
-Edit your Swift files in the editor and use the AI assistant to generate, modify, or debug code.
-"""
-        try readme.write(to: dir.appendingPathComponent("README.md"), atomically: true, encoding: .utf8)
-
-        // Package.swift
-        let packageSwift = """
-// swift-tools-version: 5.9
-import PackageDescription
-
-let package = Package(
-    name: "\(projectName)",
-    platforms: [.iOS(.v17)],
-    targets: [
-        .executableTarget(name: "\(projectName)", path: "Sources")
-    ]
-)
-"""
-        try packageSwift.write(to: dir.appendingPathComponent("Package.swift"), atomically: true, encoding: .utf8)
-
-        // .github/workflows/build.yml
-        let workflowsDir = dir.appendingPathComponent(".github/workflows")
-        try fm.createDirectory(at: workflowsDir, withIntermediateDirectories: true)
-        let workflow = """
-name: Build
-
-on:
-  push:
-    branches: [ main ]
-
-jobs:
-  build:
-    runs-on: macos-14
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build
-        run: echo "Add your xcodebuild command here"
-"""
-        try workflow.write(to: workflowsDir.appendingPathComponent("build.yml"), atomically: true, encoding: .utf8)
-    }
 
     // MARK: - Delete Project
 

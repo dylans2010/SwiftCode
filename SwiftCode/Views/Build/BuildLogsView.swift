@@ -84,6 +84,7 @@ final class BuildLogManager: ObservableObject {
 
 struct BuildLogsView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var settings: AppSettings
 
     let owner: String
     let repo: String
@@ -504,7 +505,7 @@ struct BuildLogsView: View {
 
                 let analysis = try await OpenRouterService.shared.chat(
                     messages: messages,
-                    model: "meta-llama/llama-3.3-70b-instruct:free",
+                    model: settings.selectedModel,
                     systemPrompt: systemPrompt
                 )
 

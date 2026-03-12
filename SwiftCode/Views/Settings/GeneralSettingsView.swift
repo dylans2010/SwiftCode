@@ -381,6 +381,7 @@ struct GeneralSettingsView: View {
     @State private var keySaved = false
     @State private var tokenSaved = false
     @State private var showExtensions = false
+    @State private var showChooseModel = false
 
     var activeTheme: AppTheme {
         themeManager.theme(for: settings.selectedThemeID) ?? AppTheme.dark
@@ -438,6 +439,10 @@ struct GeneralSettingsView: View {
         }
         .sheet(isPresented: $showExtensions) {
             ExtensionsView()
+        }
+        .sheet(isPresented: $showChooseModel) {
+            ChooseModelView(controller: AgentController.shared)
+                .environmentObject(settings)
         }
         .confirmationDialog(
             "Reset SwiftCode",
@@ -535,10 +540,21 @@ struct GeneralSettingsView: View {
                 }
             }
 
-            // AI Model Picker
-            Picker("AI Model", selection: $settings.selectedModel) {
-                ForEach(OpenRouterModel.defaults) { model in
-                    Text(model.name).tag(model.id)
+            // AI Model selection / validation
+            Button {
+                showChooseModel = true
+            } label: {
+                HStack {
+                    Label("Choose Default AI Model", systemImage: "slider.horizontal.3")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Text(settings.selectedModel)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.tertiary)
+                        .font(.caption)
                 }
             }
 
