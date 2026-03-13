@@ -25,6 +25,7 @@ struct GitHubIntegrationView: View {
     @State private var currentBranch = "main"
     @State private var isDownloadingRepo = false
     @State private var showGitCommands = false
+    @State private var showGitCLI = false
     @State private var repoDetail: GitHubRepoDetail?
     @State private var isValidatingRepo = false
     @State private var repoValidationError: String?
@@ -121,6 +122,9 @@ struct GitHubIntegrationView: View {
             .sheet(isPresented: $showRepoPicker) { repoPickerSheet }
             .sheet(isPresented: $showGitCommands) {
                 GitCommandView(project: project)
+            }
+            .sheet(isPresented: $showGitCLI) {
+                GitCLIView(project: project)
             }
             .sheet(isPresented: $showBranchManagement) {
                 BranchManagementView(
@@ -560,30 +564,51 @@ struct GitHubIntegrationView: View {
             sectionHeader("Tools", icon: "wrench.and.screwdriver.fill", color: .purple)
 
             HStack(spacing: 12) {
-                // Git Commands
                 Button {
                     showGitCommands = true
                 } label: {
-                    VStack(spacing: 8) {
-                        Image(systemName: "terminal.fill")
-                            .font(.title2)
-                            .foregroundStyle(.green)
-                        Text("Git Commands")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.white)
-                        Text("Run git ops with guided buttons")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(2)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(14)
-                    .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
+                    toolButtonContent(
+                        icon: "square.grid.2x2.fill",
+                        title: "Git Commands",
+                        subtitle: "Run git ops with guided buttons",
+                        color: .orange
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showGitCLI = true
+                } label: {
+                    toolButtonContent(
+                        icon: "terminal.fill",
+                        title: "Git CLI",
+                        subtitle: "Run direct git commands",
+                        color: .green
+                    )
                 }
                 .buttonStyle(.plain)
             }
         }
+    }
+
+
+    private func toolButtonContent(icon: String, title: String, subtitle: String, color: Color) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundStyle(color)
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white)
+            Text(subtitle)
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(14)
+        .background(Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 12))
     }
 
     // MARK: - Workflow Section

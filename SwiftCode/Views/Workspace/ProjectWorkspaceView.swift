@@ -45,6 +45,7 @@ struct ProjectWorkspaceView: View {
     @State private var showDocumentationBrowser = false
     @State private var showWorkspaceProfiles = false
     @State private var showAssetManager = false
+    @State private var showDebugTools = false
     @State private var showProjectTemplates = false
     @State private var showAllToolsSheet = false
 
@@ -235,6 +236,7 @@ struct ProjectWorkspaceView: View {
         .sheet(isPresented: $showDocumentationBrowser) { DocumentationBrowserView() }
         .sheet(isPresented: $showWorkspaceProfiles) { WorkspaceProfilesView() }
         .sheet(isPresented: $showAssetManager) { AssetManagerView() }
+        .sheet(isPresented: $showDebugTools) { DebuggingToolsView() }
         .sheet(isPresented: $showProjectTemplates) {
             ProjectTemplateView()
                 .presentationDetents([.medium, .large])
@@ -344,6 +346,7 @@ struct ProjectWorkspaceView: View {
         case .documentationBrowser: showDocumentationBrowser = true
         case .workspaceProfiles: showWorkspaceProfiles = true
         case .assetManager: showAssetManager = true
+        case .debugTools: showDebugTools = true
         }
     }
 

@@ -136,6 +136,9 @@ CB000000000000000000002A /* build.yml in Resources */ = {isa = PBXBuildFile; fil
 		AT000000000000000000009A /* SymbolIndexView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000009B /* SymbolIndexView.swift */; };
 		AT00000000000000000000AA /* CodeMetricsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000AB /* CodeMetricsDashboardView.swift */; };
 		AT00000000000000000000BA /* DocumentationBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000BB /* DocumentationBrowserView.swift */; };
+		BN000000000000000000001A /* BinaryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BN000000000000000000001B /* BinaryManager.swift */; };
+		GC000000000000000000001A /* GitCLIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GC000000000000000000001B /* GitCLIView.swift */; };
+		DT000000000000000000001A /* DebuggingToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DT000000000000000000001B /* DebuggingToolsView.swift */; };
 		AT00000000000000000000CA /* WorkspaceProfilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000CB /* WorkspaceProfilesView.swift */; };
 		AT00000000000000000000DA /* AssetManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000DB /* AssetManagerView.swift */; };
 		AT00000000000000000000EA /* WorkspaceProfilesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000EB /* WorkspaceProfilesManager.swift */; };
@@ -275,6 +278,9 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		AT000000000000000000009B /* SymbolIndexView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolIndexView.swift; sourceTree = "<group>"; };
 		AT00000000000000000000AB /* CodeMetricsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeMetricsDashboardView.swift; sourceTree = "<group>"; };
 		AT00000000000000000000BB /* DocumentationBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentationBrowserView.swift; sourceTree = "<group>"; };
+		BN000000000000000000001B /* BinaryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryManager.swift; sourceTree = "<group>"; };
+		GC000000000000000000001B /* GitCLIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitCLIView.swift; sourceTree = "<group>"; };
+		DT000000000000000000001B /* DebuggingToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebuggingToolsView.swift; sourceTree = "<group>"; };
 		AT00000000000000000000CB /* WorkspaceProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceProfilesView.swift; sourceTree = "<group>"; };
 		AT00000000000000000000DB /* AssetManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetManagerView.swift; sourceTree = "<group>"; };
 		AT00000000000000000000EB /* WorkspaceProfilesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceProfilesManager.swift; sourceTree = "<group>"; };
@@ -433,6 +439,7 @@ children = (
 				BM0000000000000000000001B /* BranchManagementView.swift */,
 				CH0000000000000000000001B /* CommitHistoryView.swift */,
 				PR0000000000000000000001B /* PullRequestView.swift */,
+				GC000000000000000000001B /* GitCLIView.swift */,
 			);
 path = GitHub;
 sourceTree = "<group>";
@@ -520,6 +527,7 @@ children = (
 				AA00001000000000000006FF /* AI */,
 				AGSK0000000000000000001F /* Agent Skills */,
 				AT000000000000000000011F /* AdvancedTools */,
+				DT000000000000000000001F /* Debug Tools */,
 			);
 path = Features;
 sourceTree = "<group>";
@@ -531,6 +539,15 @@ children = (
 				AT000000000000000000013F /* Views */,
 			);
 path = AdvancedTools;
+sourceTree = "<group>";
+};
+
+DT000000000000000000001F /* Debug Tools */ = {
+isa = PBXGroup;
+children = (
+				DT000000000000000000001B /* DebuggingToolsView.swift */,
+			);
+path = "Debug Tools";
 sourceTree = "<group>";
 };
 		AT000000000000000000012F /* Engines */ = {
@@ -631,6 +648,7 @@ children = (
 				BD000000000000000000001F /* BuildSystem */,
 				CF000000000000000000001F /* FileSystem */,
 				CG000000000000000000001F /* GitHub */,
+				BN000000000000000000001F /* Binaries */,
 			);
 path = Core;
 sourceTree = "<group>";
@@ -670,6 +688,15 @@ children = (
 				CG000000000000000000002B /* GitHubImportManager.swift */,
 			);
 path = GitHub;
+sourceTree = "<group>";
+};
+
+BN000000000000000000001F /* Binaries */ = {
+isa = PBXGroup;
+children = (
+				BN000000000000000000001B /* BinaryManager.swift */,
+			);
+path = Binaries;
 sourceTree = "<group>";
 };
 AA0000100000000000000EFF /* UI */ = {
@@ -901,6 +928,7 @@ files = (
 				AA000010000000000000012A /* BuildStatusView.swift in Sources */,
 				AA000010000000000000013A /* SettingsView.swift in Sources */,
 				AA000010000000000000016A /* GitCommandView.swift in Sources */,
+				GC000000000000000000001A /* GitCLIView.swift in Sources */,
 				AA000010000000000000017A /* CIBuildView.swift in Sources */,
 				AA000010000000000000018A /* FileImporterRepresentableView.swift in Sources */,
 				AA000010000000000000019A /* AgentTool.swift in Sources */,
@@ -922,6 +950,7 @@ files = (
 				AA00001000000000000004EA /* ToolbarCustomizationView.swift in Sources */,
 				AA00001000000000000005AA /* CodingManager.swift in Sources */,
 				AA00001000000000000005BA /* ToolbarActionManager.swift in Sources */,
+				BN000000000000000000001A /* BinaryManager.swift in Sources */,
 				AA00001000000000000005CA /* SFSymbolBrowserView.swift in Sources */,
 				GS0000000000000000000001 /* GeneralSettingsView.swift in Sources */,
 				UP0000000000000000000001 /* UpdatesView.swift in Sources */,
@@ -1006,6 +1035,7 @@ files = (
 				AT00000000000000000000FA /* SymbolIndexingEngine.swift in Sources */,
 				AT000000000000000000010A /* CodeIntelligenceEngine.swift in Sources */,
 				AT000000000000000000011A /* AdvancedToolsDesignSystem.swift in Sources */,
+				DT000000000000000000001A /* DebuggingToolsView.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };
