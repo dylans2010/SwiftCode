@@ -33,7 +33,7 @@ final class CodeSuggestionsML: ObservableObject {
         isAnalyzing = true
 
         Task.detached(priority: .utility) {
-            let report = self.generateSuggestions(for: project)
+            let report = await self.generateSuggestions(for: project)
             await MainActor.run {
                 self.groupedSuggestions = report
                 self.isAnalyzing = false
@@ -42,7 +42,7 @@ final class CodeSuggestionsML: ObservableObject {
         }
     }
 
-    private func generateSuggestions(for project: Project) -> [CodeSuggestionCategory: [CodeSuggestion]] {
+    private func generateSuggestions(for project: Project) async -> [CodeSuggestionCategory: [CodeSuggestion]] {
         // CoreML placeholder entry point for future model integration.
         _ = MLModelConfiguration()
 
