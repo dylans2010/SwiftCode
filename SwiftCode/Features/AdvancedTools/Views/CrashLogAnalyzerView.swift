@@ -3,22 +3,18 @@ import SwiftUI
 struct CrashLogAnalyzerView: View {
     @State private var crashLog = ""
 
-    private var parsed: CrashAnalysis {
-        CrashAnalysis.parse(log: crashLog)
-    }
+    private var parsed: CrashAnalysis { CrashAnalysis.parse(log: crashLog) }
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
+        AdvancedToolScreen(title: "Crash Log Analyzer") {
+            AdvancedToolCard(title: "Crash Input") {
                 TextField("Paste crash log", text: $crashLog, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
-                GroupBox("Failing Function") { Text(parsed.failingFunction) }
-                GroupBox("Likely Cause") { Text(parsed.likelyCause) }
-                GroupBox("Relevant Locations") { Text(parsed.fileHints.joined(separator: "\n")) }
-                Spacer()
             }
-            .padding()
-            .navigationTitle("Crash Log Analyzer")
+
+            AdvancedToolCard(title: "Failing Function") { Text(parsed.failingFunction) }
+            AdvancedToolCard(title: "Likely Cause") { Text(parsed.likelyCause) }
+            AdvancedToolCard(title: "Relevant Locations") { Text(parsed.fileHints.joined(separator: "\n")) }
         }
     }
 }
@@ -34,10 +30,6 @@ private struct CrashAnalysis {
         let reason = lines.first(where: { $0.localizedCaseInsensitiveContains("reason:") || $0.localizedCaseInsensitiveContains("fatal error") }) ?? "Cause not found in log."
         let fileRefs = lines.filter { $0.contains(".swift") }.prefix(8)
 
-        return .init(
-            failingFunction: frame,
-            likelyCause: reason,
-            fileHints: Array(fileRefs)
-        )
+        return .init(failingFunction: frame, likelyCause: reason, fileHints: Array(fileRefs))
     }
 }

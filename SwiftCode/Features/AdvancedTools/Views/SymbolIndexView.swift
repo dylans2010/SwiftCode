@@ -11,22 +11,25 @@ struct SymbolIndexView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack {
+        AdvancedToolScreen(title: "Symbol Index") {
+            AdvancedToolCard(title: "Search Symbols") {
                 TextField("Search symbol", text: $query)
                     .textFieldStyle(.roundedBorder)
-                List(filtered) { symbol in
+            }
+
+            AdvancedToolCard(title: "Indexed Symbols", subtitle: "Open a symbol to jump to file") {
+                ForEach(filtered) { symbol in
                     Button("\(symbol.kind): \(symbol.name) — \(symbol.file):\(symbol.line)") {
                         if let node = projectManager.activeProject?.files.flatMapDeep().first(where: { $0.path == symbol.file }) {
                             projectManager.openFile(node)
                         }
                     }
+                    .buttonStyle(.plain)
+                    Divider()
                 }
             }
-            .padding()
-            .navigationTitle("Symbol Index")
-            .onAppear { engine.index(project: projectManager.activeProject) }
         }
+        .onAppear { engine.index(project: projectManager.activeProject) }
     }
 }
 

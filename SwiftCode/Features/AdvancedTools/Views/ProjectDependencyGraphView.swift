@@ -20,20 +20,17 @@ struct ProjectDependencyGraphView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            List(dependencyRows, id: \.0) { file, imports in
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(file).font(.headline)
-                    Text(imports.isEmpty ? "No imports" : imports.joined(separator: ", "))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        AdvancedToolScreen(title: "Dependency Graph") {
+            AdvancedToolCard(title: "Swift Import Graph", subtitle: "Dependencies parsed from import statements") {
+                ForEach(dependencyRows, id: \.0) { file, imports in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(file).font(.headline)
+                        Text(imports.isEmpty ? "No imports" : imports.joined(separator: ", "))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Divider()
                 }
-            }
-            .navigationTitle("Dependency Graph")
-            .overlay(alignment: .bottomLeading) {
-                Text("Dependencies are parsed from import statements in Swift files.")
-                    .font(.caption)
-                    .padding(8)
             }
         }
     }

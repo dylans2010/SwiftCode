@@ -1,53 +1,61 @@
 import SwiftUI
-
-@MainActor
-final class AppleDocumentationCache: ObservableObject {
-    static let shared = AppleDocumentationCache()
-    @Published var content = ""
-
-    func load(path: String) async {
-        let base = "https://developer.apple.com/documentation"
-        let url = URL(string: "\(base)/\(path)")!
-        let cacheURL = FileManager.default.temporaryDirectory.appendingPathComponent("docs-\(path.replacingOccurrences(of: "/", with: "_")).txt")
-
-        if let cached = try? String(contentsOf: cacheURL) {
-            content = cached
-            return
-        }
-
-        do {
-            let (data, _) = try await URLSession.shared.data(from: url)
-            let html = String(decoding: data, as: UTF8.self)
-            try? html.write(to: cacheURL, atomically: true, encoding: .utf8)
-            content = html
-        } catch {
-            content = "Failed to load documentation for \(path)."
-        }
-    }
-}
+import WebKit
 
 struct DocumentationBrowserView: View {
-    @StateObject private var cache = AppleDocumentationCache.shared
-    @State private var query = "swiftui"
+    @State private var query = "SwiftUI/View"
+    @State private var currentURL = URL(string: "https://developer.apple.com/documentation/swiftui")!
 
     var body: some View {
-        NavigationStack {
-            VStack {
+        AdvancedToolScreen(title: "Documentation Browser") {
+            AdvancedToolCard(title: "Apple Developer Docs", subtitle: "JavaScript-enabled rendering for dynamic pages") {
                 HStack {
                     TextField("Search API (e.g. SwiftUI/View)", text: $query)
                         .textFieldStyle(.roundedBorder)
-                    Button("Search") { Task { await cache.load(path: query.lowercased()) } }
+                    Button("Search", action: performSearch)
+                        .buttonStyle(.borderedProminent)
                 }
-                .padding()
 
-                ScrollView {
-                    Text(cache.content.isEmpty ? "Search Apple documentation." : cache.content)
-                        .font(.caption)
-                        .textSelection(.enabled)
-                        .padding()
-                }
+                DocsWebView(url: currentURL)
+                    .frame(minHeight: 600)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             }
-            .navigationTitle("Documentation Browser")
         }
+    }
+
+    private func performSearch() {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        if trimmed.lowercased().hasPrefix("http"), let url = URL(string: trimmed) {
+            currentURL = url
+            return
+        }
+
+        let safePath = trimmed
+            .replacingOccurrences(of: " ", with: "-")
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            .lowercased()
+        currentURL = URL(string: "https://developer.apple.com/documentation/\(safePath)")!
+    }
+}
+
+private struct DocsWebView: NSViewRepresentable {
+    let url: URL
+
+    func makeNSView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        config.defaultWebpagePreferences.allowsContentJavaScript = true
+        config.preferences.javaScriptCanOpenWindowsAutomatically = true
+        config.websiteDataStore = .default()
+
+        let webView = WKWebView(frame: .zero, configuration: config)
+        webView.setValue(false, forKey: "drawsBackground")
+        webView.load(URLRequest(url: url))
+        return webView
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        guard webView.url != url else { return }
+        webView.load(URLRequest(url: url))
     }
 }

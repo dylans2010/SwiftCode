@@ -9,13 +9,14 @@ struct ErrorDiagnosticsView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack {
+        AdvancedToolScreen(title: "Error Diagnostics") {
+            AdvancedToolCard(title: "Error Log Input") {
                 TextField("Paste compile/runtime errors", text: $logs, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
-                    .padding()
+            }
 
-                List(diagnostics) { item in
+            AdvancedToolCard(title: "Parsed Diagnostics", subtitle: "Click an item to open the corresponding file") {
+                ForEach(diagnostics) { item in
                     Button {
                         if let node = projectManager.activeProject?.files.flatMapDeep().first(where: { $0.path.contains(item.file) }) {
                             projectManager.openFile(node)
@@ -26,10 +27,12 @@ struct ErrorDiagnosticsView: View {
                             Text(item.message).font(.subheadline)
                             Text(item.explanation).font(.caption).foregroundStyle(.secondary)
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .buttonStyle(.plain)
+                    Divider()
                 }
             }
-            .navigationTitle("Error Diagnostics")
         }
     }
 }

@@ -3,10 +3,7 @@ import SwiftUI
 struct CodeMetricsDashboardView: View {
     @EnvironmentObject private var projectManager: ProjectManager
 
-    private var files: [FileNode] {
-        projectManager.activeProject?.files.flatMapDeep(includeDirectories: false) ?? []
-    }
-
+    private var files: [FileNode] { projectManager.activeProject?.files.flatMapDeep(includeDirectories: false) ?? [] }
     private var swiftFiles: [FileNode] { files.filter { $0.name.hasSuffix(".swift") } }
 
     private var totalLOC: Int {
@@ -19,17 +16,18 @@ struct CodeMetricsDashboardView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
-                metric("Total Files", value: "\(files.count)")
-                metric("Total Lines of Code", value: "\(totalLOC)")
-                metric("Language Breakdown", value: languageBreakdown())
-                metric("Most Modified Files", value: projectManager.modifiedFilePaths.prefix(3).joined(separator: ", "))
-                metric("Complexity Indicator", value: complexityLabel())
-                Spacer()
+        AdvancedToolScreen(title: "Code Metrics") {
+            HStack(spacing: 12) {
+                MetricPill(label: "Files", value: "\(files.count)")
+                MetricPill(label: "LOC", value: "\(totalLOC)")
+                MetricPill(label: "Complexity", value: complexityLabel())
             }
-            .padding()
-            .navigationTitle("Code Metrics")
+
+            AdvancedToolCard(title: "Architecture Signals") {
+                Text("Language Breakdown: \(languageBreakdown())")
+                Text("Most Modified: \(projectManager.modifiedFilePaths.prefix(3).joined(separator: ", "))")
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -42,10 +40,6 @@ struct CodeMetricsDashboardView: View {
         if totalLOC > 10_000 || swiftFiles.count > 120 { return "High" }
         if totalLOC > 3_000 || swiftFiles.count > 40 { return "Moderate" }
         return "Low"
-    }
-
-    private func metric(_ title: String, value: String) -> some View {
-        GroupBox(title) { Text(value.isEmpty ? "n/a" : value) }
     }
 }
 

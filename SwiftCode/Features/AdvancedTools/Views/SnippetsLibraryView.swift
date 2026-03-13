@@ -8,45 +8,46 @@ struct SnippetsLibraryView: View {
     private var filtered: [CodeSnippet] { snippets.filter { $0.category == selectedCategory } }
 
     var body: some View {
-        NavigationStack {
-            VStack {
+        AdvancedToolScreen(title: "Snippets Library") {
+            AdvancedToolCard(title: "Categories") {
                 Picker("Category", selection: $selectedCategory) {
                     ForEach(SnippetCategory.allCases) { Text($0.rawValue).tag($0) }
                 }
                 .pickerStyle(.segmented)
+            }
 
-                List(filtered) { snippet in
+            AdvancedToolCard(title: "Saved Snippets") {
+                ForEach(filtered) { snippet in
                     VStack(alignment: .leading) {
                         Text(snippet.title).font(.headline)
-                        Text(snippet.code).font(.caption).lineLimit(2)
+                        Text(snippet.code).font(.caption).lineLimit(3)
                         HStack {
-                            Button("Insert into Editor") {
-                                ProjectManager.shared.activeFileContent += "\n\n" + snippet.code
-                            }
-                            .buttonStyle(.bordered)
+                            Button("Insert into Editor") { ProjectManager.shared.activeFileContent += "\n\n" + snippet.code }
                             Button("Delete", role: .destructive) {
                                 snippets.removeAll { $0.id == snippet.id }
                                 CodeSnippetStore.save(snippets)
                             }
-                            .buttonStyle(.bordered)
                         }
+                        .buttonStyle(.bordered)
                     }
-                }
-
-                Form {
-                    TextField("Snippet name", text: $draft.title)
-                    TextField("Snippet code", text: $draft.code, axis: .vertical)
-                    Button("Save Snippet") {
-                        draft.category = selectedCategory
-                        snippets.append(draft)
-                        CodeSnippetStore.save(snippets)
-                        draft = .empty
-                    }
-                    .disabled(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Divider()
                 }
             }
-            .padding()
-            .navigationTitle("Snippets Library")
+
+            AdvancedToolCard(title: "Create Snippet") {
+                TextField("Snippet name", text: $draft.title)
+                    .textFieldStyle(.roundedBorder)
+                TextField("Snippet code", text: $draft.code, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                Button("Save Snippet") {
+                    draft.category = selectedCategory
+                    snippets.append(draft)
+                    CodeSnippetStore.save(snippets)
+                    draft = .empty
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
         }
     }
 }
@@ -73,10 +74,7 @@ private enum CodeSnippetStore {
     private static let key = "com.swiftcode.snippets"
 
     static func load() -> [CodeSnippet] {
-        guard let data = UserDefaults.standard.data(forKey: key),
-              let decoded = try? JSONDecoder().decode([CodeSnippet].self, from: data) else {
-            return []
-        }
+        guard let data = UserDefaults.standard.data(forKey: key), let decoded = try? JSONDecoder().decode([CodeSnippet].self, from: data) else { return [] }
         return decoded
     }
 
