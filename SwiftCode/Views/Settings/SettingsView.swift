@@ -33,6 +33,17 @@ enum DashboardSortOrder: String, Codable, CaseIterable {
     case creationDate = "Creation Date"
 }
 
+enum FileNavigatorLayoutStyle: String, Codable, CaseIterable {
+    case compact = "Compact"
+    case expanded = "Expanded"
+}
+
+enum FileNavigatorAnimationStyle: String, Codable, CaseIterable {
+    case easeInOut = "Ease In/Out"
+    case spring = "Spring"
+    case bouncy = "Bouncy"
+}
+
 @MainActor
 class AppSettings: ObservableObject {
     static let shared = AppSettings()
@@ -154,6 +165,35 @@ class AppSettings: ObservableObject {
         didSet { debouncedSave("coreMLUsageLimit", coreMLUsageLimit) }
     }
 
+    // MARK: - File Navigator Customization
+    @Published var fileNavigatorLayoutStyle: FileNavigatorLayoutStyle {
+        didSet { debouncedSave("fileNavigatorLayoutStyle", fileNavigatorLayoutStyle.rawValue) }
+    }
+    @Published var fileNavigatorAnimationStyle: FileNavigatorAnimationStyle {
+        didSet { debouncedSave("fileNavigatorAnimationStyle", fileNavigatorAnimationStyle.rawValue) }
+    }
+    @Published var fileNavigatorFolderSymbol: String {
+        didSet { debouncedSave("fileNavigatorFolderSymbol", fileNavigatorFolderSymbol) }
+    }
+    @Published var fileNavigatorFileSymbol: String {
+        didSet { debouncedSave("fileNavigatorFileSymbol", fileNavigatorFileSymbol) }
+    }
+    @Published var fileNavigatorFolderColorHex: String {
+        didSet { debouncedSave("fileNavigatorFolderColorHex", fileNavigatorFolderColorHex) }
+    }
+    @Published var fileNavigatorSwiftFileColorHex: String {
+        didSet { debouncedSave("fileNavigatorSwiftFileColorHex", fileNavigatorSwiftFileColorHex) }
+    }
+    @Published var fileNavigatorDefaultFileColorHex: String {
+        didSet { debouncedSave("fileNavigatorDefaultFileColorHex", fileNavigatorDefaultFileColorHex) }
+    }
+    @Published var fileNavigatorAnimationSpeed: Double {
+        didSet { debouncedSave("fileNavigatorAnimationSpeed", fileNavigatorAnimationSpeed) }
+    }
+    @Published var codeSuggestionsEnabled: Bool {
+        didSet { debouncedSave("codeSuggestionsEnabled", codeSuggestionsEnabled) }
+    }
+
     // MARK: - Debounced Save
 
     private func debouncedSave(_ key: String, _ value: Any) {
@@ -208,6 +248,15 @@ class AppSettings: ObservableObject {
         coreMLHybridMode = UserDefaults.standard.object(forKey: "coreMLHybridMode") as? Bool ?? false
         coreMLSelectedModel = UserDefaults.standard.string(forKey: "coreMLSelectedModel") ?? ""
         coreMLUsageLimit = UserDefaults.standard.object(forKey: "coreMLUsageLimit") as? Double ?? 100
+        fileNavigatorLayoutStyle = FileNavigatorLayoutStyle(rawValue: UserDefaults.standard.string(forKey: "fileNavigatorLayoutStyle") ?? "") ?? .compact
+        fileNavigatorAnimationStyle = FileNavigatorAnimationStyle(rawValue: UserDefaults.standard.string(forKey: "fileNavigatorAnimationStyle") ?? "") ?? .easeInOut
+        fileNavigatorFolderSymbol = UserDefaults.standard.string(forKey: "fileNavigatorFolderSymbol") ?? "folder.fill"
+        fileNavigatorFileSymbol = UserDefaults.standard.string(forKey: "fileNavigatorFileSymbol") ?? "doc.fill"
+        fileNavigatorFolderColorHex = UserDefaults.standard.string(forKey: "fileNavigatorFolderColorHex") ?? "#5E86FF"
+        fileNavigatorSwiftFileColorHex = UserDefaults.standard.string(forKey: "fileNavigatorSwiftFileColorHex") ?? "#FF9F0A"
+        fileNavigatorDefaultFileColorHex = UserDefaults.standard.string(forKey: "fileNavigatorDefaultFileColorHex") ?? "#9FA8DA"
+        fileNavigatorAnimationSpeed = UserDefaults.standard.object(forKey: "fileNavigatorAnimationSpeed") as? Double ?? 0.22
+        codeSuggestionsEnabled = UserDefaults.standard.object(forKey: "codeSuggestionsEnabled") as? Bool ?? false
 
         // Load saved repositories
         loadSavedRepositories()
