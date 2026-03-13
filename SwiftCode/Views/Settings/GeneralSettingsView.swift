@@ -396,6 +396,7 @@ struct GeneralSettingsView: View {
                 apiKeysSection
                 editorSection
                 dashboardSection
+                fileNavigatorCustomizationSection
                 themesSection
                 gitHubSection
                 agentConnectionsSection
@@ -749,6 +750,49 @@ struct GeneralSettingsView: View {
         }
     }
 
+    private var fileNavigatorCustomizationSection: some View {
+        Section {
+            Picker("Layout Style", selection: $settings.fileNavigatorLayoutStyle) {
+                ForEach(FileNavigatorLayoutStyle.allCases, id: \.self) { style in
+                    Text(style.rawValue).tag(style)
+                }
+            }
+
+            Picker("Expand Animation", selection: $settings.fileNavigatorAnimationStyle) {
+                ForEach(FileNavigatorAnimationStyle.allCases, id: \.self) { style in
+                    Text(style.rawValue).tag(style)
+                }
+            }
+
+            TextField("Folder Symbol", text: $settings.fileNavigatorFolderSymbol)
+            TextField("File Symbol", text: $settings.fileNavigatorFileSymbol)
+
+            ColorPicker("Folder Color", selection: Binding(
+                get: { Color(hex: settings.fileNavigatorFolderColorHex) },
+                set: { settings.fileNavigatorFolderColorHex = $0.toHex }
+            ), supportsOpacity: false)
+
+            ColorPicker("Swift File Color", selection: Binding(
+                get: { Color(hex: settings.fileNavigatorSwiftFileColorHex) },
+                set: { settings.fileNavigatorSwiftFileColorHex = $0.toHex }
+            ), supportsOpacity: false)
+
+            ColorPicker("Default File Color", selection: Binding(
+                get: { Color(hex: settings.fileNavigatorDefaultFileColorHex) },
+                set: { settings.fileNavigatorDefaultFileColorHex = $0.toHex }
+            ), supportsOpacity: false)
+
+            VStack(alignment: .leading) {
+                Text("Animation Speed")
+                Slider(value: $settings.fileNavigatorAnimationSpeed, in: 0.1...0.8)
+            }
+        } header: {
+            Label("File Navigator Customization", systemImage: "folder.badge.gearshape")
+        } footer: {
+            Text("Customize navigator appearance and behavior in real time.")
+        }
+    }
+
     private var agentConnectionsSection: some View {
         Section {
             Button {
@@ -790,6 +834,8 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                 }
             }
+
+            Toggle("Code Suggestions", isOn: $settings.codeSuggestionsEnabled)
         } header: {
             Label("Local AI", systemImage: "brain.head.profile")
         } footer: {
