@@ -127,6 +127,7 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "documentation_browser", name: "Docs Browser", icon: "book", category: "Tools", isEnabled: false, order: 35),
         ToolbarTool(id: "workspace_profiles", name: "Workspace Profiles", icon: "person.2.crop.square.stack", category: "Project", isEnabled: false, order: 36),
         ToolbarTool(id: "asset_manager", name: "Asset Manager", icon: "photo.stack", category: "File", isEnabled: false, order: 37),
+        ToolbarTool(id: "debug_tools", name: "Debug Tools", icon: "ladybug.fill", category: "Diagnostics", isEnabled: false, order: 38),
     ]
 }
 

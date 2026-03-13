@@ -46,6 +46,7 @@ final class ToolbarActionManager {
         case documentationBrowser
         case workspaceProfiles
         case assetManager
+        case debugTools
     }
 
     func destination(for toolId: String) -> SheetDestination? {
@@ -131,6 +132,8 @@ final class ToolbarActionManager {
             return .workspaceProfiles
         case "asset_manager":
             return .assetManager
+        case "debug_tools":
+            return .debugTools
 
         default:
             return nil

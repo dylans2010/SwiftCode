@@ -3,6 +3,9 @@ import SwiftUI
 struct CodeMetricsDashboardView: View {
     @EnvironmentObject private var projectManager: ProjectManager
 
+    @State private var lintSummary = "Run SwiftLint to gather diagnostics."
+    @State private var isLinting = false
+
     private var files: [FileNode] { projectManager.activeProject?.files.flatMapDeep(includeDirectories: false) ?? [] }
     private var swiftFiles: [FileNode] { files.filter { $0.name.hasSuffix(".swift") } }
 
@@ -27,6 +30,38 @@ struct CodeMetricsDashboardView: View {
                 Text("Language Breakdown: \(languageBreakdown())")
                 Text("Most Modified: \(projectManager.modifiedFilePaths.prefix(3).joined(separator: ", "))")
                     .foregroundStyle(.secondary)
+            }
+
+            AdvancedToolCard(title: "SwiftLint Diagnostics") {
+                HStack {
+                    Button("Run SwiftLint") { runSwiftLint() }
+                        .buttonStyle(.borderedProminent)
+                    if isLinting { ProgressView() }
+                }
+                Text(lintSummary)
+                    .font(.caption.monospaced())
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func runSwiftLint() {
+        guard let project = projectManager.activeProject else { return }
+        isLinting = true
+        Task {
+            do {
+                let lint = try await BinaryManager.shared.runSwiftLint(at: project.directoryURL.path)
+                let output = lint.mergedOutput
+                await MainActor.run {
+                    lintSummary = output.isEmpty ? "SwiftLint completed with no output." : output
+                    isLinting = false
+                }
+            } catch {
+                await MainActor.run {
+                    lintSummary = "SwiftLint unavailable: \(error.localizedDescription)"
+                    isLinting = false
+                }
             }
         }
     }

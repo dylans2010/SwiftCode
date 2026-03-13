@@ -140,55 +140,40 @@ struct ErrorsPanelView: View {
 
     private func analyzeProject() {
         guard let project = projectManager.activeProject else { return }
-        var found: [CodeError] = []
 
-        // Simple syntax analysis on all Swift files
-        analyzeDirectory(project.directoryURL, relativeTo: project.directoryURL, errors: &found)
-        errors = found
-    }
-
-    private func analyzeDirectory(_ url: URL, relativeTo base: URL, errors: inout [CodeError]) {
-        let fm = FileManager.default
-        guard let enumerator = fm.enumerator(
-            at: url,
-            includingPropertiesForKeys: [.isRegularFileKey],
-            options: [.skipsHiddenFiles]
-        ) else { return }
-
-        while let fileURL = enumerator.nextObject() as? URL {
-            guard fileURL.pathExtension == "swift" else { continue }
-            guard let content = try? String(contentsOf: fileURL, encoding: .utf8) else { continue }
-            let relativePath = fileURL.path.replacingOccurrences(of: base.path + "/", with: "")
-            let fileName = fileURL.lastPathComponent
-            let lines = content.components(separatedBy: "\n")
-
-            // Simple brace matching
-            var braceCount = 0
-            for (i, line) in lines.enumerated() {
-                braceCount += line.filter { $0 == "{" }.count
-                braceCount -= line.filter { $0 == "}" }.count
-                if braceCount < 0 {
-                    errors.append(CodeError(
-                        fileName: fileName,
-                        filePath: relativePath,
-                        lineNumber: i + 1,
-                        message: "Unexpected Closing Brace",
-                        severity: .error,
-                        source: .syntaxAnalysis
-                    ))
-                    braceCount = 0
+        Task {
+            do {
+                let result = try await BinaryManager.shared.runSwiftLint(at: project.directoryURL.path)
+                let parsed = parseSwiftLint(result.stdout, projectRoot: project.directoryURL.path)
+                await MainActor.run {
+                    errors = parsed
+                }
+            } catch {
+                await MainActor.run {
+                    errors = []
                 }
             }
-            if braceCount > 0 {
-                errors.append(CodeError(
-                    fileName: fileName,
-                    filePath: relativePath,
-                    lineNumber: lines.count,
-                    message: "Expected \(braceCount) Closing Brace(s)",
-                    severity: .error,
-                    source: .syntaxAnalysis
-                ))
-            }
+        }
+    }
+
+    private func parseSwiftLint(_ output: String, projectRoot: String) -> [CodeError] {
+        output.split(separator: "\n").compactMap { line in
+            let parts = line.split(separator: ":", maxSplits: 4, omittingEmptySubsequences: false)
+            guard parts.count >= 5 else { return nil }
+            let filePath = String(parts[0]).replacingOccurrences(of: projectRoot + "/", with: "")
+            let fileName = URL(fileURLWithPath: String(parts[0])).lastPathComponent
+            let lineNumber = Int(parts[1]) ?? 1
+            let kind = String(parts[3]).lowercased()
+            let severity: CodeError.Severity = kind.contains("error") ? .error : (kind.contains("warning") ? .warning : .info)
+            let message = String(parts[4]).trimmingCharacters(in: .whitespaces)
+            return CodeError(
+                fileName: fileName,
+                filePath: filePath,
+                lineNumber: lineNumber,
+                message: message,
+                severity: severity,
+                source: .syntaxAnalysis
+            )
         }
     }
 

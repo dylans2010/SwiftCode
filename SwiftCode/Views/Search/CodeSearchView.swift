@@ -11,6 +11,7 @@ struct CodeSearchView: View {
     @State private var caseSensitive = false
     @State private var useRegex = false
     @State private var selectedFileExtension: String? = nil
+    @State private var searchBackendHint = ""
     @FocusState private var searchFocused: Bool
 
     private let fileExtensions = [
@@ -65,6 +66,11 @@ struct CodeSearchView: View {
                         Text("\(results.count) result\(results.count == 1 ? "" : "s")")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                        if !searchBackendHint.isEmpty {
+                            Text("• \(searchBackendHint)")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
                         Spacer()
                         Button("Search") { performSearch() }
                             .font(.caption)
@@ -223,7 +229,7 @@ struct CodeSearchView: View {
         let regexFlag = useRegex
         let extFilter = selectedFileExtension
         Task {
-            let searchResults = await indexService.searchProject(
+            let searchResults = await searchUsingBestAvailableBackend(
                 query: query,
                 at: dirURL,
                 caseSensitive: caseFlag,
@@ -235,6 +241,55 @@ struct CodeSearchView: View {
                 isSearching = false
             }
         }
+    }
+
+    private func searchUsingBestAvailableBackend(
+        query: String,
+        at directoryURL: URL,
+        caseSensitive: Bool,
+        useRegex: Bool,
+        fileExtension: String?
+    ) async -> [SearchResult] {
+        do {
+            let ripgrepOutput = try await BinaryManager.shared.runRipgrepSearch(
+                query: query,
+                in: directoryURL.path,
+                caseSensitive: caseSensitive,
+                useRegex: useRegex,
+                fileExtension: fileExtension
+            )
+            await MainActor.run { searchBackendHint = "ripgrep" }
+            return parseRipgrep(output: ripgrepOutput.stdout, projectRoot: directoryURL)
+        } catch {
+            await MainActor.run { searchBackendHint = "index fallback" }
+            return await indexService.searchProject(
+                query: query,
+                at: directoryURL,
+                caseSensitive: caseSensitive,
+                useRegex: useRegex,
+                fileExtension: fileExtension
+            )
+        }
+    }
+
+    private func parseRipgrep(output: String, projectRoot: URL) -> [SearchResult] {
+        output
+            .split(separator: "\n")
+            .compactMap { line in
+                let parts = line.split(separator: ":", maxSplits: 3, omittingEmptySubsequences: false)
+                guard parts.count == 4, let lineNumber = Int(parts[1]) else { return nil }
+
+                let fullPath = String(parts[0])
+                let relativePath = fullPath.replacingOccurrences(of: projectRoot.path + "/", with: "")
+
+                return SearchResult(
+                    fileName: URL(fileURLWithPath: fullPath).lastPathComponent,
+                    filePath: relativePath,
+                    lineNumber: lineNumber,
+                    snippet: String(parts[3]),
+                    matchRange: nil
+                )
+            }
     }
 
     private func openResult(_ result: SearchResult) {
