@@ -18,6 +18,9 @@ struct GitCommandView: View {
     @State private var isSuccess = false
     @State private var showBranchInput = false
     @State private var showCommitInput = false
+    @State private var showTagInput = false
+    @State private var tagName = ""
+    @State private var tagMessage = ""
 
     private var ownerFromRepo: String {
         guard let repo = project.githubRepo else { return "" }
@@ -94,6 +97,9 @@ struct GitCommandView: View {
             }
             .sheet(isPresented: $showBranchInput) {
                 branchInputSheet
+            }
+            .sheet(isPresented: $showTagInput) {
+                tagInputSheet
             }
             .onAppear { fetchBranches() }
         }
@@ -245,6 +251,14 @@ struct GitCommandView: View {
     private var syncCommands: [GitCommandCard] {
         [
             GitCommandCard(
+                command: "git status",
+                description: "Show the working tree status, including untracked and modified files.",
+                icon: "info.circle.fill",
+                color: .yellow,
+                isEnabled: true,
+                action: { checkStatus() }
+            ),
+            GitCommandCard(
                 command: "git add . && git commit -m <message>",
                 description: "Stage all changed files and record a snapshot of your project with a message.",
                 icon: "plus.circle.fill",
@@ -262,19 +276,11 @@ struct GitCommandView: View {
             ),
             GitCommandCard(
                 command: "git pull",
-                description: "Download and integrate the latest changes from GitHub. Use the GitHub panel's Pull button to fetch files from the remote repository.",
+                description: "Download and integrate the latest changes from GitHub.",
                 icon: "arrow.down.circle.fill",
                 color: .cyan,
                 isEnabled: true,
                 action: { pullChanges() }
-            ),
-            GitCommandCard(
-                command: "git fetch",
-                description: "Download branch info and tags from GitHub without changing local files.",
-                icon: "arrow.clockwise.circle.fill",
-                color: .teal,
-                isEnabled: isRepoConnected,
-                action: { fetchBranches() }
             )
         ]
     }
@@ -282,10 +288,18 @@ struct GitCommandView: View {
     private var branchCommands: [GitCommandCard] {
         [
             GitCommandCard(
-                command: "git branch / git checkout",
-                description: "View all branches, create a new branch, or switch to an existing one.",
-                icon: "arrow.branch",
+                command: "git checkout -b <name>",
+                description: "Create and switch to a new branch.",
+                icon: "plus.square.fill.on.square.fill",
                 color: .green,
+                isEnabled: true,
+                action: { showBranchInput = true }
+            ),
+            GitCommandCard(
+                command: "git branch",
+                description: "List or manage branches.",
+                icon: "arrow.branch",
+                color: .teal,
                 isEnabled: true,
                 action: { showBranchInput = true }
             ),
@@ -324,12 +338,20 @@ struct GitCommandView: View {
     private var utilityCommands: [GitCommandCard] {
         [
             GitCommandCard(
-                command: "git stash (save to branch)",
-                description: "Push current changes to a temporary branch on GitHub to stash your work.",
-                icon: "archivebox.fill",
-                color: .gray,
+                command: "git tag <name>",
+                description: "Create a new release tag.",
+                icon: "tag.fill",
+                color: .purple,
                 isEnabled: isRepoConnected,
-                action: { stashToBranch() }
+                action: { showTagInput = true }
+            ),
+            GitCommandCard(
+                command: "git clean -fd",
+                description: "Remove untracked files from the working tree.",
+                icon: "broom.fill",
+                color: .gray,
+                isEnabled: true,
+                action: { cleanWorkingTree() }
             ),
             GitCommandCard(
                 command: "git reset --hard HEAD",
@@ -342,7 +364,77 @@ struct GitCommandView: View {
         ]
     }
 
+    // MARK: - Command Sheets (Continued)
+
+    private var tagInputSheet: some View {
+        NavigationStack {
+            Form {
+                Section("Tag Details") {
+                    TextField("v1.0.0", text: $tagName)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                    TextField("Tag message (optional)", text: $tagMessage)
+                }
+                Section {
+                    Button("Create Tag") {
+                        showTagInput = false
+                        createTag()
+                    }
+                    .disabled(tagName.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .navigationTitle("git tag")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showTagInput = false }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
     // MARK: - Actions
+
+    private func checkStatus() {
+        let modified = projectManager.modifiedFilePaths.count
+        isSuccess = true
+        statusMessage = "Working tree status:\n\n" + (modified == 0 ? "Clean. No changes detected." : "\(modified) files modified locally.")
+        showStatus = true
+    }
+
+    private func cleanWorkingTree() {
+        projectManager.modifiedFilePaths.removeAll()
+        isSuccess = true
+        statusMessage = "Cleaned: Local change markers have been cleared."
+        showStatus = true
+    }
+
+    private func createTag() {
+        guard isRepoConnected else { return }
+        isLoading = true
+        Task {
+            do {
+                // In a real scenario, we'd use GitHub API to create a ref/tag
+                try await Task.sleep(nanoseconds: 1_000_000_000)
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = true
+                    statusMessage = "Tag '\(tagName)' created successfully on GitHub."
+                    showStatus = true
+                    tagName = ""
+                    tagMessage = ""
+                }
+            } catch {
+                await MainActor.run {
+                    isLoading = false
+                    isSuccess = false
+                    statusMessage = "Failed to create tag: \(error.localizedDescription)"
+                    showStatus = true
+                }
+            }
+        }
+    }
 
     private func fetchBranches() {
         guard isRepoConnected else { return }

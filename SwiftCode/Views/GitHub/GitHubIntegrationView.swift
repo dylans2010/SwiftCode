@@ -25,7 +25,6 @@ struct GitHubIntegrationView: View {
     @State private var currentBranch = "main"
     @State private var isDownloadingRepo = false
     @State private var showGitCommands = false
-    @State private var showGitCLI = false
     @State private var repoDetail: GitHubRepoDetail?
     @State private var isValidatingRepo = false
     @State private var repoValidationError: String?
@@ -122,9 +121,6 @@ struct GitHubIntegrationView: View {
             .sheet(isPresented: $showRepoPicker) { repoPickerSheet }
             .sheet(isPresented: $showGitCommands) {
                 GitCommandView(project: project)
-            }
-            .sheet(isPresented: $showGitCLI) {
-                GitCLIView(project: project)
             }
             .sheet(isPresented: $showBranchManagement) {
                 BranchManagementView(
@@ -576,17 +572,6 @@ struct GitHubIntegrationView: View {
                 }
                 .buttonStyle(.plain)
 
-                Button {
-                    showGitCLI = true
-                } label: {
-                    toolButtonContent(
-                        icon: "terminal.fill",
-                        title: "Git CLI",
-                        subtitle: "Run direct git commands",
-                        color: .green
-                    )
-                }
-                .buttonStyle(.plain)
             }
         }
     }

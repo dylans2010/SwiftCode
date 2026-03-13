@@ -7,6 +7,10 @@ struct ProjectSettingsView: View {
     @State private var projectName = ""
     @State private var projectDescription = ""
     @State private var githubRepo = ""
+    @State private var bundleIdentifier = ""
+    @State private var version = "1.0.0"
+    @State private var build = "1"
+    @State private var deploymentTarget = "16.0"
     @State private var errorMessage: String?
     @State private var showError = false
 
@@ -30,6 +34,33 @@ struct ProjectSettingsView: View {
                     TextField("Repository (Owner/Repo)", text: $githubRepo)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                }
+
+                Section("Build Settings") {
+                    TextField("Bundle Identifier", text: $bundleIdentifier)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+
+                    HStack {
+                        Text("Version")
+                        Spacer()
+                        TextField("1.0.0", text: $version)
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    HStack {
+                        Text("Build")
+                        Spacer()
+                        TextField("1", text: $build)
+                            .multilineTextAlignment(.trailing)
+                    }
+
+                    Picker("Deployment Target", selection: $deploymentTarget) {
+                        Text("iOS 15.0").tag("15.0")
+                        Text("iOS 16.0").tag("16.0")
+                        Text("iOS 17.0").tag("17.0")
+                        Text("iOS 18.0").tag("18.0")
+                    }
                 }
 
                 if let project = projectManager.activeProject {
@@ -64,6 +95,13 @@ struct ProjectSettingsView: View {
                                 .foregroundStyle(.tertiary)
                                 .lineLimit(1)
                         }
+
+                        Button {
+                            openProjectInFiles(project)
+                        } label: {
+                            Label("Open In Files App", systemImage: "folder.fill")
+                                .foregroundStyle(.blue)
+                        }
                     }
                 }
             }
@@ -91,6 +129,7 @@ struct ProjectSettingsView: View {
         projectName = project.name
         projectDescription = project.description
         githubRepo = project.githubRepo ?? ""
+        bundleIdentifier = "com.swiftcode.\(project.name.lowercased().replacingOccurrences(of: " ", with: "."))"
     }
 
     private func saveSettings() {
@@ -103,5 +142,15 @@ struct ProjectSettingsView: View {
         projectManager.activeProject?.githubRepo = githubRepo.isEmpty ? nil : githubRepo
 
         dismiss()
+    }
+
+    private func openProjectInFiles(_ project: Project) {
+        // iOS: The Files app can be opened to the app's document directory.
+        // shareddocuments:// is a common way to attempt opening the Files app.
+        if let url = URL(string: "shareddocuments://\(project.directoryURL.path)") {
+            UIApplication.shared.open(url)
+        } else {
+            UIApplication.shared.open(project.directoryURL)
+        }
     }
 }

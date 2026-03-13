@@ -231,8 +231,14 @@ struct FileNodeRowView: View {
 
     private var iconTint: Color {
         if node.isDirectory { return Color(hex: settings.fileNavigatorFolderColorHex) }
-        if node.name.hasSuffix(".swift") { return Color(hex: settings.fileNavigatorSwiftFileColorHex) }
+        if node.name.hasSuffix(".swift") { return .orange }
         return Color(hex: settings.fileNavigatorDefaultFileColorHex)
+    }
+
+    private var iconName: String {
+        if node.isDirectory { return settings.fileNavigatorFolderSymbol }
+        if node.name.hasSuffix(".swift") { return "swift" }
+        return settings.fileNavigatorFileSymbol
     }
 
     var body: some View {
@@ -252,7 +258,7 @@ struct FileNodeRowView: View {
                 }
 
                 // Icon
-                Image(systemName: node.isDirectory ? settings.fileNavigatorFolderSymbol : settings.fileNavigatorFileSymbol)
+                Image(systemName: iconName)
                     .font(.caption)
                     .foregroundStyle(iconTint)
                     .frame(width: 16)

@@ -14,6 +14,7 @@ struct FoldersView: View {
         List {
             if projects.isEmpty {
                 ContentUnavailableView("No Projects", systemImage: "folder", description: Text("Add projects to this folder from the dashboard."))
+                    .listRowBackground(Color.clear)
             } else {
                 ForEach(projects) { project in
                     Button {
@@ -30,9 +31,30 @@ struct FoldersView: View {
                             }
                         }
                     }
+                    .listRowBackground(Color.white.opacity(0.05))
                 }
             }
         }
         .navigationTitle(folder.folderName)
+        .scrollContentBackground(.hidden)
+        .background {
+            ZStack {
+                Color(red: 0.05, green: 0.05, blue: 0.08).ignoresSafeArea()
+                Color(hex: folder.colorHex)
+                    .opacity(0.12)
+                    .ignoresSafeArea()
+
+                // Subtle gradient overlay
+                LinearGradient(
+                    colors: [
+                        Color(hex: folder.colorHex).opacity(0.1),
+                        .clear
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            }
+        }
     }
 }
