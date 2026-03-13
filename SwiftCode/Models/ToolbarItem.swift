@@ -113,7 +113,21 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "git_history", name: "Git History", icon: "clock.arrow.trianglehead.counterclockwise.rotate.90", category: "Git", isEnabled: false, order: 21),
         ToolbarTool(id: "symbol_outline", name: "Symbol Outline", icon: "list.bullet.rectangle", category: "Navigation", isEnabled: false, order: 22),
         ToolbarTool(id: "plugin_manager", name: "Plugin Manager", icon: "puzzlepiece.extension.fill", category: "Tools", isEnabled: false, order: 23),
-        ToolbarTool(id: "file_preview", name: "File Preview", icon: "eye.fill", category: "File", isEnabled: false, order: 24),
+                ToolbarTool(id: "file_preview", name: "File Preview", icon: "eye.fill", category: "File", isEnabled: false, order: 24),
+        ToolbarTool(id: "search_documentation", name: "Search Docs", icon: "doc.text.magnifyingglass", category: "AI", isEnabled: false, order: 25),
+        ToolbarTool(id: "snippets_library", name: "Snippets Library", icon: "text.badge.plus", category: "Tools", isEnabled: false, order: 26),
+        ToolbarTool(id: "code_refactoring", name: "Code Refactoring", icon: "wand.and.rays", category: "Editor", isEnabled: false, order: 27),
+        ToolbarTool(id: "error_diagnostics", name: "Error Diagnostics", icon: "stethoscope", category: "Diagnostics", isEnabled: false, order: 28),
+        ToolbarTool(id: "extension_marketplace", name: "Extension Marketplace", icon: "shippingbox.circle", category: "Tools", isEnabled: false, order: 29),
+        ToolbarTool(id: "code_intelligence", name: "Code Intelligence", icon: "brain", category: "Editor", isEnabled: false, order: 30),
+        ToolbarTool(id: "crash_log_analyzer", name: "Crash Analyzer", icon: "ant", category: "Diagnostics", isEnabled: false, order: 31),
+        ToolbarTool(id: "project_dependency_graph", name: "Dependency Graph", icon: "point.3.connected.trianglepath.dotted", category: "Navigation", isEnabled: false, order: 32),
+        ToolbarTool(id: "symbol_index", name: "Symbol Index", icon: "text.magnifyingglass", category: "Navigation", isEnabled: false, order: 33),
+        ToolbarTool(id: "code_metrics", name: "Code Metrics", icon: "chart.xyaxis.line", category: "Diagnostics", isEnabled: false, order: 34),
+        ToolbarTool(id: "documentation_browser", name: "Docs Browser", icon: "book", category: "Tools", isEnabled: false, order: 35),
+        ToolbarTool(id: "workspace_profiles", name: "Workspace Profiles", icon: "person.2.crop.square.stack", category: "Project", isEnabled: false, order: 36),
+        ToolbarTool(id: "asset_manager", name: "Asset Manager", icon: "photo.stack", category: "File", isEnabled: false, order: 37),
+        ToolbarTool(id: "debug_tools", name: "Debug Tools", icon: "ladybug.fill", category: "Diagnostics", isEnabled: false, order: 38),
     ]
 }
 

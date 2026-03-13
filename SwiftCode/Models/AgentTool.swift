@@ -36,18 +36,30 @@ enum AgentToolCategory: String, CaseIterable {
     case dependency    = "Dependency"
     case build         = "Build"
     case search        = "Search"
+    case refactoring   = "Refactoring"
+    case formatting    = "Formatting"
+    case documentation = "Documentation"
+    case testing       = "Testing"
+    case performance   = "Performance"
+    case security      = "Security"
 
     var icon: String {
         switch self {
-        case .fileSystem:   return "folder.fill"
-        case .codeAnalysis: return "magnifyingglass.circle.fill"
-        case .codeGen:      return "wand.and.stars"
-        case .textUtils:    return "textformat"
-        case .utilities:    return "wrench.and.screwdriver.fill"
-        case .project:      return "cube.fill"
-        case .dependency:   return "shippingbox.fill"
-        case .build:        return "hammer.fill"
-        case .search:       return "magnifyingglass"
+        case .fileSystem:     return "folder.fill"
+        case .codeAnalysis:   return "magnifyingglass.circle.fill"
+        case .codeGen:        return "wand.and.stars"
+        case .textUtils:      return "textformat"
+        case .utilities:      return "wrench.and.screwdriver.fill"
+        case .project:        return "cube.fill"
+        case .dependency:     return "shippingbox.fill"
+        case .build:          return "hammer.fill"
+        case .search:         return "magnifyingglass"
+        case .refactoring:    return "arrow.triangle.2.circlepath"
+        case .formatting:     return "text.alignleft"
+        case .documentation:  return "doc.text.magnifyingglass"
+        case .testing:        return "checkmark.shield.fill"
+        case .performance:    return "gauge.with.dots.needle.33percent"
+        case .security:       return "lock.shield.fill"
         }
     }
 }
@@ -88,7 +100,13 @@ extension AgentTool {
         projectTools +
         dependencyTools +
         buildTools +
-        searchTools
+        searchTools +
+        refactoringTools +
+        formattingTools +
+        documentationTools +
+        testingTools +
+        performanceTools +
+        securityTools
 
     /// All available tools, including user-defined custom tools from CustomToolRegistry.
     static var all: [AgentTool] {
@@ -744,6 +762,370 @@ extension AgentTool {
                 .init(name: "path", description: "Relative path to the file to analyze")
             ],
             category: .search
+        ),
+    ]
+
+    // MARK: Refactoring Tools (8)
+
+    static let refactoringTools: [AgentTool] = [
+        AgentTool(
+            id: "extract_method",
+            displayName: "Extract Method",
+            description: "Extract a range of lines from a function into a new method with proper parameter passing",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "start_line", type: "number", description: "Start line of code to extract"),
+                .init(name: "end_line", type: "number", description: "End line of code to extract"),
+                .init(name: "method_name", description: "Name for the new extracted method")
+            ],
+            category: .refactoring
+        ),
+        AgentTool(
+            id: "rename_symbol",
+            displayName: "Rename Symbol",
+            description: "Rename a symbol (variable, function, type) across the entire project",
+            parameters: [
+                .init(name: "old_name", description: "Current symbol name"),
+                .init(name: "new_name", description: "New symbol name"),
+                .init(name: "file_extension", description: "Only process files with this extension", required: false, defaultValue: "swift")
+            ],
+            category: .refactoring
+        ),
+        AgentTool(
+            id: "inline_variable",
+            displayName: "Inline Variable",
+            description: "Replace a variable with its value at all usage sites in a file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "variable_name", description: "Name of the variable to inline")
+            ],
+            category: .refactoring
+        ),
+        AgentTool(
+            id: "extract_protocol",
+            displayName: "Extract Protocol",
+            description: "Extract a protocol from a class or struct's public interface",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "type_name", description: "Name of the type to extract protocol from"),
+                .init(name: "protocol_name", description: "Name for the new protocol")
+            ],
+            category: .refactoring
+        ),
+        AgentTool(
+            id: "convert_to_async",
+            displayName: "Convert to Async",
+            description: "Convert a completion-handler-based function to async/await syntax",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "function_name", description: "Name of the function to convert")
+            ],
+            category: .refactoring
+        ),
+        AgentTool(
+            id: "split_file",
+            displayName: "Split File",
+            description: "Split a large file into multiple files based on type declarations",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file to split"),
+                .init(name: "output_directory", description: "Directory for the split files", required: false, defaultValue: "")
+            ],
+            category: .refactoring
+        ),
+        AgentTool(
+            id: "add_conformance",
+            displayName: "Add Protocol Conformance",
+            description: "Add protocol conformance (Equatable, Hashable, Codable, etc.) to a type with auto-generated implementations",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "type_name", description: "Name of the type"),
+                .init(name: "protocol", description: "Protocol to conform to (e.g. Equatable, Hashable, Codable, CustomStringConvertible)")
+            ],
+            category: .refactoring
+        ),
+        AgentTool(
+            id: "dependency_graph",
+            displayName: "Dependency Graph",
+            description: "Generate a dependency graph showing import relationships between all project files",
+            parameters: [
+                .init(name: "format", description: "Output format: text, mermaid, or dot", required: false, defaultValue: "text")
+            ],
+            category: .refactoring
+        ),
+    ]
+
+    // MARK: Formatting Tools (6)
+
+    static let formattingTools: [AgentTool] = [
+        AgentTool(
+            id: "format_file",
+            displayName: "Format File",
+            description: "Auto-format a source file with consistent indentation, spacing, and style",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file to format")
+            ],
+            category: .formatting
+        ),
+        AgentTool(
+            id: "format_selection",
+            displayName: "Format Selection",
+            description: "Format a specific range of lines in a file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "start_line", type: "number", description: "Start line"),
+                .init(name: "end_line", type: "number", description: "End line")
+            ],
+            category: .formatting
+        ),
+        AgentTool(
+            id: "sort_imports",
+            displayName: "Sort Imports",
+            description: "Sort and organize import statements alphabetically in a Swift file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the Swift file")
+            ],
+            category: .formatting
+        ),
+        AgentTool(
+            id: "normalize_whitespace",
+            displayName: "Normalize Whitespace",
+            description: "Remove trailing whitespace, normalize line endings, and fix indentation across a file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "tab_width", type: "number", description: "Number of spaces per tab", required: false, defaultValue: "4")
+            ],
+            category: .formatting
+        ),
+        AgentTool(
+            id: "remove_unused_imports",
+            displayName: "Remove Unused Imports",
+            description: "Detect and remove import statements that are not referenced in the file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the Swift file")
+            ],
+            category: .formatting
+        ),
+        AgentTool(
+            id: "add_mark_sections",
+            displayName: "Add MARK Sections",
+            description: "Automatically add // MARK: - sections to organize a Swift file by properties, methods, and protocol conformances",
+            parameters: [
+                .init(name: "path", description: "Relative path to the Swift file")
+            ],
+            category: .formatting
+        ),
+    ]
+
+    // MARK: Documentation Tools (5)
+
+    static let documentationTools: [AgentTool] = [
+        AgentTool(
+            id: "generate_doc_comment",
+            displayName: "Generate Doc Comment",
+            description: "Generate a documentation comment for a function, type, or property",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "symbol_name", description: "Name of the symbol to document")
+            ],
+            category: .documentation
+        ),
+        AgentTool(
+            id: "generate_readme",
+            displayName: "Generate README",
+            description: "Generate a comprehensive README.md for the project with usage, setup, and architecture sections",
+            parameters: [
+                .init(name: "include_api", description: "Include API documentation section", required: false, defaultValue: "true")
+            ],
+            category: .documentation
+        ),
+        AgentTool(
+            id: "generate_changelog",
+            displayName: "Generate Changelog",
+            description: "Generate a CHANGELOG.md entry based on recent code changes",
+            parameters: [
+                .init(name: "version", description: "Version number for this changelog entry"),
+                .init(name: "changes", description: "Comma-separated list of changes")
+            ],
+            category: .documentation
+        ),
+        AgentTool(
+            id: "generate_api_docs",
+            displayName: "Generate API Docs",
+            description: "Generate API reference documentation for all public types and methods in a file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the Swift file")
+            ],
+            category: .documentation
+        ),
+        AgentTool(
+            id: "generate_architecture_doc",
+            displayName: "Generate Architecture Doc",
+            description: "Generate an architecture decision record (ADR) documenting a design decision",
+            parameters: [
+                .init(name: "title", description: "Decision title"),
+                .init(name: "context", description: "Background context for the decision"),
+                .init(name: "decision", description: "The decision that was made"),
+                .init(name: "consequences", description: "Expected consequences of this decision")
+            ],
+            category: .documentation
+        ),
+    ]
+
+    // MARK: Testing Tools (6)
+
+    static let testingTools: [AgentTool] = [
+        AgentTool(
+            id: "generate_test_suite",
+            displayName: "Generate Test Suite",
+            description: "Generate a comprehensive test suite for a Swift type including unit, edge case, and error tests",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file containing the type to test"),
+                .init(name: "type_name", description: "Name of the type to generate tests for")
+            ],
+            category: .testing
+        ),
+        AgentTool(
+            id: "generate_mock",
+            displayName: "Generate Mock",
+            description: "Generate a mock implementation of a protocol for testing",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file containing the protocol"),
+                .init(name: "protocol_name", description: "Name of the protocol to mock")
+            ],
+            category: .testing
+        ),
+        AgentTool(
+            id: "generate_test_data",
+            displayName: "Generate Test Data Factory",
+            description: "Generate a factory that creates test instances of a model type with sensible defaults",
+            parameters: [
+                .init(name: "path", description: "Relative path to the model file"),
+                .init(name: "type_name", description: "Name of the model type")
+            ],
+            category: .testing
+        ),
+        AgentTool(
+            id: "analyze_testability",
+            displayName: "Analyze Testability",
+            description: "Analyze a type for testability issues: tight coupling, hidden dependencies, global state",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "type_name", description: "Name of the type to analyze")
+            ],
+            category: .testing
+        ),
+        AgentTool(
+            id: "generate_snapshot_test",
+            displayName: "Generate Snapshot Test",
+            description: "Generate a snapshot test for a SwiftUI view",
+            parameters: [
+                .init(name: "view_name", description: "Name of the SwiftUI view to snapshot test"),
+                .init(name: "configurations", description: "Comma-separated device configurations to test", required: false, defaultValue: "iPhone SE,iPhone 15 Pro")
+            ],
+            category: .testing
+        ),
+        AgentTool(
+            id: "generate_performance_test",
+            displayName: "Generate Performance Test",
+            description: "Generate a performance test with measurement baselines for a function",
+            parameters: [
+                .init(name: "function_name", description: "Name of the function to measure"),
+                .init(name: "iterations", type: "number", description: "Number of iterations to measure", required: false, defaultValue: "10")
+            ],
+            category: .testing
+        ),
+    ]
+
+    // MARK: Performance Tools (5)
+
+    static let performanceTools: [AgentTool] = [
+        AgentTool(
+            id: "analyze_complexity",
+            displayName: "Analyze Complexity",
+            description: "Calculate cyclomatic complexity and cognitive complexity for functions in a file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file to analyze")
+            ],
+            category: .performance
+        ),
+        AgentTool(
+            id: "find_large_files",
+            displayName: "Find Large Files",
+            description: "Find the largest files in the project by line count",
+            parameters: [
+                .init(name: "limit", type: "number", description: "Number of files to return", required: false, defaultValue: "10")
+            ],
+            category: .performance
+        ),
+        AgentTool(
+            id: "detect_retain_cycles",
+            displayName: "Detect Retain Cycles",
+            description: "Scan Swift files for common retain cycle patterns (missing weak self, strong delegate references)",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file, or empty to scan entire project", required: false, defaultValue: "")
+            ],
+            category: .performance
+        ),
+        AgentTool(
+            id: "find_force_unwraps",
+            displayName: "Find Force Unwraps",
+            description: "Find all force unwrap (!) usage in a file or project for safety auditing",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file, or empty to scan entire project", required: false, defaultValue: "")
+            ],
+            category: .performance
+        ),
+        AgentTool(
+            id: "analyze_view_body_complexity",
+            displayName: "Analyze View Body Complexity",
+            description: "Analyze SwiftUI view body complexity and suggest extraction of subviews",
+            parameters: [
+                .init(name: "path", description: "Relative path to the SwiftUI view file")
+            ],
+            category: .performance
+        ),
+    ]
+
+    // MARK: Security Tools (5)
+
+    static let securityTools: [AgentTool] = [
+        AgentTool(
+            id: "audit_secrets",
+            displayName: "Audit Secrets",
+            description: "Scan the project for hardcoded secrets, API keys, passwords, and tokens",
+            parameters: [],
+            category: .security
+        ),
+        AgentTool(
+            id: "check_permissions",
+            displayName: "Check Permissions",
+            description: "List all iOS permission usage descriptions in Info.plist and verify they have appropriate descriptions",
+            parameters: [],
+            category: .security
+        ),
+        AgentTool(
+            id: "audit_network_security",
+            displayName: "Audit Network Security",
+            description: "Check for insecure network configurations: HTTP URLs, missing ATS settings, no certificate pinning",
+            parameters: [],
+            category: .security
+        ),
+        AgentTool(
+            id: "audit_data_storage",
+            displayName: "Audit Data Storage",
+            description: "Check for sensitive data stored insecurely (UserDefaults for tokens, unencrypted files)",
+            parameters: [],
+            category: .security
+        ),
+        AgentTool(
+            id: "generate_keychain_wrapper",
+            displayName: "Generate Keychain Wrapper",
+            description: "Generate a type-safe Keychain access wrapper for secure data storage",
+            parameters: [
+                .init(name: "name", description: "Wrapper class name"),
+                .init(name: "keys", description: "Comma-separated key names to store (e.g. authToken, apiKey, refreshToken)")
+            ],
+            category: .security
         ),
     ]
 }

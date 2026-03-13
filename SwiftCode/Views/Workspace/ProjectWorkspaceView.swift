@@ -32,6 +32,20 @@ struct ProjectWorkspaceView: View {
     @State private var showSymbolOutline = false
     @State private var showLocalSimulation = false
     @State private var showPluginManager = false
+    @State private var showSearchDocumentation = false
+    @State private var showSnippetsLibrary = false
+    @State private var showCodeRefactoring = false
+    @State private var showErrorDiagnostics = false
+    @State private var showExtensionMarketplace = false
+    @State private var showCodeIntelligence = false
+    @State private var showCrashLogAnalyzer = false
+    @State private var showProjectDependencyGraph = false
+    @State private var showSymbolIndex = false
+    @State private var showCodeMetrics = false
+    @State private var showDocumentationBrowser = false
+    @State private var showWorkspaceProfiles = false
+    @State private var showAssetManager = false
+    @State private var showDebugTools = false
     @State private var showProjectTemplates = false
     @State private var showAllToolsSheet = false
 
@@ -206,6 +220,23 @@ struct ProjectWorkspaceView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showSearchDocumentation) {
+            SearchDocumentationView()
+                .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showSnippetsLibrary) { SnippetsLibraryView() }
+        .sheet(isPresented: $showCodeRefactoring) { CodeRefactoringView() }
+        .sheet(isPresented: $showErrorDiagnostics) { ErrorDiagnosticsView() }
+        .sheet(isPresented: $showExtensionMarketplace) { ExtensionMarketplaceView() }
+        .sheet(isPresented: $showCodeIntelligence) { CodeIntelligenceView() }
+        .sheet(isPresented: $showCrashLogAnalyzer) { CrashLogAnalyzerView() }
+        .sheet(isPresented: $showProjectDependencyGraph) { ProjectDependencyGraphView() }
+        .sheet(isPresented: $showSymbolIndex) { SymbolIndexView() }
+        .sheet(isPresented: $showCodeMetrics) { CodeMetricsDashboardView() }
+        .sheet(isPresented: $showDocumentationBrowser) { DocumentationBrowserView() }
+        .sheet(isPresented: $showWorkspaceProfiles) { WorkspaceProfilesView() }
+        .sheet(isPresented: $showAssetManager) { AssetManagerView() }
+        .sheet(isPresented: $showDebugTools) { DebuggingToolsView() }
         .sheet(isPresented: $showProjectTemplates) {
             ProjectTemplateView()
                 .presentationDetents([.medium, .large])
@@ -302,6 +333,20 @@ struct ProjectWorkspaceView: View {
         case .symbolOutline: showSymbolOutline = true
         case .localSimulation: showLocalSimulation = true
         case .pluginManager: showPluginManager = true
+        case .searchDocumentation: showSearchDocumentation = true
+        case .snippetsLibrary: showSnippetsLibrary = true
+        case .codeRefactoring: showCodeRefactoring = true
+        case .errorDiagnostics: showErrorDiagnostics = true
+        case .extensionMarketplace: showExtensionMarketplace = true
+        case .codeIntelligence: showCodeIntelligence = true
+        case .crashLogAnalyzer: showCrashLogAnalyzer = true
+        case .projectDependencyGraph: showProjectDependencyGraph = true
+        case .symbolIndex: showSymbolIndex = true
+        case .codeMetrics: showCodeMetrics = true
+        case .documentationBrowser: showDocumentationBrowser = true
+        case .workspaceProfiles: showWorkspaceProfiles = true
+        case .assetManager: showAssetManager = true
+        case .debugTools: showDebugTools = true
         }
     }
 

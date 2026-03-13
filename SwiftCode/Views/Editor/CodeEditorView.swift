@@ -14,17 +14,14 @@ struct CodeEditorView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // File Tabs
             if !projectManager.openFileTabs.isEmpty {
                 fileTabsBar
             }
 
-            // Path Bar (breadcrumb)
             if projectManager.activeFileNode != nil {
-                pathBar
+                editorActionBar
             }
 
-            // Background button for keyboard shortcut
             Button("") {
                 projectManager.saveCurrentFile(content: projectManager.activeFileContent)
             }
@@ -32,13 +29,11 @@ struct CodeEditorView: View {
             .opacity(0)
             .frame(width: 0, height: 0)
 
-            // Search bar
             if toolbarSettings.showSearchBar {
                 searchBar
                     .transition(.move(edge: .top).combined(with: .opacity))
             }
 
-            // Editor or placeholder
             if projectManager.activeFileNode != nil {
                 HStack(spacing: 0) {
                     TextEditorRepresentable(
@@ -58,7 +53,6 @@ struct CodeEditorView: View {
                     .background(Color(red: 0.11, green: 0.11, blue: 0.14))
                     .id(projectManager.activeFileNode?.id)
 
-                    // Minimap
                     if minimapEnabled {
                         MinimapView(content: projectManager.activeFileContent)
                     }
@@ -82,116 +76,220 @@ struct CodeEditorView: View {
 
     private var fileTabsBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 0) {
+            HStack(spacing: 1) {
                 ForEach(projectManager.openFileTabs) { tab in
                     fileTab(tab)
                 }
             }
+            .padding(.horizontal, 4)
+            .padding(.vertical, 4)
         }
-        .background(Color(red: 0.09, green: 0.09, blue: 0.12))
+        .background(Color(red: 0.08, green: 0.08, blue: 0.10))
     }
 
     private func fileTab(_ node: FileNode) -> some View {
         let isActive = projectManager.activeFileNode?.id == node.id
-        return HStack(spacing: 4) {
+        return HStack(spacing: 6) {
             Image(systemName: node.icon)
-                .font(.system(size: 9))
+                .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(node.iconColor)
             Text(node.name)
-                .font(.caption2)
+                .font(.system(size: 12, weight: isActive ? .semibold : .regular, design: .default))
                 .foregroundStyle(isActive ? .white : .secondary)
                 .lineLimit(1)
             Button {
                 projectManager.closeTab(node)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 8))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(isActive ? .white.opacity(0.6) : .secondary.opacity(0.5))
+                    .padding(2)
+                    .background(
+                        Circle()
+                            .fill(isActive ? Color.white.opacity(0.1) : Color.clear)
+                    )
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 5)
-        .background(isActive ? Color.white.opacity(0.08) : Color.clear)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 6)
+                .fill(isActive
+                      ? Color(red: 0.16, green: 0.16, blue: 0.20)
+                      : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(isActive ? Color.white.opacity(0.08) : Color.clear, lineWidth: 0.5)
+        )
         .contentShape(Rectangle())
         .onTapGesture {
             projectManager.openFile(node)
         }
     }
 
-    // MARK: - Path Bar (Breadcrumb)
+    // MARK: - Editor Action Bar (Breadcrumb + Format)
 
-    private var pathBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 2) {
-                if let project = projectManager.activeProject {
-                    Text(project.name)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
+    private var editorActionBar: some View {
+        HStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 2) {
+                    if let project = projectManager.activeProject {
+                        HStack(spacing: 4) {
+                            Image(systemName: "folder.fill")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.blue.opacity(0.7))
+                            Text(project.name)
+                                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
 
-                if let node = projectManager.activeFileNode {
-                    let components = node.path.components(separatedBy: "/")
-                    ForEach(Array(components.enumerated()), id: \.offset) { index, component in
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.tertiary)
-                        Text(component)
-                            .font(.caption2)
-                            .foregroundStyle(index == components.count - 1 ? .orange : .secondary)
+                    if let node = projectManager.activeFileNode {
+                        let components = node.path.components(separatedBy: "/")
+                        ForEach(Array(components.enumerated()), id: \.offset) { index, component in
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundStyle(.quaternary)
+                            Text(component)
+                                .font(.system(size: 11, weight: index == components.count - 1 ? .semibold : .regular, design: .monospaced))
+                                .foregroundStyle(index == components.count - 1 ? .orange : .secondary)
+                        }
                     }
                 }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 4)
+
+            Spacer()
+
+            Button {
+                formatCode()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "text.alignleft")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text("Format")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Color(red: 0.22, green: 0.22, blue: 0.28))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                )
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 10)
         }
-        .background(Color(red: 0.12, green: 0.12, blue: 0.15))
+        .background(Color(red: 0.10, green: 0.10, blue: 0.13))
+        .overlay(
+            Rectangle()
+                .fill(Color.white.opacity(0.04))
+                .frame(height: 0.5),
+            alignment: .bottom
+        )
     }
 
     // MARK: - Subviews
 
     private var searchBar: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary).font(.caption)
-                TextField("Find", text: $searchQuery)
-                    .font(.caption)
-                    .autocorrectionDisabled()
-                Button("Done") {
-                    withAnimation { toolbarSettings.showSearchBar = false }
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                    TextField("Find in file...", text: $searchQuery)
+                        .font(.system(size: 13, design: .monospaced))
+                        .autocorrectionDisabled()
                 }
-                .font(.caption)
-                .foregroundStyle(.orange)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.06))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                )
+
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        toolbarSettings.showSearchBar = false
+                    }
+                } label: {
+                    Text("Done")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.orange)
+                }
             }
-            .padding(8)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
 
             HStack(spacing: 8) {
-                Image(systemName: "arrow.left.arrow.right").foregroundStyle(.secondary).font(.caption)
-                TextField("Replace", text: $replaceText)
-                    .font(.caption)
-                    .autocorrectionDisabled()
-                Button("Replace All") {
-                    replaceAll()
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.left.arrow.right")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 12))
+                    TextField("Replace with...", text: $replaceText)
+                        .font(.system(size: 13, design: .monospaced))
+                        .autocorrectionDisabled()
                 }
-                .font(.caption)
-                .foregroundStyle(.blue)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white.opacity(0.06))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                )
+
+                Button {
+                    replaceAll()
+                } label: {
+                    Text("Replace")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.blue)
+                }
             }
-            .padding(8)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8))
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color(red: 0.13, green: 0.13, blue: 0.17))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(Color(red: 0.10, green: 0.10, blue: 0.13))
     }
 
     private var editorPlaceholder: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "doc.text")
-                .font(.system(size: 48))
-                .foregroundStyle(.secondary.opacity(0.5))
-            Text("Select a file to edit")
-                .foregroundStyle(.tertiary)
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.03))
+                    .frame(width: 100, height: 100)
+                Image(systemName: "curlybraces")
+                    .font(.system(size: 36, weight: .thin))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.blue.opacity(0.6), .purple.opacity(0.6)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+            VStack(spacing: 6) {
+                Text("No File Open")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.secondary)
+                Text("Select a file from the navigator to begin editing")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.tertiary)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -199,9 +297,14 @@ struct CodeEditorView: View {
     private var fileLoadErrorSheet: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 40))
-                    .foregroundStyle(.red)
+                ZStack {
+                    Circle()
+                        .fill(Color.red.opacity(0.1))
+                        .frame(width: 72, height: 72)
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .font(.system(size: 32))
+                        .foregroundStyle(.red)
+                }
                 Text("File Load Error")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
@@ -247,6 +350,39 @@ struct CodeEditorView: View {
         let updated = projectManager.activeFileContent.replacingOccurrences(of: searchQuery, with: replaceText)
         projectManager.saveCurrentFile(content: updated)
     }
+
+    private func formatCode() {
+        let ext = projectManager.activeFileNode?.name.components(separatedBy: ".").last ?? "swift"
+        let formatted = EditorCodeFormatter.shared.format(projectManager.activeFileContent, fileExtension: ext)
+        projectManager.activeFileContent = formatted
+        projectManager.saveCurrentFile(content: formatted)
+    }
+}
+
+private final class EditorCodeFormatter {
+    static let shared = EditorCodeFormatter()
+
+    private init() {}
+
+    func format(_ code: String, fileExtension: String) -> String {
+        switch fileExtension.lowercased() {
+        case "json":
+            return formatJSON(code)
+        default:
+            return code
+        }
+    }
+
+    private func formatJSON(_ code: String) -> String {
+        guard let data = code.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data),
+              let formattedData = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted, .sortedKeys]),
+              let formatted = String(data: formattedData, encoding: .utf8) else {
+            return code
+        }
+
+        return formatted
+    }
 }
 
 // MARK: - Minimap View
@@ -278,7 +414,7 @@ struct MinimapView: View {
             }
         }
         .frame(width: minimapWidth)
-        .background(Color(red: 0.13, green: 0.13, blue: 0.17))
+        .background(Color(red: 0.10, green: 0.10, blue: 0.13))
         .opacity(minimapOpacity)
     }
 
@@ -288,15 +424,24 @@ struct MinimapView: View {
             return .green.opacity(0.4)
         }
         if trimmed.hasPrefix("import ") {
-            return .purple.opacity(0.4)
+            return .purple.opacity(0.5)
         }
-        if trimmed.hasPrefix("func ") || trimmed.hasPrefix("struct ") || trimmed.hasPrefix("class ") {
-            return .blue.opacity(0.5)
+        if trimmed.hasPrefix("func ") {
+            return Color(red: 0.40, green: 0.83, blue: 0.37).opacity(0.5)
+        }
+        if trimmed.hasPrefix("struct ") || trimmed.hasPrefix("class ") || trimmed.hasPrefix("enum ") {
+            return .cyan.opacity(0.5)
+        }
+        if trimmed.hasPrefix("@") {
+            return Color(red: 0.75, green: 0.49, blue: 0.98).opacity(0.5)
+        }
+        if trimmed.hasPrefix("var ") || trimmed.hasPrefix("let ") {
+            return Color(red: 0.99, green: 0.37, blue: 0.53).opacity(0.3)
         }
         if trimmed.isEmpty {
             return .clear
         }
-        return .white.opacity(0.25)
+        return .white.opacity(0.2)
     }
 }
 
@@ -336,9 +481,7 @@ struct TextEditorRepresentable: UIViewRepresentable {
         textView.isScrollEnabled = false
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.delegate = context.coordinator
-        // Inset: left padding keeps code clear of the gutter boundary
         textView.textContainerInset = TextLayoutEngine.textContainerInset()
-        // No exclusion paths needed; the text view starts after the gutter in the layout
 
         container.addSubview(lineNumbers)
         container.addSubview(textView)
@@ -350,7 +493,6 @@ struct TextEditorRepresentable: UIViewRepresentable {
 
         scrollView.delegate = context.coordinator
 
-        // Load initial text with syntax highlighting
         let highlighted = SyntaxHighlighter.shared.highlight(text, fileExtension: fileExtension)
         textView.attributedText = highlighted
 
@@ -362,7 +504,6 @@ struct TextEditorRepresentable: UIViewRepresentable {
 
         context.coordinator.fileExtension = fileExtension
 
-        // Apply syntax highlighting when text changes
         if textView.attributedText.string != text {
             let highlighted = SyntaxHighlighter.shared.highlight(text, fileExtension: fileExtension)
             let savedRange = textView.selectedRange
@@ -371,11 +512,9 @@ struct TextEditorRepresentable: UIViewRepresentable {
             textView.selectedRange = NSRange(location: clampedLocation, length: 0)
         }
 
-        // Apply word wrap
         if wordWrap {
             textView.textContainer.lineBreakMode = .byWordWrapping
             textView.textContainer.widthTracksTextView = true
-            // Ensure lines wrap within the code column only; never bleed into gutter
             textView.textContainer.size = CGSize(
                 width: TextLayoutEngine.codeColumnWidth(totalWidth: scrollView.bounds.width),
                 height: .greatestFiniteMagnitude
@@ -426,7 +565,6 @@ struct TextEditorRepresentable: UIViewRepresentable {
 
         func textViewDidChange(_ textView: UITextView) {
             text.wrappedValue = textView.text
-            // Re-apply syntax highlighting after edit
             let highlighted = SyntaxHighlighter.shared.highlight(textView.text, fileExtension: fileExtension)
             let savedRange = textView.selectedRange
             textView.attributedText = highlighted
@@ -453,14 +591,11 @@ struct TextEditorRepresentable: UIViewRepresentable {
             container.frame = CGRect(x: 0, y: 0, width: contentWidth, height: contentHeight)
             scrollView.contentSize = container.frame.size
 
-            // Line number gutter: fixed width, full content height
             lineNumbers.frame = CGRect(x: 0, y: 0, width: gutterWidth, height: contentHeight)
-            // Code region starts immediately after the gutter
             textView.frame = CGRect(x: gutterWidth, y: 0,
                                     width: contentWidth - gutterWidth,
                                     height: contentHeight)
 
-            // Pass layout metrics to the line number view so it draws at exact positions
             let font = textView.font ?? TextLayoutEngine.editorFont()
             lineNumbers.lineHeight = font.lineHeight
             lineNumbers.topInset = textView.textContainerInset.top
@@ -474,40 +609,43 @@ struct TextEditorRepresentable: UIViewRepresentable {
 
 final class LineNumberView: UIView {
     var lineCount: Int = 1
-    /// Must match the editor font's lineHeight.
     var lineHeight: CGFloat = TextLayoutEngine.lineHeight()
-    /// Must match UITextView.textContainerInset.top.
     var topInset: CGFloat = TextLayoutEngine.textContainerInset().top
 
     override init(frame: CGRect) {
         super.init(frame: frame)
-        backgroundColor = UIColor(red: 0.13, green: 0.13, blue: 0.17, alpha: 1)
+        backgroundColor = UIColor(red: 0.10, green: 0.10, blue: 0.13, alpha: 1)
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
     override func draw(_ rect: CGRect) {
         let font = UIFont.monospacedSystemFont(ofSize: 11, weight: .regular)
-        let attributes: [NSAttributedString.Key: Any] = [
+        let activeAttrs: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: UIColor.gray.withAlphaComponent(0.6)
+            .foregroundColor: UIColor.white.withAlphaComponent(0.4)
+        ]
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor.gray.withAlphaComponent(0.35)
         ]
 
-        // Draw a subtle right-edge separator line
-        let separatorX = bounds.width - 1
-        UIColor.white.withAlphaComponent(0.07).setFill()
-        UIRectFill(CGRect(x: separatorX, y: 0, width: 1, height: bounds.height))
+        let separatorX = bounds.width - 0.5
+        UIColor.white.withAlphaComponent(0.05).setFill()
+        UIRectFill(CGRect(x: separatorX, y: 0, width: 0.5, height: bounds.height))
 
         let count = max(1, lineCount)
         for i in 1...count {
             let label = "\(i)"
-            let labelSize = label.size(withAttributes: attributes)
-            // Right-align the number with 8pt right padding
+            let useAttrs = (i % 5 == 0 || i == 1) ? activeAttrs : attrs
+            let labelSize = label.size(withAttributes: useAttrs)
             let x = bounds.width - labelSize.width - 8
-
+            // Align baseline with the code line: topInset + (line-1) * lineHeight
+            // Drawing with `draw(at:)` places top-left of the glyph at the given point.
+            // Shift down by (lineHeight - labelSize.height) / 2 to vertically centre.
             let codeLine_y = topInset + CGFloat(i - 1) * lineHeight
             let y = codeLine_y + (lineHeight - labelSize.height) / 2
-            label.draw(at: CGPoint(x: x, y: y), withAttributes: attributes)
+            label.draw(at: CGPoint(x: x, y: y), withAttributes: useAttrs)
         }
     }
 }

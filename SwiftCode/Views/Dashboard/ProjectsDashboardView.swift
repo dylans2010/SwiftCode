@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct ProjectsDashboardView: View {
     @EnvironmentObject private var projectManager: ProjectManager
     @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var folderManager: FolderManager
     @State private var showCreationSheet = false
     @State private var showNewProjectSheet = false
     @State private var newProjectName = ""
@@ -26,6 +27,10 @@ struct ProjectsDashboardView: View {
     @State private var showGitHubRemoteSheet = false
     @State private var pendingProjectForRemote: Project?
     @State private var isImporting = false
+    @State private var showFolderCreateView = false
+    @State private var selectedFolder: ProjectFolder?
+    @State private var projectToAssignFolder: Project?
+    @State private var showAddToFolderSheet = false
 
     private var gridColumns: [GridItem] {
         [GridItem(.adaptive(minimum: 200, maximum: 280), spacing: 20)]
@@ -60,6 +65,8 @@ struct ProjectsDashboardView: View {
                     emptyStateView
                 } else {
                     ScrollView {
+                        foldersSection
+
                         if settings.dashboardLayout == .grid {
                             LazyVGrid(columns: gridColumns, spacing: 20) {
                                 ForEach(sortedProjects) { project in
@@ -97,6 +104,11 @@ struct ProjectsDashboardView: View {
             .navigationBarTitleDisplayMode(.large)
             .toolbar { toolbarContent }
             .sheet(isPresented: $showCreationSheet) { creationOptionsSheet }
+            .sheet(isPresented: $showFolderCreateView) {
+                FolderCreateView()
+                    .environmentObject(folderManager)
+            }
+            .sheet(isPresented: $showAddToFolderSheet) { addToFolderSheet }
             .sheet(isPresented: $showNewProjectSheet) { newProjectSheet }
             .sheet(isPresented: $showImportPicker) {
                 FileImporterRepresentableView(
@@ -134,6 +146,11 @@ struct ProjectsDashboardView: View {
                     }
                     .environmentObject(projectManager)
                 }
+            }
+            .navigationDestination(item: $selectedFolder) { folder in
+                FoldersView(folder: folder)
+                    .environmentObject(projectManager)
+                    .environmentObject(folderManager)
             }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
                 Button("OK") {}
@@ -174,6 +191,12 @@ struct ProjectsDashboardView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
+            Button {
+                showFolderCreateView = true
+            } label: {
+                Label("Create Folder", systemImage: "folder.badge.plus")
+            }
+
             Button {
                 showCreationSheet = true
             } label: {
@@ -256,6 +279,28 @@ struct ProjectsDashboardView: View {
                     } icon: {
                         Image(systemName: "chevron.left.forwardslash.chevron.right")
                             .foregroundStyle(.purple)
+                            .font(.title3)
+                    }
+                }
+
+                Button {
+                    showCreationSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showFolderCreateView = true
+                    }
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Create Folder")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            Text("Organize projects with custom folder groups")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "folder.badge.plus")
+                            .foregroundStyle(.cyan)
                             .font(.title3)
                     }
                 }
@@ -426,6 +471,13 @@ struct ProjectsDashboardView: View {
             exportProject(project)
         } label: {
             Label("Export As ZIP", systemImage: "square.and.arrow.up")
+        }
+
+        Button {
+            projectToAssignFolder = project
+            showAddToFolderSheet = true
+        } label: {
+            Label("Add To Folder", systemImage: "folder.badge.plus")
         }
 
         Divider()
@@ -663,6 +715,74 @@ struct ProjectsDashboardView: View {
     private func scheduleProjectTemplatesPresentation() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             NotificationCenter.default.post(name: .showProjectTemplatesOnOpen, object: nil)
+        }
+    }
+
+    private var foldersSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if !folderManager.folders.isEmpty {
+                Text("Folders")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .padding(.horizontal)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(folderManager.folders) { folder in
+                            Button {
+                                selectedFolder = folder
+                            } label: {
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Image(systemName: folder.iconSymbol)
+                                        .font(.title2)
+                                        .foregroundStyle(Color(hex: folder.colorHex))
+                                    Text(folder.folderName)
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.white)
+                                    Text("\(folder.projectIdentifiers.count) project\(folder.projectIdentifiers.count == 1 ? "" : "s")")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(12)
+                                .frame(width: 170, alignment: .leading)
+                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+            }
+        }
+        .padding(.top)
+    }
+
+    private var addToFolderSheet: some View {
+        NavigationStack {
+            List(folderManager.folders) { folder in
+                Button {
+                    if let project = projectToAssignFolder {
+                        folderManager.addProject(project.id, to: folder.folderId)
+                    }
+                    showAddToFolderSheet = false
+                } label: {
+                    HStack {
+                        Image(systemName: folder.iconSymbol)
+                            .foregroundStyle(Color(hex: folder.colorHex))
+                        Text(folder.folderName)
+                        Spacer()
+                        Text("\(folder.projectIdentifiers.count)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .navigationTitle("Add To Folder")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showAddToFolderSheet = false }
+                }
+            }
         }
     }
 }

@@ -6,6 +6,8 @@ struct SwiftCodeApp: App {
     @StateObject private var settings = AppSettings.shared
     @StateObject private var codingManager = CodingManager.shared
     @StateObject private var toolbarSettings = ToolbarSettings.shared
+    @StateObject private var folderManager = FolderManager.shared
+    @StateObject private var codeSuggestionsML = CodeSuggestionsML.shared
 
     var body: some Scene {
         WindowGroup {
@@ -13,6 +15,8 @@ struct SwiftCodeApp: App {
                 .environmentObject(projectManager)
                 .environmentObject(settings)
                 .environmentObject(toolbarSettings)
+                .environmentObject(folderManager)
+                .environmentObject(codeSuggestionsML)
                 .task {
                     // Ensure the persistent Projects and Models directories exist at launch
                     codingManager.ensureProjectsDirectory()

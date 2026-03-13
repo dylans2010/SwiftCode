@@ -3,6 +3,7 @@ import SwiftUI
 struct FileNavigatorView: View {
     let project: Project
     @EnvironmentObject private var projectManager: ProjectManager
+    @EnvironmentObject private var settings: AppSettings
     @State private var searchText = ""
     @State private var showNewFileDialog = false
     @State private var showNewFolderDialog = false
@@ -100,7 +101,8 @@ struct FileNavigatorView: View {
                                 isCreatingFolder = true
                                 newItemName = ""
                                 showNewFolderDialog = true
-                            }
+                            },
+                            settings: settings
                         )
                     }
                 }
@@ -130,11 +132,19 @@ struct FileNavigatorView: View {
         } message: { msg in Text(msg) }
     }
 
+    private var expandAnimation: Animation {
+        switch settings.fileNavigatorAnimationStyle {
+        case .easeInOut: return .easeInOut(duration: settings.fileNavigatorAnimationSpeed)
+        case .spring: return .spring(response: settings.fileNavigatorAnimationSpeed, dampingFraction: 0.75)
+        case .bouncy: return .bouncy(duration: settings.fileNavigatorAnimationSpeed)
+        }
+    }
+
     // MARK: - Actions
 
     private func handleTap(node: FileNode) {
         guard !node.isDirectory else {
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(expandAnimation) {
                 node.isExpanded.toggle()
             }
             return
@@ -211,11 +221,18 @@ struct FileNodeRowView: View {
     let onDelete: (FileNode) -> Void
     let onNewFile: (FileNode) -> Void
     let onNewFolder: (FileNode) -> Void
+    let settings: AppSettings
 
     @EnvironmentObject private var projectManager: ProjectManager
 
     var isSelected: Bool {
         projectManager.activeFileNode?.id == node.id
+    }
+
+    private var iconTint: Color {
+        if node.isDirectory { return Color(hex: settings.fileNavigatorFolderColorHex) }
+        if node.name.hasSuffix(".swift") { return Color(hex: settings.fileNavigatorSwiftFileColorHex) }
+        return Color(hex: settings.fileNavigatorDefaultFileColorHex)
     }
 
     var body: some View {
@@ -235,9 +252,9 @@ struct FileNodeRowView: View {
                 }
 
                 // Icon
-                Image(systemName: node.icon)
+                Image(systemName: node.isDirectory ? settings.fileNavigatorFolderSymbol : settings.fileNavigatorFileSymbol)
                     .font(.caption)
-                    .foregroundStyle(node.iconColor)
+                    .foregroundStyle(iconTint)
                     .frame(width: 16)
 
                 // Name
@@ -256,7 +273,7 @@ struct FileNodeRowView: View {
                 Spacer()
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.vertical, settings.fileNavigatorLayoutStyle == .compact ? 5 : 9)
             .background(
                 isSelected
                     ? Color.orange.opacity(0.25)
@@ -276,7 +293,8 @@ struct FileNodeRowView: View {
                         onRename: onRename,
                         onDelete: onDelete,
                         onNewFile: onNewFile,
-                        onNewFolder: onNewFolder
+                        onNewFolder: onNewFolder,
+                        settings: settings
                     )
                 }
             }

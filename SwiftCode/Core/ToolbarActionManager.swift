@@ -33,6 +33,20 @@ final class ToolbarActionManager {
         case symbolOutline
         case localSimulation
         case pluginManager
+        case searchDocumentation
+        case snippetsLibrary
+        case codeRefactoring
+        case errorDiagnostics
+        case extensionMarketplace
+        case codeIntelligence
+        case crashLogAnalyzer
+        case projectDependencyGraph
+        case symbolIndex
+        case codeMetrics
+        case documentationBrowser
+        case workspaceProfiles
+        case assetManager
+        case debugTools
     }
 
     func destination(for toolId: String) -> SheetDestination? {
@@ -92,6 +106,34 @@ final class ToolbarActionManager {
             return .localSimulation
         case "plugin_manager":
             return .pluginManager
+        case "search_documentation":
+            return .searchDocumentation
+        case "snippets_library":
+            return .snippetsLibrary
+        case "code_refactoring":
+            return .codeRefactoring
+        case "error_diagnostics":
+            return .errorDiagnostics
+        case "extension_marketplace":
+            return .extensionMarketplace
+        case "code_intelligence":
+            return .codeIntelligence
+        case "crash_log_analyzer":
+            return .crashLogAnalyzer
+        case "project_dependency_graph":
+            return .projectDependencyGraph
+        case "symbol_index":
+            return .symbolIndex
+        case "code_metrics":
+            return .codeMetrics
+        case "documentation_browser":
+            return .documentationBrowser
+        case "workspace_profiles":
+            return .workspaceProfiles
+        case "asset_manager":
+            return .assetManager
+        case "debug_tools":
+            return .debugTools
 
         default:
             return nil

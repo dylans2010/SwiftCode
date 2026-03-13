@@ -193,35 +193,6 @@ struct AppTheme: Identifiable, Codable, Equatable {
     static let builtIns: [AppTheme] = [.light, .dark, .monokai, .dracula, .oneDark, .solarized]
 }
 
-// MARK: - Color Hex Helpers
-
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3:
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6:
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8:
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (255, 0, 0, 0)
-        }
-        self.init(.sRGB, red: Double(r) / 255, green: Double(g) / 255,
-                  blue: Double(b) / 255, opacity: Double(a) / 255)
-    }
-
-    func toHex() -> String {
-        let uiColor = UIColor(self)
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
-        uiColor.getRed(&r, green: &g, blue: &b, alpha: &a)
-        return String(format: "#%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
-    }
-}
 
 // MARK: - Theme Manager
 
@@ -372,6 +343,8 @@ struct GeneralSettingsView: View {
     @State private var showSkillsSheet = false
     @State private var showCoreMLSheet = false
     @State private var showResetConfirmation = false
+    @State private var showUpdatesSheet = false
+    @State private var showCreditsSheet = false
 
     // Quick Setup section state
     @State private var openRouterKey: String = ""
@@ -394,6 +367,7 @@ struct GeneralSettingsView: View {
                 apiKeysSection
                 editorSection
                 dashboardSection
+                fileNavigatorCustomizationSection
                 themesSection
                 gitHubSection
                 agentConnectionsSection
@@ -436,6 +410,12 @@ struct GeneralSettingsView: View {
         }
         .sheet(isPresented: $showSkillsSheet) {
             SkillsView()
+        }
+        .sheet(isPresented: $showUpdatesSheet) {
+            UpdatesView()
+        }
+        .sheet(isPresented: $showCreditsSheet) {
+            CreditsView()
         }
         .sheet(isPresented: $showExtensions) {
             ExtensionsView()
@@ -741,6 +721,49 @@ struct GeneralSettingsView: View {
         }
     }
 
+    private var fileNavigatorCustomizationSection: some View {
+        Section {
+            Picker("Layout Style", selection: $settings.fileNavigatorLayoutStyle) {
+                ForEach(FileNavigatorLayoutStyle.allCases, id: \.self) { style in
+                    Text(style.rawValue).tag(style)
+                }
+            }
+
+            Picker("Expand Animation", selection: $settings.fileNavigatorAnimationStyle) {
+                ForEach(FileNavigatorAnimationStyle.allCases, id: \.self) { style in
+                    Text(style.rawValue).tag(style)
+                }
+            }
+
+            TextField("Folder Symbol", text: $settings.fileNavigatorFolderSymbol)
+            TextField("File Symbol", text: $settings.fileNavigatorFileSymbol)
+
+            ColorPicker("Folder Color", selection: Binding(
+                get: { Color(hex: settings.fileNavigatorFolderColorHex) },
+                set: { settings.fileNavigatorFolderColorHex = $0.toHex }
+            ), supportsOpacity: false)
+
+            ColorPicker("Swift File Color", selection: Binding(
+                get: { Color(hex: settings.fileNavigatorSwiftFileColorHex) },
+                set: { settings.fileNavigatorSwiftFileColorHex = $0.toHex }
+            ), supportsOpacity: false)
+
+            ColorPicker("Default File Color", selection: Binding(
+                get: { Color(hex: settings.fileNavigatorDefaultFileColorHex) },
+                set: { settings.fileNavigatorDefaultFileColorHex = $0.toHex }
+            ), supportsOpacity: false)
+
+            VStack(alignment: .leading) {
+                Text("Animation Speed")
+                Slider(value: $settings.fileNavigatorAnimationSpeed, in: 0.1...0.8)
+            }
+        } header: {
+            Label("File Navigator Customization", systemImage: "folder.badge.gearshape")
+        } footer: {
+            Text("Customize navigator appearance and behavior in real time.")
+        }
+    }
+
     private var agentConnectionsSection: some View {
         Section {
             Button {
@@ -782,6 +805,8 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                 }
             }
+
+            Toggle("Code Suggestions", isOn: $settings.codeSuggestionsEnabled)
         } header: {
             Label("Local AI", systemImage: "brain.head.profile")
         } footer: {
@@ -829,6 +854,7 @@ struct GeneralSettingsView: View {
 
     private static let openRouterURL = URL(string: "https://openrouter.ai")!
     private static let githubAPIDocsURL = URL(string: "https://docs.github.com/en/rest")!
+    private static let swiftCodeReleasesURL = URL(string: "https://github.com/dylans2010/SwiftCode/releases")!
 
     private var aboutSection: some View {
         Section {
@@ -841,6 +867,19 @@ struct GeneralSettingsView: View {
                 Text("Build")
                 Spacer()
                 Text("1").foregroundStyle(.secondary)
+            }
+            Button {
+                showUpdatesSheet = true
+            } label: {
+                Label("Check for Updates", systemImage: "arrow.triangle.2.circlepath.circle.fill")
+            }
+            Button {
+                showCreditsSheet = true
+            } label: {
+                Label("Credits", systemImage: "person.2.fill")
+            }
+            Link(destination: Self.swiftCodeReleasesURL) {
+                Label("SwiftCode Releases", systemImage: "sparkles")
             }
             Link(destination: Self.openRouterURL) {
                 Label("OpenRouter API", systemImage: "link")
@@ -1336,15 +1375,15 @@ struct CustomThemeEditorView: View {
 
     private func saveTheme() {
         let colors = ThemeColors(
-            background: backgroundColor.toHex(),
-            editorText: editorTextColor.toHex(),
-            syntaxKeyword: syntaxKeywordColor.toHex(),
-            syntaxString: syntaxStringColor.toHex(),
-            syntaxComment: syntaxCommentColor.toHex(),
-            syntaxType: syntaxTypeColor.toHex(),
-            accent: accentColor.toHex(),
-            toolbar: toolbarColor.toHex(),
-            panelBackground: panelBackgroundColor.toHex()
+            background: backgroundColor.toHex,
+            editorText: editorTextColor.toHex,
+            syntaxKeyword: syntaxKeywordColor.toHex,
+            syntaxString: syntaxStringColor.toHex,
+            syntaxComment: syntaxCommentColor.toHex,
+            syntaxType: syntaxTypeColor.toHex,
+            accent: accentColor.toHex,
+            toolbar: toolbarColor.toHex,
+            panelBackground: panelBackgroundColor.toHex
         )
         if isEditing, let existing = theme {
             let updated = AppTheme(
