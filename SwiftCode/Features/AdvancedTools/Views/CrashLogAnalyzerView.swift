@@ -3,7 +3,7 @@ import SwiftUI
 struct CrashLogAnalyzerView: View {
     @State private var crashLog = ""
 
-    var parsed: CrashAnalysis {
+    private var parsed: CrashAnalysis {
         CrashAnalysis.parse(log: crashLog)
     }
 

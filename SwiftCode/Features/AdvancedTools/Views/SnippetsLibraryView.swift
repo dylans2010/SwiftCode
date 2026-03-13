@@ -5,7 +5,7 @@ struct SnippetsLibraryView: View {
     @State private var selectedCategory: SnippetCategory = .swiftUIViews
     @State private var draft = CodeSnippet.empty
 
-    var filtered: [CodeSnippet] { snippets.filter { $0.category == selectedCategory } }
+    private var filtered: [CodeSnippet] { snippets.filter { $0.category == selectedCategory } }
 
     var body: some View {
         NavigationStack {
