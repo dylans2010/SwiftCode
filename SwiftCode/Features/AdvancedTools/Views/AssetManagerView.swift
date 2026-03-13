@@ -8,53 +8,47 @@ struct AssetManagerView: View {
     @State private var importError: String?
 
     private var appIconSizes: [Int] { [20, 29, 40, 60, 76, 83, 1024] }
-
     private var missingSizes: [Int] {
         let names = Set(importedAssets.map { $0.lastPathComponent.lowercased() })
-        return appIconSizes.filter { size in
-            !names.contains(where: { $0.contains("\(size)") })
-        }
+        return appIconSizes.filter { size in !names.contains(where: { $0.contains("\(size)") }) }
     }
 
     var body: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 12) {
-                Button("Import Image") { isImporting = true }
+        AdvancedToolScreen(title: "Asset Manager") {
+            AdvancedToolCard(title: "Asset Intake") {
+                Button("Import Images") { isImporting = true }
                     .buttonStyle(.borderedProminent)
-
                 if let importError {
                     Text(importError).font(.caption).foregroundStyle(.red)
                 }
-
-                GroupBox("App Icon Validation") {
-                    Text(missingSizes.isEmpty ? "All common app icon sizes detected." : "Missing sizes: \(missingSizes.map(String.init).joined(separator: ", "))")
-                }
-
-                GroupBox("Assets") {
-                    if importedAssets.isEmpty {
-                        Text("No assets imported yet.").foregroundStyle(.secondary)
-                    }
-                    ForEach(importedAssets, id: \.path) { asset in
-                        HStack {
-                            Image(systemName: "photo")
-                            Text(asset.lastPathComponent)
-                            Spacer()
-                            Text(ByteCountFormatter.string(fromByteCount: (try? asset.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0, countStyle: .file))
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                Spacer()
             }
-            .padding()
-            .navigationTitle("Asset Manager")
-            .onAppear(perform: reloadAssets)
-            .fileImporter(isPresented: $isImporting, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
-                switch result {
-                case .success(let urls): importAssets(urls)
-                case .failure(let error): importError = error.localizedDescription
+
+            AdvancedToolCard(title: "App Icon Validation") {
+                Text(missingSizes.isEmpty ? "All common app icon sizes detected." : "Missing sizes: \(missingSizes.map(String.init).joined(separator: ", "))")
+            }
+
+            AdvancedToolCard(title: "Assets") {
+                if importedAssets.isEmpty {
+                    Text("No assets imported yet.").foregroundStyle(.secondary)
                 }
+                ForEach(importedAssets, id: \.path) { asset in
+                    HStack {
+                        Image(systemName: "photo")
+                        Text(asset.lastPathComponent)
+                        Spacer()
+                        Text(ByteCountFormatter.string(fromByteCount: (try? asset.resourceValues(forKeys: [.fileSizeKey]).fileSize).map(Int64.init) ?? 0, countStyle: .file))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Divider()
+                }
+            }
+        }
+        .onAppear(perform: reloadAssets)
+        .fileImporter(isPresented: $isImporting, allowedContentTypes: [.image], allowsMultipleSelection: true) { result in
+            switch result {
+            case .success(let urls): importAssets(urls)
+            case .failure(let error): importError = error.localizedDescription
             }
         }
     }
@@ -78,9 +72,7 @@ struct AssetManagerView: View {
             try FileManager.default.createDirectory(at: assetsURL, withIntermediateDirectories: true)
             for source in urls {
                 let dest = assetsURL.appendingPathComponent(source.lastPathComponent)
-                if FileManager.default.fileExists(atPath: dest.path) {
-                    try FileManager.default.removeItem(at: dest)
-                }
+                if FileManager.default.fileExists(atPath: dest.path) { try FileManager.default.removeItem(at: dest) }
                 try FileManager.default.copyItem(at: source, to: dest)
             }
             reloadAssets()

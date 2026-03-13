@@ -1,6 +1,6 @@
 import Foundation
 
-struct WorkspaceProfile: Identifiable, Codable {
+struct WorkspaceProfile: Identifiable, Codable, Equatable {
     let id: UUID
     var name: String
     var buildConfiguration: String
@@ -20,55 +20,81 @@ struct WorkspaceProfile: Identifiable, Codable {
 final class WorkspaceProfilesManager: ObservableObject {
     static let shared = WorkspaceProfilesManager()
 
-    @Published var profiles: [WorkspaceProfile] = [] {
-        didSet { persistProfiles() }
+    @Published private(set) var profiles: [WorkspaceProfile] = [] {
+        didSet {
+            persistProfiles()
+            if !profiles.contains(where: { $0.id == activeProfileID }) {
+                activeProfileID = profiles.first?.id
+            } else {
+                syncActiveProfileFromID()
+            }
+        }
     }
-    @Published var activeProfileID: UUID? {
-        didSet { persistActiveProfileID() }
+
+    @Published private(set) var activeProfileID: UUID? {
+        didSet {
+            persistActiveProfileID()
+            syncActiveProfileFromID()
+        }
     }
+
+    @Published private(set) var activeProfile: WorkspaceProfile?
 
     private let profilesKey = "com.swiftcode.workspaceProfiles"
     private let activeProfileKey = "com.swiftcode.activeWorkspaceProfile"
 
     private init() {
-        loadProfiles()
-        loadActiveProfileID()
+        loadState()
     }
 
-    func switchTo(_ profile: WorkspaceProfile) { activeProfileID = profile.id }
+    func switchTo(_ profile: WorkspaceProfile) {
+        guard profiles.contains(where: { $0.id == profile.id }) else { return }
+        activeProfileID = profile.id
+    }
 
     func add(_ profile: WorkspaceProfile) {
         profiles.append(profile)
-        if activeProfileID == nil { activeProfileID = profile.id }
+        if activeProfileID == nil {
+            activeProfileID = profile.id
+        }
     }
 
     func update(_ profile: WorkspaceProfile) {
         guard let idx = profiles.firstIndex(where: { $0.id == profile.id }) else { return }
         profiles[idx] = profile
+        if activeProfileID == profile.id {
+            activeProfile = profile
+        }
     }
 
     func delete(_ profile: WorkspaceProfile) {
         profiles.removeAll { $0.id == profile.id }
-        if activeProfileID == profile.id {
-            activeProfileID = profiles.first?.id
-        }
     }
 
-    private func loadProfiles() {
-        guard
-            let data = UserDefaults.standard.data(forKey: profilesKey),
-            let decoded = try? JSONDecoder().decode([WorkspaceProfile].self, from: data)
-        else {
-            profiles = []
-            return
+    private func loadState() {
+        let storedProfiles: [WorkspaceProfile]
+        if let data = UserDefaults.standard.data(forKey: profilesKey),
+           let decoded = try? JSONDecoder().decode([WorkspaceProfile].self, from: data) {
+            storedProfiles = decoded
+        } else {
+            storedProfiles = []
         }
 
-        profiles = decoded
+        profiles = storedProfiles
+
+        if let idString = UserDefaults.standard.string(forKey: activeProfileKey),
+           let storedID = UUID(uuidString: idString),
+           storedProfiles.contains(where: { $0.id == storedID }) {
+            activeProfileID = storedID
+        } else {
+            activeProfileID = storedProfiles.first?.id
+        }
+
+        syncActiveProfileFromID()
     }
 
-    private func loadActiveProfileID() {
-        guard let value = UserDefaults.standard.string(forKey: activeProfileKey) else { return }
-        activeProfileID = UUID(uuidString: value)
+    private func syncActiveProfileFromID() {
+        activeProfile = profiles.first(where: { $0.id == activeProfileID })
     }
 
     private func persistProfiles() {

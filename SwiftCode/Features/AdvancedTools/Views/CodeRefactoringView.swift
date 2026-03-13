@@ -7,36 +7,32 @@ struct CodeRefactoringView: View {
     @State private var preview = ""
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Global Rename") {
-                    TextField("Old symbol", text: $fromText)
-                    TextField("New symbol", text: $toText)
-                    Button("Preview Rename") {
-                        preview = projectManager.activeFileContent.replacingOccurrences(of: fromText, with: toText)
-                    }
+        AdvancedToolScreen(title: "Code Refactoring") {
+            AdvancedToolCard(title: "Global Rename") {
+                TextField("Old symbol", text: $fromText).textFieldStyle(.roundedBorder)
+                TextField("New symbol", text: $toText).textFieldStyle(.roundedBorder)
+                HStack {
+                    Button("Preview Rename") { preview = projectManager.activeFileContent.replacingOccurrences(of: fromText, with: toText) }
                     Button("Apply Rename") { projectManager.activeFileContent = preview }
                 }
-
-                Section("Transformations") {
-                    Button("Extract Selection to Function") {
-                        preview = projectManager.activeFileContent + "\n\nfunc extractedFunction() {\n    // Extracted code\n}"
-                    }
-                    Button("Convert callback to async/await") {
-                        preview = projectManager.activeFileContent.replacingOccurrences(of: "completion:", with: "async")
-                    }
-                    Button("Run Formatter") {
-                        preview = projectManager.activeFileContent.replacingOccurrences(of: "\t", with: "    ")
-                    }
-                }
-
-                Section("Preview") {
-                    ScrollView { Text(preview).frame(maxWidth: .infinity, alignment: .leading).font(.caption.monospaced()) }
-                    Button("Confirm All Changes") { projectManager.activeFileContent = preview }
-                        .buttonStyle(.borderedProminent)
-                }
+                .buttonStyle(.bordered)
             }
-            .navigationTitle("Code Refactoring")
+
+            AdvancedToolCard(title: "Transformations") {
+                HStack {
+                    Button("Extract to Function") { preview = projectManager.activeFileContent + "\n\nfunc extractedFunction() {\n    // Extracted code\n}" }
+                    Button("To async/await") { preview = projectManager.activeFileContent.replacingOccurrences(of: "completion:", with: "async") }
+                    Button("Run Formatter") { preview = projectManager.activeFileContent.replacingOccurrences(of: "\t", with: "    ") }
+                }
+                .buttonStyle(.bordered)
+            }
+
+            AdvancedToolCard(title: "Preview") {
+                ScrollView { Text(preview).frame(maxWidth: .infinity, alignment: .leading).font(.caption.monospaced()) }
+                    .frame(minHeight: 180)
+                Button("Confirm All Changes") { projectManager.activeFileContent = preview }
+                    .buttonStyle(.borderedProminent)
+            }
         }
     }
 }
