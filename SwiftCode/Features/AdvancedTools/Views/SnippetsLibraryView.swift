@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SnippetsLibraryView: View {
-    @State private var snippets: [CodeSnippet] = CodeSnippet.defaults
+    @State private var snippets: [CodeSnippet] = CodeSnippetStore.load()
     @State private var selectedCategory: SnippetCategory = .swiftUIViews
     @State private var draft = CodeSnippet.empty
 
@@ -19,10 +19,17 @@ struct SnippetsLibraryView: View {
                     VStack(alignment: .leading) {
                         Text(snippet.title).font(.headline)
                         Text(snippet.code).font(.caption).lineLimit(2)
-                        Button("Insert into Editor") {
-                            ProjectManager.shared.activeFileContent += "\n\n" + snippet.code
+                        HStack {
+                            Button("Insert into Editor") {
+                                ProjectManager.shared.activeFileContent += "\n\n" + snippet.code
+                            }
+                            .buttonStyle(.bordered)
+                            Button("Delete", role: .destructive) {
+                                snippets.removeAll { $0.id == snippet.id }
+                                CodeSnippetStore.save(snippets)
+                            }
+                            .buttonStyle(.bordered)
                         }
-                        .buttonStyle(.bordered)
                     }
                 }
 
@@ -32,8 +39,10 @@ struct SnippetsLibraryView: View {
                     Button("Save Snippet") {
                         draft.category = selectedCategory
                         snippets.append(draft)
+                        CodeSnippetStore.save(snippets)
                         draft = .empty
                     }
+                    .disabled(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || draft.code.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             .padding()
@@ -42,24 +51,37 @@ struct SnippetsLibraryView: View {
     }
 }
 
-private struct CodeSnippet: Identifiable {
-    let id = UUID()
+private struct CodeSnippet: Identifiable, Codable {
+    let id: UUID
     var title: String
     var code: String
     var category: SnippetCategory
 
-    static let empty = CodeSnippet(title: "", code: "", category: .utilities)
-    static let defaults: [CodeSnippet] = [
-        .init(title: "Basic SwiftUI View", code: "struct ContentView: View { var body: some View { Text(\"Hello\") } }", category: .swiftUIViews),
-        .init(title: "Async network call", code: "let (data, _) = try await URLSession.shared.data(from: url)", category: .networking)
-    ]
+    static let empty = CodeSnippet(id: UUID(), title: "", code: "", category: .utilities)
 }
 
-private enum SnippetCategory: String, CaseIterable, Identifiable {
+private enum SnippetCategory: String, CaseIterable, Identifiable, Codable {
     case swiftUIViews = "SwiftUI Views"
     case networking = "Networking"
     case asyncTasks = "Async Tasks"
     case dataModels = "Data Models"
     case utilities = "Utilities"
     var id: String { rawValue }
+}
+
+private enum CodeSnippetStore {
+    private static let key = "com.swiftcode.snippets"
+
+    static func load() -> [CodeSnippet] {
+        guard let data = UserDefaults.standard.data(forKey: key),
+              let decoded = try? JSONDecoder().decode([CodeSnippet].self, from: data) else {
+            return []
+        }
+        return decoded
+    }
+
+    static func save(_ snippets: [CodeSnippet]) {
+        guard let data = try? JSONEncoder().encode(snippets) else { return }
+        UserDefaults.standard.set(data, forKey: key)
+    }
 }

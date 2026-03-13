@@ -3,18 +3,35 @@ import SwiftUI
 struct ProjectDependencyGraphView: View {
     @EnvironmentObject private var projectManager: ProjectManager
 
-    private var nodes: [FileNode] {
-        projectManager.activeProject?.files.flatMapDeep(includeDirectories: false) ?? []
+    private var dependencyRows: [(String, [String])] {
+        guard let project = projectManager.activeProject else { return [] }
+        let files = project.files.flatMapDeep(includeDirectories: false).filter { $0.name.hasSuffix(".swift") }
+        return files.map { node in
+            let url = project.directoryURL.appendingPathComponent(node.path)
+            let imports = ((try? String(contentsOf: url)) ?? "")
+                .split(separator: "\n")
+                .compactMap { line -> String? in
+                    let trimmed = line.trimmingCharacters(in: .whitespaces)
+                    guard trimmed.hasPrefix("import ") else { return nil }
+                    return String(trimmed.dropFirst(7))
+                }
+            return (node.name, imports)
+        }
     }
 
     var body: some View {
         NavigationStack {
-            List(nodes) { node in
-                Button(node.name) { projectManager.openFile(node) }
+            List(dependencyRows, id: \.0) { file, imports in
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(file).font(.headline)
+                    Text(imports.isEmpty ? "No imports" : imports.joined(separator: ", "))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
             .navigationTitle("Dependency Graph")
             .overlay(alignment: .bottomLeading) {
-                Text("Graph edges are inferred from import statements.")
+                Text("Dependencies are parsed from import statements in Swift files.")
                     .font(.caption)
                     .padding(8)
             }

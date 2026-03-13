@@ -44,9 +44,20 @@ private struct BuildDiagnostic: Identifiable {
     init?(line: String) {
         let parts = line.split(separator: ":")
         guard parts.count >= 3, let lineNo = Int(parts[1]) else { return nil }
-        file = String(parts[0]); self.line = lineNo
+        file = String(parts[0])
+        self.line = lineNo
         message = parts.dropFirst(2).joined(separator: ":")
-        explanation = "Likely type mismatch, missing symbol, or invalid call signature."
+
+        let lower = message.lowercased()
+        if lower.contains("cannot find") {
+            explanation = "Undefined symbol or missing import. Check symbol spelling and module imports."
+        } else if lower.contains("cannot convert") || lower.contains("type") {
+            explanation = "Type mismatch. Verify argument and return types around this line."
+        } else if lower.contains("no such module") {
+            explanation = "Module is missing from package dependencies or build settings."
+        } else {
+            explanation = "Compiler/runtime reported this issue. Inspect surrounding code and recent edits."
+        }
     }
 }
 

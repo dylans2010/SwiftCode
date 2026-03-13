@@ -29,11 +29,15 @@ private struct CrashAnalysis {
     let fileHints: [String]
 
     static func parse(log: String) -> Self {
-        let line = log.split(separator: "\n").first(where: { $0.contains("0 ") || $0.contains("fatal error") })
+        let lines = log.split(separator: "\n").map(String.init)
+        let frame = lines.first(where: { $0.contains(" 0 ") || $0.localizedCaseInsensitiveContains("fatal error") || $0.localizedCaseInsensitiveContains("terminating app") }) ?? "Unknown function"
+        let reason = lines.first(where: { $0.localizedCaseInsensitiveContains("reason:") || $0.localizedCaseInsensitiveContains("fatal error") }) ?? "Cause not found in log."
+        let fileRefs = lines.filter { $0.contains(".swift") }.prefix(8)
+
         return .init(
-            failingFunction: line.map(String.init) ?? "Unknown function",
-            likelyCause: "Potential nil access, index out of range, or force-unwrap in hot path.",
-            fileHints: log.split(separator: "\n").filter { $0.contains(".swift") }.prefix(8).map(String.init)
+            failingFunction: frame,
+            likelyCause: reason,
+            fileHints: Array(fileRefs)
         )
     }
 }
