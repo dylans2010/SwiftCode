@@ -1,5 +1,10 @@
 import SwiftUI
 import WebKit
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 struct DocumentationBrowserView: View {
     @State private var query = "SwiftUI/View"
@@ -39,10 +44,10 @@ struct DocumentationBrowserView: View {
     }
 }
 
-private struct DocsWebView: NSViewRepresentable {
+private struct DocsWebView: PlatformViewRepresentable {
     let url: URL
 
-    func makeNSView(context: Context) -> WKWebView {
+    func makePlatformView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.defaultWebpagePreferences.allowsContentJavaScript = true
         config.preferences.javaScriptCanOpenWindowsAutomatically = true
@@ -54,8 +59,34 @@ private struct DocsWebView: NSViewRepresentable {
         return webView
     }
 
-    func updateNSView(_ webView: WKWebView, context: Context) {
+    func updatePlatformView(_ webView: WKWebView, context: Context) {
         guard webView.url != url else { return }
         webView.load(URLRequest(url: url))
     }
 }
+
+#if canImport(UIKit)
+private typealias PlatformViewRepresentable = UIViewRepresentable
+
+private extension DocsWebView {
+    func makeUIView(context: Context) -> WKWebView {
+        makePlatformView(context: context)
+    }
+
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        updatePlatformView(webView, context: context)
+    }
+}
+#elseif canImport(AppKit)
+private typealias PlatformViewRepresentable = NSViewRepresentable
+
+private extension DocsWebView {
+    func makeNSView(context: Context) -> WKWebView {
+        makePlatformView(context: context)
+    }
+
+    func updateNSView(_ webView: WKWebView, context: Context) {
+        updatePlatformView(webView, context: context)
+    }
+}
+#endif
