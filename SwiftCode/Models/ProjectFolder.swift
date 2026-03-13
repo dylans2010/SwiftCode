@@ -1,6 +1,6 @@
 import Foundation
 
-struct ProjectFolder: Identifiable, Codable, Equatable {
+struct ProjectFolder: Identifiable, Codable, Equatable, Hashable {
     var folderId: UUID
     var folderName: String
     var iconSymbol: String
