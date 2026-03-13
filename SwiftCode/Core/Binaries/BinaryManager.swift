@@ -116,6 +116,7 @@ actor BinaryManager {
         return try await runExecutable(executableURL.path, arguments: arguments, workingDirectory: workingDirectory)
     }
 
+    #if os(macOS)
     private func runExecutable(
         _ executablePath: String,
         arguments: [String],
@@ -152,4 +153,15 @@ actor BinaryManager {
             }
         }
     }
+    #else
+    private func runExecutable(
+        _ executablePath: String,
+        arguments: [String],
+        workingDirectory: String?
+    ) async throws -> BinaryExecutionResult {
+        throw NSError(domain: "BinaryManager", code: -1, userInfo: [
+            NSLocalizedDescriptionKey: "Subprocess execution is not supported on this platform."
+        ])
+    }
+    #endif
 }
