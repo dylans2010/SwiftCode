@@ -41,7 +41,7 @@ struct PluginManagerView: View {
             .sheet(isPresented: $showCreateView) {
                 PluginCodeCreateView()
             }
-            .alert("Install a Plugin", isPresented: $showInstallHelp) {
+            .alert("Install Plugin", isPresented: $showInstallHelp) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text("Copy a plugin folder containing a plugin.json manifest into the Plugins directory in the app's Documents folder.")

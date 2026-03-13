@@ -1,10 +1,5 @@
 import SwiftUI
 
-// MARK: - Toolbar Minimized View
-//
-// A compact "^" button that lives in the toolbar and expands a popover
-// showing ALL available toolbar tools so users can access them without
-// pinning items to the toolbar.
 
 struct ToolbarMinimizedView: View {
     @State private var isExpanded = false

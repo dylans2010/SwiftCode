@@ -105,7 +105,7 @@ struct GitCommandView: View {
         HStack(spacing: 10) {
             Image(systemName: "arrow.branch")
                 .foregroundStyle(.green)
-            Text("Current branch:")
+            Text("Current Branch:")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
             Text(currentBranch)
@@ -370,7 +370,7 @@ struct GitCommandView: View {
                 await MainActor.run {
                     isLoading = false
                     isSuccess = true
-                    statusMessage = "Pushed to '\(currentBranch)' successfully."
+                    statusMessage = "Pushed To '\(currentBranch)' Successfully."
                     showStatus = true
                 }
             } catch {

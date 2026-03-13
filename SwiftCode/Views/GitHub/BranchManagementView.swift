@@ -2,9 +2,6 @@ import SwiftUI
 
 // MARK: - Branch Management View
 
-/// Allows users to switch branches via a dropdown, create new branches from a
-/// selected base, and delete branches with confirmation. Updates reflect
-/// immediately in the branch list.
 struct BranchManagementView: View {
     let owner: String
     let repo: String
@@ -29,7 +26,7 @@ struct BranchManagementView: View {
                 Color(red: 0.08, green: 0.08, blue: 0.12).ignoresSafeArea()
 
                 if isLoading && branches.isEmpty {
-                    ProgressView("Loading branches…")
+                    ProgressView("Loading Branches…")
                         .tint(.green)
                 } else if branches.isEmpty, let error = errorMessage {
                     emptyErrorView(error)
@@ -104,7 +101,7 @@ struct BranchManagementView: View {
                     Image(systemName: "arrow.triangle.branch")
                         .foregroundStyle(.green)
                         .font(.caption)
-                    Text("Active branch")
+                    Text("Active Branch")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                     Spacer()
@@ -186,7 +183,7 @@ struct BranchManagementView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 44))
                 .foregroundStyle(.red.opacity(0.7))
-            Text("Failed to Load Branches")
+            Text("Failed To Load Branches")
                 .font(.headline)
                 .foregroundStyle(.white)
             Text(error)
@@ -246,7 +243,7 @@ struct BranchManagementView: View {
 
     private func switchTo(_ branch: GitHubBranch) {
         currentBranch = branch.name
-        showNotification("Switched to branch \(branch.name)", isError: false)
+        showNotification("Switched To branch \(branch.name)", isError: false)
     }
 
     private func createBranch() async {
@@ -257,9 +254,6 @@ struct BranchManagementView: View {
         defer { isCreating = false }
 
         do {
-            // PLACEHOLDER: Fetch the SHA for the base branch, then create the new branch.
-            // API: GET /repos/{owner}/{repo}/git/ref/heads/{baseBranch}
-            //      POST /repos/{owner}/{repo}/git/refs with { "ref": "refs/heads/{name}", "sha": sha }
             try await GitHubService.shared.createBranch(
                 owner: owner,
                 repo: repo,
@@ -268,7 +262,7 @@ struct BranchManagementView: View {
             )
             await loadBranches()
             currentBranch = name
-            showNotification("Branch \(name) created", isError: false)
+            showNotification("Branch \(name) Created", isError: false)
         } catch {
             showNotification(error.localizedDescription, isError: true)
         }
@@ -286,7 +280,7 @@ struct BranchManagementView: View {
             if currentBranch == branch.name {
                 currentBranch = branches.first?.name ?? "main"
             }
-            showNotification("Branch \(branch.name) deleted", isError: false)
+            showNotification("Branch \(branch.name) Deleted", isError: false)
         } catch {
             showNotification(error.localizedDescription, isError: true)
         }

@@ -144,7 +144,7 @@ struct FilePreviewView: View {
     private var rawText: String {
         switch previewContent {
         case .markdown(let t), .json(let t), .plist(let t), .text(let t): return t
-        case .image: return "(Binary image data)"
+        case .image: return "(Binary Image Data)"
         case .loading: return "Loading…"
         case .unsupported(let e): return "No raw preview for .\(e) files"
         case .error(let e): return "Error: \(e)"

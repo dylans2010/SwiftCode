@@ -205,7 +205,7 @@ struct CodeEditorView: View {
                 Text("File Load Error")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white)
-                Text(projectManager.fileLoadError ?? "Unknown error")
+                Text(projectManager.fileLoadError ?? "Unknown Error")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -472,9 +472,6 @@ struct TextEditorRepresentable: UIViewRepresentable {
 
 // MARK: - Line Number View
 
-/// Read-only gutter that renders 1-based line numbers aligned with the code editor.
-/// The `lineHeight` and `topInset` properties must be set from the UITextView's
-/// font metrics to guarantee vertical alignment with the code text.
 final class LineNumberView: UIView {
     var lineCount: Int = 1
     /// Must match the editor font's lineHeight.
@@ -507,9 +504,7 @@ final class LineNumberView: UIView {
             let labelSize = label.size(withAttributes: attributes)
             // Right-align the number with 8pt right padding
             let x = bounds.width - labelSize.width - 8
-            // Align baseline with the code line: topInset + (line-1) * lineHeight
-            // Drawing with `draw(at:)` places top-left of the glyph at the given point.
-            // Shift down by (lineHeight - labelSize.height) / 2 to vertically centre.
+
             let codeLine_y = topInset + CGFloat(i - 1) * lineHeight
             let y = codeLine_y + (lineHeight - labelSize.height) / 2
             label.draw(at: CGPoint(x: x, y: y), withAttributes: attributes)

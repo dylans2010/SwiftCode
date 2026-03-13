@@ -2,10 +2,6 @@ import SwiftUI
 
 // MARK: - Commit History View
 
-/// Displays the full commit history for the current branch including message,
-/// author, date, and hash. Supports amending the last commit, reverting a commit
-/// by creating a new commit, and cherry-picking commits onto the current branch.
-/// Provides inline diff previews and handles conflicts.
 struct CommitHistoryView: View {
     let owner: String
     let repo: String
@@ -32,7 +28,7 @@ struct CommitHistoryView: View {
                 Color(red: 0.08, green: 0.08, blue: 0.12).ignoresSafeArea()
 
                 if isLoading && commits.isEmpty {
-                    ProgressView("Loading commits…")
+                    ProgressView("Loading Commits…")
                         .tint(.orange)
                 } else if let error = errorMessage, commits.isEmpty {
                     errorView(error)
@@ -98,7 +94,7 @@ struct CommitHistoryView: View {
                     Text(currentBranch)
                         .font(.caption.bold())
                         .foregroundStyle(.orange)
-                    Text("· \(commits.count) commits")
+                    Text("· \(commits.count) Commits")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -358,24 +354,18 @@ struct CommitHistoryView: View {
         }
     }
 
-    /// Amend the last commit message (HEAD).
-    /// PLACEHOLDER: Uses git commit --amend via a server-side operation.
     private func amendLastCommit() async {
         guard let _ = amendTarget else { return }
         showAmendSheet = false
         isOperating = true
         defer { isOperating = false }
 
-        // PLACEHOLDER: In a real implementation this would call an endpoint or
-        // use libgit2 to rewrite the HEAD commit with the new message.
-        // For now we simulate the operation.
+
         try? await Task.sleep(nanoseconds: 800_000_000)
         showNotification("Commit amended (placeholder – requires git push --force)", isError: false)
         await loadHistory()
     }
 
-    /// Revert a commit by creating a new commit that undoes its changes.
-    /// PLACEHOLDER: POST /repos/{owner}/{repo}/git/commits with inverted diff.
     private func revertCommit(_ commit: GitHubCommit) async {
         isOperating = true
         defer { isOperating = false }
@@ -388,8 +378,6 @@ struct CommitHistoryView: View {
             return
         }
 
-        // PLACEHOLDER: Create a revert commit via the GitHub API.
-        // Normally requires computing the inverted diff and applying it.
         try? await Task.sleep(nanoseconds: 800_000_000)
         showNotification("Revert of \(String(commit.sha.prefix(8))) created (placeholder)", isError: false)
         await loadHistory()

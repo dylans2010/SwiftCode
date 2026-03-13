@@ -466,7 +466,7 @@ struct GeneralSettingsView: View {
                     Text("OpenRouter API Key")
                         .font(.subheadline.weight(.medium))
                     if openRouterKey.isEmpty {
-                        Text("Not configured").font(.caption).foregroundStyle(.red)
+                        Text("Not Configured").font(.caption).foregroundStyle(.red)
                     } else {
                         Text("Configured ✓").font(.caption).foregroundStyle(.green)
                     }
@@ -506,7 +506,7 @@ struct GeneralSettingsView: View {
                     Text("GitHub Token")
                         .font(.subheadline.weight(.medium))
                     if githubToken.isEmpty {
-                        Text("Not configured").font(.caption).foregroundStyle(.secondary)
+                        Text("Not Configured").font(.caption).foregroundStyle(.secondary)
                     } else {
                         Text("Configured ✓").font(.caption).foregroundStyle(.green)
                     }
@@ -632,7 +632,7 @@ struct GeneralSettingsView: View {
         } header: {
             Label("Themes", systemImage: "paintbrush.fill")
         } footer: {
-            Text("Customize the visual appearance of the IDE. Create and save your own themes.")
+            Text("Customize the visual appearance of the code editor. Create and save your own themes.")
         }
     }
 
@@ -989,7 +989,7 @@ struct APIKeyRowView: View {
                     Text(entry.name)
                         .font(.headline)
                     if entry.isDefault {
-                        Text("DEFAULT")
+                        Text("Default")
                             .font(.caption2)
                             .fontWeight(.semibold)
                             .padding(.horizontal, 5)
@@ -1002,7 +1002,7 @@ struct APIKeyRowView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 if manager.keyValue(for: entry)?.isEmpty == false {
-                    Text("Key configured")
+                    Text("Key Configured")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
@@ -1043,7 +1043,7 @@ struct AddEditAPIKeyView: View {
         NavigationStack {
             Form {
                 Section("Key Details") {
-                    TextField("Key Name (e.g. My OpenRouter Key)", text: $name)
+                    TextField("Key Name", text: $name)
                         .autocorrectionDisabled()
 
                     Picker("Provider", selection: $provider) {
@@ -1130,7 +1130,7 @@ struct ThemeManagementView: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Built-in Themes") {
+                Section("Built In Themes") {
                     ForEach(AppTheme.builtIns) { theme in
                         ThemeRowView(theme: theme, isSelected: settings.selectedThemeID == theme.id)
                             .contentShape(Rectangle())
@@ -1217,7 +1217,7 @@ struct ThemeRowView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(theme.name)
                     .font(.headline)
-                Text(theme.isBuiltIn ? "Built-in" : "Custom")
+                Text(theme.isBuiltIn ? "Built In" : "Custom")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -1396,7 +1396,7 @@ struct GitHubConfigView: View {
                                     .font(.caption)
                                     .foregroundStyle(.red)
                             } else {
-                                Text("Token configured")
+                                Text("Token Configured")
                                     .font(.caption)
                                     .foregroundStyle(.green)
                             }
@@ -1502,7 +1502,7 @@ struct GitHubConfigView: View {
                     if permManager.isLoading {
                         HStack(spacing: 10) {
                             ProgressView()
-                            Text("Checking permissions…")
+                            Text("Checking Permissions…")
                                 .font(.callout)
                                 .foregroundStyle(.secondary)
                         }
@@ -1537,7 +1537,7 @@ struct GitHubConfigView: View {
                         Button {
                             Task { await permManager.fetchPermissions() }
                         } label: {
-                            Label("Re-check Permissions", systemImage: "arrow.clockwise")
+                            Label("Check Permissions", systemImage: "arrow.clockwise")
                                 .font(.callout)
                         }
                     } else {
@@ -1547,7 +1547,7 @@ struct GitHubConfigView: View {
                             Label("Check Permissions", systemImage: "checkmark.shield.fill")
                                 .foregroundStyle(.blue)
                         }
-                        Text("Tap to inspect what scopes your current GitHub token has.")
+                        Text("Tap here to see what scopes your current GitHub token has.")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }
@@ -1842,7 +1842,7 @@ struct CoreMLSettingsView: View {
                 if settings.coreMLEnabled {
                     Section {
                         if importedModels.isEmpty {
-                            Text("No models imported")
+                            Text("No Models Imported")
                                 .foregroundStyle(.secondary)
                         } else {
                             ForEach(importedModels, id: \.lastPathComponent) { model in
@@ -1885,7 +1885,7 @@ struct CoreMLSettingsView: View {
                     } header: {
                         Label("Imported Models", systemImage: "cube.fill")
                     } footer: {
-                        Text("Models are stored in Documents/Models and are accessible from the Files app.")
+                        Text("Models are stored in Documents/Models and are accessible from the app's directory on the Files app.")
                     }
 
                     Section {
@@ -1893,7 +1893,7 @@ struct CoreMLSettingsView: View {
                             HStack {
                                 Text("Usage Limit")
                                 Spacer()
-                                Text("\(Int(settings.coreMLUsageLimit)) requests/session")
+                                Text("\(Int(settings.coreMLUsageLimit)) Requests/Session")
                                     .foregroundStyle(.secondary)
                                     .font(.caption)
                             }

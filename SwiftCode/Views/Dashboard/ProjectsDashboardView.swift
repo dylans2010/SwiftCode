@@ -227,7 +227,7 @@ struct ProjectsDashboardView: View {
                             Text("Import From ZIP")
                                 .font(.headline)
                                 .foregroundStyle(.primary)
-                            Text("Extract a ZIP archive into a new project")
+                            Text("Extract a ZIP file with the codebase into a new project")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -302,14 +302,14 @@ struct ProjectsDashboardView: View {
                         Image(systemName: "link")
                             .foregroundStyle(.secondary)
 
-                        TextField("https://github.com/owner/repo", text: $githubImportURL)
+                        TextField("GitHub URL", text: $githubImportURL)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
                             .keyboardType(.URL)
 
                         Menu {
                             if fetchedGitHubRepos.isEmpty {
-                                Text("No repositories loaded")
+                                Text("No Repositories Loaded")
                             } else {
                                 ForEach(fetchedGitHubRepos) { repo in
                                     Button(repo.fullName) {

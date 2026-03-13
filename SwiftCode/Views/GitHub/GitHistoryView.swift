@@ -29,7 +29,7 @@ struct GitHistoryView: View {
                 Color(red: 0.08, green: 0.08, blue: 0.12).ignoresSafeArea()
 
                 if isLoading {
-                    ProgressView("Loading commits…")
+                    ProgressView("Loading Commits…")
                         .tint(.orange)
                 } else if let error = errorMessage {
                     errorView(error)
@@ -200,7 +200,7 @@ struct GitHistoryView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 44))
                 .foregroundStyle(.red.opacity(0.7))
-            Text("Failed to Load History")
+            Text("Failed To Load History")
                 .font(.headline)
                 .foregroundStyle(.white)
             Text(message)
@@ -295,7 +295,7 @@ struct CommitDetailSheet: View {
                     if let urlStr = commit.htmlUrl, let url = URL(string: urlStr) {
                         Divider().opacity(0.3)
                         Link(destination: url) {
-                            Label("View on GitHub", systemImage: "safari")
+                            Label("View On GitHub", systemImage: "safari")
                                 .font(.callout)
                                 .foregroundStyle(.orange)
                         }

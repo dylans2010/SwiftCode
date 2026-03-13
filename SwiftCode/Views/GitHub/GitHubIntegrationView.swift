@@ -298,7 +298,7 @@ struct GitHubIntegrationView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
-                    TextField("https://github.com/owner/repo", text: $repoURL)
+                    TextField("GitHub URL", text: $repoURL)
                         .textFieldStyle(.roundedBorder)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
@@ -390,7 +390,7 @@ struct GitHubIntegrationView: View {
                         }
 
                         HStack(spacing: 8) {
-                            Text("Default branch:")
+                            Text("Default Branch:")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                             Text(detail.defaultBranch)
@@ -635,7 +635,7 @@ struct GitHubIntegrationView: View {
                 if let url = createdRepoURL {
                     Section("Repository Created") {
                         VStack(alignment: .leading, spacing: 8) {
-                            Label("Your new repository is ready!", systemImage: "checkmark.circle.fill")
+                            Label("Your New Repository Is Ready!", systemImage: "checkmark.circle.fill")
                                 .foregroundStyle(.green)
                                 .font(.subheadline)
                             Text(url)
@@ -644,7 +644,7 @@ struct GitHubIntegrationView: View {
                                 .textSelection(.enabled)
                             if let repoURL = URL(string: url) {
                                 Link(destination: repoURL) {
-                                    Label("Open in Browser", systemImage: "safari")
+                                    Label("Open In Browser", systemImage: "safari")
                                         .font(.caption)
                                 }
                             }
@@ -698,7 +698,7 @@ struct GitHubIntegrationView: View {
         NavigationStack {
             Group {
                 if isFetchingRepos {
-                    ProgressView("Loading repositories…")
+                    ProgressView("Loading Repositories…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let fetchError = repoFetchError {
                     ContentUnavailableView(
@@ -756,7 +756,7 @@ struct GitHubIntegrationView: View {
                     }
                 }
             }
-            .searchable(text: $repoSearchQuery, prompt: "Search repositories…")
+            .searchable(text: $repoSearchQuery, prompt: "Search Repositories")
             .navigationTitle("Select Repository")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

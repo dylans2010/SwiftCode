@@ -69,7 +69,7 @@ struct GitHubIssuesView: View {
                 Color(red: 0.08, green: 0.08, blue: 0.12).ignoresSafeArea()
 
                 if isLoading {
-                    ProgressView("Loading issues…").tint(.cyan)
+                    ProgressView("Loading Issues…").tint(.cyan)
                 } else if let error = errorMessage {
                     errorView(error)
                 } else if issues.isEmpty {
@@ -247,7 +247,7 @@ struct GitHubIssuesView: View {
                     .padding(10)
                     .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
 
-                Text("Description (optional)")
+                Text("Description (Optional)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 TextEditor(text: $newIssueBody)
@@ -258,7 +258,7 @@ struct GitHubIssuesView: View {
                     .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
 
                 if isCreating {
-                    ProgressView("Creating issue…").tint(.cyan)
+                    ProgressView("Creating Issue…").tint(.cyan)
                 }
                 Spacer()
             }
@@ -413,7 +413,7 @@ struct IssueDetailView: View {
                             .font(.caption.bold()).foregroundStyle(.secondary).textCase(.uppercase)
                         Text(body).font(.body).foregroundStyle(.primary).textSelection(.enabled)
                     } else {
-                        Text("No description provided.")
+                        Text("No Description Provided.")
                             .font(.body).foregroundStyle(.secondary)
                     }
 
@@ -421,7 +421,7 @@ struct IssueDetailView: View {
 
                     if let url = URL(string: issue.htmlUrl) {
                         Link(destination: url) {
-                            Label("View on GitHub", systemImage: "safari")
+                            Label("View On GitHub", systemImage: "safari")
                                 .font(.callout).foregroundStyle(.cyan)
                         }
                     }

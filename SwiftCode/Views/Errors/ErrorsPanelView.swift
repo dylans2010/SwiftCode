@@ -57,7 +57,7 @@ struct ErrorsPanelView: View {
                                         Text(error.fileName)
                                             .font(.subheadline.weight(.medium))
                                             .foregroundStyle(.orange)
-                                        Text("line \(error.lineNumber)")
+                                        Text("Line \(error.lineNumber)")
                                             .font(.caption)
                                             .foregroundStyle(.cyan)
                                             .padding(.horizontal, 4)

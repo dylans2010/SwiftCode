@@ -1,10 +1,5 @@
 import SwiftUI
 
-// MARK: - Main Toolbar View
-//
-// A compact, modern UI element providing quick access to all tools
-// and frequent actions, positioned as a floating bar or bottom-docked.
-
 struct MainToolbarView: View {
     @EnvironmentObject private var projectManager: ProjectManager
     @EnvironmentObject private var toolbarSettings: ToolbarSettings

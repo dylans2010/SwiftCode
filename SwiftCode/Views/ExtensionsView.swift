@@ -2,9 +2,6 @@ import SwiftUI
 
 // MARK: - Extensions View
 
-/// Central hub for managing SwiftCode Extensions. Users can install, delete,
-/// enable, or disable Extensions. Supports search, filter, and sort.
-/// Accessible directly from the Customize Toolbar.
 struct ExtensionsView: View {
     @StateObject private var manager = ExtensionManager.shared
     @State private var searchText = ""
@@ -76,7 +73,7 @@ struct ExtensionsView: View {
             }
             .navigationTitle("Extensions")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $searchText, prompt: "Search extensions…")
+            .searchable(text: $searchText, prompt: "Search Extensions")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Menu {

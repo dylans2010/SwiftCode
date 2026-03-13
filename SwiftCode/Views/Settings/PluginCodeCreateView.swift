@@ -57,7 +57,7 @@ struct AdvancedPlugin {
             TextField("Version", text: $pluginVersion)
             TextField("Minimum SwiftCode Version", text: $minimumVersion)
             TextField("Author", text: $pluginAuthor)
-            TextField("Tags (comma separated)", text: $tagsText)
+            TextField("Tags (Comma Separated)", text: $tagsText)
             TextField("Description", text: $pluginDescription, axis: .vertical)
                 .lineLimit(3...5)
         }
@@ -94,7 +94,7 @@ struct AdvancedPlugin {
     private var automationSection: some View {
         Section("Automation Steps") {
             if automationSteps.isEmpty {
-                Text("No steps added yet")
+                Text("No Steps Added Yet")
                     .foregroundStyle(.secondary)
             }
             ForEach(automationSteps) { step in
@@ -120,7 +120,7 @@ struct AdvancedPlugin {
     private var configSchemaSection: some View {
         Section("Config Schema") {
             if configFields.isEmpty {
-                Text("No config fields yet")
+                Text("No Config Fields Yet")
                     .foregroundStyle(.secondary)
             }
             ForEach(configFields) { field in
