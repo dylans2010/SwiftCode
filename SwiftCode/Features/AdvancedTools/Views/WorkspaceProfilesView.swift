@@ -16,7 +16,7 @@ struct WorkspaceProfilesView: View {
                     }
                     Spacer()
                     Image(systemName: "checkmark.seal.fill")
-                        .foregroundStyle(manager.activeProfile == nil ? .secondary : .green)
+                        .foregroundStyle(manager.activeProfile == nil ? Color.secondary : Color.green)
                         .font(.title2)
                 }
             }

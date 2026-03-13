@@ -256,7 +256,7 @@ private struct RepositoryKnowledgeReport {
         let snippetLines = files.prefix(80).compactMap { url -> String? in
             guard let handle = try? FileHandle(forReadingFrom: url),
                   let data = try? handle.read(upToCount: 1600),
-                  let content = String(data: data ?? Data(), encoding: .utf8)
+                  let content = String(data: data, encoding: .utf8)
             else { return nil }
             let first = content.split(separator: "\n").prefix(2).joined(separator: " ")
             return "\(url.lastPathComponent): \(first)"
@@ -299,7 +299,7 @@ private struct RepositoryKnowledgeReport {
         let (data, response) = try await URLSession.shared.data(from: treeURL)
         guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw RepositoryScanError.githubListingFailed }
 
-        let decoded = try JSONDecoder().decode(GitHubTreeResponse.self, from: data)
+        let decoded = try JSONDecoder().decode(SearchGitHubTreeResponse.self, from: data)
         let allowed = Set(["swift", "md", "txt", "json", "yaml", "yml", "plist"])
         let manifests = decoded.tree
             .filter { $0.type == "blob" }
@@ -418,11 +418,11 @@ private struct GitHubRepoReference {
     }
 }
 
-private struct GitHubTreeResponse: Decodable {
-    let tree: [GitHubTreeNode]
+private struct SearchGitHubTreeResponse: Decodable {
+    let tree: [SearchGitHubTreeNode]
 }
 
-private struct GitHubTreeNode: Decodable {
+private struct SearchGitHubTreeNode: Decodable {
     let path: String
     let type: String
 }
