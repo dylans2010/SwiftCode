@@ -125,6 +125,22 @@ CB000000000000000000002A /* build.yml in Resources */ = {isa = PBXBuildFile; fil
 		SV000000000000000000001A /* SkillsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SV000000000000000000001B /* SkillsView.swift */; };
 		SA000000000000000000001A /* SkillsAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SA000000000000000000001B /* SkillsAddView.swift */; };
 		SI000000000000000000001A /* SkillsInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI000000000000000000001B /* SkillsInfoView.swift */; };
+		AT000000000000000000001A /* SearchDocumentationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000001B /* SearchDocumentationView.swift */; };
+		AT000000000000000000002A /* SnippetsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000002B /* SnippetsLibraryView.swift */; };
+		AT000000000000000000003A /* CodeRefactoringView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000003B /* CodeRefactoringView.swift */; };
+		AT000000000000000000004A /* ErrorDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000004B /* ErrorDiagnosticsView.swift */; };
+		AT000000000000000000005A /* ExtensionMarketplaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000005B /* ExtensionMarketplaceView.swift */; };
+		AT000000000000000000006A /* CodeIntelligenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000006B /* CodeIntelligenceView.swift */; };
+		AT000000000000000000007A /* CrashLogAnalyzerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000007B /* CrashLogAnalyzerView.swift */; };
+		AT000000000000000000008A /* ProjectDependencyGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000008B /* ProjectDependencyGraphView.swift */; };
+		AT000000000000000000009A /* SymbolIndexView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000009B /* SymbolIndexView.swift */; };
+		AT00000000000000000000AA /* CodeMetricsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000AB /* CodeMetricsDashboardView.swift */; };
+		AT00000000000000000000BA /* DocumentationBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000BB /* DocumentationBrowserView.swift */; };
+		AT00000000000000000000CA /* WorkspaceProfilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000CB /* WorkspaceProfilesView.swift */; };
+		AT00000000000000000000DA /* AssetManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000DB /* AssetManagerView.swift */; };
+		AT00000000000000000000EA /* WorkspaceProfilesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000EB /* WorkspaceProfilesManager.swift */; };
+		AT00000000000000000000FA /* SymbolIndexingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000FB /* SymbolIndexingEngine.swift */; };
+		AT000000000000000000010A /* CodeIntelligenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000010B /* CodeIntelligenceEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -246,7 +262,23 @@ SK000000000000000000001B /* AgentSkillManager.swift */ = {isa = PBXFileReference
 PS000000000000000000001B /* PresetAgentSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetAgentSkills.swift; sourceTree = "<group>"; };
 SV000000000000000000001B /* SkillsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsView.swift; sourceTree = "<group>"; };
 SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsAddView.swift; sourceTree = "<group>"; };
-SI000000000000000000001B /* SkillsInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsInfoView.swift; sourceTree = "<group>"; };
+		SI000000000000000000001B /* SkillsInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillsInfoView.swift; sourceTree = "<group>"; };
+		AT000000000000000000001B /* SearchDocumentationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchDocumentationView.swift; sourceTree = "<group>"; };
+		AT000000000000000000002B /* SnippetsLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnippetsLibraryView.swift; sourceTree = "<group>"; };
+		AT000000000000000000003B /* CodeRefactoringView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeRefactoringView.swift; sourceTree = "<group>"; };
+		AT000000000000000000004B /* ErrorDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorDiagnosticsView.swift; sourceTree = "<group>"; };
+		AT000000000000000000005B /* ExtensionMarketplaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionMarketplaceView.swift; sourceTree = "<group>"; };
+		AT000000000000000000006B /* CodeIntelligenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeIntelligenceView.swift; sourceTree = "<group>"; };
+		AT000000000000000000007B /* CrashLogAnalyzerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogAnalyzerView.swift; sourceTree = "<group>"; };
+		AT000000000000000000008B /* ProjectDependencyGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDependencyGraphView.swift; sourceTree = "<group>"; };
+		AT000000000000000000009B /* SymbolIndexView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolIndexView.swift; sourceTree = "<group>"; };
+		AT00000000000000000000AB /* CodeMetricsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeMetricsDashboardView.swift; sourceTree = "<group>"; };
+		AT00000000000000000000BB /* DocumentationBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentationBrowserView.swift; sourceTree = "<group>"; };
+		AT00000000000000000000CB /* WorkspaceProfilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceProfilesView.swift; sourceTree = "<group>"; };
+		AT00000000000000000000DB /* AssetManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetManagerView.swift; sourceTree = "<group>"; };
+		AT00000000000000000000EB /* WorkspaceProfilesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceProfilesManager.swift; sourceTree = "<group>"; };
+		AT00000000000000000000FB /* SymbolIndexingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolIndexingEngine.swift; sourceTree = "<group>"; };
+		AT000000000000000000010B /* CodeIntelligenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeIntelligenceEngine.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -480,13 +512,53 @@ children = (
 path = Utilities;
 sourceTree = "<group>";
 };
-AA00001000000000000005FF /* Features */ = {
+		AA00001000000000000005FF /* Features */ = {
 isa = PBXGroup;
 children = (
 				AA00001000000000000006FF /* AI */,
 				AGSK0000000000000000001F /* Agent Skills */,
+				AT000000000000000000011F /* AdvancedTools */,
 			);
 path = Features;
+sourceTree = "<group>";
+};
+		AT000000000000000000011F /* AdvancedTools */ = {
+isa = PBXGroup;
+children = (
+				AT000000000000000000012F /* Engines */,
+				AT000000000000000000013F /* Views */,
+			);
+path = AdvancedTools;
+sourceTree = "<group>";
+};
+		AT000000000000000000012F /* Engines */ = {
+isa = PBXGroup;
+children = (
+				AT00000000000000000000EB /* WorkspaceProfilesManager.swift */,
+				AT00000000000000000000FB /* SymbolIndexingEngine.swift */,
+				AT000000000000000000010B /* CodeIntelligenceEngine.swift */,
+			);
+path = Engines;
+sourceTree = "<group>";
+};
+		AT000000000000000000013F /* Views */ = {
+isa = PBXGroup;
+children = (
+				AT000000000000000000001B /* SearchDocumentationView.swift */,
+				AT000000000000000000002B /* SnippetsLibraryView.swift */,
+				AT000000000000000000003B /* CodeRefactoringView.swift */,
+				AT000000000000000000004B /* ErrorDiagnosticsView.swift */,
+				AT000000000000000000005B /* ExtensionMarketplaceView.swift */,
+				AT000000000000000000006B /* CodeIntelligenceView.swift */,
+				AT000000000000000000007B /* CrashLogAnalyzerView.swift */,
+				AT000000000000000000008B /* ProjectDependencyGraphView.swift */,
+				AT000000000000000000009B /* SymbolIndexView.swift */,
+				AT00000000000000000000AB /* CodeMetricsDashboardView.swift */,
+				AT00000000000000000000BB /* DocumentationBrowserView.swift */,
+				AT00000000000000000000CB /* WorkspaceProfilesView.swift */,
+				AT00000000000000000000DB /* AssetManagerView.swift */,
+			);
+path = Views;
 sourceTree = "<group>";
 };
 AA00001000000000000006FF /* AI */ = {
@@ -914,6 +986,22 @@ files = (
 				SV000000000000000000001A /* SkillsView.swift in Sources */,
 				SA000000000000000000001A /* SkillsAddView.swift in Sources */,
 				SI000000000000000000001A /* SkillsInfoView.swift in Sources */,
+				AT000000000000000000001A /* SearchDocumentationView.swift in Sources */,
+				AT000000000000000000002A /* SnippetsLibraryView.swift in Sources */,
+				AT000000000000000000003A /* CodeRefactoringView.swift in Sources */,
+				AT000000000000000000004A /* ErrorDiagnosticsView.swift in Sources */,
+				AT000000000000000000005A /* ExtensionMarketplaceView.swift in Sources */,
+				AT000000000000000000006A /* CodeIntelligenceView.swift in Sources */,
+				AT000000000000000000007A /* CrashLogAnalyzerView.swift in Sources */,
+				AT000000000000000000008A /* ProjectDependencyGraphView.swift in Sources */,
+				AT000000000000000000009A /* SymbolIndexView.swift in Sources */,
+				AT00000000000000000000AA /* CodeMetricsDashboardView.swift in Sources */,
+				AT00000000000000000000BA /* DocumentationBrowserView.swift in Sources */,
+				AT00000000000000000000CA /* WorkspaceProfilesView.swift in Sources */,
+				AT00000000000000000000DA /* AssetManagerView.swift in Sources */,
+				AT00000000000000000000EA /* WorkspaceProfilesManager.swift in Sources */,
+				AT00000000000000000000FA /* SymbolIndexingEngine.swift in Sources */,
+				AT000000000000000000010A /* CodeIntelligenceEngine.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };
