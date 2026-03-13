@@ -121,7 +121,8 @@ actor BinaryManager {
         arguments: [String],
         workingDirectory: String?
     ) async throws -> BinaryExecutionResult {
-        try await withCheckedThrowingContinuation { continuation in
+        #if os(macOS)
+        return try await withCheckedThrowingContinuation { continuation in
             let process = Process()
             process.executableURL = URL(fileURLWithPath: executablePath)
             process.arguments = arguments
@@ -151,5 +152,10 @@ actor BinaryManager {
                 continuation.resume(throwing: error)
             }
         }
+        #else
+        throw NSError(domain: "BinaryManager", code: 501, userInfo: [
+            NSLocalizedDescriptionKey: "Subprocess execution is not supported on this platform."
+        ])
+        #endif
     }
 }
