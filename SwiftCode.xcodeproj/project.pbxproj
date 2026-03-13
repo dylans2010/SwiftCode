@@ -141,6 +141,7 @@ CB000000000000000000002A /* build.yml in Resources */ = {isa = PBXBuildFile; fil
 		AT00000000000000000000EA /* WorkspaceProfilesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000EB /* WorkspaceProfilesManager.swift */; };
 		AT00000000000000000000FA /* SymbolIndexingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000FB /* SymbolIndexingEngine.swift */; };
 		AT000000000000000000010A /* CodeIntelligenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000010B /* CodeIntelligenceEngine.swift */; };
+		AT000000000000000000011A /* AdvancedToolsDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000011B /* AdvancedToolsDesignSystem.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -279,6 +280,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		AT00000000000000000000EB /* WorkspaceProfilesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceProfilesManager.swift; sourceTree = "<group>"; };
 		AT00000000000000000000FB /* SymbolIndexingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolIndexingEngine.swift; sourceTree = "<group>"; };
 		AT000000000000000000010B /* CodeIntelligenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeIntelligenceEngine.swift; sourceTree = "<group>"; };
+		AT000000000000000000011B /* AdvancedToolsDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedToolsDesignSystem.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -537,6 +539,7 @@ children = (
 				AT00000000000000000000EB /* WorkspaceProfilesManager.swift */,
 				AT00000000000000000000FB /* SymbolIndexingEngine.swift */,
 				AT000000000000000000010B /* CodeIntelligenceEngine.swift */,
+				AT000000000000000000011B /* AdvancedToolsDesignSystem.swift */,
 			);
 path = Engines;
 sourceTree = "<group>";
@@ -1002,6 +1005,7 @@ files = (
 				AT00000000000000000000EA /* WorkspaceProfilesManager.swift in Sources */,
 				AT00000000000000000000FA /* SymbolIndexingEngine.swift in Sources */,
 				AT000000000000000000010A /* CodeIntelligenceEngine.swift in Sources */,
+				AT000000000000000000011A /* AdvancedToolsDesignSystem.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };
