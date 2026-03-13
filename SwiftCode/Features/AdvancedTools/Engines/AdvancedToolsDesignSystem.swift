@@ -12,7 +12,7 @@ struct AdvancedToolScreen<Content: View>: View {
                 }
                 .padding(20)
             }
-            .background(Color(nsColor: .windowBackgroundColor))
+            .background(Color.windowBackground)
             .navigationTitle(title)
         }
     }

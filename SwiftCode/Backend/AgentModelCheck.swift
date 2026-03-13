@@ -71,32 +71,23 @@ final class AgentModelCheck {
             )
         }
 
-        do {
-            switch normalizedProvider {
-            case "OpenRouter":
-                return await checkOpenRouter(apiKey: normalizedKey, model: normalizedModel, startTime: startTime)
-            case "Anthropic", "OpenAI", "Gemini":
-                // Validate config path for providers that are user-managed in this phase.
-                return .init(
-                    status: .success,
-                    supportedModels: [normalizedModel],
-                    latency: Date().timeIntervalSince(startTime),
-                    modelCapability: "Provider configuration is valid. Live model validation is currently available for OpenRouter."
-                )
-            default:
-                return .init(
-                    status: .configuration_error,
-                    supportedModels: [],
-                    latency: Date().timeIntervalSince(startTime),
-                    modelCapability: "Unknown provider: \(normalizedProvider)"
-                )
-            }
-        } catch {
+        switch normalizedProvider {
+        case "OpenRouter":
+            return await checkOpenRouter(apiKey: normalizedKey, model: normalizedModel, startTime: startTime)
+        case "Anthropic", "OpenAI", "Gemini":
+            // Validate config path for providers that are user-managed in this phase.
             return .init(
-                status: .network_error,
+                status: .success,
+                supportedModels: [normalizedModel],
+                latency: Date().timeIntervalSince(startTime),
+                modelCapability: "Provider configuration is valid. Live model validation is currently available for OpenRouter."
+            )
+        default:
+            return .init(
+                status: .configuration_error,
                 supportedModels: [],
                 latency: Date().timeIntervalSince(startTime),
-                modelCapability: error.localizedDescription
+                modelCapability: "Unknown provider: \(normalizedProvider)"
             )
         }
     }
