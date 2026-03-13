@@ -21,7 +21,11 @@ struct ExtensionMarketplaceView: View {
                         Text(ext.description).font(.subheadline)
                         HStack {
                             Button(ext.isInstalled ? "Remove" : "Install") {
-                                if ext.isInstalled { try? extensionManager.uninstallExtension(ext) }
+                                if ext.isInstalled {
+                                    try? extensionManager.uninstallExtension(ext)
+                                } else {
+                                    extensionManager.downloadExtension(ext)
+                                }
                             }
                             .buttonStyle(.bordered)
                             Text(ext.category.rawValue).font(.caption).foregroundStyle(.secondary)

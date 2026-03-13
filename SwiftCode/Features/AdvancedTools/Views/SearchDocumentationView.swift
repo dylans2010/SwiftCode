@@ -1,4 +1,5 @@
 import SwiftUI
+import ZIPFoundation
 
 struct SearchDocumentationView: View {
     @EnvironmentObject private var projectManager: ProjectManager
@@ -9,6 +10,7 @@ struct SearchDocumentationView: View {
     @State private var prompt = ""
     @State private var chatHistory: [SearchDocChatMessage] = []
     @State private var report = RepositoryKnowledgeReport.empty
+    @State private var reportError: String?
 
     var body: some View {
         NavigationStack {
@@ -35,6 +37,11 @@ struct SearchDocumentationView: View {
                     }
 
                     if isScanning { ProgressView("Building repository knowledge map...") }
+                    if let reportError {
+                        Text(reportError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
 
                     repositorySection(title: "Project Summary", content: report.projectSummary)
                     repositorySection(title: "Architecture Overview", content: report.architectureOverview)
@@ -80,10 +87,15 @@ struct SearchDocumentationView: View {
 
     private func runScan(source: RepositorySource) {
         isScanning = true
+        reportError = nil
         Task {
-            try? await Task.sleep(nanoseconds: 450_000_000)
-            report = RepositoryKnowledgeReport.from(source: source)
-            chatHistory = []
+            do {
+                report = try await RepositoryKnowledgeReport.from(source: source)
+                chatHistory = []
+            } catch {
+                report = .empty
+                reportError = error.localizedDescription
+            }
             isScanning = false
         }
     }
@@ -116,27 +128,97 @@ private struct RepositoryKnowledgeReport {
     var importantFiles: String
     var dependencies: String
     var integrationGuide: String
+    var searchableSnippets: [String]
 
-    static let empty = Self(projectSummary: "", architectureOverview: "", importantFiles: "", dependencies: "", integrationGuide: "")
+    static let empty = Self(projectSummary: "", architectureOverview: "", importantFiles: "", dependencies: "", integrationGuide: "", searchableSnippets: [])
 
-    static func from(source: RepositorySource) -> Self {
-        let sourceText: String
+    static func from(source: RepositorySource) async throws -> Self {
+        let rootURL = try await resolveRootURL(for: source)
+        return try analyze(rootURL: rootURL)
+    }
+
+    private static func resolveRootURL(for source: RepositorySource) async throws -> URL {
         switch source {
-        case .github(let url): sourceText = "Source: GitHub URL \(url)"
-        case .zip(let url): sourceText = "Source: ZIP \(url?.lastPathComponent ?? "Unknown")"
-        case .folder(let url): sourceText = "Source: Folder \(url?.path ?? "Unknown")"
+        case .folder(let url):
+            guard let url else { throw NSError(domain: "SearchDocumentation", code: 1, userInfo: [NSLocalizedDescriptionKey: "No local folder available."]) }
+            return url
+        case .zip(let url):
+            guard let url else { throw NSError(domain: "SearchDocumentation", code: 2, userInfo: [NSLocalizedDescriptionKey: "ZIP file path is missing."]) }
+            let dest = FileManager.default.temporaryDirectory.appendingPathComponent("repo-unzip-\(UUID().uuidString)")
+            try FileManager.default.createDirectory(at: dest, withIntermediateDirectories: true)
+            try FileManager.default.unzipItem(at: url, to: dest)
+            if let first = try FileManager.default.contentsOfDirectory(at: dest, includingPropertiesForKeys: nil).first {
+                return first
+            }
+            return dest
+        case .github(let value):
+            guard let url = URL(string: value), !value.isEmpty else {
+                throw NSError(domain: "SearchDocumentation", code: 3, userInfo: [NSLocalizedDescriptionKey: "Invalid GitHub URL."])
+            }
+            let zipURL = URL(string: url.absoluteString.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/archive/refs/heads/main.zip")!
+            let (data, _) = try await URLSession.shared.data(from: zipURL)
+            let tmpZip = FileManager.default.temporaryDirectory.appendingPathComponent("repo-download-\(UUID().uuidString).zip")
+            try data.write(to: tmpZip)
+            return try await resolveRootURL(for: .zip(tmpZip))
+        }
+    }
+
+    private static func analyze(rootURL: URL) throws -> Self {
+        let fm = FileManager.default
+        let allowed = Set(["swift", "md", "txt", "json", "yaml", "yml", "plist"])
+        let enumerator = fm.enumerator(at: rootURL, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles])
+
+        var files: [URL] = []
+        while let item = enumerator?.nextObject() as? URL {
+            if allowed.contains(item.pathExtension.lowercased()) { files.append(item) }
         }
 
+        let snippetLines = files.prefix(30).compactMap { url -> String? in
+            guard let data = try? Data(contentsOf: url), let content = String(data: data, encoding: .utf8) else { return nil }
+            let first = content.split(separator: "\n").prefix(2).joined(separator: " ")
+            return "\(url.lastPathComponent): \(first)"
+        }
+
+        let readme = files.first(where: { $0.lastPathComponent.lowercased().contains("readme") })
+        let readmeText = readme.flatMap { try? String(contentsOf: $0) } ?? ""
+
+        let dependenciesText = files.filter { ["package.swift", "podfile", "cartfile"].contains($0.lastPathComponent.lowercased()) }
+            .compactMap { try? String(contentsOf: $0) }
+            .joined(separator: "\n")
+
+        let swiftFiles = files.filter { $0.pathExtension.lowercased() == "swift" }
+        let importSet = Set(swiftFiles.compactMap { try? String(contentsOf: $0) }
+            .flatMap { text in
+                text.split(separator: "\n").compactMap { line -> String? in
+                    let trimmed = line.trimmingCharacters(in: .whitespaces)
+                    guard trimmed.hasPrefix("import ") else { return nil }
+                    return String(trimmed.dropFirst("import ".count))
+                }
+            })
+
+        let important = files.sorted { $0.path.count < $1.path.count }.prefix(8).map { "- " + $0.path.replacingOccurrences(of: rootURL.path + "/", with: "") }.joined(separator: "\n")
+
         return .init(
-            projectSummary: "\(sourceText)\nScanned README files, docs/, source, package manifests, and config files to build a knowledge map.",
-            architectureOverview: "Detected modular layers: UI, core services, and integrations. Entry points and data flow were inferred from import graph and file structure.",
-            importantFiles: "- README.md\n- Package.swift / Podfile\n- App entry point\n- API client and auth handlers",
-            dependencies: "Swift Package Manager dependencies inferred from Package.swift and lock files, plus framework imports discovered in source code.",
-            integrationGuide: "1. Initialize required services.\n2. Register feature modules.\n3. Inject configuration.\n4. Validate with integration tests."
+            projectSummary: "Repository root: \(rootURL.lastPathComponent)\nFiles scanned: \(files.count)\n\(readmeText.prefix(350))",
+            architectureOverview: "Swift files: \(swiftFiles.count). Imported modules: \(importSet.sorted().joined(separator: ", ")).",
+            importantFiles: important,
+            dependencies: dependenciesText.isEmpty ? "No dependency manifests found." : String(dependenciesText.prefix(600)),
+            integrationGuide: "1. Start from README and manifests.\n2. Inspect key source files listed above.\n3. Follow module imports to integration points.\n4. Validate by running project tests/build.",
+            searchableSnippets: snippetLines
         )
     }
 
     func answer(for query: String) -> String {
-        "Answer for: \(query)\n\nLikely files: Sources/Auth/AuthManager.swift:42, Sources/Networking/APIClient.swift:19\n\nExample Swift integration:\n```swift\nlet module = ExternalModule(configuration: .default)\nmodule.register(in: appContainer)\n```"
+        let terms = query.lowercased().split(separator: " ").map(String.init)
+        let matches = searchableSnippets.filter { snippet in
+            let lower = snippet.lowercased()
+            return terms.contains(where: { lower.contains($0) })
+        }.prefix(5)
+
+        if matches.isEmpty {
+            return "No direct text match found. Try asking with specific filenames, symbols, or module names."
+        }
+
+        return "Top relevant snippets:\n" + matches.joined(separator: "\n")
     }
 }
