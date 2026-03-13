@@ -505,15 +505,6 @@ struct ProjectsDashboardView: View {
                     Text("Choose a unique name for your project.")
                 }
 
-                Section {
-                    TextField("owner/repo (optional)", text: $newProjectGithubRepo)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                } header: {
-                    Label("Link GitHub Repository", systemImage: "chevron.left.forwardslash.chevron.right")
-                } footer: {
-                    Text("Enter owner/repo (e.g. apple/swift) to link a GitHub repository specific to this project. Overrides global settings. You can also link a repo later from the GitHub panel inside the project.")
-                }
             }
             .navigationTitle("New Project")
             .navigationBarTitleDisplayMode(.inline)

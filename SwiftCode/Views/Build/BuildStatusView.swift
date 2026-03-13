@@ -52,14 +52,73 @@ struct BuildStatusView: View {
                     noRepoView
                 } else {
                     ScrollView {
-                        VStack(spacing: 16) {
-                            repoHeaderSection
-                            compileSection
+                        VStack(spacing: 24) {
+                            // Step 1: Repository Connection
+                            VStack(alignment: .leading, spacing: 12) {
+                                stepHeader(number: 1, title: "Repository Connection", icon: "link")
+                                repoHeaderSection
+                            }
+
+                            // Step 2: Preparation
+                            VStack(alignment: .leading, spacing: 12) {
+                                stepHeader(number: 2, title: "Asset Preparation", icon: "wrench.and.screwdriver")
+                                VStack(alignment: .leading, spacing: 16) {
+                                    Text("Prepare certificates, profiles, and project metadata for a successful build.")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+
+                                    Button {
+                                        showPrepareCompile = true
+                                    } label: {
+                                        Label("Prepare Compiling", systemImage: "arrow.triangle.2.circlepath")
+                                            .font(.subheadline.bold())
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 12)
+                                            .background(Color.orange, in: RoundedRectangle(cornerRadius: 12))
+                                            .foregroundStyle(.white)
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                                .padding()
+                                .buildStatusCard()
+                            }
+
+                            // Step 3: Execution
+                            VStack(alignment: .leading, spacing: 12) {
+                                stepHeader(number: 3, title: "Build Execution", icon: "play.fill")
+                                compileSection
+
+                                Text("Or trigger a full CI workflow for distribution.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 4)
+
+                                Button {
+                                    showCIBuild = true
+                                } label: {
+                                    Label("Build With CI", systemImage: "cpu")
+                                        .font(.subheadline.bold())
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Color.purple, in: RoundedRectangle(cornerRadius: 12))
+                                        .foregroundStyle(.white)
+                                }
+                                .buttonStyle(.plain)
+                                .padding()
+                                .buildStatusCard()
+                            }
+
+                            // Step 4: Monitoring & Results
+                            VStack(alignment: .leading, spacing: 12) {
+                                stepHeader(number: 4, title: "Monitoring & Results", icon: "gauge.with.needle")
+                                workflowRunsSection
+                                releasesSection
+                            }
+
+                            Divider().padding(.vertical)
+
                             localBuildSection
-                            ciBuildSection
                             buildGuideSection
-                            workflowRunsSection
-                            releasesSection
                         }
                         .padding()
                     }
@@ -357,6 +416,23 @@ struct BuildStatusView: View {
             .buttonStyle(.plain)
         }
         .buildStatusCard()
+    }
+
+    private func stepHeader(number: Int, title: String, icon: String) -> some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color.orange.opacity(0.2))
+                    .frame(width: 28, height: 28)
+                Text("\(number)")
+                    .font(.caption.bold())
+                    .foregroundStyle(.orange)
+            }
+
+            Label(title, systemImage: icon)
+                .font(.headline)
+                .foregroundStyle(.white)
+        }
     }
 
     private func guideStep(number: Int, text: String) -> some View {

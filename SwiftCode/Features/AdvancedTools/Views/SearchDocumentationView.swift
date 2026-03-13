@@ -7,78 +7,199 @@ struct SearchDocumentationView: View {
     @State private var repositoryURL = ""
     @State private var prompt = ""
 
+    @AppStorage("search_docs_history") private var searchHistoryData: Data = Data()
+
+    private var searchHistory: [String] {
+        (try? JSONDecoder().decode([String].self, from: searchHistoryData)) ?? []
+    }
+
     var body: some View {
         AdvancedToolScreen(title: "Repository AI Search") {
-            AdvancedToolCard(title: "Repository Input", subtitle: "Fast background scanning with progress feedback") {
-                TextField("GitHub repository URL", text: $repositoryURL)
-                    .textFieldStyle(.roundedBorder)
+            VStack(spacing: 20) {
+                // Input Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Source Repository", systemImage: "server.rack")
+                        .font(.headline)
 
-                HStack {
-                    Button("Analyze GitHub URL") { viewModel.runScan(source: .github(repositoryURL)) }
-                        .buttonStyle(.borderedProminent)
-                    Button("Analyze ZIP") {
-                        viewModel.runScan(source: .zip(URL(fileURLWithPath: "/tmp/repository.zip")))
-                    }
-                    .buttonStyle(.bordered)
-                    Button("Analyze Local Folder") {
-                        viewModel.runScan(source: .folder(projectManager.activeProject?.directoryURL))
-                    }
-                    .buttonStyle(.bordered)
-                }
-
-                if viewModel.isScanning {
-                    ProgressView(value: viewModel.progress)
-                    Text(viewModel.statusMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if let reportError = viewModel.reportError {
-                    Text(reportError)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-            }
-
-            repositorySection(title: "Project Summary", content: viewModel.report.projectSummary)
-            repositorySection(title: "Architecture Overview", content: viewModel.report.architectureOverview)
-            repositorySection(title: "Important Files", content: viewModel.report.importantFiles)
-            repositorySection(title: "Dependencies", content: viewModel.report.dependencies)
-            repositorySection(title: "Integration Guide", content: viewModel.report.integrationGuide)
-
-            AdvancedToolCard(title: "Ask Questions", subtitle: "Search indexed snippets from the latest analysis") {
-                ForEach(viewModel.chatHistory) { message in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(message.role)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(message.text)
-                            .font(.subheadline)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(8)
-                    .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
-                }
-
-                HStack {
-                    TextField("How do I integrate this module?", text: $prompt)
+                    TextField("GitHub repository URL", text: $repositoryURL)
                         .textFieldStyle(.roundedBorder)
-                    Button("Send") {
-                        viewModel.askQuestion(prompt)
-                        prompt = ""
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+
+                    HStack(spacing: 10) {
+                        Button {
+                            viewModel.runScan(source: .github(repositoryURL))
+                        } label: {
+                            Text("Analyze URL")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        Button {
+                            viewModel.runScan(source: .folder(projectManager.activeProject?.directoryURL))
+                        } label: {
+                            Text("Current Project")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    .buttonStyle(.borderedProminent)
+
+                    if viewModel.isScanning {
+                        VStack(alignment: .leading, spacing: 6) {
+                            ProgressView(value: viewModel.progress)
+                                .tint(.orange)
+                            Text(viewModel.statusMessage)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.top, 4)
+                    }
+
+                    if let reportError = viewModel.reportError {
+                        Text(reportError)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+                .padding()
+                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+
+                // Analysis Sections
+                if !viewModel.report.projectSummary.isEmpty {
+                    VStack(alignment: .leading, spacing: 16) {
+                        Label("Analysis Report", systemImage: "doc.text.magnifyingglass")
+                            .font(.headline)
+
+                        DisclosureGroup("Project Summary") {
+                            Text(viewModel.report.projectSummary)
+                                .font(.caption)
+                                .padding(.top, 4)
+                        }
+
+                        DisclosureGroup("Architecture") {
+                            Text(viewModel.report.architectureOverview)
+                                .font(.caption)
+                                .padding(.top, 4)
+                        }
+
+                        DisclosureGroup("Key Files") {
+                            Text(viewModel.report.importantFiles)
+                                .font(.caption)
+                                .padding(.top, 4)
+                        }
+                    }
+                    .padding()
+                    .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+                }
+
+                // AI Chat Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Ask AI about Repo", systemImage: "sparkles")
+                        .font(.headline)
+
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 10) {
+                            if viewModel.chatHistory.isEmpty {
+                                Text("Ask a question about the indexed code to see AI answers.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                    .padding(.vertical, 20)
+                            } else {
+                                ForEach(viewModel.chatHistory) { message in
+                                    chatBubble(for: message)
+                                }
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 300)
+
+                    HStack {
+                        TextField("How do I use...", text: $prompt)
+                            .textFieldStyle(.roundedBorder)
+                        Button {
+                            addToHistory(prompt)
+                            viewModel.askQuestion(prompt)
+                            prompt = ""
+                        } label: {
+                            Image(systemName: "paperplane.fill")
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(prompt.isEmpty || viewModel.isScanning)
+                    }
+                }
+                .padding()
+                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+
+                // History Section
+                if !searchHistory.isEmpty {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Label("Recent Searches", systemImage: "clock.arrow.circlepath")
+                                .font(.headline)
+                            Spacer()
+                            Button("Clear") { clearHistory() }
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                        }
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack {
+                                ForEach(searchHistory, id: \.self) { item in
+                                    Button {
+                                        prompt = item
+                                    } label: {
+                                        Text(item)
+                                            .font(.caption)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 6)
+                                            .background(Color.white.opacity(0.1), in: Capsule())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 12))
                 }
             }
         }
     }
 
-    private func repositorySection(title: String, content: String) -> some View {
-        AdvancedToolCard(title: title) {
-            Text(content.isEmpty ? "No analysis yet." : content)
-                .font(.subheadline)
-                .textSelection(.enabled)
+    private func chatBubble(for message: SearchDocChatMessage) -> some View {
+        HStack {
+            if message.role == "You" { Spacer() }
+
+            VStack(alignment: message.role == "You" ? .trailing : .leading, spacing: 4) {
+                Text(message.role)
+                    .font(.caption2.bold())
+                    .foregroundStyle(.secondary)
+                Text(message.text)
+                    .font(.caption)
+                    .padding(10)
+                    .background(message.role == "You" ? Color.orange.opacity(0.2) : Color.white.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+
+            if message.role != "You" { Spacer() }
         }
+    }
+
+    private func addToHistory(_ query: String) {
+        var current = searchHistory
+        if let index = current.firstIndex(of: query) { current.remove(at: index) }
+        current.insert(query, at: 0)
+        let limited = Array(current.prefix(10))
+        if let data = try? JSONEncoder().encode(limited) {
+            searchHistoryData = data
+        }
+    }
+
+    private func clearHistory() {
+        searchHistoryData = Data()
     }
 }
 

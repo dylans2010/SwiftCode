@@ -68,7 +68,6 @@ private struct DocsWebView: PlatformViewRepresentable {
         configuration.websiteDataStore = .default()
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
-        webView.setValue(false, forKey: "drawsBackground")
         loadIfValid(on: webView, url: url)
         return webView
     }
