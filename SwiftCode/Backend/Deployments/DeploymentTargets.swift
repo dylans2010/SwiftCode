@@ -26,7 +26,7 @@ final class DeploymentTargets {
 
     /// Prepares the repository for deployment by staging, committing, and pushing changes using GitHub API.
     func prepareRepositoryForDeployment(project: Project, logHandler: @escaping (String) -> Void) async throws -> Bool {
-        logHandler("Initializing repository preparation workflow...")
+        logHandler("Initializing repository preparation workflow")
 
         guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
             logHandler("CRITICAL ERROR: No GitHub repository is linked to this project.")
@@ -34,25 +34,52 @@ final class DeploymentTargets {
             throw NSError(domain: "Deployment", code: 401, userInfo: [NSLocalizedDescriptionKey: "Deployment requires a connected GitHub repository containing the full project codebase."])
         }
 
-        logHandler("Validating repository: \(repoURL)")
         let (owner, repo) = try GitHubRepositoryManager.shared.parseRepoURL(repoURL)
 
         do {
-            logHandler("Connecting to GitHub Data API for \(owner)/\(repo)...")
-            logHandler("Scanning project directory for changes...")
+            // Step 1: Check repository status
+            logHandler("Checking GitHub repository status")
+            let isEmpty = try await GitHubService.shared.isRepositoryEmpty(owner: owner, repo: repo)
 
-            logHandler("Pushing complete project codebase to GitHub...")
-            try await GitHubService.shared.pushProject(
-                project,
+            // Step 2: Initialize if empty
+            if isEmpty {
+                logHandler("Repository is empty, creating initial commit")
+                try await GitHubService.shared.initializeRepository(owner: owner, repo: repo, branch: "main")
+                logHandler("Initial commit created successfully")
+            }
+
+            // Step 3: Verify main branch exists
+            var branch = try await GitHubService.shared.getBranch(owner: owner, repo: repo, branch: "main")
+            if branch == nil {
+                logHandler("Branch 'main' not found, attempting to create it")
+
+                // Try to find any commit to branch from
+                let commits = try await GitHubService.shared.listCommits(owner: owner, repo: repo, perPage: 1)
+                if let latestCommit = commits.first {
+                    try await GitHubService.shared.createBranchRef(owner: owner, repo: repo, branch: "main", sha: latestCommit.sha)
+                    logHandler("Successfully created 'main' branch")
+                } else {
+                    logHandler("No commits found in repository, cannot create branch.")
+                    throw NSError(domain: "Deployment", code: 404, userInfo: [NSLocalizedDescriptionKey: "Repository has no commits. Branch initialization failed."])
+                }
+            }
+
+            // Step 4: Upload project codebase files
+            logHandler("Uploading project files to repository")
+            try await GitHubService.shared.pushProjectUsingContentsAPI(
+                project: project,
                 owner: owner,
                 repo: repo,
-                commitMessage: "Prepare for deployment: Sync codebase",
-                branch: "main"
+                branch: "main",
+                logHandler: logHandler
             )
-            logHandler("✓ Codebase successfully synchronized with remote repository.")
+
+            // Step 5: Confirm readiness
+            logHandler("Repository preparation completed successfully")
+
             return true
         } catch {
-            logHandler("FAILED to push changes to GitHub: \(error.localizedDescription)")
+            logHandler("FAILED to prepare repository: \(error.localizedDescription)")
             logHandler("Suggestion: Check your GitHub Personal Access Token permissions (needs 'repo' scope).")
             throw error
         }

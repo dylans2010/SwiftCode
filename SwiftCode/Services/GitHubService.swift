@@ -429,6 +429,117 @@ final class GitHubService {
         return try JSONDecoder().decode([GitHubBranch].self, from: data)
     }
 
+    func getBranch(owner: String, repo: String, branch: String) async throws -> GitHubBranch? {
+        let branches = try await listBranches(owner: owner, repo: repo)
+        return branches.first { $0.name == branch }
+    }
+
+    func isRepositoryEmpty(owner: String, repo: String) async throws -> Bool {
+        let repoDetail = try await validateAndFetchRepo(owner: owner, repo: repo)
+        // If size is 0 or default branch is empty/missing, it's likely empty
+        if (repoDetail.size ?? 0) == 0 { return true }
+
+        // Double check branches
+        let branches = try await listBranches(owner: owner, repo: repo)
+        return branches.isEmpty
+    }
+
+    func initializeRepository(owner: String, repo: String, branch: String = "main") async throws {
+        let readmeContent = "# \(repo)\n\nCreated by SwiftCode."
+        try await pushFile(
+            owner: owner,
+            repo: repo,
+            path: "README.md",
+            content: readmeContent,
+            message: "Initial commit created by SwiftCode",
+            branch: branch
+        )
+    }
+
+    func createBranchRef(owner: String, repo: String, branch: String, sha: String) async throws {
+        guard token != nil else { throw GitHubError.missingToken }
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/refs")
+        var request = authorizedRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "ref": "refs/heads/\(branch)",
+            "sha": sha
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+    }
+
+    func pushFileData(
+        owner: String,
+        repo: String,
+        path: String,
+        data: Data,
+        message: String,
+        sha: String? = nil,
+        branch: String? = nil
+    ) async throws {
+        guard token != nil else { throw GitHubError.missingToken }
+
+        guard let encodedPath = path.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            throw GitHubError.invalidPath
+        }
+        let url = baseURL
+            .appendingPathComponent("repos")
+            .appendingPathComponent(owner)
+            .appendingPathComponent(repo)
+            .appendingPathComponent("contents")
+            .appendingPathComponent(encodedPath)
+
+        var request = authorizedRequest(url: url, method: "PUT")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let base64Content = data.base64EncodedString()
+        var body: [String: Any] = [
+            "message": message,
+            "content": base64Content
+        ]
+        if let sha { body["sha"] = sha }
+        if let branch { body["branch"] = branch }
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (responseData, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: responseData)
+    }
+
+    func pushProjectUsingContentsAPI(
+        project: Project,
+        owner: String,
+        repo: String,
+        branch: String = "main",
+        logHandler: (String) -> Void
+    ) async throws {
+        let allFiles = collectFiles(from: project.files)
+        let projectDir = await project.directoryURL
+
+        for fileNode in allFiles {
+            let fileURL = projectDir.appendingPathComponent(fileNode.path)
+            let data = try Data(contentsOf: fileURL)
+
+            logHandler("Uploading: \(fileNode.path)")
+
+            let existingSHA = try? await getFileSHA(owner: owner, repo: repo, path: fileNode.path, branch: branch)
+
+            try await pushFileData(
+                owner: owner,
+                repo: repo,
+                path: fileNode.path,
+                data: data,
+                message: "Update \(fileNode.path)",
+                sha: existingSHA,
+                branch: branch
+            )
+        }
+    }
+
     // MARK: - Create Branch
 
     /// Creates a new branch from an existing branch's HEAD SHA.
@@ -753,13 +864,14 @@ struct GitHubRepoDetail: Decodable, Identifiable {
     let stargazersCount: Int
     let forksCount: Int
     let openIssuesCount: Int
-    let defaultBranch: String
+    let defaultBranch: String?
     let isPrivate: Bool
+    let size: Int?
     let createdAt: Date?
     let updatedAt: Date?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, description, language
+        case id, name, description, language, size
         case fullName = "fullName"
         case htmlUrl = "htmlUrl"
         case cloneUrl = "cloneUrl"
