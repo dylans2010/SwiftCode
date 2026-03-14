@@ -11,7 +11,7 @@ struct MemoryInspectorView: View {
                     Text("Memory Usage")
                     Spacer()
                     Text(memoryUsage)
-                        .font(.monospacedDigit())
+                        .monospacedDigit()
                 }
             }
         }

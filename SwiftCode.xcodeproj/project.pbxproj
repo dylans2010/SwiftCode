@@ -1496,6 +1496,7 @@ files = (
 				BE8188B67B8D4127A2024B0B /* PaywallView.swift in Sources */,
 				8F59BBB2AB834D09A602D4DB /* DeveloperDashboardView.swift in Sources */,
 					55692774D3694350B609B803 /* FeatureFlags.swift in Sources */,
+					2EC2F9D75DE64A1FB30D011F /* InternalLoggingManager.swift in Sources */,
 					C48CC734575E44B1BD920D2C /* VerboseLoggingView.swift in Sources */,
 					C815E4364BE64EDA803817E7 /* NetworkInspectorView.swift in Sources */,
 					F94F6063217746B798ED5D35 /* APIInspectorView.swift in Sources */,
