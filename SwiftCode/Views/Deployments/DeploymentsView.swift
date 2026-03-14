@@ -3,7 +3,6 @@ import SwiftUI
 struct DeploymentsView: View {
     @EnvironmentObject private var projectManager: ProjectManager
     @State private var selectedPlatform: DeploymentPlatform = .netlify
-    @State private var apiToken: String = ""
     @State private var customDomain: String = ""
     @State private var useCustomDomain: Bool = false
     @State private var logs: [DeploymentLogLine] = []
@@ -11,148 +10,103 @@ struct DeploymentsView: View {
     @State private var deploymentURL: String?
     @State private var errorMessage: String?
 
-    var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Text("Deployments")
-                    .font(.title2.bold())
-                Spacer()
-                if isDeploying {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                }
+    private var hasToken: Bool {
+        let service: DeploymentKeychainManager.Service = {
+            switch selectedPlatform {
+            case .netlify: return .netlify
+            case .vercel: return .vercel
+            case .githubPages: return .github
             }
-            .padding()
-            .background(Color.white.opacity(0.05))
+        }()
+        return DeploymentKeychainManager.shared.retrieveKey(service: service) != nil
+    }
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    // Platform Selection
-                    GroupBox {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Deployment Platform")
-                                .font(.headline)
-
-                            Picker("Platform", selection: $selectedPlatform) {
-                                ForEach(DeploymentPlatform.allCases) { platform in
-                                    Text(platform.rawValue).tag(platform)
-                                }
-                            }
-                            .pickerStyle(.segmented)
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Platform") {
+                    Picker("Platform", selection: $selectedPlatform) {
+                        ForEach(DeploymentPlatform.allCases) { platform in
+                            Text(platform.rawValue).tag(platform)
                         }
-                        .padding(4)
                     }
-                    .groupBoxStyle(ModernGroupBoxStyle())
+                    .pickerStyle(.segmented)
+                }
 
-                    // Configuration
-                    GroupBox {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Configuration")
-                                .font(.headline)
-
-                            if selectedPlatform != .githubPages {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("API Token")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    SecureField("Enter API Token", text: $apiToken)
-                                        .textFieldStyle(.roundedBorder)
-                                }
-                            }
-
-                            Toggle("Use Custom Domain", isOn: $useCustomDomain)
-
-                            if useCustomDomain {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text("Domain")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    TextField("e.g. example.com", text: $customDomain)
-                                        .textFieldStyle(.roundedBorder)
-                                }
-                            }
-                        }
-                        .padding(4)
+                Section("Configuration") {
+                    Toggle("Use Custom Domain", isOn: $useCustomDomain)
+                    if useCustomDomain {
+                        TextField("e.g. example.com", text: $customDomain)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
                     }
-                    .groupBoxStyle(ModernGroupBoxStyle())
+                }
 
-                    // Deploy Button
+                Section {
                     Button(action: startDeployment) {
                         HStack {
-                            Image(systemName: "cloud.fill")
+                            if isDeploying {
+                                ProgressView().padding(.trailing, 8)
+                            } else {
+                                Image(systemName: "cloud.fill")
+                            }
                             Text(isDeploying ? "Deploying..." : "Start Deployment")
+                                .fontWeight(.semibold)
                         }
                         .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(isDeploying ? Color.gray : Color.orange)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
                     }
-                    .disabled(isDeploying || (selectedPlatform != .githubPages && apiToken.isEmpty))
+                    .disabled(isDeploying || !hasToken)
+                    .listRowBackground(isDeploying || !hasToken ? Color.gray.opacity(0.2) : Color.orange)
+                    .foregroundStyle(.white)
+                } footer: {
+                    if !hasToken {
+                        Text("Please configure your API key in Settings > API Keys.")
+                            .foregroundStyle(.red)
+                    }
+                }
 
-                    // Result Section
-                    if let deploymentURL = deploymentURL {
-                        GroupBox {
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack {
-                                    Image(systemName: "checkmark.circle.fill")
-                                        .foregroundStyle(.green)
-                                    Text("Deployment Successful")
-                                        .font(.headline)
-                                }
-
-                                Text("Your site is live at:")
-                                    .font(.subheadline)
-
-                                Link(deploymentURL, destination: URL(string: deploymentURL)!)
-                                    .font(.system(.subheadline, design: .monospaced))
-                                    .foregroundStyle(.blue)
-
-                                Button {
-                                    #if os(iOS)
-                                    UIApplication.shared.open(URL(string: deploymentURL)!)
-                                    #endif
-                                } label: {
-                                    Text("Open in Browser")
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 8)
-                                        .background(Color.blue)
-                                        .foregroundColor(.white)
-                                        .cornerRadius(6)
-                                }
-                            }
+                if let deploymentURL = deploymentURL {
+                    Section("Result") {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Deployment Successful")
+                                .font(.subheadline.bold())
                         }
-                        .groupBoxStyle(ModernGroupBoxStyle())
-                    }
 
-                    if let errorMessage = errorMessage {
-                        GroupBox {
-                            HStack {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundStyle(.red)
-                                Text(errorMessage)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.red)
-                            }
+                        Link(destination: URL(string: deploymentURL)!) {
+                            Label(deploymentURL, systemImage: "link")
+                                .font(.caption.monospaced())
                         }
-                        .groupBoxStyle(ModernGroupBoxStyle())
-                    }
 
-                    // Logs Section
-                    if !logs.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Deployment Logs")
-                                .font(.headline)
-                                .padding(.horizontal)
-
-                            DeploymentLogsView(logs: logs)
-                                .frame(height: 250)
+                        Button("Open in Browser") {
+                            #if os(iOS)
+                            UIApplication.shared.open(URL(string: deploymentURL)!)
+                            #endif
                         }
                     }
                 }
-                .padding()
+
+                if let errorMessage = errorMessage {
+                    Section {
+                        Label(errorMessage, systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                    } header: {
+                        Text("Error").foregroundStyle(.red)
+                    }
+                }
+
+                if !logs.isEmpty {
+                    Section("Deployment Logs") {
+                        DeploymentLogsView(logs: logs)
+                            .frame(height: 200)
+                            .listRowInsets(EdgeInsets())
+                    }
+                }
             }
+            .navigationTitle("Deployments")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -166,17 +120,14 @@ struct DeploymentsView: View {
 
         Task {
             do {
-                // Retrieve token from keychain if not provided in UI
-                let tokenToUse: String?
-                if selectedPlatform == .githubPages {
-                    tokenToUse = DeploymentKeychainManager.shared.retrieveKey(service: .github)
-                } else if selectedPlatform == .netlify {
-                    tokenToUse = !apiToken.isEmpty ? apiToken : DeploymentKeychainManager.shared.retrieveKey(service: .netlify)
-                } else if selectedPlatform == .vercel {
-                    tokenToUse = !apiToken.isEmpty ? apiToken : DeploymentKeychainManager.shared.retrieveKey(service: .vercel)
-                } else {
-                    tokenToUse = apiToken
-                }
+                let service: DeploymentKeychainManager.Service = {
+                    switch selectedPlatform {
+                    case .netlify: return .netlify
+                    case .vercel: return .vercel
+                    case .githubPages: return .github
+                    }
+                }()
+                let tokenToUse = DeploymentKeychainManager.shared.retrieveKey(service: service)
 
                 let result = try await DeploymentTargets.shared.deploy(
                     project: project,
