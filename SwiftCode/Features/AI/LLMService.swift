@@ -7,6 +7,7 @@ enum LLMProvider: String, CaseIterable {
     case google = "Gemini"
     case mistral = "Mistral"
     case qwen = "Qwen"
+    case offline = "Offline"
 
     static func from(rawValue: String?) -> LLMProvider {
         guard let rawValue = rawValue else { return .openRouter }
@@ -21,6 +22,7 @@ enum LLMProvider: String, CaseIterable {
         case .google: return "gemini_api_key"
         case .mistral: return "mistral_api_key"
         case .qwen: return "qwen_api_key"
+        case .offline: return "offline_model_selected"
         }
     }
 
@@ -32,6 +34,7 @@ enum LLMProvider: String, CaseIterable {
         case .google: return URL(string: "https://generativelanguage.googleapis.com/v1beta")!
         case .mistral: return URL(string: "https://api.mistral.ai/v1")!
         case .qwen: return URL(string: "https://dashscope.aliyuncs.com/compatible-mode/v1")!
+        case .offline: return URL(string: "http://localhost")! // Not used for offline
         }
     }
 }
@@ -175,6 +178,16 @@ final class LLMService {
     ) async throws {
         let providerRaw = UserDefaults.standard.string(forKey: "ai.selectedProvider")
         let provider = LLMProvider.from(rawValue: providerRaw)
+
+        if provider == .offline {
+            try await OfflineModelRunner.shared.loadModel(at: OfflineModelManager.shared.modelDirectory(for: model))
+            try await OfflineModelRunner.shared.streamResponse(prompt: messages.last?.content ?? "") { token in
+                Task {
+                    await onToken(token)
+                }
+            }
+            return
+        }
 
         if provider == .openRouter {
             try await OpenRouterService.shared.streamChat(

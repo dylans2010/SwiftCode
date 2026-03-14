@@ -23,6 +23,7 @@ struct ChooseModelView: View {
         case google = "Gemini"
         case mistral = "Mistral"
         case qwen = "Qwen"
+        case offline = "Offline Models"
 
         var id: String { self.rawValue }
 
@@ -34,6 +35,7 @@ struct ChooseModelView: View {
             case .google: return "gemini_api_key"
             case .mistral: return "mistral_api_key"
             case .qwen: return "qwen_api_key"
+            case .offline: return "offline_model_selected"
             }
         }
     }
@@ -53,24 +55,44 @@ struct ChooseModelView: View {
                         availableModels = []
                     }
 
-                    SecureField("API Key", text: $apiKey)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
+                    if selectedProvider != .offline {
+                        SecureField("API Key", text: $apiKey)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    }
                 }
 
                 Section {
-                    Button {
-                        fetchModels()
-                    } label: {
-                        if isLoadingModels { ProgressView().scaleEffect(0.8) }
-                        else { Text("Fetch Available Models") }
-                    }
-                    .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoadingModels)
+                    if selectedProvider == .offline {
+                        NavigationLink(destination: OfflineModelsView()) {
+                            Text("Manage Offline Models")
+                        }
 
-                    if !availableModels.isEmpty {
-                        Picker("Model", selection: $controller.selectedModel) {
-                            ForEach(availableModels, id: \.self) { model in
-                                Text(model).tag(model)
+                        let installed = OfflineModelManager.shared.installedModels
+                        if !installed.isEmpty {
+                            Picker("Local Model", selection: $controller.selectedModel) {
+                                ForEach(installed) { model in
+                                    Text(model.modelName).tag(model.modelName)
+                                }
+                            }
+                        } else {
+                            Text("No offline models installed")
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Button {
+                            fetchModels()
+                        } label: {
+                            if isLoadingModels { ProgressView().scaleEffect(0.8) }
+                            else { Text("Fetch Available Models") }
+                        }
+                        .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoadingModels)
+
+                        if !availableModels.isEmpty {
+                            Picker("Model", selection: $controller.selectedModel) {
+                                ForEach(availableModels, id: \.self) { model in
+                                    Text(model).tag(model)
+                                }
                             }
                         }
                     }
