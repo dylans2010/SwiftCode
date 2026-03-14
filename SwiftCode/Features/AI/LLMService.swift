@@ -105,7 +105,19 @@ final class LLMService {
     func sendChatRequest(model: String, messages: [AIMessage], key: String? = nil) async throws -> LLMResponse {
         let providerRaw = UserDefaults.standard.string(forKey: "ai.selectedProvider")
         let provider = LLMProvider.from(rawValue: providerRaw)
-        let actualKey = key ?? KeychainService.shared.get(forKey: provider.keychainKey) ?? ""
+
+        let providerKey: APIKeyProvider = {
+            switch provider {
+            case .openRouter: return .openRouter
+            case .anthropic: return .anthropic
+            case .openai: return .openai
+            case .google: return .google
+            case .mistral: return .mistral
+            case .qwen: return .qwen
+            }
+        }()
+
+        let actualKey = key ?? APIKeyManager.shared.retrieveKey(service: providerKey) ?? KeychainService.shared.get(forKey: provider.keychainKey) ?? ""
 
         guard !actualKey.isEmpty else { throw LLMError.invalidKey }
 
@@ -174,7 +186,18 @@ final class LLMService {
             return
         }
 
-        let key = KeychainService.shared.get(forKey: provider.keychainKey) ?? ""
+        let providerKey: APIKeyProvider = {
+            switch provider {
+            case .openRouter: return .openRouter
+            case .anthropic: return .anthropic
+            case .openai: return .openai
+            case .google: return .google
+            case .mistral: return .mistral
+            case .qwen: return .qwen
+            }
+        }()
+
+        let key = APIKeyManager.shared.retrieveKey(service: providerKey) ?? KeychainService.shared.get(forKey: provider.keychainKey) ?? ""
         guard !key.isEmpty else { throw LLMError.invalidKey }
 
         let endpoint = provider == .anthropic ? "messages" : "chat/completions"

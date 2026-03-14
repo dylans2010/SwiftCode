@@ -2,23 +2,23 @@ import SwiftUI
 
 struct DeploymentsView: View {
     @EnvironmentObject private var projectManager: ProjectManager
+    @StateObject private var logManager = LogManager.shared
     @State private var selectedPlatform: DeploymentPlatform = .netlify
     @State private var customDomain: String = ""
     @State private var useCustomDomain: Bool = false
-    @State private var logs: [DeploymentLogLine] = []
     @State private var isDeploying: Bool = false
     @State private var deploymentURL: String?
     @State private var errorMessage: String?
 
     private var hasToken: Bool {
-        let service: DeploymentKeychainManager.Service = {
+        let service: APIKeyProvider = {
             switch selectedPlatform {
             case .netlify: return .netlify
             case .vercel: return .vercel
-            case .githubPages: return .github
+            case .githubPages: return .gitHub
             }
         }()
-        return DeploymentKeychainManager.shared.retrieveKey(service: service) != nil
+        return APIKeyManager.shared.retrieveKey(service: service) != nil
     }
 
     var body: some View {
@@ -97,9 +97,9 @@ struct DeploymentsView: View {
                     }
                 }
 
-                if !logs.isEmpty {
+                if !logManager.deploymentLogs.isEmpty {
                     Section("Deployment Logs") {
-                        DeploymentLogsView(logs: logs)
+                        DeploymentLogsView(logs: logManager.deploymentLogs)
                             .frame(height: 200)
                             .listRowInsets(EdgeInsets())
                     }
@@ -116,18 +116,18 @@ struct DeploymentsView: View {
         isDeploying = true
         deploymentURL = nil
         errorMessage = nil
-        logs = []
+        logManager.clearDeploymentLogs()
 
         Task {
             do {
-                let service: DeploymentKeychainManager.Service = {
+                let service: APIKeyProvider = {
                     switch selectedPlatform {
                     case .netlify: return .netlify
                     case .vercel: return .vercel
-                    case .githubPages: return .github
+                    case .githubPages: return .gitHub
                     }
                 }()
-                let tokenToUse = DeploymentKeychainManager.shared.retrieveKey(service: service)
+                let tokenToUse = APIKeyManager.shared.retrieveKey(service: service)
 
                 let result = try await DeploymentTargets.shared.deploy(
                     project: project,
@@ -136,24 +136,24 @@ struct DeploymentsView: View {
                     domain: useCustomDomain ? customDomain : nil
                 ) { message in
                     DispatchQueue.main.async {
-                        logs.append(DeploymentLogLine(timestamp: Date(), message: message, isError: false))
+                        logManager.logDeployment(message)
                     }
                 }
 
-                DispatchQueue.main.async {
+                DispatchQueue.main.run {
                     isDeploying = false
                     if result.success {
                         deploymentURL = result.url
                     } else {
                         errorMessage = result.errorMessage
-                        logs.append(DeploymentLogLine(timestamp: Date(), message: result.errorMessage ?? "Unknown error", isError: true))
+                        logManager.logDeployment(result.errorMessage ?? "Unknown error", isError: true)
                     }
                 }
             } catch {
                 DispatchQueue.main.async {
                     isDeploying = false
                     errorMessage = error.localizedDescription
-                    logs.append(DeploymentLogLine(timestamp: Date(), message: error.localizedDescription, isError: true))
+                    logManager.logDeployment(error.localizedDescription, isError: true)
                 }
             }
         }

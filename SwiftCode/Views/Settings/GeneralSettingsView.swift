@@ -47,15 +47,13 @@ struct APIKeyEntry: Identifiable, Codable {
     var id: UUID
     var name: String
     var provider: APIKeyProvider
-    var isDefault: Bool
 
     var keychainKey: String { "api_key_entry_\(id.uuidString)" }
 
-    init(id: UUID = UUID(), name: String, provider: APIKeyProvider, isDefault: Bool = false) {
+    init(id: UUID = UUID(), name: String, provider: APIKeyProvider) {
         self.id = id
         self.name = name
         self.provider = provider
-        self.isDefault = isDefault
     }
 }
 
@@ -85,31 +83,22 @@ final class APIKeyManager: ObservableObject {
     }
 
     func add(name: String, provider: APIKeyProvider, keyValue: String) {
-        var entry = APIKeyEntry(name: name, provider: provider)
-        if keys.isEmpty { entry.isDefault = true }
+        if providerKeyExists(service: provider) { return }
+        let entry = APIKeyEntry(name: name, provider: provider)
         KeychainService.shared.set(keyValue, forKey: entry.keychainKey)
         keys.append(entry)
-        if entry.isDefault { syncDefaultKey(entry, value: keyValue) }
+        syncKey(entry, value: keyValue)
     }
 
     func update(_ entry: APIKeyEntry, keyValue: String) {
         KeychainService.shared.set(keyValue, forKey: entry.keychainKey)
-        if entry.isDefault { syncDefaultKey(entry, value: keyValue) }
+        syncKey(entry, value: keyValue)
     }
 
     func delete(_ entry: APIKeyEntry) {
         KeychainService.shared.delete(forKey: entry.keychainKey)
         keys.removeAll { $0.id == entry.id }
-        // If deleted key was default, make first remaining key default
-        if entry.isDefault && !keys.isEmpty {
-            keys[0].isDefault = true
-            if let val = keyValue(for: keys[0]) { syncDefaultKey(keys[0], value: val) }
-        }
-    }
-
-    func setDefault(_ entry: APIKeyEntry) {
-        for i in keys.indices { keys[i].isDefault = keys[i].id == entry.id }
-        if let val = keyValue(for: entry) { syncDefaultKey(entry, value: val) }
+        clearSyncedKey(for: entry.provider)
     }
 
     func keyValue(for entry: APIKeyEntry) -> String? {
@@ -128,7 +117,7 @@ final class APIKeyManager: ObservableObject {
     }
 
     func retrieveKey(service: APIKeyProvider) -> String? {
-        if let entry = keys.first(where: { $0.provider == service && $0.isDefault }) {
+        if let entry = keys.first(where: { $0.provider == service }) {
             return keyValue(for: entry)
         }
         return nil
@@ -144,7 +133,7 @@ final class APIKeyManager: ObservableObject {
         keys.contains { $0.provider == service }
     }
 
-    private func syncDefaultKey(_ entry: APIKeyEntry, value: String) {
+    private func syncKey(_ entry: APIKeyEntry, value: String) {
         switch entry.provider {
         case .openRouter:
             KeychainService.shared.set(value, forKey: KeychainService.openRouterAPIKey)
@@ -164,6 +153,29 @@ final class APIKeyManager: ObservableObject {
             DeploymentKeychainManager.shared.storeKey(service: .netlify, key: value)
         case .vercel:
             DeploymentKeychainManager.shared.storeKey(service: .vercel, key: value)
+        }
+    }
+
+    private func clearSyncedKey(for provider: APIKeyProvider) {
+        switch provider {
+        case .openRouter:
+            KeychainService.shared.delete(forKey: KeychainService.openRouterAPIKey)
+        case .anthropic:
+            KeychainService.shared.delete(forKey: "anthropic_api_key")
+        case .openai:
+            KeychainService.shared.delete(forKey: "openai_api_key")
+        case .google:
+            KeychainService.shared.delete(forKey: "gemini_api_key")
+        case .mistral:
+            KeychainService.shared.delete(forKey: "mistral_api_key")
+        case .qwen:
+            KeychainService.shared.delete(forKey: "qwen_api_key")
+        case .gitHub:
+            DeploymentKeychainManager.shared.deleteKey(service: .github)
+        case .netlify:
+            DeploymentKeychainManager.shared.deleteKey(service: .netlify)
+        case .vercel:
+            DeploymentKeychainManager.shared.deleteKey(service: .vercel)
         }
     }
 
@@ -394,6 +406,10 @@ struct GeneralSettingsView: View {
     @StateObject private var themeManager = ThemeManager.shared
     @StateObject private var toolRegistry = CustomToolRegistry.shared
 
+    @State private var showAddSheet = false
+    @State private var selectedProvider: APIKeyProvider?
+    @State private var editingEntry: APIKeyEntry?
+
     @State private var showAPIKeysSheet = false
     @State private var showThemeSheet = false
     @State private var showGitHubConfigSheet = false
@@ -420,7 +436,6 @@ struct GeneralSettingsView: View {
                 dashboardSection
                 fileNavigatorCustomizationSection
                 themesSection
-                gitHubSection
                 agentConnectionsSection
                 skillsSection
                 coreMLSection
@@ -467,6 +482,12 @@ struct GeneralSettingsView: View {
         .sheet(isPresented: $showExtensions) {
             ExtensionsView()
         }
+        .sheet(isPresented: $showAddSheet) {
+            AddEditAPIKeyView(entry: nil, provider: selectedProvider)
+        }
+        .sheet(item: $editingEntry) { entry in
+            AddEditAPIKeyView(entry: entry)
+        }
         .confirmationDialog(
             "Reset SwiftCode",
             isPresented: $showResetConfirmation,
@@ -493,60 +514,44 @@ struct GeneralSettingsView: View {
         } header: {
             Label("Quick Setup", systemImage: "bolt.fill")
         } footer: {
-            Text("Configure your API keys and model directly here, or use the API Keys section for more advanced key management.")
+            Text("Configure your model and extensions here.")
         }
     }
 
     private var apiKeysSection: some View {
         Section {
-            Button {
-                showAPIKeysSheet = true
-            } label: {
+            ForEach(APIKeyProvider.allCases, id: \.self) { provider in
                 HStack {
-                    Label("Manage API Keys", systemImage: "key.fill")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Text("\(apiKeyManager.keys.count) key\(apiKeyManager.keys.count == 1 ? "" : "s")")
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.tertiary)
-                        .font(.caption)
-                }
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 20) {
-                    ForEach(APIKeyProvider.allCases, id: \.self) { provider in
-                        VStack(spacing: 4) {
-                            Image(systemName: provider.icon)
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundStyle(apiKeyManager.keys.contains(where: { $0.provider == provider && $0.isDefault }) ? provider.tintColor : .secondary.opacity(0.3))
-                            Text(provider.rawValue)
-                                .font(.system(size: 8, weight: .medium))
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(minWidth: 50)
+                    Label {
+                        Text(provider.rawValue + (apiKeyManager.providerKeyExists(service: provider) ? " ✓" : ""))
+                            .foregroundStyle(apiKeyManager.providerKeyExists(service: provider) ? .green : .primary)
+                    } icon: {
+                        Image(systemName: provider.icon)
+                            .foregroundStyle(apiKeyManager.providerKeyExists(service: provider) ? .green : provider.tintColor)
                     }
-                }
-                .padding(.horizontal, 4)
-            }
-            .padding(.vertical, 8)
-
-            if let defaultKey = apiKeyManager.keys.first(where: { $0.isDefault }) {
-                HStack {
-                    Text("Active Key")
-                        .foregroundStyle(.secondary)
                     Spacer()
-                    Label(defaultKey.name, systemImage: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                    if let entry = apiKeyManager.keys.first(where: { $0.provider == provider }) {
+                        Text(entry.name)
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                            .onTapGesture {
+                                selectedProvider = provider
+                                editingEntry = entry
+                            }
+                    } else {
+                        Button("Setup") {
+                            selectedProvider = provider
+                            showAddSheet = true
+                        }
                         .font(.caption)
+                        .buttonStyle(.bordered)
+                    }
                 }
             }
         } header: {
             Label("API & Deployment Keys", systemImage: "key.fill")
         } footer: {
-            Text("Configure keys for AI services (OpenRouter) and Deployments (GitHub, Netlify, Vercel). The default key for each service is used automatically.")
+            Text("Configure keys for AI services (OpenRouter) and Deployments (GitHub, Netlify, Vercel).")
         }
     }
 
@@ -580,31 +585,6 @@ struct GeneralSettingsView: View {
         }
     }
 
-    private var gitHubSection: some View {
-        Section {
-            Button {
-                showGitHubConfigSheet = true
-            } label: {
-                HStack {
-                    Label("GitHub & Git Configuration", systemImage: "arrow.triangle.2.circlepath")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    if !settings.gitUserName.isEmpty {
-                        Text(settings.gitUserName)
-                            .foregroundStyle(.secondary)
-                            .font(.caption)
-                    }
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.tertiary)
-                        .font(.caption)
-                }
-            }
-        } header: {
-            Label("GitHub & Git", systemImage: "arrow.triangle.2.circlepath")
-        } footer: {
-            Text("Configure your GitHub token, Git identity, and default repository. These settings are shared across all projects.")
-        }
-    }
 
 
     private var editorSection: some View {
@@ -805,6 +785,12 @@ struct GeneralSettingsView: View {
 
     private var appManagementSection: some View {
         Section {
+            Button {
+                showGitHubConfigSheet = true
+            } label: {
+                Label("Git Identity & Options", systemImage: "person.badge.key.fill")
+                    .foregroundStyle(.blue)
+            }
             Button(role: .destructive) {
                 showResetConfirmation = true
             } label: {
@@ -922,10 +908,7 @@ struct APIKeysManagementView: View {
                 }
 
                 Section("Configured Services") {
-                    ForEach([
-                        APIKeyProvider.openRouter, .anthropic, .openai,
-                        .google, .mistral, .qwen, .gitHub, .netlify, .vercel
-                    ], id: \.self) { provider in
+                    ForEach(APIKeyProvider.allCases, id: \.self) { provider in
                         HStack {
                             Label {
                                 Text(provider.rawValue + (manager.providerKeyExists(service: provider) ? " ✓" : ""))
@@ -935,8 +918,8 @@ struct APIKeysManagementView: View {
                                     .foregroundStyle(manager.providerKeyExists(service: provider) ? .green : provider.tintColor)
                             }
                             Spacer()
-                            if let defaultKey = manager.keys.first(where: { $0.provider == provider && $0.isDefault }) {
-                                Text(defaultKey.name)
+                            if let entry = manager.keys.first(where: { $0.provider == provider }) {
+                                Text(entry.name)
                                     .font(.caption)
                                     .foregroundStyle(.green)
                             } else {
@@ -965,16 +948,6 @@ struct APIKeysManagementView: View {
                                         showDeleteConfirmation = true
                                     } label: {
                                         Label("Delete", systemImage: "trash")
-                                    }
-                                }
-                                .swipeActions(edge: .leading) {
-                                    if !entry.isDefault {
-                                        Button {
-                                            manager.setDefault(entry)
-                                        } label: {
-                                            Label("Set Default", systemImage: "checkmark.circle.fill")
-                                        }
-                                        .tint(.green)
                                     }
                                 }
                         }
@@ -1086,22 +1059,16 @@ struct APIKeyRowView: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: entry.provider.icon)
-                .foregroundStyle(entry.provider.tintColor)
+                .foregroundStyle(.green)
                 .frame(width: 28)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(entry.name)
                         .font(.headline)
-                    if entry.isDefault {
-                        Text("Default")
-                            .font(.caption2)
-                            .fontWeight(.semibold)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
-                            .background(.green.opacity(0.15), in: Capsule())
-                            .foregroundStyle(.green)
-                    }
+                    Text("✓")
+                        .font(.headline)
+                        .foregroundStyle(.green)
                 }
                 Text(entry.provider.rawValue)
                     .font(.caption)
@@ -1236,11 +1203,36 @@ struct AddEditAPIKeyView: View {
         validationError = nil
 
         do {
-            // Only validate AI providers
-            let aiProviders: [APIKeyProvider] = [.openRouter, .anthropic, .openai, .google, .mistral, .qwen]
-            if aiProviders.contains(provider) {
+            // Validate based on provider
+            switch provider {
+            case .openRouter, .anthropic, .openai, .google, .mistral, .qwen:
                 let llmProvider = LLMProvider(rawValue: provider.rawValue) ?? .openRouter
                 _ = try await LLMService.shared.validateAPIKey(provider: llmProvider, key: keyValue)
+            case .gitHub:
+                // Simple validation by fetching user info
+                let url = URL(string: "https://api.github.com/user")!
+                var request = URLRequest(url: url)
+                request.setValue("Bearer \(keyValue)", forHTTPHeaderField: "Authorization")
+                let (_, response) = try await URLSession.shared.data(for: request)
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                    throw NSError(domain: "GitHub", code: 401, userInfo: [NSLocalizedDescriptionKey: "Invalid GitHub token."])
+                }
+            case .netlify:
+                let url = URL(string: "https://api.netlify.com/api/v1/user")!
+                var request = URLRequest(url: url)
+                request.setValue("Bearer \(keyValue)", forHTTPHeaderField: "Authorization")
+                let (_, response) = try await URLSession.shared.data(for: request)
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                    throw NSError(domain: "Netlify", code: 401, userInfo: [NSLocalizedDescriptionKey: "Invalid Netlify token."])
+                }
+            case .vercel:
+                let url = URL(string: "https://api.vercel.com/v2/user")!
+                var request = URLRequest(url: url)
+                request.setValue("Bearer \(keyValue)", forHTTPHeaderField: "Authorization")
+                let (_, response) = try await URLSession.shared.data(for: request)
+                guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                    throw NSError(domain: "Vercel", code: 401, userInfo: [NSLocalizedDescriptionKey: "Invalid Vercel token."])
+                }
             }
 
             saveKey()
@@ -1536,54 +1528,6 @@ struct GitHubConfigView: View {
     var body: some View {
         NavigationStack {
             Form {
-                // GitHub Authentication
-                Section {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Personal Access Token")
-                                .font(.headline)
-                            if githubToken.isEmpty {
-                                Text("Not Set")
-                                    .font(.caption)
-                                    .foregroundStyle(.red)
-                            } else {
-                                Text("Token Configured")
-                                    .font(.caption)
-                                    .foregroundStyle(.green)
-                            }
-                        }
-                        Spacer()
-                        Button {
-                            showToken.toggle()
-                        } label: {
-                            Image(systemName: showToken ? "eye.slash" : "eye")
-                                .foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    if showToken {
-                        TextField("ghp_xxxxxxxxxxxx", text: $githubToken)
-                            .autocorrectionDisabled()
-                            .textInputAutocapitalization(.never)
-                            .fontDesign(.monospaced)
-
-                        Button {
-                            KeychainService.shared.set(githubToken, forKey: KeychainService.githubToken)
-                            tokenSaved = true
-                            showToken = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + Self.savedIndicatorDuration) { tokenSaved = false }
-                        } label: {
-                            Label(tokenSaved ? "Saved!" : "Save Token",
-                                  systemImage: tokenSaved ? "checkmark.circle.fill" : "key.fill")
-                                .foregroundStyle(tokenSaved ? .green : .blue)
-                        }
-                    }
-                } header: {
-                    Label("GitHub Account", systemImage: "chevron.left.forwardslash.chevron.right")
-                } footer: {
-                    Text("Your token is stored securely in the iOS Keychain. Create a token at github.com/settings/tokens with repo and workflow scopes.")
-                }
 
                 // Git Identity
                 Section {
