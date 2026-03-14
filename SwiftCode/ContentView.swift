@@ -65,5 +65,9 @@ struct ContentView: View {
             CodeSuggestionsView()
                 .environmentObject(suggestionsManager)
         }
+        .fullScreenCover(isPresented: .init(get: { !settings.hasCompletedOnboarding }, set: { _ in })) {
+            OnboardingView()
+                .environmentObject(settings)
+        }
     }
 }

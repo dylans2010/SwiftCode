@@ -19,6 +19,13 @@ final class NetlifyManager {
 
         do {
             logHandler("Starting Netlify deployment workflow for project: \(project.name)")
+
+            logHandler("Ensuring GitHub repository is up to date...")
+            let repoPrepared = try await DeploymentTargets.shared.prepareRepositoryForDeployment(project: project, logHandler: logHandler)
+            guard repoPrepared else {
+                return DeploymentResult(success: false, url: nil, errorMessage: "Failed to prepare GitHub repository for deployment.")
+            }
+
             logHandler("Preparing project files for archiving...")
 
             logHandler("Creating ZIP archive of project files using ZIPFoundation...")

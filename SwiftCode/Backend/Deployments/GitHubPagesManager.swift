@@ -22,6 +22,12 @@ final class GitHubPagesManager {
             logHandler("Starting GitHub Pages deployment workflow for project: \(project.name)")
             logHandler("Target Repository: \(owner)/\(repo)")
 
+            logHandler("Ensuring GitHub repository is up to date...")
+            let repoPrepared = try await DeploymentTargets.shared.prepareRepositoryForDeployment(project: project, logHandler: logHandler)
+            guard repoPrepared else {
+                return DeploymentResult(success: false, url: nil, errorMessage: "Failed to prepare GitHub repository for deployment.")
+            }
+
             logHandler("Checking existing GitHub Pages configuration...")
             let pagesInfo = try? await getPagesInfo(owner: owner, repo: repo, token: token)
 

@@ -66,12 +66,12 @@ final class DeploymentTargets {
 
             // Step 4: Upload project codebase files
             logHandler("Uploading project files to repository")
-            try await GitHubService.shared.pushProjectUsingContentsAPI(
-                project: project,
+            try await GitHubService.shared.pushProject(
+                project,
                 owner: owner,
                 repo: repo,
-                branch: "main",
-                logHandler: logHandler
+                commitMessage: "Deployment update: \(Date().formatted())",
+                branch: "main"
             )
 
             // Step 5: Confirm readiness
@@ -130,17 +130,6 @@ final class DeploymentTargets {
         domain: String?,
         logHandler: @escaping (String) -> Void
     ) async throws -> DeploymentResult {
-
-        let success = try await prepareRepositoryForDeployment(project: project, logHandler: logHandler)
-
-        logHandler("Detecting framework...")
-        let framework = await detectFramework(project: project)
-        logHandler("Detected Framework: \(framework.name)")
-
-        guard success else {
-            return DeploymentResult(success: false, url: nil, errorMessage: "Failed to prepare repository.")
-        }
-
         switch platform {
         case .netlify:
             logHandler("Starting Netlify deployment...")
