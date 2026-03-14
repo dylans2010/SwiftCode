@@ -69,6 +69,10 @@ final class ProjectTemplateManager: ObservableObject {
             visionOSApp,
             serverAPI,
             bluetoothUtility,
+            staticWebsite,
+            reactApp,
+            htmlCssWebsite,
+            javascriptApp,
             emptyProject,
             unitTestTarget
         ]
@@ -663,6 +667,87 @@ final class BluetoothManager: NSObject, CBCentralManagerDelegate {
                 }
             ],
             tags: ["CoreBluetooth", "Utility", "iOS"]
+        )
+    }
+
+    // MARK: - Web Templates
+
+    private static var staticWebsite: ProjectTemplate {
+        ProjectTemplate(
+            id: "static_website",
+            name: "Static Website",
+            description: "A simple static website with HTML, CSS, and JS.",
+            icon: "globe",
+            iconColor: "blue",
+            files: [
+                .init(relativePath: "index.html") { name in
+                    "<!DOCTYPE html>\n<html>\n<head>\n    <title>\(name)</title>\n    <link rel='stylesheet' href='style.css'>\n</head>\n<body>\n    <h1>Welcome to \(name)</h1>\n    <script src='script.js'></script>\n</body>\n</html>"
+                },
+                .init(relativePath: "style.css") { _ in
+                    "body {\n    font-family: sans-serif;\n    display: flex;\n    justify-content: center;\n    align-items: center;\n    height: 100vh;\n    background: #f0f0f0;\n}"
+                },
+                .init(relativePath: "script.js") { _ in
+                    "console.log('Website loaded');"
+                }
+            ],
+            tags: ["Web", "HTML", "CSS", "JS"]
+        )
+    }
+
+    private static var reactApp: ProjectTemplate {
+        ProjectTemplate(
+            id: "react_app",
+            name: "React App",
+            description: "A basic React application template.",
+            icon: "atom",
+            iconColor: "cyan",
+            files: [
+                .init(relativePath: "package.json") { name in
+                    "{\n  \"name\": \"\(name.lowercased().replacingOccurrences(of: " ", with: "-"))\",\n  \"version\": \"1.0.0\",\n  \"dependencies\": {\n    \"react\": \"^18.2.0\",\n    \"react-dom\": \"^18.2.0\"\n  }\n}"
+                },
+                .init(relativePath: "src/App.js") { _ in
+                    "import React from 'react';\n\nfunction App() {\n  return (\n    <div className=\"App\">\n      <h1>Hello React</h1>\n    </div>\n  );\n}\n\nexport default App;"
+                },
+                .init(relativePath: "public/index.html") { name in
+                    "<!DOCTYPE html>\n<html lang=\"en\">\n  <head>\n    <title>\(name)</title>\n  </head>\n  <body>\n    <div id=\"root\"></div>\n  </body>\n</html>"
+                }
+            ],
+            tags: ["Web", "React", "JS"]
+        )
+    }
+
+    private static var htmlCssWebsite: ProjectTemplate {
+        ProjectTemplate(
+            id: "html_css_website",
+            name: "HTML/CSS Website",
+            description: "A clean HTML and CSS starter.",
+            icon: "doc.plaintext",
+            iconColor: "orange",
+            files: [
+                .init(relativePath: "index.html") { name in
+                    "<!DOCTYPE html>\n<html>\n<head>\n    <title>\(name)</title>\n    <style>\n        body { margin: 0; padding: 20px; }\n    </style>\n</head>\n<body>\n    <h1>\(name)</h1>\n</body>\n</html>"
+                }
+            ],
+            tags: ["Web", "HTML", "CSS"]
+        )
+    }
+
+    private static var javascriptApp: ProjectTemplate {
+        ProjectTemplate(
+            id: "javascript_app",
+            name: "JavaScript App",
+            description: "A vanilla JavaScript application starter.",
+            icon: "js",
+            iconColor: "yellow",
+            files: [
+                .init(relativePath: "index.html") { name in
+                    "<!DOCTYPE html>\n<html>\n<body>\n    <h1 id='title'>\(name)</h1>\n    <script src='app.js'></script>\n</body>\n</html>"
+                },
+                .init(relativePath: "app.js") { _ in
+                    "document.getElementById('title').style.color = 'blue';"
+                }
+            ],
+            tags: ["Web", "JS"]
         )
     }
 
