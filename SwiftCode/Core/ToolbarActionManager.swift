@@ -47,6 +47,7 @@ final class ToolbarActionManager {
         case workspaceProfiles
         case assetManager
         case debugTools
+        case deployments
     }
 
     func destination(for toolId: String) -> SheetDestination? {
