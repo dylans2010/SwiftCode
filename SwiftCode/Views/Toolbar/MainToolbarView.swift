@@ -8,7 +8,30 @@ struct MainToolbarView: View {
 
     // Tools to show on the compact bar (pinned tools)
     private var pinnedTools: [ToolbarTool] {
-        toolbarManager.enabledTools
+        var tools = toolbarManager.enabledTools
+
+        // Filter out deployments if not a web project
+        if let project = projectManager.activeProject {
+            let isWebProject = project.files.contains { node in
+                isWebFile(node)
+            }
+            if !isWebProject {
+                tools.removeAll { $0.id == "deployments" }
+            }
+        }
+
+        return tools
+    }
+
+    private func isWebFile(_ node: FileNode) -> Bool {
+        let webExtensions = [".html", ".css", ".js", ".jsx", ".ts", ".tsx", "package.json"]
+        if webExtensions.contains(where: { node.name.lowercased().hasSuffix($0) }) {
+            return true
+        }
+        if node.isDirectory {
+            return node.children.contains { isWebFile($0) }
+        }
+        return false
     }
 
     var body: some View {
@@ -142,6 +165,7 @@ struct MainToolbarView: View {
         case "local_simulation": return .green
         case "plugin_manager": return .pink
         case "file_preview": return .yellow
+        case "deployments": return .orange
         default: return .secondary
         }
     }
