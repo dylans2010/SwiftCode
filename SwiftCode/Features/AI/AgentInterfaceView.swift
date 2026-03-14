@@ -631,8 +631,6 @@ struct AgentInterfaceView: View {
     @State private var showProcessSheet   = false
     @State private var showLogsSheet      = false
     @State private var showModeSheet      = false
-    @State private var showChooseModel    = false
-
     var body: some View {
         ZStack {
             Color(red: 0.07, green: 0.07, blue: 0.09).ignoresSafeArea()
@@ -682,18 +680,8 @@ struct AgentInterfaceView: View {
         .sheet(isPresented: $showModeSheet) {
             ModeSelectionSheet(
                 selectedMode: $controller.executionMode,
-                selectedModel: $controller.selectedModel,
-                onShowChooseModel: {
-                    showModeSheet = false
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                        showChooseModel = true
-                    }
-                }
+                selectedModel: $controller.selectedModel
             )
-        }
-        .sheet(isPresented: $showChooseModel) {
-            ChooseModelView(controller: controller)
-                .environmentObject(settings)
         }
         .onAppear {
             if controller.selectedModel != settings.selectedModel {
@@ -1439,7 +1427,6 @@ struct LogsDetailSheet: View {
 struct ModeSelectionSheet: View {
     @Binding var selectedMode: AgentExecutionMode
     @Binding var selectedModel: String
-    var onShowChooseModel: () -> Void
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -1483,12 +1470,6 @@ struct ModeSelectionSheet: View {
                     .pickerStyle(.inline)
                     .labelsHidden()
 
-                    Button {
-                        onShowChooseModel()
-                    } label: {
-                        Label("Choose My Own Model", systemImage: "cpu")
-                            .foregroundColor(.blue)
-                    }
                 }
             }
             .navigationTitle("Agent Settings")

@@ -47,18 +47,6 @@ final class LLMService {
                 onToken: onToken
             )
         case .anthropic, .openai, .google, .mistral, .qwen:
-            // For now, we route these through OpenRouter if the user has an OpenRouter key,
-            // or we could implement direct API calls here.
-            // The user requested to let them add API keys so they can use those models.
-            // If they are NOT using OpenRouter, they expect direct API calls.
-
-            // Placeholder: Implementing direct calls for each would be massive.
-            // Most users use OpenRouter to access these.
-            // But the requirement says "add API keys from AI providers like Claude, OpenAI, Gemini, Mistral, Qwen, etc so they can use those models as their preferred AI on the full app"
-
-            // To fulfill this without implementing 5 different APIs in one go,
-            // we will check if the provider is OpenRouter. If not, we'll try to use the specific provider's API.
-
             try await performDirectStreamChat(
                 provider: provider,
                 messages: messages,
@@ -76,28 +64,217 @@ final class LLMService {
         systemPrompt: String,
         onToken: @escaping @Sendable (String) async -> Void
     ) async throws {
-        // This is where direct API implementations for OpenAI, Anthropic, etc. would go.
-        // For this task, we will implement a generic error or a fallback if direct API isn't fully ready,
-        // but to "let users add API keys ... so they can use those models", we should at least support the most common ones.
+        guard let apiKey = KeychainService.shared.get(forKey: provider.keychainKey), !apiKey.isEmpty else {
+            throw NSError(domain: "LLMService", code: 401, userInfo: [NSLocalizedDescriptionKey: "Missing API Key for \(provider.rawValue). Please add it in Settings."])
+        }
 
-        // However, OpenRouter already supports all of these.
-        // If the user selects "Anthropic" and provides an Anthropic key, they expect it to work directly.
-
-        // For the sake of this task and time constraints, I'll implement a routing that suggests using OpenRouter
-        // for full compatibility, or uses OpenRouter as a proxy if possible,
-        // but since they provide their OWN keys for specific providers, direct implementation is better.
-
-        // I will implement a basic version that handles the most requested ones or throws a specific "Direct API not yet implemented" error.
-
-        // For now, let's assume OpenRouter is the primary engine but we've added the UI for others.
-        // To satisfy the user, I'll route direct providers to a message that they should use OpenRouter for now
-        // OR I will implement a basic OpenAI-compatible routing as many providers (Mistral, Groq, etc) use it.
-
-        // Actually, the most robust way to support "Anthropic, OpenAI, Gemini, Mistral, Qwen"
-        // is to actually use their APIs.
-
-        // For this PR, I will make sure AgentController uses LLMService.
-
-        throw NSError(domain: "LLMService", code: 1, userInfo: [NSLocalizedDescriptionKey: "Direct API for \(provider.rawValue) is coming soon. Please use OpenRouter to access these models for now."])
+        switch provider {
+        case .openai:
+            try await performOpenAICompatibleStreaming(baseURL: "https://api.openai.com/v1", apiKey: apiKey, messages: messages, model: model, systemPrompt: systemPrompt, onToken: onToken)
+        case .mistral:
+            try await performOpenAICompatibleStreaming(baseURL: "https://api.mistral.ai/v1", apiKey: apiKey, messages: messages, model: model, systemPrompt: systemPrompt, onToken: onToken)
+        case .qwen:
+            try await performOpenAICompatibleStreaming(baseURL: "https://dashscope.aliyuncs.com/compatible-mode/v1", apiKey: apiKey, messages: messages, model: model, systemPrompt: systemPrompt, onToken: onToken)
+        case .anthropic:
+            try await performAnthropicStreaming(apiKey: apiKey, messages: messages, model: model, systemPrompt: systemPrompt, onToken: onToken)
+        case .google:
+            try await performGeminiStreaming(apiKey: apiKey, messages: messages, model: model, systemPrompt: systemPrompt, onToken: onToken)
+        case .openRouter:
+            break // Handled in streamChat
+        }
     }
+
+    private func performGeminiStreaming(
+        apiKey: String,
+        messages: [AIMessage],
+        model: String,
+        systemPrompt: String,
+        onToken: @escaping @Sendable (String) async -> Void
+    ) async throws {
+        let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models/\(model):streamGenerateContent?alt=sse&key=\(apiKey)")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        var contents: [[String: Any]] = []
+        contents.append(["role": "user", "parts": [["text": "System Instruction: \(systemPrompt)"]]])
+
+        for msg in messages {
+            let role = msg.role == "assistant" ? "model" : "user"
+            contents.append(["role": role, "parts": [["text": msg.content]]])
+        }
+
+        let body: [String: Any] = ["contents": contents]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (stream, response) = try await URLSession.shared.bytes(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NSError(domain: "LLMService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response from server"])
+        }
+
+        if httpResponse.statusCode != 200 {
+            var errorBody = ""
+            for try await line in stream.lines {
+                errorBody += line
+                if errorBody.count > 1000 { break }
+            }
+            throw NSError(domain: "LLMService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Gemini API Error \(httpResponse.statusCode): \(errorBody)"])
+        }
+
+        for try await line in stream.lines {
+            guard line.hasPrefix("data: ") else { continue }
+            let jsonString = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !jsonString.isEmpty else { continue }
+
+            guard let data = jsonString.data(using: .utf8),
+                  let chunk = try? JSONDecoder().decode(GeminiStreamChunk.self, from: data),
+                  let token = chunk.candidates?.first?.content?.parts?.first?.text else { continue }
+
+            await onToken(token)
+        }
+    }
+
+    private func performAnthropicStreaming(
+        apiKey: String,
+        messages: [AIMessage],
+        model: String,
+        systemPrompt: String,
+        onToken: @escaping @Sendable (String) async -> Void
+    ) async throws {
+        let url = URL(string: "https://api.anthropic.com/v1/messages")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
+        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let apiMessages = messages.map { ["role": $0.role, "content": $0.content] }
+
+        let body: [String: Any] = [
+            "model": model,
+            "system": systemPrompt,
+            "messages": apiMessages,
+            "max_tokens": 4096,
+            "stream": true
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (stream, response) = try await URLSession.shared.bytes(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NSError(domain: "LLMService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response from server"])
+        }
+
+        if httpResponse.statusCode != 200 {
+            var errorBody = ""
+            for try await line in stream.lines {
+                errorBody += line
+                if errorBody.count > 1000 { break }
+            }
+            throw NSError(domain: "LLMService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "Anthropic API Error \(httpResponse.statusCode): \(errorBody)"])
+        }
+
+        for try await line in stream.lines {
+            guard line.hasPrefix("data: ") else { continue }
+            let jsonString = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !jsonString.isEmpty else { continue }
+
+            guard let data = jsonString.data(using: .utf8),
+                  let event = try? JSONDecoder().decode(AnthropicEvent.self, from: data) else { continue }
+
+            if event.type == "content_block_delta", let delta = event.delta, delta.type == "text_delta" {
+                await onToken(delta.text ?? "")
+            }
+        }
+    }
+
+    private func performOpenAICompatibleStreaming(
+        baseURL: String,
+        apiKey: String,
+        messages: [AIMessage],
+        model: String,
+        systemPrompt: String,
+        onToken: @escaping @Sendable (String) async -> Void
+    ) async throws {
+        let url = URL(string: "\(baseURL)/chat/completions")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        var apiMessages: [[String: String]] = [
+            ["role": "system", "content": systemPrompt]
+        ]
+        apiMessages += messages.map { ["role": $0.role, "content": $0.content] }
+
+        let body: [String: Any] = [
+            "model": model,
+            "messages": apiMessages,
+            "stream": true
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (stream, response) = try await URLSession.shared.bytes(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw NSError(domain: "LLMService", code: 0, userInfo: [NSLocalizedDescriptionKey: "Invalid response from server"])
+        }
+
+        if httpResponse.statusCode != 200 {
+            var errorBody = ""
+            for try await line in stream.lines {
+                errorBody += line
+                if errorBody.count > 1000 { break }
+            }
+            throw NSError(domain: "LLMService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: "API Error \(httpResponse.statusCode): \(errorBody)"])
+        }
+
+        for try await line in stream.lines {
+            guard line.hasPrefix("data: ") else { continue }
+            let jsonString = String(line.dropFirst(6)).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard jsonString != "[DONE]" && !jsonString.isEmpty else { break }
+
+            guard let data = jsonString.data(using: .utf8),
+                  let chunk = try? JSONDecoder().decode(OpenAIStreamChunk.self, from: data),
+                  let token = chunk.choices.first?.delta.content else { continue }
+
+            await onToken(token)
+        }
+    }
+}
+
+private struct OpenAIStreamChunk: Decodable {
+    struct Choice: Decodable {
+        struct Delta: Decodable {
+            let content: String?
+        }
+        let delta: Delta
+    }
+    let choices: [Choice]
+}
+
+private struct AnthropicEvent: Decodable {
+    let type: String
+    let delta: AnthropicDelta?
+
+    struct AnthropicDelta: Decodable {
+        let type: String?
+        let text: String?
+    }
+}
+
+private struct GeminiStreamChunk: Decodable {
+    struct Candidate: Decodable {
+        struct Content: Decodable {
+            struct Part: Decodable {
+                let text: String?
+            }
+            let parts: [Part]?
+        }
+        let content: Content?
+    }
+    let candidates: [Candidate]?
 }

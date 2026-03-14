@@ -378,7 +378,6 @@ struct GeneralSettingsView: View {
 
     // Quick Setup section state
     @State private var showExtensions = false
-    @State private var showChooseModel = false
 
     var activeTheme: AppTheme {
         themeManager.theme(for: settings.selectedThemeID) ?? AppTheme.dark
@@ -440,10 +439,6 @@ struct GeneralSettingsView: View {
         .sheet(isPresented: $showExtensions) {
             ExtensionsView()
         }
-        .sheet(isPresented: $showChooseModel) {
-            ChooseModelView(controller: AgentController.shared)
-                .environmentObject(settings)
-        }
         .confirmationDialog(
             "Reset SwiftCode",
             isPresented: $showResetConfirmation,
@@ -461,21 +456,19 @@ struct GeneralSettingsView: View {
     private var quickSetupSection: some View {
         Section {
             // AI Model selection / validation
-            Button {
-                showChooseModel = true
-            } label: {
-                HStack {
-                    Label("Choose Default AI Model", systemImage: "slider.horizontal.3")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Text(settings.selectedModel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.tertiary)
-                        .font(.caption)
+            Picker(selection: $settings.selectedModel) {
+                ForEach(OpenRouterModel.defaults) { model in
+                    VStack(alignment: .leading) {
+                        Text(model.name)
+                        Text(model.description)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .tag(model.id)
                 }
+            } label: {
+                Label("Default AI Model", systemImage: "cpu.fill")
+                    .foregroundStyle(.primary)
             }
 
             // Extensions shortcut
