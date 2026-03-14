@@ -166,10 +166,22 @@ struct DeploymentsView: View {
 
         Task {
             do {
+                // Retrieve token from keychain if not provided in UI
+                let tokenToUse: String?
+                if selectedPlatform == .githubPages {
+                    tokenToUse = DeploymentKeychainManager.shared.retrieveKey(service: .github)
+                } else if selectedPlatform == .netlify {
+                    tokenToUse = !apiToken.isEmpty ? apiToken : DeploymentKeychainManager.shared.retrieveKey(service: .netlify)
+                } else if selectedPlatform == .vercel {
+                    tokenToUse = !apiToken.isEmpty ? apiToken : DeploymentKeychainManager.shared.retrieveKey(service: .vercel)
+                } else {
+                    tokenToUse = apiToken
+                }
+
                 let result = try await DeploymentTargets.shared.deploy(
                     project: project,
                     platform: selectedPlatform,
-                    token: apiToken,
+                    token: tokenToUse,
                     domain: useCustomDomain ? customDomain : nil
                 ) { message in
                     DispatchQueue.main.async {

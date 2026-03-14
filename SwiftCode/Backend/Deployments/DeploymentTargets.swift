@@ -14,6 +14,12 @@ struct DeploymentResult {
     let errorMessage: String?
 }
 
+struct FrameworkConfig {
+    let name: String
+    let buildCommand: String?
+    let outputDirectory: String
+}
+
 final class DeploymentTargets {
     static let shared = DeploymentTargets()
     private init() {}
@@ -63,6 +69,43 @@ final class DeploymentTargets {
         return true
     }
 
+    /// Detects the framework used in the project.
+    func detectFramework(project: Project) async -> FrameworkConfig {
+        let projectPath = await project.directoryURL.path
+        let fileManager = FileManager.default
+
+        // Detect Next.js
+        if fileManager.fileExists(atPath: "\(projectPath)/next.config.js") ||
+           fileManager.fileExists(atPath: "\(projectPath)/next.config.mjs") {
+            return FrameworkConfig(name: "Next.js", buildCommand: "npm run build", outputDirectory: ".next")
+        }
+
+        // Detect Vite (React, Vue, etc.)
+        if fileManager.fileExists(atPath: "\(projectPath)/vite.config.js") ||
+           fileManager.fileExists(atPath: "\(projectPath)/vite.config.ts") {
+            return FrameworkConfig(name: "Vite", buildCommand: "npm run build", outputDirectory: "dist")
+        }
+
+        // Detect Nuxt
+        if fileManager.fileExists(atPath: "\(projectPath)/nuxt.config.js") ||
+           fileManager.fileExists(atPath: "\(projectPath)/nuxt.config.ts") {
+            return FrameworkConfig(name: "Nuxt", buildCommand: "npm run build", outputDirectory: ".output/public")
+        }
+
+        // Detect Astro
+        if fileManager.fileExists(atPath: "\(projectPath)/astro.config.mjs") {
+            return FrameworkConfig(name: "Astro", buildCommand: "npm run build", outputDirectory: "dist")
+        }
+
+        // Detect generic package.json
+        if fileManager.fileExists(atPath: "\(projectPath)/package.json") {
+            return FrameworkConfig(name: "Node.js", buildCommand: "npm run build", outputDirectory: "dist")
+        }
+
+        // Default to static
+        return FrameworkConfig(name: "Static", buildCommand: nil, outputDirectory: ".")
+    }
+
     /// Routes the deployment to the appropriate platform manager.
     func deploy(
         project: Project,
@@ -71,6 +114,10 @@ final class DeploymentTargets {
         domain: String?,
         logHandler: @escaping (String) -> Void
     ) async throws -> DeploymentResult {
+
+        logHandler("Detecting framework...")
+        let framework = await detectFramework(project: project)
+        logHandler("Detected Framework: \(framework.name)")
 
         let success = try await prepareRepositoryForDeployment(project: project, logHandler: logHandler)
         guard success else {

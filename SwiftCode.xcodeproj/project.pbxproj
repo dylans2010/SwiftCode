@@ -131,6 +131,13 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		PS000000000000000000001A /* PresetAgentSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = PS000000000000000000001B /* PresetAgentSkills.swift */; };
 		SV000000000000000000001A /* SkillsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SV000000000000000000001B /* SkillsView.swift */; };
 		SA000000000000000000001A /* SkillsAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SA000000000000000000001B /* SkillsAddView.swift */; };
+		DEP000000000000000000001A /* DeploymentKeychainManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000001 /* DeploymentKeychainManager.swift */; };
+		DEP000000000000000000002A /* DeploymentTargets.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000002 /* DeploymentTargets.swift */; };
+		DEP000000000000000000003A /* GitHubPagesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000003 /* GitHubPagesManager.swift */; };
+		DEP000000000000000000004A /* NetlifyManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000004 /* NetlifyManager.swift */; };
+		DEP000000000000000000005A /* VercelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000005 /* VercelManager.swift */; };
+		DEP000000000000000000102A /* DeploymentLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000102 /* DeploymentLogsView.swift */; };
+		DEP000000000000000000103A /* DeploymentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000103 /* DeploymentsView.swift */; };
 		SI000000000000000000001A /* SkillsInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI000000000000000000001B /* SkillsInfoView.swift */; };
 		AT000000000000000000001A /* SearchDocumentationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000001B /* SearchDocumentationView.swift */; };
 		AT000000000000000000002A /* SnippetsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000002B /* SnippetsLibraryView.swift */; };
@@ -261,6 +268,11 @@ RPM000000000000000000001B /* RepoPermManager.swift */ = {isa = PBXFileReference;
 PBM000000000000000000001B /* ProjectBuilderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectBuilderManager.swift; sourceTree = "<group>"; };
 GRS000000000000000000001B /* GitHubRemoteSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubRemoteSetupView.swift; sourceTree = "<group>"; };
 AA0000100000000000000PFR /* ProjectFilesExtracter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectFilesExtracter.swift; sourceTree = "<group>"; };
+		DEP000000000000000000001 /* DeploymentKeychainManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentKeychainManager.swift; sourceTree = "<group>"; };
+		DEP000000000000000000002 /* DeploymentTargets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentTargets.swift; sourceTree = "<group>"; };
+		DEP000000000000000000003 /* GitHubPagesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubPagesManager.swift; sourceTree = "<group>"; };
+		DEP000000000000000000004 /* NetlifyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetlifyManager.swift; sourceTree = "<group>"; };
+		DEP000000000000000000005 /* VercelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VercelManager.swift; sourceTree = "<group>"; };
 CB000000000000000000001B /* build-project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "build-project.yml"; sourceTree = "<group>"; };
 		AA0000100000000000000F8B /* ModernGroupBoxStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernGroupBoxStyle.swift; sourceTree = "<group>"; };
 		AA0000100000000000000F6B /* ChooseModelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChooseModelView.swift; sourceTree = "<group>"; };
@@ -393,6 +405,7 @@ children = (
 				AA0000100000000000000AFF /* Errors */,
 				AA0000100000000000000BFF /* Search */,
 				AA0000100000000000000CFF /* Toolbar */,
+				DEP000000000000000000101 /* Deployments */,
 				EX0000000000000000000001B /* ExtensionsView.swift */,
 			);
 path = Views;
@@ -761,6 +774,7 @@ children = (
 				LS000000000000000000001F /* Local Simulation */,
 				BG000000000000000000001F /* GitHub */,
 				CB000000000000000000001F /* CI Building */,
+				DEP000000000000000000201 /* Deployments */,
 			);
 path = Backend;
 sourceTree = "<group>";
@@ -833,6 +847,29 @@ sourceTree = "<group>";
 				B9FC4267E4F840ABAE5D9ACA /* MacDiscoveryService.swift */,
 			);
 			path = Connectivity;
+			sourceTree = "<group>";
+		};
+DEP000000000000000000101 /* Deployments */ = {
+			isa = PBXGroup;
+			children = (
+				DEP000000000000000000102 /* DeploymentLogsView.swift */,
+				DEP000000000000000000103 /* DeploymentsView.swift */,
+			);
+			path = Deployments;
+			sourceTree = "<group>";
+		};
+		DEP000000000000000000102 /* DeploymentLogsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentLogsView.swift; sourceTree = "<group>"; };
+		DEP000000000000000000103 /* DeploymentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentsView.swift; sourceTree = "<group>"; };
+		DEP000000000000000000201 /* Deployments */ = {
+			isa = PBXGroup;
+			children = (
+				DEP000000000000000000001 /* DeploymentKeychainManager.swift */,
+				DEP000000000000000000002 /* DeploymentTargets.swift */,
+				DEP000000000000000000003 /* GitHubPagesManager.swift */,
+				DEP000000000000000000004 /* NetlifyManager.swift */,
+				DEP000000000000000000005 /* VercelManager.swift */,
+			);
+			path = Deployments;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1064,6 +1101,13 @@ files = (
 				AT000000000000000000010A /* CodeIntelligenceEngine.swift in Sources */,
 				AT000000000000000000011A /* AdvancedToolsDesignSystem.swift in Sources */,
 				DT000000000000000000001A /* DebuggingToolsView.swift in Sources */,
+				DEP000000000000000000001A /* DeploymentKeychainManager.swift in Sources */,
+				DEP000000000000000000002A /* DeploymentTargets.swift in Sources */,
+				DEP000000000000000000003A /* GitHubPagesManager.swift in Sources */,
+				DEP000000000000000000004A /* NetlifyManager.swift in Sources */,
+				DEP000000000000000000005A /* VercelManager.swift in Sources */,
+				DEP000000000000000000102A /* DeploymentLogsView.swift in Sources */,
+				DEP000000000000000000103A /* DeploymentsView.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };
