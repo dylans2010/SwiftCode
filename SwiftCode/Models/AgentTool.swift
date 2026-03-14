@@ -114,9 +114,17 @@ extension AgentTool {
         builtIns + CustomToolRegistry.shared.asAgentTools
     }
 
-    // MARK: File System (12)
+    // MARK: File System (13)
 
     static let fileSystemTools: [AgentTool] = [
+        AgentTool(
+            id: "minify_swift_file",
+            displayName: "Minify Swift File",
+            description: "Remove comments and extra whitespace from a Swift file to reduce size",
+            parameters: [.init(name: "path", description: "Relative path to the Swift file")],
+            category: .fileSystem,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "read_file",
             displayName: "Read File",
@@ -221,9 +229,25 @@ extension AgentTool {
         ),
     ]
 
-    // MARK: Code Analysis (10)
+    // MARK: Code Analysis (12)
 
     static let codeAnalysisTools: [AgentTool] = [
+        AgentTool(
+            id: "lint_swift_code",
+            displayName: "Lint Swift Code",
+            description: "Run a basic lint check on a Swift file for common style issues",
+            parameters: [.init(name: "path", description: "Relative path to the Swift file")],
+            category: .codeAnalysis,
+            use_test_tools: true
+        ),
+        AgentTool(
+            id: "find_unused_swift_code",
+            displayName: "Find Unused Code",
+            description: "Scan the project for potentially unused functions and variables",
+            parameters: [],
+            category: .codeAnalysis,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "search_in_file",
             displayName: "Search in File",
@@ -316,9 +340,31 @@ extension AgentTool {
         ),
     ]
 
-    // MARK: Code Generation (12)
+    // MARK: Code Generation (14)
 
     static let codeGenTools: [AgentTool] = [
+        AgentTool(
+            id: "convert_json_to_swift_model",
+            displayName: "JSON to Swift Model",
+            description: "Convert a JSON string into a Swift Codable struct",
+            parameters: [
+                .init(name: "json", description: "Input JSON string"),
+                .init(name: "root_name", description: "Name for the root struct")
+            ],
+            category: .codeGen,
+            use_test_tools: true
+        ),
+        AgentTool(
+            id: "generate_mock_swift_data",
+            displayName: "Generate Mock Data",
+            description: "Generate sample mock data for a Swift model",
+            parameters: [
+                .init(name: "type_name", description: "Name of the model type"),
+                .init(name: "count", type: "number", description: "Number of mock instances to generate", required: false, defaultValue: "5")
+            ],
+            category: .codeGen,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "generate_swiftui_view",
             displayName: "Generate SwiftUI View",
@@ -515,9 +561,20 @@ extension AgentTool {
         ),
     ]
 
-    // MARK: Utilities (9)
+    // MARK: Utilities (10)
 
     static let utilityTools: [AgentTool] = [
+        AgentTool(
+            id: "explain_code_logic",
+            displayName: "Explain Code Logic",
+            description: "Provide a high-level natural language explanation of a code snippet or file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file", required: false),
+                .init(name: "code", description: "Snippet of code to explain", required: false)
+            ],
+            category: .utilities,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "calculate",
             displayName: "Calculate",
@@ -593,9 +650,17 @@ extension AgentTool {
         ),
     ]
 
-    // MARK: Project (8)
+    // MARK: Project (9)
 
     static let projectTools: [AgentTool] = [
+        AgentTool(
+            id: "backup_active_project",
+            displayName: "Backup Project",
+            description: "Create a backup archive of the current project state",
+            parameters: [],
+            category: .project,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "get_current_project",
             displayName: "Get Current Project",
@@ -766,9 +831,33 @@ extension AgentTool {
         ),
     ]
 
-    // MARK: Refactoring Tools (8)
+    // MARK: Refactoring Tools (10)
 
     static let refactoringTools: [AgentTool] = [
+        AgentTool(
+            id: "extract_swiftui_subview",
+            displayName: "Extract SwiftUI Subview",
+            description: "Extract a portion of a SwiftUI body into a separate subview struct",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "start_line", type: "number", description: "Start line of the view code"),
+                .init(name: "end_line", type: "number", description: "End line of the view code"),
+                .init(name: "new_view_name", description: "Name for the new subview")
+            ],
+            category: .refactoring,
+            use_test_tools: true
+        ),
+        AgentTool(
+            id: "apply_file_header_template",
+            displayName: "Apply File Header",
+            description: "Apply a standard copyright/license header to a source file",
+            parameters: [
+                .init(name: "path", description: "Relative path to the file"),
+                .init(name: "author", description: "Author name to include in header")
+            ],
+            category: .refactoring,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "extract_method",
             displayName: "Extract Method",
@@ -855,9 +944,17 @@ extension AgentTool {
         ),
     ]
 
-    // MARK: Formatting Tools (6)
+    // MARK: Formatting Tools (7)
 
     static let formattingTools: [AgentTool] = [
+        AgentTool(
+            id: "optimize_swift_imports",
+            displayName: "Optimize Imports",
+            description: "Sort imports and remove duplicates or unused imports from a Swift file",
+            parameters: [.init(name: "path", description: "Relative path to the Swift file")],
+            category: .formatting,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "format_file",
             displayName: "Format File",
@@ -917,9 +1014,17 @@ extension AgentTool {
         ),
     ]
 
-    // MARK: Documentation Tools (5)
+    // MARK: Documentation Tools (6)
 
     static let documentationTools: [AgentTool] = [
+        AgentTool(
+            id: "generate_markdown_api_docs",
+            displayName: "Generate Markdown Docs",
+            description: "Generate a full API reference in Markdown format for the current project",
+            parameters: [],
+            category: .documentation,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "generate_doc_comment",
             displayName: "Generate Doc Comment",
@@ -1037,9 +1142,28 @@ extension AgentTool {
         ),
     ]
 
-    // MARK: Performance Tools (5)
+    // MARK: Performance Tools (7)
 
     static let performanceTools: [AgentTool] = [
+        AgentTool(
+            id: "calculate_code_complexity_metrics",
+            displayName: "Calculate Complexity Metrics",
+            description: "Run advanced metrics on a file: Cyclomatic, Halstead, and Maintainability Index",
+            parameters: [.init(name: "path", description: "Relative path to the file")],
+            category: .performance,
+            use_test_tools: true
+        ),
+        AgentTool(
+            id: "identify_long_methods",
+            displayName: "Identify Long Methods",
+            description: "Find methods that exceed a certain line threshold",
+            parameters: [
+                .init(name: "path", description: "Relative path to scan"),
+                .init(name: "threshold", type: "number", description: "Line count threshold", required: false, defaultValue: "50")
+            ],
+            category: .performance,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "analyze_complexity",
             displayName: "Analyze Complexity",
@@ -1087,9 +1211,33 @@ extension AgentTool {
         ),
     ]
 
-    // MARK: Security Tools (5)
+    // MARK: Security Tools (8)
 
     static let securityTools: [AgentTool] = [
+        AgentTool(
+            id: "obfuscate_swift_secrets",
+            displayName: "Obfuscate Secrets",
+            description: "Replace sensitive strings with obfuscated versions to prevent static analysis exposure",
+            parameters: [.init(name: "path", description: "Relative path to the file")],
+            category: .security,
+            use_test_tools: true
+        ),
+        AgentTool(
+            id: "audit_project_security",
+            displayName: "Audit Project Security",
+            description: "Run a full security audit across the entire codebase",
+            parameters: [],
+            category: .security,
+            use_test_tools: true
+        ),
+        AgentTool(
+            id: "check_api_key_exposure",
+            displayName: "Check API Key Exposure",
+            description: "Scan for potential API keys that might be accidentally committed or exposed",
+            parameters: [],
+            category: .security,
+            use_test_tools: true
+        ),
         AgentTool(
             id: "audit_secrets",
             displayName: "Audit Secrets",
