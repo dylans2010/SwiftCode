@@ -50,6 +50,7 @@ struct ProjectWorkspaceView: View {
     @State private var showDeployments = false
     @State private var showTestTools = false
     @State private var showAllToolsSheet = false
+    @State private var showPaywall = false
 
     var body: some View {
         ZStack {
@@ -259,6 +260,9 @@ struct ProjectWorkspaceView: View {
         .sheet(isPresented: $showAllToolsSheet) {
             ToolbarExpandedPanelView(isPresented: $showAllToolsSheet)
         }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .toolbarToolActivated)) { notification in
             guard
                 let toolId = notification.userInfo?["toolID"] as? String,
@@ -320,6 +324,11 @@ struct ProjectWorkspaceView: View {
     // MARK: - Tool Actions
 
     private func openSheet(for destination: ToolbarActionManager.SheetDestination) {
+        if destination.isPro && !EntitlementManager.shared.proAccess {
+            showPaywall = true
+            return
+        }
+
         switch destination {
         case .fileNavigator: showNavigatorSheet = true
         case .aiAgent: showAISheet = true

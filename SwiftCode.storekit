@@ -1,0 +1,91 @@
+{
+  "identifier" : "E2B7A8B1",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "99.99",
+      "familyShareable" : false,
+      "internalID" : "33C293A4",
+      "localizations" : [
+        {
+          "description" : "Full access for life.",
+          "displayName" : "Lifetime Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "swiftcode.pro.lifetime",
+      "referenceName" : "Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "11A2B3C4",
+      "localizations" : [
+
+      ],
+      "name" : "Pro Subscriptions",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "44D5E6F7",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Monthly Pro Access",
+              "displayName" : "Monthly Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "swiftcode.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly",
+          "subscriptionPeriod" : "P1M",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "79.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "55E6F7G8",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Yearly Pro Access",
+              "displayName" : "Yearly Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "swiftcode.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Yearly",
+          "subscriptionPeriod" : "P1Y",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

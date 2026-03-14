@@ -169,6 +169,36 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		AT000000000000000000011A /* AdvancedToolsDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000011B /* AdvancedToolsDesignSystem.swift */; };
 		DABA00000000000000000002 /* DocumentationAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DABA00000000000000000001 /* DocumentationAnalyzer.swift */; };
 		DAIV00000000000000000002 /* DocumentationAIInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAIV00000000000000000001 /* DocumentationAIInsightsView.swift */; };
+		160FE5122C6B4BF28B24411B /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98558CB6FCC94243B4109A5D /* StoreKitManager.swift */; };
+		3A8F4E173A664A43B945D8D2 /* EntitlementManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216D578B01674F88AC9D1EB1 /* EntitlementManager.swift */; };
+		62ABAC57969544DB80231017 /* DeveloperModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D907C765973435DA91B7D13 /* DeveloperModeManager.swift */; };
+		55692774D3694350B609B803 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAC49B596AA46DDA825C53E /* FeatureFlags.swift */; };
+		2EC2F9D75DE64A1FB30D011F /* InternalLoggingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0FB4EA55FA4E7EBA7358A8 /* InternalLoggingManager.swift */; };
+		BE8188B67B8D4127A2024B0B /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF997D8EF6994D92B4B52CA1 /* PaywallView.swift */; };
+		8F59BBB2AB834D09A602D4DB /* DeveloperDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C881F28FC23948CE91255D64 /* DeveloperDashboardView.swift */; };
+		C48CC734575E44B1BD920D2C /* VerboseLoggingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117AAF2E96B14FE6B66351C3 /* VerboseLoggingView.swift */; };
+		C815E4364BE64EDA803817E7 /* NetworkInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1776C20AD9EE4D5E85BFE146 /* NetworkInspectorView.swift */; };
+		F94F6063217746B798ED5D35 /* APIInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B206E7970E4D5FAE89F1B9 /* APIInspectorView.swift */; };
+		3F321C450B924BAB90F8FF50 /* CrashDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C94C0630A849DCBD8B2D49 /* CrashDebuggerView.swift */; };
+		E35511C445BA431F8207A66E /* LogConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2627ECC0E9F4C5C8AAF7E3F /* LogConsoleView.swift */; };
+		D3709213CC5045C68EBF5EC8 /* WebViewDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A413EF2076BE41428650FDE9 /* WebViewDebuggerView.swift */; };
+		30EC0A259CCA489E81514C37 /* GitHubAPIDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2F62CFE24244AF4A04556FF /* GitHubAPIDebugView.swift */; };
+		FEFAC29E9C51412FAE4E54F0 /* FeatureFlagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03F8DC6162E4691A2242642 /* FeatureFlagsView.swift */; };
+		94D9599C874C47EDB825D854 /* RuntimeFlagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38534A77EBD64613B025A0F5 /* RuntimeFlagsView.swift */; };
+		92A6F4C3CE3E43DEAF5583F0 /* MemoryInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD2C8761C8C43E4B5960DD1 /* MemoryInspectorView.swift */; };
+		994FA8509D6F48C2AD17B910 /* ThreadInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B91E3E1FDDB43ACA73DEF20 /* ThreadInspectorView.swift */; };
+		C1C704F795744C18AB83664F /* FileSystemInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B21E4635A449C8B296E0F0 /* FileSystemInspectorView.swift */; };
+		3C3D335FBD164D74BB7B1058 /* DatabaseInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E7FE37355342788AB5D694 /* DatabaseInspectorView.swift */; };
+		435DF726DEB14427AB99D72F /* PaywallDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE55E5025AD466AB310DF5A /* PaywallDebugView.swift */; };
+		C15ABC97D5FC4E0FA3DA99BB /* StoreKitDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5F581DFC25D452EB65C4557 /* StoreKitDebugView.swift */; };
+		DD8D7C3E05DC40F09C85F4F6 /* PerformanceMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FB1237CDDB540FD8C71111C /* PerformanceMonitorView.swift */; };
+		8D289E52CECF4D1BBA2B388F /* CoreMLInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D02CE893A4AC401E9C93EEF8 /* CoreMLInspectorView.swift */; };
+		2F6F884FC3AC4EC7B6DECF2D /* AIModelDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34E0B4ED7C904393B938C59F /* AIModelDebuggerView.swift */; };
+		515C73DCDD6D426FB2863F8A /* BuildPipelineDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDFFF8094E44490822742E9 /* BuildPipelineDebuggerView.swift */; };
+		64FE62C5E45D4870A7C4D5B0 /* ExtensionDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF676BF61B1427D84CBD9C8 /* ExtensionDebuggerView.swift */; };
+		19CBF295160D44C398DA0FE0 /* DeploymentDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 396AC91935E9439DBB45D345 /* DeploymentDebugView.swift */; };
+		86C4B2D064364A479708F0F9 /* BinaryToolsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C097D500804667A45947D8 /* BinaryToolsViews.swift */; };
+		9DB89E5FB93B4015BCBF1773 /* SwiftCode.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 879B1052D19145C0A7450391 /* SwiftCode.storekit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -333,6 +363,36 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		ONB000000000000000000002 /* OnboardingFeaturesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFeaturesView.swift; sourceTree = "<group>"; };
 		ONB000000000000000000003 /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		ONB000000000000000000004 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		98558CB6FCC94243B4109A5D /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		216D578B01674F88AC9D1EB1 /* EntitlementManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementManager.swift; sourceTree = "<group>"; };
+		0D907C765973435DA91B7D13 /* DeveloperModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperModeManager.swift; sourceTree = "<group>"; };
+		8CAC49B596AA46DDA825C53E /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
+		EC0FB4EA55FA4E7EBA7358A8 /* InternalLoggingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalLoggingManager.swift; sourceTree = "<group>"; };
+		BF997D8EF6994D92B4B52CA1 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
+		C881F28FC23948CE91255D64 /* DeveloperDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperDashboardView.swift; sourceTree = "<group>"; };
+		117AAF2E96B14FE6B66351C3 /* VerboseLoggingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerboseLoggingView.swift; sourceTree = "<group>"; };
+		1776C20AD9EE4D5E85BFE146 /* NetworkInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInspectorView.swift; sourceTree = "<group>"; };
+		A9B206E7970E4D5FAE89F1B9 /* APIInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIInspectorView.swift; sourceTree = "<group>"; };
+		B4C94C0630A849DCBD8B2D49 /* CrashDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashDebuggerView.swift; sourceTree = "<group>"; };
+		B2627ECC0E9F4C5C8AAF7E3F /* LogConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogConsoleView.swift; sourceTree = "<group>"; };
+		A413EF2076BE41428650FDE9 /* WebViewDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewDebuggerView.swift; sourceTree = "<group>"; };
+		B2F62CFE24244AF4A04556FF /* GitHubAPIDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAPIDebugView.swift; sourceTree = "<group>"; };
+		C03F8DC6162E4691A2242642 /* FeatureFlagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagsView.swift; sourceTree = "<group>"; };
+		38534A77EBD64613B025A0F5 /* RuntimeFlagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeFlagsView.swift; sourceTree = "<group>"; };
+		0AD2C8761C8C43E4B5960DD1 /* MemoryInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryInspectorView.swift; sourceTree = "<group>"; };
+		5B91E3E1FDDB43ACA73DEF20 /* ThreadInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadInspectorView.swift; sourceTree = "<group>"; };
+		66B21E4635A449C8B296E0F0 /* FileSystemInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemInspectorView.swift; sourceTree = "<group>"; };
+		B7E7FE37355342788AB5D694 /* DatabaseInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseInspectorView.swift; sourceTree = "<group>"; };
+		ADE55E5025AD466AB310DF5A /* PaywallDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallDebugView.swift; sourceTree = "<group>"; };
+		D5F581DFC25D452EB65C4557 /* StoreKitDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitDebugView.swift; sourceTree = "<group>"; };
+		3FB1237CDDB540FD8C71111C /* PerformanceMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceMonitorView.swift; sourceTree = "<group>"; };
+		D02CE893A4AC401E9C93EEF8 /* CoreMLInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLInspectorView.swift; sourceTree = "<group>"; };
+		34E0B4ED7C904393B938C59F /* AIModelDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIModelDebuggerView.swift; sourceTree = "<group>"; };
+		DDDFFF8094E44490822742E9 /* BuildPipelineDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildPipelineDebuggerView.swift; sourceTree = "<group>"; };
+		6AF676BF61B1427D84CBD9C8 /* ExtensionDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDebuggerView.swift; sourceTree = "<group>"; };
+		396AC91935E9439DBB45D345 /* DeploymentDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentDebugView.swift; sourceTree = "<group>"; };
+		97C097D500804667A45947D8 /* BinaryToolsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryToolsViews.swift; sourceTree = "<group>"; };
+		879B1052D19145C0A7450391 /* SwiftCode.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SwiftCode.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -932,6 +992,247 @@ DEP000000000000000000101 /* Deployments */ = {
 				ONB000000000000000000004 /* OnboardingView.swift */,
 			);
 			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		E747261C4C724E6ABAF256AC /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				98558CB6FCC94243B4109A5D /* StoreKitManager.swift */,
+				216D578B01674F88AC9D1EB1 /* EntitlementManager.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		00C7A193457C46B8B87727C8 /* Developer */ = {
+			isa = PBXGroup;
+			children = (
+				0D907C765973435DA91B7D13 /* DeveloperModeManager.swift */,
+				8CAC49B596AA46DDA825C53E /* FeatureFlags.swift */,
+				EC0FB4EA55FA4E7EBA7358A8 /* InternalLoggingManager.swift */,
+			);
+			path = Developer;
+			sourceTree = "<group>";
+		};
+		6788B5B3B9EA40A0B3783183 /* Paywall */ = {
+			isa = PBXGroup;
+			children = (
+				BF997D8EF6994D92B4B52CA1 /* PaywallView.swift */,
+			);
+			path = Paywall;
+			sourceTree = "<group>";
+		};
+		CF9C1B8DFD9F474AA7E8C8CE /* DeveloperDashboard */ = {
+			isa = PBXGroup;
+			children = (
+				C881F28FC23948CE91255D64 /* DeveloperDashboardView.swift */,
+			);
+			path = DeveloperDashboard;
+			sourceTree = "<group>";
+		};
+		05A90B78D13744218B188056 /* VerboseLogging */ = {
+			isa = PBXGroup;
+			children = (
+				117AAF2E96B14FE6B66351C3 /* VerboseLoggingView.swift */,
+			);
+			path = VerboseLogging;
+			sourceTree = "<group>";
+		};
+		60A3A882CDA04962B795A12D /* NetworkInspector */ = {
+			isa = PBXGroup;
+			children = (
+				1776C20AD9EE4D5E85BFE146 /* NetworkInspectorView.swift */,
+			);
+			path = NetworkInspector;
+			sourceTree = "<group>";
+		};
+		E7788ABCAEC7410ABCAD71AA /* APIInspector */ = {
+			isa = PBXGroup;
+			children = (
+				A9B206E7970E4D5FAE89F1B9 /* APIInspectorView.swift */,
+			);
+			path = APIInspector;
+			sourceTree = "<group>";
+		};
+		E0DAF6A5E08A40B8B49D1201 /* CrashDebugger */ = {
+			isa = PBXGroup;
+			children = (
+				B4C94C0630A849DCBD8B2D49 /* CrashDebuggerView.swift */,
+			);
+			path = CrashDebugger;
+			sourceTree = "<group>";
+		};
+		4FA3A87F007545809CEBCBEC /* LogConsole */ = {
+			isa = PBXGroup;
+			children = (
+				B2627ECC0E9F4C5C8AAF7E3F /* LogConsoleView.swift */,
+			);
+			path = LogConsole;
+			sourceTree = "<group>";
+		};
+		77FF619A091143039A18FC66 /* WebViewDebugger */ = {
+			isa = PBXGroup;
+			children = (
+				A413EF2076BE41428650FDE9 /* WebViewDebuggerView.swift */,
+			);
+			path = WebViewDebugger;
+			sourceTree = "<group>";
+		};
+		1DC7ECDE3FB24CD483E662CB /* GitHubAPIDebug */ = {
+			isa = PBXGroup;
+			children = (
+				B2F62CFE24244AF4A04556FF /* GitHubAPIDebugView.swift */,
+			);
+			path = GitHubAPIDebug;
+			sourceTree = "<group>";
+		};
+		0B4FDF97654D4A4F9890A508 /* FeatureFlags */ = {
+			isa = PBXGroup;
+			children = (
+				C03F8DC6162E4691A2242642 /* FeatureFlagsView.swift */,
+			);
+			path = FeatureFlags;
+			sourceTree = "<group>";
+		};
+		FCDBB1FD57CD457E88E4AF4C /* RuntimeFlags */ = {
+			isa = PBXGroup;
+			children = (
+				38534A77EBD64613B025A0F5 /* RuntimeFlagsView.swift */,
+			);
+			path = RuntimeFlags;
+			sourceTree = "<group>";
+		};
+		57C221B2175A4D679976D7B1 /* MemoryInspector */ = {
+			isa = PBXGroup;
+			children = (
+				0AD2C8761C8C43E4B5960DD1 /* MemoryInspectorView.swift */,
+			);
+			path = MemoryInspector;
+			sourceTree = "<group>";
+		};
+		AA4BF6294AC6428184A92F1A /* ThreadInspector */ = {
+			isa = PBXGroup;
+			children = (
+				5B91E3E1FDDB43ACA73DEF20 /* ThreadInspectorView.swift */,
+			);
+			path = ThreadInspector;
+			sourceTree = "<group>";
+		};
+		977BE158DE8D4621823A1C18 /* FileSystemInspector */ = {
+			isa = PBXGroup;
+			children = (
+				66B21E4635A449C8B296E0F0 /* FileSystemInspectorView.swift */,
+			);
+			path = FileSystemInspector;
+			sourceTree = "<group>";
+		};
+		CFE9EA8967AC4E35A475DB8D /* DatabaseInspector */ = {
+			isa = PBXGroup;
+			children = (
+				B7E7FE37355342788AB5D694 /* DatabaseInspectorView.swift */,
+			);
+			path = DatabaseInspector;
+			sourceTree = "<group>";
+		};
+		37727872002045C28E63D057 /* PaywallDebug */ = {
+			isa = PBXGroup;
+			children = (
+				ADE55E5025AD466AB310DF5A /* PaywallDebugView.swift */,
+			);
+			path = PaywallDebug;
+			sourceTree = "<group>";
+		};
+		CD2C0794C1734D30A06BBBDB /* StoreKitDebug */ = {
+			isa = PBXGroup;
+			children = (
+				D5F581DFC25D452EB65C4557 /* StoreKitDebugView.swift */,
+			);
+			path = StoreKitDebug;
+			sourceTree = "<group>";
+		};
+		1C988281A5F242F3B964E3E1 /* PerformanceMonitor */ = {
+			isa = PBXGroup;
+			children = (
+				3FB1237CDDB540FD8C71111C /* PerformanceMonitorView.swift */,
+			);
+			path = PerformanceMonitor;
+			sourceTree = "<group>";
+		};
+		0961DA38B71142F998F32652 /* CoreMLInspector */ = {
+			isa = PBXGroup;
+			children = (
+				D02CE893A4AC401E9C93EEF8 /* CoreMLInspectorView.swift */,
+			);
+			path = CoreMLInspector;
+			sourceTree = "<group>";
+		};
+		826A08B5394D4899A3741BE7 /* AIModelDebugger */ = {
+			isa = PBXGroup;
+			children = (
+				34E0B4ED7C904393B938C59F /* AIModelDebuggerView.swift */,
+			);
+			path = AIModelDebugger;
+			sourceTree = "<group>";
+		};
+		A214B578677E4CABA09C978A /* BuildPipelineDebugger */ = {
+			isa = PBXGroup;
+			children = (
+				DDDFFF8094E44490822742E9 /* BuildPipelineDebuggerView.swift */,
+			);
+			path = BuildPipelineDebugger;
+			sourceTree = "<group>";
+		};
+		19528BE5591F4684BFFD1CCF /* ExtensionDebugger */ = {
+			isa = PBXGroup;
+			children = (
+				6AF676BF61B1427D84CBD9C8 /* ExtensionDebuggerView.swift */,
+			);
+			path = ExtensionDebugger;
+			sourceTree = "<group>";
+		};
+		E4776A4CFA694C5B81DE5863 /* DeploymentDebug */ = {
+			isa = PBXGroup;
+			children = (
+				396AC91935E9439DBB45D345 /* DeploymentDebugView.swift */,
+			);
+			path = DeploymentDebug;
+			sourceTree = "<group>";
+		};
+		CB14884490CA4581BBE1D071 /* BinaryTools */ = {
+			isa = PBXGroup;
+			children = (
+				97C097D500804667A45947D8 /* BinaryToolsViews.swift */,
+			);
+			path = BinaryTools;
+			sourceTree = "<group>";
+		};
+		59FB829091674EF599B9D608 /* Developer */ = {
+			isa = PBXGroup;
+			children = (
+				CF9C1B8DFD9F474AA7E8C8CE /* DeveloperDashboard */,
+				05A90B78D13744218B188056 /* VerboseLogging */,
+				60A3A882CDA04962B795A12D /* NetworkInspector */,
+				E7788ABCAEC7410ABCAD71AA /* APIInspector */,
+				E0DAF6A5E08A40B8B49D1201 /* CrashDebugger */,
+				4FA3A87F007545809CEBCBEC /* LogConsole */,
+				77FF619A091143039A18FC66 /* WebViewDebugger */,
+				1DC7ECDE3FB24CD483E662CB /* GitHubAPIDebug */,
+				0B4FDF97654D4A4F9890A508 /* FeatureFlags */,
+				FCDBB1FD57CD457E88E4AF4C /* RuntimeFlags */,
+				57C221B2175A4D679976D7B1 /* MemoryInspector */,
+				AA4BF6294AC6428184A92F1A /* ThreadInspector */,
+				977BE158DE8D4621823A1C18 /* FileSystemInspector */,
+				CFE9EA8967AC4E35A475DB8D /* DatabaseInspector */,
+				37727872002045C28E63D057 /* PaywallDebug */,
+				CD2C0794C1734D30A06BBBDB /* StoreKitDebug */,
+				1C988281A5F242F3B964E3E1 /* PerformanceMonitor */,
+				0961DA38B71142F998F32652 /* CoreMLInspector */,
+				826A08B5394D4899A3741BE7 /* AIModelDebugger */,
+				A214B578677E4CABA09C978A /* BuildPipelineDebugger */,
+				19528BE5591F4684BFFD1CCF /* ExtensionDebugger */,
+				E4776A4CFA694C5B81DE5863 /* DeploymentDebug */,
+				CB14884490CA4581BBE1D071 /* BinaryTools */,
+			);
+			path = Developer;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

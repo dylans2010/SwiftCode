@@ -18,6 +18,7 @@ struct DocumentationBrowserView: View {
     @State private var backTrigger = false
     @State private var forwardTrigger = false
     @State private var showingAIInsights = false
+    @State private var showingPaywall = false
     @State private var extractedContent: String?
 
     let frameworks = [
@@ -113,6 +114,10 @@ struct DocumentationBrowserView: View {
                     }
 
                     Button(action: {
+                        guard EntitlementManager.shared.proAccess else {
+                            showingPaywall = true
+                            return
+                        }
                         if let url = currentURL {
                             Task {
                                 await DocumentationAnalyzer.shared.analyze(url: url, documentationContent: extractedContent)
@@ -130,6 +135,9 @@ struct DocumentationBrowserView: View {
             }
             .sheet(isPresented: $showingAIInsights) {
                 DocumentationAIInsightsView()
+            }
+            .sheet(isPresented: $showingPaywall) {
+                PaywallView()
             }
         }
     }
