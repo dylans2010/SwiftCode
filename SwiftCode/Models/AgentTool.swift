@@ -72,6 +72,7 @@ struct AgentTool: Identifiable {
     let description: String
     let parameters: [AgentToolParameter]
     let category: AgentToolCategory
+    var use_test_tools: Bool = false
 
     /// Formatted description for the AI system prompt
     var promptDescription: String {

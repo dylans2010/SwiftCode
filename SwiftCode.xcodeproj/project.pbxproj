@@ -14,6 +14,8 @@ objects = {
 		9761876CF9AA47A6A9774A6C /* LocalBuildDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74800A4834DA43F6AA725284 /* LocalBuildDemoView.swift */; };
 		284F27E6F05844958BFD3332 /* LocalBuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030CC42C1F184196A05B7808 /* LocalBuildView.swift */; };
 		ZIPFOUND000000000000003 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ZIPFOUND000000000000002 /* ZIPFoundation */; };
+		TT000000000000000000001A /* TestTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000001B /* TestTools.swift */; };
+		TTV000000000000000000001A /* TestToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TTV000000000000000000001B /* TestToolsView.swift */; };
 AA000010000000000000001A /* SwiftCodeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000001B /* SwiftCodeApp.swift */; };
 AA000010000000000000002A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000002B /* ContentView.swift */; };
 AA000010000000000000003A /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000003B /* Project.swift */; };
@@ -275,6 +277,8 @@ AA0000100000000000000PFR /* ProjectFilesExtracter.swift */ = {isa = PBXFileRefer
 		DEP000000000000000000003 /* GitHubPagesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubPagesManager.swift; sourceTree = "<group>"; };
 		DEP000000000000000000004 /* NetlifyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetlifyManager.swift; sourceTree = "<group>"; };
 		DEP000000000000000000005 /* VercelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VercelManager.swift; sourceTree = "<group>"; };
+		TT000000000000000000001B /* TestTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestTools.swift; sourceTree = "<group>"; };
+		TTV000000000000000000001B /* TestToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestToolsView.swift; sourceTree = "<group>"; };
 CB000000000000000000001B /* build-project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "build-project.yml"; sourceTree = "<group>"; };
 		AA0000100000000000000F8B /* ModernGroupBoxStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernGroupBoxStyle.swift; sourceTree = "<group>"; };
 		AA0000100000000000000F6B /* ChooseModelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChooseModelView.swift; sourceTree = "<group>"; };
@@ -564,6 +568,7 @@ children = (
 				AGSK0000000000000000001F /* Agent Skills */,
 				AT000000000000000000011F /* AdvancedTools */,
 				DT000000000000000000001F /* Debug Tools */,
+				TS000000000000000000001F /* Testing */,
 			);
 path = Features;
 sourceTree = "<group>";
@@ -584,6 +589,22 @@ children = (
 				DT000000000000000000001B /* DebuggingToolsView.swift */,
 			);
 path = "Debug Tools";
+sourceTree = "<group>";
+};
+TS000000000000000000001F /* Testing */ = {
+isa = PBXGroup;
+children = (
+				TSV00000000000000000001F /* Views */,
+			);
+path = Testing;
+sourceTree = "<group>";
+};
+TSV00000000000000000001F /* Views */ = {
+isa = PBXGroup;
+children = (
+				TTV000000000000000000001B /* TestToolsView.swift */,
+			);
+path = Views;
 sourceTree = "<group>";
 };
 		AT000000000000000000012F /* Engines */ = {
@@ -778,6 +799,7 @@ children = (
 				BG000000000000000000001F /* GitHub */,
 				CB000000000000000000001F /* CI Building */,
 				DEP000000000000000000201 /* Deployments */,
+				TT000000000000000000001B /* TestTools.swift */,
 			);
 path = Backend;
 sourceTree = "<group>";
@@ -1112,6 +1134,8 @@ files = (
 				DEP000000000000000000005A /* VercelManager.swift in Sources */,
 				DEP000000000000000000102A /* DeploymentLogsView.swift in Sources */,
 				DEP000000000000000000103A /* DeploymentsView.swift in Sources */,
+				TT000000000000000000001A /* TestTools.swift in Sources */,
+				TTV000000000000000000001A /* TestToolsView.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };
