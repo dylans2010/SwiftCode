@@ -170,6 +170,7 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		DABA00000000000000000002 /* DocumentationAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DABA00000000000000000001 /* DocumentationAnalyzer.swift */; };
 		DAIV00000000000000000002 /* DocumentationAIInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAIV00000000000000000001 /* DocumentationAIInsightsView.swift */; };
 		160FE5122C6B4BF28B24411B /* StoreKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98558CB6FCC94243B4109A5D /* StoreKitManager.swift */; };
+		A55708E00000000000000001 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A55708E00000000000000002 /* AppStore.swift */; };
 		3A8F4E173A664A43B945D8D2 /* EntitlementManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216D578B01674F88AC9D1EB1 /* EntitlementManager.swift */; };
 		62ABAC57969544DB80231017 /* DeveloperModeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D907C765973435DA91B7D13 /* DeveloperModeManager.swift */; };
 		55692774D3694350B609B803 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAC49B596AA46DDA825C53E /* FeatureFlags.swift */; };
@@ -364,6 +365,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		ONB000000000000000000003 /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
 		ONB000000000000000000004 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		98558CB6FCC94243B4109A5D /* StoreKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitManager.swift; sourceTree = "<group>"; };
+		A55708E00000000000000002 /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
 		216D578B01674F88AC9D1EB1 /* EntitlementManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementManager.swift; sourceTree = "<group>"; };
 		0D907C765973435DA91B7D13 /* DeveloperModeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperModeManager.swift; sourceTree = "<group>"; };
 		8CAC49B596AA46DDA825C53E /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
@@ -418,6 +420,7 @@ children = (
 				AA0000100000000000000DFF /* Core */,
 				AA0000100000000000000EFF /* UI */,
 				BE000000000000000000001F /* Backend */,
+				879B1052D19145C0A7450391 /* SwiftCode.storekit */,
 			);
 path = SwiftCode;
 sourceTree = "<group>";
@@ -489,6 +492,8 @@ children = (
 				AA0000100000000000000CFF /* Toolbar */,
 				DEP000000000000000000101 /* Deployments */,
 				EX0000000000000000000001B /* ExtensionsView.swift */,
+				6788B5B3B9EA40A0B3783183 /* Paywall */,
+				59FB829091674EF599B9D608 /* Developer */,
 			);
 path = Views;
 sourceTree = "<group>";
@@ -878,6 +883,8 @@ children = (
 				DEP000000000000000000201 /* Deployments */,
 				DABA00000000000000000000 /* Documentation */,
 				TT000000000000000000001B /* TestTools.swift */,
+				E747261C4C724E6ABAF256AC /* Store */,
+				00C7A193457C46B8B87727C8 /* Developer */,
 			);
 path = Backend;
 sourceTree = "<group>";
@@ -997,6 +1004,7 @@ DEP000000000000000000101 /* Deployments */ = {
 		E747261C4C724E6ABAF256AC /* Store */ = {
 			isa = PBXGroup;
 			children = (
+				A55708E00000000000000002 /* AppStore.swift */,
 				98558CB6FCC94243B4109A5D /* StoreKitManager.swift */,
 				216D578B01674F88AC9D1EB1 /* EntitlementManager.swift */,
 			);
@@ -1481,6 +1489,12 @@ files = (
 				ONB000000000000000000004A /* OnboardingView.swift in Sources */,
 				TT000000000000000000001A /* TestTools.swift in Sources */,
 				TTV000000000000000000001A /* TestToolsView.swift in Sources */,
+				160FE5122C6B4BF28B24411B /* StoreKitManager.swift in Sources */,
+				A55708E00000000000000001 /* AppStore.swift in Sources */,
+				3A8F4E173A664A43B945D8D2 /* EntitlementManager.swift in Sources */,
+				62ABAC57969544DB80231017 /* DeveloperModeManager.swift in Sources */,
+				BE8188B67B8D4127A2024B0B /* PaywallView.swift in Sources */,
+				8F59BBB2AB834D09A602D4DB /* DeveloperDashboardView.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };
