@@ -9,6 +9,7 @@ struct ProjectTemplateView: View {
     @State private var showApplyConfirm = false
     @State private var applyResult: String?
     @State private var showResultAlert = false
+    @State private var isInitializingRepo = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -37,18 +38,28 @@ struct ProjectTemplateView: View {
                     }
 
                     Section {
-                        Button {
-                            showApplyConfirm = true
-                        } label: {
+                        if isInitializingRepo {
                             HStack {
-                                Spacer()
-                                Label("Apply Template", systemImage: "doc.badge.plus")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.white)
-                                Spacer()
+                                ProgressView()
+                                    .padding(.trailing, 8)
+                                Text("Initializing GitHub Repository...")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
                             }
+                        } else {
+                            Button {
+                                showApplyConfirm = true
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    Label("Apply Template", systemImage: "doc.badge.plus")
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundStyle(.white)
+                                    Spacer()
+                                }
+                            }
+                            .listRowBackground(Color.orange)
                         }
-                        .listRowBackground(Color.orange)
                     }
                 }
             }
@@ -87,14 +98,34 @@ struct ProjectTemplateView: View {
             showResultAlert = true
             return
         }
-        do {
-            try templateManager.applyTemplate(template, to: project)
-            applyResult = "Template \"\(template.name)\" was applied successfully."
-            selectedTemplate = nil
-        } catch {
-            applyResult = "Failed to apply template: \(error.localizedDescription)"
+
+        isInitializingRepo = true
+
+        Task {
+            do {
+                try templateManager.applyTemplate(template, to: project)
+
+                // Block until repository is initialized
+                try await GitHubService.shared.initializeGitHubRepository(for: project) { log in
+                    DispatchQueue.main.async {
+                        LogManager.shared.logDeployment("[GitHub Init] \(log)")
+                    }
+                }
+
+                await MainActor.run {
+                    isInitializingRepo = false
+                    applyResult = "Template \"\(template.name)\" applied and GitHub repository initialized successfully."
+                    showResultAlert = true
+                    selectedTemplate = nil
+                }
+            } catch {
+                await MainActor.run {
+                    isInitializingRepo = false
+                    applyResult = "Failed: \(error.localizedDescription)"
+                    showResultAlert = true
+                }
+            }
         }
-        showResultAlert = true
     }
 }
 

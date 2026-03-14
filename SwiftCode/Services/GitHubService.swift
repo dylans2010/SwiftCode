@@ -9,7 +9,7 @@ final class GitHubService {
     private let baseURL = URL(string: "https://api.github.com")!
 
     private var token: String? {
-        KeychainService.shared.get(forKey: KeychainService.githubToken)
+        APIKeyManager.shared.retrieveKey(service: .gitHub) ?? KeychainService.shared.get(forKey: KeychainService.githubToken)
     }
 
     private func authorizedRequest(url: URL, method: String = "GET") -> URLRequest {
@@ -442,6 +442,53 @@ final class GitHubService {
         // Double check branches
         let branches = try await listBranches(owner: owner, repo: repo)
         return branches.isEmpty
+    }
+
+    func initializeGitHubRepository(for project: Project, logHandler: @escaping (String) -> Void) async throws {
+        guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
+            throw GitHubError.pushFailed(message: "No GitHub repository linked to this project.")
+        }
+
+        let components = repoURL.split(separator: "/")
+        guard components.count >= 2 else {
+            throw GitHubError.pushFailed(message: "Invalid repository format: \(repoURL)")
+        }
+        let owner = String(components[0])
+        let repo = String(components[1])
+
+        // Step 1: Create the GitHub repository
+        logHandler("Creating GitHub repository: \(repo)")
+        do {
+            _ = try await createRepository(name: repo, description: project.description, isPrivate: false)
+            logHandler("Repository created successfully")
+        } catch {
+            logHandler("Repository creation skipped or failed: \(error.localizedDescription)")
+            // Continue as it might already exist but be empty
+        }
+
+        // Step 2: Create the initial commit
+        logHandler("Creating initial commit")
+        let readmeContent = "# \(project.name)\n\nCreated with SwiftCode."
+        try await pushFile(
+            owner: owner,
+            repo: repo,
+            path: "README.md",
+            content: readmeContent,
+            message: "Initial commit created by SwiftCode",
+            branch: "main"
+        )
+
+        // Step 3: Upload the full template codebase
+        logHandler("Scanning template files")
+        try await pushProjectUsingContentsAPI(
+            project: project,
+            owner: owner,
+            repo: repo,
+            branch: "main",
+            logHandler: logHandler
+        )
+
+        logHandler("Repository initialized successfully")
     }
 
     func initializeRepository(owner: String, repo: String, branch: String = "main") async throws {
