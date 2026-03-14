@@ -17,13 +17,14 @@ final class VercelManager {
         }
 
         do {
-            logHandler("Detecting framework and build settings...")
+            logHandler("Preparing project files")
             let framework = await DeploymentTargets.shared.detectFramework(project: project)
 
-            logHandler("Preparing files for Vercel deployment...")
+            logHandler("Scanning files for Vercel deployment...")
             let files = try await prepareFiles(project: project)
 
-            logHandler("Creating deployment on Vercel...")
+            logHandler("Uploading archive to deployment service")
+            logHandler("Deployment started")
             let deployment = try await createDeployment(
                 project: project,
                 files: files,
@@ -32,12 +33,12 @@ final class VercelManager {
                 logHandler: logHandler
             )
 
-            logHandler("Deployment created (ID: \(deployment.id)). Monitoring build status...")
+            logHandler("Waiting for deployment status")
             let finalStatus = try await pollDeploymentStatus(deploymentId: deployment.id, token: token, logHandler: logHandler)
 
             if finalStatus == "READY" {
                 let siteURL = domain != nil ? "https://\(domain!)" : "https://\(deployment.url)"
-                logHandler("Deployment successful! Live at \(siteURL)")
+                logHandler("Deployment successful")
                 return DeploymentResult(success: true, url: siteURL, errorMessage: nil)
             } else {
                 return DeploymentResult(success: false, url: nil, errorMessage: "Vercel deployment failed with status: \(finalStatus)")
@@ -53,10 +54,18 @@ final class VercelManager {
         let fileManager = FileManager.default
         var vercelFiles: [VercelFile] = []
 
-        let enumerator = fileManager.enumerator(at: projectDir, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles])
+        // Recursive enumeration skipping .git and other internal folders
+        let enumerator = fileManager.enumerator(at: projectDir, includingPropertiesForKeys: [.isRegularFileKey], options: [.skipsHiddenFiles, .skipsPackageDescendants])
 
         while let fileURL = enumerator?.nextObject() as? URL {
+            let resourceValues = try fileURL.resourceValues(forKeys: [.isRegularFileKey])
+            guard resourceValues.isRegularFile == true else { continue }
+
             let relativePath = String(fileURL.path.dropFirst(projectDir.path.count + 1))
+
+            // Skip .DS_Store
+            if relativePath.hasSuffix(".DS_Store") { continue }
+
             let data = try Data(contentsOf: fileURL)
             vercelFiles.append(VercelFile(file: relativePath, data: data))
         }
@@ -77,7 +86,9 @@ final class VercelManager {
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let projectName = project.name.lowercased().replacingOccurrences(of: " ", with: "-")
+        let projectName = project.name.lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: ".", with: "-")
 
         let vercelFramework: String?
         switch framework.name.lowercased() {
@@ -91,13 +102,16 @@ final class VercelManager {
 
         var body: [String: Any] = [
             "name": projectName,
-            "files": files.map { ["file": $0.file, "data": $0.data.base64EncodedString()] },
-            "projectSettings": [
+            "files": files.map { ["file": $0.file, "data": $0.data.base64EncodedString()] }
+        ]
+
+        if vercelFramework != nil || framework.buildCommand != nil || framework.outputDirectory != "." {
+            body["projectSettings"] = [
                 "framework": vercelFramework,
                 "buildCommand": framework.buildCommand,
-                "outputDirectory": framework.outputDirectory
-            ]
-        ]
+                "outputDirectory": framework.outputDirectory == "." ? nil : framework.outputDirectory
+            ].compactMapValues { $0 }
+        }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -121,7 +135,7 @@ final class VercelManager {
             let (data, response) = try await URLSession.shared.data(for: request)
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 let deployment = try JSONDecoder().decode(VercelDeploymentResponse.self, from: data)
-                logHandler("Status (\(i)): \(deployment.readyState)")
+                logHandler("Status: \(deployment.readyState)")
                 if deployment.readyState == "READY" { return "READY" }
                 if ["ERROR", "CANCELED"].contains(deployment.readyState) { return deployment.readyState }
             }

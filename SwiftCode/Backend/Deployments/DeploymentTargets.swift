@@ -24,49 +24,32 @@ final class DeploymentTargets {
     static let shared = DeploymentTargets()
     private init() {}
 
-    /// Prepares the repository for deployment by staging, committing, and pushing changes.
+    /// Prepares the repository for deployment by staging, committing, and pushing changes using GitHub API.
     func prepareRepositoryForDeployment(project: Project, logHandler: @escaping (String) -> Void) async throws -> Bool {
-        logHandler("Preparing repository for deployment...")
+        logHandler("Preparing repository for deployment via GitHub API...")
 
         guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
             logHandler("Error: Deployment requires a connected GitHub repository.")
             throw NSError(domain: "Deployment", code: 401, userInfo: [NSLocalizedDescriptionKey: "Deployment requires a connected GitHub repository."])
         }
 
-        let projectPath = await project.directoryURL.path
+        let (owner, repo) = try GitHubRepositoryManager.shared.parseRepoURL(repoURL)
 
-        // 1. Stage all changes
-        logHandler("Staging changes...")
-        let addResult = try await BinaryManager.shared.runGitCommand(arguments: ["add", "."], in: projectPath)
-        if !addResult.isSuccess {
-            logHandler("Failed to stage changes: \(addResult.mergedOutput)")
+        do {
+            logHandler("Pushing project files to GitHub (\(owner)/\(repo))...")
+            try await GitHubService.shared.pushProject(
+                project,
+                owner: owner,
+                repo: repo,
+                commitMessage: "Prepare for deployment",
+                branch: "main"
+            )
+            logHandler("Repository successfully pushed to GitHub.")
+            return true
+        } catch {
+            logHandler("Failed to push changes via API: \(error.localizedDescription)")
             return false
         }
-
-        // 2. Check for changes to commit
-        let statusResult = try await BinaryManager.shared.runGitCommand(arguments: ["status", "--porcelain"], in: projectPath)
-        if !statusResult.stdout.isEmpty {
-            logHandler("Committing changes...")
-            let commitResult = try await BinaryManager.shared.runGitCommand(arguments: ["commit", "-m", "Prepare for deployment"], in: projectPath)
-            if !commitResult.isSuccess {
-                logHandler("Failed to commit changes: \(commitResult.mergedOutput)")
-                return false
-            }
-        } else {
-            logHandler("No changes to commit.")
-        }
-
-        // 3. Push to remote
-        logHandler("Pushing to remote GitHub repository...")
-        // We assume 'main' for now, or we could detect it.
-        let pushResult = try await BinaryManager.shared.runGitCommand(arguments: ["push", "origin", "HEAD"], in: projectPath)
-        if !pushResult.isSuccess {
-            logHandler("Failed to push changes: \(pushResult.mergedOutput)")
-            return false
-        }
-
-        logHandler("Repository successfully pushed to GitHub.")
-        return true
     }
 
     /// Detects the framework used in the project.

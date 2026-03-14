@@ -142,37 +142,136 @@ final class GitHubService {
         try validateResponse(response, data: data)
     }
 
-    // MARK: - Push All Project Files
+    // MARK: - Push All Project Files (Efficient Data API)
 
-    func pushProject(_ project: Project, owner: String, repo: String, commitMessage: String, branch: String? = nil) async throws {
+    func pushProject(_ project: Project, owner: String, repo: String, commitMessage: String, branch: String = "main") async throws {
         let allFiles = collectFiles(from: project.files)
         let projectDir = await project.directoryURL
-        var failedFiles: [(String, Error)] = []
 
+        // 1. Get the latest commit SHA of the branch
+        let branchRef = try await getBranchRef(owner: owner, repo: repo, branch: branch)
+        let baseTreeSHA = try await getCommitTreeSHA(owner: owner, repo: repo, commitSHA: branchRef.object.sha)
+
+        // 2. Create blobs for each file
+        var treeEntries: [[String: Any]] = []
         for fileNode in allFiles {
             let fileURL = projectDir.appendingPathComponent(fileNode.path)
-            do {
-                let content = try String(contentsOf: fileURL, encoding: .utf8)
-                let existingSHA = try? await getFileSHA(owner: owner, repo: repo, path: fileNode.path, branch: branch)
-                try await pushFile(
-                    owner: owner,
-                    repo: repo,
-                    path: fileNode.path,
-                    content: content,
-                    message: commitMessage,
-                    sha: existingSHA,
-                    branch: branch
-                )
-            } catch {
-                failedFiles.append((fileNode.path, error))
-            }
+            let data = try Data(contentsOf: fileURL)
+            let blobSHA = try await createBlob(owner: owner, repo: repo, data: data)
+
+            treeEntries.append([
+                "path": fileNode.path,
+                "mode": "100644",
+                "type": "blob",
+                "sha": blobSHA
+            ])
         }
 
-        // If any files failed to push, throw an error with details
-        if !failedFiles.isEmpty {
-            let failureDetails = failedFiles.map { "\($0.0): \($0.1.localizedDescription)" }.joined(separator: "\n")
-            throw GitHubError.pushFailed(message: "Failed to push \(failedFiles.count) file(s):\n\(failureDetails)")
+        // 3. Create a new tree
+        let newTreeSHA = try await createTree(owner: owner, repo: repo, baseTreeSHA: baseTreeSHA, entries: treeEntries)
+
+        // 4. Create a new commit
+        let newCommitSHA = try await createCommit(owner: owner, repo: repo, message: commitMessage, treeSHA: newTreeSHA, parentSHA: branchRef.object.sha)
+
+        // 5. Update the branch reference
+        try await updateBranchRef(owner: owner, repo: repo, branch: branch, commitSHA: newCommitSHA)
+    }
+
+    private func getBranchRef(owner: String, repo: String, branch: String) async throws -> GitHubRefResponse {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/ref/heads/\(branch)")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return try JSONDecoder().decode(GitHubRefResponse.self, from: data)
+    }
+
+    private func getCommitTreeSHA(owner: String, repo: String, commitSHA: String) async throws -> String {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/commits/\(commitSHA)")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        guard let tree = json?["tree"] as? [String: Any], let sha = tree["sha"] as? String else {
+            throw GitHubError.decodingFailed
         }
+        return sha
+    }
+
+    private func createBlob(owner: String, repo: String, data: Data) async throws -> String {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/blobs")
+        var request = authorizedRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "content": data.base64EncodedString(),
+            "encoding": "base64"
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (responseData, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: responseData)
+        let json = try JSONSerialization.jsonObject(with: responseData) as? [String: Any]
+        return json?["sha"] as? String ?? ""
+    }
+
+    private func createTree(owner: String, repo: String, baseTreeSHA: String, entries: [[String: Any]]) async throws -> String {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/trees")
+        var request = authorizedRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "base_tree": baseTreeSHA,
+            "tree": entries
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (responseData, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: responseData)
+        let json = try JSONSerialization.jsonObject(with: responseData) as? [String: Any]
+        return json?["sha"] as? String ?? ""
+    }
+
+    private func createCommit(owner: String, repo: String, message: String, treeSHA: String, parentSHA: String) async throws -> String {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/commits")
+        var request = authorizedRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "message": message,
+            "tree": treeSHA,
+            "parents": [parentSHA]
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (responseData, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: responseData)
+        let json = try JSONSerialization.jsonObject(with: responseData) as? [String: Any]
+        return json?["sha"] as? String ?? ""
+    }
+
+    private func updateBranchRef(owner: String, repo: String, branch: String, commitSHA: String) async throws {
+        let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/git/refs/heads/\(branch)")
+        var request = authorizedRequest(url: url, method: "PATCH")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        let body: [String: Any] = [
+            "sha": commitSHA,
+            "force": false
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+    }
+
+    struct GitHubRefResponse: Decodable {
+        let ref: String
+        let object: GitHubRefObject
+    }
+
+    struct GitHubRefObject: Decodable {
+        let sha: String
+        let type: String
     }
 
     private func collectFiles(from nodes: [FileNode]) -> [FileNode] {
