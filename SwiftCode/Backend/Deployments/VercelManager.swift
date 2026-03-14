@@ -18,6 +18,13 @@ final class VercelManager {
 
         do {
             logHandler("Starting Vercel deployment workflow for project: \(project.name)")
+
+            logHandler("Ensuring GitHub repository is up to date...")
+            let repoPrepared = try await DeploymentTargets.shared.prepareRepositoryForDeployment(project: project, logHandler: logHandler)
+            guard repoPrepared else {
+                return DeploymentResult(success: false, url: nil, errorMessage: "Failed to prepare GitHub repository for deployment.")
+            }
+
             logHandler("Detecting project framework and build configuration...")
             let framework = await DeploymentTargets.shared.detectFramework(project: project)
             logHandler("✓ Framework detected: \(framework.name)")

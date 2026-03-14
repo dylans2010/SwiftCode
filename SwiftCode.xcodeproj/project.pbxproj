@@ -142,6 +142,10 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		DEP000000000000000000005A /* VercelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000005 /* VercelManager.swift */; };
 		DEP000000000000000000102A /* DeploymentLogsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000102 /* DeploymentLogsView.swift */; };
 		DEP000000000000000000103A /* DeploymentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEP000000000000000000103 /* DeploymentsView.swift */; };
+		ONB000000000000000000001A /* OnboardingSplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONB000000000000000000001 /* OnboardingSplashView.swift */; };
+		ONB000000000000000000002A /* OnboardingFeaturesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONB000000000000000000002 /* OnboardingFeaturesView.swift */; };
+		ONB000000000000000000003A /* OnboardingWelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONB000000000000000000003 /* OnboardingWelcomeView.swift */; };
+		ONB000000000000000000004A /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ONB000000000000000000004 /* OnboardingView.swift */; };
 		SI000000000000000000001A /* SkillsInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SI000000000000000000001B /* SkillsInfoView.swift */; };
 		AT000000000000000000001A /* SearchDocumentationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000001B /* SearchDocumentationView.swift */; };
 		AT000000000000000000002A /* SnippetsLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000002B /* SnippetsLibraryView.swift */; };
@@ -321,6 +325,10 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		AT00000000000000000000FB /* SymbolIndexingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolIndexingEngine.swift; sourceTree = "<group>"; };
 		AT000000000000000000010B /* CodeIntelligenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeIntelligenceEngine.swift; sourceTree = "<group>"; };
 		AT000000000000000000011B /* AdvancedToolsDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedToolsDesignSystem.swift; sourceTree = "<group>"; };
+		ONB000000000000000000001 /* OnboardingSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSplashView.swift; sourceTree = "<group>"; };
+		ONB000000000000000000002 /* OnboardingFeaturesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFeaturesView.swift; sourceTree = "<group>"; };
+		ONB000000000000000000003 /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
+		ONB000000000000000000004 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -412,6 +420,7 @@ children = (
 				AA00001000000000000008FF /* Dependencies */,
 				AA00001000000000000009FF /* DiffViewer */,
 				AA0000100000000000000AFF /* Errors */,
+				ONB000000000000000000000F /* Onboarding */,
 				AA0000100000000000000BFF /* Search */,
 				AA0000100000000000000CFF /* Toolbar */,
 				DEP000000000000000000101 /* Deployments */,
@@ -900,6 +909,17 @@ DEP000000000000000000101 /* Deployments */ = {
 			path = Deployments;
 			sourceTree = "<group>";
 		};
+		ONB000000000000000000000F /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				ONB000000000000000000001 /* OnboardingSplashView.swift */,
+				ONB000000000000000000002 /* OnboardingFeaturesView.swift */,
+				ONB000000000000000000003 /* OnboardingWelcomeView.swift */,
+				ONB000000000000000000004 /* OnboardingView.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1138,6 +1158,10 @@ files = (
 				DEP000000000000000000005A /* VercelManager.swift in Sources */,
 				DEP000000000000000000102A /* DeploymentLogsView.swift in Sources */,
 				DEP000000000000000000103A /* DeploymentsView.swift in Sources */,
+				ONB000000000000000000001A /* OnboardingSplashView.swift in Sources */,
+				ONB000000000000000000002A /* OnboardingFeaturesView.swift in Sources */,
+				ONB000000000000000000003A /* OnboardingWelcomeView.swift in Sources */,
+				ONB000000000000000000004A /* OnboardingView.swift in Sources */,
 				TT000000000000000000001A /* TestTools.swift in Sources */,
 				TTV000000000000000000001A /* TestToolsView.swift in Sources */,
 			);

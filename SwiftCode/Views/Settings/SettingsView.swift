@@ -184,6 +184,9 @@ class AppSettings: ObservableObject {
     @Published var codeSuggestionsEnabled: Bool {
         didSet { debouncedSave("codeSuggestionsEnabled", codeSuggestionsEnabled) }
     }
+    @Published var hasCompletedOnboarding: Bool {
+        didSet { debouncedSave("hasCompletedOnboarding", hasCompletedOnboarding) }
+    }
 
     // MARK: - Debounced Save
 
@@ -245,6 +248,7 @@ class AppSettings: ObservableObject {
         fileNavigatorDefaultFileColorHex = UserDefaults.standard.string(forKey: "fileNavigatorDefaultFileColorHex") ?? "#9FA8DA"
         fileNavigatorAnimationSpeed = UserDefaults.standard.object(forKey: "fileNavigatorAnimationSpeed") as? Double ?? 0.22
         codeSuggestionsEnabled = UserDefaults.standard.object(forKey: "codeSuggestionsEnabled") as? Bool ?? false
+        hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
 
         // Load saved repositories
         loadSavedRepositories()
