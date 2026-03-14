@@ -74,7 +74,7 @@ final class AgentModelCheck {
         switch normalizedProvider {
         case "OpenRouter":
             return await checkOpenRouter(apiKey: normalizedKey, model: normalizedModel, startTime: startTime)
-        case "Anthropic", "OpenAI", "Gemini":
+        case "Anthropic", "OpenAI", "Gemini", "Mistral", "Qwen":
             // Validate config path for providers that are user-managed in this phase.
             return .init(
                 status: .success,
@@ -98,6 +98,8 @@ final class AgentModelCheck {
         case "Anthropic": return "anthropic_api_key"
         case "OpenAI": return "openai_api_key"
         case "Gemini": return "gemini_api_key"
+        case "Mistral": return "mistral_api_key"
+        case "Qwen": return "qwen_api_key"
         default: return nil
         }
     }

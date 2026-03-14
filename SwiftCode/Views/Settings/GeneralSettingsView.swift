@@ -5,28 +5,40 @@ import Foundation
 
 enum APIKeyProvider: String, Codable, CaseIterable {
     case openRouter = "OpenRouter"
+    case anthropic = "Anthropic"
+    case openai = "OpenAI"
+    case google = "Gemini"
+    case mistral = "Mistral"
+    case qwen = "Qwen"
     case gitHub = "GitHub"
     case netlify = "Netlify"
     case vercel = "Vercel"
-    case custom = "Custom"
 
     var icon: String {
         switch self {
         case .openRouter: return "cpu"
+        case .anthropic: return "sparkles"
+        case .openai: return "bolt.fill"
+        case .google: return "circle.grid.3x3.fill"
+        case .mistral: return "wind"
+        case .qwen: return "brain.head.profile"
         case .gitHub: return "chevron.left.forwardslash.chevron.right"
         case .netlify: return "cloud.fill"
         case .vercel: return "triangle.fill"
-        case .custom: return "key.fill"
         }
     }
 
     var tintColor: Color {
         switch self {
         case .openRouter: return .orange
+        case .anthropic: return .indigo
+        case .openai: return .green
+        case .google: return .blue
+        case .mistral: return .orange
+        case .qwen: return .purple
         case .gitHub: return .primary
         case .netlify: return .teal
         case .vercel: return .primary
-        case .custom: return .cyan
         }
     }
 }
@@ -108,14 +120,22 @@ final class APIKeyManager: ObservableObject {
         switch entry.provider {
         case .openRouter:
             KeychainService.shared.set(value, forKey: KeychainService.openRouterAPIKey)
+        case .anthropic:
+            KeychainService.shared.set(value, forKey: "anthropic_api_key")
+        case .openai:
+            KeychainService.shared.set(value, forKey: "openai_api_key")
+        case .google:
+            KeychainService.shared.set(value, forKey: "gemini_api_key")
+        case .mistral:
+            KeychainService.shared.set(value, forKey: "mistral_api_key")
+        case .qwen:
+            KeychainService.shared.set(value, forKey: "qwen_api_key")
         case .gitHub:
             DeploymentKeychainManager.shared.storeKey(service: .github, key: value)
         case .netlify:
             DeploymentKeychainManager.shared.storeKey(service: .netlify, key: value)
         case .vercel:
             DeploymentKeychainManager.shared.storeKey(service: .vercel, key: value)
-        case .custom:
-            break
         }
     }
 
@@ -490,18 +510,21 @@ struct GeneralSettingsView: View {
                 }
             }
 
-            HStack(spacing: 15) {
-                ForEach([APIKeyProvider.openRouter, .gitHub, .netlify, .vercel], id: \.self) { provider in
-                    VStack(spacing: 4) {
-                        Image(systemName: provider.icon)
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(apiKeyManager.keys.contains(where: { $0.provider == provider && $0.isDefault }) ? provider.tintColor : .secondary.opacity(0.3))
-                        Text(provider.rawValue)
-                            .font(.system(size: 8, weight: .medium))
-                            .foregroundStyle(.secondary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 20) {
+                    ForEach(APIKeyProvider.allCases, id: \.self) { provider in
+                        VStack(spacing: 4) {
+                            Image(systemName: provider.icon)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundStyle(apiKeyManager.keys.contains(where: { $0.provider == provider && $0.isDefault }) ? provider.tintColor : .secondary.opacity(0.3))
+                            Text(provider.rawValue)
+                                .font(.system(size: 8, weight: .medium))
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(minWidth: 50)
                     }
-                    .frame(maxWidth: .infinity)
                 }
+                .padding(.horizontal, 4)
             }
             .padding(.vertical, 8)
 
@@ -879,12 +902,25 @@ struct APIKeysManagementView: View {
     @State private var editingEntry: APIKeyEntry?
     @State private var showDeleteConfirmation = false
     @State private var entryToDelete: APIKeyEntry?
+    @State private var showHelpSheet = false
 
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    Button {
+                        showHelpSheet = true
+                    } label: {
+                        Label("Where Do I Get Keys?", systemImage: "questionmark.circle.fill")
+                            .font(.subheadline.bold())
+                    }
+                }
+
                 Section("Configured Services") {
-                    ForEach([APIKeyProvider.openRouter, .gitHub, .netlify, .vercel], id: \.self) { provider in
+                    ForEach([
+                        APIKeyProvider.openRouter, .anthropic, .openai,
+                        .google, .mistral, .qwen, .gitHub, .netlify, .vercel
+                    ], id: \.self) { provider in
                         HStack {
                             Label {
                                 Text(provider.rawValue)
@@ -957,6 +993,9 @@ struct APIKeysManagementView: View {
             .sheet(isPresented: $showAddSheet) {
                 AddEditAPIKeyView(entry: nil, provider: selectedProvider)
             }
+            .sheet(isPresented: $showHelpSheet) {
+                APIKeysHelpView()
+            }
             .sheet(item: $editingEntry) { entry in
                 AddEditAPIKeyView(entry: entry)
             }
@@ -972,6 +1011,62 @@ struct APIKeysManagementView: View {
             } message: {
                 if let name = entryToDelete?.name {
                     Text("Delete \(name)? This cannot be undone.")
+                }
+            }
+        }
+    }
+}
+
+// MARK: - API Keys Help View
+
+struct APIKeysHelpView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let providers: [(name: String, url: String, icon: String, color: Color)] = [
+        ("OpenRouter", "https://openrouter.ai/keys", "cpu", .orange),
+        ("Anthropic", "https://console.anthropic.com/settings/keys", "sparkles", .indigo),
+        ("OpenAI", "https://platform.openai.com/api-keys", "bolt.fill", .green),
+        ("Gemini", "https://aistudio.google.com/app/apikey", "circle.grid.3x3.fill", .blue),
+        ("Mistral", "https://console.mistral.ai/api-keys/", "wind", .orange),
+        ("Qwen", "https://dashscope.console.aliyun.com/apiKey", "brain.head.profile", .purple),
+        ("GitHub", "https://github.com/settings/tokens", "chevron.left.forwardslash.chevron.right", .primary),
+        ("Netlify", "https://app.netlify.com/user/settings/applications", "cloud.fill", .teal),
+        ("Vercel", "https://vercel.com/account/tokens", "triangle.fill", .primary)
+    ]
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    Text("To use the AI and deployment features of SwiftCode, you'll need API keys from the respective providers. Tap a provider below to visit their website and generate a key.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 4)
+                }
+
+                ForEach(providers, id: \.name) { provider in
+                    Link(destination: URL(string: provider.url)!) {
+                        HStack {
+                            Label {
+                                Text(provider.name)
+                                    .foregroundColor(.primary)
+                            } icon: {
+                                Image(systemName: provider.icon)
+                                    .foregroundStyle(provider.color)
+                            }
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Get API Keys")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
                 }
             }
         }
