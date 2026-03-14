@@ -405,6 +405,9 @@ struct GeneralSettingsView: View {
     @StateObject private var apiKeyManager = APIKeyManager.shared
     @StateObject private var themeManager = ThemeManager.shared
     @StateObject private var toolRegistry = CustomToolRegistry.shared
+    @StateObject private var devModeManager = DeveloperModeManager.shared
+    @StateObject private var entitlementManager = EntitlementManager.shared
+    @StateObject private var storeManager = StoreKitManager.shared
 
     @State private var showAddSheet = false
     @State private var selectedProvider: APIKeyProvider?
@@ -419,6 +422,10 @@ struct GeneralSettingsView: View {
     @State private var showResetConfirmation = false
     @State private var showUpdatesSheet = false
     @State private var showCreditsSheet = false
+    @State private var showPaywall = false
+    @State private var showDeveloperDashboard = false
+    @State private var showDeveloperModeEnabledAlert = false
+    @State private var versionTapCount = 0
 
     // Quick Setup section state
     @State private var showExtensions = false
@@ -430,6 +437,7 @@ struct GeneralSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                proSection
                 quickSetupSection
                 apiKeysSection
                 editorSection
@@ -439,6 +447,9 @@ struct GeneralSettingsView: View {
                 agentConnectionsSection
                 skillsSection
                 coreMLSection
+                if devModeManager.isDeveloperModeEnabled {
+                    developerToolsSection
+                }
                 appManagementSection
                 aboutSection
             }
@@ -482,11 +493,22 @@ struct GeneralSettingsView: View {
         .sheet(isPresented: $showExtensions) {
             ExtensionsView()
         }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+        }
+        .sheet(isPresented: $showDeveloperDashboard) {
+            DeveloperDashboardView()
+        }
         .sheet(isPresented: $showAddSheet) {
             AddEditAPIKeyView(entry: nil, provider: selectedProvider)
         }
         .sheet(item: $editingEntry) { entry in
             AddEditAPIKeyView(entry: entry)
+        }
+        .alert("Developer Mode Enabled", isPresented: $showDeveloperModeEnabledAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Internal debugging tools and feature flags are now available.")
         }
         .confirmationDialog(
             "Reset SwiftCode",
@@ -722,6 +744,51 @@ struct GeneralSettingsView: View {
         }
     }
 
+    private var proSection: some View {
+        Section {
+            Button {
+                showPaywall = true
+            } label: {
+                HStack {
+                    Label("Upgrade to Pro", systemImage: "crown.fill")
+                        .foregroundStyle(.orange)
+                    Spacer()
+                    if entitlementManager.isProUser {
+                        Text("Active")
+                            .font(.caption)
+                            .foregroundStyle(.green)
+                    }
+                }
+            }
+
+            Button {
+                Task { try? await storeManager.restorePurchases() }
+            } label: {
+                Label("Restore Purchases", systemImage: "arrow.clockwise")
+            }
+
+            Button {
+                AppStore.showManageSubscriptions()
+            } label: {
+                Label("Manage Subscription", systemImage: " person.crop.circle.badge.checkmark")
+            }
+        } header: {
+            Label("SwiftCode Pro", systemImage: "star.fill")
+        }
+    }
+
+    private var developerToolsSection: some View {
+        Section {
+            Button {
+                showDeveloperDashboard = true
+            } label: {
+                Label("Developer Tools", systemImage: "wrench.and.screwdriver.fill")
+            }
+        } header: {
+            Label("Developer Mode", systemImage: "cpu")
+        }
+    }
+
     private var agentConnectionsSection: some View {
         Section {
             Button {
@@ -821,6 +888,17 @@ struct GeneralSettingsView: View {
                 Spacer()
                 Text("1.0.0").foregroundStyle(.secondary)
             }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                versionTapCount += 1
+                if versionTapCount >= 7 {
+                    devModeManager.enableDeveloperMode()
+                    showDeveloperModeEnabledAlert = true
+                    print("Developer Mode Enabled")
+                    versionTapCount = 0
+                }
+            }
+
             HStack {
                 Text("Build")
                 Spacer()

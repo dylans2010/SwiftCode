@@ -49,6 +49,15 @@ final class ToolbarActionManager {
         case debugTools
         case deployments
         case testTools
+
+        var isPro: Bool {
+            switch self {
+            case .deployments, .documentationBrowser, .debugTools, .extensionMarketplace:
+                return true
+            default:
+                return false
+            }
+        }
     }
 
     func destination(for toolId: String) -> SheetDestination? {
