@@ -140,7 +140,7 @@ struct DeploymentsView: View {
                     }
                 }
 
-                DispatchQueue.main.run {
+                DispatchQueue.main.async {
                     isDeploying = false
                     if result.success {
                         deploymentURL = result.url
