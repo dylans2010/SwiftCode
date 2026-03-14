@@ -531,13 +531,26 @@ struct GeneralSettingsView: View {
                     }
                     Spacer()
                     if let entry = apiKeyManager.keys.first(where: { $0.provider == provider }) {
-                        Text(entry.name)
-                            .font(.caption)
-                            .foregroundStyle(.green)
-                            .onTapGesture {
-                                selectedProvider = provider
-                                editingEntry = entry
+                        HStack(spacing: 8) {
+                            Text(entry.name)
+                                .font(.caption)
+                                .foregroundStyle(.green)
+
+                            if provider == .gitHub {
+                                Button {
+                                    showGitHubConfigSheet = true
+                                } label: {
+                                    Image(systemName: "gearshape.fill")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .buttonStyle(.plain)
                             }
+                        }
+                        .onTapGesture {
+                            selectedProvider = provider
+                            editingEntry = entry
+                        }
                     } else {
                         Button("Setup") {
                             selectedProvider = provider
@@ -785,12 +798,6 @@ struct GeneralSettingsView: View {
 
     private var appManagementSection: some View {
         Section {
-            Button {
-                showGitHubConfigSheet = true
-            } label: {
-                Label("Git Identity & Options", systemImage: "person.badge.key.fill")
-                    .foregroundStyle(.blue)
-            }
             Button(role: .destructive) {
                 showResetConfirmation = true
             } label: {

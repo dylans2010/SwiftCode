@@ -95,15 +95,6 @@ class AppSettings: ObservableObject {
     @Published var savedRepositories: [SavedRepository] = [] {
         didSet { persistSavedRepositories() }
     }
-    @Published var defaultRepositoryID: UUID? {
-        didSet {
-            if let id = defaultRepositoryID {
-                UserDefaults.standard.set(id.uuidString, forKey: "defaultRepositoryID")
-            } else {
-                UserDefaults.standard.removeObject(forKey: "defaultRepositoryID")
-            }
-        }
-    }
     @Published var startOnNewProject: Bool {
         didSet { debouncedSave("startOnNewProject", startOnNewProject) }
     }
@@ -213,9 +204,6 @@ class AppSettings: ObservableObject {
         !customModel.isEmpty && selectedModel == customModel
     }
 
-    var defaultRepository: SavedRepository? {
-        savedRepositories.first { $0.id == defaultRepositoryID }
-    }
 
     private init() {
         selectedModel = UserDefaults.standard.string(forKey: "selectedModel") ?? OpenRouterModel.defaults.first?.id ?? ""
@@ -260,9 +248,6 @@ class AppSettings: ObservableObject {
 
         // Load saved repositories
         loadSavedRepositories()
-        if let idString = UserDefaults.standard.string(forKey: "defaultRepositoryID") {
-            defaultRepositoryID = UUID(uuidString: idString)
-        }
     }
 
     // MARK: - Saved Repositories Persistence
@@ -283,20 +268,10 @@ class AppSettings: ObservableObject {
 
     func addRepository(_ repo: SavedRepository) {
         savedRepositories.append(repo)
-        if savedRepositories.count == 1 {
-            defaultRepositoryID = repo.id
-        }
     }
 
     func removeRepository(_ repo: SavedRepository) {
         savedRepositories.removeAll { $0.id == repo.id }
-        if defaultRepositoryID == repo.id {
-            defaultRepositoryID = savedRepositories.first?.id
-        }
-    }
-
-    func setDefaultRepository(_ repo: SavedRepository) {
-        defaultRepositoryID = repo.id
     }
 }
 

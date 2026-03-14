@@ -455,38 +455,83 @@ final class GitHubService {
         }
         let owner = String(components[0])
         let repo = String(components[1])
+        let projectDir = await project.directoryURL
 
-        // Step 1: Create the GitHub repository
-        logHandler("Creating GitHub repository: \(repo)")
+        // Step 1: Detect and scan
+        logHandler("Scanning template files")
+        var filesToUpload: [URL] = []
+        let enumerator = FileManager.default.enumerator(
+            at: projectDir,
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsPackageDescendants]
+        )
+        while let fileURL = enumerator?.nextObject() as? URL {
+            let resourceValues = try? fileURL.resourceValues(forKeys: [.isRegularFileKey])
+            if resourceValues?.isRegularFile == true {
+                // Skip project.json metadata
+                if fileURL.lastPathComponent != "project.json" {
+                    filesToUpload.append(fileURL)
+                }
+            }
+        }
+
+        // Step 2: Create the GitHub repository
+        logHandler("Creating GitHub repository")
         do {
             _ = try await createRepository(name: repo, description: project.description, isPrivate: false)
             logHandler("Repository created successfully")
         } catch {
-            logHandler("Repository creation skipped or failed: \(error.localizedDescription)")
-            // Continue as it might already exist but be empty
+            // If it already exists (422), we can proceed
+            if case let .apiError(statusCode, _) = error as? GitHubError, statusCode == 422 {
+                logHandler("Repository created successfully")
+            } else {
+                logHandler("Repository creation: \(error.localizedDescription)")
+            }
         }
 
-        // Step 2: Create the initial commit
+        // Step 3: Create initial commit
         logHandler("Creating initial commit")
-        let readmeContent = "# \(project.name)\n\nCreated with SwiftCode."
+        let readmeURL = projectDir.appendingPathComponent("README.md")
+        let readmeContent: String
+        if FileManager.default.fileExists(atPath: readmeURL.path) {
+            readmeContent = (try? String(contentsOf: readmeURL, encoding: .utf8)) ?? "# \(project.name)\n\nCreated with SwiftCode."
+        } else {
+            readmeContent = "# \(project.name)\n\nCreated with SwiftCode."
+        }
+
+        let existingReadmeSHA = try? await getFileSHA(owner: owner, repo: repo, path: "README.md", branch: "main")
+
         try await pushFile(
             owner: owner,
             repo: repo,
             path: "README.md",
             content: readmeContent,
             message: "Initial commit created by SwiftCode",
+            sha: existingReadmeSHA,
             branch: "main"
         )
 
-        // Step 3: Upload the full template codebase
-        logHandler("Scanning template files")
-        try await pushProjectUsingContentsAPI(
-            project: project,
-            owner: owner,
-            repo: repo,
-            branch: "main",
-            logHandler: logHandler
-        )
+        // Step 4: Upload full template codebase
+        logHandler("Uploading template files to GitHub")
+        for fileURL in filesToUpload {
+            let relativePath = String(fileURL.path.dropFirst(projectDir.path.count + 1))
+            // README already pushed or will be updated if it was in the scanned list
+            if relativePath == "README.md" { continue }
+
+            let data = try Data(contentsOf: fileURL)
+            // Use SHA to avoid 409 if file exists
+            let existingSHA = try? await getFileSHA(owner: owner, repo: repo, path: relativePath, branch: "main")
+
+            try await pushFileData(
+                owner: owner,
+                repo: repo,
+                path: relativePath,
+                data: data,
+                message: "Add template file: \(fileURL.lastPathComponent)",
+                sha: existingSHA,
+                branch: "main"
+            )
+        }
 
         logHandler("Repository initialized successfully")
     }
