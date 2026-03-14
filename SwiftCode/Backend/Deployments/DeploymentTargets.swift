@@ -49,7 +49,7 @@ final class DeploymentTargets {
             }
 
             // Step 3: Verify main branch exists
-            var branch = try await GitHubService.shared.getBranch(owner: owner, repo: repo, branch: "main")
+            let branch = try await GitHubService.shared.getBranch(owner: owner, repo: repo, branch: "main")
             if branch == nil {
                 logHandler("Branch 'main' not found, attempting to create it")
 

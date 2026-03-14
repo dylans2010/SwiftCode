@@ -97,7 +97,7 @@ struct DocumentationAIInsightsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: icon)
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
                 Text(title)
                     .font(.headline)
             }

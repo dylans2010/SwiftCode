@@ -24,7 +24,12 @@ final class DocumentationAnalyzer: ObservableObject {
 
         do {
             // Step 1 & 2: Capture URL and Extract relevant documentation content
-            let documentationSummary = documentationContent ?? (try await extractDocumentationContent(from: url))
+            let documentationSummary: String
+            if let documentationContent = documentationContent {
+                documentationSummary = documentationContent
+            } else {
+                documentationSummary = try await extractDocumentationContent(from: url)
+            }
 
             // Step 3: Scan the user’s project codebase
             let projectContext = try await scanProjectContext()

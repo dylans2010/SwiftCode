@@ -7,10 +7,16 @@ struct OnboardingWelcomeView: View {
         VStack(spacing: 30) {
             Spacer()
 
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 80))
-                .foregroundStyle(.green)
-                .symbolEffect(.bounce, options: .repeat(2))
+            if #available(iOS 18.0, *) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 80))
+                    .foregroundStyle(.green)
+                    .symbolEffect(.bounce, options: .repeat(2))
+            } else {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 80))
+                    .foregroundStyle(.green)
+            }
 
             VStack(spacing: 12) {
                 Text("Ready to Build?")
