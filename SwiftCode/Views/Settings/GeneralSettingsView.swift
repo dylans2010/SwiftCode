@@ -116,6 +116,34 @@ final class APIKeyManager: ObservableObject {
         KeychainService.shared.get(forKey: entry.keychainKey)
     }
 
+    // MARK: - Keychain Methods
+
+    func storeKey(service: APIKeyProvider, key: String) {
+        // Find existing entry or create new
+        if let idx = keys.firstIndex(where: { $0.provider == service }) {
+            update(keys[idx], keyValue: key)
+        } else {
+            add(name: "\(service.rawValue) Key", provider: service, keyValue: key)
+        }
+    }
+
+    func retrieveKey(service: APIKeyProvider) -> String? {
+        if let entry = keys.first(where: { $0.provider == service && $0.isDefault }) {
+            return keyValue(for: entry)
+        }
+        return nil
+    }
+
+    func deleteKey(service: APIKeyProvider) {
+        if let entry = keys.first(where: { $0.provider == service }) {
+            delete(entry)
+        }
+    }
+
+    func providerKeyExists(service: APIKeyProvider) -> Bool {
+        keys.contains { $0.provider == service }
+    }
+
     private func syncDefaultKey(_ entry: APIKeyEntry, value: String) {
         switch entry.provider {
         case .openRouter:
@@ -378,7 +406,6 @@ struct GeneralSettingsView: View {
 
     // Quick Setup section state
     @State private var showExtensions = false
-    @State private var showChooseModel = false
 
     var activeTheme: AppTheme {
         themeManager.theme(for: settings.selectedThemeID) ?? AppTheme.dark
@@ -440,10 +467,6 @@ struct GeneralSettingsView: View {
         .sheet(isPresented: $showExtensions) {
             ExtensionsView()
         }
-        .sheet(isPresented: $showChooseModel) {
-            ChooseModelView(controller: AgentController.shared)
-                .environmentObject(settings)
-        }
         .confirmationDialog(
             "Reset SwiftCode",
             isPresented: $showResetConfirmation,
@@ -460,24 +483,6 @@ struct GeneralSettingsView: View {
 
     private var quickSetupSection: some View {
         Section {
-            // AI Model selection / validation
-            Button {
-                showChooseModel = true
-            } label: {
-                HStack {
-                    Label("Choose Default AI Model", systemImage: "slider.horizontal.3")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Text(settings.selectedModel)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.tertiary)
-                        .font(.caption)
-                }
-            }
-
             // Extensions shortcut
             Button {
                 showExtensions = true
@@ -923,10 +928,11 @@ struct APIKeysManagementView: View {
                     ], id: \.self) { provider in
                         HStack {
                             Label {
-                                Text(provider.rawValue)
+                                Text(provider.rawValue + (manager.providerKeyExists(service: provider) ? " ✓" : ""))
+                                    .foregroundStyle(manager.providerKeyExists(service: provider) ? .green : .primary)
                             } icon: {
                                 Image(systemName: provider.icon)
-                                    .foregroundStyle(provider.tintColor)
+                                    .foregroundStyle(manager.providerKeyExists(service: provider) ? .green : provider.tintColor)
                             }
                             Spacer()
                             if let defaultKey = manager.keys.first(where: { $0.provider == provider && $0.isDefault }) {
@@ -1128,6 +1134,8 @@ struct AddEditAPIKeyView: View {
     @State private var keyValue: String
     @State private var showKey = false
     @State private var saved = false
+    @State private var isValidating = false
+    @State private var validationError: String?
 
     init(entry: APIKeyEntry?, provider: APIKeyProvider? = nil) {
         self.entry = entry
@@ -1188,8 +1196,24 @@ struct AddEditAPIKeyView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(isEditing ? "Update" : "Add") { saveKey() }
+                    if isValidating {
+                        ProgressView()
+                    } else {
+                        Button(isEditing ? "Update" : "Add") {
+                            Task { await validateAndSave() }
+                        }
                         .disabled(!isValid)
+                    }
+                }
+            }
+            .alert("Validation Error", isPresented: Binding(
+                get: { validationError != nil },
+                set: { if !$0 { validationError = nil } }
+            )) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                if let error = validationError {
+                    Text(error)
                 }
             }
             .onAppear {
@@ -1199,6 +1223,32 @@ struct AddEditAPIKeyView: View {
             }
         }
         .presentationDetents([.medium])
+    }
+
+    private func validateAndSave() async {
+        // Block duplicate provider keys unless we are editing an existing entry for that provider
+        if !isEditing && manager.providerKeyExists(service: provider) {
+            validationError = "A key for this provider is already configured."
+            return
+        }
+
+        isValidating = true
+        validationError = nil
+
+        do {
+            // Only validate AI providers
+            let aiProviders: [APIKeyProvider] = [.openRouter, .anthropic, .openai, .google, .mistral, .qwen]
+            if aiProviders.contains(provider) {
+                let llmProvider = LLMProvider(rawValue: provider.rawValue) ?? .openRouter
+                _ = try await LLMService.shared.validateAPIKey(provider: llmProvider, key: keyValue)
+            }
+
+            saveKey()
+        } catch {
+            validationError = error.localizedDescription
+        }
+
+        isValidating = false
     }
 
     private func saveKey() {

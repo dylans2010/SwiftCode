@@ -31,7 +31,7 @@ final class DeploymentTargets {
         guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
             logHandler("CRITICAL ERROR: No GitHub repository is linked to this project.")
             logHandler("Please go to Project Settings and connect a GitHub repository before deploying.")
-            throw NSError(domain: "Deployment", code: 401, userInfo: [NSLocalizedDescriptionKey: "No GitHub repository connected. Please link a repository in Project Settings before starting deployment."])
+            throw NSError(domain: "Deployment", code: 401, userInfo: [NSLocalizedDescriptionKey: "Deployment requires a connected GitHub repository containing the full project codebase."])
         }
 
         logHandler("Validating repository: \(repoURL)")
@@ -104,11 +104,12 @@ final class DeploymentTargets {
         logHandler: @escaping (String) -> Void
     ) async throws -> DeploymentResult {
 
+        let success = try await prepareRepositoryForDeployment(project: project, logHandler: logHandler)
+
         logHandler("Detecting framework...")
         let framework = await detectFramework(project: project)
         logHandler("Detected Framework: \(framework.name)")
 
-        let success = try await prepareRepositoryForDeployment(project: project, logHandler: logHandler)
         guard success else {
             return DeploymentResult(success: false, url: nil, errorMessage: "Failed to prepare repository.")
         }
