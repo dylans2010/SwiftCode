@@ -129,6 +129,7 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "asset_manager", name: "Asset Manager", icon: "photo.stack", category: "File", isEnabled: false, order: 37),
         ToolbarTool(id: "debug_tools", name: "Debug Tools", icon: "ladybug.fill", category: "Diagnostics", isEnabled: false, order: 38),
         ToolbarTool(id: "deployments", name: "Deployments", icon: "cloud.fill", category: "Tools", isEnabled: true, order: 39),
+        ToolbarTool(id: "run_tests", name: "Run Tests", icon: "play.shield.fill", category: "Diagnostics", isEnabled: true, order: 40),
     ]
 }
 

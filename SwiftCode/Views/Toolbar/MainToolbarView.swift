@@ -166,6 +166,7 @@ struct MainToolbarView: View {
         case "plugin_manager": return .pink
         case "file_preview": return .yellow
         case "deployments": return .orange
+        case "run_tests": return .green
         default: return .secondary
         }
     }

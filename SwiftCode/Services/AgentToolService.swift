@@ -69,6 +69,12 @@ final class AgentToolService {
         projectManager: ProjectManager
     ) async -> AgentToolResult {
 
+        // Handle use_test_tools if enabled for this tool
+        if let tool = AgentTool.all.first(where: { $0.id == toolName }), tool.use_test_tools {
+            await TestToolsManager.shared.runAgentToolTests(toolID: toolName)
+            // In a real implementation, we might want to check the results before proceeding.
+        }
+
         func str(_ key: String) -> String { parameters[key] as? String ?? "" }
         func int(_ key: String) -> Int? {
             if let n = parameters[key] as? Int    { return n }

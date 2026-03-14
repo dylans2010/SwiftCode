@@ -17,6 +17,7 @@ struct ExtensionManifest: Identifiable, Codable, Equatable {
     var isEnabled: Bool
     var isUserCreated: Bool
     var isDownloaded: Bool = true
+    var use_test_tools: Bool = false
 
     enum ExtensionCategory: String, Codable, CaseIterable, Identifiable {
         case editor        = "Editor"
@@ -378,6 +379,14 @@ final class ExtensionManager: ObservableObject {
         guard let idx = extensions.firstIndex(where: { $0.id == ext.id }) else { return }
         extensions[idx].isEnabled.toggle()
         saveEnabledState(for: extensions[idx].id, enabled: extensions[idx].isEnabled)
+
+        // Handle use_test_tools if enabled for this extension
+        if extensions[idx].isEnabled && extensions[idx].use_test_tools {
+            Task {
+                await TestToolsManager.shared.runExtensionTests(extensionID: extensions[idx].id)
+            }
+        }
+
         // PLACEHOLDER: Notify the IDE to load or unload this extension's entry point.
         // IDEExtensionLoader.shared.reload(extensions[idx])
     }

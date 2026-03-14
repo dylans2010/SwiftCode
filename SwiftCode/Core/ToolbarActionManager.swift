@@ -48,6 +48,7 @@ final class ToolbarActionManager {
         case assetManager
         case debugTools
         case deployments
+        case testTools
     }
 
     func destination(for toolId: String) -> SheetDestination? {
@@ -137,6 +138,8 @@ final class ToolbarActionManager {
             return .debugTools
         case "deployments":
             return .deployments
+        case "run_tests":
+            return .testTools
 
         default:
             return nil
