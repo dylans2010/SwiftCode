@@ -92,45 +92,47 @@ struct DocumentationBrowserView: View {
                 performSearch()
             }
             .toolbar {
-                ToolbarItemGroup(placement: .bottomBar) {
-                    Button(action: { backTrigger.toggle() }) {
-                        Image(systemName: "chevron.left")
-                    }
-                    .disabled(!canGoBack)
-
-                    Button(action: { forwardTrigger.toggle() }) {
-                        Image(systemName: "chevron.right")
-                    }
-                    .disabled(!canGoForward)
-
-                    Spacer()
-
-                    Button(action: { reloadTrigger.toggle() }) {
-                        Image(systemName: "arrow.clockwise")
-                    }
-
-                    Button(action: openInSafari) {
-                        Image(systemName: "safari")
-                    }
-
-                    Button(action: {
-                        guard EntitlementManager.shared.proAccess else {
-                            showingPaywall = true
-                            return
-                        }
-                        if let url = currentURL {
-                            Task {
-                                await DocumentationAnalyzer.shared.analyze(url: url, documentationContent: extractedContent)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button(action: {
+                            guard EntitlementManager.shared.proAccess else {
+                                showingPaywall = true
+                                return
                             }
-                            showingAIInsights = true
+                            if let url = currentURL {
+                                Task {
+                                    await DocumentationAnalyzer.shared.analyze(url: url, documentationContent: extractedContent)
+                                }
+                                showingAIInsights = true
+                            }
+                        }) {
+                            Label("AI Insights", systemImage: "sparkles")
                         }
-                    }) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "sparkles")
-                            Text("AI Insights")
+
+                        Button(action: { reloadTrigger.toggle() }) {
+                            Label("Reload", systemImage: "arrow.clockwise")
                         }
+
+                        Button(action: openInSafari) {
+                            Label("Open in Safari", systemImage: "safari")
+                        }
+
+                        Divider()
+
+                        Button(action: { backTrigger.toggle() }) {
+                            Label("Back", systemImage: "chevron.left")
+                        }
+                        .disabled(!canGoBack)
+
+                        Button(action: { forwardTrigger.toggle() }) {
+                            Label("Forward", systemImage: "chevron.right")
+                        }
+                        .disabled(!canGoForward)
+
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.title3)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
             }
             .sheet(isPresented: $showingAIInsights) {
