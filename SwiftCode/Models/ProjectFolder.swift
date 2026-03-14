@@ -5,6 +5,7 @@ struct ProjectFolder: Identifiable, Codable, Equatable, Hashable {
     var folderName: String
     var iconSymbol: String
     var colorHex: String
+    var gradientColors: [String]?
     var createdDate: Date
     var projectIdentifiers: [UUID]
 
@@ -15,6 +16,7 @@ struct ProjectFolder: Identifiable, Codable, Equatable, Hashable {
         folderName: String,
         iconSymbol: String = "folder.fill",
         colorHex: String = "#4F86FF",
+        gradientColors: [String]? = nil,
         createdDate: Date = Date(),
         projectIdentifiers: [UUID] = []
     ) {
@@ -22,6 +24,7 @@ struct ProjectFolder: Identifiable, Codable, Equatable, Hashable {
         self.folderName = folderName
         self.iconSymbol = iconSymbol
         self.colorHex = colorHex
+        self.gradientColors = gradientColors
         self.createdDate = createdDate
         self.projectIdentifiers = projectIdentifiers
     }

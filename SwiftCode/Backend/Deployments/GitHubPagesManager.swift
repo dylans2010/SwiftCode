@@ -23,7 +23,7 @@ final class GitHubPagesManager {
             logHandler("Target Repository: \(owner)/\(repo)")
 
             logHandler("Ensuring GitHub repository is up to date...")
-            let repoPrepared = try await DeploymentTargets.shared.prepareRepositoryForDeployment(project: project, logHandler: logHandler)
+            let repoPrepared = try await prepareGitHubRepository(project: project, logHandler: logHandler)
             guard repoPrepared else {
                 return DeploymentResult(success: false, url: nil, errorMessage: "Failed to prepare GitHub repository for deployment.")
             }
@@ -63,6 +63,20 @@ final class GitHubPagesManager {
             logHandler("Detailed Error Context: \(error)")
             return DeploymentResult(success: false, url: nil, errorMessage: error.localizedDescription)
         }
+    }
+
+    private func prepareGitHubRepository(project: Project, logHandler: @escaping (String) -> Void) async throws -> Bool {
+        let (owner, repo) = try GitHubRepositoryManager.shared.parseRepoURL(project.githubRepo!)
+
+        logHandler("Uploading project files to GitHub repository")
+        try await GitHubService.shared.pushProject(
+            project,
+            owner: owner,
+            repo: repo,
+            commitMessage: "GitHub Pages Deployment: \(Date().formatted())",
+            branch: "main"
+        )
+        return true
     }
 
     private func getPagesInfo(owner: String, repo: String, token: String?) async throws -> GitHubPagesInfo {
@@ -118,7 +132,7 @@ final class GitHubPagesManager {
             return
         }
 
-        let framework = await DeploymentTargets.shared.detectFramework(project: project)
+        let framework = await detectFramework(project: project)
         let buildSteps = generateBuildSteps(for: framework)
 
         let workflowContent = """
@@ -169,6 +183,21 @@ jobs:
         logHandler("Created .github/workflows/pages.yml with \(framework.name) configuration.")
     }
 
+    private func detectFramework(project: Project) async -> FrameworkConfig {
+        let projectPath = await project.directoryURL.path
+        let fileManager = FileManager.default
+
+        if fileManager.fileExists(atPath: "\(projectPath)/next.config.js") ||
+           fileManager.fileExists(atPath: "\(projectPath)/next.config.mjs") {
+            return FrameworkConfig(name: "Next.js", buildCommand: "npm run build", outputDirectory: ".next")
+        }
+        if fileManager.fileExists(atPath: "\(projectPath)/vite.config.js") ||
+           fileManager.fileExists(atPath: "\(projectPath)/vite.config.ts") {
+            return FrameworkConfig(name: "Vite", buildCommand: "npm run build", outputDirectory: "dist")
+        }
+        return FrameworkConfig(name: "Static", buildCommand: nil, outputDirectory: ".")
+    }
+
     private func generateBuildSteps(for framework: FrameworkConfig) -> String {
         if let buildCommand = framework.buildCommand {
             return """
@@ -189,7 +218,7 @@ jobs:
     private func pollDeploymentStatus(owner: String, repo: String, token: String?, logHandler: @escaping (String) -> Void) async throws -> String {
         let url = baseURL.appendingPathComponent("repos/\(owner)/\(repo)/pages/deployments")
 
-        for i in 1...60 { // Poll for 10 minutes (10s intervals)
+        for _ in 1...60 { // Poll for 10 minutes (10s intervals)
             var request = URLRequest(url: url)
             request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
             if let token = token {

@@ -724,9 +724,16 @@ struct ProjectsDashboardView: View {
                                 selectedFolder = folder
                             } label: {
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Image(systemName: folder.iconSymbol)
-                                        .font(.title2)
-                                        .foregroundStyle(Color(hex: folder.colorHex))
+                                    if let gColors = folder.gradientColors, gColors.count >= 2 {
+                                        Image(systemName: folder.iconSymbol)
+                                            .font(.title2)
+                                            .foregroundStyle(LinearGradient(colors: [Color(hex: gColors[0]), Color(hex: gColors[1])], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                    } else {
+                                        Image(systemName: folder.iconSymbol)
+                                            .font(.title2)
+                                            .foregroundStyle(Color(hex: folder.colorHex))
+                                    }
+
                                     Text(folder.folderName)
                                         .font(.subheadline.weight(.semibold))
                                         .foregroundStyle(.white)
@@ -736,7 +743,19 @@ struct ProjectsDashboardView: View {
                                 }
                                 .padding(12)
                                 .frame(width: 170, alignment: .leading)
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14))
+                                .background {
+                                    if let gColors = folder.gradientColors, gColors.count >= 2 {
+                                        LinearGradient(colors: [Color(hex: gColors[0]).opacity(0.15), Color(hex: gColors[1]).opacity(0.15)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                                    } else {
+                                        Color.white.opacity(0.05)
+                                            .clipShape(RoundedRectangle(cornerRadius: 14))
+                                    }
+                                }
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14)
+                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                )
                             }
                             .buttonStyle(.plain)
                         }

@@ -14,10 +14,10 @@ final class FolderManager: ObservableObject {
         loadFolders()
     }
 
-    func createFolder(name: String, symbol: String, colorHex: String) {
+    func createFolder(name: String, symbol: String, colorHex: String, gradientColors: [String]? = nil) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        let folder = ProjectFolder(folderName: trimmed, iconSymbol: symbol, colorHex: colorHex)
+        let folder = ProjectFolder(folderName: trimmed, iconSymbol: symbol, colorHex: colorHex, gradientColors: gradientColors)
         folders.append(folder)
     }
 
