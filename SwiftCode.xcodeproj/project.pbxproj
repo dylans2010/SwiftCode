@@ -167,6 +167,8 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		AT00000000000000000000FA /* SymbolIndexingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000FB /* SymbolIndexingEngine.swift */; };
 		AT000000000000000000010A /* CodeIntelligenceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000010B /* CodeIntelligenceEngine.swift */; };
 		AT000000000000000000011A /* AdvancedToolsDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000011B /* AdvancedToolsDesignSystem.swift */; };
+		DABA00000000000000000002 /* DocumentationAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = DABA00000000000000000001 /* DocumentationAnalyzer.swift */; };
+		DAIV00000000000000000002 /* DocumentationAIInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAIV00000000000000000001 /* DocumentationAIInsightsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -325,6 +327,8 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		AT00000000000000000000FB /* SymbolIndexingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolIndexingEngine.swift; sourceTree = "<group>"; };
 		AT000000000000000000010B /* CodeIntelligenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeIntelligenceEngine.swift; sourceTree = "<group>"; };
 		AT000000000000000000011B /* AdvancedToolsDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedToolsDesignSystem.swift; sourceTree = "<group>"; };
+		DABA00000000000000000001 /* DocumentationAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentationAnalyzer.swift; sourceTree = "<group>"; };
+		DAIV00000000000000000001 /* DocumentationAIInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentationAIInsightsView.swift; sourceTree = "<group>"; };
 		ONB000000000000000000001 /* OnboardingSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSplashView.swift; sourceTree = "<group>"; };
 		ONB000000000000000000002 /* OnboardingFeaturesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFeaturesView.swift; sourceTree = "<group>"; };
 		ONB000000000000000000003 /* OnboardingWelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingWelcomeView.swift; sourceTree = "<group>"; };
@@ -644,6 +648,7 @@ children = (
 				AT000000000000000000009B /* SymbolIndexView.swift */,
 				AT00000000000000000000AB /* CodeMetricsDashboardView.swift */,
 				AT00000000000000000000BB /* DocumentationBrowserView.swift */,
+				DAIV00000000000000000001 /* DocumentationAIInsightsView.swift */,
 				AT00000000000000000000CB /* WorkspaceProfilesView.swift */,
 				AT00000000000000000000DB /* AssetManagerView.swift */,
 			);
@@ -811,9 +816,18 @@ children = (
 				BG000000000000000000001F /* GitHub */,
 				CB000000000000000000001F /* CI Building */,
 				DEP000000000000000000201 /* Deployments */,
+				DABA00000000000000000000 /* Documentation */,
 				TT000000000000000000001B /* TestTools.swift */,
 			);
 path = Backend;
+sourceTree = "<group>";
+};
+DABA00000000000000000000 /* Documentation */ = {
+isa = PBXGroup;
+children = (
+				DABA00000000000000000001 /* DocumentationAnalyzer.swift */,
+			);
+path = Documentation;
 sourceTree = "<group>";
 };
 CB000000000000000000001F /* CI Building */ = {
@@ -1150,6 +1164,8 @@ files = (
 				AT00000000000000000000FA /* SymbolIndexingEngine.swift in Sources */,
 				AT000000000000000000010A /* CodeIntelligenceEngine.swift in Sources */,
 				AT000000000000000000011A /* AdvancedToolsDesignSystem.swift in Sources */,
+				DABA00000000000000000002 /* DocumentationAnalyzer.swift in Sources */,
+				DAIV00000000000000000002 /* DocumentationAIInsightsView.swift in Sources */,
 				DT000000000000000000001A /* DebuggingToolsView.swift in Sources */,
 				DEP000000000000000000001A /* DeploymentKeychainManager.swift in Sources */,
 				DEP000000000000000000002A /* DeploymentTargets.swift in Sources */,

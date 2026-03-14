@@ -7,33 +7,146 @@ import AppKit
 #endif
 
 struct DocumentationBrowserView: View {
-    @State private var query = "SwiftUI/View"
+    @State private var query = ""
     @State private var currentURL: URL? = URL(string: "https://developer.apple.com/documentation/swiftui")
+    @State private var isLoading = false
+    @State private var canGoBack = false
+    @State private var canGoForward = false
+
+    // Actions to trigger WebView methods
+    @State private var reloadTrigger = false
+    @State private var backTrigger = false
+    @State private var forwardTrigger = false
+    @State private var showingAIInsights = false
+    @State private var extractedContent: String?
+
+    let frameworks = [
+        "SwiftUI", "UIKit", "Combine", "CoreML", "AVFoundation", "CloudKit", "Metal"
+    ]
 
     var body: some View {
-        AdvancedToolScreen(title: "Documentation Browser") {
-            AdvancedToolCard(title: "Apple Developer Docs", subtitle: "JavaScript-enabled rendering for dynamic pages") {
-                HStack {
-                    TextField("Search API (e.g. SwiftUI/View)", text: $query)
-                        .textFieldStyle(.roundedBorder)
-                    Button("Search", action: performSearch)
-                        .buttonStyle(.borderedProminent)
+        NavigationStack {
+            VStack(spacing: 0) {
+                // Loading Indicator
+                if isLoading {
+                    HStack {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                        Text("Loading Apple Developer Documentation…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.accentColor.opacity(0.05))
                 }
 
+                // Framework Chips
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(frameworks, id: \.self) { framework in
+                            Button(action: {
+                                loadFramework(framework)
+                            }) {
+                                Text(framework)
+                                    .font(.subheadline.weight(.medium))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(Color.accentColor.opacity(0.1))
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16) // Search section padding: 16 (shared)
+                    .padding(.vertical, 12)
+                }
+                .background(Color(.secondarySystemBackground))
+
+                // Documentation Content
                 if let currentURL {
-                    DocsWebView(url: currentURL)
-                        .frame(minHeight: 600)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    DocsWebView(
+                        url: currentURL,
+                        isLoading: $isLoading,
+                        canGoBack: $canGoBack,
+                        canGoForward: $canGoForward,
+                        reloadTrigger: $reloadTrigger,
+                        backTrigger: $backTrigger,
+                        forwardTrigger: $forwardTrigger,
+                        extractedContent: $extractedContent
+                    )
+                    .padding(12) // WebView padding: 12
                 } else {
                     ContentUnavailableView(
                         "No URL Loaded",
                         systemImage: "book.closed",
-                        description: Text("Enter a documentation path or URL to begin browsing.")
+                        description: Text("Search for documentation or select a framework shortcut to begin.")
                     )
-                    .frame(minHeight: 260)
+                    .frame(maxHeight: .infinity)
                 }
             }
+            .navigationTitle("Documentation")
+            .navigationBarTitleDisplayMode(.inline)
+            .searchable(text: $query, prompt: "Search API (e.g. SwiftUI/View)")
+            .onSubmit(of: .search) {
+                performSearch()
+            }
+            .toolbar {
+                ToolbarItemGroup(placement: .bottomBar) {
+                    Button(action: { backTrigger.toggle() }) {
+                        Image(systemName: "chevron.left")
+                    }
+                    .disabled(!canGoBack)
+
+                    Button(action: { forwardTrigger.toggle() }) {
+                        Image(systemName: "chevron.right")
+                    }
+                    .disabled(!canGoForward)
+
+                    Spacer()
+
+                    Button(action: { reloadTrigger.toggle() }) {
+                        Image(systemName: "arrow.clockwise")
+                    }
+
+                    Button(action: openInSafari) {
+                        Image(systemName: "safari")
+                    }
+
+                    Button(action: {
+                        if let url = currentURL {
+                            Task {
+                                await DocumentationAnalyzer.shared.analyze(url: url, documentationContent: extractedContent)
+                            }
+                            showingAIInsights = true
+                        }
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "sparkles")
+                            Text("AI Insights")
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+            .sheet(isPresented: $showingAIInsights) {
+                DocumentationAIInsightsView()
+            }
         }
+    }
+
+    private func openInSafari() {
+        if let currentURL {
+            #if canImport(UIKit)
+            UIApplication.shared.open(currentURL)
+            #elseif canImport(AppKit)
+            NSWorkspace.shared.open(currentURL)
+            #endif
+        }
+    }
+
+    private func loadFramework(_ name: String) {
+        query = name
+        performSearch()
     }
 
     private func performSearch() {
@@ -60,26 +173,95 @@ struct DocumentationBrowserView: View {
 
 private struct DocsWebView: PlatformViewRepresentable {
     let url: URL
+    @Binding var isLoading: Bool
+    @Binding var canGoBack: Bool
+    @Binding var canGoForward: Bool
+
+    @Binding var reloadTrigger: Bool
+    @Binding var backTrigger: Bool
+    @Binding var forwardTrigger: Bool
+    @Binding var extractedContent: String?
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
 
     func makePlatformView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
-        configuration.preferences.javaScriptCanOpenWindowsAutomatically = true
-        configuration.websiteDataStore = .default()
+        // Important: Apple documentation site uses dynamic rendering
+        configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
         let webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = context.coordinator
+
         loadIfValid(on: webView, url: url)
         return webView
     }
 
     func updatePlatformView(_ webView: WKWebView, context: Context) {
-        guard webView.url != url else { return }
-        loadIfValid(on: webView, url: url)
+        if webView.url != url {
+            loadIfValid(on: webView, url: url)
+        }
+
+        if reloadTrigger != context.coordinator.lastReloadTrigger {
+            webView.reload()
+            context.coordinator.lastReloadTrigger = reloadTrigger
+        }
+
+        if backTrigger != context.coordinator.lastBackTrigger {
+            if webView.canGoBack { webView.goBack() }
+            context.coordinator.lastBackTrigger = backTrigger
+        }
+
+        if forwardTrigger != context.coordinator.lastForwardTrigger {
+            if webView.canGoForward { webView.goForward() }
+            context.coordinator.lastForwardTrigger = forwardTrigger
+        }
     }
 
     private func loadIfValid(on webView: WKWebView, url: URL) {
         guard ["http", "https"].contains(url.scheme?.lowercased()) else { return }
         webView.load(URLRequest(url: url))
+    }
+
+    class Coordinator: NSObject, WKNavigationDelegate {
+        var parent: DocsWebView
+        var lastReloadTrigger = false
+        var lastBackTrigger = false
+        var lastForwardTrigger = false
+
+        init(_ parent: DocsWebView) {
+            self.parent = parent
+        }
+
+        func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = true
+            }
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = false
+                self.parent.canGoBack = webView.canGoBack
+                self.parent.canGoForward = webView.canGoForward
+            }
+
+            // Extract content for AI Analysis
+            webView.evaluateJavaScript("document.body.innerText") { [weak self] result, error in
+                guard let content = result as? String, error == nil else { return }
+                DispatchQueue.main.async {
+                    self?.parent.extractedContent = content
+                }
+            }
+        }
+
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            DispatchQueue.main.async {
+                self.parent.isLoading = false
+            }
+        }
     }
 }
 
