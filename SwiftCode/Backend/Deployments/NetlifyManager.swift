@@ -18,23 +18,26 @@ final class NetlifyManager {
         }
 
         do {
-            logHandler("Preparing project files for upload...")
+            logHandler("Preparing project files")
+
+            logHandler("Creating project archive")
             let zipURL = try await createProjectZip(project: project)
             defer { try? FileManager.default.removeItem(at: zipURL) }
 
-            logHandler("Checking for existing site or creating a new one...")
+            logHandler("Identifying Netlify site...")
             let siteId = try await getOrCreateSite(project: project, token: token, logHandler: logHandler)
 
-            logHandler("Uploading ZIP to Netlify (Site ID: \(siteId))...")
+            logHandler("Uploading archive to deployment service")
             let deployId = try await uploadZip(siteId: siteId, zipURL: zipURL, token: token)
 
-            logHandler("Deployment queued (ID: \(deployId)). Waiting for processing...")
+            logHandler("Deployment started")
+            logHandler("Waiting for deployment status")
             let finalStatus = try await pollDeploymentStatus(deployId: deployId, token: token, logHandler: logHandler)
 
             if finalStatus == "ready" {
                 let siteInfo = try await getSiteInfo(siteId: siteId, token: token)
                 let siteURL = domain != nil ? "https://\(domain!)" : siteInfo.url
-                logHandler("Deployment successful! Live at \(siteURL)")
+                logHandler("Deployment successful")
                 return DeploymentResult(success: true, url: siteURL, errorMessage: nil)
             } else {
                 return DeploymentResult(success: false, url: nil, errorMessage: "Netlify deployment failed with status: \(finalStatus)")
@@ -49,7 +52,7 @@ final class NetlifyManager {
         let projectDir = await project.directoryURL
         let zipURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(project.name)_\(UUID().uuidString).zip")
 
-        // Use ZIPFoundation to create the archive
+        // Use ZIPFoundation to create the archive natively
         try FileManager.default.zipItem(at: projectDir, to: zipURL, shouldKeepParent: false)
 
         return zipURL
@@ -67,10 +70,11 @@ final class NetlifyManager {
         }
 
         let sites = try JSONDecoder().decode([NetlifySite].self, from: data)
-        let siteName = project.name.lowercased().replacingOccurrences(of: " ", with: "-")
+        let siteName = project.name.lowercased()
+            .replacingOccurrences(of: " ", with: "-")
+            .replacingOccurrences(of: ".", with: "-")
 
         if let existingSite = sites.first(where: { $0.name == siteName || $0.custom_domain == siteName }) {
-            logHandler("Using existing site: \(existingSite.name)")
             return existingSite.id
         }
 
@@ -84,14 +88,31 @@ final class NetlifyManager {
         createRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (createData, createResponse) = try await URLSession.shared.data(for: createRequest)
-        guard let httpCreateResponse = createResponse as? HTTPURLResponse, (200...201).contains(httpCreateResponse.statusCode) else {
-            // If name is taken, Netlify might return 422. We should handle it by getting a random name if needed or reporting error.
-            let errorMsg = String(data: createData, encoding: .utf8) ?? "Unknown error"
-            throw NSError(domain: "NetlifyManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to create site: \(errorMsg)"])
+        guard let httpCreateResponse = createResponse as? HTTPURLResponse else {
+            throw NSError(domain: "NetlifyManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "Invalid response while creating site."])
         }
 
-        let newSite = try JSONDecoder().decode(NetlifySite.self, from: createData)
-        return newSite.id
+        if (200...201).contains(httpCreateResponse.statusCode) {
+            let newSite = try JSONDecoder().decode(NetlifySite.self, from: createData)
+            return newSite.id
+        } else {
+            // If the name is taken, create a site with a random name
+            logHandler("Site name '\(siteName)' taken, creating site with auto-generated name...")
+            var fallbackRequest = URLRequest(url: sitesURL)
+            fallbackRequest.httpMethod = "POST"
+            fallbackRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            fallbackRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            // Empty body for auto-generated name
+            fallbackRequest.httpBody = try JSONSerialization.data(withJSONObject: [:] as [String: Any])
+
+            let (fallbackData, fallbackResponse) = try await URLSession.shared.data(for: fallbackRequest)
+            guard let httpFallbackResponse = fallbackResponse as? HTTPURLResponse, (200...201).contains(httpFallbackResponse.statusCode) else {
+                let errorMsg = String(data: fallbackData, encoding: .utf8) ?? "Unknown error"
+                throw NSError(domain: "NetlifyManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to create site: \(errorMsg)"])
+            }
+            let fallbackSite = try JSONDecoder().decode(NetlifySite.self, from: fallbackData)
+            return fallbackSite.id
+        }
     }
 
     private func uploadZip(siteId: String, zipURL: URL, token: String) async throws -> String {
@@ -107,7 +128,7 @@ final class NetlifyManager {
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, (200...201).contains(httpResponse.statusCode) else {
             let errorMsg = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw NSError(domain: "NetlifyManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to upload ZIP: \(errorMsg)"])
+            throw NSError(domain: "NetlifyManager", code: 4, userInfo: [NSLocalizedDescriptionKey: "Failed to upload ZIP: \(errorMsg)"])
         }
 
         let deploy = try JSONDecoder().decode(NetlifyDeploy.self, from: data)
@@ -117,7 +138,7 @@ final class NetlifyManager {
     private func pollDeploymentStatus(deployId: String, token: String, logHandler: @escaping (String) -> Void) async throws -> String {
         let deployURL = baseURL.appendingPathComponent("deploys/\(deployId)")
 
-        for i in 1...30 { // Poll for 5 minutes (10s intervals)
+        for i in 1...60 { // Poll for 10 minutes (10s intervals)
             var request = URLRequest(url: deployURL)
             request.httpMethod = "GET"
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -125,7 +146,7 @@ final class NetlifyManager {
             let (data, response) = try await URLSession.shared.data(for: request)
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 let deploy = try JSONDecoder().decode(NetlifyDeploy.self, from: data)
-                logHandler("Status (\(i)): \(deploy.state)")
+                logHandler("Status: \(deploy.state)")
                 if deploy.state == "ready" { return "ready" }
                 if ["error", "failed"].contains(deploy.state) { return deploy.state }
             }
@@ -143,7 +164,7 @@ final class NetlifyManager {
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-            throw NSError(domain: "NetlifyManager", code: 4, userInfo: [NSLocalizedDescriptionKey: "Failed to fetch site info."])
+            throw NSError(domain: "NetlifyManager", code: 5, userInfo: [NSLocalizedDescriptionKey: "Failed to fetch site info."])
         }
 
         return try JSONDecoder().decode(NetlifySite.self, from: data)

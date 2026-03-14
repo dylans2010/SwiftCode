@@ -121,41 +121,10 @@ actor BinaryManager {
         arguments: [String],
         workingDirectory: String?
     ) async throws -> BinaryExecutionResult {
-        #if os(macOS)
-        return try await withCheckedThrowingContinuation { continuation in
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: executablePath)
-            process.arguments = arguments
-            if let workingDirectory {
-                process.currentDirectoryURL = URL(fileURLWithPath: workingDirectory)
-            }
-
-            let stdoutPipe = Pipe()
-            let stderrPipe = Pipe()
-            process.standardOutput = stdoutPipe
-            process.standardError = stderrPipe
-
-            process.terminationHandler = { task in
-                let stdout = String(data: stdoutPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                let stderr = String(data: stderrPipe.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
-                continuation.resume(returning: BinaryExecutionResult(
-                    command: ([executablePath] + arguments).joined(separator: " "),
-                    stdout: stdout,
-                    stderr: stderr,
-                    exitCode: task.terminationStatus
-                ))
-            }
-
-            do {
-                try process.run()
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
-        #else
+        // iOS/iPadOS do not support subprocess execution.
+        // Return a clear error explaining that CLI tools are only available on macOS.
         throw NSError(domain: "BinaryManager", code: 501, userInfo: [
-            NSLocalizedDescriptionKey: "Subprocess execution is not supported on this platform."
+            NSLocalizedDescriptionKey: "Command line tools (including git, npm, and xcodebuild) are not supported on iOS/iPadOS. Please use the integrated API-based features instead."
         ])
-        #endif
     }
 }

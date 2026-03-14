@@ -19,26 +19,26 @@ final class GitHubPagesManager {
         let token = DeploymentKeychainManager.shared.retrieveKey(service: .github)
 
         do {
+            logHandler("Preparing project files")
             logHandler("Checking GitHub Pages configuration for \(owner)/\(repo)...")
             let pagesInfo = try? await getPagesInfo(owner: owner, repo: repo, token: token)
 
             if pagesInfo == nil {
                 logHandler("GitHub Pages not enabled. Enabling now...")
                 try await enablePages(owner: owner, repo: repo, token: token, logHandler: logHandler)
-            } else {
-                logHandler("GitHub Pages is already enabled.")
             }
 
             logHandler("Ensuring Pages workflow exists...")
             try await ensurePagesWorkflow(project: project, owner: owner, repo: repo, token: token, logHandler: logHandler)
 
-            logHandler("Waiting for GitHub Actions to trigger and complete...")
+            logHandler("Deployment started")
+            logHandler("Waiting for deployment status")
             let finalStatus = try await pollDeploymentStatus(owner: owner, repo: repo, token: token, logHandler: logHandler)
 
             if finalStatus == "succeeded" {
                 let finalPagesInfo = try await getPagesInfo(owner: owner, repo: repo, token: token)
                 let siteURL = domain != nil ? "https://\(domain!)" : finalPagesInfo.htmlUrl
-                logHandler("Deployment successful! Live at \(siteURL)")
+                logHandler("Deployment successful")
                 return DeploymentResult(success: true, url: siteURL, errorMessage: nil)
             } else {
                 return DeploymentResult(success: false, url: nil, errorMessage: "GitHub Pages deployment failed or timed out.")
@@ -96,10 +96,9 @@ final class GitHubPagesManager {
     private func ensurePagesWorkflow(project: Project, owner: String, repo: String, token: String?, logHandler: @escaping (String) -> Void) async throws {
         let path = ".github/workflows/pages.yml"
 
-        // Check if workflow already exists
+        // Check if workflow already exists using GitHubService (API based)
         let existingSHA = try? await GitHubService.shared.getFileSHA(owner: owner, repo: repo, path: path, branch: "main")
         if existingSHA != nil {
-            logHandler("Pages workflow already exists.")
             return
         }
 
@@ -142,6 +141,7 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 """
+        // Push file using GitHubService (API based)
         try await GitHubService.shared.pushFile(
             owner: owner,
             repo: repo,
@@ -184,11 +184,9 @@ jobs:
             if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                 let deployments = try JSONDecoder().decode(GitHubPagesDeploymentsResponse.self, from: data)
                 if let latest = deployments.deployments.first {
-                    logHandler("Latest Deployment Status (\(i)): \(latest.status ?? "unknown")")
+                    logHandler("Status: \(latest.status ?? "unknown")")
                     if latest.status == "succeed" { return "succeeded" }
                     if ["fail", "cancel"].contains(latest.status) { return "failed" }
-                } else {
-                    logHandler("Waiting for deployment to start...")
                 }
             }
 
