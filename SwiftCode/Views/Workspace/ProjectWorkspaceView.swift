@@ -47,6 +47,7 @@ struct ProjectWorkspaceView: View {
     @State private var showAssetManager = false
     @State private var showDebugTools = false
     @State private var showProjectTemplates = false
+    @State private var showDeployments = false
     @State private var showAllToolsSheet = false
 
     var body: some View {
@@ -242,6 +243,12 @@ struct ProjectWorkspaceView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showDeployments) {
+            DeploymentsView()
+                .environmentObject(projectManager)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
         .sheet(isPresented: $showAllToolsSheet) {
             ToolbarExpandedPanelView(isPresented: $showAllToolsSheet)
         }
@@ -347,6 +354,7 @@ struct ProjectWorkspaceView: View {
         case .workspaceProfiles: showWorkspaceProfiles = true
         case .assetManager: showAssetManager = true
         case .debugTools: showDebugTools = true
+        case .deployments: showDeployments = true
         }
     }
 

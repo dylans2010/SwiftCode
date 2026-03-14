@@ -349,10 +349,16 @@ struct GeneralSettingsView: View {
     // Quick Setup section state
     @State private var openRouterKey: String = ""
     @State private var githubToken: String = ""
+    @State private var netlifyToken: String = ""
+    @State private var vercelToken: String = ""
     @State private var showOpenRouterKey = false
     @State private var showGitHubToken = false
+    @State private var showNetlifyToken = false
+    @State private var showVercelToken = false
     @State private var keySaved = false
     @State private var tokenSaved = false
+    @State private var netlifyTokenSaved = false
+    @State private var vercelTokenSaved = false
     @State private var showExtensions = false
     @State private var showChooseModel = false
 
@@ -370,6 +376,7 @@ struct GeneralSettingsView: View {
                 fileNavigatorCustomizationSection
                 themesSection
                 gitHubSection
+                deploymentKeysSection
                 agentConnectionsSection
                 skillsSection
                 coreMLSection
@@ -378,7 +385,9 @@ struct GeneralSettingsView: View {
             }
             .onAppear {
                 openRouterKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey) ?? ""
-                githubToken = KeychainService.shared.get(forKey: KeychainService.githubToken) ?? ""
+                githubToken = DeploymentKeychainManager.shared.retrieveKey(service: .github) ?? ""
+                netlifyToken = DeploymentKeychainManager.shared.retrieveKey(service: .netlify) ?? ""
+                vercelToken = DeploymentKeychainManager.shared.retrieveKey(service: .vercel) ?? ""
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -639,6 +648,138 @@ struct GeneralSettingsView: View {
             Label("GitHub & Git", systemImage: "arrow.triangle.2.circlepath")
         } footer: {
             Text("Configure your GitHub token, Git identity, and default repository. These settings are shared across all projects.")
+        }
+    }
+
+    private var deploymentKeysSection: some View {
+        Section {
+            // Netlify Token
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Label("Netlify API Token", systemImage: "cloud.fill")
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                    Button { showNetlifyToken.toggle() } label: {
+                        Image(systemName: showNetlifyToken ? "eye.slash" : "eye")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if showNetlifyToken {
+                    TextField("Netlify Token", text: $netlifyToken)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .font(.system(.body, design: .monospaced))
+                        .textFieldStyle(.roundedBorder)
+
+                    Button {
+                        DeploymentKeychainManager.shared.storeKey(service: .netlify, key: netlifyToken)
+                        netlifyTokenSaved = true
+                        showNetlifyToken = false
+                        Task {
+                            try? await Task.sleep(nanoseconds: 2_000_000_000)
+                            netlifyTokenSaved = false
+                        }
+                    } label: {
+                        Label(netlifyTokenSaved ? "Saved!" : "Save Netlify Token",
+                              systemImage: netlifyTokenSaved ? "checkmark.circle.fill" : "key.fill")
+                            .foregroundStyle(netlifyTokenSaved ? .green : .orange)
+                    }
+                } else if !netlifyToken.isEmpty {
+                    Text("Configured ✓")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+            }
+            .padding(.vertical, 4)
+
+            // Vercel Token
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Label("Vercel API Token", systemImage: "triangle.fill")
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                    Button { showVercelToken.toggle() } label: {
+                        Image(systemName: showVercelToken ? "eye.slash" : "eye")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if showVercelToken {
+                    TextField("Vercel Token", text: $vercelToken)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .font(.system(.body, design: .monospaced))
+                        .textFieldStyle(.roundedBorder)
+
+                    Button {
+                        DeploymentKeychainManager.shared.storeKey(service: .vercel, key: vercelToken)
+                        vercelTokenSaved = true
+                        showVercelToken = false
+                        Task {
+                            try? await Task.sleep(nanoseconds: 2_000_000_000)
+                            vercelTokenSaved = false
+                        }
+                    } label: {
+                        Label(vercelTokenSaved ? "Saved!" : "Save Vercel Token",
+                              systemImage: vercelTokenSaved ? "checkmark.circle.fill" : "key.fill")
+                            .foregroundStyle(vercelTokenSaved ? .green : .orange)
+                    }
+                } else if !vercelToken.isEmpty {
+                    Text("Configured ✓")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+            }
+            .padding(.vertical, 4)
+
+            // GitHub Token (Re-using the one from quick setup for consistency)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Label("GitHub Token", systemImage: "chevron.left.forwardslash.chevron.right")
+                        .font(.subheadline.weight(.medium))
+                    Spacer()
+                    Button { showGitHubToken.toggle() } label: {
+                        Image(systemName: showGitHubToken ? "eye.slash" : "eye")
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if showGitHubToken {
+                    TextField("GitHub Token", text: $githubToken)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .font(.system(.body, design: .monospaced))
+                        .textFieldStyle(.roundedBorder)
+
+                    Button {
+                        DeploymentKeychainManager.shared.storeKey(service: .github, key: githubToken)
+                        tokenSaved = true
+                        showGitHubToken = false
+                        Task {
+                            try? await Task.sleep(nanoseconds: 2_000_000_000)
+                            tokenSaved = false
+                        }
+                    } label: {
+                        Label(tokenSaved ? "Saved!" : "Save GitHub Token",
+                              systemImage: tokenSaved ? "checkmark.circle.fill" : "key.fill")
+                            .foregroundStyle(tokenSaved ? .green : .orange)
+                    }
+                } else if !githubToken.isEmpty {
+                    Text("Configured ✓")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+            }
+            .padding(.vertical, 4)
+
+        } header: {
+            Label("Deployment Keys", systemImage: "key.horizontal.fill")
+        } footer: {
+            Text("These tokens are used for automated deployments to Netlify, Vercel, and GitHub Pages.")
         }
     }
 

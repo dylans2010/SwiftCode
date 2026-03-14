@@ -134,6 +134,8 @@ final class ToolbarActionManager {
             return .assetManager
         case "debug_tools":
             return .debugTools
+        case "deployments":
+            return .deployments
 
         default:
             return nil
