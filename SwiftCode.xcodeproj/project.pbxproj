@@ -31,6 +31,7 @@ AA00001000000000000000DA /* ProjectWorkspaceView.swift in Sources */ = {isa = PB
 AA00001000000000000000EA /* CodeEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000000EB /* CodeEditorView.swift */; };
 AA00001000000000000000FA /* FileNavigatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00001000000000000000FB /* FileNavigatorView.swift */; };
 AA000010000000000000010A /* AIAssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000010B /* AIAssistantView.swift */; };
+AA0000100000000000000F7B /* LLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000100000000000000F7A /* LLMService.swift */; };
 AA000010000000000000011A /* GitHubIntegrationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000011B /* GitHubIntegrationView.swift */; };
 AA000010000000000000012A /* BuildStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000012B /* BuildStatusView.swift */; };
 AA000010000000000000013A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000013B /* SettingsView.swift */; };
@@ -196,6 +197,7 @@ AA000010000000000000017B /* CIBuildView.swift */ = {isa = PBXFileReference; last
 AA000010000000000000018B /* FileImporterRepresentableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileImporterRepresentableView.swift; sourceTree = "<group>"; };
 AA000010000000000000019B /* AgentTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTool.swift; sourceTree = "<group>"; };
 AA00001000000000000001AB /* AgentToolService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentToolService.swift; sourceTree = "<group>"; };
+AA0000100000000000000F7A /* LLMService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMService.swift; sourceTree = "<group>"; };
 AA00001000000000000001BB /* AgentInterfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentInterfaceView.swift; sourceTree = "<group>"; };
 AA00001000000000000002BB /* CodeIndex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeIndex.swift; sourceTree = "<group>"; };
 AA00001000000000000002CB /* ToolbarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarItem.swift; sourceTree = "<group>"; };
@@ -618,6 +620,7 @@ sourceTree = "<group>";
 AA00001000000000000006FF /* AI */ = {
 isa = PBXGroup;
 children = (
+				AA0000100000000000000F7A /* LLMService.swift */,
 				AA00001000000000000001BB /* AgentInterfaceView.swift */,
 				AA0000100000000000000F6B /* ChooseModelView.swift */,
 			);
@@ -992,6 +995,7 @@ files = (
 				AA000010000000000000018A /* FileImporterRepresentableView.swift in Sources */,
 				AA000010000000000000019A /* AgentTool.swift in Sources */,
 				AA00001000000000000001AA /* AgentToolService.swift in Sources */,
+				AA0000100000000000000F7B /* LLMService.swift in Sources */,
 				AA00001000000000000001BA /* AgentInterfaceView.swift in Sources */,
 				AA00001000000000000002BA /* CodeIndex.swift in Sources */,
 				AA00001000000000000002CA /* ToolbarItem.swift in Sources */,
