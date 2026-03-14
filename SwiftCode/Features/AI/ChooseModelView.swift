@@ -21,6 +21,8 @@ struct ChooseModelView: View {
         case anthropic = "Anthropic"
         case openai = "OpenAI"
         case google = "Gemini"
+        case mistral = "Mistral"
+        case qwen = "Qwen"
 
         var id: String { self.rawValue }
 
@@ -30,6 +32,8 @@ struct ChooseModelView: View {
             case .anthropic: return "anthropic_api_key"
             case .openai: return "openai_api_key"
             case .google: return "gemini_api_key"
+            case .mistral: return "mistral_api_key"
+            case .qwen: return "qwen_api_key"
             }
         }
     }

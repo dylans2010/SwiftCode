@@ -26,29 +26,35 @@ final class DeploymentTargets {
 
     /// Prepares the repository for deployment by staging, committing, and pushing changes using GitHub API.
     func prepareRepositoryForDeployment(project: Project, logHandler: @escaping (String) -> Void) async throws -> Bool {
-        logHandler("Preparing repository for deployment via GitHub API...")
+        logHandler("Initializing repository preparation workflow...")
 
         guard let repoURL = project.githubRepo, !repoURL.isEmpty else {
-            logHandler("Error: Deployment requires a connected GitHub repository.")
-            throw NSError(domain: "Deployment", code: 401, userInfo: [NSLocalizedDescriptionKey: "Deployment requires a connected GitHub repository."])
+            logHandler("CRITICAL ERROR: No GitHub repository is linked to this project.")
+            logHandler("Please go to Project Settings and connect a GitHub repository before deploying.")
+            throw NSError(domain: "Deployment", code: 401, userInfo: [NSLocalizedDescriptionKey: "No GitHub repository connected. Please link a repository in Project Settings before starting deployment."])
         }
 
+        logHandler("Validating repository: \(repoURL)")
         let (owner, repo) = try GitHubRepositoryManager.shared.parseRepoURL(repoURL)
 
         do {
-            logHandler("Pushing project files to GitHub (\(owner)/\(repo))...")
+            logHandler("Connecting to GitHub Data API for \(owner)/\(repo)...")
+            logHandler("Scanning project directory for changes...")
+
+            logHandler("Pushing complete project codebase to GitHub...")
             try await GitHubService.shared.pushProject(
                 project,
                 owner: owner,
                 repo: repo,
-                commitMessage: "Prepare for deployment",
+                commitMessage: "Prepare for deployment: Sync codebase",
                 branch: "main"
             )
-            logHandler("Repository successfully pushed to GitHub.")
+            logHandler("✓ Codebase successfully synchronized with remote repository.")
             return true
         } catch {
-            logHandler("Failed to push changes via API: \(error.localizedDescription)")
-            return false
+            logHandler("FAILED to push changes to GitHub: \(error.localizedDescription)")
+            logHandler("Suggestion: Check your GitHub Personal Access Token permissions (needs 'repo' scope).")
+            throw error
         }
     }
 

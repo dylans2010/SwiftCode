@@ -19,32 +19,42 @@ final class GitHubPagesManager {
         let token = DeploymentKeychainManager.shared.retrieveKey(service: .github)
 
         do {
-            logHandler("Preparing project files")
-            logHandler("Checking GitHub Pages configuration for \(owner)/\(repo)...")
+            logHandler("Starting GitHub Pages deployment workflow for project: \(project.name)")
+            logHandler("Target Repository: \(owner)/\(repo)")
+
+            logHandler("Checking existing GitHub Pages configuration...")
             let pagesInfo = try? await getPagesInfo(owner: owner, repo: repo, token: token)
 
             if pagesInfo == nil {
-                logHandler("GitHub Pages not enabled. Enabling now...")
+                logHandler("GitHub Pages is not currently enabled for this repository.")
+                logHandler("Enabling GitHub Pages via API (build_type: workflow)...")
                 try await enablePages(owner: owner, repo: repo, token: token, logHandler: logHandler)
+                logHandler("✓ GitHub Pages enabled successfully.")
+            } else {
+                logHandler("✓ GitHub Pages is already enabled.")
             }
 
-            logHandler("Ensuring Pages workflow exists...")
+            logHandler("Verifying GitHub Actions deployment workflow (.github/workflows/pages.yml)...")
             try await ensurePagesWorkflow(project: project, owner: owner, repo: repo, token: token, logHandler: logHandler)
 
-            logHandler("Deployment started")
-            logHandler("Waiting for deployment status")
+            logHandler("Entering deployment monitoring phase...")
+            logHandler("Waiting for GitHub Actions to trigger and complete deployment...")
             let finalStatus = try await pollDeploymentStatus(owner: owner, repo: repo, token: token, logHandler: logHandler)
 
             if finalStatus == "succeeded" {
+                logHandler("Fetching final site metadata...")
                 let finalPagesInfo = try await getPagesInfo(owner: owner, repo: repo, token: token)
                 let siteURL = domain != nil ? "https://\(domain!)" : finalPagesInfo.htmlUrl
-                logHandler("Deployment successful")
+                logHandler("✓ DEPLOYMENT SUCCESSFUL: \(siteURL)")
                 return DeploymentResult(success: true, url: siteURL, errorMessage: nil)
             } else {
+                logHandler("CRITICAL ERROR: GitHub Pages deployment failed or timed out.")
+                logHandler("Polling returned status: \(finalStatus)")
                 return DeploymentResult(success: false, url: nil, errorMessage: "GitHub Pages deployment failed or timed out.")
             }
         } catch {
-            logHandler("Error: \(error.localizedDescription)")
+            logHandler("DEPLOYMENT FAILED: \(error.localizedDescription)")
+            logHandler("Detailed Error Context: \(error)")
             return DeploymentResult(success: false, url: nil, errorMessage: error.localizedDescription)
         }
     }

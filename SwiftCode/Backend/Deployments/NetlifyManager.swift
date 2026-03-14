@@ -18,32 +18,43 @@ final class NetlifyManager {
         }
 
         do {
-            logHandler("Preparing project files")
+            logHandler("Starting Netlify deployment workflow for project: \(project.name)")
+            logHandler("Preparing project files for archiving...")
 
-            logHandler("Creating project archive")
+            logHandler("Creating ZIP archive of project files using ZIPFoundation...")
             let zipURL = try await createProjectZip(project: project)
-            defer { try? FileManager.default.removeItem(at: zipURL) }
+            defer {
+                logHandler("Cleaning up temporary archive...")
+                try? FileManager.default.removeItem(at: zipURL)
+            }
+            logHandler("✓ Project archive created successfully.")
 
-            logHandler("Identifying Netlify site...")
+            logHandler("Resolving Netlify site target...")
             let siteId = try await getOrCreateSite(project: project, token: token, logHandler: logHandler)
+            logHandler("✓ Target Site ID identified: \(siteId)")
 
-            logHandler("Uploading archive to deployment service")
+            logHandler("Initiating secure upload to Netlify API...")
             let deployId = try await uploadZip(siteId: siteId, zipURL: zipURL, token: token)
+            logHandler("✓ Upload complete. Deploy ID: \(deployId)")
 
-            logHandler("Deployment started")
-            logHandler("Waiting for deployment status")
+            logHandler("Entering deployment monitoring phase...")
+            logHandler("Waiting for Netlify to process and deploy files...")
             let finalStatus = try await pollDeploymentStatus(deployId: deployId, token: token, logHandler: logHandler)
 
             if finalStatus == "ready" {
+                logHandler("Fetching final site metadata...")
                 let siteInfo = try await getSiteInfo(siteId: siteId, token: token)
                 let siteURL = domain != nil ? "https://\(domain!)" : siteInfo.url
-                logHandler("Deployment successful")
+                logHandler("✓ DEPLOYMENT SUCCESSFUL: \(siteURL)")
                 return DeploymentResult(success: true, url: siteURL, errorMessage: nil)
             } else {
+                logHandler("CRITICAL ERROR: Netlify deployment failed.")
+                logHandler("Terminal Status: \(finalStatus)")
                 return DeploymentResult(success: false, url: nil, errorMessage: "Netlify deployment failed with status: \(finalStatus)")
             }
         } catch {
-            logHandler("Error: \(error.localizedDescription)")
+            logHandler("DEPLOYMENT FAILED: \(error.localizedDescription)")
+            logHandler("Detailed Error Context: \(error)")
             return DeploymentResult(success: false, url: nil, errorMessage: error.localizedDescription)
         }
     }

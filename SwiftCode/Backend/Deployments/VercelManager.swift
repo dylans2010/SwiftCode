@@ -17,14 +17,17 @@ final class VercelManager {
         }
 
         do {
-            logHandler("Preparing project files")
+            logHandler("Starting Vercel deployment workflow for project: \(project.name)")
+            logHandler("Detecting project framework and build configuration...")
             let framework = await DeploymentTargets.shared.detectFramework(project: project)
+            logHandler("✓ Framework detected: \(framework.name)")
 
-            logHandler("Scanning files for Vercel deployment...")
+            logHandler("Scanning files for Vercel deployment (base64 payload prep)...")
             let files = try await prepareFiles(project: project)
+            logHandler("✓ Scanned \(files.count) files for upload.")
 
-            logHandler("Uploading archive to deployment service")
-            logHandler("Deployment started")
+            logHandler("Initiating Vercel API deployment request (v13/deployments)...")
+            logHandler("Project Name: \(project.name.lowercased())")
             let deployment = try await createDeployment(
                 project: project,
                 files: files,
@@ -32,19 +35,24 @@ final class VercelManager {
                 token: token,
                 logHandler: logHandler
             )
+            logHandler("✓ Deployment request accepted. Deployment ID: \(deployment.id)")
 
-            logHandler("Waiting for deployment status")
+            logHandler("Entering real-time monitoring phase (polling Vercel API)...")
             let finalStatus = try await pollDeploymentStatus(deploymentId: deployment.id, token: token, logHandler: logHandler)
 
             if finalStatus == "READY" {
+                logHandler("Resolving production URL...")
                 let siteURL = domain != nil ? "https://\(domain!)" : "https://\(deployment.url)"
-                logHandler("Deployment successful")
+                logHandler("✓ DEPLOYMENT SUCCESSFUL: \(siteURL)")
                 return DeploymentResult(success: true, url: siteURL, errorMessage: nil)
             } else {
+                logHandler("CRITICAL ERROR: Vercel deployment failed.")
+                logHandler("Final State: \(finalStatus)")
                 return DeploymentResult(success: false, url: nil, errorMessage: "Vercel deployment failed with status: \(finalStatus)")
             }
         } catch {
-            logHandler("Error: \(error.localizedDescription)")
+            logHandler("DEPLOYMENT FAILED: \(error.localizedDescription)")
+            logHandler("Detailed Error Context: \(error)")
             return DeploymentResult(success: false, url: nil, errorMessage: error.localizedDescription)
         }
     }

@@ -379,7 +379,7 @@ final class AgentController: ObservableObject {
             do {
                 var fullResponse = ""
 
-                try await OpenRouterService.shared.streamChat(
+                try await LLMService.shared.streamChat(
                     messages: conversationHistory,
                     model: selectedModel,
                     systemPrompt: systemPrompt
