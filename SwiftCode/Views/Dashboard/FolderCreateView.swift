@@ -84,8 +84,8 @@ struct FolderCreateView: View {
                                 .frame(width: 44, height: 44)
                                 .background(
                                     useGradient ?
-                                    AnyView(LinearGradient(colors: [gradientColor1.opacity(0.2), gradientColor2.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)) :
-                                    AnyView(selectedColor.opacity(0.15)),
+                                    AnyShapeStyle(LinearGradient(colors: [gradientColor1.opacity(0.2), gradientColor2.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)) :
+                                    AnyShapeStyle(selectedColor.opacity(0.15)),
                                     in: RoundedRectangle(cornerRadius: 12)
                                 )
 
