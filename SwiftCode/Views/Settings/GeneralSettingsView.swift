@@ -6,12 +6,16 @@ import Foundation
 enum APIKeyProvider: String, Codable, CaseIterable {
     case openRouter = "OpenRouter"
     case gitHub = "GitHub"
+    case netlify = "Netlify"
+    case vercel = "Vercel"
     case custom = "Custom"
 
     var icon: String {
         switch self {
         case .openRouter: return "cpu"
         case .gitHub: return "chevron.left.forwardslash.chevron.right"
+        case .netlify: return "cloud.fill"
+        case .vercel: return "triangle.fill"
         case .custom: return "key.fill"
         }
     }
@@ -20,6 +24,8 @@ enum APIKeyProvider: String, Codable, CaseIterable {
         switch self {
         case .openRouter: return .orange
         case .gitHub: return .primary
+        case .netlify: return .teal
+        case .vercel: return .primary
         case .custom: return .cyan
         }
     }
@@ -103,7 +109,11 @@ final class APIKeyManager: ObservableObject {
         case .openRouter:
             KeychainService.shared.set(value, forKey: KeychainService.openRouterAPIKey)
         case .gitHub:
-            KeychainService.shared.set(value, forKey: KeychainService.githubToken)
+            DeploymentKeychainManager.shared.storeKey(service: .github, key: value)
+        case .netlify:
+            DeploymentKeychainManager.shared.storeKey(service: .netlify, key: value)
+        case .vercel:
+            DeploymentKeychainManager.shared.storeKey(service: .vercel, key: value)
         case .custom:
             break
         }
@@ -347,18 +357,6 @@ struct GeneralSettingsView: View {
     @State private var showCreditsSheet = false
 
     // Quick Setup section state
-    @State private var openRouterKey: String = ""
-    @State private var githubToken: String = ""
-    @State private var netlifyToken: String = ""
-    @State private var vercelToken: String = ""
-    @State private var showOpenRouterKey = false
-    @State private var showGitHubToken = false
-    @State private var showNetlifyToken = false
-    @State private var showVercelToken = false
-    @State private var keySaved = false
-    @State private var tokenSaved = false
-    @State private var netlifyTokenSaved = false
-    @State private var vercelTokenSaved = false
     @State private var showExtensions = false
     @State private var showChooseModel = false
 
@@ -376,18 +374,11 @@ struct GeneralSettingsView: View {
                 fileNavigatorCustomizationSection
                 themesSection
                 gitHubSection
-                deploymentKeysSection
                 agentConnectionsSection
                 skillsSection
                 coreMLSection
                 appManagementSection
                 aboutSection
-            }
-            .onAppear {
-                openRouterKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey) ?? ""
-                githubToken = DeploymentKeychainManager.shared.retrieveKey(service: .github) ?? ""
-                netlifyToken = DeploymentKeychainManager.shared.retrieveKey(service: .netlify) ?? ""
-                vercelToken = DeploymentKeychainManager.shared.retrieveKey(service: .vercel) ?? ""
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -449,86 +440,6 @@ struct GeneralSettingsView: View {
 
     private var quickSetupSection: some View {
         Section {
-            // OpenRouter API Key
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("OpenRouter API Key")
-                        .font(.subheadline.weight(.medium))
-                    if openRouterKey.isEmpty {
-                        Text("Not Configured").font(.caption).foregroundStyle(.red)
-                    } else {
-                        Text("Configured ✓").font(.caption).foregroundStyle(.green)
-                    }
-                }
-                Spacer()
-                Button {
-                    showOpenRouterKey.toggle()
-                } label: {
-                    Image(systemName: showOpenRouterKey ? "eye.slash" : "eye")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-            if showOpenRouterKey {
-                TextField("sk-or-xxxxxxxxxxxx", text: $openRouterKey)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .font(.system(.body, design: .monospaced))
-                Button {
-                    KeychainService.shared.set(openRouterKey, forKey: KeychainService.openRouterAPIKey)
-                    keySaved = true
-                    showOpenRouterKey = false
-                    Task {
-                        try? await Task.sleep(nanoseconds: 2_000_000_000)
-                        keySaved = false
-                    }
-                } label: {
-                    Label(keySaved ? "Saved!" : "Save Key",
-                          systemImage: keySaved ? "checkmark.circle.fill" : "key.fill")
-                        .foregroundStyle(keySaved ? .green : .orange)
-                }
-            }
-
-            // GitHub Token
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("GitHub Token")
-                        .font(.subheadline.weight(.medium))
-                    if githubToken.isEmpty {
-                        Text("Not Configured").font(.caption).foregroundStyle(.secondary)
-                    } else {
-                        Text("Configured ✓").font(.caption).foregroundStyle(.green)
-                    }
-                }
-                Spacer()
-                Button {
-                    showGitHubToken.toggle()
-                } label: {
-                    Image(systemName: showGitHubToken ? "eye.slash" : "eye")
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
-            if showGitHubToken {
-                TextField("ghp_xxxxxxxxxxxx", text: $githubToken)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .font(.system(.body, design: .monospaced))
-                Button {
-                    KeychainService.shared.set(githubToken, forKey: KeychainService.githubToken)
-                    tokenSaved = true
-                    showGitHubToken = false
-                    Task {
-                        try? await Task.sleep(nanoseconds: 2_000_000_000)
-                        tokenSaved = false
-                    }
-                } label: {
-                    Label(tokenSaved ? "Saved!" : "Save Token",
-                          systemImage: tokenSaved ? "checkmark.circle.fill" : "key.fill")
-                        .foregroundStyle(tokenSaved ? .green : .orange)
-                }
-            }
-
             // AI Model selection / validation
             Button {
                 showChooseModel = true
@@ -578,6 +489,22 @@ struct GeneralSettingsView: View {
                         .font(.caption)
                 }
             }
+
+            HStack(spacing: 15) {
+                ForEach([APIKeyProvider.openRouter, .gitHub, .netlify, .vercel], id: \.self) { provider in
+                    VStack(spacing: 4) {
+                        Image(systemName: provider.icon)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(apiKeyManager.keys.contains(where: { $0.provider == provider && $0.isDefault }) ? provider.tintColor : .secondary.opacity(0.3))
+                        Text(provider.rawValue)
+                            .font(.system(size: 8, weight: .medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.vertical, 8)
+
             if let defaultKey = apiKeyManager.keys.first(where: { $0.isDefault }) {
                 HStack {
                     Text("Active Key")
@@ -589,9 +516,9 @@ struct GeneralSettingsView: View {
                 }
             }
         } header: {
-            Label("API Keys", systemImage: "key.fill")
+            Label("API & Deployment Keys", systemImage: "key.fill")
         } footer: {
-            Text("Securely store multiple API keys. The default key is used automatically by AI services.")
+            Text("Configure keys for AI services (OpenRouter) and Deployments (GitHub, Netlify, Vercel). The default key for each service is used automatically.")
         }
     }
 
@@ -651,137 +578,6 @@ struct GeneralSettingsView: View {
         }
     }
 
-    private var deploymentKeysSection: some View {
-        Section {
-            // Netlify Token
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Label("Netlify API Token", systemImage: "cloud.fill")
-                        .font(.subheadline.weight(.medium))
-                    Spacer()
-                    Button { showNetlifyToken.toggle() } label: {
-                        Image(systemName: showNetlifyToken ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                if showNetlifyToken {
-                    TextField("Netlify Token", text: $netlifyToken)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .font(.system(.body, design: .monospaced))
-                        .textFieldStyle(.roundedBorder)
-
-                    Button {
-                        DeploymentKeychainManager.shared.storeKey(service: .netlify, key: netlifyToken)
-                        netlifyTokenSaved = true
-                        showNetlifyToken = false
-                        Task {
-                            try? await Task.sleep(nanoseconds: 2_000_000_000)
-                            netlifyTokenSaved = false
-                        }
-                    } label: {
-                        Label(netlifyTokenSaved ? "Saved!" : "Save Netlify Token",
-                              systemImage: netlifyTokenSaved ? "checkmark.circle.fill" : "key.fill")
-                            .foregroundStyle(netlifyTokenSaved ? .green : .orange)
-                    }
-                } else if !netlifyToken.isEmpty {
-                    Text("Configured ✓")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
-            }
-            .padding(.vertical, 4)
-
-            // Vercel Token
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Label("Vercel API Token", systemImage: "triangle.fill")
-                        .font(.subheadline.weight(.medium))
-                    Spacer()
-                    Button { showVercelToken.toggle() } label: {
-                        Image(systemName: showVercelToken ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                if showVercelToken {
-                    TextField("Vercel Token", text: $vercelToken)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .font(.system(.body, design: .monospaced))
-                        .textFieldStyle(.roundedBorder)
-
-                    Button {
-                        DeploymentKeychainManager.shared.storeKey(service: .vercel, key: vercelToken)
-                        vercelTokenSaved = true
-                        showVercelToken = false
-                        Task {
-                            try? await Task.sleep(nanoseconds: 2_000_000_000)
-                            vercelTokenSaved = false
-                        }
-                    } label: {
-                        Label(vercelTokenSaved ? "Saved!" : "Save Vercel Token",
-                              systemImage: vercelTokenSaved ? "checkmark.circle.fill" : "key.fill")
-                            .foregroundStyle(vercelTokenSaved ? .green : .orange)
-                    }
-                } else if !vercelToken.isEmpty {
-                    Text("Configured ✓")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
-            }
-            .padding(.vertical, 4)
-
-            // GitHub Token (Re-using the one from quick setup for consistency)
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Label("GitHub Token", systemImage: "chevron.left.forwardslash.chevron.right")
-                        .font(.subheadline.weight(.medium))
-                    Spacer()
-                    Button { showGitHubToken.toggle() } label: {
-                        Image(systemName: showGitHubToken ? "eye.slash" : "eye")
-                            .foregroundStyle(.secondary)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                if showGitHubToken {
-                    TextField("GitHub Token", text: $githubToken)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                        .font(.system(.body, design: .monospaced))
-                        .textFieldStyle(.roundedBorder)
-
-                    Button {
-                        DeploymentKeychainManager.shared.storeKey(service: .github, key: githubToken)
-                        tokenSaved = true
-                        showGitHubToken = false
-                        Task {
-                            try? await Task.sleep(nanoseconds: 2_000_000_000)
-                            tokenSaved = false
-                        }
-                    } label: {
-                        Label(tokenSaved ? "Saved!" : "Save GitHub Token",
-                              systemImage: tokenSaved ? "checkmark.circle.fill" : "key.fill")
-                            .foregroundStyle(tokenSaved ? .green : .orange)
-                    }
-                } else if !githubToken.isEmpty {
-                    Text("Configured ✓")
-                        .font(.caption)
-                        .foregroundStyle(.green)
-                }
-            }
-            .padding(.vertical, 4)
-
-        } header: {
-            Label("Deployment Keys", systemImage: "key.horizontal.fill")
-        } footer: {
-            Text("These tokens are used for automated deployments to Netlify, Vercel, and GitHub Pages.")
-        }
-    }
 
     private var editorSection: some View {
         Section {
@@ -1050,7 +846,9 @@ struct GeneralSettingsView: View {
         }
         // 6. Clear keychain tokens
         KeychainService.shared.delete(forKey: KeychainService.openRouterAPIKey)
-        KeychainService.shared.delete(forKey: KeychainService.githubToken)
+        DeploymentKeychainManager.shared.deleteKey(service: .github)
+        DeploymentKeychainManager.shared.deleteKey(service: .netlify)
+        DeploymentKeychainManager.shared.deleteKey(service: .vercel)
         // 7. Clear Documents directory
         guard let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
         if let contents = try? FileManager.default.contentsOfDirectory(
@@ -1077,6 +875,7 @@ struct APIKeysManagementView: View {
     @StateObject private var manager = APIKeyManager.shared
 
     @State private var showAddSheet = false
+    @State private var selectedProvider: APIKeyProvider?
     @State private var editingEntry: APIKeyEntry?
     @State private var showDeleteConfirmation = false
     @State private var entryToDelete: APIKeyEntry?
@@ -1084,39 +883,63 @@ struct APIKeysManagementView: View {
     var body: some View {
         NavigationStack {
             List {
-                if manager.keys.isEmpty {
-                    ContentUnavailableView(
-                        "No API Keys",
-                        systemImage: "key.fill",
-                        description: Text("Add API keys to use with OpenRouter, GitHub, or custom services.")
-                    )
-                } else {
-                    ForEach(manager.keys) { entry in
-                        APIKeyRowView(entry: entry)
-                            .contentShape(Rectangle())
-                            .onTapGesture { editingEntry = entry }
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    entryToDelete = entry
-                                    showDeleteConfirmation = true
-                                } label: {
-                                    Label("Delete", systemImage: "trash")
-                                }
+                Section("Configured Services") {
+                    ForEach([APIKeyProvider.openRouter, .gitHub, .netlify, .vercel], id: \.self) { provider in
+                        HStack {
+                            Label {
+                                Text(provider.rawValue)
+                            } icon: {
+                                Image(systemName: provider.icon)
+                                    .foregroundStyle(provider.tintColor)
                             }
-                            .swipeActions(edge: .leading) {
-                                if !entry.isDefault {
-                                    Button {
-                                        manager.setDefault(entry)
+                            Spacer()
+                            if let defaultKey = manager.keys.first(where: { $0.provider == provider && $0.isDefault }) {
+                                Text(defaultKey.name)
+                                    .font(.caption)
+                                    .foregroundStyle(.green)
+                            } else {
+                                Button("Setup") {
+                                    selectedProvider = provider
+                                    showAddSheet = true
+                                }
+                                .font(.caption)
+                                .buttonStyle(.bordered)
+                            }
+                        }
+                    }
+                }
+
+                Section("All Keys") {
+                    if manager.keys.isEmpty {
+                        Text("No keys added yet").foregroundStyle(.secondary)
+                    } else {
+                        ForEach(manager.keys) { entry in
+                            APIKeyRowView(entry: entry)
+                                .contentShape(Rectangle())
+                                .onTapGesture { editingEntry = entry }
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        entryToDelete = entry
+                                        showDeleteConfirmation = true
                                     } label: {
-                                        Label("Set Default", systemImage: "checkmark.circle.fill")
+                                        Label("Delete", systemImage: "trash")
                                     }
-                                    .tint(.green)
                                 }
-                            }
+                                .swipeActions(edge: .leading) {
+                                    if !entry.isDefault {
+                                        Button {
+                                            manager.setDefault(entry)
+                                        } label: {
+                                            Label("Set Default", systemImage: "checkmark.circle.fill")
+                                        }
+                                        .tint(.green)
+                                    }
+                                }
+                        }
                     }
                 }
             }
-            .navigationTitle("API Keys")
+            .navigationTitle("API & Deployment Keys")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -1124,6 +947,7 @@ struct APIKeysManagementView: View {
                 }
                 ToolbarItem(placement: .primaryAction) {
                     Button {
+                        selectedProvider = nil
                         showAddSheet = true
                     } label: {
                         Image(systemName: "plus")
@@ -1131,7 +955,7 @@ struct APIKeysManagementView: View {
                 }
             }
             .sheet(isPresented: $showAddSheet) {
-                AddEditAPIKeyView(entry: nil)
+                AddEditAPIKeyView(entry: nil, provider: selectedProvider)
             }
             .sheet(item: $editingEntry) { entry in
                 AddEditAPIKeyView(entry: entry)
@@ -1200,6 +1024,7 @@ struct APIKeyRowView: View {
 
 struct AddEditAPIKeyView: View {
     let entry: APIKeyEntry?
+    let initialProvider: APIKeyProvider?
     @Environment(\.dismiss) private var dismiss
     @StateObject private var manager = APIKeyManager.shared
 
@@ -1209,10 +1034,11 @@ struct AddEditAPIKeyView: View {
     @State private var showKey = false
     @State private var saved = false
 
-    init(entry: APIKeyEntry?) {
+    init(entry: APIKeyEntry?, provider: APIKeyProvider? = nil) {
         self.entry = entry
+        self.initialProvider = provider
         _name = State(initialValue: entry?.name ?? "")
-        _provider = State(initialValue: entry?.provider ?? .openRouter)
+        _provider = State(initialValue: entry?.provider ?? provider ?? .openRouter)
         _keyValue = State(initialValue: "")
     }
 
