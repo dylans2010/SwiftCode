@@ -7,25 +7,11 @@ struct FolderCreateView: View {
     @State private var folderName = ""
     @State private var selectedSymbol = "folder.fill"
     @State private var selectedColor = Color.blue
-    @State private var symbolSearch = ""
 
     // Gradient Support
     @State private var useGradient = false
     @State private var gradientColor1 = Color.blue
     @State private var gradientColor2 = Color.purple
-
-    private let symbols: [String] = {
-        guard let url = Bundle.main.url(forResource: "sf_symbols_full", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let decoded = try? JSONDecoder().decode([String].self, from: data)
-        else { return ["folder.fill", "folder", "shippingbox.fill", "tray.full.fill"] }
-        return decoded
-    }()
-
-    private var filteredSymbols: [String] {
-        if symbolSearch.isEmpty { return Array(symbols.prefix(120)) }
-        return symbols.filter { $0.localizedCaseInsensitiveContains(symbolSearch) }.prefix(80).map { $0 }
-    }
 
     var body: some View {
         NavigationStack {
@@ -40,29 +26,6 @@ struct FolderCreateView: View {
                 Form {
                     Section("Folder Name") {
                         TextField("iOS Apps", text: $folderName)
-                    }
-
-                    Section("SF Symbol") {
-                        TextField("Search symbols", text: $symbolSearch)
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                ForEach(filteredSymbols, id: \.self) { symbol in
-                                    Button {
-                                        selectedSymbol = symbol
-                                    } label: {
-                                        Image(systemName: symbol)
-                                            .font(.title3)
-                                            .frame(width: 36, height: 36)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 10)
-                                                    .fill(selectedSymbol == symbol ? (useGradient ? gradientColor1.opacity(0.2) : selectedColor.opacity(0.2)) : Color.secondary.opacity(0.12))
-                                            )
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            .padding(.vertical, 4)
-                        }
                     }
 
                     Section("Style") {

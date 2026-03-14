@@ -31,6 +31,9 @@ struct ProjectsDashboardView: View {
     @State private var selectedFolder: ProjectFolder?
     @State private var projectToAssignFolder: Project?
     @State private var showAddToFolderSheet = false
+    @State private var showFolderRenameSheet = false
+    @State private var folderToRename: ProjectFolder?
+    @State private var folderRenameText = ""
 
     private var gridColumns: [GridItem] {
         [GridItem(.adaptive(minimum: 200, maximum: 280), spacing: 20)]
@@ -107,6 +110,10 @@ struct ProjectsDashboardView: View {
             .sheet(isPresented: $showFolderCreateView) {
                 FolderCreateView()
                     .environmentObject(folderManager)
+                    .presentationDetents([.medium])
+            }
+            .sheet(isPresented: $showFolderRenameSheet) {
+                folderRenameSheet
             }
             .sheet(isPresented: $showAddToFolderSheet) { addToFolderSheet }
             .sheet(isPresented: $showNewProjectSheet) { newProjectSheet }
@@ -310,6 +317,41 @@ struct ProjectsDashboardView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { showCreationSheet = false }
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private var folderRenameSheet: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("New Folder Name")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    TextField("Folder Name", text: $folderRenameText)
+                        .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                }
+                .padding(.horizontal)
+                Spacer()
+            }
+            .padding(.top, 32)
+            .navigationTitle("Rename Folder")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { showFolderRenameSheet = false }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Rename") {
+                        if let folder = folderToRename {
+                            folderManager.renameFolder(folder, to: folderRenameText)
+                            showFolderRenameSheet = false
+                        }
+                    }
+                    .disabled(folderRenameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
         }
@@ -758,6 +800,21 @@ struct ProjectsDashboardView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .contextMenu {
+                                Button {
+                                    folderToRename = folder
+                                    folderRenameText = folder.folderName
+                                    showFolderRenameSheet = true
+                                } label: {
+                                    Label("Rename", systemImage: "pencil")
+                                }
+
+                                Button(role: .destructive) {
+                                    folderManager.deleteFolder(folder)
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal)

@@ -76,8 +76,30 @@ struct PaywallView: View {
     private var productsSection: some View {
         VStack(spacing: 12) {
             if storeManager.products.isEmpty {
-                ProgressView()
-                    .tint(.orange)
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .tint(.orange)
+
+                    Text("Loading products...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    Button {
+                        Task {
+                            await storeManager.loadProducts()
+                        }
+                    } label: {
+                        Label("Refresh Products", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding(.vertical, 20)
+                .onAppear {
+                    // Trigger load on appear in case it hasn't started
+                    Task {
+                        await storeManager.loadProducts()
+                    }
+                }
             } else {
                 ForEach(storeManager.products) { product in
                     Button {

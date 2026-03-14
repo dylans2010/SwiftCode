@@ -542,52 +542,70 @@ struct GeneralSettingsView: View {
     }
 
     private var apiKeysSection: some View {
-        Section {
-            ForEach(APIKeyProvider.allCases, id: \.self) { provider in
-                HStack {
-                    Label {
-                        Text(provider.rawValue + (apiKeyManager.providerKeyExists(service: provider) ? " ✓" : ""))
-                            .foregroundStyle(apiKeyManager.providerKeyExists(service: provider) ? .green : .primary)
-                    } icon: {
-                        Image(systemName: provider.icon)
-                            .foregroundStyle(apiKeyManager.providerKeyExists(service: provider) ? .green : provider.tintColor)
-                    }
-                    Spacer()
-                    if let entry = apiKeyManager.keys.first(where: { $0.provider == provider }) {
-                        HStack(spacing: 8) {
-                            Text(entry.name)
-                                .font(.caption)
-                                .foregroundStyle(.green)
+        Group {
+            Section {
+                let aiProviders: [APIKeyProvider] = [.openRouter, .anthropic, .openai, .google, .mistral, .qwen]
+                ForEach(aiProviders, id: \.self) { provider in
+                    apiKeyRow(for: provider)
+                }
+            } header: {
+                Label("AI Providers", systemImage: "brain.fill")
+            } footer: {
+                Text("Configure keys for AI services like OpenRouter and Anthropic.")
+            }
 
-                            if provider == .gitHub {
-                                Button {
-                                    showGitHubConfigSheet = true
-                                } label: {
-                                    Image(systemName: "gearshape.fill")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .onTapGesture {
-                            selectedProvider = provider
-                            editingEntry = entry
-                        }
-                    } else {
-                        Button("Setup") {
-                            selectedProvider = provider
-                            showAddSheet = true
-                        }
+            Section {
+                let deploymentProviders: [APIKeyProvider] = [.gitHub, .netlify, .vercel]
+                ForEach(deploymentProviders, id: \.self) { provider in
+                    apiKeyRow(for: provider)
+                }
+            } header: {
+                Label("Deployment Providers", systemImage: "cloud.fill")
+            } footer: {
+                Text("Configure keys for Deployments (GitHub, Netlify, Vercel).")
+            }
+        }
+    }
+
+    private func apiKeyRow(for provider: APIKeyProvider) -> some View {
+        HStack {
+            Label {
+                Text(provider.rawValue + (apiKeyManager.providerKeyExists(service: provider) ? " ✓" : ""))
+                    .foregroundStyle(apiKeyManager.providerKeyExists(service: provider) ? .green : .primary)
+            } icon: {
+                Image(systemName: provider.icon)
+                    .foregroundStyle(apiKeyManager.providerKeyExists(service: provider) ? .green : provider.tintColor)
+            }
+            Spacer()
+            if let entry = apiKeyManager.keys.first(where: { $0.provider == provider }) {
+                HStack(spacing: 8) {
+                    Text(entry.name)
                         .font(.caption)
-                        .buttonStyle(.bordered)
+                        .foregroundStyle(.green)
+
+                    if provider == .gitHub {
+                        Button {
+                            showGitHubConfigSheet = true
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
+                .onTapGesture {
+                    selectedProvider = provider
+                    editingEntry = entry
+                }
+            } else {
+                Button("Setup") {
+                    selectedProvider = provider
+                    showAddSheet = true
+                }
+                .font(.caption)
+                .buttonStyle(.bordered)
             }
-        } header: {
-            Label("API & Deployment Keys", systemImage: "key.fill")
-        } footer: {
-            Text("Configure keys for AI services (OpenRouter) and Deployments (GitHub, Netlify, Vercel).")
         }
     }
 
@@ -747,17 +765,24 @@ struct GeneralSettingsView: View {
 
     private var proSection: some View {
         Section {
-            Button {
-                showPaywall = true
-            } label: {
+            if entitlementManager.isProUser {
                 HStack {
-                    Label("Upgrade to Pro", systemImage: "crown.fill")
+                    Label("SwiftCode Pro Member!", systemImage: "crown.fill")
                         .foregroundStyle(.orange)
                     Spacer()
-                    if entitlementManager.isProUser {
-                        Text("Active")
-                            .font(.caption)
-                            .foregroundStyle(.green)
+                    Text("Active")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+                .padding(.vertical, 4)
+            } else {
+                Button {
+                    showPaywall = true
+                } label: {
+                    HStack {
+                        Label("Upgrade to Pro", systemImage: "crown.fill")
+                            .foregroundStyle(.orange)
+                        Spacer()
                     }
                 }
             }
@@ -1629,18 +1654,34 @@ struct GitHubConfigView: View {
                     Text("Used in commit messages across all repositories.")
                 }
 
-                // Repository Defaults
+                // Key Recommendation
                 Section {
-                    TextField("Owner/Repo (e.g. apple/swift)", text: $settings.defaultGitHubRepo)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
-                    TextField("Default Branch (e.g. main)", text: $settings.defaultBranch)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Recommended: Personal Access Token (Classic)")
+                            .font(.subheadline.bold())
+
+                        Text("For full integration with SwiftCode (repository creation, commits, and deployments), we recommend using a 'Classic' token (ghp_).")
+                            .font(.caption)
+
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Classic (ghp_):")
+                                .font(.caption.bold())
+                            Text("Supports all repository operations and is generally more reliable for full developer workflows.")
+                                .font(.caption2)
+                        }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Fine-grained (github_pat_):")
+                                .font(.caption.bold())
+                            Text("Good for limiting access to specific repositories, but may cause permission issues with automated deployments.")
+                                .font(.caption2)
+                        }
+                    }
+                    .padding(.vertical, 4)
                 } header: {
-                    Label("Repository Defaults", systemImage: "folder.fill")
-                } footer: {
-                    Text("These defaults are used when creating new projects or cloning repositories.")
+                    Label("Which GitHub Key Is Recommended", systemImage: "lightbulb.fill")
                 }
 
                 // SSH & HTTPS Authentication

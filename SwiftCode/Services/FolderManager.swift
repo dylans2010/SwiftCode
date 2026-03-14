@@ -21,6 +21,22 @@ final class FolderManager: ObservableObject {
         folders.append(folder)
     }
 
+    func renameFolder(_ folder: ProjectFolder, to newName: String) {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        if let index = folders.firstIndex(where: { $0.folderId == folder.folderId }) {
+            folders[index].folderName = trimmed
+        }
+    }
+
+    func deleteFolder(at offsets: IndexSet) {
+        folders.remove(atOffsets: offsets)
+    }
+
+    func deleteFolder(_ folder: ProjectFolder) {
+        folders.removeAll { $0.folderId == folder.folderId }
+    }
+
     func addProject(_ projectId: UUID, to folderId: UUID) {
         guard let index = folders.firstIndex(where: { $0.folderId == folderId }) else { return }
         if !folders[index].projectIdentifiers.contains(projectId) {
