@@ -393,7 +393,7 @@ struct GitHubIntegrationView: View {
                             Text("Default Branch:")
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
-                            Text(detail.defaultBranch)
+                            Text(detail.defaultBranch ?? "unknown")
                                 .font(.caption2.weight(.semibold))
                                 .foregroundStyle(.green)
                         }
@@ -991,7 +991,7 @@ struct GitHubIntegrationView: View {
                     repoDetail = detail
                     isValidatingRepo = false
                     // Update the current branch to match the repo default
-                    currentBranch = detail.defaultBranch
+                    currentBranch = detail.defaultBranch ?? "main"
                 }
             } catch let error as GitHubError {
                 await MainActor.run {

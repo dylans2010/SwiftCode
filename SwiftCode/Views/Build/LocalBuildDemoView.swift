@@ -49,7 +49,7 @@ struct LocalBuildDemoView: View {
                             .padding()
                             .background(Color.black)
                             .cornerRadius(12)
-                            .onChange(of: logs.count) { _ in
+                            .onChange(of: logs.count, initial: false) { oldValue, newValue in
                                 if !logs.isEmpty {
                                     proxy.scrollTo(logs.count - 1, anchor: .bottom)
                                 }
