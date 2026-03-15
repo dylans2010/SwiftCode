@@ -11,6 +11,7 @@ objects = {
 		7897B7DD965943C19E6C7C46 /* HuggingFaceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 882B230F330E4276B1E38C44 /* HuggingFaceAPI.swift */; };
 		F0104F91B48646D0901577AD /* OfflineModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6D8D2419B14345A69FBC5D /* OfflineModelManager.swift */; };
 		FF15B6A2EDDB413F962CD209 /* OfflineModelDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEDC3527A3F94ECBAF182723 /* OfflineModelDownloader.swift */; };
+		7C72C64AA8D745FB9D693281 /* OfflineModelsStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 626D56E2DA5A465BA46CCF6D /* OfflineModelsStorage.swift */; };
 		F11ACFFBE4514FDFBD9D2A44 /* OfflineModelConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0593A98312094DEAB617C288 /* OfflineModelConverter.swift */; };
 		46361ACF3F3C4733B82A39D6 /* OfflineModelRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5526E6C932FF4FC3BA7B7733 /* OfflineModelRunner.swift */; };
 		MLX000000000000000000001 /* MLXModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = MLX000000000000000000002 /* MLXModelContainer.swift */; };
@@ -225,6 +226,7 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		882B230F330E4276B1E38C44 /* HuggingFaceAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HuggingFaceAPI.swift"; sourceTree = "<group>"; };
 		EA6D8D2419B14345A69FBC5D /* OfflineModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelManager.swift"; sourceTree = "<group>"; };
 		AEDC3527A3F94ECBAF182723 /* OfflineModelDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelDownloader.swift"; sourceTree = "<group>"; };
+		626D56E2DA5A465BA46CCF6D /* OfflineModelsStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelsStorage.swift"; sourceTree = "<group>"; };
 		0593A98312094DEAB617C288 /* OfflineModelConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelConverter.swift"; sourceTree = "<group>"; };
 		5526E6C932FF4FC3BA7B7733 /* OfflineModelRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelRunner.swift"; sourceTree = "<group>"; };
 		MLX000000000000000000002 /* MLXModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLXModelContainer.swift; sourceTree = "<group>"; };
@@ -1288,6 +1290,7 @@ DEP000000000000000000101 /* Deployments */ = {
 				882B230F330E4276B1E38C44 /* HuggingFaceAPI.swift */,
 				EA6D8D2419B14345A69FBC5D /* OfflineModelManager.swift */,
 				AEDC3527A3F94ECBAF182723 /* OfflineModelDownloader.swift */,
+				626D56E2DA5A465BA46CCF6D /* OfflineModelsStorage.swift */,
 				0593A98312094DEAB617C288 /* OfflineModelConverter.swift */,
 				5526E6C932FF4FC3BA7B7733 /* OfflineModelRunner.swift */,
 				MLX000000000000000000005 /* MLXSwift Foundation */,
@@ -1406,6 +1409,7 @@ files = (
 				7897B7DD965943C19E6C7C46 /* HuggingFaceAPI.swift in Sources */,
 				F0104F91B48646D0901577AD /* OfflineModelManager.swift in Sources */,
 				FF15B6A2EDDB413F962CD209 /* OfflineModelDownloader.swift in Sources */,
+				7C72C64AA8D745FB9D693281 /* OfflineModelsStorage.swift in Sources */,
 				F11ACFFBE4514FDFBD9D2A44 /* OfflineModelConverter.swift in Sources */,
 				46361ACF3F3C4733B82A39D6 /* OfflineModelRunner.swift in Sources */,
 				MLX000000000000000000001 /* MLXModelContainer.swift in Sources */,
