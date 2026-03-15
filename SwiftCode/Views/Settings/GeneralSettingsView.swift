@@ -410,6 +410,10 @@ struct GeneralSettingsView: View {
     @StateObject private var entitlementManager = EntitlementManager.shared
     @StateObject private var storeManager = StoreKitManager.shared
     @StateObject private var gitHubOAuth = GitHubOAuth.shared
+    @StateObject private var offlineModelManager = OfflineModelManager.shared
+    @ObservedObject private var offlineModelDownloader = OfflineModelDownloader.shared
+
+    @AppStorage("ai.routingMode") private var aiRoutingModeRawValue: String = AIRoutingMode.dynamic.rawValue
 
     @State private var showAddSheet = false
     @State private var selectedProvider: APIKeyProvider?
@@ -442,14 +446,14 @@ struct GeneralSettingsView: View {
             Form {
                 proSection
                 quickSetupSection
-                apiKeysSection
+                aiSection
+                deploymentAndAPIKeysSection
                 editorSection
                 dashboardSection
                 fileNavigatorCustomizationSection
                 themesSection
                 agentConnectionsSection
                 skillsSection
-                coreMLSection
                 if devModeManager.isDeveloperModeEnabled {
                     developerToolsSection
                 }
@@ -532,6 +536,34 @@ struct GeneralSettingsView: View {
 
     // MARK: - Sections
 
+    private var aiRoutingMode: AIRoutingMode {
+        get { AIRoutingMode.from(rawValue: aiRoutingModeRawValue) }
+        set { aiRoutingModeRawValue = newValue.rawValue }
+    }
+
+    private var hasServerAPIKey: Bool {
+        let providers: [APIKeyProvider] = [.openRouter, .anthropic, .openai, .google, .mistral, .qwen]
+        return providers.contains(where: { apiKeyManager.providerKeyExists(service: $0) })
+    }
+
+    private var aiErrorMessages: [String] {
+        var errors: [String] = []
+
+        if aiRoutingMode == .dynamic && !hasServerAPIKey && offlineModelManager.defaultOfflineModelRecord() == nil {
+            errors.append("Dynamic AI needs either a server API key or a default offline model.")
+        }
+
+        if aiRoutingMode == .alwaysServer && !hasServerAPIKey {
+            errors.append("Always Server mode requires at least one API key.")
+        }
+
+        if let downloadError = offlineModelDownloader.lastErrorMessage, !downloadError.isEmpty {
+            errors.append("Offline model download failed: \(downloadError)")
+        }
+
+        return errors
+    }
+
     private var quickSetupSection: some View {
         Section {
             // Extensions shortcut
@@ -603,7 +635,74 @@ struct GeneralSettingsView: View {
         }
     }
 
-    private var apiKeysSection: some View {
+    private var aiSection: some View {
+        Section {
+            Picker("Dynamic AI", selection: Binding(
+                get: { aiRoutingMode },
+                set: { aiRoutingMode = $0 }
+            )) {
+                ForEach(AIRoutingMode.allCases, id: \.self) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+
+            if !offlineModelManager.installedModelRecords.isEmpty {
+                Picker("Default Offline Model", selection: Binding(
+                    get: { offlineModelManager.defaultOfflineModelName },
+                    set: { offlineModelManager.setDefaultOfflineModel($0) }
+                )) {
+                    ForEach(offlineModelManager.installedModelRecords) { model in
+                        Text(model.modelName).tag(model.modelName)
+                    }
+                }
+            } else {
+                Text("No offline models installed yet.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Button {
+                showOfflineModelsSheet = true
+            } label: {
+                Label("Offline Models", systemImage: "externaldrive.fill")
+                    .foregroundStyle(.blue)
+            }
+
+            Button {
+                showCoreMLSheet = true
+            } label: {
+                HStack {
+                    Label("Local AI", systemImage: "brain.head.profile")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Text(settings.coreMLEnabled ? "Enabled" : "Disabled")
+                        .foregroundStyle(settings.coreMLEnabled ? .green : .secondary)
+                        .font(.caption)
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                }
+            }
+
+            if !aiErrorMessages.isEmpty {
+                ForEach(aiErrorMessages, id: \.self) { error in
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.red)
+                        Text(error)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
+                }
+            }
+        } header: {
+            Label("AI", systemImage: "brain.fill")
+        } footer: {
+            Text("Configure AI Providers, Offline Models, Local AI, and Dynamic AI routing.")
+        }
+    }
+
+    private var deploymentAndAPIKeysSection: some View {
         Group {
             Section {
                 let aiProviders: [APIKeyProvider] = [.openRouter, .anthropic, .openai, .google, .mistral, .qwen]
@@ -611,9 +710,9 @@ struct GeneralSettingsView: View {
                     apiKeyRow(for: provider)
                 }
             } header: {
-                Label("AI Providers", systemImage: "brain.fill")
+                Label("Deployment & API Keys", systemImage: "key.fill")
             } footer: {
-                Text("Configure keys for AI services like OpenRouter and Anthropic.")
+                Text("Server-based API keys for OpenRouter, Gemini, Claude, GPT, and other providers.")
             }
 
             Section {
@@ -623,8 +722,6 @@ struct GeneralSettingsView: View {
                 }
             } header: {
                 Label("Deployment Providers", systemImage: "cloud.fill")
-            } footer: {
-                Text("Configure keys for Deployments (GitHub, Netlify, Vercel).")
             }
         }
     }
@@ -898,32 +995,6 @@ struct GeneralSettingsView: View {
             Label("Agent Connections", systemImage: "puzzlepiece.extension.fill")
         } footer: {
             Text("Define custom tools the AI agent can call. Tools are registered immediately and available to the agent without app updates.")
-        }
-    }
-
-    private var coreMLSection: some View {
-        Section {
-            Button {
-                showCoreMLSheet = true
-            } label: {
-                HStack {
-                    Label("CoreML Integration", systemImage: "brain.head.profile")
-                        .foregroundStyle(.primary)
-                    Spacer()
-                    Text(settings.coreMLEnabled ? "Enabled" : "Disabled")
-                        .foregroundStyle(settings.coreMLEnabled ? .green : .secondary)
-                        .font(.caption)
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(.tertiary)
-                        .font(.caption)
-                }
-            }
-
-            Toggle("Code Suggestions", isOn: $settings.codeSuggestionsEnabled)
-        } header: {
-            Label("Local AI", systemImage: "brain.head.profile")
-        } footer: {
-            Text("Run AI models locally on device using CoreML for offline code completion and analysis.")
         }
     }
 

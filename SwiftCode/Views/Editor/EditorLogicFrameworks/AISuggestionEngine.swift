@@ -28,9 +28,6 @@ final class AISuggestionEngine: ObservableObject {
         ghostText = ""
 
         guard !prefix.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        guard let apiKey = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey),
-              !apiKey.isEmpty else { return }
-
         pendingTask = Task {
             try? await Task.sleep(nanoseconds: debounceNanos)
             guard !Task.isCancelled else { return }
@@ -43,11 +40,11 @@ final class AISuggestionEngine: ObservableObject {
             let prompt = buildPrompt(prefix: contextLines, suffix: suffix, fileName: fileName)
 
             do {
-                let result = try await OpenRouterService.shared.chat(
-                    messages: [AIMessage(role: "user", content: prompt)],
+                let response = try await LLMService.shared.sendChatRequest(
                     model: resolvedModel,
-                    systemPrompt: completionSystemPrompt
+                    messages: [AIMessage(role: "system", content: completionSystemPrompt), AIMessage(role: "user", content: prompt)]
                 )
+                let result = response.completionText
                 guard !Task.isCancelled else { return }
                 ghostText = cleanCompletion(result, prefix: prefix)
             } catch {

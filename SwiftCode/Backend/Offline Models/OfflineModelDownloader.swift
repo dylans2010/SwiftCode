@@ -135,6 +135,9 @@ final class OfflineModelDownloader: ObservableObject {
         )
         try OfflineModelsStorage.shared.writeMetadata(installedMetadata, modelDirectory: localModelDirectory)
         OfflineModelManager.shared.registerInstalledModel(from: model, localPath: localModelDirectory)
+        if OfflineModelManager.shared.defaultOfflineModelName.isEmpty {
+            OfflineModelManager.shared.setDefaultOfflineModel(model.modelName)
+        }
         NotificationManager.shared.sendOfflineModelDownloadedNotification(modelName: model.modelName)
     }
 
