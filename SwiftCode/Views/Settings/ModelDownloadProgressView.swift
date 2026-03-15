@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ModelDownloadProgressView: View {
     let modelName: String
@@ -59,7 +60,7 @@ struct ModelDownloadProgressView: View {
 
             Label("Speed: \(downloader.downloadSpeed)", systemImage: "speedometer")
                 .font(.caption)
-            .foregroundStyle(.secondary)
+                .foregroundStyle(.secondary)
 
             if !downloader.currentFileName.isEmpty {
                 Text("Current file: \(downloader.currentFileName)")
@@ -69,9 +70,20 @@ struct ModelDownloadProgressView: View {
             }
 
             if let errorMessage {
-                Text(errorMessage)
-                    .foregroundStyle(.red)
-                    .font(.caption)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(errorMessage)
+                        .foregroundStyle(.red)
+                        .font(.caption)
+                        .textSelection(.enabled)
+
+                    Button {
+                        UIPasteboard.general.string = errorMessage
+                    } label: {
+                        Label("Copy Error", systemImage: "doc.on.doc")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
 
             HStack {
@@ -132,13 +144,13 @@ struct ModelDownloadProgressView: View {
 
         let nsError = error as NSError
         if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileWriteNoPermissionError {
-            return "Cannot write model files due to insufficient permissions in the selected folder."
+            return "Cannot write model files due to insufficient permissions in the selected folder. Full error: \(nsError)"
         }
 
         if nsError.domain == NSURLErrorDomain {
-            return "Network download failed: \(nsError.localizedDescription)"
+            return "Network download failed. Full error: \(nsError)"
         }
 
-        return error.localizedDescription
+        return "\(error)"
     }
 }

@@ -47,7 +47,8 @@ final class OfflineModelDownloader: ObservableObject {
         OfflineModelManager.shared.downloadingModels.insert(model.modelName)
         defer { OfflineModelManager.shared.downloadingModels.remove(model.modelName) }
 
-        let localModelDirectory = OfflineModelManager.shared.modelDirectory(for: model.modelName)
+        _ = try OfflineModelsStorage.shared.offlineModelsDirectory(createIfNeeded: true)
+        let localModelDirectory = try OfflineModelsStorage.shared.modelDirectory(for: model.modelName, createIfNeeded: true)
         try ensureWritableDirectory(localModelDirectory)
 
         let totalBytes = model.modelSizeBytes > 0 ? model.modelSizeBytes : model.files.reduce(0) { $0 + $1.sizeBytes }
@@ -86,6 +87,16 @@ final class OfflineModelDownloader: ObservableObject {
         currentFileName = "Completed"
         print("[OfflineModelDownloader] Completed download for \(model.modelName)")
 
+        let installedMetadata = InstalledOfflineModelMetadata(
+            modelName: model.modelName,
+            modelSourceURL: model.modelURL.absoluteString,
+            addedOn: Date(),
+            totalSize: totalBytes,
+            tokenCount: 0,
+            downloadedFiles: model.files.map(\.fileName),
+            modelVersion: "main"
+        )
+        try OfflineModelsStorage.shared.writeMetadata(installedMetadata, modelDirectory: localModelDirectory)
         OfflineModelManager.shared.registerInstalledModel(from: model, localPath: localModelDirectory)
     }
 
@@ -120,6 +131,9 @@ final class OfflineModelDownloader: ObservableObject {
 
     private func finalizeDownloadedFile(from tempURL: URL, to destinationURL: URL) throws {
         do {
+            try OfflineModelsStorage.shared.createDirectoryIfNeeded(at: try OfflineModelsStorage.shared.offlineModelsDirectory(createIfNeeded: true))
+            try OfflineModelsStorage.shared.createDirectoryIfNeeded(at: destinationURL.deletingLastPathComponent())
+
             if FileManager.default.fileExists(atPath: destinationURL.path) {
                 try FileManager.default.removeItem(at: destinationURL)
             }
