@@ -1,45 +1,71 @@
 import Foundation
 import MLX
-import MLXLLM
+import MLXNN
+import MLXOptimizers
+import MLXRandom
 
-/// Factory for creating and managing MLX models and tokenizers.
-final class LLMModelFactory {
-    static let shared = LLMModelFactory()
-    private init() {}
-
-    func loadModel(from directory: URL) async throws -> (LLMModel, Tokenizer) {
-        // This is a simplified implementation based on common MLX Swift patterns.
-        // In a real implementation, you would use MLXLLM to load the model and tokenizer.
-
-        let modelConfiguration = try ModelConfiguration.load(from: directory)
-        let (model, tokenizer) = try await MLXLLM.load(configuration: modelConfiguration)
-
-        return (model, tokenizer)
+/// Centralized MLX bootstrap and validation utilities.
+enum MLXIntegration {
+    /// Ensures MLX modules are linked into the application binary and available at runtime.
+    ///
+    /// The implementation intentionally references symbols from multiple MLX packages
+    /// so that SPM/Xcode will resolve and link all configured products.
+    static func validateRuntime() {
+        _ = Adam(learningRate: 1e-3)
+        _ = GELU()
+        MLXRandom.seed(42)
     }
 }
 
-/// Helper for MLX configuration loading
-struct ModelConfiguration {
-    static func load(from directory: URL) throws -> ModelConfiguration {
-        // Implementation for loading config.json and determining model type
-        return ModelConfiguration()
-    }
-}
-
-/// Protocols and stubs if MLXLLM is not directly available in this simplified environment
-/// In a real project, these would be provided by the mlx-swift-lm package.
-protocol LLMModel {
+/// Common abstraction for loaded offline models.
+protocol OfflineLanguageModel {
     func generate(tokens: [Int]) -> AsyncThrowingStream<Int, Error>
 }
 
-protocol Tokenizer {
+/// Common abstraction for tokenizers.
+protocol OfflineTokenizer {
     func encode(text: String) -> [Int]
     func decode(tokens: [Int]) -> String
 }
 
-final class MLXLLM {
-    static func load(configuration: ModelConfiguration) async throws -> (LLMModel, Tokenizer) {
-        // Stub implementation
-        fatalError("MLXLLM must be integrated via Swift Package Manager")
+/// Factory for creating and managing MLX-backed models and tokenizers.
+final class LLMModelFactory {
+    static let shared = LLMModelFactory()
+
+    private init() {
+        MLXIntegration.validateRuntime()
+    }
+
+    func loadModel(from directory: URL) async throws -> (OfflineLanguageModel, OfflineTokenizer) {
+        let configuration = try ModelConfiguration.load(from: directory)
+        return try await StubOfflineModelLoader.load(configuration: configuration)
+    }
+}
+
+struct ModelConfiguration {
+    let modelDirectory: URL
+
+    static func load(from directory: URL) throws -> ModelConfiguration {
+        let configFile = directory.appendingPathComponent("config.json")
+        guard FileManager.default.fileExists(atPath: configFile.path) else {
+            throw NSError(
+                domain: "LLMModelFactory",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Missing config.json in model directory: \(directory.path)"]
+            )
+        }
+
+        return ModelConfiguration(modelDirectory: directory)
+    }
+}
+
+/// Placeholder loader used until a concrete MLX model runtime is wired to specific model families.
+enum StubOfflineModelLoader {
+    static func load(configuration: ModelConfiguration) async throws -> (OfflineLanguageModel, OfflineTokenizer) {
+        throw NSError(
+            domain: "StubOfflineModelLoader",
+            code: 1,
+            userInfo: [NSLocalizedDescriptionKey: "MLX Swift packages are integrated. Add model-family specific loader implementation for \(configuration.modelDirectory.lastPathComponent)."]
+        )
     }
 }
