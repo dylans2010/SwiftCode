@@ -92,9 +92,9 @@ enum GitCommandsError: LocalizedError {
         case .missingRemote:
             return "No GitHub repository is linked to this project. Please set a repository URL in the GitHub settings."
         case .pushFailed(let reason):
-            return "Push failed: \(reason)"
+            return "Push Failed: \(reason)"
         case .pullFailed(let reason):
-            return "Pull failed: \(reason)"
+            return "Pull Failed: \(reason)"
         }
     }
 }
