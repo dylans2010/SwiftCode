@@ -93,6 +93,7 @@ final class LLMService {
 
     private let aiRoutingModeKey = "ai.routingMode"
 
+    @MainActor
     private func resolvedRoutingProvider() throws -> LLMProvider {
         let mode = AIRoutingMode.from(rawValue: UserDefaults.standard.string(forKey: aiRoutingModeKey))
         let preferredProvider = LLMProvider.from(rawValue: UserDefaults.standard.string(forKey: "ai.selectedProvider"))
@@ -124,15 +125,22 @@ final class LLMService {
         return !key.isEmpty
     }
 
+    @MainActor
     private func hasDefaultOfflineModel() -> Bool {
         !OfflineModelManager.shared.defaultOfflineModelName.isEmpty && OfflineModelManager.shared.defaultOfflineModelRecord() != nil
     }
 
+    @MainActor
     private func defaultOfflineModelName() throws -> String {
         guard let model = OfflineModelManager.shared.defaultOfflineModelRecord()?.modelName else {
             throw LLMError.missingOfflineDefaultModel
         }
         return model
+    }
+
+    @MainActor
+    private func defaultOfflineModelDirectory() throws -> URL {
+        OfflineModelManager.shared.modelDirectory(for: try defaultOfflineModelName())
     }
 
     private func apiKeyProvider(for provider: LLMProvider) -> APIKeyProvider {
@@ -179,7 +187,7 @@ final class LLMService {
     }
 
     func sendChatRequest(model: String, messages: [AIMessage], key: String? = nil) async throws -> LLMResponse {
-        let provider = try resolvedRoutingProvider()
+        let provider = try await resolvedRoutingProvider()
 
         if provider == .offline {
             return try await runOfflineResponse(messages: messages)
@@ -227,7 +235,7 @@ final class LLMService {
                 )
             }
         } catch {
-            if shouldFallbackToOffline(for: provider) {
+            if await shouldFallbackToOffline(for: provider) {
                 return try await runOfflineResponse(messages: messages)
             }
             throw error
@@ -247,11 +255,11 @@ final class LLMService {
         systemPrompt: String,
         onToken: @escaping @Sendable (String) async -> Void
     ) async throws {
-        let provider = try resolvedRoutingProvider()
+        let provider = try await resolvedRoutingProvider()
 
         if provider == .offline {
-            let offlineModel = try defaultOfflineModelName()
-            try await OfflineModelRunner.shared.loadModel(at: OfflineModelManager.shared.modelDirectory(for: offlineModel))
+            let offlineModel = try await defaultOfflineModelName()
+            try await OfflineModelRunner.shared.loadModel(at: try await defaultOfflineModelDirectory())
             try await OfflineModelRunner.shared.streamResponse(prompt: messages.last?.content ?? "") { token in
                 Task {
                     await onToken(token)
@@ -307,9 +315,9 @@ final class LLMService {
                 }
             }
         } catch {
-            if shouldFallbackToOffline(for: provider) {
-                let offlineModel = try defaultOfflineModelName()
-                try await OfflineModelRunner.shared.loadModel(at: OfflineModelManager.shared.modelDirectory(for: offlineModel))
+            if await shouldFallbackToOffline(for: provider) {
+                let offlineModel = try await defaultOfflineModelName()
+                try await OfflineModelRunner.shared.loadModel(at: try await defaultOfflineModelDirectory())
                 try await OfflineModelRunner.shared.streamResponse(prompt: messages.last?.content ?? "") { token in
                     Task { await onToken(token) }
                 }
@@ -319,6 +327,7 @@ final class LLMService {
         }
     }
 
+    @MainActor
     private func shouldFallbackToOffline(for provider: LLMProvider) -> Bool {
         let mode = AIRoutingMode.from(rawValue: UserDefaults.standard.string(forKey: aiRoutingModeKey))
         return mode == .dynamic && provider != .offline && hasDefaultOfflineModel()
@@ -326,8 +335,8 @@ final class LLMService {
 
     private func runOfflineResponse(messages: [AIMessage]) async throws -> LLMResponse {
         let startTime = Date()
-        let offlineModel = try defaultOfflineModelName()
-        try await OfflineModelRunner.shared.loadModel(at: OfflineModelManager.shared.modelDirectory(for: offlineModel))
+        let offlineModel = try await defaultOfflineModelName()
+        try await OfflineModelRunner.shared.loadModel(at: try await defaultOfflineModelDirectory())
         let completionText = try await OfflineModelRunner.shared.generateResponse(prompt: messages.last?.content ?? "")
         return LLMResponse(modelName: offlineModel, completionText: completionText, tokenUsage: nil, latency: Date().timeIntervalSince(startTime))
     }
