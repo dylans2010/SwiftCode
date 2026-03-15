@@ -16,6 +16,7 @@ objects = {
 		46361ACF3F3C4733B82A39D6 /* OfflineModelRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5526E6C932FF4FC3BA7B7733 /* OfflineModelRunner.swift */; };
 		MLX000000000000000000001 /* MLXModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = MLX000000000000000000002 /* MLXModelContainer.swift */; };
 		MLX000000000000000000003 /* MLXIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = MLX000000000000000000004 /* MLXIntegration.swift */; };
+		MLX000000000000000000006 /* UniversalModelLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = MLX000000000000000000007 /* UniversalModelLoader.swift */; };
 		BE48BB6CD7B3460D8F6A071E /* DeviceCapabilityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3553F82112BD443A9024DBF9 /* DeviceCapabilityAnalyzer.swift */; };
 		2544379C0BD14EE7BFD5B024 /* OfflineModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67EAFEC592A74ED1856B4635 /* OfflineModelsView.swift */; };
 		7B81D9E192994D2686FD69A4 /* ModelDownloadProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEC4574ACAD94E99A5E4DDC2 /* ModelDownloadProgressView.swift */; };
@@ -232,6 +233,7 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		5526E6C932FF4FC3BA7B7733 /* OfflineModelRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelRunner.swift"; sourceTree = "<group>"; };
 		MLX000000000000000000002 /* MLXModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLXModelContainer.swift; sourceTree = "<group>"; };
 		MLX000000000000000000004 /* MLXIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MLXIntegration.swift; sourceTree = "<group>"; };
+		MLX000000000000000000007 /* UniversalModelLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniversalModelLoader.swift; sourceTree = "<group>"; };
 		3553F82112BD443A9024DBF9 /* DeviceCapabilityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceCapabilityAnalyzer.swift"; sourceTree = "<group>"; };
 		67EAFEC592A74ED1856B4635 /* OfflineModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelsView.swift"; sourceTree = "<group>"; };
 		BEC4574ACAD94E99A5E4DDC2 /* ModelDownloadProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelDownloadProgressView.swift"; sourceTree = "<group>"; };
@@ -1307,6 +1309,7 @@ DEP000000000000000000101 /* Deployments */ = {
 			children = (
 				MLX000000000000000000002 /* MLXModelContainer.swift */,
 				MLX000000000000000000004 /* MLXIntegration.swift */,
+				MLX000000000000000000007 /* UniversalModelLoader.swift */,
 			);
 			path = "MLXSwift Foundation";
 			sourceTree = "<group>";
@@ -1417,6 +1420,7 @@ files = (
 				46361ACF3F3C4733B82A39D6 /* OfflineModelRunner.swift in Sources */,
 				MLX000000000000000000001 /* MLXModelContainer.swift in Sources */,
 				MLX000000000000000000003 /* MLXIntegration.swift in Sources */,
+				MLX000000000000000000006 /* UniversalModelLoader.swift in Sources */,
 				BE48BB6CD7B3460D8F6A071E /* DeviceCapabilityAnalyzer.swift in Sources */,
 				2544379C0BD14EE7BFD5B024 /* OfflineModelsView.swift in Sources */,
 				7B81D9E192994D2686FD69A4 /* ModelDownloadProgressView.swift in Sources */,

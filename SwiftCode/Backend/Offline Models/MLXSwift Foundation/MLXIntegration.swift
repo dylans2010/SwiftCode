@@ -32,40 +32,14 @@ protocol OfflineTokenizer {
 final class LLMModelFactory {
     static let shared = LLMModelFactory()
 
+    private let universalLoader = UniversalModelLoader()
+
     private init() {
         MLXIntegration.validateRuntime()
     }
 
     func loadModel(from directory: URL) async throws -> (OfflineLanguageModel, OfflineTokenizer) {
-        let configuration = try ModelConfiguration.load(from: directory)
-        return try await StubOfflineModelLoader.load(configuration: configuration)
-    }
-}
-
-struct ModelConfiguration {
-    let modelDirectory: URL
-
-    static func load(from directory: URL) throws -> ModelConfiguration {
-        let configFile = directory.appendingPathComponent("config.json")
-        guard FileManager.default.fileExists(atPath: configFile.path) else {
-            throw NSError(
-                domain: "LLMModelFactory",
-                code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Missing config.json in model directory: \(directory.path)"]
-            )
-        }
-
-        return ModelConfiguration(modelDirectory: directory)
-    }
-}
-
-/// Placeholder loader used until a concrete MLX model runtime is wired to specific model families.
-enum StubOfflineModelLoader {
-    static func load(configuration: ModelConfiguration) async throws -> (OfflineLanguageModel, OfflineTokenizer) {
-        throw NSError(
-            domain: "StubOfflineModelLoader",
-            code: 1,
-            userInfo: [NSLocalizedDescriptionKey: "MLX Swift packages are integrated. Add model-family specific loader implementation for \(configuration.modelDirectory.lastPathComponent)."]
-        )
+        let loaded = try await universalLoader.loadModel(from: directory)
+        return (loaded.model, loaded.tokenizer)
     }
 }
