@@ -283,35 +283,50 @@ private struct GitHubOAuthConfig {
 
 private struct DotEnvLoader {
     static func load(fileName: String) -> [String: String] {
+        var dictionary: [String: String] = [:]
+
         let locations: [URL?] = [
-            URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(fileName),
-            Bundle.main.url(forResource: fileName, withExtension: nil)
+            Bundle.main.url(forResource: fileName.replacingOccurrences(of: ".env", with: ""), withExtension: "env"),
+            Bundle.main.url(forResource: fileName, withExtension: nil),
+            FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(fileName),
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent(fileName),
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("SwiftCode").appendingPathComponent(fileName),
+            URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent(fileName)
         ]
 
         for case let fileURL? in locations {
-            guard let data = try? Data(contentsOf: fileURL),
-                  let contents = String(data: data, encoding: .utf8) else {
-                continue
+            if let data = try? Data(contentsOf: fileURL),
+               let contents = String(data: data, encoding: .utf8) {
+                let parsed = parse(contents: contents)
+                dictionary.merge(parsed) { (_, new) in new }
             }
-
-            return parse(contents: contents)
         }
 
-        return [:]
+        return dictionary
     }
 
     private static func parse(contents: String) -> [String: String] {
         var dictionary: [String: String] = [:]
 
-        for rawLine in contents.components(separatedBy: .newlines) {
-            let line = rawLine.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !line.isEmpty, !line.hasPrefix("#") else { continue }
+        let lines = contents.components(separatedBy: .newlines)
+        for line in lines {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmedLine.isEmpty || trimmedLine.hasPrefix("#") {
+                continue
+            }
 
-            let parts = line.split(separator: "=", maxSplits: 1).map(String.init)
-            guard parts.count == 2 else { continue }
-            let key = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
-            let value = parts[1].trimmingCharacters(in: .whitespacesAndNewlines)
-            dictionary[key] = value.trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+            let parts = trimmedLine.split(separator: "=", maxSplits: 1)
+            if parts.count == 2 {
+                let key = String(parts[0]).trimmingCharacters(in: .whitespacesAndNewlines)
+                var value = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+
+                // Remove quotes if present
+                if (value.hasPrefix("\"") && value.hasSuffix("\"")) || (value.hasPrefix("'") && value.hasSuffix("'")) {
+                    value = String(value.dropFirst().dropLast())
+                }
+
+                dictionary[key] = value
+            }
         }
 
         return dictionary

@@ -1,34 +1,34 @@
 import Foundation
 
-final class OfflineModelRunner {
+@MainActor
+final class OfflineModelRunner: ObservableObject {
     static let shared = OfflineModelRunner()
     private init() {}
 
+    private let container = MLXModelContainer()
     private var loadedModelPath: String?
-    // private var model: MLXModel? // Placeholder for actual MLX Swift model
 
     func loadModel(at url: URL) async throws {
-        if loadedModelPath == url.path { return }
+        if loadedModelPath == url.path && container.isLoaded { return }
 
-        // MLX Model loading logic
-        print("Loading MLX model from \(url.path)")
+        try await OfflineModelConverter.shared.convertIfNecessary(at: url)
+        try await container.loadModel(at: url)
         loadedModelPath = url.path
     }
 
     func generateResponse(prompt: String) async throws -> String {
-        guard loadedModelPath != nil else {
-            throw NSError(domain: "OfflineModelRunner", code: 1, userInfo: [NSLocalizedDescriptionKey: "No model loaded"])
+        var response = ""
+        try await streamResponse(prompt: prompt) { token in
+            response += token
         }
-
-        // MLX Inference logic
-        return "Offline response to: \(prompt)"
+        return response
     }
 
     func streamResponse(prompt: String, onToken: @escaping (String) -> Void) async throws {
-        let response = try await generateResponse(prompt: prompt)
-        for word in response.components(separatedBy: " ") {
-            onToken(word + " ")
-            try await Task.sleep(nanoseconds: 100_000_000)
+        guard container.isLoaded else {
+            throw NSError(domain: "OfflineModelRunner", code: 1, userInfo: [NSLocalizedDescriptionKey: "No model loaded"])
         }
+
+        try await container.generate(prompt: prompt, onToken: onToken)
     }
 }

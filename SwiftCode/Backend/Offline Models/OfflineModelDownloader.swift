@@ -8,9 +8,10 @@ final class OfflineModelDownloader: ObservableObject {
     @Published var downloadPercentage: Double = 0
     @Published var downloadSpeed: String = "0 KB/s"
     @Published var remainingTime: String = "Unknown"
+    @Published var currentFileName: String = ""
 
     func download(model: OfflineModelMetadata) async throws {
-        guard let targetFile = model.preferredDownloadFile else {
+        if model.files.isEmpty {
             throw OfflineModelError.noCompatibleModelFiles
         }
 
@@ -20,63 +21,38 @@ final class OfflineModelDownloader: ObservableObject {
         let localModelDirectory = OfflineModelManager.shared.modelDirectory(for: model.modelName)
         try FileManager.default.createDirectory(at: localModelDirectory, withIntermediateDirectories: true)
 
-        let destinationURL = localModelDirectory.appendingPathComponent(URL(fileURLWithPath: targetFile.fileName).lastPathComponent)
-        let request = URLRequest(url: targetFile.downloadURL)
+        let totalBytes = model.modelSizeBytes > 0 ? model.modelSizeBytes : model.files.reduce(0) { $0 + $1.sizeBytes }
+        var totalReceivedBytes: Int64 = 0
         let startDate = Date()
 
-        let (bytes, response) = try await URLSession.shared.bytes(for: request)
-        let expectedLength = max(response.expectedContentLength, Int64(1))
+        for file in model.files {
+            currentFileName = file.fileName
+            let destinationURL = localModelDirectory.appendingPathComponent(file.fileName)
 
-        guard let stream = OutputStream(url: destinationURL, append: false) else {
-            throw URLError(.cannotCreateFile)
-        }
+            // Create subdirectories if necessary (for files in subfolders)
+            let folderURL = destinationURL.deletingLastPathComponent()
+            try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
 
-        stream.open()
-        defer { stream.close() }
+            let (localURL, response) = try await URLSession.shared.download(from: file.downloadURL)
 
-        var receivedBytes: Int64 = 0
-        var buffer = Data()
-
-        for try await byte in bytes {
-            buffer.append(byte)
-            if buffer.count >= 64 * 1024 {
-                try writeBuffer(buffer, to: stream)
-                receivedBytes += Int64(buffer.count)
-                updateProgress(receivedBytes: receivedBytes, expectedBytes: expectedLength, startDate: startDate)
-                buffer.removeAll(keepingCapacity: true)
+            guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                throw URLError(.badServerResponse)
             }
-        }
 
-        if !buffer.isEmpty {
-            try writeBuffer(buffer, to: stream)
-            receivedBytes += Int64(buffer.count)
-            updateProgress(receivedBytes: receivedBytes, expectedBytes: expectedLength, startDate: startDate)
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+            try FileManager.default.moveItem(at: localURL, to: destinationURL)
+
+            totalReceivedBytes += file.sizeBytes
+            updateProgress(receivedBytes: totalReceivedBytes, expectedBytes: totalBytes, startDate: startDate)
         }
 
         downloadPercentage = 100
         remainingTime = "0s"
+        currentFileName = "Completed"
 
         OfflineModelManager.shared.registerInstalledModel(from: model, localPath: localModelDirectory)
-    }
-
-    private func writeBuffer(_ data: Data, to stream: OutputStream) throws {
-        try data.withUnsafeBytes { rawBuffer in
-            guard let basePointer = rawBuffer.bindMemory(to: UInt8.self).baseAddress else {
-                throw URLError(.cannotWriteToFile)
-            }
-
-            var totalWritten = 0
-            while totalWritten < data.count {
-                let written = stream.write(basePointer.advanced(by: totalWritten), maxLength: data.count - totalWritten)
-                if written < 0 {
-                    throw stream.streamError ?? URLError(.cannotWriteToFile)
-                }
-                if written == 0 {
-                    throw URLError(.networkConnectionLost)
-                }
-                totalWritten += written
-            }
-        }
     }
 
     private func updateProgress(receivedBytes: Int64, expectedBytes: Int64, startDate: Date) {
