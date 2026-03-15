@@ -48,7 +48,7 @@ final class OfflineModelDownloader: ObservableObject {
         defer { OfflineModelManager.shared.downloadingModels.remove(model.modelName) }
 
         let localModelDirectory = OfflineModelManager.shared.modelDirectory(for: model.modelName)
-        try FileManager.default.createDirectory(at: localModelDirectory, withIntermediateDirectories: true)
+        try ensureWritableDirectory(localModelDirectory)
 
         let totalBytes = model.modelSizeBytes > 0 ? model.modelSizeBytes : model.files.reduce(0) { $0 + $1.sizeBytes }
         try verifyStorageCapacity(requiredBytes: totalBytes)
@@ -64,7 +64,7 @@ final class OfflineModelDownloader: ObservableObject {
 
             // Create subdirectories if necessary (for files in subfolders)
             let folderURL = destinationURL.deletingLastPathComponent()
-            try FileManager.default.createDirectory(at: folderURL, withIntermediateDirectories: true)
+            try ensureWritableDirectory(folderURL)
 
             let localURL = try await downloadFile(
                 file: file,
@@ -73,10 +73,7 @@ final class OfflineModelDownloader: ObservableObject {
                 startDate: startDate
             )
 
-            if FileManager.default.fileExists(atPath: destinationURL.path) {
-                try FileManager.default.removeItem(at: destinationURL)
-            }
-            try FileManager.default.moveItem(at: localURL, to: destinationURL)
+            try finalizeDownloadedFile(from: localURL, to: destinationURL)
 
             totalReceivedBytes += file.sizeBytes
             updateProgress(receivedBytes: totalReceivedBytes, expectedBytes: totalBytes, startDate: startDate)
@@ -106,6 +103,41 @@ final class OfflineModelDownloader: ObservableObject {
         downloadSpeed = "0 KB/s"
         remainingTime = "Unknown"
         currentFileName = ""
+    }
+
+
+    private func ensureWritableDirectory(_ directoryURL: URL) throws {
+        do {
+            try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+        } catch {
+            throw OfflineModelError.cannotCreateDirectory(path: directoryURL.path, underlyingError: error)
+        }
+
+        guard FileManager.default.isWritableFile(atPath: directoryURL.path) else {
+            throw OfflineModelError.noWritePermission(path: directoryURL.path)
+        }
+    }
+
+    private func finalizeDownloadedFile(from tempURL: URL, to destinationURL: URL) throws {
+        do {
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+
+            do {
+                try FileManager.default.moveItem(at: tempURL, to: destinationURL)
+            } catch {
+                // Fall back to copy + remove when move fails across filesystems or app sandboxes.
+                try FileManager.default.copyItem(at: tempURL, to: destinationURL)
+                try? FileManager.default.removeItem(at: tempURL)
+            }
+        } catch {
+            throw OfflineModelError.failedToMoveDownloadedFile(
+                from: tempURL.path,
+                to: destinationURL.path,
+                underlyingError: error
+            )
+        }
     }
 
     private func verifyStorageCapacity(requiredBytes: Int64) throws {

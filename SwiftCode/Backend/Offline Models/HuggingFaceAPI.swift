@@ -213,6 +213,9 @@ enum OfflineModelError: LocalizedError {
     case noCompatibleModelFiles
     case insufficientStorage(requiredBytes: Int64, availableBytes: Int64)
     case downloadCancelled
+    case cannotCreateDirectory(path: String, underlyingError: Error)
+    case noWritePermission(path: String)
+    case failedToMoveDownloadedFile(from: String, to: String, underlyingError: Error)
 
     var errorDescription: String? {
         switch self {
@@ -226,6 +229,12 @@ enum OfflineModelError: LocalizedError {
             return "Insufficient storage. Required \(required), available \(available)."
         case .downloadCancelled:
             return "Download cancelled."
+        case let .cannotCreateDirectory(path, underlyingError):
+            return "Unable to create download folder at \(path). \(underlyingError.localizedDescription)"
+        case let .noWritePermission(path):
+            return "No write permission for download folder: \(path). Please choose a writable app container directory."
+        case let .failedToMoveDownloadedFile(from, to, underlyingError):
+            return "Downloaded file could not be finalized from \(from) to \(to). \(underlyingError.localizedDescription)"
         }
     }
 }
