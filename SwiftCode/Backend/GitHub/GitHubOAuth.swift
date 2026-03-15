@@ -90,6 +90,16 @@ final class GitHubOAuth: NSObject, ObservableObject {
         }
     }
 
+    func signOut() {
+        GitHubAuth.shared.clearToken()
+        APIKeyManager.shared.deleteKey(service: .gitHub)
+        isAuthenticating = false
+        isConnected = false
+        username = nil
+        pendingState = nil
+        errorMessage = nil
+    }
+
     func handleRedirectURL(_ url: URL) async {
         guard let config = GitHubOAuthConfig.load() else {
             handleOAuthFailure(.missingConfiguration)

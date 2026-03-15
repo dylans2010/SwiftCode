@@ -4,6 +4,7 @@ struct OfflineModelsView: View {
     @StateObject private var manager = OfflineModelManager.shared
     @State private var availableModels: [OfflineModelMetadata] = []
     @State private var isLoading = false
+    @State private var isRefreshingFromAPI = false
     @State private var downloadingModel: OfflineModelMetadata?
 
     var body: some View {
@@ -11,6 +12,22 @@ struct OfflineModelsView: View {
             InstalledOfflineModelsView(manager: manager)
 
             Section("Available Models (HuggingFace)") {
+                Button {
+                    Task {
+                        await loadModels(forceRefresh: true)
+                    }
+                } label: {
+                    HStack {
+                        Label("Fetch from HuggingFace API", systemImage: "arrow.clockwise")
+                        if isRefreshingFromAPI {
+                            Spacer()
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                        }
+                    }
+                }
+                .disabled(isLoading || isRefreshingFromAPI)
+
                 if isLoading {
                     ProgressView()
                 } else {
@@ -46,21 +63,25 @@ struct OfflineModelsView: View {
         .navigationTitle("Offline Models")
         .task {
             manager.loadInstalledModels()
-            await loadModels()
+            await loadModels(forceRefresh: false)
         }
         .sheet(item: $downloadingModel) { model in
             ModelDownloadProgressView(modelName: model.modelName)
+                .presentationDetents([.height(180)])
+                .presentationDragIndicator(.visible)
         }
     }
 
-    private func loadModels() async {
-        isLoading = true
+    private func loadModels(forceRefresh: Bool) async {
+        isLoading = !forceRefresh
+        isRefreshingFromAPI = forceRefresh
         do {
-            availableModels = try await HuggingFaceAPI.shared.fetchModels()
+            availableModels = try await HuggingFaceAPI.shared.fetchModels(forceRefresh: forceRefresh)
         } catch {
             print("Failed to fetch models: \(error)")
         }
         isLoading = false
+        isRefreshingFromAPI = false
     }
 
     private func startDownload(_ model: OfflineModelMetadata) {
@@ -68,7 +89,7 @@ struct OfflineModelsView: View {
         Task {
             try? await OfflineModelDownloader.shared.download(model: model)
             manager.loadInstalledModels()
-            await loadModels()
+            await loadModels(forceRefresh: false)
         }
     }
 }

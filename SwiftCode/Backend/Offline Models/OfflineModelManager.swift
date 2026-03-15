@@ -6,7 +6,8 @@ struct InstalledOfflineModelRecord: Identifiable, Codable {
     let provider: String
     let size: String
     let installDate: Date
-    let localModelPath: String
+    var localModelPath: String
+    var validationStatus: String?
 }
 
 @MainActor
@@ -42,7 +43,7 @@ final class OfflineModelManager: ObservableObject {
                 modelSize: record.size,
                 tags: ["offline", "installed"],
                 downloadCount: 0,
-                modelURL: URL(fileURLWithPath: record.localModelPath),
+                modelURL: URL(fileURLWithPath: record.localModelPath.isEmpty ? "/" : record.localModelPath),
                 files: [],
                 isQuantized: false
             )
@@ -56,7 +57,8 @@ final class OfflineModelManager: ObservableObject {
             provider: model.providerName,
             size: model.modelSize,
             installDate: installDate,
-            localModelPath: localPath.path
+            localModelPath: localPath.path,
+            validationStatus: nil
         )
         records.append(newRecord)
         records.sort { $0.installDate > $1.installDate }
@@ -74,6 +76,19 @@ final class OfflineModelManager: ObservableObject {
 
         var records = loadMetadataFromPlist()
         records.removeAll { $0.modelName == model.modelName }
+        persist(records)
+        loadInstalledModels()
+    }
+
+    func updateValidationStatus(for modelName: String, status: String, clearLocalPath: Bool = false) {
+        var records = loadMetadataFromPlist()
+        guard let index = records.firstIndex(where: { $0.modelName == modelName }) else { return }
+
+        records[index].validationStatus = status
+        if clearLocalPath {
+            records[index].localModelPath = ""
+        }
+
         persist(records)
         loadInstalledModels()
     }

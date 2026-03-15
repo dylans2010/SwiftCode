@@ -550,25 +550,38 @@ struct GeneralSettingsView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
-                Button {
-                    gitHubOAuth.signInWithGitHub()
-                } label: {
-                    HStack {
-                        Label("Sign in with GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
-                            .foregroundStyle(.primary)
+                HStack {
+                    Button {
+                        gitHubOAuth.signInWithGitHub()
+                    } label: {
+                        HStack {
+                            Label("Sign in with GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                                .foregroundStyle(.primary)
 
-                        Spacer()
+                            Spacer()
 
-                        if gitHubOAuth.isAuthenticating {
-                            ProgressView()
-                                .progressViewStyle(.circular)
-                        } else if gitHubOAuth.isConnected {
-                            Image(systemName: "checkmark.seal.fill")
-                                .foregroundStyle(.green)
+                            if gitHubOAuth.isAuthenticating {
+                                ProgressView()
+                                    .progressViewStyle(.circular)
+                            } else if gitHubOAuth.isConnected {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .foregroundStyle(.green)
+                            }
                         }
                     }
+                    .disabled(gitHubOAuth.isAuthenticating || gitHubOAuth.isConnected)
+
+                    if gitHubOAuth.isConnected {
+                        Button {
+                            gitHubOAuth.signOut()
+                        } label: {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.red)
+                        .accessibilityLabel("Log out from GitHub")
+                    }
                 }
-                .disabled(gitHubOAuth.isAuthenticating || gitHubOAuth.isConnected)
 
                 if gitHubOAuth.isConnected {
                     let userLabel = gitHubOAuth.username.map { "Connected to GitHub (@\($0))" } ?? "Connected to GitHub"
