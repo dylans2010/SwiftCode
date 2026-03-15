@@ -96,6 +96,7 @@ final class AgentTaskManager: ObservableObject {
             $0.completedAt = Date()
             $0.result = result
         }
+        NotificationManager.shared.sendAgentTaskFinishedNotification()
     }
 
     func failTask(_ task: AgentTaskItem, error: String? = nil) {
