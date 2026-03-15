@@ -1,6 +1,6 @@
 import Foundation
 
-struct OfflineModelFile: Identifiable, Codable, Hashable {
+struct OfflineModelFile: Identifiable, Codable, Hashable, Equatable {
     var id: String { fileName }
     let fileName: String
     let downloadURL: URL
@@ -15,7 +15,7 @@ struct OfflineModelFile: Identifiable, Codable, Hashable {
     }
 }
 
-struct OfflineModelMetadata: Identifiable, Codable {
+struct OfflineModelMetadata: Identifiable, Codable, Equatable {
     var id: String { modelName }
     let modelName: String
     let providerName: String
