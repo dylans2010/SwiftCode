@@ -1,17 +1,29 @@
 import Foundation
 
+struct InstalledOfflineModelRecord: Identifiable, Codable {
+    var id: String { modelName }
+    let modelName: String
+    let provider: String
+    let size: String
+    let installDate: Date
+    let localModelPath: String
+}
+
 @MainActor
 final class OfflineModelManager: ObservableObject {
     static let shared = OfflineModelManager()
 
     @Published var installedModels: [OfflineModelMetadata] = []
+    @Published var installedModelRecords: [InstalledOfflineModelRecord] = []
     @Published var downloadingModels: Set<String> = []
 
     private let modelsDir: URL
+    private let metadataPlistURL: URL
 
     private init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         modelsDir = appSupport.appendingPathComponent("SwiftCode/OfflineModels")
+        metadataPlistURL = modelsDir.appendingPathComponent("installed-models.plist")
         ensureDirectory()
         loadInstalledModels()
     }
@@ -20,42 +32,74 @@ final class OfflineModelManager: ObservableObject {
         try? FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
     }
 
-    private func loadInstalledModels() {
-        // In a real app, we'd store metadata in a plist/database.
-        // For now, we'll scan the directory.
-        guard let contents = try? FileManager.default.contentsOfDirectory(at: modelsDir, includingPropertiesForKeys: nil) else { return }
-
-        var installed: [OfflineModelMetadata] = []
-        for url in contents {
-            if url.hasDirectoryPath {
-                // Mock metadata for discovered folders
-                installed.append(OfflineModelMetadata(
-                    modelName: url.lastPathComponent,
-                    providerName: "Local",
-                    description: "Locally stored model",
-                    modelSize: "Unknown",
-                    tags: ["offline"],
-                    downloadCount: 0,
-                    modelURL: url,
-                    files: [],
-                    isQuantized: false
-                ))
-            }
+    func loadInstalledModels() {
+        installedModelRecords = loadMetadataFromPlist()
+        installedModels = installedModelRecords.map { record in
+            OfflineModelMetadata(
+                modelName: record.modelName,
+                providerName: record.provider,
+                description: "Locally stored model",
+                modelSize: record.size,
+                tags: ["offline", "installed"],
+                downloadCount: 0,
+                modelURL: URL(fileURLWithPath: record.localModelPath),
+                files: [],
+                isQuantized: false
+            )
         }
-        installedModels = installed
+    }
+
+    func registerInstalledModel(from model: OfflineModelMetadata, localPath: URL, installDate: Date = Date()) {
+        var records = loadMetadataFromPlist().filter { $0.modelName != model.modelName }
+        let newRecord = InstalledOfflineModelRecord(
+            modelName: model.modelName,
+            provider: model.providerName,
+            size: model.modelSize,
+            installDate: installDate,
+            localModelPath: localPath.path
+        )
+        records.append(newRecord)
+        records.sort { $0.installDate > $1.installDate }
+        persist(records)
+        loadInstalledModels()
     }
 
     func isModelInstalled(_ modelName: String) -> Bool {
-        installedModels.contains { $0.modelName == modelName }
+        installedModelRecords.contains { $0.modelName == modelName }
     }
 
     func removeModel(_ model: OfflineModelMetadata) {
-        let url = modelsDir.appendingPathComponent(model.modelName)
+        let url = modelDirectory(for: model.modelName)
         try? FileManager.default.removeItem(at: url)
-        installedModels.removeAll { $0.modelName == model.modelName }
+
+        var records = loadMetadataFromPlist()
+        records.removeAll { $0.modelName == model.modelName }
+        persist(records)
+        loadInstalledModels()
     }
 
     func modelDirectory(for modelName: String) -> URL {
         modelsDir.appendingPathComponent(modelName)
+    }
+
+    private func loadMetadataFromPlist() -> [InstalledOfflineModelRecord] {
+        guard let data = try? Data(contentsOf: metadataPlistURL) else {
+            return []
+        }
+
+        do {
+            return try PropertyListDecoder().decode([InstalledOfflineModelRecord].self, from: data)
+        } catch {
+            return []
+        }
+    }
+
+    private func persist(_ records: [InstalledOfflineModelRecord]) {
+        do {
+            let data = try PropertyListEncoder().encode(records)
+            try data.write(to: metadataPlistURL, options: .atomic)
+        } catch {
+            print("Failed to persist offline model metadata plist: \(error)")
+        }
     }
 }
