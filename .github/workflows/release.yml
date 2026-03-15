@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+env:
+  CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+  SECRET_ID: ${{ secrets.SECRET_ID }}
+
 jobs:
   build:
     runs-on: macos-14
@@ -32,8 +36,32 @@ jobs:
         run: |
           rm -rf ~/Library/Developer/Xcode/DerivedData
 
+
+      - name: Verify CI secret wiring
+        run: |
+          if [ -n "$CLIENT_SECRET" ]; then
+            echo "CLIENT_SECRET is set (masked)"
+          else
+            echo "CLIENT_SECRET is missing"
+          fi
+
+          if [ -n "$SECRET_ID" ]; then
+            echo "SECRET_ID is set (masked)"
+          else
+            echo "SECRET_ID is missing"
+          fi
+
       - name: Resolve Package Dependencies
         run: xcodebuild -project SwiftCode.xcodeproj -scheme SwiftCode -resolvePackageDependencies
+
+
+      - name: Swift build (env check)
+        run: |
+          if [ -f Package.swift ]; then
+            swift build
+          else
+            echo "No Package.swift found; skipping swift build for Xcode project workflow."
+          fi
 
       - name: Compile and Build .ipa
         run: |
