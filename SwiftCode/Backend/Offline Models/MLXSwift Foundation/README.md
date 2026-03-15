@@ -28,4 +28,12 @@ The app target now links these products from [`ml-explore/mlx-swift`](https://gi
 
 ## Next step for model-family support
 
-`UniversalModelLoader` now performs config-driven architecture detection (`model_type` in `config.json`), tokenizer discovery, and safetensors file resolution. Architecture routing is centralized and extendable so new HuggingFace model types can be added without changing call sites. Runtime-specific MLX builders can be wired per architecture in `GenericMLXArchitectureBuilders`.
+`UniversalModelLoader` now performs config-driven architecture detection (`model_type` in `config.json`), tokenizer discovery, and safetensors file resolution for both single-file and sharded layouts.
+
+Architecture routing is now dynamic:
+
+- `ArchitectureRegistry` normalizes and resolves architectures from `model_type`, not model names.
+- Unknown/new model families are auto-registered at runtime to a generic transformer builder.
+- Optional optimized builders can still be registered for known families over time.
+
+The generic fallback reads transformer metadata from `config.json` (for example `hidden_size`, `num_hidden_layers`, and `num_attention_heads`) so newly added HuggingFace models can initialize without explicit hardcoded architecture entries.
