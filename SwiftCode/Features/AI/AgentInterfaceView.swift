@@ -295,7 +295,7 @@ final class AgentController: ObservableObject {
 
     @Published var state = AgentState()
     @Published var executionMode: AgentExecutionMode = .agent
-    @Published var selectedModel: String = AppSettings.shared.selectedModel
+    @Published var includeProjectContext = true
 
     private var activeTask: Task<Void, Never>?
     private var conversationHistory: [AIMessage] = []
@@ -358,7 +358,7 @@ final class AgentController: ObservableObject {
     // MARK: - Execution Loop
 
     private func runExecutionLoop(goal: String, projectManager: ProjectManager) async {
-        let context = gatherProjectContext(projectManager: projectManager)
+        let context = includeProjectContext ? gatherProjectContext(projectManager: projectManager) : ""
         let systemPrompt = buildSystemPrompt(context: context)
 
         if conversationHistory.isEmpty {
@@ -381,7 +381,7 @@ final class AgentController: ObservableObject {
 
                 try await LLMService.shared.streamChat(
                     messages: conversationHistory,
-                    model: selectedModel,
+                    model: AppSettings.shared.selectedModel,
                     systemPrompt: systemPrompt
                 ) { [weak self] token in
                     guard let self, !Task.isCancelled else { return }
@@ -631,6 +631,24 @@ struct AgentInterfaceView: View {
     @State private var showProcessSheet   = false
     @State private var showLogsSheet      = false
     @State private var showModeSheet      = false
+    @State private var showSlashCommands = false
+    @State private var slashFilter = ""
+    @State private var selectedSlashCommand: String?
+
+    private let slashCommands: [(title: String, icon: String, description: String)] = [
+        ("start", "play.fill", "Start the agent with this goal"),
+        ("pause", "pause.fill", "Pause active execution"),
+        ("resume", "playpause.fill", "Resume from paused state"),
+        ("stop", "stop.fill", "Stop current execution"),
+        ("clear logs", "trash", "Clear execution logs"),
+        ("analyze project", "folder", "Analyze this project's structure"),
+        ("fix errors", "wrench.and.screwdriver.fill", "Ask the agent to fix current issues"),
+    ]
+
+    private var filteredSlashCommands: [(title: String, icon: String, description: String)] {
+        guard !slashFilter.isEmpty else { return slashCommands }
+        return slashCommands.filter { $0.title.localizedCaseInsensitiveContains(slashFilter) }
+    }
 
     var body: some View {
         ZStack {
@@ -679,21 +697,7 @@ struct AgentInterfaceView: View {
             LogsDetailSheet(logs: controller.state.logs)
         }
         .sheet(isPresented: $showModeSheet) {
-            ModeSelectionSheet(
-                selectedMode: $controller.executionMode,
-                selectedModel: $controller.selectedModel
-            )
-        }
-        .onAppear {
-            if controller.selectedModel != settings.selectedModel {
-                controller.selectedModel = settings.selectedModel
-            }
-        }
-        .onChange(of: settings.selectedModel) {
-            controller.selectedModel = settings.selectedModel
-        }
-        .onChange(of: controller.selectedModel) {
-            settings.selectedModel = controller.selectedModel
+            ModeSelectionSheet(selectedMode: $controller.executionMode)
         }
     }
 
@@ -728,6 +732,12 @@ struct AgentInterfaceView: View {
                     Text(controller.executionMode.rawValue)
                         .font(.caption)
                         .foregroundColor(.blue)
+                    Text("·")
+                        .foregroundColor(.secondary)
+                    Text(modelDisplayName)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
                 }
             }
 
@@ -768,21 +778,36 @@ struct AgentInterfaceView: View {
                 .foregroundColor(.secondary)
                 .textCase(.uppercase)
 
-            TextField(
-                "What should Agent build?",
-                text: $goalText,
-                axis: .vertical
-            )
-            .lineLimit(3...6)
-            .font(.system(size: 14))
-            .foregroundColor(.white)
-            .padding(10)
+            if showSlashCommands && !filteredSlashCommands.isEmpty {
+                slashCommandsList
+            }
+
+            ZStack(alignment: .topLeading) {
+                if goalText.isEmpty {
+                    Text("What should Agent build? (type / for commands)")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 10)
+                }
+
+                TextEditor(text: $goalText)
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+                    .frame(minHeight: 72, maxHeight: 120)
+                    .scrollContentBackground(.hidden)
+                    .background(.clear)
+                    .disabled(
+                        controller.state.status == .running ||
+                        controller.state.status == .planning
+                    )
+                    .onChange(of: goalText) { _, newValue in
+                        handleGoalInputChange(newValue)
+                    }
+            }
+            .padding(4)
             .background(Color.white.opacity(0.06))
             .cornerRadius(10)
-            .disabled(
-                controller.state.status == .running ||
-                controller.state.status == .planning
-            )
         }
         .padding(12)
         .background(Color.white.opacity(0.03))
@@ -1022,12 +1047,13 @@ struct AgentInterfaceView: View {
     // MARK: - Execution Controls
 
     private var executionControls: some View {
-        HStack(spacing: 10) {
-            let status = controller.state.status
+        VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                let status = controller.state.status
 
             if status == .idle || status == .completed || status == .failed {
                 Button {
-                    let trimmed = goalText.trimmingCharacters(in: .whitespaces)
+                    let trimmed = goalText.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !trimmed.isEmpty {
                         controller.start(goal: trimmed, projectManager: projectManager)
                     }
@@ -1038,13 +1064,13 @@ struct AgentInterfaceView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                         .background(
-                            goalText.trimmingCharacters(in: .whitespaces).isEmpty
+                            goalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                 ? Color.green.opacity(0.35)
                                 : Color.green
                         )
                         .cornerRadius(10)
                 }
-                .disabled(goalText.trimmingCharacters(in: .whitespaces).isEmpty)
+                .disabled(goalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
 
             if status == .running || status == .planning {
@@ -1091,15 +1117,141 @@ struct AgentInterfaceView: View {
                 }
             }
 
-            Button { controller.clearLogs() } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: 15))
-                    .foregroundColor(.secondary)
-                    .frame(width: 40, height: 40)
+                Button { controller.clearLogs() } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 15))
+                        .foregroundColor(.secondary)
+                        .frame(width: 40, height: 40)
+                        .background(Color.white.opacity(0.07))
+                        .cornerRadius(10)
+                }
+            }
+
+            HStack {
+                Button {
+                    controller.includeProjectContext.toggle()
+                } label: {
+                    Label(controller.includeProjectContext ? "Context On" : "Context Off",
+                          systemImage: controller.includeProjectContext ? "doc.text.fill" : "doc.text")
+                    .font(.caption)
+                    .foregroundColor(controller.includeProjectContext ? .orange : .secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
                     .background(Color.white.opacity(0.07))
-                    .cornerRadius(10)
+                    .cornerRadius(8)
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
             }
         }
+    }
+
+
+    private var modelDisplayName: String {
+        if let preset = OpenRouterModel.defaults.first(where: { $0.id == settings.selectedModel }) {
+            return preset.name
+        }
+        return settings.selectedModel
+    }
+
+    private var slashCommandsList: some View {
+        VStack(spacing: 0) {
+            ForEach(filteredSlashCommands, id: \.title) { command in
+                Button {
+                    applyGoalCommand(command.title)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: command.icon)
+                            .font(.caption2)
+                            .foregroundColor(selectedSlashCommand == command.title ? .cyan : .blue)
+                            .frame(width: 14)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("/\(command.title)")
+                                .font(.caption.weight(.semibold))
+                                .foregroundColor(.white)
+                            Text(command.description)
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        if selectedSlashCommand == command.title {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundColor(.cyan)
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(selectedSlashCommand == command.title ? Color.cyan.opacity(0.1) : .clear)
+                }
+                .buttonStyle(.plain)
+
+                if command.title != filteredSlashCommands.last?.title {
+                    Divider().opacity(0.2)
+                }
+            }
+        }
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(10)
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.blue.opacity(0.25), lineWidth: 1))
+    }
+
+    private func handleGoalInputChange(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.hasPrefix("/") {
+            slashFilter = String(trimmed.dropFirst())
+            showSlashCommands = true
+        } else {
+            slashFilter = ""
+            showSlashCommands = false
+            selectedSlashCommand = nil
+        }
+    }
+
+    private func applyGoalCommand(_ command: String) {
+        selectedSlashCommand = command
+        showSlashCommands = false
+        slashFilter = ""
+        let prefix = "/\(command)"
+
+        switch command {
+        case "start":
+            goalText = prefix
+            startIfPossible()
+        case "pause":
+            goalText = prefix
+            if controller.state.status == .running || controller.state.status == .planning {
+                controller.pause()
+            }
+        case "resume":
+            goalText = prefix
+            if controller.state.status == .paused {
+                controller.resume(projectManager: projectManager)
+            }
+        case "stop":
+            goalText = prefix
+            if controller.state.status == .running || controller.state.status == .planning || controller.state.status == .paused {
+                controller.stop()
+            }
+        case "clear logs":
+            goalText = prefix
+            controller.clearLogs()
+        case "analyze project":
+            goalText = "\(prefix) Analyze this project structure and summarize architecture."
+        case "fix errors":
+            goalText = "\(prefix) Find and fix errors in the active project."
+        default:
+            goalText = "\(prefix) "
+        }
+    }
+
+    private func startIfPossible() {
+        let trimmed = goalText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let status = controller.state.status
+        guard status == .idle || status == .completed || status == .failed else { return }
+        controller.start(goal: trimmed, projectManager: projectManager)
     }
 
     // MARK: - Helpers
@@ -1427,7 +1579,6 @@ struct LogsDetailSheet: View {
 
 struct ModeSelectionSheet: View {
     @Binding var selectedMode: AgentExecutionMode
-    @Binding var selectedModel: String
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -1456,21 +1607,6 @@ struct ModeSelectionSheet: View {
                     }
                 }
 
-                Section("Model") {
-                    Picker("Model", selection: $selectedModel) {
-                        ForEach(OpenRouterModel.defaults) { model in
-                            VStack(alignment: .leading) {
-                                Text(model.name)
-                                Text(model.description)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .tag(model.id)
-                        }
-                    }
-                    .pickerStyle(.inline)
-                    .labelsHidden()
-                }
             }
             .navigationTitle("Agent Settings")
             .navigationBarTitleDisplayMode(.inline)

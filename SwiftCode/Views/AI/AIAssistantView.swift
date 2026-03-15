@@ -62,12 +62,11 @@ struct AIAssistantView: View {
     @State private var streamingResponse = ""
     @State private var scrollProxy: ScrollViewProxy?
     @State private var agentIterationCount = 0
-    @State private var showCustomModelSheet = false
     @State private var showChatHistory = false
-    @State private var customModelDraft = ""
     @State private var showAgentInterface = false
     @State private var showSlashCommands = false
     @State private var slashFilter = ""
+    @State private var selectedSlashCommand: String?
     @State private var lastUserPrompt = ""
     @State private var copiedMessageID: UUID?
     private let maxAgentIterations = 15
@@ -200,9 +199,6 @@ struct AIAssistantView: View {
         .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
             Button("OK") {}
         } message: { msg in Text(msg) }
-        .sheet(isPresented: $showCustomModelSheet) {
-            customModelSheet
-        }
         .sheet(isPresented: $showChatHistory) {
             chatHistorySheet
         }
@@ -242,18 +238,6 @@ struct AIAssistantView: View {
             }
             .buttonStyle(.plain)
 
-            // Context toggle (hidden in agent mode – agent uses its own tools)
-            if selectedMode != .agent {
-                Button {
-                    includeContext.toggle()
-                } label: {
-                    Label(includeContext ? "With Context" : "No Context",
-                          systemImage: includeContext ? "doc.text.fill" : "doc.text")
-                        .font(.caption)
-                        .foregroundStyle(includeContext ? .orange : .secondary)
-                }
-                .buttonStyle(.plain)
-            }
 
             Button {
                 regenerateLastPrompt()
@@ -374,63 +358,7 @@ struct AIAssistantView: View {
     }
 
     private var inputArea: some View {
-        VStack(spacing: 8) {
-            // Model selector
-            HStack {
-                Text("Model:")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Menu {
-                    ForEach(OpenRouterModel.defaults) { model in
-                        Button {
-                            settings.selectedModel = model.id
-                        } label: {
-                            HStack {
-                                Text(model.name)
-                                if settings.selectedModel == model.id {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
-                    // Custom model option
-                    Divider()
-                    if !settings.customModel.isEmpty {
-                        Button {
-                            settings.selectedModel = settings.customModel
-                        } label: {
-                            HStack {
-                                Text("Custom: \(settings.customModel)")
-                                    .lineLimit(1)
-                                if settings.selectedModel == settings.customModel {
-                                    Image(systemName: "checkmark")
-                                }
-                            }
-                        }
-                    }
-                    Button {
-                        customModelDraft = settings.customModel
-                        showCustomModelSheet = true
-                    } label: {
-                        Label("Set Custom Model…", systemImage: "plus.circle")
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(currentModelName)
-                            .font(.caption2)
-                            .foregroundStyle(settings.isUsingCustomModel ? .cyan : .purple)
-                            .lineLimit(1)
-                        if settings.isUsingCustomModel {
-                            Image(systemName: "cpu.fill")
-                                .font(.caption2)
-                                .foregroundStyle(.cyan)
-                        }
-                    }
-                }
-                Spacer()
-            }
-
-            // Agent mode hint strip
+        VStack(spacing: 10) {
             if selectedMode == .agent {
                 HStack(spacing: 6) {
                     Image(systemName: "info.circle")
@@ -443,73 +371,54 @@ struct AIAssistantView: View {
                 .padding(.horizontal, 4)
             }
 
-            HStack(alignment: .bottom, spacing: 8) {
-                VStack(spacing: 0) {
-                    // Slash command tooltip (shown above input when user types /)
-                    if showSlashCommands && !filteredSlashCommands.isEmpty {
-                        VStack(alignment: .leading, spacing: 0) {
-                            ForEach(filteredSlashCommands, id: \.title) { cmd in
-                                Button {
-                                    applySlashCommand(cmd.title)
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: cmd.icon)
-                                            .font(.caption2)
-                                            .foregroundStyle(.purple)
-                                            .frame(width: 16)
-                                        VStack(alignment: .leading, spacing: 1) {
-                                            Text("/\(cmd.title)")
-                                                .font(.caption.bold())
-                                                .foregroundStyle(.white)
-                                            Text(cmd.description)
-                                                .font(.caption2)
-                                                .foregroundStyle(.secondary)
-                                        }
-                                        Spacer()
-                                    }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 6)
-                                }
-                                .buttonStyle(.plain)
-                                if cmd.title != filteredSlashCommands.last?.title {
-                                    Divider().opacity(0.2)
-                                }
-                            }
-                        }
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
-                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(.purple.opacity(0.3), lineWidth: 1))
-                        .padding(.bottom, 4)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
+            if showSlashCommands && !filteredSlashCommands.isEmpty {
+                slashCommandsList
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
 
-                    ZStack(alignment: .topLeading) {
-                        if inputText.isEmpty {
-                            Text(selectedMode == .agent ? "What should the agent do?" : "Ask the AI… (type / for commands)")
-                                .font(.callout)
-                                .foregroundStyle(.tertiary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 10)
-                        }
-                        TextEditor(text: $inputText)
-                            .font(.callout)
-                            .frame(minHeight: 60, maxHeight: 120)
-                            .scrollContentBackground(.hidden)
-                            .background(.clear)
-                            .onChange(of: inputText) { _, newVal in
-                                handleInputChange(newVal)
-                            }
-                    }
-                    .padding(4)
-                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(
-                                LinearGradient(colors: [.purple.opacity(0.3), .blue.opacity(0.2)],
-                                               startPoint: .topLeading, endPoint: .bottomTrailing),
-                                lineWidth: 1
-                            )
-                    )
+            ZStack(alignment: .topLeading) {
+                if inputText.isEmpty {
+                    Text(selectedMode == .agent ? "What should the agent do?" : "Ask the AI… (type / for commands)")
+                        .font(.callout)
+                        .foregroundStyle(.tertiary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 10)
                 }
+                TextEditor(text: $inputText)
+                    .font(.callout)
+                    .frame(minHeight: 60, maxHeight: 120)
+                    .scrollContentBackground(.hidden)
+                    .background(.clear)
+                    .onChange(of: inputText) { _, newVal in
+                        handleInputChange(newVal)
+                    }
+            }
+            .padding(4)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(
+                        LinearGradient(colors: [.purple.opacity(0.3), .blue.opacity(0.2)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing),
+                        lineWidth: 1
+                    )
+            )
+
+            HStack(spacing: 10) {
+                Button {
+                    includeContext.toggle()
+                } label: {
+                    Label(includeContext ? "Context On" : "Context Off",
+                          systemImage: includeContext ? "doc.text.fill" : "doc.text")
+                    .font(.caption)
+                    .foregroundStyle(includeContext ? .orange : .secondary)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(.ultraThinMaterial, in: Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
 
                 Button {
                     sendMessage()
@@ -531,6 +440,46 @@ struct AIAssistantView: View {
         .animation(.spring(response: 0.25), value: showSlashCommands)
     }
 
+    private var slashCommandsList: some View {
+        VStack(spacing: 0) {
+            ForEach(filteredSlashCommands, id: \.title) { cmd in
+                Button {
+                    applySlashCommand(cmd.title)
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: cmd.icon)
+                            .font(.caption2)
+                            .foregroundStyle(selectedSlashCommand == cmd.title ? .cyan : .purple)
+                            .frame(width: 16)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("/\(cmd.title)")
+                                .font(.caption.bold())
+                                .foregroundStyle(.white)
+                            Text(cmd.description)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if selectedSlashCommand == cmd.title {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.cyan)
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .background(selectedSlashCommand == cmd.title ? Color.cyan.opacity(0.12) : .clear)
+                }
+                .buttonStyle(.plain)
+                if cmd.title != filteredSlashCommands.last?.title {
+                    Divider().opacity(0.2)
+                }
+            }
+        }
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(.purple.opacity(0.3), lineWidth: 1))
+    }
+
     private func handleInputChange(_ text: String) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.hasPrefix("/") {
@@ -539,112 +488,40 @@ struct AIAssistantView: View {
         } else {
             showSlashCommands = false
             slashFilter = ""
+            selectedSlashCommand = nil
         }
     }
 
     private func applySlashCommand(_ command: String) {
+        selectedSlashCommand = command
+        let commandPrefix = "/\(command)"
         showSlashCommands = false
         slashFilter = ""
         switch command {
         case "run agent":
-            inputText = ""
+            inputText = commandPrefix
             showAgentInterface = true
         case "search project":
-            inputText = "Search the project for: "
+            inputText = "\(commandPrefix) Search the project for: "
         case "generate code":
-            inputText = "Generate Swift code for: "
+            inputText = "\(commandPrefix) Generate Swift code for: "
         case "fix errors":
             let fileName = projectManager.activeFileNode?.name ?? "this file"
-            inputText = "Fix any errors or issues in \(fileName)"
+            inputText = "\(commandPrefix) Fix any errors or issues in \(fileName)"
         case "install dependencies":
-            inputText = "Help me add a Swift package dependency for: "
+            inputText = "\(commandPrefix) Help me add a Swift package dependency for: "
         case "run build":
-            inputText = "Help me set up the build workflow."
+            inputText = "\(commandPrefix) Help me set up the build workflow."
         case "review code":
             let fileName = projectManager.activeFileNode?.name ?? "current file"
-            inputText = "Review the code in \(fileName) and list any issues."
+            inputText = "\(commandPrefix) Review the code in \(fileName) and list any issues."
         case "explain code":
-            inputText = "Explain what the current file does."
+            inputText = "\(commandPrefix) Explain what the current file does."
         case "refactor":
-            inputText = "Refactor the current file for better readability and performance."
+            inputText = "\(commandPrefix) Refactor the current file for better readability and performance."
         default:
-            inputText = "/\(command) "
+            inputText = "\(commandPrefix) "
         }
-    }
-
-    // MARK: - Custom Model Sheet
-
-    private var customModelSheet: some View {
-        NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Enter any valid OpenRouter model ID. You can browse all available models at openrouter.ai/models.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-
-                TextField("e.g. mistralai/mistral-7b-instruct", text: $customModelDraft)
-                    .autocorrectionDisabled()
-                    .textInputAutocapitalization(.never)
-                    .font(.system(.body, design: .monospaced))
-                    .padding(10)
-                    .background(.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
-
-                // Popular model suggestions
-                Text("Popular models:")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                    ForEach([
-                        "mistralai/mistral-7b-instruct",
-                        "mistralai/mixtral-8x7b-instruct",
-                        "qwen/qwen-2.5-72b-instruct",
-                        "cohere/command-r-plus",
-                        "perplexity/llama-3.1-sonar-large-128k-online",
-                        "microsoft/phi-3-medium-128k-instruct"
-                    ], id: \.self) { modelId in
-                        Button {
-                            customModelDraft = modelId
-                        } label: {
-                            Text(modelId)
-                                .font(.caption2)
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
-                                .padding(8)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(
-                                    customModelDraft == modelId
-                                        ? Color.cyan.opacity(0.2)
-                                        : Color.white.opacity(0.06),
-                                    in: RoundedRectangle(cornerRadius: 8)
-                                )
-                                .foregroundStyle(customModelDraft == modelId ? .cyan : .primary)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-                Spacer()
-            }
-            .padding()
-            .background(Color(red: 0.1, green: 0.1, blue: 0.14))
-            .navigationTitle("Custom AI Model")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showCustomModelSheet = false }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Use This Model") {
-                        let trimmed = customModelDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !trimmed.isEmpty else { return }
-                        settings.customModel   = trimmed
-                        settings.selectedModel = trimmed
-                        showCustomModelSheet   = false
-                    }
-                    .disabled(customModelDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                }
-            }
-        }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Chat History Sheet
@@ -1011,14 +888,6 @@ struct AIAssistantView: View {
         projectManager.saveCurrentFile(content: code)
     }
 
-    private var currentModelName: String {
-        if let preset = OpenRouterModel.defaults.first(where: { $0.id == settings.selectedModel }) {
-            return preset.name
-        }
-        // Truncate long custom IDs for display
-        let id = settings.selectedModel
-        return id.count > 28 ? "…" + id.suffix(25) : id
-    }
 }
 
 // MARK: - Message Bubble
