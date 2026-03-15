@@ -8,7 +8,8 @@ struct ModelLinkInstallGuideView: View {
     @State private var resolvedMetadata: OfflineModelMetadata?
     @State private var errorMessage: String?
     @State private var isLoadingMetadata = false
-    @State private var isDownloading = false
+    @State private var pendingDownloadMetadata: OfflineModelMetadata?
+    @State private var pendingDownloadLink: String?
 
     let onInstalled: () async -> Void
 
@@ -71,10 +72,10 @@ struct ModelLinkInstallGuideView: View {
                                 .foregroundStyle(.secondary)
 
                             Button("Download Model") {
-                                Task { await installModel() }
+                                startDownload(metadata)
                             }
                             .buttonStyle(.borderedProminent)
-                            .disabled(isDownloading || manager.isModelInstalled(metadata.modelName))
+                            .disabled(manager.isModelInstalled(metadata.modelName))
                         }
                         .padding()
                         .background(Color.secondary.opacity(0.1))
@@ -84,6 +85,18 @@ struct ModelLinkInstallGuideView: View {
                 .padding()
             }
             .navigationTitle("Install Through Link")
+            .sheet(item: $pendingDownloadMetadata) { metadata in
+                ModelDownloadProgressView(
+                    modelName: metadata.modelName,
+                    modelLink: pendingDownloadLink,
+                    metadata: metadata
+                ) {
+                    await onInstalled()
+                    dismiss()
+                }
+                .presentationDetents([.height(280)])
+                .presentationDragIndicator(.visible)
+            }
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
@@ -112,18 +125,9 @@ struct ModelLinkInstallGuideView: View {
         }
     }
 
-    private func installModel() async {
-        guard resolvedMetadata != nil else { return }
-
-        isDownloading = true
-        defer { isDownloading = false }
-
-        do {
-            try await manager.installModelFromLink(url: repositoryLink)
-            await onInstalled()
-            dismiss()
-        } catch {
-            errorMessage = error.localizedDescription
-        }
+    private func startDownload(_ metadata: OfflineModelMetadata) {
+        errorMessage = nil
+        pendingDownloadLink = repositoryLink.trimmingCharacters(in: .whitespacesAndNewlines)
+        pendingDownloadMetadata = metadata
     }
 }

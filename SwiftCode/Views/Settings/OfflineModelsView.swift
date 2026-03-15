@@ -103,8 +103,15 @@ struct OfflineModelsView: View {
             await loadModels(forceRefresh: false)
         }
         .sheet(item: $downloadingModel) { model in
-            ModelDownloadProgressView(modelName: model.modelName)
-                .presentationDetents([.height(180)])
+            ModelDownloadProgressView(
+                modelName: model.modelName,
+                modelLink: model.modelURL.absoluteString,
+                metadata: model
+            ) {
+                downloadingModel = nil
+                await loadModels(forceRefresh: false)
+            }
+                .presentationDetents([.height(280)])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $isPresentingInstallGuide) {
@@ -128,10 +135,5 @@ struct OfflineModelsView: View {
 
     private func startDownload(_ model: OfflineModelMetadata) {
         downloadingModel = model
-        Task {
-            try? await OfflineModelDownloader.shared.download(model: model)
-            manager.loadInstalledModels()
-            await loadModels(forceRefresh: false)
-        }
     }
 }
