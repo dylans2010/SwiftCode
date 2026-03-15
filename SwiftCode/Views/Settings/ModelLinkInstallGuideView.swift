@@ -8,7 +8,7 @@ struct ModelLinkInstallGuideView: View {
     @State private var resolvedMetadata: OfflineModelMetadata?
     @State private var errorMessage: String?
     @State private var isLoadingMetadata = false
-    @State private var isDownloading = false
+    @State private var activeRequest: OfflineModelDownloader.DownloadRequest?
 
     let onInstalled: () async -> Void
 
@@ -33,10 +33,10 @@ struct ModelLinkInstallGuideView: View {
 
                     Divider()
 
-                    Text("Paste HuggingFace Link")
+                    Text("Paste Model Link")
                         .font(.headline)
 
-                    TextField("https://huggingface.co/{author}/{model}", text: $repositoryLink)
+                    TextField("https://huggingface.co/{author}/{model} or direct file URL", text: $repositoryLink)
                         .textInputAutocapitalization(.never)
 #if canImport(UIKit)
                         .autocorrectionDisabled(true)
@@ -48,6 +48,12 @@ struct ModelLinkInstallGuideView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .disabled(isLoadingMetadata || repositoryLink.isEmpty)
+
+                    Button("Download Model") {
+                        launchDownloadFlow()
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(repositoryLink.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
                     if let errorMessage {
                         Text(errorMessage)
@@ -70,11 +76,6 @@ struct ModelLinkInstallGuideView: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
 
-                            Button("Download Model") {
-                                Task { await installModel() }
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(isDownloading || manager.isModelInstalled(metadata.modelName))
                         }
                         .padding()
                         .background(Color.secondary.opacity(0.1))
@@ -89,6 +90,13 @@ struct ModelLinkInstallGuideView: View {
                     Button("Close") { dismiss() }
                 }
             }
+        }
+        .sheet(item: $activeRequest) { request in
+            ModelDownloadProgressView(request: request) {
+                await onInstalled()
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.visible)
         }
     }
 
@@ -112,18 +120,24 @@ struct ModelLinkInstallGuideView: View {
         }
     }
 
-    private func installModel() async {
-        guard resolvedMetadata != nil else { return }
+    private func launchDownloadFlow() {
+        errorMessage = nil
 
-        isDownloading = true
-        defer { isDownloading = false }
+        if let metadata = resolvedMetadata {
+            if manager.isModelInstalled(metadata.modelName) {
+                errorMessage = "This model is already installed."
+                return
+            }
 
-        do {
-            try await manager.installModelFromLink(url: repositoryLink)
-            await onInstalled()
-            dismiss()
-        } catch {
-            errorMessage = error.localizedDescription
+            activeRequest = OfflineModelDownloader.DownloadRequest(source: .metadata(metadata), originalLink: repositoryLink)
+            return
         }
+
+        guard let url = URL(string: repositoryLink.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            errorMessage = OfflineModelError.invalidModelURL.localizedDescription
+            return
+        }
+
+        activeRequest = OfflineModelDownloader.DownloadRequest(source: .directURL(url), originalLink: repositoryLink)
     }
 }
