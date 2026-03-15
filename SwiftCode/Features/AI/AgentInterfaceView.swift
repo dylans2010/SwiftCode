@@ -19,7 +19,7 @@ struct AgentInterfaceView: View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
                 Image(systemName: "cpu")
-                    .foregroundStyle(.accent)
+                    .foregroundStyle(Color.accentColor)
                 Text("Agent Interface")
                     .font(.headline)
                 Spacer()

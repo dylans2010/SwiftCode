@@ -288,7 +288,7 @@ final class LLMService {
         let provider = try await resolvedRoutingProvider()
 
         if provider == .offline {
-            let offlineModel = try await defaultOfflineModelName()
+            _ = try await defaultOfflineModelName()
             try await OfflineModelRunner.shared.loadModel(at: try await defaultOfflineModelDirectory())
             try await OfflineModelRunner.shared.streamResponse(prompt: messages.last?.content ?? "") { token in
                 Task {
