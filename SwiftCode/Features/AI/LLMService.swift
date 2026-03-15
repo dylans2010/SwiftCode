@@ -235,12 +235,6 @@ final class LLMService {
         request.httpMethod = "POST"
         setupHeaders(for: &request, provider: provider, key: key)
 
-        var allMessages = messages
-        if !systemPrompt.isEmpty && provider != .anthropic {
-             // For OpenAI, system prompt is a message
-             // We'll handle it in buildRequestBody
-        }
-
         let body = try buildRequestBody(provider: provider, model: model, messages: messages, systemPrompt: systemPrompt, stream: true)
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
