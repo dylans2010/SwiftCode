@@ -17,6 +17,9 @@ struct SwiftCodeApp: App {
                 .environmentObject(toolbarSettings)
                 .environmentObject(folderManager)
                 .environmentObject(codeSuggestionsML)
+                .onOpenURL { url in
+                    _ = GitHubOAuth.shared.handleOpenURL(url)
+                }
                 .task {
                     // Ensure the persistent Projects and Models directories exist at launch
                     codingManager.ensureProjectsDirectory()

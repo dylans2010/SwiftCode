@@ -409,6 +409,7 @@ struct GeneralSettingsView: View {
     @StateObject private var devModeManager = DeveloperModeManager.shared
     @StateObject private var entitlementManager = EntitlementManager.shared
     @StateObject private var storeManager = StoreKitManager.shared
+    @StateObject private var gitHubOAuth = GitHubOAuth.shared
 
     @State private var showAddSheet = false
     @State private var selectedProvider: APIKeyProvider?
@@ -533,6 +534,41 @@ struct GeneralSettingsView: View {
             } label: {
                 Label("Manage Extensions", systemImage: "puzzlepiece.extension.fill")
                     .foregroundStyle(.orange)
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                Button {
+                    gitHubOAuth.signInWithGitHub()
+                } label: {
+                    HStack {
+                        Label("Sign in with GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                            .foregroundStyle(.primary)
+
+                        Spacer()
+
+                        if gitHubOAuth.isAuthenticating {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                        } else if gitHubOAuth.isConnected {
+                            Image(systemName: "checkmark.seal.fill")
+                                .foregroundStyle(.green)
+                        }
+                    }
+                }
+                .disabled(gitHubOAuth.isAuthenticating || gitHubOAuth.isConnected)
+
+                if gitHubOAuth.isConnected {
+                    let userLabel = gitHubOAuth.username.map { "Connected to GitHub (@\($0))" } ?? "Connected to GitHub"
+                    Text(userLabel)
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                }
+
+                if let errorMessage = gitHubOAuth.errorMessage {
+                    Text(errorMessage)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
             }
         } header: {
             Label("Quick Setup", systemImage: "bolt.fill")

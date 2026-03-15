@@ -84,6 +84,7 @@ BG000000000000000000005A /* GitHubRepositoryManager.swift in Sources */ = {isa =
 BG000000000000000000006A /* GitHubBuilds.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000006B /* GitHubBuilds.swift */; };
 BG000000000000000000007A /* GitCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000007B /* GitCommands.swift */; };
 BG000000000000000000008A /* GitHubReleaseCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000008B /* GitHubReleaseCheck.swift */; };
+BG000000000000000000009A /* GitHubOAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = BG000000000000000000009B /* GitHubOAuth.swift */; };
 BD000000000000000000001A /* BuildLogDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD000000000000000000001B /* BuildLogDecoder.swift */; };
 LS000000000000000000001A /* LocalRunManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000001B /* LocalRunManager.swift */; };
 LS000000000000000000002A /* PreviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000002B /* PreviewEngine.swift */; };
@@ -288,6 +289,7 @@ BG000000000000000000005B /* GitHubRepositoryManager.swift */ = {isa = PBXFileRef
 BG000000000000000000006B /* GitHubBuilds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubBuilds.swift; sourceTree = "<group>"; };
 BG000000000000000000007B /* GitCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitCommands.swift; sourceTree = "<group>"; };
 BG000000000000000000008B /* GitHubReleaseCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubReleaseCheck.swift; sourceTree = "<group>"; };
+BG000000000000000000009B /* GitHubOAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubOAuth.swift; sourceTree = "<group>"; };
 BD000000000000000000001B /* BuildLogDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildLogDecoder.swift; sourceTree = "<group>"; };
 LS000000000000000000001B /* LocalRunManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalRunManager.swift; sourceTree = "<group>"; };
 LS000000000000000000002B /* PreviewEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewEngine.swift; sourceTree = "<group>"; };
@@ -949,6 +951,7 @@ children = (
 				BG000000000000000000006B /* GitHubBuilds.swift */,
 				BG000000000000000000007B /* GitCommands.swift */,
 				BG000000000000000000008B /* GitHubReleaseCheck.swift */,
+				BG000000000000000000009B /* GitHubOAuth.swift */,
 			);
 path = GitHub;
 sourceTree = "<group>";
@@ -1442,6 +1445,7 @@ files = (
 				BG000000000000000000006A /* GitHubBuilds.swift in Sources */,
 				BG000000000000000000007A /* GitCommands.swift in Sources */,
 				BG000000000000000000008A /* GitHubReleaseCheck.swift in Sources */,
+				BG000000000000000000009A /* GitHubOAuth.swift in Sources */,
 				BD000000000000000000001A /* BuildLogDecoder.swift in Sources */,
 				LS000000000000000000001A /* LocalRunManager.swift in Sources */,
 				LS000000000000000000002A /* PreviewEngine.swift in Sources */,
