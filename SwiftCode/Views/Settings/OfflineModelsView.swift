@@ -8,37 +8,7 @@ struct OfflineModelsView: View {
 
     var body: some View {
         List {
-            Section("Installed Models") {
-                if manager.installedModels.isEmpty {
-                    Text("No local models installed")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(manager.installedModels) { model in
-                        VStack(alignment: .leading) {
-                            Text(model.modelName)
-                                .font(.headline)
-                            HStack {
-                                Text(model.providerName)
-                                Text("•")
-                                Text(model.modelSize)
-                            }
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-
-                            HStack {
-                                Button("Run") {
-                                    // Test run
-                                }
-                                Spacer()
-                                Button("Remove", role: .destructive) {
-                                    manager.removeModel(model)
-                                }
-                            }
-                            .padding(.top, 4)
-                        }
-                    }
-                }
-            }
+            InstalledOfflineModelsView(manager: manager)
 
             Section("Available Models (HuggingFace)") {
                 if isLoading {
@@ -75,6 +45,7 @@ struct OfflineModelsView: View {
         }
         .navigationTitle("Offline Models")
         .task {
+            manager.loadInstalledModels()
             await loadModels()
         }
         .sheet(item: $downloadingModel) { model in
@@ -96,7 +67,8 @@ struct OfflineModelsView: View {
         downloadingModel = model
         Task {
             try? await OfflineModelDownloader.shared.download(model: model)
-            await loadModels() // Refresh
+            manager.loadInstalledModels()
+            await loadModels()
         }
     }
 }

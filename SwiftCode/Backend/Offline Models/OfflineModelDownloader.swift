@@ -26,8 +26,7 @@ final class OfflineModelDownloader: ObservableObject {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         try? "dummy".write(to: dir.appendingPathComponent("config.json"), atomically: true, encoding: .utf8)
 
+        OfflineModelManager.shared.registerInstalledModel(from: model, localPath: dir)
         OfflineModelManager.shared.downloadingModels.remove(model.modelName)
-        // Refresh installed models
-        // OfflineModelManager.shared.loadInstalledModels()
     }
 }

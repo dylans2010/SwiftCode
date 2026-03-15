@@ -16,6 +16,7 @@ objects = {
 		BE48BB6CD7B3460D8F6A071E /* DeviceCapabilityAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3553F82112BD443A9024DBF9 /* DeviceCapabilityAnalyzer.swift */; };
 		2544379C0BD14EE7BFD5B024 /* OfflineModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67EAFEC592A74ED1856B4635 /* OfflineModelsView.swift */; };
 		7B81D9E192994D2686FD69A4 /* ModelDownloadProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEC4574ACAD94E99A5E4DDC2 /* ModelDownloadProgressView.swift */; };
+		IOM000000000000000000001 /* InstalledOfflineModelsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = IOM000000000000000000002 /* InstalledOfflineModelsView.swift */; };
 		4F5D612236144576AF4B2D68 /* ProjectPackager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAD118EAE81C490A9008EF7B /* ProjectPackager.swift */; };
 		E1230C44F3E34C7CA8C1817F /* BuildModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5B2A2E0C6DD473C8B04ACB2 /* BuildModels.swift */; };
 		9E22EE6941CD419F987943CC /* LocalBuildService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB19D790DE24876B403E623 /* LocalBuildService.swift */; };
@@ -222,6 +223,7 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		3553F82112BD443A9024DBF9 /* DeviceCapabilityAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DeviceCapabilityAnalyzer.swift"; sourceTree = "<group>"; };
 		67EAFEC592A74ED1856B4635 /* OfflineModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelsView.swift"; sourceTree = "<group>"; };
 		BEC4574ACAD94E99A5E4DDC2 /* ModelDownloadProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelDownloadProgressView.swift"; sourceTree = "<group>"; };
+		IOM000000000000000000002 /* InstalledOfflineModelsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InstalledOfflineModelsView.swift"; sourceTree = "<group>"; };
 		CAD118EAE81C490A9008EF7B /* ProjectPackager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectPackager.swift; sourceTree = "<group>"; };
 		C5B2A2E0C6DD473C8B04ACB2 /* BuildModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildModels.swift; sourceTree = "<group>"; };
 		EAB19D790DE24876B403E623 /* LocalBuildService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalBuildService.swift; sourceTree = "<group>"; };
@@ -603,6 +605,7 @@ isa = PBXGroup;
 children = (
 				67EAFEC592A74ED1856B4635 /* OfflineModelsView.swift */,
 				BEC4574ACAD94E99A5E4DDC2 /* ModelDownloadProgressView.swift */,
+				IOM000000000000000000002 /* InstalledOfflineModelsView.swift */,
 				AA000010000000000000013B /* SettingsView.swift */,
 				AA00001000000000000004DB /* ProjectSettingsView.swift */,
 				GS0000000000000000000002 /* GeneralSettingsView.swift */,
@@ -1378,6 +1381,7 @@ files = (
 				BE48BB6CD7B3460D8F6A071E /* DeviceCapabilityAnalyzer.swift in Sources */,
 				2544379C0BD14EE7BFD5B024 /* OfflineModelsView.swift in Sources */,
 				7B81D9E192994D2686FD69A4 /* ModelDownloadProgressView.swift in Sources */,
+				IOM000000000000000000001 /* InstalledOfflineModelsView.swift in Sources */,
 				4F5D612236144576AF4B2D68 /* ProjectPackager.swift in Sources */,
 				E1230C44F3E34C7CA8C1817F /* BuildModels.swift in Sources */,
 				9E22EE6941CD419F987943CC /* LocalBuildService.swift in Sources */,

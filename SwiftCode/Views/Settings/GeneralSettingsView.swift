@@ -431,6 +431,7 @@ struct GeneralSettingsView: View {
 
     // Quick Setup section state
     @State private var showExtensions = false
+    @State private var showOfflineModelsSheet = false
 
     var activeTheme: AppTheme {
         themeManager.theme(for: settings.selectedThemeID) ?? AppTheme.dark
@@ -495,6 +496,11 @@ struct GeneralSettingsView: View {
         .sheet(isPresented: $showExtensions) {
             ExtensionsView()
         }
+        .sheet(isPresented: $showOfflineModelsSheet) {
+            NavigationStack {
+                OfflineModelsView()
+            }
+        }
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
@@ -534,6 +540,13 @@ struct GeneralSettingsView: View {
             } label: {
                 Label("Manage Extensions", systemImage: "puzzlepiece.extension.fill")
                     .foregroundStyle(.orange)
+            }
+
+            Button {
+                showOfflineModelsSheet = true
+            } label: {
+                Label("Offline Models", systemImage: "externaldrive.fill")
+                    .foregroundStyle(.blue)
             }
 
             VStack(alignment: .leading, spacing: 8) {

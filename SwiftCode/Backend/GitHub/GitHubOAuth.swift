@@ -44,7 +44,7 @@ final class GitHubOAuth: NSObject, ObservableObject {
         guard !isAuthenticating else { return }
 
         guard let config = GitHubOAuthConfig.load() else {
-            errorMessage = "GitHub OAuth is not configured. Add GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and GITHUB_REDIRECT_URI to your .env file."
+            errorMessage = "GitHub OAuth is not configured. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to your .env file."
             return
         }
 
@@ -260,11 +260,10 @@ private struct GitHubOAuthConfig {
 
         let clientID = environment["GITHUB_CLIENT_ID"] ?? dotenv["GITHUB_CLIENT_ID"]
         let clientSecret = environment["GITHUB_CLIENT_SECRET"] ?? dotenv["GITHUB_CLIENT_SECRET"]
-        let redirectURI = environment["GITHUB_REDIRECT_URI"] ?? dotenv["GITHUB_REDIRECT_URI"]
+        let redirectURI = "swiftcode://oauth/callback"
 
         guard let clientID, !clientID.isEmpty,
-              let clientSecret, !clientSecret.isEmpty,
-              let redirectURI, !redirectURI.isEmpty else {
+              let clientSecret, !clientSecret.isEmpty else {
             return nil
         }
 
