@@ -10,6 +10,7 @@ struct ModelDownloadProgressView: View {
     @ObservedObject private var downloader = OfflineModelDownloader.shared
     @State private var errorMessage: String?
     @State private var hasStarted = false
+    @State private var statusMessage = "Preparing download…"
 
     private var titleText: String {
         if let metadata {
@@ -31,8 +32,12 @@ struct ModelDownloadProgressView: View {
                     .lineLimit(2)
             }
 
-            ProgressView(value: downloader.downloadPercentage, total: 100)
+            ProgressView(value: max(downloader.downloadPercentage, downloader.isDownloading ? 0.01 : 0), total: 100)
                 .progressViewStyle(.linear)
+
+            Text(statusMessage)
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             HStack {
                 Text("\(Int(downloader.downloadPercentage))%")
@@ -48,9 +53,12 @@ struct ModelDownloadProgressView: View {
                 Label("Time Remaining: \(downloader.remainingTime)", systemImage: "clock")
                     .font(.caption)
                 Spacer()
-                Label("Data Remaining: \(downloader.dataRemainingDescription)", systemImage: "externaldrive")
+                Label("Size Remaining: \(downloader.dataRemainingDescription)", systemImage: "externaldrive")
                     .font(.caption)
             }
+
+            Label("Speed: \(downloader.downloadSpeed)", systemImage: "speedometer")
+                .font(.caption)
             .foregroundStyle(.secondary)
 
             if !downloader.currentFileName.isEmpty {
@@ -87,6 +95,11 @@ struct ModelDownloadProgressView: View {
             hasStarted = true
             await startDownloadIfNeeded()
         }
+        .onChange(of: downloader.currentFileName) { _, newValue in
+            if !newValue.isEmpty {
+                statusMessage = "Downloading \(newValue)"
+            }
+        }
     }
 
     private func startDownloadIfNeeded() async {
@@ -100,11 +113,32 @@ struct ModelDownloadProgressView: View {
                 throw OfflineModelError.invalidHuggingFaceURL
             }
 
+            statusMessage = "Starting download…"
             try await OfflineModelDownloader.shared.download(model: selectedMetadata)
+            statusMessage = "Finalizing…"
             OfflineModelManager.shared.loadInstalledModels()
+            statusMessage = "Completed"
             await onComplete?()
         } catch {
-            errorMessage = error.localizedDescription
+            statusMessage = "Download failed"
+            errorMessage = detailedErrorMessage(for: error)
         }
+    }
+
+    private func detailedErrorMessage(for error: Error) -> String {
+        if let offlineError = error as? OfflineModelError {
+            return offlineError.localizedDescription
+        }
+
+        let nsError = error as NSError
+        if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileWriteNoPermissionError {
+            return "Cannot write model files due to insufficient permissions in the selected folder."
+        }
+
+        if nsError.domain == NSURLErrorDomain {
+            return "Network download failed: \(nsError.localizedDescription)"
+        }
+
+        return error.localizedDescription
     }
 }
