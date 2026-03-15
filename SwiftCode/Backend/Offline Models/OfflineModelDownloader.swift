@@ -8,6 +8,17 @@ final class OfflineModelDownloader: NSObject, ObservableObject {
         enum Source: Equatable {
             case metadata(OfflineModelMetadata)
             case directURL(URL)
+
+            static func == (lhs: Source, rhs: Source) -> Bool {
+                switch (lhs, rhs) {
+                case let (.metadata(leftMetadata), .metadata(rightMetadata)):
+                    return leftMetadata == rightMetadata
+                case let (.directURL(leftURL), .directURL(rightURL)):
+                    return leftURL == rightURL
+                default:
+                    return false
+                }
+            }
         }
 
         let source: Source
