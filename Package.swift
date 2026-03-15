@@ -26,7 +26,8 @@ let package = Package(
             exclude: [
                 "Assets.xcassets",
                 "Info.plist",
-                "Preview Content"
+                "Preview Content",
+                "Features/AdvancedTools/Views/AdvancedToolsDesignSystem.swift"
             ],
             resources: [
                 .process("Resources")
