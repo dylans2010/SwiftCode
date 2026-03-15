@@ -149,7 +149,7 @@ final class GitHubOAuth: NSObject, ObservableObject {
             return
         }
 
-        guard let pendingState, pendingState == state else {
+        guard let pendingStateValue = pendingState, pendingStateValue == state else {
             handleOAuthFailure(.invalidState)
             return
         }
