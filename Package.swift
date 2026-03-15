@@ -11,7 +11,8 @@ let package = Package(
         .library(name: "SwiftCodeApp", targets: ["SwiftCodeApp"])
     ],
     dependencies: [
-        .package(url: "https://github.com/ml-explore/mlx-swift.git", from: "0.19.0")
+        .package(url: "https://github.com/ml-explore/mlx-swift.git", from: "0.19.0"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", from: "0.9.0")
     ],
     targets: [
         .target(
@@ -20,7 +21,8 @@ let package = Package(
                 .product(name: "MLX", package: "mlx-swift"),
                 .product(name: "MLXNN", package: "mlx-swift"),
                 .product(name: "MLXOptimizers", package: "mlx-swift"),
-                .product(name: "MLXRandom", package: "mlx-swift")
+                .product(name: "MLXRandom", package: "mlx-swift"),
+                .product(name: "ZIPFoundation", package: "ZIPFoundation")
             ],
             path: "SwiftCode",
             exclude: [
