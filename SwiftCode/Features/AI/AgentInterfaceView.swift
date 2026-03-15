@@ -378,9 +378,10 @@ final class AgentController: ObservableObject {
 
             do {
                 var fullResponse = ""
+                let requestMessages = conversationHistory
 
                 try await LLMService.shared.streamChat(
-                    messages: conversationHistory,
+                    messages: requestMessages,
                     model: AppSettings.shared.selectedModel,
                     systemPrompt: systemPrompt
                 ) { [weak self] token in
@@ -398,9 +399,12 @@ final class AgentController: ObservableObject {
                     state.addThought(finalThought)
                 }
 
-                conversationHistory.append(
-                    AIMessage(role: "assistant", content: fullResponse)
-                )
+                let aiResponse = fullResponse.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !aiResponse.isEmpty {
+                    conversationHistory.append(
+                        AIMessage(role: "assistant", content: aiResponse)
+                    )
+                }
 
                 extractPlan(from: fullResponse)
                 syncTasksFromPlan()
