@@ -13,6 +13,7 @@ struct ModelDownloadProgressView: View {
     @State private var hasStarted = false
     @State private var statusMessage = "Preparing download…"
     @State private var didCopyError = false
+    @State private var hasCompleted = false
 
     private var titleText: String {
         if let metadata {
@@ -61,8 +62,7 @@ struct ModelDownloadProgressView: View {
             HStack {
                 if downloader.isDownloading {
                     Button("Continue On Background") {
-                        downloader.scheduleBackgroundDownloadContinuation()
-                        statusMessage = "Download will continue in background"
+                        dismiss()
                     }
                     .buttonStyle(.bordered)
                 }
@@ -87,6 +87,21 @@ struct ModelDownloadProgressView: View {
             hasStarted = true
             await startDownloadIfNeeded()
         }
+        .onChange(of: downloader.isDownloading) { _, isDownloading in
+            guard !isDownloading, hasStarted, !hasCompleted else { return }
+
+            if let latestError = downloader.lastErrorMessage {
+                statusMessage = "Download failed"
+                errorMessage = latestError
+                return
+            }
+
+            hasCompleted = true
+            statusMessage = "Completed"
+            Task {
+                await onComplete?()
+            }
+        }
         .onChange(of: downloader.currentFileName) { _, newValue in
             if !newValue.isEmpty {
                 statusMessage = "Downloading \(newValue)"
@@ -105,12 +120,14 @@ struct ModelDownloadProgressView: View {
                 throw OfflineModelError.invalidHuggingFaceURL
             }
 
+            if downloader.isDownloading,
+               downloader.activeModel?.modelName == selectedMetadata.modelName {
+                statusMessage = "Download in progress…"
+                return
+            }
+
             statusMessage = "Starting download…"
-            try await OfflineModelDownloader.shared.download(model: selectedMetadata)
-            statusMessage = "Finalizing…"
-            OfflineModelManager.shared.loadInstalledModels()
-            statusMessage = "Completed"
-            await onComplete?()
+            downloader.startDownload(model: selectedMetadata)
         } catch {
             statusMessage = "Download failed"
             errorMessage = detailedErrorMessage(for: error)
