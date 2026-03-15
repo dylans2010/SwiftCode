@@ -118,6 +118,7 @@ PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */ = {isa =
 SO0000000000000000000001A /* SymbolOutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SO0000000000000000000001B /* SymbolOutlineView.swift */; };
 AM0000000000000000000001A /* AgentMemoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AM0000000000000000000001B /* AgentMemoryManager.swift */; };
 TM0000000000000000000001A /* AgentTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TM0000000000000000000001B /* AgentTaskManager.swift */; };
+NM0000000000000000000001A /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = NM0000000000000000000001B /* NotificationManager.swift */; };
 TQ0000000000000000000001A /* AgentTaskQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = TQ0000000000000000000001B /* AgentTaskQueue.swift */; };
 LM0000000000000000000001A /* LocalModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = LM0000000000000000000001B /* LocalModelManager.swift */; };
 PM0000000000000000000001A /* PluginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PM0000000000000000000001B /* PluginManager.swift */; };
@@ -328,6 +329,7 @@ PT0000000000000000000001B /* ProjectTemplateManager.swift */ = {isa = PBXFileRef
 SO0000000000000000000001B /* SymbolOutlineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolOutlineView.swift; sourceTree = "<group>"; };
 AM0000000000000000000001B /* AgentMemoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentMemoryManager.swift; sourceTree = "<group>"; };
 TM0000000000000000000001B /* AgentTaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTaskManager.swift; sourceTree = "<group>"; };
+NM0000000000000000000001B /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 TQ0000000000000000000001B /* AgentTaskQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTaskQueue.swift; sourceTree = "<group>"; };
 LM0000000000000000000001B /* LocalModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalModelManager.swift; sourceTree = "<group>"; };
 PM0000000000000000000001B /* PluginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginManager.swift; sourceTree = "<group>"; };
@@ -489,6 +491,7 @@ children = (
 				PT0000000000000000000001B /* ProjectTemplateManager.swift */,
 				AM0000000000000000000001B /* AgentMemoryManager.swift */,
 				TM0000000000000000000001B /* AgentTaskManager.swift */,
+				NM0000000000000000000001B /* NotificationManager.swift */,
 				TQ0000000000000000000001B /* AgentTaskQueue.swift */,
 				LM0000000000000000000001B /* LocalModelManager.swift */,
 				PM0000000000000000000001B /* PluginManager.swift */,
@@ -1510,6 +1513,7 @@ files = (
 				SO0000000000000000000001A /* SymbolOutlineView.swift in Sources */,
 				AM0000000000000000000001A /* AgentMemoryManager.swift in Sources */,
 				TM0000000000000000000001A /* AgentTaskManager.swift in Sources */,
+				NM0000000000000000000001A /* NotificationManager.swift in Sources */,
 				TQ0000000000000000000001A /* AgentTaskQueue.swift in Sources */,
 				LM0000000000000000000001A /* LocalModelManager.swift in Sources */,
 				PM0000000000000000000001A /* PluginManager.swift in Sources */,

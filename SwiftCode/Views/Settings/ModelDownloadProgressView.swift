@@ -22,9 +22,9 @@ struct ModelDownloadProgressView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Downloading \(titleText)")
-                .font(.subheadline.weight(.semibold))
+        VStack(alignment: .leading, spacing: 12) {
+            Text(titleText)
+                .font(.headline)
                 .lineLimit(2)
 
             if let modelLink {
@@ -40,35 +40,6 @@ struct ModelDownloadProgressView: View {
             Text(statusMessage)
                 .font(.caption)
                 .foregroundStyle(.secondary)
-
-            HStack {
-                Text("\(Int(downloader.downloadPercentage))%")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("\(downloader.downloadedDescription) / \(downloader.totalDescription)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            HStack {
-                Label("Time Remaining: \(downloader.remainingTime)", systemImage: "clock")
-                    .font(.caption)
-                Spacer()
-                Label("Size Remaining: \(downloader.dataRemainingDescription)", systemImage: "externaldrive")
-                    .font(.caption)
-            }
-
-            Label("Speed: \(downloader.downloadSpeed)", systemImage: "speedometer")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            if !downloader.currentFileName.isEmpty {
-                Text("Current file: \(downloader.currentFileName)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
 
             if let errorMessage {
                 VStack(alignment: .leading, spacing: 6) {
@@ -88,6 +59,14 @@ struct ModelDownloadProgressView: View {
             }
 
             HStack {
+                if downloader.isDownloading {
+                    Button("Continue On Background") {
+                        downloader.scheduleBackgroundDownloadContinuation()
+                        statusMessage = "Download will continue in background"
+                    }
+                    .buttonStyle(.bordered)
+                }
+
                 Spacer()
                 if downloader.isDownloading {
                     Button("Cancel") {

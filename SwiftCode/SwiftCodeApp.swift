@@ -2,6 +2,9 @@ import SwiftUI
 
 @main
 struct SwiftCodeApp: App {
+    init() {
+        OfflineModelDownloader.shared.registerBackgroundTask()
+    }
     @StateObject private var projectManager = ProjectManager.shared
     @StateObject private var settings = AppSettings.shared
     @StateObject private var codingManager = CodingManager.shared
@@ -24,6 +27,8 @@ struct SwiftCodeApp: App {
                     // Ensure the persistent Projects and Models directories exist at launch
                     codingManager.ensureProjectsDirectory()
                     codingManager.ensureModelsDirectory()
+                    NotificationManager.shared.requestAuthorizationIfNeeded()
+                    await OfflineModelDownloader.shared.resumePendingDownloadIfNeeded()
                 }
         }
     }

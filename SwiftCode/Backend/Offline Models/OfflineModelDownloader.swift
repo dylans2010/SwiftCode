@@ -1,9 +1,13 @@
 import Foundation
+import BackgroundTasks
 
 @MainActor
 final class OfflineModelDownloader: ObservableObject {
     static let shared = OfflineModelDownloader()
     private init() {}
+
+    static let backgroundTaskIdentifier = "com.swiftcode.offline-model-download"
+    private let pendingModelKey = "com.swiftcode.pendingOfflineModelDownload"
 
     @Published var downloadPercentage: Double = 0
     @Published var bytesDownloaded: Int64 = 0
@@ -17,6 +21,8 @@ final class OfflineModelDownloader: ObservableObject {
     private var activeTask: URLSessionDownloadTask?
     private var activeSession: URLSession?
     private var activeDelegate: DownloadTaskDelegate?
+
+    private var pendingBackgroundModel: OfflineModelMetadata?
 
     var dataRemainingDescription: String {
         ByteCountFormatter.string(fromByteCount: bytesRemaining, countStyle: .file)
@@ -36,12 +42,16 @@ final class OfflineModelDownloader: ObservableObject {
         }
 
         resetProgress()
+        pendingBackgroundModel = model
+        persistPendingDownload(model)
         isDownloading = true
         defer {
             isDownloading = false
             activeTask = nil
             activeSession = nil
             activeDelegate = nil
+            pendingBackgroundModel = nil
+            clearPersistedPendingDownload()
         }
 
         OfflineModelManager.shared.downloadingModels.insert(model.modelName)
@@ -91,6 +101,41 @@ final class OfflineModelDownloader: ObservableObject {
         )
         try OfflineModelsStorage.shared.writeMetadata(installedMetadata, modelDirectory: localModelDirectory)
         OfflineModelManager.shared.registerInstalledModel(from: model, localPath: localModelDirectory)
+        NotificationManager.shared.sendOfflineModelDownloadedNotification(modelName: model.modelName)
+    }
+
+    func registerBackgroundTask() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundTaskIdentifier, using: nil) { task in
+            Task { @MainActor in
+                self.handleBackgroundProcessingTask(task)
+            }
+        }
+    }
+
+    func scheduleBackgroundDownloadContinuation() {
+        guard isDownloading || persistedPendingDownload() != nil else { return }
+
+        let request = BGProcessingTaskRequest(identifier: Self.backgroundTaskIdentifier)
+        request.requiresNetworkConnectivity = true
+        request.requiresExternalPower = false
+
+        do {
+            try BGTaskScheduler.shared.submit(request)
+            print("[OfflineModelDownloader] Scheduled background continuation task")
+        } catch {
+            print("[OfflineModelDownloader] Failed to schedule background task: \(error)")
+        }
+    }
+
+    func resumePendingDownloadIfNeeded() async {
+        guard !isDownloading else { return }
+        guard let model = pendingBackgroundModel ?? persistedPendingDownload() else { return }
+
+        do {
+            try await download(model: model)
+        } catch {
+            print("[OfflineModelDownloader] Failed to resume pending background download: \(error)")
+        }
     }
 
     func cancelCurrentDownload() {
@@ -107,6 +152,39 @@ final class OfflineModelDownloader: ObservableObject {
         downloadSpeed = "0 KB/s"
         remainingTime = "Unknown"
         currentFileName = ""
+    }
+
+    private func handleBackgroundProcessingTask(_ task: BGTask) {
+        task.expirationHandler = {
+            Task { @MainActor in
+                self.cancelCurrentDownload()
+            }
+        }
+
+        Task { @MainActor in
+            await self.resumePendingDownloadIfNeeded()
+            task.setTaskCompleted(success: !self.isDownloading)
+        }
+    }
+
+    private func persistPendingDownload(_ model: OfflineModelMetadata) {
+        guard let data = try? JSONEncoder().encode(model) else { return }
+        UserDefaults.standard.set(data, forKey: pendingModelKey)
+    }
+
+    private func clearPersistedPendingDownload() {
+        UserDefaults.standard.removeObject(forKey: pendingModelKey)
+    }
+
+    private func persistedPendingDownload() -> OfflineModelMetadata? {
+        guard
+            let data = UserDefaults.standard.data(forKey: pendingModelKey),
+            let model = try? JSONDecoder().decode(OfflineModelMetadata.self, from: data)
+        else {
+            return nil
+        }
+
+        return model
     }
 
 
