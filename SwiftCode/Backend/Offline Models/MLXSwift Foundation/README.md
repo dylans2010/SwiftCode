@@ -28,4 +28,4 @@ The app target now links these products from [`ml-explore/mlx-swift`](https://gi
 
 ## Next step for model-family support
 
-`StubOfflineModelLoader` intentionally throws until a concrete loader is chosen for your model families. Add the real loader there (for example, a llama/qwen adapter) and keep the `OfflineLanguageModel` / `OfflineTokenizer` abstractions unchanged so the backend interfaces remain stable.
+`UniversalModelLoader` now performs config-driven architecture detection (`model_type` in `config.json`), tokenizer discovery, and safetensors file resolution. Architecture routing is centralized and extendable so new HuggingFace model types can be added without changing call sites. Runtime-specific MLX builders can be wired per architecture in `GenericMLXArchitectureBuilders`.
