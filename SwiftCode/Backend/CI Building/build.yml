@@ -1,106 +1,84 @@
-name: Build iOS IPA
+name: Create New Release
 
 on:
-{{ON_PUSH}}
-{{ON_PR}}
   workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+env:
+  CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+  SECRET_ID: ${{ secrets.SECRET_ID }}
 
 jobs:
   build:
     runs-on: macos-14
-    timeout-minutes: 30
-    permissions:
-      contents: read
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'
 
-      - name: Select Xcode
+      - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '{{XCODE_VERSION}}'
+          xcode-version: '16.2'
 
-      - name: Resolve CI build configuration
-        id: ci_config
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          defaults = {
-            "platform": "iOS",
-            "deploymentTarget": "{{DEPLOYMENT_TARGET}}",
-            "targetDeviceFamily": "{{TARGETED_DEVICE_FAMILY}}",
-            "schemeName": "{{SCHEME}}",
-          }
-
-          config_path = Path('.swiftcode/ci-build-config.json')
-          config = defaults.copy()
-          if config_path.exists():
-            with config_path.open('r', encoding='utf-8') as fh:
-              loaded = json.load(fh)
-            config['platform'] = loaded.get('platform', config['platform'])
-            config['deploymentTarget'] = loaded.get('deploymentTarget', config['deploymentTarget'])
-            device_family = loaded.get('targetDeviceFamily', '')
-            map_family = {"iPhone": "1", "iPad": "2", "iPhone + iPad": "1,2"}
-            config['targetDeviceFamily'] = map_family.get(device_family, loaded.get('targetDeviceFamily', config['targetDeviceFamily']))
-            config['schemeName'] = loaded.get('schemeName', config['schemeName'])
-
-          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as out:
-            out.write(f"platform={config['platform']}\n")
-            out.write(f"deployment_target={config['deploymentTarget']}\n")
-            out.write(f"target_device_family={config['targetDeviceFamily']}\n")
-            out.write(f"scheme={config['schemeName']}\n")
-          PY
-
-      - name: Show Environment
+      - name: Verify Xcode Version
         run: |
           xcodebuild -version
-          swift --version
-          echo "Platform: ${{ steps.ci_config.outputs.platform }}"
-          echo "Deployment Target: ${{ steps.ci_config.outputs.deployment_target }}"
-          echo "Target Device Family: ${{ steps.ci_config.outputs.target_device_family }}"
-          echo "Scheme: ${{ steps.ci_config.outputs.scheme }}"
+          xcodebuild -showsdks
 
-      - name: Detect Xcode workspace/project
-        id: project
+      - name: Clean Build Environment
+        run: rm -rf ~/Library/Developer/Xcode/DerivedData
+
+      - name: Verify CI Secret Wiring
         run: |
-          WORKSPACE=$(find . -name "*.xcworkspace" -not -path "*/DerivedData/*" | head -1)
-          XCODEPROJ=$(find . -name "*.xcodeproj" -not -path "*/DerivedData/*" | head -1)
-          if [ -n "$WORKSPACE" ]; then
-            echo "project_arg=-workspace $WORKSPACE" >> "$GITHUB_OUTPUT"
-          elif [ -n "$XCODEPROJ" ]; then
-            echo "project_arg=-project $XCODEPROJ" >> "$GITHUB_OUTPUT"
+          if [ -n "$CLIENT_SECRET" ]; then
+            echo "CLIENT_SECRET is set (masked)"
           else
-            echo "Error: No .xcworkspace or .xcodeproj found in repository." >&2
-            exit 1
+            echo "CLIENT_SECRET is missing"
           fi
-{{STEPS}}
-      - name: Build Archive
+
+          if [ -n "$SECRET_ID" ]; then
+            echo "SECRET_ID is set (masked)"
+          else
+            echo "SECRET_ID is missing"
+          fi
+
+      - name: Resolve Package Dependencies
+        run: xcodebuild -project SwiftCode.xcodeproj -scheme SwiftCode -resolvePackageDependencies
+
+      - name: Build and Archive .ipa
         run: |
-          xcodebuild archive \
-            ${{ steps.project.outputs.project_arg }} \
-            -scheme "${{ steps.ci_config.outputs.scheme }}" \
-            -archivePath "$RUNNER_TEMP/${{ steps.ci_config.outputs.scheme }}.xcarchive" \
+          mkdir -p upload
+          xcodebuild -project SwiftCode.xcodeproj \
+            -scheme SwiftCode \
+            -configuration Release \
             -destination "generic/platform=iOS" \
-            IPHONEOS_DEPLOYMENT_TARGET=${{ steps.ci_config.outputs.deployment_target }} \
-            TARGETED_DEVICE_FAMILY=${{ steps.ci_config.outputs.target_device_family }} \
-            CODE_SIGNING_ALLOWED=NO
+            -sdk iphoneos \
+            -archivePath upload/SwiftCode.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
 
-      - name: Package IPA
+          mkdir -p upload/Payload
+          cp -R upload/SwiftCode.xcarchive/Products/Applications/*.app upload/Payload/
+          cd upload
+          zip -r SwiftCode.ipa Payload
+
+      - name: Verify IPA
         run: |
-          mkdir -p "$RUNNER_TEMP/ipa/Payload"
-          cp -R "$RUNNER_TEMP/${{ steps.ci_config.outputs.scheme }}.xcarchive/Products/Applications/"*.app \
-            "$RUNNER_TEMP/ipa/Payload/"
-          cd "$RUNNER_TEMP/ipa"
-          zip -r "${{ steps.ci_config.outputs.scheme }}.ipa" Payload
+          ls -la upload/
+          test -f upload/SwiftCode.ipa && echo "IPA created successfully"
 
-      - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: ${{ steps.ci_config.outputs.scheme }}-IPA
-          path: ${{ runner.temp }}/ipa/${{ steps.ci_config.outputs.scheme }}.ipa
-          if-no-files-found: error
-          retention-days: 30
+          tag_name: build-${{ github.run_number }}
+          name: SwiftCode Build ${{ github.run_number }}
+          files: upload/SwiftCode.ipa
+          generate_release_notes: true
