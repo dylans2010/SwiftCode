@@ -5,32 +5,18 @@ struct ModelDownloadProgressView: View {
     @ObservedObject var downloader = OfflineModelDownloader.shared
 
     var body: some View {
-        VStack(spacing: 15) {
-            Text(modelName)
-                .font(.headline)
+        VStack(spacing: 10) {
+            Text("Downloading \(modelName)")
+                .font(.subheadline.weight(.semibold))
+                .lineLimit(1)
 
             ProgressView(value: downloader.downloadPercentage, total: 100)
                 .progressViewStyle(.linear)
 
-            HStack {
-                Text("\(Int(downloader.downloadPercentage))%")
-                Spacer()
-                Text(downloader.downloadSpeed)
-            }
-            .font(.caption)
-            .foregroundStyle(.secondary)
-
-            Text("Remaining: \(downloader.remainingTime)")
-                .font(.caption2)
-
-            if downloader.downloadPercentage >= 100 {
-                Text("Download Complete")
-                    .foregroundColor(.green)
-                    .bold()
-            }
+            Text("\(Int(downloader.downloadPercentage))%")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(12)
     }
 }
