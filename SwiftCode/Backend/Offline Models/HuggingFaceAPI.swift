@@ -211,6 +211,8 @@ private struct HFModelLFS: Decodable {
 enum OfflineModelError: LocalizedError {
     case invalidHuggingFaceURL
     case noCompatibleModelFiles
+    case insufficientStorage(requiredBytes: Int64, availableBytes: Int64)
+    case downloadCancelled
 
     var errorDescription: String? {
         switch self {
@@ -218,6 +220,12 @@ enum OfflineModelError: LocalizedError {
             return "Please provide a valid Hugging Face repository link."
         case .noCompatibleModelFiles:
             return "No compatible model files were found (.safetensors, .gguf, .bin)."
+        case let .insufficientStorage(requiredBytes, availableBytes):
+            let required = ByteCountFormatter.string(fromByteCount: requiredBytes, countStyle: .file)
+            let available = ByteCountFormatter.string(fromByteCount: availableBytes, countStyle: .file)
+            return "Insufficient storage. Required \(required), available \(available)."
+        case .downloadCancelled:
+            return "Download cancelled."
         }
     }
 }
