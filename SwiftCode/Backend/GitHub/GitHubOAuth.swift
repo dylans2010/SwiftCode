@@ -6,6 +6,8 @@ import UIKit
 @MainActor
 final class GitHubOAuth: NSObject, ObservableObject {
     static let shared = GitHubOAuth()
+    static let clientSecret = EnvironmentValueLoader.value(for: "CLIENT_SECRET", fallback: "missing_client_secret")
+    static let secretID = EnvironmentValueLoader.value(for: "SECRET_ID", fallback: "missing_secret_id")
 
     @Published private(set) var isAuthenticating = false
     @Published private(set) var isConnected = false
@@ -44,7 +46,7 @@ final class GitHubOAuth: NSObject, ObservableObject {
         guard !isAuthenticating else { return }
 
         guard let config = GitHubOAuthConfig.load() else {
-            errorMessage = "GitHub OAuth is not configured. Add GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET to your .env file."
+            errorMessage = "GitHub OAuth is not configured. Add GITHUB_CLIENT_ID and CLIENT_SECRET to your environment or .env file."
             return
         }
 
@@ -265,19 +267,38 @@ private struct GitHubOAuthConfig {
     let redirectURI: String
 
     static func load() -> GitHubOAuthConfig? {
-        let environment = ProcessInfo.processInfo.environment
-        let dotenv = DotEnvLoader.load(fileName: ".env")
-
-        let clientID = environment["GITHUB_CLIENT_ID"] ?? dotenv["GITHUB_CLIENT_ID"]
-        let clientSecret = environment["GITHUB_CLIENT_SECRET"] ?? dotenv["GITHUB_CLIENT_SECRET"]
+        let clientID = EnvironmentValueLoader.optionalValue(for: "GITHUB_CLIENT_ID")
+        let clientSecret = GitHubOAuth.clientSecret
         let redirectURI = "swiftcode://oauth/callback"
 
         guard let clientID, !clientID.isEmpty,
-              let clientSecret, !clientSecret.isEmpty else {
+              clientSecret != "missing_client_secret" else {
             return nil
         }
 
         return GitHubOAuthConfig(clientID: clientID, clientSecret: clientSecret, redirectURI: redirectURI)
+    }
+}
+
+private enum EnvironmentValueLoader {
+    private static let dotenv = DotEnvLoader.load(fileName: ".env")
+
+    static func optionalValue(for key: String) -> String? {
+        let environment = ProcessInfo.processInfo.environment
+
+        if let raw = environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty {
+            return raw
+        }
+
+        if let raw = dotenv[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty {
+            return raw
+        }
+
+        return nil
+    }
+
+    static func value(for key: String, fallback: String) -> String {
+        optionalValue(for: key) ?? fallback
     }
 }
 
