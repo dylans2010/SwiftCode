@@ -7,7 +7,8 @@ final class HuggingFaceAPI {
     private let baseURL = URL(string: "https://huggingface.co/api/models")!
     private let cacheKey = "huggingface.models.cache"
     private let cacheTimestampKey = "huggingface.models.cache.timestamp"
-    private let cacheDuration: TimeInterval = 3600 // 1 hour
+    private let cacheDuration: TimeInterval = 3600
+    private let allowedExtensions = ["safetensors", "gguf", "bin"]
 
     func fetchModels(forceRefresh: Bool = false) async throws -> [OfflineModelMetadata] {
         if !forceRefresh, let cached = getCachedModels() {
@@ -29,39 +30,87 @@ final class HuggingFaceAPI {
 
         let hfModels = try JSONDecoder().decode([HFModelResponse].self, from: data)
         let models = try await mapModels(hfModels)
-
         cacheModels(models)
         return models
+    }
+
+    func fetchModel(from repositoryURL: URL) async throws -> OfflineModelMetadata {
+        let modelPath = try parseRepositoryPath(repositoryURL)
+        return try await fetchModel(modelPath: modelPath)
+    }
+
+    func fetchModel(modelPath: String) async throws -> OfflineModelMetadata {
+        let details = try await fetchModelDetails(modelId: modelPath)
+        return mapDetails(modelPath: modelPath, details: details)
+    }
+
+    func parseRepositoryPath(_ repositoryURL: URL) throws -> String {
+        guard repositoryURL.scheme?.lowercased().hasPrefix("http") == true,
+              repositoryURL.host?.lowercased() == "huggingface.co" else {
+            throw OfflineModelError.invalidHuggingFaceURL
+        }
+
+        let parts = repositoryURL.pathComponents
+            .filter { $0 != "/" }
+            .filter { !$0.isEmpty }
+
+        guard parts.count >= 2 else {
+            throw OfflineModelError.invalidHuggingFaceURL
+        }
+
+        let author = parts[0]
+        let model = parts[1]
+        guard !author.isEmpty, !model.isEmpty else {
+            throw OfflineModelError.invalidHuggingFaceURL
+        }
+
+        return "\(author)/\(model)"
     }
 
     private func mapModels(_ hfModels: [HFModelResponse]) async throws -> [OfflineModelMetadata] {
         var mapped: [OfflineModelMetadata] = []
 
         for hf in hfModels {
-            let details = try? await fetchModelDetails(modelId: hf.modelId)
-            let totalBytes = details?.siblingFiles?.compactMap { file in
-                file.lfs?.size ?? file.size
-            }.reduce(0, +)
-
-            let files = details?.siblingFiles?.map(\.filename) ?? []
-            let resolvedSize = totalBytes.map(Self.formatBytes) ?? "Unknown"
-
-            mapped.append(
-                OfflineModelMetadata(
-                    modelName: hf.modelId,
-                    providerName: hf.author ?? "Unknown",
-                    description: "Hugging Face model: \(hf.modelId)",
-                    modelSize: resolvedSize,
-                    tags: hf.tags ?? [],
-                    downloadCount: hf.downloads ?? 0,
-                    modelURL: URL(string: "https://huggingface.co/\(hf.modelId)")!,
-                    files: files,
-                    isQuantized: hf.tags?.contains("quantized") ?? false
-                )
-            )
+            do {
+                let metadata = try await fetchModel(modelPath: hf.modelId)
+                mapped.append(metadata)
+            } catch {
+                continue
+            }
         }
 
         return mapped
+    }
+
+    private func mapDetails(modelPath: String, details: HFModelDetailsResponse) -> OfflineModelMetadata {
+        let files = (details.siblingFiles ?? []).compactMap { file -> OfflineModelFile? in
+            let ext = URL(fileURLWithPath: file.filename).pathExtension.lowercased()
+            guard allowedExtensions.contains(ext) else { return nil }
+            guard let encodedPath = file.filename.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+                  let downloadURL = URL(string: "https://huggingface.co/\(modelPath)/resolve/main/\(encodedPath)") else {
+                return nil
+            }
+
+            return OfflineModelFile(
+                fileName: file.filename,
+                downloadURL: downloadURL,
+                sizeBytes: Int64(file.lfs?.size ?? file.size ?? 0)
+            )
+        }
+
+        let totalBytes = files.reduce(0) { $0 + $1.sizeBytes }
+        return OfflineModelMetadata(
+            modelName: details.modelId,
+            providerName: details.author ?? details.modelId.components(separatedBy: "/").first ?? "Unknown",
+            description: details.description ?? "Hugging Face model: \(details.modelId)",
+            modelSize: totalBytes > 0 ? Self.formatBytes(Int(totalBytes)) : "Unknown",
+            modelSizeBytes: totalBytes,
+            tags: details.tags ?? [],
+            downloadCount: details.downloads ?? 0,
+            modelURL: URL(string: "https://huggingface.co/\(details.modelId)") ?? baseURL,
+            files: files,
+            isQuantized: (details.tags ?? []).contains(where: { $0.localizedCaseInsensitiveContains("quant") })
+        )
     }
 
     private func fetchModelDetails(modelId: String) async throws -> HFModelDetailsResponse {
@@ -103,17 +152,44 @@ final class HuggingFaceAPI {
 
 private struct HFModelResponse: Decodable {
     let modelId: String
-    let author: String?
-    let downloads: Int?
-    let tags: [String]?
 }
 
 private struct HFModelDetailsResponse: Decodable {
+    let modelId: String
+    let author: String?
+    let downloads: Int?
+    let tags: [String]?
+    let description: String?
     let siblingFiles: [HFModelFile]?
 
     enum CodingKeys: String, CodingKey {
+        case modelId = "id"
+        case author
+        case downloads
+        case tags
+        case description = "cardData"
         case siblingFiles = "siblings"
     }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        modelId = try container.decode(String.self, forKey: .modelId)
+        author = try container.decodeIfPresent(String.self, forKey: .author)
+        downloads = try container.decodeIfPresent(Int.self, forKey: .downloads)
+        tags = try container.decodeIfPresent([String].self, forKey: .tags)
+        siblingFiles = try container.decodeIfPresent([HFModelFile].self, forKey: .siblingFiles)
+
+        if let card = try? container.decode(HFCardData.self, forKey: .description) {
+            description = card.summary ?? card.description
+        } else {
+            description = nil
+        }
+    }
+}
+
+private struct HFCardData: Decodable {
+    let summary: String?
+    let description: String?
 }
 
 private struct HFModelFile: Decodable {
@@ -130,4 +206,18 @@ private struct HFModelFile: Decodable {
 
 private struct HFModelLFS: Decodable {
     let size: Int?
+}
+
+enum OfflineModelError: LocalizedError {
+    case invalidHuggingFaceURL
+    case noCompatibleModelFiles
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidHuggingFaceURL:
+            return "Please provide a valid Hugging Face repository link."
+        case .noCompatibleModelFiles:
+            return "No compatible model files were found (.safetensors, .gguf, .bin)."
+        }
+    }
 }

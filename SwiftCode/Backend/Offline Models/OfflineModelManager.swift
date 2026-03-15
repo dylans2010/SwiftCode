@@ -33,6 +33,38 @@ final class OfflineModelManager: ObservableObject {
         try? FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
     }
 
+    func validateRepositoryURL(_ urlString: String) -> Bool {
+        guard let url = URL(string: urlString.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            return false
+        }
+
+        do {
+            _ = try HuggingFaceAPI.shared.parseRepositoryPath(url)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    func fetchModelMetadataFromLink(_ urlString: String) async throws -> OfflineModelMetadata {
+        guard let repositoryURL = URL(string: urlString.trimmingCharacters(in: .whitespacesAndNewlines)) else {
+            throw OfflineModelError.invalidHuggingFaceURL
+        }
+
+        let metadata = try await HuggingFaceAPI.shared.fetchModel(from: repositoryURL)
+        guard !metadata.files.isEmpty else {
+            throw OfflineModelError.noCompatibleModelFiles
+        }
+
+        return metadata
+    }
+
+    func installModelFromLink(url: String) async throws {
+        let metadata = try await fetchModelMetadataFromLink(url)
+        try await OfflineModelDownloader.shared.download(model: metadata)
+        loadInstalledModels()
+    }
+
     func loadInstalledModels() {
         installedModelRecords = loadMetadataFromPlist()
         installedModels = installedModelRecords.map { record in
@@ -41,6 +73,7 @@ final class OfflineModelManager: ObservableObject {
                 providerName: record.provider,
                 description: "Locally stored model",
                 modelSize: record.size,
+                modelSizeBytes: 0,
                 tags: ["offline", "installed"],
                 downloadCount: 0,
                 modelURL: URL(fileURLWithPath: record.localModelPath.isEmpty ? "/" : record.localModelPath),
@@ -94,7 +127,8 @@ final class OfflineModelManager: ObservableObject {
     }
 
     func modelDirectory(for modelName: String) -> URL {
-        modelsDir.appendingPathComponent(modelName)
+        let safeName = modelName.replacingOccurrences(of: "/", with: "_")
+        return modelsDir.appendingPathComponent(safeName)
     }
 
     private func loadMetadataFromPlist() -> [InstalledOfflineModelRecord] {

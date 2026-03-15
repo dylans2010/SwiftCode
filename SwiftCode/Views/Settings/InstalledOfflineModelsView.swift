@@ -77,6 +77,7 @@ struct InstalledOfflineModelsView: View {
             providerName: model.provider,
             description: "Locally stored model",
             modelSize: model.size,
+            modelSizeBytes: 0,
             tags: ["offline", "installed"],
             downloadCount: 0,
             modelURL: URL(fileURLWithPath: model.localModelPath.isEmpty ? "/" : model.localModelPath),
