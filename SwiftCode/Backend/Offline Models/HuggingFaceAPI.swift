@@ -8,7 +8,7 @@ final class HuggingFaceAPI {
     private let cacheKey = "huggingface.models.cache"
     private let cacheTimestampKey = "huggingface.models.cache.timestamp"
     private let cacheDuration: TimeInterval = 3600
-    private let allowedExtensions = ["safetensors", "gguf", "bin"]
+    private let allowedExtensions = ["safetensors", "gguf", "bin", "json", "model", "txt"]
 
     func fetchModels(forceRefresh: Bool = false) async throws -> [OfflineModelMetadata] {
         if !forceRefresh, let cached = getCachedModels() {
