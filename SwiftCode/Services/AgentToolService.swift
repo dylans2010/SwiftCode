@@ -753,7 +753,7 @@ final class AgentToolService {
             return .success(toolName, "No unused code detected in the current project.")
 
         case "convert_json_to_swift_model":
-            let json = str("json"); let root = str("root_name")
+            _ = str("json"); let root = str("root_name")
             return .success(toolName, "Generated Swift model \(root) from JSON.")
 
         case "generate_mock_swift_data":
