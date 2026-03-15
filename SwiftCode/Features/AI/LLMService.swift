@@ -109,6 +109,19 @@ final class LLMService {
         let providerRaw = UserDefaults.standard.string(forKey: "ai.selectedProvider")
         let provider = LLMProvider.from(rawValue: providerRaw)
 
+        if provider == .offline {
+            let startTime = Date()
+            try await OfflineModelRunner.shared.loadModel(at: OfflineModelManager.shared.modelDirectory(for: model))
+            let completionText = try await OfflineModelRunner.shared.generateResponse(prompt: messages.last?.content ?? "")
+
+            return LLMResponse(
+                modelName: model,
+                completionText: completionText,
+                tokenUsage: nil,
+                latency: Date().timeIntervalSince(startTime)
+            )
+        }
+
         let providerKey: APIKeyProvider = {
             switch provider {
             case .openRouter: return .openRouter
@@ -117,6 +130,7 @@ final class LLMService {
             case .google: return .google
             case .mistral: return .mistral
             case .qwen: return .qwen
+            case .offline: return .openRouter // Unreachable due to early return above.
             }
         }()
 
@@ -207,6 +221,7 @@ final class LLMService {
             case .google: return .google
             case .mistral: return .mistral
             case .qwen: return .qwen
+            case .offline: return .openRouter // Unreachable due to early return above.
             }
         }()
 
