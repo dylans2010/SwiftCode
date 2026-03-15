@@ -12,6 +12,7 @@ struct ModelDownloadProgressView: View {
     @State private var errorMessage: String?
     @State private var hasStarted = false
     @State private var statusMessage = "Preparing download…"
+    @State private var didCopyError = false
 
     private var titleText: String {
         if let metadata {
@@ -77,9 +78,9 @@ struct ModelDownloadProgressView: View {
                         .textSelection(.enabled)
 
                     Button {
-                        UIPasteboard.general.string = errorMessage
+                        copyErrorMessage(errorMessage)
                     } label: {
-                        Label("Copy Error", systemImage: "doc.on.doc")
+                        Label(didCopyError ? "Copied" : "Copy Error", systemImage: didCopyError ? "checkmark" : "doc.on.doc")
                             .font(.caption)
                     }
                     .buttonStyle(.bordered)
@@ -137,12 +138,25 @@ struct ModelDownloadProgressView: View {
         }
     }
 
+
+    @MainActor
+    private func copyErrorMessage(_ message: String) {
+        UIPasteboard.general.string = message
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+
+        didCopyError = true
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            didCopyError = false
+        }
+    }
     private func detailedErrorMessage(for error: Error) -> String {
+        let nsError = error as NSError
+
         if let offlineError = error as? OfflineModelError {
-            return offlineError.localizedDescription
+            return "\(offlineError.localizedDescription)\n\nFull error: \(nsError)"
         }
 
-        let nsError = error as NSError
         if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileWriteNoPermissionError {
             return "Cannot write model files due to insufficient permissions in the selected folder. Full error: \(nsError)"
         }
@@ -151,6 +165,6 @@ struct ModelDownloadProgressView: View {
             return "Network download failed. Full error: \(nsError)"
         }
 
-        return "\(error)"
+        return "Full error: \(nsError)"
     }
 }

@@ -61,20 +61,13 @@ final class OfflineModelDownloader: ObservableObject {
         print("[OfflineModelDownloader] Starting download for \(model.modelName)")
         for file in model.files {
             currentFileName = file.fileName
-            let destinationURL = localModelDirectory.appendingPathComponent(file.fileName)
-
-            // Create subdirectories if necessary (for files in subfolders)
-            let folderURL = destinationURL.deletingLastPathComponent()
-            try ensureWritableDirectory(folderURL)
-
-            let localURL = try await downloadFile(
+            let _ = try await downloadFile(
                 file: file,
+                modelFolderName: OfflineModelsStorage.shared.sanitizedFolderName(from: model.modelName),
                 alreadyReceivedBytes: totalReceivedBytes,
                 totalExpectedBytes: totalBytes,
                 startDate: startDate
             )
-
-            try finalizeDownloadedFile(from: localURL, to: destinationURL)
 
             totalReceivedBytes += file.sizeBytes
             updateProgress(receivedBytes: totalReceivedBytes, expectedBytes: totalBytes, startDate: startDate)
@@ -129,31 +122,6 @@ final class OfflineModelDownloader: ObservableObject {
         }
     }
 
-    private func finalizeDownloadedFile(from tempURL: URL, to destinationURL: URL) throws {
-        do {
-            try OfflineModelsStorage.shared.createDirectoryIfNeeded(at: try OfflineModelsStorage.shared.offlineModelsDirectory(createIfNeeded: true))
-            try OfflineModelsStorage.shared.createDirectoryIfNeeded(at: destinationURL.deletingLastPathComponent())
-
-            if FileManager.default.fileExists(atPath: destinationURL.path) {
-                try FileManager.default.removeItem(at: destinationURL)
-            }
-
-            do {
-                try FileManager.default.moveItem(at: tempURL, to: destinationURL)
-            } catch {
-                // Fall back to copy + remove when move fails across filesystems or app sandboxes.
-                try FileManager.default.copyItem(at: tempURL, to: destinationURL)
-                try? FileManager.default.removeItem(at: tempURL)
-            }
-        } catch {
-            throw OfflineModelError.failedToMoveDownloadedFile(
-                from: tempURL.path,
-                to: destinationURL.path,
-                underlyingError: error
-            )
-        }
-    }
-
     private func verifyStorageCapacity(requiredBytes: Int64) throws {
         guard
             let values = try? URL(fileURLWithPath: NSHomeDirectory()).resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
@@ -169,18 +137,21 @@ final class OfflineModelDownloader: ObservableObject {
 
     private func downloadFile(
         file: OfflineModelFile,
+        modelFolderName: String,
         alreadyReceivedBytes: Int64,
         totalExpectedBytes: Int64,
         startDate: Date
     ) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             let delegate = DownloadTaskDelegate(
+                modelFolderName: modelFolderName,
+                relativeFilePath: file.fileName,
                 onProgress: { bytesWritten, expectedToWrite in
                     let expectedBytes = expectedToWrite > 0 ? expectedToWrite : file.sizeBytes
                     let received = alreadyReceivedBytes + bytesWritten
                     self.updateProgress(receivedBytes: received, expectedBytes: max(totalExpectedBytes, alreadyReceivedBytes + expectedBytes), startDate: startDate)
                 },
-                onComplete: { tempURL, response, error in
+                onComplete: { finalizedURL, response, error in
                     self.activeTask = nil
                     self.activeSession = nil
                     self.activeDelegate = nil
@@ -194,12 +165,12 @@ final class OfflineModelDownloader: ObservableObject {
                         return
                     }
 
-                    guard let tempURL, let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+                    guard let finalizedURL, let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
                         continuation.resume(throwing: URLError(.badServerResponse))
                         return
                     }
 
-                    continuation.resume(returning: tempURL)
+                    continuation.resume(returning: finalizedURL)
                 }
             )
 
@@ -235,22 +206,52 @@ final class OfflineModelDownloader: ObservableObject {
 }
 
 private final class DownloadTaskDelegate: NSObject, URLSessionDownloadDelegate {
+    private let modelFolderName: String
+    private let relativeFilePath: String
     private let onProgress: @MainActor (Int64, Int64) -> Void
     private let onComplete: @MainActor (URL?, URLResponse?, Error?) -> Void
-    private var tempURL: URL?
+    private var finalizedURL: URL?
     private var response: URLResponse?
+    private var fileMoveError: Error?
 
     init(
+        modelFolderName: String,
+        relativeFilePath: String,
         onProgress: @escaping @MainActor (Int64, Int64) -> Void,
         onComplete: @escaping @MainActor (URL?, URLResponse?, Error?) -> Void
     ) {
+        self.modelFolderName = modelFolderName
+        self.relativeFilePath = relativeFilePath
         self.onProgress = onProgress
         self.onComplete = onComplete
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        tempURL = location
         response = downloadTask.response
+
+        let documentsDirectory = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let offlineModelsDirectory = documentsDirectory.appendingPathComponent("Offline Models", isDirectory: true)
+        let modelDirectory = offlineModelsDirectory.appendingPathComponent(modelFolderName, isDirectory: true)
+        let destinationURL = modelDirectory.appendingPathComponent(relativeFilePath)
+
+        do {
+            try FileManager.default.createDirectory(at: offlineModelsDirectory, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: destinationURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                try FileManager.default.removeItem(at: destinationURL)
+            }
+
+            try FileManager.default.moveItem(at: location, to: destinationURL)
+            finalizedURL = destinationURL
+        } catch {
+            fileMoveError = OfflineModelError.failedToMoveDownloadedFile(
+                from: location.path,
+                to: destinationURL.path,
+                underlyingError: error
+            )
+        }
     }
 
     func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
@@ -261,7 +262,8 @@ private final class DownloadTaskDelegate: NSObject, URLSessionDownloadDelegate {
 
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         Task { @MainActor in
-            onComplete(tempURL, response, error)
+            let completionError = error ?? fileMoveError
+            onComplete(finalizedURL, response, completionError)
         }
         session.finishTasksAndInvalidate()
     }
