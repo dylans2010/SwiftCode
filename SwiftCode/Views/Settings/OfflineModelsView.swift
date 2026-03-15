@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OfflineModelsView: View {
     @StateObject private var manager = OfflineModelManager.shared
+    @ObservedObject private var downloader = OfflineModelDownloader.shared
     @State private var availableModels: [OfflineModelMetadata] = []
     @State private var recommendations: [RecommendedOfflineModel] = []
     @State private var isLoading = false
@@ -19,25 +20,30 @@ struct OfflineModelsView: View {
                         Text(recommendation.modelName)
                             .font(.headline)
 
+                        Text(recommendation.description)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        Text("Compatibility: \(recommendation.compatibility)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
                         HStack {
                             Text(recommendation.estimatedSize)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Spacer()
-                            Button("Download Recommended Model") {
-                                Task {
-                                    try? await manager.installModelFromLink(url: recommendation.suggestedLink)
-                                    await loadModels(forceRefresh: false)
-                                }
+                            Button("Download") {
+                                Task { await startRecommendedDownload(recommendation) }
                             }
                             .buttonStyle(.borderedProminent)
                         }
-
-                        Text(recommendation.reason)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                     }
-                    .padding(.vertical, 4)
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                    .listRowBackground(Color.clear)
                 }
             }
 
@@ -134,6 +140,17 @@ struct OfflineModelsView: View {
     }
 
     private func startDownload(_ model: OfflineModelMetadata) {
+        downloader.startDownload(model: model)
         downloadingModel = model
+    }
+
+    private func startRecommendedDownload(_ recommendation: RecommendedOfflineModel) async {
+        do {
+            let metadata = try await manager.fetchModelMetadataFromLink(recommendation.suggestedLink)
+            downloader.startDownload(model: metadata)
+            downloadingModel = metadata
+        } catch {
+            print("Failed to start recommended model download: \(error)")
+        }
     }
 }

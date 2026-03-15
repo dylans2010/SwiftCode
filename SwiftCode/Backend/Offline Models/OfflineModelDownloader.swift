@@ -17,10 +17,13 @@ final class OfflineModelDownloader: ObservableObject {
     @Published var remainingTime: String = "Unknown"
     @Published var currentFileName: String = ""
     @Published var isDownloading = false
+    @Published var activeModel: OfflineModelMetadata?
+    @Published var lastErrorMessage: String?
 
     private var activeTask: URLSessionDownloadTask?
     private var activeSession: URLSession?
     private var activeDelegate: DownloadTaskDelegate?
+    private var downloadRunnerTask: Task<Void, Never>?
 
     private var pendingBackgroundModel: OfflineModelMetadata?
 
@@ -34,6 +37,37 @@ final class OfflineModelDownloader: ObservableObject {
 
     var totalDescription: String {
         ByteCountFormatter.string(fromByteCount: totalBytesToDownload, countStyle: .file)
+    }
+
+    var progressLine: String {
+        "\(Int(downloadPercentage))% • \(downloadedDescription) / \(totalDescription) • \(remainingTime) remaining"
+    }
+
+    func startDownload(model: OfflineModelMetadata, onComplete: (() -> Void)? = nil) {
+        if isDownloading, activeModel?.modelName == model.modelName {
+            return
+        }
+
+        if isDownloading {
+            cancelCurrentDownload()
+        }
+
+        downloadRunnerTask?.cancel()
+        activeModel = model
+        lastErrorMessage = nil
+
+        downloadRunnerTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            do {
+                try await self.download(model: model)
+                OfflineModelManager.shared.loadInstalledModels()
+                self.lastErrorMessage = nil
+                onComplete?()
+            } catch {
+                self.lastErrorMessage = self.detailedErrorMessage(for: error)
+            }
+        }
     }
 
     func download(model: OfflineModelMetadata) async throws {
@@ -141,6 +175,7 @@ final class OfflineModelDownloader: ObservableObject {
     func cancelCurrentDownload() {
         guard isDownloading else { return }
         print("[OfflineModelDownloader] Cancelling active download")
+        downloadRunnerTask?.cancel()
         activeTask?.cancel()
     }
 
@@ -152,6 +187,24 @@ final class OfflineModelDownloader: ObservableObject {
         downloadSpeed = "0 KB/s"
         remainingTime = "Unknown"
         currentFileName = ""
+    }
+
+    private func detailedErrorMessage(for error: Error) -> String {
+        let nsError = error as NSError
+
+        if let offlineError = error as? OfflineModelError {
+            return "\(offlineError.localizedDescription)\n\nFull error: \(nsError)"
+        }
+
+        if nsError.domain == NSCocoaErrorDomain, nsError.code == NSFileWriteNoPermissionError {
+            return "Cannot write model files due to insufficient permissions in the selected folder. Full error: \(nsError)"
+        }
+
+        if nsError.domain == NSURLErrorDomain {
+            return "Network download failed. Full error: \(nsError)"
+        }
+
+        return "Full error: \(nsError)"
     }
 
     private func handleBackgroundProcessingTask(_ task: BGTask) {
