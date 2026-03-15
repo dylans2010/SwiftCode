@@ -118,6 +118,7 @@ GH0000000000000000000001A /* GitHistoryView.swift in Sources */ = {isa = PBXBuil
 PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PT0000000000000000000001B /* ProjectTemplateManager.swift */; };
 SO0000000000000000000001A /* SymbolOutlineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SO0000000000000000000001B /* SymbolOutlineView.swift */; };
 AM0000000000000000000001A /* AgentMemoryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AM0000000000000000000001B /* AgentMemoryManager.swift */; };
+AM0000000000000000000002A /* AgentMemory.swift in Sources */ = {isa = PBXBuildFile; fileRef = AM0000000000000000000002B /* AgentMemory.swift */; };
 TM0000000000000000000001A /* AgentTaskManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TM0000000000000000000001B /* AgentTaskManager.swift */; };
 NM0000000000000000000001A /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = NM0000000000000000000001B /* NotificationManager.swift */; };
 TQ0000000000000000000001A /* AgentTaskQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = TQ0000000000000000000001B /* AgentTaskQueue.swift */; };
@@ -332,6 +333,7 @@ GH0000000000000000000001B /* GitHistoryView.swift */ = {isa = PBXFileReference; 
 PT0000000000000000000001B /* ProjectTemplateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTemplateManager.swift; sourceTree = "<group>"; };
 SO0000000000000000000001B /* SymbolOutlineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolOutlineView.swift; sourceTree = "<group>"; };
 AM0000000000000000000001B /* AgentMemoryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentMemoryManager.swift; sourceTree = "<group>"; };
+AM0000000000000000000002B /* AgentMemory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentMemory.swift; sourceTree = "<group>"; };
 TM0000000000000000000001B /* AgentTaskManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTaskManager.swift; sourceTree = "<group>"; };
 NM0000000000000000000001B /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 TQ0000000000000000000001B /* AgentTaskQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTaskQueue.swift; sourceTree = "<group>"; };
@@ -495,6 +497,7 @@ children = (
 				AA00001000000000000002DB /* CodeIndexService.swift */,
 				RM0000000000000000000001B /* CodeReviewManager.swift */,
 				PT0000000000000000000001B /* ProjectTemplateManager.swift */,
+				AM0000000000000000000002B /* AgentMemory.swift */,
 				AM0000000000000000000001B /* AgentMemoryManager.swift */,
 				TM0000000000000000000001B /* AgentTaskManager.swift */,
 				NM0000000000000000000001B /* NotificationManager.swift */,
@@ -1522,6 +1525,7 @@ files = (
 				RV0000000000000000000001A /* CodeReviewView.swift in Sources */,
 				GH0000000000000000000001A /* GitHistoryView.swift in Sources */,
 				PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */,
+				AM0000000000000000000002A /* AgentMemory.swift in Sources */,
 				SO0000000000000000000001A /* SymbolOutlineView.swift in Sources */,
 				AM0000000000000000000001A /* AgentMemoryManager.swift in Sources */,
 				TM0000000000000000000001A /* AgentTaskManager.swift in Sources */,
