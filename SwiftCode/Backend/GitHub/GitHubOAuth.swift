@@ -6,8 +6,8 @@ import UIKit
 @MainActor
 final class GitHubOAuth: NSObject, ObservableObject {
     static let shared = GitHubOAuth()
-    static let clientSecret = EnvironmentValueLoader.value(for: "CLIENT_SECRET", fallback: "missing_client_secret")
-    static let secretID = EnvironmentValueLoader.value(for: "SECRET_ID", fallback: "missing_secret_id")
+    nonisolated static let clientSecret = EnvironmentValueLoader.value(for: "CLIENT_SECRET", fallback: "missing_client_secret")
+    nonisolated static let secretID = EnvironmentValueLoader.value(for: "SECRET_ID", fallback: "missing_secret_id")
 
     @Published private(set) var isAuthenticating = false
     @Published private(set) var isConnected = false
