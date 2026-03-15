@@ -3,10 +3,12 @@ import Foundation
 @MainActor
 final class OfflineModelManager: ObservableObject {
     static let shared = OfflineModelManager()
+    static let defaultOfflineModelKey = "ai.defaultOfflineModel"
 
     @Published var installedModels: [OfflineModelMetadata] = []
     @Published var installedModelRecords: [InstalledOfflineModelRecord] = []
     @Published var downloadingModels: Set<String> = []
+    @Published var defaultOfflineModelName: String = UserDefaults.standard.string(forKey: OfflineModelManager.defaultOfflineModelKey) ?? ""
 
     private var validationStatusByFolderName: [String: String] = [:]
 
@@ -68,6 +70,8 @@ final class OfflineModelManager: ObservableObject {
                 isQuantized: false
             )
         }
+
+        ensureDefaultModelSelection()
     }
 
     func registerInstalledModel(from model: OfflineModelMetadata, localPath: URL, installDate: Date = Date()) {
@@ -83,6 +87,35 @@ final class OfflineModelManager: ObservableObject {
         try? FileManager.default.removeItem(at: url)
         validationStatusByFolderName.removeValue(forKey: url.lastPathComponent)
         loadInstalledModels()
+
+        if defaultOfflineModelName == model.modelName {
+            ensureDefaultModelSelection()
+        }
+    }
+
+    func setDefaultOfflineModel(_ modelName: String) {
+        defaultOfflineModelName = modelName
+        UserDefaults.standard.set(modelName, forKey: Self.defaultOfflineModelKey)
+    }
+
+    func defaultOfflineModelRecord() -> InstalledOfflineModelRecord? {
+        installedModelRecords.first(where: { $0.modelName == defaultOfflineModelName })
+    }
+
+    private func ensureDefaultModelSelection() {
+        if let existing = installedModelRecords.first(where: { $0.modelName == defaultOfflineModelName }) {
+            if existing.modelName != defaultOfflineModelName {
+                setDefaultOfflineModel(existing.modelName)
+            }
+            return
+        }
+
+        if let firstInstalled = installedModelRecords.first {
+            setDefaultOfflineModel(firstInstalled.modelName)
+        } else {
+            defaultOfflineModelName = ""
+            UserDefaults.standard.removeObject(forKey: Self.defaultOfflineModelKey)
+        }
     }
 
     func updateValidationStatus(for modelName: String, status: String, clearLocalPath: Bool = false) {

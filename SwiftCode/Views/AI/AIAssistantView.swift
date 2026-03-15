@@ -792,7 +792,7 @@ struct AIAssistantView: View {
 
         Task {
             do {
-                try await OpenRouterService.shared.streamChat(
+                try await LLMService.shared.streamChat(
                     messages: messages,
                     model: settings.selectedModel,
                     systemPrompt: selectedMode.systemPrompt
@@ -850,7 +850,7 @@ struct AIAssistantView: View {
 
             var assistantReply = ""
             do {
-                try await OpenRouterService.shared.streamChat(
+                try await LLMService.shared.streamChat(
                     messages: apiMessages,
                     model: settings.selectedModel,
                     systemPrompt: systemPrompt
