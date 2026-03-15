@@ -1,15 +1,5 @@
 import Foundation
 
-struct InstalledOfflineModelRecord: Identifiable, Codable {
-    var id: String { modelName }
-    let modelName: String
-    let provider: String
-    let size: String
-    let installDate: Date
-    var localModelPath: String
-    var validationStatus: String?
-}
-
 @MainActor
 final class OfflineModelManager: ObservableObject {
     static let shared = OfflineModelManager()
@@ -18,19 +8,10 @@ final class OfflineModelManager: ObservableObject {
     @Published var installedModelRecords: [InstalledOfflineModelRecord] = []
     @Published var downloadingModels: Set<String> = []
 
-    private let modelsDir: URL
-    private let metadataPlistURL: URL
+    private var validationStatusByFolderName: [String: String] = [:]
 
     private init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        modelsDir = appSupport.appendingPathComponent("SwiftCode/OfflineModels")
-        metadataPlistURL = modelsDir.appendingPathComponent("installed-models.plist")
-        ensureDirectory()
         loadInstalledModels()
-    }
-
-    private func ensureDirectory() {
-        try? FileManager.default.createDirectory(at: modelsDir, withIntermediateDirectories: true)
     }
 
     func validateRepositoryURL(_ urlString: String) -> Bool {
@@ -66,17 +47,23 @@ final class OfflineModelManager: ObservableObject {
     }
 
     func loadInstalledModels() {
-        installedModelRecords = loadMetadataFromPlist()
+        let records = OfflineModelsStorage.shared.loadInstalledModelRecords()
+        installedModelRecords = records.map { record in
+            var mutableRecord = record
+            mutableRecord.validationStatus = validationStatusByFolderName[record.folderName]
+            return mutableRecord
+        }
+
         installedModels = installedModelRecords.map { record in
             OfflineModelMetadata(
                 modelName: record.modelName,
-                providerName: record.provider,
+                providerName: "Offline",
                 description: "Locally stored model",
-                modelSize: record.size,
-                modelSizeBytes: 0,
+                modelSize: record.sizeDescription,
+                modelSizeBytes: record.metadata.totalSize,
                 tags: ["offline", "installed"],
                 downloadCount: 0,
-                modelURL: URL(fileURLWithPath: record.localModelPath.isEmpty ? "/" : record.localModelPath),
+                modelURL: URL(string: record.metadata.modelSourceURL) ?? URL(fileURLWithPath: record.localModelPath),
                 files: [],
                 isQuantized: false
             )
@@ -84,18 +71,6 @@ final class OfflineModelManager: ObservableObject {
     }
 
     func registerInstalledModel(from model: OfflineModelMetadata, localPath: URL, installDate: Date = Date()) {
-        var records = loadMetadataFromPlist().filter { $0.modelName != model.modelName }
-        let newRecord = InstalledOfflineModelRecord(
-            modelName: model.modelName,
-            provider: model.providerName,
-            size: model.modelSize,
-            installDate: installDate,
-            localModelPath: localPath.path,
-            validationStatus: nil
-        )
-        records.append(newRecord)
-        records.sort { $0.installDate > $1.installDate }
-        persist(records)
         loadInstalledModels()
     }
 
@@ -104,51 +79,20 @@ final class OfflineModelManager: ObservableObject {
     }
 
     func removeModel(_ model: OfflineModelMetadata) {
-        let url = modelDirectory(for: model.modelName)
+        let url = OfflineModelsStorage.shared.modelDirectoryURL(for: OfflineModelsStorage.shared.sanitizedFolderName(from: model.modelName))
         try? FileManager.default.removeItem(at: url)
-
-        var records = loadMetadataFromPlist()
-        records.removeAll { $0.modelName == model.modelName }
-        persist(records)
+        validationStatusByFolderName.removeValue(forKey: url.lastPathComponent)
         loadInstalledModels()
     }
 
     func updateValidationStatus(for modelName: String, status: String, clearLocalPath: Bool = false) {
-        var records = loadMetadataFromPlist()
-        guard let index = records.firstIndex(where: { $0.modelName == modelName }) else { return }
-
-        records[index].validationStatus = status
-        if clearLocalPath {
-            records[index].localModelPath = ""
-        }
-
-        persist(records)
+        guard let record = installedModelRecords.first(where: { $0.modelName == modelName }) else { return }
+        validationStatusByFolderName[record.folderName] = status
         loadInstalledModels()
     }
 
     func modelDirectory(for modelName: String) -> URL {
-        let safeName = modelName.replacingOccurrences(of: "/", with: "_")
-        return modelsDir.appendingPathComponent(safeName)
-    }
-
-    private func loadMetadataFromPlist() -> [InstalledOfflineModelRecord] {
-        guard let data = try? Data(contentsOf: metadataPlistURL) else {
-            return []
-        }
-
-        do {
-            return try PropertyListDecoder().decode([InstalledOfflineModelRecord].self, from: data)
-        } catch {
-            return []
-        }
-    }
-
-    private func persist(_ records: [InstalledOfflineModelRecord]) {
-        do {
-            let data = try PropertyListEncoder().encode(records)
-            try data.write(to: metadataPlistURL, options: .atomic)
-        } catch {
-            print("Failed to persist offline model metadata plist: \(error)")
-        }
+        (try? OfflineModelsStorage.shared.modelDirectory(for: modelName, createIfNeeded: true))
+            ?? OfflineModelsStorage.shared.modelDirectoryURL(for: OfflineModelsStorage.shared.sanitizedFolderName(from: modelName))
     }
 }
