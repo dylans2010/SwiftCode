@@ -38,3 +38,8 @@ Pods/
 xcuserdata/
 *.xccheckout
 *.xcscmblueprint
+
+# Environment secrets
+.env
+.env.local
+.env.*
