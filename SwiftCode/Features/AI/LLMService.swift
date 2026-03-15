@@ -316,7 +316,7 @@ final class LLMService {
             }
         } catch {
             if await shouldFallbackToOffline(for: provider) {
-                let offlineModel = try await defaultOfflineModelName()
+                _ = try await defaultOfflineModelName()
                 try await OfflineModelRunner.shared.loadModel(at: try await defaultOfflineModelDirectory())
                 try await OfflineModelRunner.shared.streamResponse(prompt: messages.last?.content ?? "") { token in
                     Task { await onToken(token) }

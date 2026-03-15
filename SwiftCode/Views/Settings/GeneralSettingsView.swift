@@ -637,12 +637,9 @@ struct GeneralSettingsView: View {
 
     private var aiSection: some View {
         Section {
-            Picker("Dynamic AI", selection: Binding(
-                get: { aiRoutingMode },
-                set: { aiRoutingMode = $0 }
-            )) {
+            Picker("Dynamic AI", selection: $aiRoutingModeRawValue) {
                 ForEach(AIRoutingMode.allCases, id: \.self) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(mode.rawValue).tag(mode.rawValue)
                 }
             }
 
