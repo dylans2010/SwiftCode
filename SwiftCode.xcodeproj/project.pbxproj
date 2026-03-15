@@ -221,6 +221,8 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		19CBF295160D44C398DA0FE0 /* DeploymentDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 396AC91935E9439DBB45D345 /* DeploymentDebugView.swift */; };
 		86C4B2D064364A479708F0F9 /* BinaryToolsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C097D500804667A45947D8 /* BinaryToolsViews.swift */; };
 		9DB89E5FB93B4015BCBF1773 /* SwiftCode.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 879B1052D19145C0A7450391 /* SwiftCode.storekit */; };
+		CC000000000000000000001A /* ChatController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000000000000000000001B /* ChatController.swift */; };
+		CU000000000000000000001A /* ChatUIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CU000000000000000000001B /* ChatUIComponents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -433,6 +435,8 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		396AC91935E9439DBB45D345 /* DeploymentDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentDebugView.swift; sourceTree = "<group>"; };
 		97C097D500804667A45947D8 /* BinaryToolsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryToolsViews.swift; sourceTree = "<group>"; };
 		879B1052D19145C0A7450391 /* SwiftCode.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SwiftCode.storekit; sourceTree = "<group>"; };
+		CC000000000000000000001B /* ChatController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatController.swift; sourceTree = "<group>"; };
+		CU000000000000000000001B /* ChatUIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatUIComponents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -582,6 +586,7 @@ AA000010000000000000045F /* AI */ = {
 isa = PBXGroup;
 children = (
 				AA000010000000000000010B /* AIAssistantView.swift */,
+				CU000000000000000000001B /* ChatUIComponents.swift */,
 				RV0000000000000000000001B /* CodeReviewView.swift */,
 				CX0000000000000000000001B /* ComplexityAnalyzerView.swift */,
 			);
@@ -767,6 +772,7 @@ AA00001000000000000006FF /* AI */ = {
 isa = PBXGroup;
 children = (
 				AA0000100000000000000F7A /* LLMService.swift */,
+				CC000000000000000000001B /* ChatController.swift */,
 				AA00001000000000000001BB /* AgentInterfaceView.swift */,
 				AA0000100000000000000F6B /* ChooseModelView.swift */,
 			);
@@ -1450,6 +1456,7 @@ files = (
 				AA00001000000000000000EA /* CodeEditorView.swift in Sources */,
 				AA00001000000000000000FA /* FileNavigatorView.swift in Sources */,
 				AA000010000000000000010A /* AIAssistantView.swift in Sources */,
+				CU000000000000000000001A /* ChatUIComponents.swift in Sources */,
 				AA000010000000000000011A /* GitHubIntegrationView.swift in Sources */,
 				AA000010000000000000012A /* BuildStatusView.swift in Sources */,
 				AA000010000000000000013A /* SettingsView.swift in Sources */,
@@ -1460,6 +1467,7 @@ files = (
 				AA000010000000000000019A /* AgentTool.swift in Sources */,
 				AA00001000000000000001AA /* AgentToolService.swift in Sources */,
 				AA0000100000000000000F7B /* LLMService.swift in Sources */,
+				CC000000000000000000001A /* ChatController.swift in Sources */,
 				AA00001000000000000001BA /* AgentInterfaceView.swift in Sources */,
 				AA00001000000000000002BA /* CodeIndex.swift in Sources */,
 				AA00001000000000000002CA /* ToolbarItem.swift in Sources */,

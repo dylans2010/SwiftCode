@@ -157,6 +157,36 @@ final class LLMService {
 
     // MARK: - Core Methods
 
+    @MainActor
+    func generateResponse(prompt: String, useContext: Bool) async throws -> String {
+        let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPrompt.isEmpty else { return "" }
+
+        let messageContent: String
+        if useContext {
+            messageContent = "[Use available project context when relevant.]\n\n\(trimmedPrompt)"
+        } else {
+            messageContent = trimmedPrompt
+        }
+
+        let provider = try resolvedRoutingProvider()
+        let model: String
+        if provider == .offline {
+            model = try await defaultOfflineModelName()
+        } else {
+            let selected = AppSettings.shared.selectedModel.trimmingCharacters(in: .whitespacesAndNewlines)
+            model = selected.isEmpty ? "openai/gpt-4o-mini" : selected
+        }
+
+        let response = try await sendChatRequest(
+            model: model,
+            messages: [AIMessage(role: "user", content: messageContent)]
+        )
+
+        return response.completionText
+    }
+
+
     func validateAPIKey(provider: LLMProvider, key: String) async throws -> Bool {
         do {
             // For most providers, fetching models is a good way to validate
