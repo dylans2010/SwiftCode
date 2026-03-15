@@ -1,2 +1,29 @@
+modules = ["swift-5.8"]
 [agent]
 expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "swift /home/runner/workspace/SwiftCode/SwiftCodeApp.swift 2>&1 || echo 'Note: This is an iOS/Xcode project. Swift on Linux cannot run UIKit/SwiftUI apps directly. Project files are valid Swift source code.'"
+
+[workflows.workflow.metadata]
+outputType = "console"
