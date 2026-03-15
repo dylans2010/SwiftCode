@@ -661,24 +661,31 @@ struct AIAssistantView: View {
             fullPrompt = "File: \(node.path)\n\n```swift\n\(projectManager.activeFileContent)\n```\n\n\(userPrompt)"
         }
 
-        let userMessage = AIMessage(role: "user", content: fullPrompt)
+        let userMessage = AIMessage(role: "user", content: userPrompt)
         messages.append(userMessage)
         inputText = ""
         isLoading = true
         streamingResponse = ""
 
+        var apiMessages = messages
+        if !apiMessages.isEmpty {
+            apiMessages[apiMessages.count - 1].content = fullPrompt
+        }
+
         Task {
             do {
                 try await LLMService.shared.streamChat(
-                    messages: messages,
+                    messages: apiMessages,
                     model: settings.selectedModel,
                     systemPrompt: selectedMode.systemPrompt
                 ) { token in
                     await MainActor.run { streamingResponse += token }
                 }
+
+                let assistantResponse = await MainActor.run { streamingResponse }
                 await MainActor.run {
-                    if !streamingResponse.isEmpty {
-                        messages.append(AIMessage(role: "assistant", content: streamingResponse))
+                    if !assistantResponse.isEmpty {
+                        messages.append(AIMessage(role: "assistant", content: assistantResponse))
                     }
                     streamingResponse = ""
                     isLoading = false
