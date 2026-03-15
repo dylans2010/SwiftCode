@@ -6,7 +6,7 @@ struct OfflineModelsView: View {
     @State private var recommendations: [RecommendedOfflineModel] = []
     @State private var isLoading = false
     @State private var isRefreshingFromAPI = false
-    @State private var downloadingModel: OfflineModelMetadata?
+    @State private var activeDownloadRequest: OfflineModelDownloader.DownloadRequest?
     @State private var isPresentingInstallGuide = false
 
     var body: some View {
@@ -25,10 +25,7 @@ struct OfflineModelsView: View {
                                 .foregroundStyle(.secondary)
                             Spacer()
                             Button("Download Recommended Model") {
-                                Task {
-                                    try? await manager.installModelFromLink(url: recommendation.suggestedLink)
-                                    await loadModels(forceRefresh: false)
-                                }
+                                startDownloadFromLink(recommendation.suggestedLink)
                             }
                             .buttonStyle(.borderedProminent)
                         }
@@ -102,10 +99,13 @@ struct OfflineModelsView: View {
             recommendations = DeviceCapabilityAnalyzer.shared.getRecommendedModelList()
             await loadModels(forceRefresh: false)
         }
-        .sheet(item: $downloadingModel) { model in
-            ModelDownloadProgressView(modelName: model.modelName)
-                .presentationDetents([.height(180)])
-                .presentationDragIndicator(.visible)
+        .sheet(item: $activeDownloadRequest) { request in
+            ModelDownloadProgressView(request: request) {
+                manager.loadInstalledModels()
+                await loadModels(forceRefresh: false)
+            }
+            .presentationDetents([.height(320)])
+            .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $isPresentingInstallGuide) {
             ModelLinkInstallGuideView {
@@ -127,11 +127,13 @@ struct OfflineModelsView: View {
     }
 
     private func startDownload(_ model: OfflineModelMetadata) {
-        downloadingModel = model
-        Task {
-            try? await OfflineModelDownloader.shared.download(model: model)
-            manager.loadInstalledModels()
-            await loadModels(forceRefresh: false)
+        activeDownloadRequest = OfflineModelDownloader.DownloadRequest(source: .metadata(model), originalLink: model.modelURL.absoluteString)
+    }
+
+    private func startDownloadFromLink(_ link: String) {
+        if let url = URL(string: link) {
+            activeDownloadRequest = OfflineModelDownloader.DownloadRequest(source: .directURL(url), originalLink: link)
         }
     }
+
 }
