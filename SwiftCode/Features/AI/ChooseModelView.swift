@@ -3,7 +3,6 @@ import SwiftUI
 struct ChooseModelView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var settings: AppSettings
-    @ObservedObject var controller: AgentController
 
     @State private var selectedProvider: AIProvider = .openRouter
     @State private var apiKey: String = ""

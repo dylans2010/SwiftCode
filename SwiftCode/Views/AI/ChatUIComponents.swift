@@ -18,7 +18,7 @@ struct ChatMessageBubble: View {
     private var bubble: some View {
         Text(message.content)
             .font(.callout)
-            .foregroundStyle(message.role == .assistant ? .primary : .white)
+            .foregroundStyle(message.role == .assistant ? .primary : Color.white)
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(message.role == .assistant ? Color.secondary.opacity(0.18) : Color.accentColor)
