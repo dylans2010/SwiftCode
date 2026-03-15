@@ -70,7 +70,7 @@ struct ChooseModelView: View {
 
                         let installed = OfflineModelManager.shared.installedModels
                         if !installed.isEmpty {
-                            Picker("Local Model", selection: $controller.selectedModel) {
+                            Picker("Local Model", selection: $settings.selectedModel) {
                                 ForEach(installed) { model in
                                     Text(model.modelName).tag(model.modelName)
                                 }
@@ -89,7 +89,7 @@ struct ChooseModelView: View {
                         .disabled(apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoadingModels)
 
                         if !availableModels.isEmpty {
-                            Picker("Model", selection: $controller.selectedModel) {
+                            Picker("Model", selection: $settings.selectedModel) {
                                 ForEach(availableModels, id: \.self) { model in
                                     Text(model).tag(model)
                                 }
@@ -107,7 +107,7 @@ struct ChooseModelView: View {
                         if isTesting { ProgressView().scaleEffect(0.8) }
                         else { Text("Test Model") }
                     }
-                    .disabled(apiKey.isEmpty || controller.selectedModel.isEmpty || isTesting)
+                    .disabled(apiKey.isEmpty || settings.selectedModel.isEmpty || isTesting)
 
                     if let result = testResult {
                         VStack(alignment: .leading, spacing: 4) {
@@ -149,7 +149,7 @@ struct ChooseModelView: View {
                         saveSettings()
                         dismiss()
                     }
-                    .disabled(apiKey.isEmpty || controller.selectedModel.isEmpty)
+                    .disabled(apiKey.isEmpty || settings.selectedModel.isEmpty)
                 }
             }
             .onAppear { loadCurrentSettings() }
@@ -172,7 +172,6 @@ struct ChooseModelView: View {
         let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         KeychainService.shared.set(trimmedKey, forKey: selectedProvider.keychainKey)
         UserDefaults.standard.set(selectedProvider.rawValue, forKey: providerDefaultsKey)
-        settings.selectedModel = controller.selectedModel
     }
 
     private func fetchModels() {
@@ -215,7 +214,7 @@ struct ChooseModelView: View {
             let result = await AgentModelCheck.shared.checkModel(
                 provider: selectedProvider.rawValue,
                 apiKey: apiKey,
-                model: controller.selectedModel
+                model: settings.selectedModel
             )
 
             await MainActor.run {
