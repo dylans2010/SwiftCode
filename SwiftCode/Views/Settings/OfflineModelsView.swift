@@ -3,13 +3,49 @@ import SwiftUI
 struct OfflineModelsView: View {
     @StateObject private var manager = OfflineModelManager.shared
     @State private var availableModels: [OfflineModelMetadata] = []
+    @State private var recommendations: [RecommendedOfflineModel] = []
     @State private var isLoading = false
     @State private var isRefreshingFromAPI = false
     @State private var downloadingModel: OfflineModelMetadata?
+    @State private var isPresentingInstallGuide = false
 
     var body: some View {
         List {
             InstalledOfflineModelsView(manager: manager)
+
+            Section("Recommended Models") {
+                ForEach(recommendations) { recommendation in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(recommendation.modelName)
+                            .font(.headline)
+
+                        HStack {
+                            Text(recommendation.estimatedSize)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Download Recommended Model") {
+                                Task {
+                                    try? await manager.installModelFromLink(url: recommendation.suggestedLink)
+                                    await loadModels(forceRefresh: false)
+                                }
+                            }
+                            .buttonStyle(.borderedProminent)
+                        }
+
+                        Text(recommendation.reason)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+
+            Section("Install Model Through Link") {
+                Button("Install Model Through Link") {
+                    isPresentingInstallGuide = true
+                }
+            }
 
             Section("Available Models (HuggingFace)") {
                 Button {
@@ -52,7 +88,7 @@ struct OfflineModelsView: View {
                                         .foregroundColor(.white)
                                         .cornerRadius(8)
                                 }
-                                .disabled(manager.isModelInstalled(model.modelName))
+                                .disabled(manager.isModelInstalled(model.modelName) || model.preferredDownloadFile == nil)
                             }
                         }
                         .padding(.vertical, 4)
@@ -63,12 +99,18 @@ struct OfflineModelsView: View {
         .navigationTitle("Offline Models")
         .task {
             manager.loadInstalledModels()
+            recommendations = DeviceCapabilityAnalyzer.shared.getRecommendedModelList()
             await loadModels(forceRefresh: false)
         }
         .sheet(item: $downloadingModel) { model in
             ModelDownloadProgressView(modelName: model.modelName)
                 .presentationDetents([.height(180)])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $isPresentingInstallGuide) {
+            ModelLinkInstallGuideView {
+                await loadModels(forceRefresh: false)
+            }
         }
     }
 
