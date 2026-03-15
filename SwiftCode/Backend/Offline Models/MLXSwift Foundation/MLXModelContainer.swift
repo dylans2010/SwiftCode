@@ -1,18 +1,15 @@
 import Foundation
 import MLX
-import MLXLLM
 
 @MainActor
 final class MLXModelContainer: ObservableObject {
     @Published var isLoaded = false
     @Published var modelName: String = ""
 
-    private var model: (LLMModel, Tokenizer)?
+    private var model: (OfflineLanguageModel, OfflineTokenizer)?
 
     func loadModel(at url: URL) async throws {
         let modelDirectory = url
-
-        // MLX Swift LM expects the folder to contain weights.safetensors, config.json, etc.
         let (model, tokenizer) = try await LLMModelFactory.shared.loadModel(from: modelDirectory)
 
         self.model = (model, tokenizer)
@@ -30,10 +27,9 @@ final class MLXModelContainer: ObservableObject {
         var tokens = [Int]()
         for try await token in model.generate(tokens: promptTokens) {
             tokens.append(token)
-            let text = tokenizer.decode(tokens: [token])
-            onToken(text)
+            onToken(tokenizer.decode(tokens: [token]))
 
-            if tokens.count > 1024 { break } // Limit generation
+            if tokens.count > 1024 { break }
         }
     }
 
