@@ -233,6 +233,34 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		9DB89E5FB93B4015BCBF1773 /* SwiftCode.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 879B1052D19145C0A7450391 /* SwiftCode.storekit */; };
 		CC000000000000000000001A /* ChatController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000000000000000000001B /* ChatController.swift */; };
 		CU000000000000000000001A /* ChatUIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CU000000000000000000001B /* ChatUIComponents.swift */; };
+		AG00000000000000000000001A /* AgentSystemInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000001 /* AgentSystemInitializer.swift */; };
+		AG00000000000000000000002A /* AgentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000002 /* AgentManager.swift */; };
+		AG00000000000000000000003A /* AgentLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000003 /* AgentLogger.swift */; };
+		AG00000000000000000000004A /* CodePatchEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000004 /* CodePatchEngine.swift */; };
+		AG00000000000000000000005A /* AgentExecutionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000005 /* AgentExecutionState.swift */; };
+		AG00000000000000000000006A /* ToolExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000006 /* ToolExecutor.swift */; };
+		AG00000000000000000000007A /* TaskPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000007 /* TaskPlanner.swift */; };
+		AG00000000000000000000008A /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000008 /* AgentLoop.swift */; };
+		AG00000000000000000000009A /* PluginContextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000009 /* PluginContextBuilder.swift */; };
+		AG00000000000000000000010A /* PluginAgentBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000010 /* PluginAgentBridge.swift */; };
+		AG00000000000000000000011A /* AgentServiceRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000011 /* AgentServiceRouter.swift */; };
+		AG00000000000000000000012A /* PluginAgentResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000012 /* PluginAgentResponse.swift */; };
+		AG00000000000000000000013A /* PluginAgentRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000013 /* PluginAgentRequest.swift */; };
+		AG00000000000000000000014A /* SwiftCodeUseAgentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000014 /* SwiftCodeUseAgentService.swift */; };
+		AG00000000000000000000015A /* AgentConnectionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000015 /* AgentConnectionsManager.swift */; };
+		AG00000000000000000000016A /* AgentSkillsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000016 /* AgentSkillsManager.swift */; };
+		AG00000000000000000000017A /* ToolConnectionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000017 /* ToolConnectionExecutor.swift */; };
+		AG00000000000000000000018A /* AgentToolsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000018 /* AgentToolsManager.swift */; };
+		AG00000000000000000000019A /* ToolRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AG00000000000000000000019 /* ToolRegistry.swift */; };
+		AV00000000000000000000001A /* CodeChangesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AV00000000000000000000001 /* CodeChangesView.swift */; };
+		AV00000000000000000000002A /* AgentTaskPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AV00000000000000000000002 /* AgentTaskPanel.swift */; };
+		AV00000000000000000000003A /* ToolExecutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AV00000000000000000000003 /* ToolExecutionView.swift */; };
+		AV00000000000000000000004A /* AgentModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AV00000000000000000000004 /* AgentModeView.swift */; };
+		AV00000000000000000000005A /* AgentPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AV00000000000000000000005 /* AgentPlanView.swift */; };
+		AV00000000000000000000006A /* AgentConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AV00000000000000000000006 /* AgentConsoleView.swift */; };
+		AV00000000000000000000007A /* AgentToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AV00000000000000000000007 /* AgentToolbar.swift */; };
+		AV00000000000000000000008A /* AgentNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AV00000000000000000000008 /* AgentNewView.swift */; };
+		AV00000000000000000000009A /* ChatAIInterfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AV00000000000000000000009 /* ChatAIInterfaceView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -345,8 +373,8 @@ TLE000000000000000000001B /* TextLayoutEngine.swift */ = {isa = PBXFileReference
 PMV000000000000000000001B /* PluginManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginManagerView.swift; sourceTree = "<group>"; };
 PTV000000000000000000001B /* ProjectTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTemplateView.swift; sourceTree = "<group>"; };
 CM0000000000000000000001B /* CodeEditorManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeEditorManagementView.swift; sourceTree = "<group>"; };
-RM0000000000000000000001B /* CodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewManager.swift; sourceTree = "<group>"; };
-RV0000000000000000000001B /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewView.swift; sourceTree = "<group>"; };
+		RM0000000000000000000001B /* CodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Backend/Agent New/CodeReviewManager.swift"; sourceTree = "<group>"; };
+		RV0000000000000000000001B /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AI New/CodeReviewView.swift"; sourceTree = "<group>"; };
 GH0000000000000000000001B /* GitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHistoryView.swift; sourceTree = "<group>"; };
 PT0000000000000000000001B /* ProjectTemplateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTemplateManager.swift; sourceTree = "<group>"; };
 SO0000000000000000000001B /* SymbolOutlineView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolOutlineView.swift; sourceTree = "<group>"; };
@@ -457,6 +485,34 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		879B1052D19145C0A7450391 /* SwiftCode.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SwiftCode.storekit; sourceTree = "<group>"; };
 		CC000000000000000000001B /* ChatController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatController.swift; sourceTree = "<group>"; };
 		CU000000000000000000001B /* ChatUIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatUIComponents.swift; sourceTree = "<group>"; };
+		AG00000000000000000000001 /* AgentSystemInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSystemInitializer.swift; sourceTree = "<group>"; };
+		AG00000000000000000000002 /* AgentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentManager.swift; sourceTree = "<group>"; };
+		AG00000000000000000000003 /* AgentLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLogger.swift; sourceTree = "<group>"; };
+		AG00000000000000000000004 /* CodePatchEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodePatchEngine.swift; sourceTree = "<group>"; };
+		AG00000000000000000000005 /* AgentExecutionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentExecutionState.swift; sourceTree = "<group>"; };
+		AG00000000000000000000006 /* ToolExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolExecutor.swift; sourceTree = "<group>"; };
+		AG00000000000000000000007 /* TaskPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskPlanner.swift; sourceTree = "<group>"; };
+		AG00000000000000000000008 /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLoop.swift; sourceTree = "<group>"; };
+		AG00000000000000000000009 /* PluginContextBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginContextBuilder.swift; sourceTree = "<group>"; };
+		AG00000000000000000000010 /* PluginAgentBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginAgentBridge.swift; sourceTree = "<group>"; };
+		AG00000000000000000000011 /* AgentServiceRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentServiceRouter.swift; sourceTree = "<group>"; };
+		AG00000000000000000000012 /* PluginAgentResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginAgentResponse.swift; sourceTree = "<group>"; };
+		AG00000000000000000000013 /* PluginAgentRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginAgentRequest.swift; sourceTree = "<group>"; };
+		AG00000000000000000000014 /* SwiftCodeUseAgentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCodeUseAgentService.swift; sourceTree = "<group>"; };
+		AG00000000000000000000015 /* AgentConnectionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentConnectionsManager.swift; sourceTree = "<group>"; };
+		AG00000000000000000000016 /* AgentSkillsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSkillsManager.swift; sourceTree = "<group>"; };
+		AG00000000000000000000017 /* ToolConnectionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolConnectionExecutor.swift; sourceTree = "<group>"; };
+		AG00000000000000000000018 /* AgentToolsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentToolsManager.swift; sourceTree = "<group>"; };
+		AG00000000000000000000019 /* ToolRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolRegistry.swift; sourceTree = "<group>"; };
+		AV00000000000000000000001 /* CodeChangesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeChangesView.swift; sourceTree = "<group>"; };
+		AV00000000000000000000002 /* AgentTaskPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentTaskPanel.swift; sourceTree = "<group>"; };
+		AV00000000000000000000003 /* ToolExecutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolExecutionView.swift; sourceTree = "<group>"; };
+		AV00000000000000000000004 /* AgentModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentModeView.swift; sourceTree = "<group>"; };
+		AV00000000000000000000005 /* AgentPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentPlanView.swift; sourceTree = "<group>"; };
+		AV00000000000000000000006 /* AgentConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentConsoleView.swift; sourceTree = "<group>"; };
+		AV00000000000000000000007 /* AgentToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentToolbar.swift; sourceTree = "<group>"; };
+		AV00000000000000000000008 /* AgentNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentNewView.swift; sourceTree = "<group>"; };
+		AV00000000000000000000009 /* ChatAIInterfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAIInterfaceView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -513,7 +569,6 @@ children = (
 				AA00001000000000000000BB /* SyntaxHighlighter.swift */,
 				AA00001000000000000001AB /* AgentToolService.swift */,
 				AA00001000000000000002DB /* CodeIndexService.swift */,
-				RM0000000000000000000001B /* CodeReviewManager.swift */,
 				PT0000000000000000000001B /* ProjectTemplateManager.swift */,
 				AM0000000000000000000002B /* AgentMemory.swift */,
 				AM0000000000000000000001B /* AgentMemoryManager.swift */,
@@ -608,8 +663,8 @@ isa = PBXGroup;
 children = (
 				AA000010000000000000010B /* AIAssistantView.swift */,
 				CU000000000000000000001B /* ChatUIComponents.swift */,
-				RV0000000000000000000001B /* CodeReviewView.swift */,
 				CX0000000000000000000001B /* ComplexityAnalyzerView.swift */,
+				AV00000000000000000000000 /* AI New */,
 			);
 path = AI;
 sourceTree = "<group>";
@@ -956,6 +1011,7 @@ children = (
 				TT000000000000000000001B /* TestTools.swift */,
 				E747261C4C724E6ABAF256AC /* Store */,
 				00C7A193457C46B8B87727C8 /* Developer */,
+				AG00000000000000000000000 /* Agent New */,
 			);
 path = Backend;
 sourceTree = "<group>";
@@ -1350,6 +1406,74 @@ DEP000000000000000000101 /* Deployments */ = {
 			path = "MLXSwift Foundation";
 			sourceTree = "<group>";
 		};
+		AG00000000000000000000000 /* Agent New */ = {
+			isa = PBXGroup;
+			children = (
+				AG00000000000000000000001 /* AgentSystemInitializer.swift */,
+				AG00000000000000000000002 /* AgentManager.swift */,
+				AG00000000000000000000003 /* AgentLogger.swift */,
+				AG00000000000000000000004 /* CodePatchEngine.swift */,
+				AG00000000000000000000005 /* AgentExecutionState.swift */,
+				AG00000000000000000000006 /* ToolExecutor.swift */,
+				AG00000000000000000000007 /* TaskPlanner.swift */,
+				AG00000000000000000000008 /* AgentLoop.swift */,
+				RM0000000000000000000001B /* CodeReviewManager.swift */,
+				AG00000000000000000000B1 /* AgentAPI */,
+				AG00000000000000000000B2 /* PluginBridge */,
+				AG00000000000000000000B3 /* ToolIntegration */,
+			);
+			path = "Agent New";
+			sourceTree = "<group>";
+		};
+		AG00000000000000000000B1 /* AgentAPI */ = {
+			isa = PBXGroup;
+			children = (
+				AG00000000000000000000011 /* AgentServiceRouter.swift */,
+				AG00000000000000000000012 /* PluginAgentResponse.swift */,
+				AG00000000000000000000013 /* PluginAgentRequest.swift */,
+				AG00000000000000000000014 /* SwiftCodeUseAgentService.swift */,
+			);
+			path = AgentAPI;
+			sourceTree = "<group>";
+		};
+		AG00000000000000000000B2 /* PluginBridge */ = {
+			isa = PBXGroup;
+			children = (
+				AG00000000000000000000009 /* PluginContextBuilder.swift */,
+				AG00000000000000000000010 /* PluginAgentBridge.swift */,
+			);
+			path = PluginBridge;
+			sourceTree = "<group>";
+		};
+		AG00000000000000000000B3 /* ToolIntegration */ = {
+			isa = PBXGroup;
+			children = (
+				AG00000000000000000000015 /* AgentConnectionsManager.swift */,
+				AG00000000000000000000016 /* AgentSkillsManager.swift */,
+				AG00000000000000000000017 /* ToolConnectionExecutor.swift */,
+				AG00000000000000000000018 /* AgentToolsManager.swift */,
+				AG00000000000000000000019 /* ToolRegistry.swift */,
+			);
+			path = ToolIntegration;
+			sourceTree = "<group>";
+		};
+		AV00000000000000000000000 /* AI New */ = {
+			isa = PBXGroup;
+			children = (
+				AV00000000000000000000001 /* CodeChangesView.swift */,
+				AV00000000000000000000002 /* AgentTaskPanel.swift */,
+				AV00000000000000000000003 /* ToolExecutionView.swift */,
+				AV00000000000000000000004 /* AgentModeView.swift */,
+				AV00000000000000000000005 /* AgentPlanView.swift */,
+				RV0000000000000000000001B /* CodeReviewView.swift */,
+				AV00000000000000000000006 /* AgentConsoleView.swift */,
+				AV00000000000000000000007 /* AgentToolbar.swift */,
+				AV00000000000000000000008 /* AgentNewView.swift */,
+				AV00000000000000000000009 /* ChatAIInterfaceView.swift */,
+			);
+			path = "AI New";
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1664,6 +1788,34 @@ files = (
 					3C3D335FBD164D74BB7B1058 /* DatabaseInspectorView.swift in Sources */,
 					DD8D7C3E05DC40F09C85F4F6 /* PerformanceMonitorView.swift in Sources */,
 					8D289E52CECF4D1BBA2B388F /* CoreMLInspectorView.swift in Sources */,
+					AG00000000000000000000001A /* AgentSystemInitializer.swift in Sources */,
+					AG00000000000000000000002A /* AgentManager.swift in Sources */,
+					AG00000000000000000000003A /* AgentLogger.swift in Sources */,
+					AG00000000000000000000004A /* CodePatchEngine.swift in Sources */,
+					AG00000000000000000000005A /* AgentExecutionState.swift in Sources */,
+					AG00000000000000000000006A /* ToolExecutor.swift in Sources */,
+					AG00000000000000000000007A /* TaskPlanner.swift in Sources */,
+					AG00000000000000000000008A /* AgentLoop.swift in Sources */,
+					AG00000000000000000000009A /* PluginContextBuilder.swift in Sources */,
+					AG00000000000000000000010A /* PluginAgentBridge.swift in Sources */,
+					AG00000000000000000000011A /* AgentServiceRouter.swift in Sources */,
+					AG00000000000000000000012A /* PluginAgentResponse.swift in Sources */,
+					AG00000000000000000000013A /* PluginAgentRequest.swift in Sources */,
+					AG00000000000000000000014A /* SwiftCodeUseAgentService.swift in Sources */,
+					AG00000000000000000000015A /* AgentConnectionsManager.swift in Sources */,
+					AG00000000000000000000016A /* AgentSkillsManager.swift in Sources */,
+					AG00000000000000000000017A /* ToolConnectionExecutor.swift in Sources */,
+					AG00000000000000000000018A /* AgentToolsManager.swift in Sources */,
+					AG00000000000000000000019A /* ToolRegistry.swift in Sources */,
+					AV00000000000000000000001A /* CodeChangesView.swift in Sources */,
+					AV00000000000000000000002A /* AgentTaskPanel.swift in Sources */,
+					AV00000000000000000000003A /* ToolExecutionView.swift in Sources */,
+					AV00000000000000000000004A /* AgentModeView.swift in Sources */,
+					AV00000000000000000000005A /* AgentPlanView.swift in Sources */,
+					AV00000000000000000000006A /* AgentConsoleView.swift in Sources */,
+					AV00000000000000000000007A /* AgentToolbar.swift in Sources */,
+					AV00000000000000000000008A /* AgentNewView.swift in Sources */,
+					AV00000000000000000000009A /* ChatAIInterfaceView.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };
