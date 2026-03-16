@@ -9,13 +9,13 @@ struct ToolExecutionView: View {
                 Text("Tools Executed")
                     .font(.headline)
                 Spacer()
-                Text("\(logger.toolLogs.count) calls")
+                Text("\(logger.toolLogs.count) Calls")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             if logger.toolLogs.isEmpty {
-                Text("No tools executed yet.")
+                Text("No Tools Executed Yet")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 8)

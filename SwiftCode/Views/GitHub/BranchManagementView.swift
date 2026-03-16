@@ -76,7 +76,7 @@ struct BranchManagementView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This action cannot be undone.")
+                Text("Are you sure you want to delete ths Branch? This action cannot be undone.")
             }
             .overlay(alignment: .bottom) {
                 if let n = notification {
@@ -142,7 +142,7 @@ struct BranchManagementView: View {
         NavigationStack {
             Form {
                 Section("New Branch") {
-                    TextField("branch-name", text: $newBranchName)
+                    TextField("new-name", text: $newBranchName)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 }
@@ -243,7 +243,7 @@ struct BranchManagementView: View {
 
     private func switchTo(_ branch: GitHubBranch) {
         currentBranch = branch.name
-        showNotification("Switched To branch \(branch.name)", isError: false)
+        showNotification("Switched To Branch \(branch.name)", isError: false)
     }
 
     private func createBranch() async {
@@ -321,7 +321,7 @@ private struct BranchManagementRow: View {
                             .foregroundStyle(.yellow)
                     }
                     if isActive {
-                        Text("active")
+                        Text("Active")
                             .font(.caption2)
                             .foregroundStyle(.green)
                             .padding(.horizontal, 5)

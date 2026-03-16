@@ -1,9 +1,6 @@
 import SwiftUI
 import Combine
 
-// MARK: - Code Editor Management View
-// ObservableObject controller for CodeEditorView — manages cursor, syntax, AI suggestions.
-
 @MainActor
 final class CodeEditorManagementView: ObservableObject {
 

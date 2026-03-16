@@ -13,7 +13,7 @@ struct FoldersView: View {
     var body: some View {
         List {
             if projects.isEmpty {
-                ContentUnavailableView("No Projects", systemImage: "folder", description: Text("Add projects to this folder from the dashboard."))
+                ContentUnavailableView("No Projects", systemImage: "folder", description: Text("Add projects to this folder from the Home page."))
                     .listRowBackground(Color.clear)
             } else {
                 ForEach(projects) { project in
@@ -25,7 +25,7 @@ struct FoldersView: View {
                                 .foregroundStyle(.orange)
                             VStack(alignment: .leading) {
                                 Text(project.name)
-                                Text("\(project.fileCount) files")
+                                Text("\(project.fileCount) Files")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

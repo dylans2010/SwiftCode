@@ -30,7 +30,7 @@ struct SkillsInfoView: View {
                         Image(systemName: "tag.fill")
                             .font(.system(size: 10))
                             .foregroundStyle(.green)
-                        Text("v\(skill.scheme.version)")
+                        Text("Skill Version \(skill.scheme.version)")
                             .font(.caption.weight(.medium))
                     }
                     Spacer()

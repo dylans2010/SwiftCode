@@ -217,7 +217,6 @@ struct GitHubIntegrationView: View {
 
     // MARK: - GitHub Modules Section
 
-    /// Navigation hub for modular GitHub views: Branch Management, Commit History, Pull Requests.
     private var githubModulesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             sectionHeader("GitHub Modules", icon: "square.grid.2x2.fill", color: .purple)
@@ -513,7 +512,7 @@ struct GitHubIntegrationView: View {
                 Text("Commit Message")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
-                TextField("Update from SwiftCode", text: $commitMessage)
+                TextField("Update From SwiftCode", text: $commitMessage)
                     .textFieldStyle(.roundedBorder)
 
                 HStack(spacing: 12) {

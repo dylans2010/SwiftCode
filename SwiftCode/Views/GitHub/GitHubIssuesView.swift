@@ -161,7 +161,7 @@ struct GitHubIssuesView: View {
                         .foregroundStyle(.secondary)
 
                     if let user = issue.user {
-                        Text("by \(user.login)")
+                        Text("By \(user.login)")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
                     }

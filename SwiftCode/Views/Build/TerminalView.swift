@@ -6,7 +6,7 @@ struct TerminalView: View {
     @EnvironmentObject private var projectManager: ProjectManager
     @State private var commandInput = ""
     @State private var outputLines: [TerminalLine] = [
-        TerminalLine(text: "SwiftCode Terminal — type 'help' for available commands", type: .info)
+        TerminalLine(text: "SwiftCode Terminal v1.2 — type 'help' for available commands", type: .info)
     ]
     @State private var commandHistory: [String] = []
     @State private var historyIndex = -1
@@ -200,7 +200,7 @@ struct TerminalView: View {
             outputLines = [TerminalLine(text: "Cleared.", type: .info)]
 
         case "pwd":
-            addOutput(workingDirectoryURL?.path ?? "(no project open)", type: .output)
+            addOutput(workingDirectoryURL?.path ?? "(No Project Open)", type: .output)
 
         case "ls", "dir":
             executeLs(args: args)

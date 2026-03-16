@@ -75,7 +75,7 @@ struct CommandPaletteView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "terminal.fill")
                         .foregroundStyle(.orange)
-                    TextField("Type A Command...", text: $searchText)
+                    TextField("Type A Command", text: $searchText)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                     if !searchText.isEmpty {

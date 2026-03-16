@@ -26,7 +26,7 @@ struct SymbolNavigatorView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
-                    TextField("Filter symbols...", text: $searchText)
+                    TextField("Filter Symbols", text: $searchText)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 }
@@ -55,7 +55,7 @@ struct SymbolNavigatorView: View {
                         Image(systemName: "list.bullet.indent")
                             .font(.system(size: 40))
                             .foregroundStyle(.secondary.opacity(0.5))
-                        Text(symbols.isEmpty ? "No symbols found" : "No matching symbols")
+                        Text(symbols.isEmpty ? "No Symbols Found" : "No Matching Symbols")
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -13,7 +13,7 @@ struct AgentModeView: View {
                         .font(.headline)
 
                     HStack {
-                        TextField("Describe a task for the agent...", text: $taskInput)
+                        TextField("Ask Agent", text: $taskInput)
                             .textFieldStyle(.roundedBorder)
 
                         Button {

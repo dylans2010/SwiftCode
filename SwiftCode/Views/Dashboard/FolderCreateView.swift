@@ -55,7 +55,7 @@ struct FolderCreateView: View {
                             VStack(alignment: .leading) {
                                 Text(folderName.isEmpty ? "Untitled Folder" : folderName)
                                     .font(.headline)
-                                Text("Ready to create")
+                                Text("Ready To Create")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

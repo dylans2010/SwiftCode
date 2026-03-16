@@ -32,7 +32,7 @@ struct ChatAIInterfaceView: View {
 
                         if isTyping {
                             HStack {
-                                Text("AI is thinking...")
+                                Text("AI Is Thinking...")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .padding(.horizontal, 16)
@@ -58,7 +58,7 @@ struct ChatAIInterfaceView: View {
             Divider()
 
             HStack {
-                TextField("Message AI...", text: $input)
+                TextField("Chat", text: $input)
                     .textFieldStyle(.roundedBorder)
 
                 Button {

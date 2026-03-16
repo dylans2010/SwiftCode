@@ -11,7 +11,7 @@ struct PluginManagerView: View {
         NavigationStack {
             Group {
                 if pluginManager.isLoading {
-                    ProgressView("Scanning plugins…")
+                    ProgressView("Scanning Plugins…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if pluginManager.plugins.isEmpty {
                     emptyState
@@ -168,7 +168,7 @@ private struct PluginRowView: View {
             Button("Uninstall", role: .destructive) { onUninstall() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This will permanently remove the plugin.")
+            Text("This will permanently remove the plugin from SwiftCode, are you sure?.")
         }
     }
 }

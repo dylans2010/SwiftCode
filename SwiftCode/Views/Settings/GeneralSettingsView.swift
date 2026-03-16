@@ -587,7 +587,7 @@ struct GeneralSettingsView: View {
                         gitHubOAuth.signInWithGitHub()
                     } label: {
                         HStack {
-                            Label("Sign in with GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                            Label("Sign In With GitHub (Beta)", systemImage: "chevron.left.forwardslash.chevron.right")
                                 .foregroundStyle(.primary)
 
                             Spacer()
@@ -611,12 +611,12 @@ struct GeneralSettingsView: View {
                         }
                         .buttonStyle(.bordered)
                         .tint(.red)
-                        .accessibilityLabel("Log out from GitHub")
+                        .accessibilityLabel("Log Out From GitHub")
                     }
                 }
 
                 if gitHubOAuth.isConnected {
-                    let userLabel = gitHubOAuth.username.map { "Connected to GitHub (@\($0))" } ?? "Connected to GitHub"
+                    let userLabel = gitHubOAuth.username.map { "Connected To GitHub (@\($0))" } ?? "Connected To GitHub"
                     Text(userLabel)
                         .font(.caption)
                         .foregroundStyle(.green)
@@ -653,7 +653,7 @@ struct GeneralSettingsView: View {
                     }
                 }
             } else {
-                Text("No offline models installed yet.")
+                Text("No Offline Models Installed Yet")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -709,7 +709,7 @@ struct GeneralSettingsView: View {
             } header: {
                 Label("Deployment & API Keys", systemImage: "key.fill")
             } footer: {
-                Text("Server-based API keys for OpenRouter, Gemini, Claude, GPT, and other providers.")
+                Text("Server based API keys for OpenRouter, Gemini, Claude, GPT, and other providers.")
             }
 
             Section {
@@ -1965,7 +1965,7 @@ struct AgentConnectionsView: View {
                                     .lineLimit(1)
                             }
                             if !connection.parameters.isEmpty {
-                                Text("\(connection.parameters.count) parameter\(connection.parameters.count == 1 ? "" : "s")")
+                                Text("\(connection.parameters.count) Parameter\(connection.parameters.count == 1 ? "" : "s")")
                                     .font(.caption2)
                                     .foregroundStyle(.tertiary)
                             }
@@ -2105,7 +2105,7 @@ struct CustomToolEditorView: View {
                         Button {
                             showAdvancedBuilder = true
                         } label: {
-                            Label("Build Tool from Scratch", systemImage: "wrench.and.screwdriver.fill")
+                            Label("Build Custon Tool", systemImage: "wrench.and.screwdriver.fill")
                                 .foregroundStyle(.orange)
                         }
                     } header: {

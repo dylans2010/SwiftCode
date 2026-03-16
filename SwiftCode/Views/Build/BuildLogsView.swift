@@ -388,7 +388,7 @@ struct BuildLogsView: View {
                                 HStack(spacing: 8) {
                                     ProgressView()
                                         .scaleEffect(0.8)
-                                    Text("Analyzing logs...")
+                                    Text("Analyzing Logs...")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
                                 }

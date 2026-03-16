@@ -36,7 +36,7 @@ struct DeploymentsView: View {
                 Section("Configuration") {
                     Toggle("Use Custom Domain", isOn: $useCustomDomain)
                     if useCustomDomain {
-                        TextField("e.g. example.com", text: $customDomain)
+                        TextField("Type Custom Domain", text: $customDomain)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.never)
                     }
@@ -60,7 +60,7 @@ struct DeploymentsView: View {
                     .foregroundStyle(.white)
                 } footer: {
                     if !hasToken {
-                        Text("Please configure your API key in Settings > API Keys.")
+                        Text("Please configure your API key in Settings.")
                             .foregroundStyle(.red)
                     }
                 }
@@ -79,7 +79,7 @@ struct DeploymentsView: View {
                                 .font(.caption.monospaced())
                         }
 
-                        Button("Open in Browser") {
+                        Button("Open In Browser") {
                             #if os(iOS)
                             UIApplication.shared.open(URL(string: deploymentURL)!)
                             #endif
@@ -146,7 +146,7 @@ struct DeploymentsView: View {
                         deploymentURL = result.url
                     } else {
                         errorMessage = result.errorMessage
-                        logManager.logDeployment(result.errorMessage ?? "Unknown error", isError: true)
+                        logManager.logDeployment(result.errorMessage ?? "Unknown Error", isError: true)
                     }
                 }
             } catch {

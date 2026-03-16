@@ -145,7 +145,7 @@ struct PullRequestView: View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader("Title", icon: "textformat", color: .orange)
 
-            TextField("Describe Your Changes…", text: $title)
+            TextField("Describe Changes", text: $title)
                 .textFieldStyle(.roundedBorder)
                 .autocorrectionDisabled()
                 .padding(.horizontal, 1)
@@ -166,7 +166,7 @@ struct PullRequestView: View {
                 .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
                 .overlay(alignment: .topLeading) {
                     if bodyText.isEmpty {
-                        Text("Add Description (Supports Markdown)…")
+                        Text("Add Description (Supports Markdown)")
                             .font(.body)
                             .foregroundStyle(.tertiary)
                             .padding(.top, 8)

@@ -1,11 +1,5 @@
 import SwiftUI
 
-// MARK: - Custom Tool Builder View
-//
-// Full advanced editor for creating a custom agent tool from scratch.
-// Users define the tool name, description, HTTP method, endpoint,
-// headers, request body template, and response parsing.
-
 struct CustomToolBuilderView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var registry = CustomToolRegistry.shared
@@ -143,7 +137,7 @@ struct CustomToolBuilderView: View {
                     .pickerStyle(.segmented)
                 }
 
-                labeledField("Endpoint URL", placeholder: "https://api.example.com/v1/...", text: $endpoint)
+                labeledField("Endpoint URL", placeholder: "Enter Endpoint URL", text: $endpoint)
             }
             .padding()
             .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
@@ -163,7 +157,7 @@ struct CustomToolBuilderView: View {
                     .buttonStyle(.plain)
                 }
                 if headers.isEmpty {
-                    Text("No custom headers").font(.caption).foregroundStyle(.secondary)
+                    Text("No Custom Headers").font(.caption).foregroundStyle(.secondary)
                 } else {
                     ForEach(headers) { h in
                         HStack {
@@ -212,7 +206,7 @@ struct CustomToolBuilderView: View {
             }
 
             if parameters.isEmpty {
-                Text("No parameters defined").font(.caption).foregroundStyle(.secondary)
+                Text("No Parameters Defined").font(.caption).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding()
             } else {
@@ -297,8 +291,6 @@ struct CustomToolBuilderView: View {
         }
     }
 
-    /// Builds a human-readable description by combining the tool description,
-    /// any custom headers, and the request body template.
     private func buildDescription() -> String {
         var parts: [String] = []
         if !toolDescription.isEmpty { parts.append(toolDescription) }
@@ -336,7 +328,7 @@ struct ParameterEditorRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                TextField("Parameter name", text: $param.name)
+                TextField("Parameter Name", text: $param.name)
                     .font(.subheadline.weight(.semibold))
                     .autocorrectionDisabled()
                 Spacer()

@@ -98,7 +98,7 @@ struct GitHubRemoteSetupView: View {
                     Task { await loadRepositories() }
                 }
             } else if availableRepos.isEmpty {
-                Text("No repositories found. Make sure your GitHub token has the correct permissions.")
+                Text("No repositories found. Make sure your GitHub token has the correct permissions and try again.")
                     .foregroundStyle(.secondary)
                     .font(.caption)
             } else {

@@ -23,7 +23,7 @@ struct UpdatesView: View {
                     if isChecking {
                         HStack(spacing: 12) {
                             ProgressView()
-                            Text("Checking latest build…")
+                            Text("Checking Latest Build…")
                                 .foregroundStyle(.secondary)
                         }
                     } else if let result = checkResult {
@@ -33,7 +33,7 @@ struct UpdatesView: View {
                         HStack {
                             Text("Status")
                             Spacer()
-                            Text(result.isUpdateAvailable(currentBuild: currentBuild) ? "Update Available" : "You're Up to Date")
+                            Text(result.isUpdateAvailable(currentBuild: currentBuild) ? "Update Available" : "You're Up To Date")
                                 .font(.caption.weight(.semibold))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
@@ -64,7 +64,7 @@ struct UpdatesView: View {
                     Button {
                         Task { await checkForUpdates() }
                     } label: {
-                        Label("Check for Updates", systemImage: "arrow.clockwise")
+                        Label("Check For Updates", systemImage: "arrow.clockwise")
                     }
                     .disabled(isChecking)
                 }

@@ -13,7 +13,7 @@ struct InstalledOfflineModelsView: View {
     var body: some View {
         Section("Installed Models") {
             if manager.installedModelRecords.isEmpty {
-                Text("No local models installed")
+                Text("No Local Models Installed")
                     .foregroundStyle(.secondary)
             } else {
                 ForEach(manager.installedModelRecords) { model in
@@ -75,7 +75,7 @@ struct InstalledOfflineModelsView: View {
         let metadata = OfflineModelMetadata(
             modelName: model.modelName,
             providerName: "Offline",
-            description: "Locally stored model",
+            description: "Locally Stored Model",
             modelSize: model.sizeDescription,
             modelSizeBytes: model.metadata.totalSize,
             tags: ["offline", "installed"],

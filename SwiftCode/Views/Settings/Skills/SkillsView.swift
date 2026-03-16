@@ -110,7 +110,7 @@ struct SkillsView: View {
                 Image(systemName: "wrench.and.screwdriver")
                     .font(.system(size: 9))
                     .foregroundStyle(.orange)
-                Text("\(skill.scheme.recommendedTools.count) tools")
+                Text("\(skill.scheme.recommendedTools.count) Tools")
                     .font(.caption2)
                     .foregroundStyle(.orange)
 

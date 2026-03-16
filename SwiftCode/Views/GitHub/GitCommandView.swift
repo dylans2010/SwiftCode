@@ -8,7 +8,7 @@ struct GitCommandView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var projectManager: ProjectManager
 
-    @State private var commitMessage = "Update from SwiftCode"
+    @State private var commitMessage = "Update From SwiftCode"
     @State private var newBranchName = ""
     @State private var branches: [GitHubBranch] = []
     @State private var currentBranch = "main"
@@ -165,7 +165,7 @@ struct GitCommandView: View {
         NavigationStack {
             Form {
                 Section("Commit Message") {
-                    TextField("Describe your changes", text: $commitMessage)
+                    TextField("Describe Your Changes", text: $commitMessage)
                         .autocorrectionDisabled()
                 }
                 Section {
@@ -192,12 +192,12 @@ struct GitCommandView: View {
         NavigationStack {
             Form {
                 Section("New Branch Name") {
-                    TextField("feature/my-feature", text: $newBranchName)
+                    TextField("feature/new-feature", text: $newBranchName)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                 }
                 if !branches.isEmpty {
-                    Section("Switch to Existing Branch") {
+                    Section("Switch To Existing Branch") {
                         ForEach(branches) { branch in
                             Button {
                                 currentBranch = branch.name

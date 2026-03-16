@@ -63,7 +63,7 @@ struct BuildStatusView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 stepHeader(number: 2, title: "Asset Preparation", icon: "wrench.and.screwdriver")
                                 VStack(alignment: .leading, spacing: 16) {
-                                    Text("Prepare certificates, profiles, and project metadata for a successful build.")
+                                    Text("Prepare Xcode Project files using the internal tool powered by GitHub Actions.")
                                         .font(.caption)
                                         .foregroundStyle(.secondary)
 
@@ -397,7 +397,7 @@ struct BuildStatusView: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 guideStep(number: 1, text: "Connect a repository in GitHub view (owner/repo).")
-                guideStep(number: 2, text: "Run Prepare Compiling to stage certificates/profiles and validate setup.")
+                guideStep(number: 2, text: "Run Prepare Compiling to set up the app using Xcode tools.")
                 guideStep(number: 3, text: "Use Build With CI to generate or run workflow builds in GitHub Actions.")
                 guideStep(number: 4, text: "Monitor Workflow Runs and open logs until build succeeds.")
                 guideStep(number: 5, text: "Download artifacts or releases from this screen once complete.")

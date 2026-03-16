@@ -11,7 +11,7 @@ struct ModelDownloadProgressView: View {
     @ObservedObject private var downloader = OfflineModelDownloader.shared
     @State private var errorMessage: String?
     @State private var hasStarted = false
-    @State private var statusMessage = "Preparing download…"
+    @State private var statusMessage = "Preparing Download…"
     @State private var didCopyError = false
     @State private var hasCompleted = false
 
@@ -91,7 +91,7 @@ struct ModelDownloadProgressView: View {
             guard !isDownloading, hasStarted, !hasCompleted else { return }
 
             if let latestError = downloader.lastErrorMessage {
-                statusMessage = "Download failed"
+                statusMessage = "Download Failed"
                 errorMessage = latestError
                 return
             }
@@ -122,14 +122,14 @@ struct ModelDownloadProgressView: View {
 
             if downloader.isDownloading,
                downloader.activeModel?.modelName == selectedMetadata.modelName {
-                statusMessage = "Download in progress…"
+                statusMessage = "Download In Progress…"
                 return
             }
 
-            statusMessage = "Starting download…"
+            statusMessage = "Starting Download…"
             downloader.startDownload(model: selectedMetadata)
         } catch {
-            statusMessage = "Download failed"
+            statusMessage = "Download Failed"
             errorMessage = detailedErrorMessage(for: error)
         }
     }
@@ -161,6 +161,6 @@ struct ModelDownloadProgressView: View {
             return "Network download failed. Full error: \(nsError)"
         }
 
-        return "Full error: \(nsError)"
+        return "Full Error: \(nsError)"
     }
 }

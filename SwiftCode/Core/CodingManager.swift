@@ -1,19 +1,13 @@
 import Foundation
 
-/// Central manager for all project file operations.
-/// The code editor and agent tools should use CodingManager instead of directly calling FileManager.
 @MainActor
 final class CodingManager: ObservableObject {
     static let shared = CodingManager()
 
     private let fm = FileManager.default
-
-    // MARK: - Projects Root
-
-    /// Resolved root directory for all projects: Documents/Projects
+    
     var projectsRoot: URL
 
-    /// Resolved root directory for CoreML models: Documents/Models
     var modelsRoot: URL
 
     private init() {

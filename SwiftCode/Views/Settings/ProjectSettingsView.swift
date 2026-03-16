@@ -145,8 +145,6 @@ struct ProjectSettingsView: View {
     }
 
     private func openProjectInFiles(_ project: Project) {
-        // iOS: The Files app can be opened to the app's document directory.
-        // shareddocuments:// is a common way to attempt opening the Files app.
         if let url = URL(string: "shareddocuments://\(project.directoryURL.path)") {
             UIApplication.shared.open(url)
         } else {

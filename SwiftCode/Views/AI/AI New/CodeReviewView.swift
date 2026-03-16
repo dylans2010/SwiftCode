@@ -76,7 +76,7 @@ struct CodeReviewView: View {
                 .font(.title2.bold())
                 .foregroundStyle(.white)
 
-            Text("Open a Swift file and tap **Review** to get an AI-powered code review with issue detection, suggestions, and a quality score.")
+            Text("Open a Swift file and tap Review to get an AI-powered code review with issue detection, suggestions, and a quality score.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)

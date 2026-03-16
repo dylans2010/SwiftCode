@@ -102,7 +102,7 @@ struct CIBuildView: View {
         } else if let content = try? String(contentsOfFile: fallbackPath, encoding: .utf8) {
             template = content
         } else {
-            return "Error: Could not load CI build template."
+            return "Internal Error: Could not load CI build template. If you are seeing this, please create an issue on GitHub ASAP. "
         }
 
         var yaml = template
@@ -285,7 +285,7 @@ struct CIBuildView: View {
                 Text("Automated IPA Builder")
                     .font(.title3.bold())
                     .foregroundStyle(.white)
-                Text("Generates a GitHub Actions workflow that compiles your app and produces a downloadable .ipa file on every push.")
+                Text("Generates a GitHub Actions workflow that compiles your app and produces a downloadable .ipa file on every push. Note: You need to sign the app yourself, you may use your certificates or SideStore.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -381,7 +381,7 @@ struct CIBuildView: View {
                         Text("iPhone 15 Pro").tag("iPhone 15 Pro")
                         Text("iPhone 15").tag("iPhone 15")
                         Text("iPhone 14").tag("iPhone 14")
-                        Text("iPad Pro (12.9-inch)").tag("iPad Pro (12.9-inch) (6th generation)")
+                        Text("iPad Pro (12.9-Inch)").tag("iPad Pro (12.9-inch) (6th generation)")
                     }
                     .pickerStyle(.segmented)
                 }

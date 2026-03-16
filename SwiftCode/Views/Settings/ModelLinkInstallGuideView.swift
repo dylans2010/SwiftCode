@@ -26,7 +26,7 @@ struct ModelLinkInstallGuideView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
-                    Text("Example link")
+                    Text("Example Link")
                         .font(.headline)
                     Text("https://huggingface.co/microsoft/phi-3-mini-4k-instruct")
                         .font(.footnote.monospaced())

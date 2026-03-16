@@ -27,7 +27,7 @@ struct DeploymentLogsView: View {
                         } else {
                             Image(systemName: "brain.head.profile")
                         }
-                        Text("Analyze Logs with AI")
+                        Text("Analyze Logs")
                     }
                     .font(.subheadline.bold())
                     .padding(.horizontal, 16)
@@ -165,9 +165,9 @@ struct AnalysisResultView: View {
 
 #Preview {
     DeploymentLogsView(logs: [
-        DeploymentLogLine(timestamp: Date(), message: "Preparing repository...", isError: false),
-        DeploymentLogLine(timestamp: Date(), message: "Pushing code to GitHub...", isError: false),
-        DeploymentLogLine(timestamp: Date(), message: "Failed to push: Remote rejected", isError: true)
+        DeploymentLogLine(timestamp: Date(), message: "Preparing Repository...", isError: false),
+        DeploymentLogLine(timestamp: Date(), message: "Pushing Code To GitHub...", isError: false),
+        DeploymentLogLine(timestamp: Date(), message: "Failed to push: Remote Rejected", isError: true)
     ])
     .frame(height: 300)
     .padding()

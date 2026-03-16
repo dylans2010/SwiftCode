@@ -189,7 +189,7 @@ struct CommitHistoryView: View {
 
                     // Cherry-pick
                     if index != 0 {
-                        actionChip(label: "Cherry-pick", icon: "paintpalette", color: .purple) {
+                        actionChip(label: "Cherry Pick", icon: "paintpalette", color: .purple) {
                             Task { await cherryPick(commit) }
                         }
                     }
@@ -488,7 +488,7 @@ struct CommitDetailView: View {
                     // View on GitHub
                     if let urlStr = commit.htmlUrl, let url = URL(string: urlStr) {
                         Link(destination: url) {
-                            Label("View on GitHub", systemImage: "safari")
+                            Label("View On GitHub", systemImage: "safari")
                                 .font(.callout)
                                 .foregroundStyle(.orange)
                                 .frame(maxWidth: .infinity, alignment: .leading)

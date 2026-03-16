@@ -1,8 +1,5 @@
 import SwiftUI
 
-// MARK: - Symbol Outline View
-// Parses the current file with regex and lists all detected symbols.
-
 struct SymbolOutlineView: View {
     @EnvironmentObject private var projectManager: ProjectManager
     @State private var symbols: [CodeSymbol] = []
@@ -36,7 +33,7 @@ struct SymbolOutlineView: View {
             }
             .navigationTitle("Symbol Outline")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $searchText, prompt: "Filter symbols")
+            .searchable(text: $searchText, prompt: "Filter Symbols")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     statsMenu
@@ -156,7 +153,7 @@ struct SymbolOutlineView: View {
         Menu {
             let stats = CodeStructureAnalyzer.shared.statistics(for: projectManager.activeFileContent)
             Text("Lines: \(stats.totalLines)")
-            Text("Non-empty: \(stats.nonEmptyLines)")
+            Text("Non Empty: \(stats.nonEmptyLines)")
             Text("Comments: \(stats.commentLines)")
             Text("Functions: \(stats.functionCount)")
             Text("Classes: \(stats.classCount)")

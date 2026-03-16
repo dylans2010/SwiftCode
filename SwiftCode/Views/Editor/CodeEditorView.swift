@@ -74,7 +74,7 @@ struct CodeEditorView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "lightbulb.max.fill")
                         .foregroundStyle(.yellow)
-                    Text("Code Suggestions has reviewed your code, check it out")
+                    Text("Code Suggestions has reviewed your code, tap here to see.")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white)
                 }
@@ -241,7 +241,7 @@ struct CodeEditorView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
                         .font(.system(size: 12))
-                    TextField("Find in file...", text: $searchQuery)
+                    TextField("Find In File", text: $searchQuery)
                         .font(.system(size: 13, design: .monospaced))
                         .autocorrectionDisabled()
                 }
@@ -272,7 +272,7 @@ struct CodeEditorView: View {
                     Image(systemName: "arrow.left.arrow.right")
                         .foregroundStyle(.secondary)
                         .font(.system(size: 12))
-                    TextField("Replace with...", text: $replaceText)
+                    TextField("Replace With", text: $replaceText)
                         .font(.system(size: 13, design: .monospaced))
                         .autocorrectionDisabled()
                 }

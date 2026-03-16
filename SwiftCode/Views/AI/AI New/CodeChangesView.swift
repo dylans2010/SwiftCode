@@ -9,7 +9,7 @@ struct CodeChangesView: View {
                 .font(.headline)
 
             if patchEngine.pendingPatches.isEmpty {
-                Text("No changes suggested.")
+                Text("No Changes Suggested")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 8)

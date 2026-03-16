@@ -60,7 +60,7 @@ struct OfflineModelsView: View {
                     }
                 } label: {
                     HStack {
-                        Label("Fetch from HuggingFace API", systemImage: "arrow.clockwise")
+                        Label("Fetch", systemImage: "arrow.clockwise")
                         if isRefreshingFromAPI {
                             Spacer()
                             ProgressView()
