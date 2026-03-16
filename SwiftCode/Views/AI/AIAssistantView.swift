@@ -7,6 +7,7 @@ struct AIAssistantView: View {
     @State private var showCommandList = false
     @State private var showHistory = false
     @State private var showAgentInterface = false
+    @State private var showNewAgentUI = false
 
     private let slashCommands = ["/explain", "/summarize", "/rewrite", "/debug"]
 
@@ -114,8 +115,15 @@ struct AIAssistantView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Agent Interface") {
-                        showAgentInterface = true
+                    Menu {
+                        Button("Agent Mode (Legacy)") {
+                            showAgentInterface = true
+                        }
+                        Button("Agent Mode (New)") {
+                            showNewAgentUI = true
+                        }
+                    } label: {
+                        Label("Agent", systemImage: "cpu")
                     }
                 }
             }
@@ -129,6 +137,12 @@ struct AIAssistantView: View {
                         .navigationBarTitleDisplayMode(.inline)
                 }
                 .presentationDetents([.large])
+            }
+            .sheet(isPresented: $showNewAgentUI) {
+                NavigationStack {
+                    AgentNewView()
+                        .presentationDetents([.large])
+                }
             }
         }
     }
