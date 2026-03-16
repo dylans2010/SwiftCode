@@ -1,5 +1,8 @@
 import Foundation
+
+#if os(macOS)
 import class Foundation.Process
+#endif
 
 final class SwiftRuntimeCompiler {
     private var cachedSignatures: [URL: Date] = [:]
@@ -19,6 +22,7 @@ final class SwiftRuntimeCompiler {
         let changedFiles = changedSwiftFiles(in: projectStructure.swiftFiles)
         let allInputs = projectStructure.swiftFiles + [bootstrapFile]
 
+#if os(macOS)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
         process.currentDirectoryURL = sandboxPolicy.projectDirectory
@@ -41,6 +45,15 @@ final class SwiftRuntimeCompiler {
             let message = String(data: data, encoding: .utf8) ?? "Unknown compiler error"
             throw parseCompilerError(message)
         }
+#else
+        throw SimulationError(
+            type: .compile,
+            message: "Dynamic compilation is not supported on iOS.",
+            file: nil,
+            line: nil,
+            stackTrace: nil
+        )
+#endif
 
         var metadata: [String: String] = [
             "inputs": "\(allInputs.count)",
