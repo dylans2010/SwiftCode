@@ -101,6 +101,15 @@ LS000000000000000000002A /* PreviewEngine.swift in Sources */ = {isa = PBXBuildF
 LS000000000000000000003A /* PreviewHostView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000003B /* PreviewHostView.swift */; };
 LS000000000000000000004A /* ProjectAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000004B /* ProjectAnalyzer.swift */; };
 LS000000000000000000005A /* SwiftUIRuntimeLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000005B /* SwiftUIRuntimeLoader.swift */; };
+LS000000000000000000006A /* LocalSimulationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000006B /* LocalSimulationEngine.swift */; };
+LS000000000000000000007A /* ProjectScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000007B /* ProjectScanner.swift */; };
+LS000000000000000000008A /* SwiftUIEntryResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000008B /* SwiftUIEntryResolver.swift */; };
+LS000000000000000000009A /* SwiftRuntimeCompiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000009B /* SwiftRuntimeCompiler.swift */; };
+LS000000000000000000010A /* SwiftDynamicLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000010B /* SwiftDynamicLoader.swift */; };
+LS000000000000000000011A /* SwiftUIViewRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000011B /* SwiftUIViewRenderer.swift */; };
+LS000000000000000000012A /* LiveReloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000012B /* LiveReloadManager.swift */; };
+LS000000000000000000013A /* LocalSimulationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000013B /* LocalSimulationView.swift */; };
+LS000000000000000000014A /* SimulationSandbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000014B /* SimulationSandbox.swift */; };
 TV0000000000000000000001A /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TV0000000000000000000001B /* TerminalView.swift */; };
 PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PC0000000000000000000001B /* PrepareCompileWaitingView.swift */; };
 AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AS0000000000000000000001B /* AISuggestionEngine.swift */; };
@@ -316,6 +325,15 @@ LS000000000000000000002B /* PreviewEngine.swift */ = {isa = PBXFileReference; la
 LS000000000000000000003B /* PreviewHostView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewHostView.swift; sourceTree = "<group>"; };
 LS000000000000000000004B /* ProjectAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectAnalyzer.swift; sourceTree = "<group>"; };
 LS000000000000000000005B /* SwiftUIRuntimeLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIRuntimeLoader.swift; sourceTree = "<group>"; };
+LS000000000000000000006B /* LocalSimulationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSimulationEngine.swift; sourceTree = "<group>"; };
+LS000000000000000000007B /* ProjectScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectScanner.swift; sourceTree = "<group>"; };
+LS000000000000000000008B /* SwiftUIEntryResolver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIEntryResolver.swift; sourceTree = "<group>"; };
+LS000000000000000000009B /* SwiftRuntimeCompiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftRuntimeCompiler.swift; sourceTree = "<group>"; };
+LS000000000000000000010B /* SwiftDynamicLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftDynamicLoader.swift; sourceTree = "<group>"; };
+LS000000000000000000011B /* SwiftUIViewRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIViewRenderer.swift; sourceTree = "<group>"; };
+LS000000000000000000012B /* LiveReloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveReloadManager.swift; sourceTree = "<group>"; };
+LS000000000000000000013B /* LocalSimulationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalSimulationView.swift; sourceTree = "<group>"; };
+LS000000000000000000014B /* SimulationSandbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulationSandbox.swift; sourceTree = "<group>"; };
 TV0000000000000000000001B /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalView.swift; sourceTree = "<group>"; };
 PC0000000000000000000001B /* PrepareCompileWaitingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareCompileWaitingView.swift; sourceTree = "<group>"; };
 AS0000000000000000000001B /* AISuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISuggestionEngine.swift; sourceTree = "<group>"; };
@@ -967,6 +985,15 @@ children = (
 				LS000000000000000000003B /* PreviewHostView.swift */,
 				LS000000000000000000004B /* ProjectAnalyzer.swift */,
 				LS000000000000000000005B /* SwiftUIRuntimeLoader.swift */,
+				LS000000000000000000006B /* LocalSimulationEngine.swift */,
+				LS000000000000000000007B /* ProjectScanner.swift */,
+				LS000000000000000000008B /* SwiftUIEntryResolver.swift */,
+				LS000000000000000000009B /* SwiftRuntimeCompiler.swift */,
+				LS000000000000000000010B /* SwiftDynamicLoader.swift */,
+				LS000000000000000000011B /* SwiftUIViewRenderer.swift */,
+				LS000000000000000000012B /* LiveReloadManager.swift */,
+				LS000000000000000000013B /* LocalSimulationView.swift */,
+				LS000000000000000000014B /* SimulationSandbox.swift */,
 			);
 path = "Local Simulation";
 sourceTree = "<group>";
@@ -1511,6 +1538,15 @@ files = (
 				LS000000000000000000003A /* PreviewHostView.swift in Sources */,
 				LS000000000000000000004A /* ProjectAnalyzer.swift in Sources */,
 				LS000000000000000000005A /* SwiftUIRuntimeLoader.swift in Sources */,
+				LS000000000000000000006A /* LocalSimulationEngine.swift in Sources */,
+				LS000000000000000000007A /* ProjectScanner.swift in Sources */,
+				LS000000000000000000008A /* SwiftUIEntryResolver.swift in Sources */,
+				LS000000000000000000009A /* SwiftRuntimeCompiler.swift in Sources */,
+				LS000000000000000000010A /* SwiftDynamicLoader.swift in Sources */,
+				LS000000000000000000011A /* SwiftUIViewRenderer.swift in Sources */,
+				LS000000000000000000012A /* LiveReloadManager.swift in Sources */,
+				LS000000000000000000013A /* LocalSimulationView.swift in Sources */,
+				LS000000000000000000014A /* SimulationSandbox.swift in Sources */,
 				TV0000000000000000000001A /* TerminalView.swift in Sources */,
 				AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */,
 				SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */,

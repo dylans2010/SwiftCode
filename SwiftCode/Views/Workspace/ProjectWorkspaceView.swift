@@ -214,7 +214,7 @@ struct ProjectWorkspaceView: View {
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showLocalSimulation) {
-            PreviewHostView()
+            LocalSimulationView()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
         }
