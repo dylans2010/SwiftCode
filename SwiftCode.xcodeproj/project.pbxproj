@@ -240,6 +240,7 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		AD89989EF990494380185AD5 /* AgentExecutionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BDC6E8DF504CDE979DB510 /* AgentExecutionState.swift */; };
 		4F57DD2F77FB464CA2DAC210 /* AgentLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23AD9F90D6A648D988920A37 /* AgentLogger.swift */; };
 		3EF8C02A214D489ABFAC44DB /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B5CF7F01C044D14A9EBA6FC /* AgentLoop.swift */; };
+		LF00000000000000000000001 /* ListFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = LF00000000000000000000002 /* ListFiles.swift */; };
 		CF616E8538D74A9DA855F26C /* AgentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8652D80AD11544899E062817 /* AgentManager.swift */; };
 		1AD75A619E664C0F97DFC015 /* AgentSystemInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504F79A303C4722962A02D9 /* AgentSystemInitializer.swift */; };
 		415D232865644BE1A8644DDE /* CodePatchEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63767CA7654C4082AE781448 /* CodePatchEngine.swift */; };
@@ -492,6 +493,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		B1BDC6E8DF504CDE979DB510 /* AgentExecutionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentExecutionState.swift"; path = "SwiftCode/Backend/Agent New/AgentExecutionState.swift"; sourceTree = SOURCE_ROOT; };
 		23AD9F90D6A648D988920A37 /* AgentLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentLogger.swift"; path = "SwiftCode/Backend/Agent New/AgentLogger.swift"; sourceTree = SOURCE_ROOT; };
 		5B5CF7F01C044D14A9EBA6FC /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentLoop.swift"; path = "SwiftCode/Backend/Agent New/AgentLoop.swift"; sourceTree = SOURCE_ROOT; };
+		LF00000000000000000000002 /* ListFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ListFiles.swift"; path = "SwiftCode/Backend/Agent New/ListFiles.swift"; sourceTree = SOURCE_ROOT; };
 		8652D80AD11544899E062817 /* AgentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentManager.swift"; path = "SwiftCode/Backend/Agent New/AgentManager.swift"; sourceTree = SOURCE_ROOT; };
 		1504F79A303C4722962A02D9 /* AgentSystemInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentSystemInitializer.swift"; path = "SwiftCode/Backend/Agent New/AgentSystemInitializer.swift"; sourceTree = SOURCE_ROOT; };
 		63767CA7654C4082AE781448 /* CodePatchEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodePatchEngine.swift"; path = "SwiftCode/Backend/Agent New/CodePatchEngine.swift"; sourceTree = SOURCE_ROOT; };
@@ -1727,6 +1729,7 @@ files = (
 				AD89989EF990494380185AD5 /* AgentExecutionState.swift in Sources */,
 				4F57DD2F77FB464CA2DAC210 /* AgentLogger.swift in Sources */,
 				3EF8C02A214D489ABFAC44DB /* AgentLoop.swift in Sources */,
+				LF00000000000000000000001 /* ListFiles.swift in Sources */,
 				CF616E8538D74A9DA855F26C /* AgentManager.swift in Sources */,
 				1AD75A619E664C0F97DFC015 /* AgentSystemInitializer.swift in Sources */,
 				415D232865644BE1A8644DDE /* CodePatchEngine.swift in Sources */,
