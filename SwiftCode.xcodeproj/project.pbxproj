@@ -233,6 +233,34 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		9DB89E5FB93B4015BCBF1773 /* SwiftCode.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 879B1052D19145C0A7450391 /* SwiftCode.storekit */; };
 		CC000000000000000000001A /* ChatController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000000000000000000001B /* ChatController.swift */; };
 		CU000000000000000000001A /* ChatUIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CU000000000000000000001B /* ChatUIComponents.swift */; };
+		00B15C78C85946BFAABEF43F /* AgentServiceRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE03EDCBA2014856821F999B /* AgentServiceRouter.swift */; };
+		65A22F6423D24E1DA37E16E2 /* PluginAgentRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 190114FD0FC84A288C58C17B /* PluginAgentRequest.swift */; };
+		B5C29EAA7AC44639AADC3902 /* PluginAgentResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD24D5D20CA249E99A39F9E6 /* PluginAgentResponse.swift */; };
+		4126E4562EC44461A76CFA38 /* SwiftCodeUseAgentService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C29B5806AEE4256885530A8 /* SwiftCodeUseAgentService.swift */; };
+		AD89989EF990494380185AD5 /* AgentExecutionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BDC6E8DF504CDE979DB510 /* AgentExecutionState.swift */; };
+		4F57DD2F77FB464CA2DAC210 /* AgentLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23AD9F90D6A648D988920A37 /* AgentLogger.swift */; };
+		3EF8C02A214D489ABFAC44DB /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B5CF7F01C044D14A9EBA6FC /* AgentLoop.swift */; };
+		CF616E8538D74A9DA855F26C /* AgentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8652D80AD11544899E062817 /* AgentManager.swift */; };
+		1AD75A619E664C0F97DFC015 /* AgentSystemInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1504F79A303C4722962A02D9 /* AgentSystemInitializer.swift */; };
+		415D232865644BE1A8644DDE /* CodePatchEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63767CA7654C4082AE781448 /* CodePatchEngine.swift */; };
+		B000AE0E1A5A4773A3ABDDCB /* PluginAgentBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E431D99548D14AF993D5F22E /* PluginAgentBridge.swift */; };
+		8C8B7A4F73124F1F8751050F /* PluginContextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FAC990112A145A599C56C78 /* PluginContextBuilder.swift */; };
+		6BFA284FC4DC4EF1A4CFF22D /* TaskPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA321D0093824C4BAC696D64 /* TaskPlanner.swift */; };
+		62F13B86363947D5B0F2C8A1 /* ToolExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = E09102C3D1604E3AA48AF39C /* ToolExecutor.swift */; };
+		93AD9E9EFF67457399259991 /* AgentConnectionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D62E119E0D842568FC1BDF2 /* AgentConnectionsManager.swift */; };
+		DB56B9C7EDCC46DFB1510DD7 /* AgentSkillsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B9E281D2E114DCFB3D147AB /* AgentSkillsManager.swift */; };
+		AE2A977B443F405FACC8CFA2 /* AgentToolsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36AD0433B12F4C619DF83E40 /* AgentToolsManager.swift */; };
+		BB9A9C3D900F4E989AC7CE55 /* ToolConnectionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5C4BE242CE47CEB2534838 /* ToolConnectionExecutor.swift */; };
+		37D616A5A78B490B8F01E8C6 /* ToolRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE63618E016B46FFA3301C2F /* ToolRegistry.swift */; };
+		1BBDA085777346E7AE29BB42 /* AgentConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66658FE9860B4F96B3822045 /* AgentConsoleView.swift */; };
+		3CAD7E73A0E243359891FEFD /* AgentModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13322D9D6DC546F0AEA9284F /* AgentModeView.swift */; };
+		88D6027E4C0E4A588D7936E5 /* AgentNewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E25410ADA54715BADEF7EA /* AgentNewView.swift */; };
+		748196C09DF94F8D9008DD94 /* AgentPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7790D9ACFD54467587FEEB32 /* AgentPlanView.swift */; };
+		04F39B8929354169B0B43AC7 /* AgentTaskPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFEB0445F9144CB493D6CAAF /* AgentTaskPanel.swift */; };
+		408DB822823B45418B63B176 /* AgentToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = B85F26DEC17C4D1D9E4DEC9E /* AgentToolbar.swift */; };
+		88ABBEAEF37545C2AE061DF9 /* ChatAIInterfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF952C5900FB4EE2ADDE8ECF /* ChatAIInterfaceView.swift */; };
+		D497EDED40E04EB690D087F1 /* CodeChangesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C3E778718344DEBEA55A55 /* CodeChangesView.swift */; };
+		5A775CEADF264C1EB3C9AC3D /* ToolExecutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4EAF22C89B463BA0947180 /* ToolExecutionView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -457,6 +485,34 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		879B1052D19145C0A7450391 /* SwiftCode.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SwiftCode.storekit; sourceTree = "<group>"; };
 		CC000000000000000000001B /* ChatController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatController.swift; sourceTree = "<group>"; };
 		CU000000000000000000001B /* ChatUIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatUIComponents.swift; sourceTree = "<group>"; };
+		BE03EDCBA2014856821F999B /* AgentServiceRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentServiceRouter.swift"; path = "SwiftCode/Backend/Agent New/AgentAPI/AgentServiceRouter.swift"; sourceTree = SOURCE_ROOT; };
+		190114FD0FC84A288C58C17B /* PluginAgentRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PluginAgentRequest.swift"; path = "SwiftCode/Backend/Agent New/AgentAPI/PluginAgentRequest.swift"; sourceTree = SOURCE_ROOT; };
+		AD24D5D20CA249E99A39F9E6 /* PluginAgentResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PluginAgentResponse.swift"; path = "SwiftCode/Backend/Agent New/AgentAPI/PluginAgentResponse.swift"; sourceTree = SOURCE_ROOT; };
+		6C29B5806AEE4256885530A8 /* SwiftCodeUseAgentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SwiftCodeUseAgentService.swift"; path = "SwiftCode/Backend/Agent New/AgentAPI/SwiftCodeUseAgentService.swift"; sourceTree = SOURCE_ROOT; };
+		B1BDC6E8DF504CDE979DB510 /* AgentExecutionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentExecutionState.swift"; path = "SwiftCode/Backend/Agent New/AgentExecutionState.swift"; sourceTree = SOURCE_ROOT; };
+		23AD9F90D6A648D988920A37 /* AgentLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentLogger.swift"; path = "SwiftCode/Backend/Agent New/AgentLogger.swift"; sourceTree = SOURCE_ROOT; };
+		5B5CF7F01C044D14A9EBA6FC /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentLoop.swift"; path = "SwiftCode/Backend/Agent New/AgentLoop.swift"; sourceTree = SOURCE_ROOT; };
+		8652D80AD11544899E062817 /* AgentManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentManager.swift"; path = "SwiftCode/Backend/Agent New/AgentManager.swift"; sourceTree = SOURCE_ROOT; };
+		1504F79A303C4722962A02D9 /* AgentSystemInitializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentSystemInitializer.swift"; path = "SwiftCode/Backend/Agent New/AgentSystemInitializer.swift"; sourceTree = SOURCE_ROOT; };
+		63767CA7654C4082AE781448 /* CodePatchEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodePatchEngine.swift"; path = "SwiftCode/Backend/Agent New/CodePatchEngine.swift"; sourceTree = SOURCE_ROOT; };
+		E431D99548D14AF993D5F22E /* PluginAgentBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PluginAgentBridge.swift"; path = "SwiftCode/Backend/Agent New/PluginBridge/PluginAgentBridge.swift"; sourceTree = SOURCE_ROOT; };
+		4FAC990112A145A599C56C78 /* PluginContextBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PluginContextBuilder.swift"; path = "SwiftCode/Backend/Agent New/PluginBridge/PluginContextBuilder.swift"; sourceTree = SOURCE_ROOT; };
+		DA321D0093824C4BAC696D64 /* TaskPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TaskPlanner.swift"; path = "SwiftCode/Backend/Agent New/TaskPlanner.swift"; sourceTree = SOURCE_ROOT; };
+		E09102C3D1604E3AA48AF39C /* ToolExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ToolExecutor.swift"; path = "SwiftCode/Backend/Agent New/ToolExecutor.swift"; sourceTree = SOURCE_ROOT; };
+		5D62E119E0D842568FC1BDF2 /* AgentConnectionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentConnectionsManager.swift"; path = "SwiftCode/Backend/Agent New/ToolIntegration/AgentConnectionsManager.swift"; sourceTree = SOURCE_ROOT; };
+		6B9E281D2E114DCFB3D147AB /* AgentSkillsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentSkillsManager.swift"; path = "SwiftCode/Backend/Agent New/ToolIntegration/AgentSkillsManager.swift"; sourceTree = SOURCE_ROOT; };
+		36AD0433B12F4C619DF83E40 /* AgentToolsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentToolsManager.swift"; path = "SwiftCode/Backend/Agent New/ToolIntegration/AgentToolsManager.swift"; sourceTree = SOURCE_ROOT; };
+		1D5C4BE242CE47CEB2534838 /* ToolConnectionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ToolConnectionExecutor.swift"; path = "SwiftCode/Backend/Agent New/ToolIntegration/ToolConnectionExecutor.swift"; sourceTree = SOURCE_ROOT; };
+		AE63618E016B46FFA3301C2F /* ToolRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ToolRegistry.swift"; path = "SwiftCode/Backend/Agent New/ToolIntegration/ToolRegistry.swift"; sourceTree = SOURCE_ROOT; };
+		66658FE9860B4F96B3822045 /* AgentConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentConsoleView.swift"; path = "SwiftCode/Views/AI/AI New/AgentConsoleView.swift"; sourceTree = SOURCE_ROOT; };
+		13322D9D6DC546F0AEA9284F /* AgentModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentModeView.swift"; path = "SwiftCode/Views/AI/AI New/AgentModeView.swift"; sourceTree = SOURCE_ROOT; };
+		C1E25410ADA54715BADEF7EA /* AgentNewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentNewView.swift"; path = "SwiftCode/Views/AI/AI New/AgentNewView.swift"; sourceTree = SOURCE_ROOT; };
+		7790D9ACFD54467587FEEB32 /* AgentPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentPlanView.swift"; path = "SwiftCode/Views/AI/AI New/AgentPlanView.swift"; sourceTree = SOURCE_ROOT; };
+		AFEB0445F9144CB493D6CAAF /* AgentTaskPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentTaskPanel.swift"; path = "SwiftCode/Views/AI/AI New/AgentTaskPanel.swift"; sourceTree = SOURCE_ROOT; };
+		B85F26DEC17C4D1D9E4DEC9E /* AgentToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentToolbar.swift"; path = "SwiftCode/Views/AI/AI New/AgentToolbar.swift"; sourceTree = SOURCE_ROOT; };
+		DF952C5900FB4EE2ADDE8ECF /* ChatAIInterfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ChatAIInterfaceView.swift"; path = "SwiftCode/Views/AI/AI New/ChatAIInterfaceView.swift"; sourceTree = SOURCE_ROOT; };
+		E6C3E778718344DEBEA55A55 /* CodeChangesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodeChangesView.swift"; path = "SwiftCode/Views/AI/AI New/CodeChangesView.swift"; sourceTree = SOURCE_ROOT; };
+		4E4EAF22C89B463BA0947180 /* ToolExecutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ToolExecutionView.swift"; path = "SwiftCode/Views/AI/AI New/ToolExecutionView.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -1664,6 +1720,34 @@ files = (
 					3C3D335FBD164D74BB7B1058 /* DatabaseInspectorView.swift in Sources */,
 					DD8D7C3E05DC40F09C85F4F6 /* PerformanceMonitorView.swift in Sources */,
 					8D289E52CECF4D1BBA2B388F /* CoreMLInspectorView.swift in Sources */,
+				00B15C78C85946BFAABEF43F /* AgentServiceRouter.swift in Sources */,
+				65A22F6423D24E1DA37E16E2 /* PluginAgentRequest.swift in Sources */,
+				B5C29EAA7AC44639AADC3902 /* PluginAgentResponse.swift in Sources */,
+				4126E4562EC44461A76CFA38 /* SwiftCodeUseAgentService.swift in Sources */,
+				AD89989EF990494380185AD5 /* AgentExecutionState.swift in Sources */,
+				4F57DD2F77FB464CA2DAC210 /* AgentLogger.swift in Sources */,
+				3EF8C02A214D489ABFAC44DB /* AgentLoop.swift in Sources */,
+				CF616E8538D74A9DA855F26C /* AgentManager.swift in Sources */,
+				1AD75A619E664C0F97DFC015 /* AgentSystemInitializer.swift in Sources */,
+				415D232865644BE1A8644DDE /* CodePatchEngine.swift in Sources */,
+				B000AE0E1A5A4773A3ABDDCB /* PluginAgentBridge.swift in Sources */,
+				8C8B7A4F73124F1F8751050F /* PluginContextBuilder.swift in Sources */,
+				6BFA284FC4DC4EF1A4CFF22D /* TaskPlanner.swift in Sources */,
+				62F13B86363947D5B0F2C8A1 /* ToolExecutor.swift in Sources */,
+				93AD9E9EFF67457399259991 /* AgentConnectionsManager.swift in Sources */,
+				DB56B9C7EDCC46DFB1510DD7 /* AgentSkillsManager.swift in Sources */,
+				AE2A977B443F405FACC8CFA2 /* AgentToolsManager.swift in Sources */,
+				BB9A9C3D900F4E989AC7CE55 /* ToolConnectionExecutor.swift in Sources */,
+				37D616A5A78B490B8F01E8C6 /* ToolRegistry.swift in Sources */,
+				1BBDA085777346E7AE29BB42 /* AgentConsoleView.swift in Sources */,
+				3CAD7E73A0E243359891FEFD /* AgentModeView.swift in Sources */,
+				88D6027E4C0E4A588D7936E5 /* AgentNewView.swift in Sources */,
+				748196C09DF94F8D9008DD94 /* AgentPlanView.swift in Sources */,
+				04F39B8929354169B0B43AC7 /* AgentTaskPanel.swift in Sources */,
+				408DB822823B45418B63B176 /* AgentToolbar.swift in Sources */,
+				88ABBEAEF37545C2AE061DF9 /* ChatAIInterfaceView.swift in Sources */,
+				D497EDED40E04EB690D087F1 /* CodeChangesView.swift in Sources */,
+				5A775CEADF264C1EB3C9AC3D /* ToolExecutionView.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };
