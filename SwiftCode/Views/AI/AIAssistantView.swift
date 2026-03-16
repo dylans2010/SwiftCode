@@ -177,7 +177,7 @@ private struct ChatHistoryRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(message.role == .assistant ? "Assistant" : "You")
                 .font(.caption)
-                .foregroundStyle(message.role == .assistant ? .secondary : .accent)
+                .foregroundStyle(message.role == .assistant ? .secondary : .accentColor)
             Text(message.content)
                 .font(.body)
             Text(ChatHistoryView.timestampFormatter.string(from: message.timestamp))
