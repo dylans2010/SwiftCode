@@ -50,7 +50,7 @@ final class ChatController: ObservableObject {
             if normalizedResponse.isEmpty {
                 appendMessage(role: .assistant, content: genericErrorMessage)
             } else if normalizedResponse.caseInsensitiveCompare(prompt) == .orderedSame {
-                appendMessage(role: .assistant, content: "I understood your request. Here is a refined response from the AI service: \(normalizedResponse)")
+                appendMessage(role: .assistant, content: "I couldn't generate a meaningful response. Please try rephrasing your request.")
             } else {
                 appendMessage(role: .assistant, content: normalizedResponse)
             }
