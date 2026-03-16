@@ -162,7 +162,7 @@ private struct ChatHistoryView: View {
         .presentationDetents([.large])
     }
 
-    private static let timestampFormatter: DateFormatter = {
+    static let timestampFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
         formatter.timeStyle = .short
