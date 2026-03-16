@@ -44,6 +44,26 @@ struct PreviewDevice: Identifiable, Hashable {
     static let iPad = PreviewDevice(name: "iPad", width: 820, height: 1180, safeAreaInsets: EdgeInsets(top: 24, leading: 0, bottom: 20, trailing: 0))
 
     static let all: [PreviewDevice] = [.iPhoneSE, .iPhone15, .iPad]
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(name)
+        hasher.combine(width)
+        hasher.combine(height)
+        hasher.combine(safeAreaInsets.top)
+        hasher.combine(safeAreaInsets.leading)
+        hasher.combine(safeAreaInsets.bottom)
+        hasher.combine(safeAreaInsets.trailing)
+    }
+
+    static func == (lhs: PreviewDevice, rhs: PreviewDevice) -> Bool {
+        lhs.name == rhs.name &&
+        lhs.width == rhs.width &&
+        lhs.height == rhs.height &&
+        lhs.safeAreaInsets.top == rhs.safeAreaInsets.top &&
+        lhs.safeAreaInsets.leading == rhs.safeAreaInsets.leading &&
+        lhs.safeAreaInsets.bottom == rhs.safeAreaInsets.bottom &&
+        lhs.safeAreaInsets.trailing == rhs.safeAreaInsets.trailing
+    }
 }
 
 struct CompiledSimulationModule {
