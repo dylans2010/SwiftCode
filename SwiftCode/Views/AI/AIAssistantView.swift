@@ -147,17 +147,7 @@ private struct ChatHistoryView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(messages) { message in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(message.role == .assistant ? "Assistant" : "You")
-                                .font(.caption)
-                                .foregroundStyle(message.role == .assistant ? .secondary : .accent)
-                            Text(message.content)
-                                .font(.body)
-                            Text(Self.timestampFormatter.string(from: message.timestamp))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 4)
+                        ChatHistoryRow(message: message)
                     }
                 }
             }
@@ -178,4 +168,22 @@ private struct ChatHistoryView: View {
         formatter.timeStyle = .short
         return formatter
     }()
+}
+
+private struct ChatHistoryRow: View {
+    let message: ChatMessage
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(message.role == .assistant ? "Assistant" : "You")
+                .font(.caption)
+                .foregroundStyle(message.role == .assistant ? .secondary : .accent)
+            Text(message.content)
+                .font(.body)
+            Text(ChatHistoryView.timestampFormatter.string(from: message.timestamp))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, 4)
+    }
 }
