@@ -16,14 +16,27 @@ struct ChatMessageBubble: View {
     }
 
     private var bubble: some View {
-        Text(message.content)
-            .font(.callout)
-            .foregroundStyle(message.role == .assistant ? .primary : Color.white)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(message.role == .assistant ? Color.secondary.opacity(0.18) : Color.accentColor)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        VStack(alignment: .leading, spacing: 6) {
+            Text(message.content)
+                .font(.callout)
+                .foregroundStyle(message.role == .assistant ? .primary : Color.white)
+
+            Text(Self.timestampFormatter.string(from: message.timestamp))
+                .font(.caption2)
+                .foregroundStyle(message.role == .assistant ? .secondary : Color.white.opacity(0.75))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(message.role == .assistant ? Color.secondary.opacity(0.18) : Color.accentColor)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
+
+    private static let timestampFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter
+    }()
 }
 
 struct TypingIndicatorBubble: View {

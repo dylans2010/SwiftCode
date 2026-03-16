@@ -102,7 +102,7 @@ struct ProjectWorkspaceView: View {
         // AI Assistant sheet
         .sheet(isPresented: $showAISheet) {
             AIAssistantView()
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showBuildStatus) {
