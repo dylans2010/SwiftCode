@@ -1,74 +1,80 @@
 import Foundation
-import Combine
+import SwiftUI
 
-/// Controls the run and stop process when users launch the local simulation preview.
-/// Analyzes the currently opened project, starts the preview engine, streams simulated
-/// build logs, and manages the preview session lifecycle.
 @MainActor
 final class LocalRunManager: ObservableObject {
     static let shared = LocalRunManager()
 
-    /// `true` while the preview session is active (both building and ready states).
     @Published var isRunning = false
-    /// `true` only while the preview is being built; `false` once the container is ready or on error.
     @Published var isPreparing = false
     @Published var buildLogs: [String] = []
-    @Published var runtimeContainer: SwiftUIRuntimeLoader.RuntimeContainer?
-    @Published var errorMessage: String?
+    @Published var loadedSimulation: LoadedSimulation?
+    @Published var diagnostics: SimulationError?
+    @Published var selectedDevice: PreviewDevice = .iPhone15
+    @Published var orientation: SwiftUIViewRenderer.Orientation = .portrait
+    @Published var reloadCount = 0
 
-    private let analyzer = ProjectAnalyzer()
-    private let engine = PreviewEngine()
-    private let loader = SwiftUIRuntimeLoader()
+    private let engine = LocalSimulationEngine()
+    private var currentProjectDirectory: URL?
 
-    private init() {}
-
-    /// Starts the local simulation for the given project directory.
-    func startPreview(projectDirectory: URL) {
-        guard !isRunning else { return }
-        isRunning = true
-        isPreparing = true
-        buildLogs = []
-        errorMessage = nil
-        runtimeContainer = nil
-
-        Task {
-            do {
-                appendLog("Analyzing project...")
-                let result = analyzer.analyze(projectDirectory: projectDirectory)
-
-                let context = try await engine.prepare(
-                    analysisResult: result,
-                    projectDirectory: projectDirectory,
-                    logHandler: { [weak self] message in
-                        Task { @MainActor in
-                            self?.appendLog(message)
-                        }
-                    }
-                )
-
-                let container = loader.load(from: context)
-                runtimeContainer = container
-                isPreparing = false
-                appendLog("Preview ready.")
-            } catch {
-                errorMessage = error.localizedDescription
-                appendLog("Error: \(error.localizedDescription)")
-                isPreparing = false
-                isRunning = false
+    private init() {
+        engine.onLogs = { [weak self] message in
+            Task { @MainActor in
+                self?.buildLogs.append(message)
+            }
+        }
+        engine.onReload = { [weak self] in
+            Task { @MainActor in
+                self?.reloadCount += 1
+                self?.buildLogs.append("Source change detected. Rebuilding...")
+                self?.rebuildAfterChange()
             }
         }
     }
 
-    /// Stops the running simulation and clears the preview state.
-    func stopPreview() {
-        isRunning = false
-        isPreparing = false
-        runtimeContainer = nil
-        buildLogs = []
-        errorMessage = nil
+    func startPreview(projectDirectory: URL, preferredView: String? = nil) {
+        currentProjectDirectory = projectDirectory
+        isRunning = true
+        isPreparing = true
+        diagnostics = nil
+        buildLogs.removeAll(keepingCapacity: true)
+
+        Task {
+            do {
+                let simulation = try await engine.start(projectDirectory: projectDirectory, preferredView: preferredView)
+                loadedSimulation = simulation
+                isPreparing = false
+                buildLogs.append("Simulation ready.")
+            } catch {
+                diagnostics = engine.diagnostics(for: error)
+                isPreparing = false
+                isRunning = false
+                loadedSimulation = nil
+                buildLogs.append("Simulation failed: \(error.localizedDescription)")
+            }
+        }
     }
 
-    private func appendLog(_ message: String) {
-        buildLogs.append(message)
+    func stopPreview() {
+        engine.stop()
+        isRunning = false
+        isPreparing = false
+        loadedSimulation = nil
+        diagnostics = nil
+        buildLogs.removeAll()
+    }
+
+    func updatePreviewConfiguration() {
+        engine.updateDevice(selectedDevice, orientation: orientation)
+        objectWillChange.send()
+    }
+
+    func previewFrame(in available: CGSize) -> CGSize {
+        engine.frame(in: available)
+    }
+
+    private func rebuildAfterChange() {
+        guard let directory = currentProjectDirectory else { return }
+        startPreview(projectDirectory: directory)
     }
 }
