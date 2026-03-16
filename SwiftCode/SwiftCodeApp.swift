@@ -4,6 +4,7 @@ import SwiftUI
 struct SwiftCodeApp: App {
     init() {
         OfflineModelDownloader.shared.registerBackgroundTask()
+        AgentSystemInitializer.shared.initialize()
     }
     @StateObject private var projectManager = ProjectManager.shared
     @StateObject private var settings = AppSettings.shared

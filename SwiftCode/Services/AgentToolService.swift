@@ -68,6 +68,25 @@ final class AgentToolService {
         parameters: [String: Any],
         projectManager: ProjectManager
     ) async -> AgentToolResult {
+        // Use the new ToolExecutor to handle registration-based tool execution
+        do {
+            let result = try await ToolExecutor.shared.execute(toolName: toolName, parameters: parameters)
+            return .success(toolName, result)
+        } catch {
+            // If the tool is not found in the new registry, it might still be in the legacy switch (unlikely but safe fallback)
+            if (error as NSError).code == 404 {
+                return await executeCore(toolName: toolName, parameters: parameters, projectManager: projectManager)
+            }
+            return .failure(toolName, error.localizedDescription)
+        }
+    }
+
+    /// Internal method for executing core tools without recursion risks.
+    func executeCore(
+        toolName: String,
+        parameters: [String: Any],
+        projectManager: ProjectManager
+    ) async -> AgentToolResult {
 
         // Handle use_test_tools if enabled for this tool
         if let tool = AgentTool.all.first(where: { $0.id == toolName }), tool.use_test_tools {
