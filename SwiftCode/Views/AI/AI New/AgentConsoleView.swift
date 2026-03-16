@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AgentConsoleView: View {
-    @StateObject private var logger = AgentLogger.shared
+    @ObservedObject private var logger = AgentLogger.shared
 
     var body: some View {
         VStack(spacing: 0) {
