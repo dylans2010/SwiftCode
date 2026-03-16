@@ -5,6 +5,7 @@ struct AgentInterfaceView: View {
     @State private var inputText = ""
     @State private var useContext = true
     @State private var showCommandList = false
+    @State private var showConsole = false
 
     private let slashCommands = ["/explain", "/summarize", "/rewrite", "/debug"]
 
@@ -28,6 +29,14 @@ struct AgentInterfaceView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                Button {
+                    showConsole.toggle()
+                } label: {
+                    Image(systemName: "terminal")
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
             }
             .padding(12)
 
@@ -101,6 +110,18 @@ struct AgentInterfaceView: View {
                 }
             }
             .padding(12)
+        }
+        .sheet(isPresented: $showConsole) {
+            NavigationStack {
+                AgentConsoleView()
+                    .navigationTitle("Agent Console")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { showConsole = false }
+                        }
+                    }
+            }
         }
     }
 }
