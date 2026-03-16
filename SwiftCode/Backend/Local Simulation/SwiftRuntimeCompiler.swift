@@ -18,7 +18,7 @@ final class SwiftRuntimeCompiler {
         let changedFiles = changedSwiftFiles(in: projectStructure.swiftFiles)
         let allInputs = projectStructure.swiftFiles + [bootstrapFile]
 
-        let process = Process()
+        let process = Foundation.Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
         process.currentDirectoryURL = sandboxPolicy.projectDirectory
         process.arguments = [
