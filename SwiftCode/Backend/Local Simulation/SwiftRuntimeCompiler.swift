@@ -1,4 +1,5 @@
 import Foundation
+import class Foundation.Process
 
 final class SwiftRuntimeCompiler {
     private var cachedSignatures: [URL: Date] = [:]
@@ -18,7 +19,7 @@ final class SwiftRuntimeCompiler {
         let changedFiles = changedSwiftFiles(in: projectStructure.swiftFiles)
         let allInputs = projectStructure.swiftFiles + [bootstrapFile]
 
-        let process = Foundation.Process()
+        let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
         process.currentDirectoryURL = sandboxPolicy.projectDirectory
         process.arguments = [
