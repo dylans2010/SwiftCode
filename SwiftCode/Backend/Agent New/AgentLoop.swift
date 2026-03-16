@@ -15,9 +15,18 @@ final class AgentLoop {
         state.status = .running
         log("Starting agent loop for task: \(request.task)")
 
+        // 0. Repository Scan - provide codebase awareness
+        log("Scanning repository structure...")
+        let fileList = try await ListFilesTool.shared.getFileList(at: request.projectPath.isEmpty ? nil : request.projectPath)
+        log("Repository scan complete. Found \(fileList.count) files.")
+
         // 1. Planning
         log("Generating execution plan...")
-        state.plan = try await TaskPlanner.shared.generatePlan(for: request.task)
+        state.plan = try await TaskPlanner.shared.generatePlan(
+            for: request.task,
+            contextFiles: request.contextFiles,
+            availableFiles: fileList
+        )
         log("Plan generated with \(state.plan.count) steps.")
 
         // 2. Execution Loop
@@ -26,15 +35,20 @@ final class AgentLoop {
             state.plan[i].status = .running
             log("Executing step \(i + 1): \(state.plan[i].description)")
 
-            try await executeStep(state.plan[i])
-
-            state.plan[i].status = .completed
+            do {
+                try await executeStep(state.plan[i], stepIndex: i)
+                state.plan[i].status = .completed
+            } catch {
+                state.plan[i].status = .failed
+                log("Step \(i + 1) failed: \(error.localizedDescription)")
+                throw error
+            }
         }
 
         state.status = .completed
         log("Task completed successfully.")
 
-        let finalOutput = "Agent completed the task: \(request.task) successfully."
+        let finalOutput = buildFinalOutput()
 
         return PluginAgentResponse(
             success: true,
@@ -55,31 +69,111 @@ final class AgentLoop {
         )
     }
 
-    private func executeStep(_ step: AgentPlanStep) async throws {
+    private func executeStep(_ step: AgentPlanStep, stepIndex: Int) async throws {
+        // Build a more structured prompt with available tools
+        let availableTools = buildToolList()
+
+        let systemPrompt = """
+        You are an autonomous software development agent executing a task step by step.
+        You have access to a project codebase and can use various tools to complete your objectives.
+
+        Your goal is to complete the current step efficiently and accurately.
+        """
+
         let prompt = """
-        You are an autonomous agent. Given the current step: "\(step.description)", decide which tool to call or what action to take.
-        Available context: \(request.task)
+        Current Task: \(request.task)
+        Current Step (\(stepIndex + 1)): \(step.description)
 
-        If you need to read a file, suggest `read_file(path: String)`.
-        If you need to list files, suggest `list_files(path: String)`.
-        If you need to write code, suggest `write_file(path: String, content: String)`.
+        Available Tools:
+        \(availableTools)
 
-        Respond with the tool name and arguments.
+        Context Files: \(request.contextFiles.isEmpty ? "None" : request.contextFiles.joined(separator: ", "))
+
+        Please analyze the step and decide which tool(s) to use.
+        Respond with a JSON array of tool calls in this format:
+        [
+          {
+            "tool": "tool_name",
+            "parameters": {
+              "param1": "value1",
+              "param2": "value2"
+            }
+          }
+        ]
+
+        If no tools are needed for this step, return an empty array: []
         """
 
         let response = try await LLMService.shared.generateResponse(prompt: prompt, useContext: true)
-        log("Agent decision: \(response)")
+        log("Agent response for step \(stepIndex + 1): \(response)")
 
-        // Simple heuristic parser for tool calls in this implementation
-        if response.contains("list_files") {
-            _ = try await ToolExecutor.shared.execute(toolName: "list_files", parameters: ["path": "."])
-        } else if response.contains("read_file") {
+        // Parse and execute tool calls
+        try await parseAndExecuteToolCalls(response)
+    }
+
+    private func buildToolList() -> String {
+        let coreTools = ["list_files", "read_file", "write_file", "create_file", "delete_file"]
+        return coreTools.map { "- \($0)" }.joined(separator: "\n")
+    }
+
+    private func parseAndExecuteToolCalls(_ response: String) async throws {
+        // Clean up response to extract JSON
+        let cleaned = response
+            .replacingOccurrences(of: "```json", with: "")
+            .replacingOccurrences(of: "```", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard let data = cleaned.data(using: .utf8),
+              let toolCalls = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+            // Fallback to simple parsing
+            try await fallbackToolExecution(response)
+            return
+        }
+
+        for call in toolCalls {
+            guard let toolName = call["tool"] as? String,
+                  let parameters = call["parameters"] as? [String: Any] else {
+                continue
+            }
+
+            log("Executing tool: \(toolName)")
+            do {
+                let result = try await ToolExecutor.shared.execute(toolName: toolName, parameters: parameters)
+                log("Tool \(toolName) result: \(result.prefix(200))...")
+            } catch {
+                log("Tool \(toolName) error: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    private func fallbackToolExecution(_ response: String) async throws {
+        // Simple heuristic-based parsing as fallback
+        let lowercased = response.lowercased()
+
+        if lowercased.contains("list_files") || lowercased.contains("scan") {
+            _ = try await ToolExecutor.shared.execute(toolName: "list_files", parameters: [:])
+        }
+
+        if lowercased.contains("read_file") && !request.contextFiles.isEmpty {
             if let path = request.contextFiles.first {
                 _ = try await ToolExecutor.shared.execute(toolName: "read_file", parameters: ["path": path])
             }
         }
+    }
 
-        // Simulate some processing time
-        try await Task.sleep(nanoseconds: 500_000_000)
+    private func buildFinalOutput() -> String {
+        var output = "Agent completed the task: \(request.task)\n\n"
+
+        if !CodePatchEngine.shared.pendingPatches.isEmpty {
+            output += "Generated \(CodePatchEngine.shared.pendingPatches.count) code patches:\n"
+            for patch in CodePatchEngine.shared.pendingPatches {
+                output += "  - \(patch.filePath)\n"
+            }
+        } else {
+            output += "No code changes generated.\n"
+        }
+
+        output += "\nExecution completed successfully."
+        return output
     }
 }
