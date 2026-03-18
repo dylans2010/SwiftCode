@@ -29,6 +29,7 @@ struct ProjectsDashboardView: View {
     @State private var isImporting = false
     @State private var showFolderCreateView = false
     @State private var selectedFolder: ProjectFolder?
+    @State private var showTransferProjects = false
     @State private var projectToAssignFolder: Project?
     @State private var showAddToFolderSheet = false
     @State private var showFolderRenameSheet = false
@@ -117,6 +118,7 @@ struct ProjectsDashboardView: View {
             }
             .sheet(isPresented: $showAddToFolderSheet) { addToFolderSheet }
             .sheet(isPresented: $showNewProjectSheet) { newProjectSheet }
+            .sheet(isPresented: $showTransferProjects) { NavigationStack { TransferProjectsHomeView().environmentObject(projectManager) } }
             .sheet(isPresented: $showImportPicker) {
                 FileImporterRepresentableView(
                     allowedContentTypes: [UTType.zip],
@@ -202,6 +204,12 @@ struct ProjectsDashboardView: View {
                 showFolderCreateView = true
             } label: {
                 Label("Create Folder", systemImage: "folder.badge.plus")
+            }
+
+            Button {
+                showTransferProjects = true
+            } label: {
+                Label("Transfer", systemImage: "arrow.left.arrow.right.circle")
             }
 
             Button {

@@ -159,6 +159,14 @@ final class LLMService {
 
     @MainActor
     func generateResponse(prompt: String, useContext: Bool) async throws -> String {
+        if OnDeviceModelRouter.shared.useOnDeviceAI() {
+            return try await OnDeviceModelRouter.shared.generateResponse(prompt: prompt, useContext: useContext)
+        }
+        return try await generateExternalResponse(prompt: prompt, useContext: useContext)
+    }
+
+    @MainActor
+    func generateExternalResponse(prompt: String, useContext: Bool) async throws -> String {
         let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPrompt.isEmpty else { return "" }
 

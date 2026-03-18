@@ -262,6 +262,27 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		88ABBEAEF37545C2AE061DF9 /* ChatAIInterfaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF952C5900FB4EE2ADDE8ECF /* ChatAIInterfaceView.swift */; };
 		D497EDED40E04EB690D087F1 /* CodeChangesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C3E778718344DEBEA55A55 /* CodeChangesView.swift */; };
 		5A775CEADF264C1EB3C9AC3D /* ToolExecutionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E4EAF22C89B463BA0947180 /* ToolExecutionView.swift */; };
+		TRP00000000000000000001A /* ProjectTransferManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRP00000000000000000001B /* ProjectTransferManager.swift */; };
+		TRP00000000000000000002A /* PeerSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRP00000000000000000002B /* PeerSessionManager.swift */; };
+		TRP00000000000000000003A /* TransferPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRP00000000000000000003B /* TransferPermission.swift */; };
+		TRP00000000000000000004A /* TransferSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRP00000000000000000004B /* TransferSession.swift */; };
+		TRP00000000000000000005A /* ProjectSerializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = TRP00000000000000000005B /* ProjectSerializer.swift */; };
+		ODI00000000000000000001A /* OnDeviceAIManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ODI00000000000000000001B /* OnDeviceAIManager.swift */; };
+		ODI00000000000000000002A /* DeviceUtilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ODI00000000000000000002B /* DeviceUtilityManager.swift */; };
+		ODI00000000000000000003A /* AppleIntelligenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ODI00000000000000000003B /* AppleIntelligenceService.swift */; };
+		ODI00000000000000000004A /* OnDeviceModelRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = ODI00000000000000000004B /* OnDeviceModelRouter.swift */; };
+		ODI00000000000000000005A /* OnDeviceSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = ODI00000000000000000005B /* OnDeviceSession.swift */; };
+		ODI00000000000000000006A /* OnDeviceCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = ODI00000000000000000006B /* OnDeviceCapabilities.swift */; };
+		TPV00000000000000000001A /* TransferProjectsHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TPV00000000000000000001B /* TransferProjectsHomeView.swift */; };
+		TPV00000000000000000002A /* DevicePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TPV00000000000000000002B /* DevicePickerView.swift */; };
+		TPV00000000000000000003A /* PermissionConfigView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TPV00000000000000000003B /* PermissionConfigView.swift */; };
+		TPV00000000000000000004A /* IncomingTransferView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TPV00000000000000000004B /* IncomingTransferView.swift */; };
+		TPV00000000000000000005A /* TransferProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TPV00000000000000000005B /* TransferProgressView.swift */; };
+		AID00000000000000000001A /* OnDeviceAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AID00000000000000000001B /* OnDeviceAIView.swift */; };
+		AGN00000000000000000001A /* AgentPermissionAuthority.swift in Sources */ = {isa = PBXBuildFile; fileRef = AGN00000000000000000001B /* AgentPermissionAuthority.swift */; };
+		AGN00000000000000000002A /* FileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AGN00000000000000000002B /* FileTool.swift */; };
+		AGN00000000000000000003A /* ProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AGN00000000000000000003B /* ProjectTool.swift */; };
+		AGN00000000000000000004A /* TransferTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AGN00000000000000000004B /* TransferTool.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -515,6 +536,27 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		DF952C5900FB4EE2ADDE8ECF /* ChatAIInterfaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ChatAIInterfaceView.swift"; path = "SwiftCode/Views/AI/AI New/ChatAIInterfaceView.swift"; sourceTree = SOURCE_ROOT; };
 		E6C3E778718344DEBEA55A55 /* CodeChangesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodeChangesView.swift"; path = "SwiftCode/Views/AI/AI New/CodeChangesView.swift"; sourceTree = SOURCE_ROOT; };
 		4E4EAF22C89B463BA0947180 /* ToolExecutionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ToolExecutionView.swift"; path = "SwiftCode/Views/AI/AI New/ToolExecutionView.swift"; sourceTree = SOURCE_ROOT; };
+		TRP00000000000000000001B /* ProjectTransferManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ProjectTransferManager.swift"; path = "SwiftCode/Backend/Projects/ProjectTransferManager.swift"; sourceTree = SOURCE_ROOT; };
+		TRP00000000000000000002B /* PeerSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PeerSessionManager.swift"; path = "SwiftCode/Backend/Projects/PeerSessionManager.swift"; sourceTree = SOURCE_ROOT; };
+		TRP00000000000000000003B /* TransferPermission.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TransferPermission.swift"; path = "SwiftCode/Backend/Projects/TransferPermission.swift"; sourceTree = SOURCE_ROOT; };
+		TRP00000000000000000004B /* TransferSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TransferSession.swift"; path = "SwiftCode/Backend/Projects/TransferSession.swift"; sourceTree = SOURCE_ROOT; };
+		TRP00000000000000000005B /* ProjectSerializer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ProjectSerializer.swift"; path = "SwiftCode/Backend/Projects/ProjectSerializer.swift"; sourceTree = SOURCE_ROOT; };
+		ODI00000000000000000001B /* OnDeviceAIManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnDeviceAIManager.swift"; path = "SwiftCode/Backend/On Device Intelligence/OnDeviceAIManager.swift"; sourceTree = SOURCE_ROOT; };
+		ODI00000000000000000002B /* DeviceUtilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "DeviceUtilityManager.swift"; path = "SwiftCode/Backend/On Device Intelligence/DeviceUtilityManager.swift"; sourceTree = SOURCE_ROOT; };
+		ODI00000000000000000003B /* AppleIntelligenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AppleIntelligenceService.swift"; path = "SwiftCode/Backend/On Device Intelligence/AppleIntelligenceService.swift"; sourceTree = SOURCE_ROOT; };
+		ODI00000000000000000004B /* OnDeviceModelRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnDeviceModelRouter.swift"; path = "SwiftCode/Backend/On Device Intelligence/OnDeviceModelRouter.swift"; sourceTree = SOURCE_ROOT; };
+		ODI00000000000000000005B /* OnDeviceSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnDeviceSession.swift"; path = "SwiftCode/Backend/On Device Intelligence/OnDeviceSession.swift"; sourceTree = SOURCE_ROOT; };
+		ODI00000000000000000006B /* OnDeviceCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnDeviceCapabilities.swift"; path = "SwiftCode/Backend/On Device Intelligence/OnDeviceCapabilities.swift"; sourceTree = SOURCE_ROOT; };
+		TPV00000000000000000001B /* TransferProjectsHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TransferProjectsHomeView.swift"; path = "SwiftCode/Views/Transfer Projects/TransferProjectsHomeView.swift"; sourceTree = SOURCE_ROOT; };
+		TPV00000000000000000002B /* DevicePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "DevicePickerView.swift"; path = "SwiftCode/Views/Transfer Projects/DevicePickerView.swift"; sourceTree = SOURCE_ROOT; };
+		TPV00000000000000000003B /* PermissionConfigView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PermissionConfigView.swift"; path = "SwiftCode/Views/Transfer Projects/PermissionConfigView.swift"; sourceTree = SOURCE_ROOT; };
+		TPV00000000000000000004B /* IncomingTransferView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "IncomingTransferView.swift"; path = "SwiftCode/Views/Transfer Projects/IncomingTransferView.swift"; sourceTree = SOURCE_ROOT; };
+		TPV00000000000000000005B /* TransferProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TransferProgressView.swift"; path = "SwiftCode/Views/Transfer Projects/TransferProgressView.swift"; sourceTree = SOURCE_ROOT; };
+		AID00000000000000000001B /* OnDeviceAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "OnDeviceAIView.swift"; path = "SwiftCode/Views/AI/OnDeviceAIView.swift"; sourceTree = SOURCE_ROOT; };
+		AGN00000000000000000001B /* AgentPermissionAuthority.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentPermissionAuthority.swift"; path = "SwiftCode/Backend/Agent New/Core/AgentPermissionAuthority.swift"; sourceTree = SOURCE_ROOT; };
+		AGN00000000000000000002B /* FileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "FileTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/FileTool.swift"; sourceTree = SOURCE_ROOT; };
+		AGN00000000000000000003B /* ProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ProjectTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/ProjectTool.swift"; sourceTree = SOURCE_ROOT; };
+		AGN00000000000000000004B /* TransferTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TransferTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/TransferTool.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -601,6 +643,7 @@ children = (
 				AA000010000000000000043F /* Editor */,
 				AA000010000000000000044F /* Navigator */,
 				AA000010000000000000045F /* AI */,
+				TPVG0000000000000000001 /* Transfer Projects */,
 				AA000010000000000000046F /* GitHub */,
 				AA000010000000000000047F /* Build */,
 				AA000010000000000000048F /* Settings */,
@@ -665,6 +708,7 @@ AA000010000000000000045F /* AI */ = {
 isa = PBXGroup;
 children = (
 				AA000010000000000000010B /* AIAssistantView.swift */,
+				AID00000000000000000001B /* OnDeviceAIView.swift */,
 				CU000000000000000000001B /* ChatUIComponents.swift */,
 				RV0000000000000000000001B /* CodeReviewView.swift */,
 				CX0000000000000000000001B /* ComplexityAnalyzerView.swift */,
@@ -1003,6 +1047,9 @@ sourceTree = "<group>";
 BE000000000000000000001F /* Backend */ = {
 isa = PBXGroup;
 children = (
+				TRPG0000000000000000001 /* Projects */,
+				ODIG0000000000000000001 /* On Device Intelligence */,
+				AGNG0000000000000000001 /* Agent New */,
 				DE1546866FBA40E9A4F3D437 /* Offline Models */,
 				1553F8B054AE453E91485DEE /* Local Building */,
 				AA0000100000000000000F6C /* AgentModelCheck.swift */,
@@ -1409,6 +1456,71 @@ DEP000000000000000000101 /* Deployments */ = {
 			path = "MLXSwift Foundation";
 			sourceTree = "<group>";
 		};
+
+TPVG0000000000000000001 /* Transfer Projects */ = {
+isa = PBXGroup;
+children = (
+				TPV00000000000000000001B /* TransferProjectsHomeView.swift */,
+				TPV00000000000000000002B /* DevicePickerView.swift */,
+				TPV00000000000000000003B /* PermissionConfigView.swift */,
+				TPV00000000000000000004B /* IncomingTransferView.swift */,
+				TPV00000000000000000005B /* TransferProgressView.swift */,
+);
+path = "Transfer Projects";
+sourceTree = "<group>";
+};
+TRPG0000000000000000001 /* Projects */ = {
+isa = PBXGroup;
+children = (
+				TRP00000000000000000001B /* ProjectTransferManager.swift */,
+				TRP00000000000000000002B /* PeerSessionManager.swift */,
+				TRP00000000000000000003B /* TransferPermission.swift */,
+				TRP00000000000000000004B /* TransferSession.swift */,
+				TRP00000000000000000005B /* ProjectSerializer.swift */,
+);
+path = Projects;
+sourceTree = "<group>";
+};
+ODIG0000000000000000001 /* On Device Intelligence */ = {
+isa = PBXGroup;
+children = (
+				ODI00000000000000000001B /* OnDeviceAIManager.swift */,
+				ODI00000000000000000002B /* DeviceUtilityManager.swift */,
+				ODI00000000000000000003B /* AppleIntelligenceService.swift */,
+				ODI00000000000000000004B /* OnDeviceModelRouter.swift */,
+				ODI00000000000000000005B /* OnDeviceSession.swift */,
+				ODI00000000000000000006B /* OnDeviceCapabilities.swift */,
+);
+path = "On Device Intelligence";
+sourceTree = "<group>";
+};
+AGNG0000000000000000001 /* Agent New */ = {
+isa = PBXGroup;
+children = (
+				AGNC0000000000000000001 /* Core */,
+				AGNT0000000000000000001 /* Tools */,
+);
+path = "Agent New";
+sourceTree = "<group>";
+};
+AGNC0000000000000000001 /* Core */ = {
+isa = PBXGroup;
+children = (
+				AGN00000000000000000001B /* AgentPermissionAuthority.swift */,
+);
+path = Core;
+sourceTree = "<group>";
+};
+AGNT0000000000000000001 /* Tools */ = {
+isa = PBXGroup;
+children = (
+				AGN00000000000000000002B /* FileTool.swift */,
+				AGN00000000000000000003B /* ProjectTool.swift */,
+				AGN00000000000000000004B /* TransferTool.swift */,
+);
+path = Tools;
+sourceTree = "<group>";
+};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1752,6 +1864,27 @@ files = (
 				88ABBEAEF37545C2AE061DF9 /* ChatAIInterfaceView.swift in Sources */,
 				D497EDED40E04EB690D087F1 /* CodeChangesView.swift in Sources */,
 				5A775CEADF264C1EB3C9AC3D /* ToolExecutionView.swift in Sources */,
+				TRP00000000000000000001A /* ProjectTransferManager.swift in Sources */,
+				TRP00000000000000000002A /* PeerSessionManager.swift in Sources */,
+				TRP00000000000000000003A /* TransferPermission.swift in Sources */,
+				TRP00000000000000000004A /* TransferSession.swift in Sources */,
+				TRP00000000000000000005A /* ProjectSerializer.swift in Sources */,
+				ODI00000000000000000001A /* OnDeviceAIManager.swift in Sources */,
+				ODI00000000000000000002A /* DeviceUtilityManager.swift in Sources */,
+				ODI00000000000000000003A /* AppleIntelligenceService.swift in Sources */,
+				ODI00000000000000000004A /* OnDeviceModelRouter.swift in Sources */,
+				ODI00000000000000000005A /* OnDeviceSession.swift in Sources */,
+				ODI00000000000000000006A /* OnDeviceCapabilities.swift in Sources */,
+				TPV00000000000000000001A /* TransferProjectsHomeView.swift in Sources */,
+				TPV00000000000000000002A /* DevicePickerView.swift in Sources */,
+				TPV00000000000000000003A /* PermissionConfigView.swift in Sources */,
+				TPV00000000000000000004A /* IncomingTransferView.swift in Sources */,
+				TPV00000000000000000005A /* TransferProgressView.swift in Sources */,
+				AID00000000000000000001A /* OnDeviceAIView.swift in Sources */,
+				AGN00000000000000000001A /* AgentPermissionAuthority.swift in Sources */,
+				AGN00000000000000000002A /* FileTool.swift in Sources */,
+				AGN00000000000000000003A /* ProjectTool.swift in Sources */,
+				AGN00000000000000000004A /* TransferTool.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };

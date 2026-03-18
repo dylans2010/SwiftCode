@@ -14,6 +14,8 @@ enum MessageRole {
 
 @MainActor
 final class ChatController: ObservableObject {
+    static let shared = ChatController()
+
     @Published var messages: [ChatMessage] = []
     @Published var isGenerating = false
 

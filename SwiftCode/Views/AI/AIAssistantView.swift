@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AIAssistantView: View {
-    @StateObject private var controller = ChatController()
+    @StateObject private var controller = ChatController.shared
     @State private var inputText = ""
     @State private var useContext = true
     @State private var showCommandList = false
@@ -24,7 +24,11 @@ struct AIAssistantView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
+            Group {
+                if AppSettings.shared.appleIntelligenceEnabled && DeviceUtilityManager.shared.isAppleIntelligenceSupported() {
+                    OnDeviceAIView(controller: controller)
+                } else {
+                    VStack(spacing: 0) {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 10) {
@@ -105,6 +109,8 @@ struct AIAssistantView: View {
                 }
                 .padding(12)
                 .background(.regularMaterial)
+                    }
+                }
             }
             .animation(.easeInOut(duration: 0.2), value: controller.messages)
             .navigationTitle("AI Assistant")

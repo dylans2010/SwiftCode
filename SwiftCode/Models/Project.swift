@@ -51,6 +51,7 @@ public struct Project: Identifiable, Codable {
     public var githubToken: String? // stored in keychain, not persisted here
     public var description: String
     public var ciBuildConfiguration: CIBuildConfiguration?
+    public var transferConfiguration: ProjectTransferConfiguration?
 
     public init(name: String) {
         self.id = UUID()
@@ -62,6 +63,7 @@ public struct Project: Identifiable, Codable {
         self.githubToken = nil
         self.description = ""
         self.ciBuildConfiguration = CIBuildConfiguration()
+        self.transferConfiguration = .owner
     }
 
     @MainActor
@@ -82,4 +84,23 @@ public struct Project: Identifiable, Codable {
             }
         }
     }
+}
+
+
+public struct ProjectTransferConfiguration: Codable, Hashable {
+    public var originPeerID: String?
+    public var permission: TransferPermission
+    public var lastTransferSessionID: UUID?
+    public var lastTransferDate: Date?
+    public var auditLog: [TransferAuditEntry]
+
+    public init(originPeerID: String? = nil, permission: TransferPermission, lastTransferSessionID: UUID? = nil, lastTransferDate: Date? = nil, auditLog: [TransferAuditEntry] = []) {
+        self.originPeerID = originPeerID
+        self.permission = permission
+        self.lastTransferSessionID = lastTransferSessionID
+        self.lastTransferDate = lastTransferDate
+        self.auditLog = auditLog
+    }
+
+    public static let owner = ProjectTransferConfiguration(permission: .owner)
 }

@@ -75,6 +75,9 @@ final class ProjectManager: ObservableObject {
                 if project.ciBuildConfiguration == nil {
                     project.ciBuildConfiguration = CIBuildConfiguration()
                 }
+                if project.transferConfiguration == nil {
+                    project.transferConfiguration = .owner
+                }
                 project.files = buildFileTree(at: url, relativeTo: url)
                 loaded.append(project)
             } else {
@@ -111,6 +114,7 @@ final class ProjectManager: ObservableObject {
 
         var project = Project(name: sanitized)
         project.description = "A new SwiftCode project"
+        project.transferConfiguration = .owner
 
         // Keep new projects empty so template selection can scaffold content later.
 
@@ -180,6 +184,7 @@ final class ProjectManager: ObservableObject {
 
         var newProject = Project(name: newName)
         newProject.description = project.description
+        newProject.transferConfiguration = project.transferConfiguration
         newProject.files = buildFileTree(at: newURL, relativeTo: newURL)
         try saveMetadata(newProject)
 
@@ -366,6 +371,37 @@ struct \(structName): View {
     func renameNode(_ node: FileNode, to newName: String, project: Project) throws {
         try CodingManager.shared.renameItem(at: node.path, to: newName, in: project.directoryURL)
         refreshFileTree(for: project)
+    }
+
+
+
+    func rebuildFileTree(at directoryURL: URL) -> [FileNode] {
+        buildFileTree(at: directoryURL, relativeTo: directoryURL)
+    }
+
+    func saveImportedProject(_ project: Project) throws {
+        try saveMetadata(project)
+        projects.insert(project, at: 0)
+    }
+
+    func updateDescription(_ description: String, for project: Project) {
+        guard let index = projects.firstIndex(where: { $0.id == project.id }) else { return }
+        projects[index].description = description
+        if activeProject?.id == project.id { activeProject?.description = description }
+        try? saveMetadata(projects[index])
+    }
+
+    func updateTransferConfiguration(_ configuration: ProjectTransferConfiguration, for project: Project) {
+        guard let index = projects.firstIndex(where: { $0.id == project.id }) else { return }
+        projects[index].transferConfiguration = configuration
+        if activeProject?.id == project.id { activeProject?.transferConfiguration = configuration }
+        try? saveMetadata(projects[index])
+    }
+
+    func recordTransferAudit(for project: Project, actor: String, action: String, path: String?, allowed: Bool, detail: String) {
+        var configuration = project.transferConfiguration ?? .owner
+        configuration.auditLog.append(TransferAuditEntry(actor: actor, action: action, path: path, allowed: allowed, detail: detail))
+        updateTransferConfiguration(configuration, for: project)
     }
 
     // MARK: - File Tree

@@ -79,12 +79,7 @@ final class AgentSystemInitializer {
                 throw NSError(domain: "read_file", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' parameter"])
             }
 
-            guard let project = ProjectManager.shared.activeProject else {
-                throw NSError(domain: "read_file", code: 404, userInfo: [NSLocalizedDescriptionKey: "No active project"])
-            }
-
-            let content = try await CodeReaderManager.shared.readFileAsync(project: project.name, relativePath: path)
-            return content
+            return try await FileTool.shared.read(path: path)
         }
 
         // Register write_file tool
@@ -112,24 +107,7 @@ final class AgentSystemInitializer {
                 throw NSError(domain: "write_file", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing required parameters"])
             }
 
-            guard let project = ProjectManager.shared.activeProject else {
-                throw NSError(domain: "write_file", code: 404, userInfo: [NSLocalizedDescriptionKey: "No active project"])
-            }
-
-            // First, read the original content if file exists
-            let originalContent = (try? await CodeReaderManager.shared.readFileAsync(project: project.name, relativePath: path)) ?? ""
-
-            // Write the file
-            try CodingManager.shared.writeFile(content: content, at: path, in: project.directoryURL)
-
-            // Create a patch for review
-            CodePatchEngine.shared.createPatch(
-                filePath: path,
-                originalContent: originalContent,
-                modifiedContent: content
-            )
-
-            return "File written successfully: \(path)"
+return try FileTool.shared.write(path: path, content: content)
         }
 
         // Register create_file tool
@@ -160,23 +138,7 @@ final class AgentSystemInitializer {
 
             let content = parameters["content"] as? String ?? ""
 
-            guard let project = ProjectManager.shared.activeProject else {
-                throw NSError(domain: "create_file", code: 404, userInfo: [NSLocalizedDescriptionKey: "No active project"])
-            }
-
-            let fileURL = project.directoryURL.appendingPathComponent(path)
-            let directory = fileURL.deletingLastPathComponent()
-
-            // Create directory if needed
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-
-            // Write the file
-            try content.write(to: fileURL, atomically: true, encoding: .utf8)
-
-            // Refresh project file tree
-            ProjectManager.shared.refreshFileTree(for: project)
-
-            return "File created successfully: \(path)"
+return try FileTool.shared.create(path: path, content: content)
         }
 
         // Register delete_file tool
@@ -199,16 +161,28 @@ final class AgentSystemInitializer {
                 throw NSError(domain: "delete_file", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'path' parameter"])
             }
 
-            guard let project = ProjectManager.shared.activeProject else {
-                throw NSError(domain: "delete_file", code: 404, userInfo: [NSLocalizedDescriptionKey: "No active project"])
+return try FileTool.shared.delete(path: path)
+        }
+
+        ToolRegistry.shared.register(
+            AgentTool(
+                id: "transfer_project",
+                displayName: "Transfer Project",
+                description: "Transfer the active project to a nearby device",
+                parameters: [
+                    AgentToolParameter(name: "peerName", description: "Nearby peer display name"),
+                    AgentToolParameter(name: "permissionPreset", description: "read-only, limited-edit, full-access or custom", required: false, defaultValue: "limited-edit")
+                ],
+                category: .project
+            ),
+            source: .core
+        ) { parameters in
+            guard let peerName = parameters["peerName"] as? String else {
+                throw NSError(domain: "transfer_project", code: 400, userInfo: [NSLocalizedDescriptionKey: "Missing 'peerName' parameter"])
             }
-
-            try CodingManager.shared.deleteItem(at: path, in: project.directoryURL)
-
-            // Refresh project file tree
-            ProjectManager.shared.refreshFileTree(for: project)
-
-            return "File deleted successfully: \(path)"
+            let presetRaw = (parameters["permissionPreset"] as? String) ?? TransferPermission.AccessPreset.limitedEdit.rawValue
+            let preset = TransferPermission.AccessPreset(rawValue: presetRaw) ?? .limitedEdit
+            return try await TransferTool.shared.transferCurrentProject(to: peerName, permission: .makePreset(preset))
         }
     }
 }
