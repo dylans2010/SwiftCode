@@ -19,7 +19,7 @@ struct AgentConsoleView: View {
 
             List {
                 if logger.toolLogs.isEmpty {
-                    Text("No tool calls recorded.")
+                    Text("No Tool Calls Recorded.")
                         .foregroundStyle(.secondary)
                         .padding()
                 } else {

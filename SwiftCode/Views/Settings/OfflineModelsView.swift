@@ -53,7 +53,7 @@ struct OfflineModelsView: View {
                 }
             }
 
-            Section("Available Models (HuggingFace)") {
+            Section("Available Models") {
                 Button {
                     Task {
                         await loadModels(forceRefresh: true)

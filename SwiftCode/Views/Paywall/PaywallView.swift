@@ -80,7 +80,7 @@ struct PaywallView: View {
                     ProgressView()
                         .tint(.orange)
 
-                    Text("Loading products...")
+                    Text("Loading Products...")
                         .font(.caption)
                         .foregroundStyle(.secondary)
 

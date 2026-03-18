@@ -169,13 +169,13 @@ final class CodeReviewManager: ObservableObject {
                     suggestion: response.prefix(500).description
                 )],
                 overallScore: 75,
-                summary: "Review completed.",
+                summary: "Review Completed!",
                 model: model
             )
         }
 
         let score = json["score"] as? Int ?? 75
-        let summary = json["summary"] as? String ?? "Review completed."
+        let summary = json["summary"] as? String ?? "Review Completed!"
         var issues: [CodeReviewIssue] = []
 
         if let rawIssues = json["issues"] as? [[String: Any]] {

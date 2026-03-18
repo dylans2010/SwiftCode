@@ -44,7 +44,7 @@ struct FilePatch: Identifiable, Codable {
             }
         }
 
-        return diff.isEmpty ? "No changes detected." : diff
+        return diff.isEmpty ? "No Changes Detected" : diff
     }
 }
 
