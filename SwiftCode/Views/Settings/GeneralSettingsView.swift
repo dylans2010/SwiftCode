@@ -665,6 +665,16 @@ struct GeneralSettingsView: View {
                     .foregroundStyle(.blue)
             }
 
+            Toggle(isOn: Binding(get: { settings.appleIntelligenceEnabled }, set: { settings.appleIntelligenceEnabled = $0 })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Apple Intelligence")
+                    Text(DeviceUtilityManager.shared.isAppleIntelligenceSupported() ? "Use on-device AI instead of external providers." : "Apple Intelligence is not available on this device")
+                        .font(.caption)
+                        .foregroundStyle(DeviceUtilityManager.shared.isAppleIntelligenceSupported() ? .secondary : .red)
+                }
+            }
+            .disabled(!DeviceUtilityManager.shared.isAppleIntelligenceSupported())
+
             Button {
                 showCoreMLSheet = true
             } label: {
