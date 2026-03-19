@@ -30,6 +30,7 @@ enum ProjectSerializationError: LocalizedError {
 }
 
 struct ProjectSerializer {
+    @MainActor
     func serialize(project: Project, permission: TransferPermission) throws -> Data {
         let root = project.directoryURL
         let fileEntries = try collectEntries(from: root, relativeTo: root)

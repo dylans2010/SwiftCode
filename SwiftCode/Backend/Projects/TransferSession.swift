@@ -11,7 +11,7 @@ enum TransferSessionState: String, Codable {
     case rejected
 }
 
-struct TransferAuditEntry: Identifiable, Codable, Hashable {
+public struct TransferAuditEntry: Identifiable, Codable, Hashable {
     let id: UUID
     let timestamp: Date
     let actor: String
@@ -20,7 +20,7 @@ struct TransferAuditEntry: Identifiable, Codable, Hashable {
     let allowed: Bool
     let detail: String
 
-    init(id: UUID = UUID(), timestamp: Date = Date(), actor: String, action: String, path: String? = nil, allowed: Bool, detail: String) {
+    public init(id: UUID = UUID(), timestamp: Date = Date(), actor: String, action: String, path: String? = nil, allowed: Bool, detail: String) {
         self.id = id
         self.timestamp = timestamp
         self.actor = actor
