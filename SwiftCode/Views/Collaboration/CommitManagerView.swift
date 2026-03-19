@@ -5,7 +5,6 @@ struct CommitManagerView: View {
     let actorID: String
 
     @State private var commitMessage = ""
-    @State private var selectedPath: String?
     @State private var customPath = ""
     @State private var customDiff = ""
     @State private var selectedKind: CommitChangeKind = .modified
@@ -79,93 +78,68 @@ struct CommitManagerView: View {
                 .font(.headline)
                 .foregroundStyle(.white)
 
-            VStack(spacing: 12) {
-                TextField("File Path", text: $customPath)
-                    .textFieldStyle(.plain)
-                    .padding()
-                    .background(Color.white.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-
-                Picker("Change Type", selection: $selectedKind) {
-                    ForEach(CommitChangeKind.allCases, id: \.self) { kind in
-                        Text(kind.rawValue.capitalized).tag(kind)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                TextField("Diff content", text: $customDiff, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .padding()
-                    .background(Color.white.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                    .lineLimit(3...8)
-
-                Button {
-                    manager.commits.updateWorkingChange(path: customPath, diff: customDiff, kind: selectedKind, authorID: actorID, branchID: manager.branches.currentBranch.id)
-                    manager.workspaces.syncWorkspaceStateFromCommitManager()
-                    customPath = ""
-                    customDiff = ""
-                } label: {
-                    Label("Add / Update Change", systemImage: "plus.circle")
-                        .font(.subheadline.bold())
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-                .disabled(customPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || customDiff.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-            }
-
-            VStack(spacing: 12) {
-                ForEach(manager.commits.workingChanges) { change in
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(change.path).font(.headline).foregroundStyle(.white)
-                                Text("\(change.kind.rawValue.capitalized) • \(change.authorID)")
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Button(change.isStaged ? "Unstage" : "Stage") {
-                                if change.isStaged {
-                                    manager.commits.unstage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
-                                } else {
-                                    manager.commits.stage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
-                                }
-                            }
-                            .font(.caption.bold())
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(change.isStaged ? Color.orange.opacity(0.2) : Color.blue.opacity(0.2))
-                            .foregroundStyle(change.isStaged ? .orange : .blue)
-                            .clipShape(Capsule())
-                        }
-
-                        NavigationLink {
-                            CollaborationDiffViewerView(diff: change.diff)
-                        } label: {
-                            HStack {
-                                Image(systemName: "doc.text.magnifyingglass")
-                                Text("Open Diff")
-                                Spacer()
-                                Image(systemName: "chevron.right")
-                            }
-                            .font(.caption)
-                            .padding(8)
-                            .background(Color.white.opacity(0.05))
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    }
-                    .padding()
-                    .background(Color.white.opacity(0.05))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
-                }
-            }
+            workingTreeEditor
+            workingChangesList
         }
         .padding(20)
         .background(Color.white.opacity(0.03))
         .clipShape(RoundedRectangle(cornerRadius: 24))
+    }
+
+    private var workingTreeEditor: some View {
+        VStack(spacing: 12) {
+            TextField("File Path", text: $customPath)
+                .textFieldStyle(.plain)
+                .padding()
+                .background(Color.white.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            Picker("Change Type", selection: $selectedKind) {
+                ForEach(CommitChangeKind.allCases, id: \.self) { kind in
+                    Text(kind.rawValue.capitalized).tag(kind)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            TextField("Diff content", text: $customDiff, axis: .vertical)
+                .textFieldStyle(.plain)
+                .padding()
+                .background(Color.white.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .lineLimit(3...8)
+
+            Button(action: addOrUpdateChange) {
+                Label("Add / Update Change", systemImage: "plus.circle")
+                    .font(.subheadline.bold())
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue.opacity(0.2))
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            .disabled(isAddChangeDisabled)
+        }
+    }
+
+    @ViewBuilder
+    private var workingChangesList: some View {
+        if manager.commits.workingChanges.isEmpty {
+            Text("No working changes on this branch yet.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(Color.white.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+        } else {
+            VStack(spacing: 12) {
+                ForEach(manager.commits.workingChanges) { change in
+                    WorkingChangeRow(
+                        change: change,
+                        onStageToggle: toggleStage(for:)
+                    )
+                }
+            }
+        }
     }
 
     @ViewBuilder
@@ -259,6 +233,32 @@ struct CommitManagerView: View {
         .clipShape(RoundedRectangle(cornerRadius: 24))
     }
 
+    private var isAddChangeDisabled: Bool {
+        customPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        customDiff.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func addOrUpdateChange() {
+        manager.commits.updateWorkingChange(
+            path: customPath,
+            diff: customDiff,
+            kind: selectedKind,
+            authorID: actorID,
+            branchID: manager.branches.currentBranch.id
+        )
+        manager.workspaces.syncWorkspaceStateFromCommitManager()
+        customPath = ""
+        customDiff = ""
+    }
+
+    private func toggleStage(for change: CommitFileChange) {
+        if change.isStaged {
+            manager.commits.unstage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
+        } else {
+            manager.commits.stage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
+        }
+    }
+
     private func actionButton(title: String, icon: String, tint: Color, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: icon)
@@ -270,5 +270,60 @@ struct CommitManagerView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .disabled(!enabled)
+    }
+}
+
+private struct WorkingChangeRow: View {
+    let change: CommitFileChange
+    let onStageToggle: (CommitFileChange) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            header
+            diffLink
+        }
+        .padding()
+        .background(Color.white.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private var header: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(change.path)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Text("\(change.kind.rawValue.capitalized) • \(change.authorID)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button(change.isStaged ? "Unstage" : "Stage") {
+                onStageToggle(change)
+            }
+            .font(.caption.bold())
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(change.isStaged ? Color.orange.opacity(0.2) : Color.blue.opacity(0.2))
+            .foregroundStyle(change.isStaged ? .orange : .blue)
+            .clipShape(Capsule())
+        }
+    }
+
+    private var diffLink: some View {
+        NavigationLink {
+            CollaborationDiffViewerView(diff: change.diff)
+        } label: {
+            HStack {
+                Image(systemName: "doc.text.magnifyingglass")
+                Text("Open Diff")
+                Spacer()
+                Image(systemName: "chevron.right")
+            }
+            .font(.caption)
+            .padding(8)
+            .background(Color.white.opacity(0.05))
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        }
     }
 }
