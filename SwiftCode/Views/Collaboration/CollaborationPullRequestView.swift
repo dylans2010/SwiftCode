@@ -470,7 +470,8 @@ struct CollaborationPullRequestView: View {
         .padding(.top, 8)
     }
 
-    private func summaryRow(title: String, value: String) -> some GridRow {
+    @ViewBuilder
+    private func summaryRow(title: String, value: String) -> some View {
         GridRow {
             Text(title)
                 .font(.caption.bold())

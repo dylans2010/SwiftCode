@@ -25,14 +25,25 @@ struct CollaborationFeedbackView: View {
     }
 }
 
+private struct CollaborationFeedbackModifier: ViewModifier {
+    let message: String?
+    let icon: String
+    let color: Color
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .bottom) {
+                if let message, !message.isEmpty {
+                    CollaborationFeedbackView(message: message, icon: icon, color: color)
+                        .padding(.bottom, 24)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+    }
+}
+
 extension View {
     func collaborationFeedback(message: String?, icon: String = "info.circle", color: Color = .blue) -> some View {
-        self.overlay(alignment: .bottom) {
-            if let message = message {
-                CollaborationFeedbackView(message: message, icon: icon, color: color)
-                    .padding(.bottom, 24)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
+        modifier(CollaborationFeedbackModifier(message: message, icon: icon, color: color))
     }
 }

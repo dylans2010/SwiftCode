@@ -32,10 +32,10 @@ struct CollaborationMainView: View {
                 }
                 .padding(.vertical)
             }
-            .collaborationFeedback(message: manager.workspaces.lastSuccessMessage, icon: "checkmark.circle.fill", color: .green)
-            .collaborationFeedback(message: manager.workspaces.lastErrorMessage, icon: "exclamationmark.triangle.fill", color: .red)
+            .collaborationFeedback(message: manager.workspaces.lastSuccessMessage, icon: "checkmark.circle.fill", color: Color.green)
+            .collaborationFeedback(message: manager.workspaces.lastErrorMessage, icon: "exclamationmark.triangle.fill", color: Color.red)
             .navigationTitle("Collaboration")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(NavigationBarItem.TitleDisplayMode.inline)
             .toolbar { toolbarContent }
         }
     }
