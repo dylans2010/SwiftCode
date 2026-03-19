@@ -7,6 +7,18 @@ objectVersion = 56;
 objects = {
 
 /* Begin PBXBuildFile section */
+		C0D000000000000000000201 /* CodexManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000101 /* CodexManager.swift */; };
+		C0D000000000000000000202 /* CodexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000102 /* CodexService.swift */; };
+		C0D000000000000000000203 /* CodexSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000103 /* CodexSession.swift */; };
+		C0D000000000000000000204 /* CodexModelRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000104 /* CodexModelRouter.swift */; };
+		C0D000000000000000000205 /* CodexRequestBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000105 /* CodexRequestBuilder.swift */; };
+		C0D000000000000000000206 /* CodexResponseParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000106 /* CodexResponseParser.swift */; };
+		C0D000000000000000000207 /* CodexErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000107 /* CodexErrorHandler.swift */; };
+		C0D000000000000000000208 /* CodexUsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000108 /* CodexUsageTracker.swift */; };
+		C0D000000000000000000209 /* CodexMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000109 /* CodexMainView.swift */; };
+		C0D00000000000000000020A /* CodexAPIKeyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00000000000000000010A /* CodexAPIKeyView.swift */; };
+		C0D00000000000000000020B /* CodexUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00000000000000000010B /* CodexUsageView.swift */; };
+		C0D00000000000000000020C /* CodexErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00000000000000000010C /* CodexErrorView.swift */; };
 		A8FE3B4E78D74A97A9517309 /* OfflineModelMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DE4216C3024885A1F6C00E /* OfflineModelMetadata.swift */; };
 		7897B7DD965943C19E6C7C46 /* HuggingFaceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 882B230F330E4276B1E38C44 /* HuggingFaceAPI.swift */; };
 		F0104F91B48646D0901577AD /* OfflineModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6D8D2419B14345A69FBC5D /* OfflineModelManager.swift */; };
@@ -286,6 +298,18 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C0D000000000000000000101 /* CodexManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexManager.swift"; path = "SwiftCode/Backend/Codex/CodexManager.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000102 /* CodexService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexService.swift"; path = "SwiftCode/Backend/Codex/CodexService.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000103 /* CodexSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexSession.swift"; path = "SwiftCode/Backend/Codex/CodexSession.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000104 /* CodexModelRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexModelRouter.swift"; path = "SwiftCode/Backend/Codex/CodexModelRouter.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000105 /* CodexRequestBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexRequestBuilder.swift"; path = "SwiftCode/Backend/Codex/CodexRequestBuilder.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000106 /* CodexResponseParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexResponseParser.swift"; path = "SwiftCode/Backend/Codex/CodexResponseParser.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000107 /* CodexErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexErrorHandler.swift"; path = "SwiftCode/Backend/Codex/CodexErrorHandler.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000108 /* CodexUsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexUsageTracker.swift"; path = "SwiftCode/Backend/Codex/CodexUsageTracker.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000109 /* CodexMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexMainView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexMainView.swift"; sourceTree = SOURCE_ROOT; };
+		C0D00000000000000000010A /* CodexAPIKeyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexAPIKeyView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexAPIKeyView.swift"; sourceTree = SOURCE_ROOT; };
+		C0D00000000000000000010B /* CodexUsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexUsageView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexUsageView.swift"; sourceTree = SOURCE_ROOT; };
+		C0D00000000000000000010C /* CodexErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexErrorView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexErrorView.swift"; sourceTree = SOURCE_ROOT; };
 		C2DE4216C3024885A1F6C00E /* OfflineModelMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelMetadata.swift"; sourceTree = "<group>"; };
 		882B230F330E4276B1E38C44 /* HuggingFaceAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HuggingFaceAPI.swift"; sourceTree = "<group>"; };
 		EA6D8D2419B14345A69FBC5D /* OfflineModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelManager.swift"; sourceTree = "<group>"; };
@@ -708,6 +732,7 @@ AA000010000000000000045F /* AI */ = {
 isa = PBXGroup;
 children = (
 				AA000010000000000000010B /* AIAssistantView.swift */,
+				C0D000000000000000000302 /* Codex UIs */,
 				AID00000000000000000001B /* OnDeviceAIView.swift */,
 				CU000000000000000000001B /* ChatUIComponents.swift */,
 				RV0000000000000000000001B /* CodeReviewView.swift */,
@@ -1050,6 +1075,7 @@ children = (
 				TRPG0000000000000000001 /* Projects */,
 				ODIG0000000000000000001 /* On Device Intelligence */,
 				AGNG0000000000000000001 /* Agent New */,
+				C0D000000000000000000301 /* Codex */,
 				DE1546866FBA40E9A4F3D437 /* Offline Models */,
 				1553F8B054AE453E91485DEE /* Local Building */,
 				AA0000100000000000000F6C /* AgentModelCheck.swift */,
@@ -1521,6 +1547,32 @@ children = (
 path = Tools;
 sourceTree = "<group>";
 };
+C0D000000000000000000301 /* Codex */ = {
+isa = PBXGroup;
+children = (
+				C0D000000000000000000101 /* CodexManager.swift */,
+				C0D000000000000000000102 /* CodexService.swift */,
+				C0D000000000000000000103 /* CodexSession.swift */,
+				C0D000000000000000000104 /* CodexModelRouter.swift */,
+				C0D000000000000000000105 /* CodexRequestBuilder.swift */,
+				C0D000000000000000000106 /* CodexResponseParser.swift */,
+				C0D000000000000000000107 /* CodexErrorHandler.swift */,
+				C0D000000000000000000108 /* CodexUsageTracker.swift */,
+);
+path = Codex;
+sourceTree = "<group>";
+};
+C0D000000000000000000302 /* Codex UIs */ = {
+isa = PBXGroup;
+children = (
+				C0D000000000000000000109 /* CodexMainView.swift */,
+				C0D00000000000000000010A /* CodexAPIKeyView.swift */,
+				C0D00000000000000000010B /* CodexUsageView.swift */,
+				C0D00000000000000000010C /* CodexErrorView.swift */,
+);
+path = "Codex UIs";
+sourceTree = "<group>";
+};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1845,6 +1897,14 @@ files = (
 				3EF8C02A214D489ABFAC44DB /* AgentLoop.swift in Sources */,
 				CF616E8538D74A9DA855F26C /* AgentManager.swift in Sources */,
 				1AD75A619E664C0F97DFC015 /* AgentSystemInitializer.swift in Sources */,
+				C0D000000000000000000201 /* CodexManager.swift in Sources */,
+				C0D000000000000000000202 /* CodexService.swift in Sources */,
+				C0D000000000000000000203 /* CodexSession.swift in Sources */,
+				C0D000000000000000000204 /* CodexModelRouter.swift in Sources */,
+				C0D000000000000000000205 /* CodexRequestBuilder.swift in Sources */,
+				C0D000000000000000000206 /* CodexResponseParser.swift in Sources */,
+				C0D000000000000000000207 /* CodexErrorHandler.swift in Sources */,
+				C0D000000000000000000208 /* CodexUsageTracker.swift in Sources */,
 				415D232865644BE1A8644DDE /* CodePatchEngine.swift in Sources */,
 				B000AE0E1A5A4773A3ABDDCB /* PluginAgentBridge.swift in Sources */,
 				8C8B7A4F73124F1F8751050F /* PluginContextBuilder.swift in Sources */,
@@ -1862,6 +1922,10 @@ files = (
 				04F39B8929354169B0B43AC7 /* AgentTaskPanel.swift in Sources */,
 				408DB822823B45418B63B176 /* AgentToolbar.swift in Sources */,
 				88ABBEAEF37545C2AE061DF9 /* ChatAIInterfaceView.swift in Sources */,
+				C0D000000000000000000209 /* CodexMainView.swift in Sources */,
+				C0D00000000000000000020A /* CodexAPIKeyView.swift in Sources */,
+				C0D00000000000000000020B /* CodexUsageView.swift in Sources */,
+				C0D00000000000000000020C /* CodexErrorView.swift in Sources */,
 				D497EDED40E04EB690D087F1 /* CodeChangesView.swift in Sources */,
 				5A775CEADF264C1EB3C9AC3D /* ToolExecutionView.swift in Sources */,
 				TRP00000000000000000001A /* ProjectTransferManager.swift in Sources */,

@@ -46,7 +46,7 @@ final class ChatController: ObservableObject {
         defer { isGenerating = false }
 
         do {
-            let response = try await LLMService.shared.generateResponse(prompt: prompt, useContext: useContext)
+            let response = try await CodexModelRouter().routePrompt(prompt, useContext: useContext)
             let normalizedResponse = response.trimmingCharacters(in: .whitespacesAndNewlines)
 
             if normalizedResponse.isEmpty {

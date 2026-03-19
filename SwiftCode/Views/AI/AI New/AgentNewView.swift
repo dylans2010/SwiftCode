@@ -9,7 +9,10 @@ struct AgentNewView: View {
 
             Divider()
 
-            if selectedTab == 0 {
+            if AppSettings.shared.useCodexAsDefaultAgent {
+                CodexMainView()
+                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+            } else if selectedTab == 0 {
                 AgentModeView()
             } else {
                 ChatAIInterfaceView()

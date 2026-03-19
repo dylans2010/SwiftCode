@@ -27,6 +27,9 @@ struct AIAssistantView: View {
             Group {
                 if AppSettings.shared.appleIntelligenceEnabled && DeviceUtilityManager.shared.isAppleIntelligenceSupported() {
                     OnDeviceAIView(controller: controller)
+                } else if AppSettings.shared.useCodexAsDefaultAgent {
+                    CodexMainView()
+                        .transition(.opacity.combined(with: .move(edge: .trailing)))
                 } else {
                     VStack(spacing: 0) {
                 ScrollViewReader { proxy in

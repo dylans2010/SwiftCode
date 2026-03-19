@@ -187,6 +187,9 @@ class AppSettings: ObservableObject {
     @Published var appleIntelligenceEnabled: Bool {
         didSet { debouncedSave("appleIntelligenceEnabled", appleIntelligenceEnabled) }
     }
+    @Published var useCodexAsDefaultAgent: Bool {
+        didSet { debouncedSave("useCodexAsDefaultAgent", useCodexAsDefaultAgent) }
+    }
     @Published var hasCompletedOnboarding: Bool {
         didSet { debouncedSave("hasCompletedOnboarding", hasCompletedOnboarding) }
     }
@@ -252,6 +255,7 @@ class AppSettings: ObservableObject {
         fileNavigatorAnimationSpeed = UserDefaults.standard.object(forKey: "fileNavigatorAnimationSpeed") as? Double ?? 0.22
         codeSuggestionsEnabled = UserDefaults.standard.object(forKey: "codeSuggestionsEnabled") as? Bool ?? false
         appleIntelligenceEnabled = UserDefaults.standard.object(forKey: "appleIntelligenceEnabled") as? Bool ?? false
+        useCodexAsDefaultAgent = UserDefaults.standard.object(forKey: "useCodexAsDefaultAgent") as? Bool ?? false
         hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
 
         // Load saved repositories

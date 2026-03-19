@@ -73,4 +73,6 @@ final class KeychainService {
 extension KeychainService {
     static let openRouterAPIKey = "openrouter_api_key"
     static let githubToken = "github_personal_access_token"
+    static let codexUserAPIKey = "codex_user_api_key"
+    static let codexAppAPIKey = "codex_app_api_key"
 }
