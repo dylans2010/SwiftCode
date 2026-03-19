@@ -49,6 +49,7 @@ final class ToolbarActionManager {
         case debugTools
         case deployments
         case testTools
+        case collaboration
 
         var isPro: Bool {
             switch self {
@@ -149,6 +150,8 @@ final class ToolbarActionManager {
             return .deployments
         case "run_tests":
             return .testTools
+        case "collaboration":
+            return .collaboration
 
         default:
             return nil

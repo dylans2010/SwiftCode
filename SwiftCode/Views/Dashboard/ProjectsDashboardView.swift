@@ -123,7 +123,7 @@ struct ProjectsDashboardView: View {
             .sheet(isPresented: $showCollaborationDashboard) {
                 if let manager = currentCollaborationManager {
                     NavigationStack {
-                        CollaborationDashboardView(manager: manager)
+                        CollaborationMainView(manager: manager)
                     }
                 }
             }
@@ -645,7 +645,7 @@ struct ProjectsDashboardView: View {
         do {
             let project = try projectManager.createProject(name: name)
             let creatorID = UIDevice.current.name
-            let manager = CollaborationManager(projectID: project.id, creatorID: creatorID)
+            let manager = CollaborationSessionStore.shared.manager(for: project, creatorID: creatorID)
             currentCollaborationManager = manager
             showCollaborationDashboard = true
         } catch {

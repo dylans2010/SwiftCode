@@ -51,6 +51,7 @@ struct ProjectWorkspaceView: View {
     @State private var showTestTools = false
     @State private var showAllToolsSheet = false
     @State private var showPaywall = false
+    @State private var showCollaboration = false
 
     var body: some View {
         ZStack {
@@ -263,6 +264,11 @@ struct ProjectWorkspaceView: View {
         .sheet(isPresented: $showPaywall) {
             PaywallView()
         }
+        .sheet(isPresented: $showCollaboration) {
+            if let activeProject = projectManager.activeProject ?? Optional(project) {
+                CollaborationMainView(manager: CollaborationSessionStore.shared.manager(for: activeProject))
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .toolbarToolActivated)) { notification in
             guard
                 let toolId = notification.userInfo?["toolID"] as? String,
@@ -372,6 +378,7 @@ struct ProjectWorkspaceView: View {
         case .debugTools: showDebugTools = true
         case .deployments: showDeployments = true
         case .testTools: showTestTools = true
+        case .collaboration: showCollaboration = true
         }
     }
 
