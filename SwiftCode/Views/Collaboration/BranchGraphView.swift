@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct BranchGraphView: View {
     @ObservedObject var manager: CollaborationManager
 

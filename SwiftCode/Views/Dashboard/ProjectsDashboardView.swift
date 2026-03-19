@@ -640,6 +640,7 @@ struct ProjectsDashboardView: View {
 
     // MARK: - Actions
 
+    @MainActor
     private func createCollaborativeProject() {
         let name = "Collaborative Project \(projectManager.projects.count + 1)"
         do {

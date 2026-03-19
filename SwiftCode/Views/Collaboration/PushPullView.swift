@@ -1,5 +1,6 @@
 import SwiftUI
 
+@MainActor
 struct PushPullView: View {
     @ObservedObject var manager: CollaborationManager
 
