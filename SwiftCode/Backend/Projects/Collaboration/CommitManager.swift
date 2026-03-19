@@ -62,65 +62,103 @@ public final class CommitManager: ObservableObject {
     @Published public private(set) var workingChanges: [CommitFileChange] = []
     @Published public private(set) var lastEvent: CommitEvent?
 
+    private var stagedChangesByBranch: [UUID: [String: String]] = [:]
+    private var workingChangesByBranch: [UUID: [CommitFileChange]] = [:]
+    private var activeBranchID: UUID?
     private var undoStack: [Commit] = []
     private var redoStack: [Commit] = []
 
     public var canUndo: Bool { !undoStack.isEmpty }
     public var canRedo: Bool { !redoStack.isEmpty }
 
-    public func seedWorkingChangesIfNeeded(authorID: String) {
-        guard workingChanges.isEmpty else { return }
-        workingChanges = [
+    public func seedWorkingChangesIfNeeded(authorID: String, branchID: UUID? = nil) {
+        let seedBranchID = branchID ?? activeBranchID
+        guard let seedBranchID else { return }
+        guard (workingChangesByBranch[seedBranchID] ?? []).isEmpty else {
+            syncPublishedState(for: seedBranchID)
+            return
+        }
+        workingChangesByBranch[seedBranchID] = [
             CommitFileChange(path: "Sources/Editor/CollabSession.swift", diff: "@@ -10,3 +10,8 @@\n+ let reviewers = assignedReviewers\n+ session.refresh()", kind: .modified, isStaged: false, authorID: authorID),
             CommitFileChange(path: "Views/Projects/Toolbar.swift", diff: "@@ -1,1 +1,4 @@\n+ Button(\"Collaborate\") { openCollaboration() }", kind: .added, isStaged: false, authorID: authorID),
             CommitFileChange(path: "Docs/OldWorkflow.md", diff: "@@ -1,4 +0,0 @@\n- Legacy workflow guidance", kind: .deleted, isStaged: false, authorID: authorID)
         ]
+        stagedChangesByBranch[seedBranchID] = [:]
+        syncPublishedState(for: seedBranchID)
     }
 
-    public func updateWorkingChange(path: String, diff: String, kind: CommitChangeKind, authorID: String) {
-        if let index = workingChanges.firstIndex(where: { $0.path == path }) {
-            workingChanges[index].diff = diff
-            workingChanges[index].kind = kind
-            workingChanges[index].authorID = authorID
-            workingChanges[index].timestamp = Date()
+    public func setActiveBranch(_ branchID: UUID) {
+        activeBranchID = branchID
+        stagedChangesByBranch[branchID, default: [:]] = stagedChangesByBranch[branchID, default: [:]]
+        workingChangesByBranch[branchID, default: []] = workingChangesByBranch[branchID, default: []]
+        syncPublishedState(for: branchID)
+    }
+
+    public func updateWorkingChange(path: String, diff: String, kind: CommitChangeKind, authorID: String, branchID: UUID? = nil) {
+        let branchID = resolvedBranchID(branchID)
+        if let index = workingChangesByBranch[branchID]?.firstIndex(where: { $0.path == path }) {
+            workingChangesByBranch[branchID]?[index].diff = diff
+            workingChangesByBranch[branchID]?[index].kind = kind
+            workingChangesByBranch[branchID]?[index].authorID = authorID
+            workingChangesByBranch[branchID]?[index].timestamp = Date()
         } else {
-            workingChanges.append(CommitFileChange(path: path, diff: diff, kind: kind, isStaged: false, authorID: authorID))
+            workingChangesByBranch[branchID, default: []].append(CommitFileChange(path: path, diff: diff, kind: kind, isStaged: false, authorID: authorID))
         }
+        syncPublishedState(for: branchID)
     }
 
-    public func stage(path: String, diff: String? = nil, kind: CommitChangeKind? = nil, authorID: String = "System") {
-        if let index = workingChanges.firstIndex(where: { $0.path == path }) {
-            if let diff { workingChanges[index].diff = diff }
-            if let kind { workingChanges[index].kind = kind }
-            workingChanges[index].isStaged = true
-            stagedChanges[path] = workingChanges[index].diff
+    public func stage(path: String, diff: String? = nil, kind: CommitChangeKind? = nil, authorID: String = "System", branchID: UUID? = nil) {
+        let branchID = resolvedBranchID(branchID)
+        if let index = workingChangesByBranch[branchID]?.firstIndex(where: { $0.path == path }) {
+            if let diff { workingChangesByBranch[branchID]?[index].diff = diff }
+            if let kind { workingChangesByBranch[branchID]?[index].kind = kind }
+            workingChangesByBranch[branchID]?[index].isStaged = true
+            stagedChangesByBranch[branchID, default: [:]][path] = workingChangesByBranch[branchID]?[index].diff ?? ""
         } else {
             let entry = CommitFileChange(path: path, diff: diff ?? "", kind: kind ?? .modified, isStaged: true, authorID: authorID)
-            workingChanges.append(entry)
-            stagedChanges[path] = entry.diff
+            workingChangesByBranch[branchID, default: []].append(entry)
+            stagedChangesByBranch[branchID, default: [:]][path] = entry.diff
         }
+        syncPublishedState(for: branchID)
         lastEvent = CommitEvent(actorID: authorID, title: "Change staged", detail: path, notifies: false)
     }
 
-    public func unstage(path: String, actorID: String = "System") {
-        stagedChanges.removeValue(forKey: path)
-        if let index = workingChanges.firstIndex(where: { $0.path == path }) {
-            workingChanges[index].isStaged = false
+    public func unstage(path: String, actorID: String = "System", branchID: UUID? = nil) {
+        let branchID = resolvedBranchID(branchID)
+        stagedChangesByBranch[branchID]?.removeValue(forKey: path)
+        if let index = workingChangesByBranch[branchID]?.firstIndex(where: { $0.path == path }) {
+            workingChangesByBranch[branchID]?[index].isStaged = false
         }
+        syncPublishedState(for: branchID)
         lastEvent = CommitEvent(actorID: actorID, title: "Change unstaged", detail: path, notifies: false)
+    }
+
+    public func replaceWorkingChanges(_ changes: [CommitFileChange], stagedChanges: [String: String], for branchID: UUID) {
+        workingChangesByBranch[branchID] = changes
+        stagedChangesByBranch[branchID] = stagedChanges
+        syncPublishedState(for: branchID)
+    }
+
+    public func workingChanges(for branchID: UUID) -> [CommitFileChange] {
+        workingChangesByBranch[branchID] ?? []
+    }
+
+    public func stagedChanges(for branchID: UUID) -> [String: String] {
+        stagedChangesByBranch[branchID] ?? [:]
     }
 
     public func recordCommit(branchID: UUID, authorID: String, message: String, changes: [String: String]) -> Commit {
         let parent = commits(for: branchID).first?.id
-        let payload = changes.isEmpty ? stagedChanges : changes
+        let payload = changes.isEmpty ? stagedChanges(for: branchID) : changes
         let normalizedMessage = message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Update collaboration changes" : message
         let commit = Commit(branchID: branchID, authorID: authorID, message: normalizedMessage, changes: payload, parentCommitID: parent)
         commits.insert(commit, at: 0)
         undoStack.append(commit)
         redoStack.removeAll()
         let stagedPaths = Set(payload.keys)
-        workingChanges.removeAll { stagedPaths.contains($0.path) }
-        stagedChanges.removeAll()
+        workingChangesByBranch[branchID, default: []].removeAll { stagedPaths.contains($0.path) }
+        stagedChangesByBranch[branchID] = [:]
+        syncPublishedState(for: branchID)
         lastEvent = CommitEvent(actorID: authorID, title: "Commit created", detail: normalizedMessage, notifies: true)
         return commit
     }
@@ -181,5 +219,21 @@ public final class CommitManager: ObservableObject {
 
     public func commits(for branchID: UUID) -> [Commit] {
         commits.filter { $0.branchID == branchID }.sorted { $0.timestamp > $1.timestamp }
+    }
+
+    private func resolvedBranchID(_ branchID: UUID?) -> UUID {
+        if let branchID { return branchID }
+        if let activeBranchID { return activeBranchID }
+        let generated = UUID()
+        activeBranchID = generated
+        return generated
+    }
+
+    private func syncPublishedState(for branchID: UUID) {
+        if activeBranchID == nil || activeBranchID == branchID {
+            activeBranchID = branchID
+            stagedChanges = stagedChangesByBranch[branchID] ?? [:]
+            workingChanges = workingChangesByBranch[branchID] ?? []
+        }
     }
 }

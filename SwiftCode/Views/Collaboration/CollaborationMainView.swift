@@ -48,6 +48,7 @@ struct CollaborationMainView: View {
             List {
                 Section("Workspace") {
                     NavigationLink { BranchGraphView(manager: manager) } label: { Label("Branch Visualization", systemImage: "point.3.connected.trianglepath.dotted") }
+                    NavigationLink { BranchWorkspaceView(manager: manager, actorID: currentUserID) } label: { Label("Branch Workspace", systemImage: "rectangle.split.3x1") }
                     NavigationLink { CommitManagerView(manager: manager, actorID: currentUserID) } label: { Label("Advanced Commit Manager", systemImage: "shippingbox.circle") }
                     NavigationLink { CollaborationPullRequestView(manager: manager, actorID: currentUserID) } label: { Label("Pull Requests", systemImage: "tray.full") }
                     NavigationLink { CollaborationCodeReviewView(manager: manager, actorID: currentUserID) } label: { Label("Code Review Dashboard", systemImage: "checkmark.seal.text.page") }
@@ -60,7 +61,7 @@ struct CollaborationMainView: View {
             }
             .scrollContentBackground(.hidden)
         case .branches:
-            BranchGraphView(manager: manager)
+            BranchWorkspaceView(manager: manager, actorID: currentUserID)
         case .commits:
             CommitManagerView(manager: manager, actorID: currentUserID)
         case .reviews:

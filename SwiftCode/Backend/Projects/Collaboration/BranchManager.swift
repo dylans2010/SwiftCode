@@ -29,9 +29,10 @@ public struct Branch: Identifiable, Codable, Equatable {
     public var lastCommitID: UUID?
     public let createdAt: Date
 
-    public init(name: String) {
+    public init(name: String, lastCommitID: UUID? = nil) {
         self.id = UUID()
         self.name = name
+        self.lastCommitID = lastCommitID
         self.createdAt = Date()
     }
 }
@@ -49,10 +50,12 @@ public final class BranchManager: ObservableObject {
         self.currentBranch = main
     }
 
-    public func createBranch(name: String, actorID: String = "System") -> Branch {
-        let newBranch = Branch(name: name)
+    public func createBranch(name: String, from baseBranchID: UUID? = nil, actorID: String = "System") -> Branch {
+        let baseBranch = branches.first(where: { $0.id == (baseBranchID ?? currentBranch.id) })
+        let newBranch = Branch(name: name, lastCommitID: baseBranch?.lastCommitID)
         branches.append(newBranch)
-        lastEvent = BranchEvent(actorID: actorID, title: "Branch created", detail: "\(name) was created.", notifies: true)
+        let baseName = baseBranch?.name ?? currentBranch.name
+        lastEvent = BranchEvent(actorID: actorID, title: "Branch created", detail: "\(name) was created from \(baseName).", notifies: true)
         return newBranch
     }
 

@@ -13,6 +13,12 @@ struct CommitManagerView: View {
 
     var body: some View {
         List {
+            Section("Branch Context") {
+                Label(manager.branches.currentBranch.name, systemImage: "arrow.triangle.branch")
+                Text("Working changes and history below are isolated to the active branch workspace.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             Section("Undo / Redo") {
                 HStack(spacing: 12) {
                     actionButton(title: "Undo", icon: "arrow.uturn.backward.circle.fill", tint: .orange, enabled: manager.commits.canUndo) {
@@ -37,7 +43,8 @@ struct CommitManagerView: View {
                 TextField("Diff content", text: $customDiff, axis: .vertical)
                     .lineLimit(3...8)
                 Button("Add / Update Change") {
-                    manager.commits.updateWorkingChange(path: customPath, diff: customDiff, kind: selectedKind, authorID: actorID)
+                    manager.commits.updateWorkingChange(path: customPath, diff: customDiff, kind: selectedKind, authorID: actorID, branchID: manager.branches.currentBranch.id)
+                    manager.workspaces.syncWorkspaceStateFromCommitManager()
                     customPath = ""
                     customDiff = ""
                 }
@@ -55,9 +62,9 @@ struct CommitManagerView: View {
                             Spacer()
                             Button(change.isStaged ? "Unstage" : "Stage") {
                                 if change.isStaged {
-                                    manager.commits.unstage(path: change.path, actorID: actorID)
+                                    manager.commits.unstage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
                                 } else {
-                                    manager.commits.stage(path: change.path, authorID: actorID)
+                                    manager.commits.stage(path: change.path, authorID: actorID, branchID: manager.branches.currentBranch.id)
                                 }
                             }
                             .buttonStyle(.bordered)
@@ -73,6 +80,7 @@ struct CommitManagerView: View {
                 TextField("Commit message", text: $commitMessage)
                 Button {
                     manager.commit(message: commitMessage, authorID: actorID, changes: [:])
+                    manager.workspaces.syncWorkspaceStateFromCommitManager()
                     commitMessage = ""
                     operationMessage = "Commit created successfully."
                 } label: {
