@@ -332,12 +332,15 @@ struct CreatePullRequestView: View {
     @State private var isCreating = false
     @State private var errorMessage: String?
 
-    init(manager: CollaborationManager, actorID: String) {
+    init(manager: CollaborationManager, actorID: String, preferredSourceBranchID: UUID? = nil, preferredTargetBranchID: UUID? = nil, preparedPayload: PullRequestDraftPayload? = nil) {
         self.manager = manager
         self.actorID = actorID
         let fallback = manager.branches.currentBranch.id
-        _sourceBranchID = State(initialValue: manager.branches.branches.dropFirst().first?.id ?? fallback)
-        _targetBranchID = State(initialValue: manager.branches.branches.first?.id ?? fallback)
+        _title = State(initialValue: preparedPayload?.title ?? "")
+        _description = State(initialValue: preparedPayload?.description ?? "")
+        _sourceBranchID = State(initialValue: preparedPayload?.sourceBranchID ?? preferredSourceBranchID ?? manager.branches.branches.dropFirst().first?.id ?? fallback)
+        _targetBranchID = State(initialValue: preparedPayload?.targetBranchID ?? preferredTargetBranchID ?? manager.branches.branches.first(where: { $0.id != (preferredSourceBranchID ?? fallback) })?.id ?? fallback)
+        _selectedCommitIDs = State(initialValue: Set(preparedPayload?.linkedCommitIDs ?? []))
     }
 
     var body: some View {

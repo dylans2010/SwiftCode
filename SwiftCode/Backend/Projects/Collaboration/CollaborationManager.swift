@@ -59,6 +59,7 @@ public final class CollaborationManager: ObservableObject {
     public let reviews: CollaborationCodeReviewManager
     public let invites: InviteManager
     public let pullRequests: PullRequestManager
+    public let workspaces: BranchWorkspaceManager
 
     @Published public private(set) var activityLog: [CollaborationActivity] = []
     @Published public private(set) var notifications: [CollaborationNotificationItem] = []
@@ -77,6 +78,7 @@ public final class CollaborationManager: ObservableObject {
         self.reviews = CollaborationCodeReviewManager()
         self.invites = InviteManager()
         self.pullRequests = PullRequestManager()
+        self.workspaces = BranchWorkspaceManager(branchManager: branches, commitManager: commits, pullRequestManager: pullRequests)
 
         setupBindings()
         loadState()
@@ -86,7 +88,9 @@ public final class CollaborationManager: ObservableObject {
         }
 
         addActivity(actorID: creatorID, title: "Collaboration enabled", detail: "Project collaboration workspace is ready.", kind: .permissions, notify: true)
-        commits.seedWorkingChangesIfNeeded(authorID: creatorID)
+        commits.setActiveBranch(branches.currentBranch.id)
+        commits.seedWorkingChangesIfNeeded(authorID: creatorID, branchID: branches.currentBranch.id)
+        _ = workspaces.loadWorkspace(for: branches.currentBranch.id, actorID: creatorID)
     }
 
     private func handleIncomingData(_ data: Data, from peerID: MCPeerID) {
@@ -106,14 +110,24 @@ public final class CollaborationManager: ObservableObject {
         self.notifications = state.notifications
         branches.restoreState(branches: state.branches, currentBranchID: state.currentBranchID, merges: state.merges)
         commits.restoreState(commits: state.commits)
+        commits.setActiveBranch(state.currentBranchID)
         pullRequests.restoreState(pullRequests: state.pullRequests)
         reviews.restoreState(reviews: state.reviews)
         permissions.restoreState(memberRoles: state.memberRoles)
-        commits.seedWorkingChangesIfNeeded(authorID: creatorID)
+        commits.setActiveBranch(branches.currentBranch.id)
+        commits.seedWorkingChangesIfNeeded(authorID: creatorID, branchID: branches.currentBranch.id)
+        _ = workspaces.loadWorkspace(for: branches.currentBranch.id, actorID: creatorID)
         invites.restoreState(invites: state.invites)
     }
 
     private func setupBindings() {
+        branches.$currentBranch
+            .sink { [weak self] branch in
+                self?.commits.setActiveBranch(branch.id)
+                _ = self?.workspaces.loadWorkspace(for: branch.id)
+            }
+            .store(in: &cancellables)
+
         branches.$lastEvent
             .compactMap { $0 }
             .sink { [weak self] event in
@@ -167,6 +181,7 @@ public final class CollaborationManager: ObservableObject {
     public func commit(message: String, authorID: String, changes: [String: String]) {
         guard permissions.hasPermission(.commit, for: authorID, projectPermission: .owner) else { return }
         let commit = commits.recordCommit(branchID: branches.currentBranch.id, authorID: authorID, message: message, changes: changes)
+        workspaces.syncWorkspaceStateFromCommitManager()
         branches.updateLastCommit(for: branches.currentBranch.id, commitID: commit.id)
         reviews.initiateReview(for: commit.id)
     }
@@ -175,6 +190,8 @@ public final class CollaborationManager: ObservableObject {
         guard permissions.hasPermission(.merge, for: actorID, projectPermission: .owner) else { return }
         if let mergedCommit = commits.merge(branchID: sourceID, into: targetID, authorID: actorID) {
             branches.registerMerge(from: sourceID, into: targetID, commitID: mergedCommit.id, actorID: actorID)
+            workspaces.reset(branchID: targetID, toMatch: sourceID)
+            workspaces.syncWorkspaceStateFromCommitManager()
             reviews.initiateReview(for: mergedCommit.id)
             if let pullRequestID {
                 pullRequests.markMerged(prID: pullRequestID, mergeCommitID: mergedCommit.id, actorID: actorID)

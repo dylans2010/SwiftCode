@@ -7,6 +7,7 @@ struct PullRequestView: View {
     let owner: String
     let repo: String
     let currentBranch: String
+    let draftPayload: PullRequestDraftPayload?
 
     @State private var branches: [GitHubBranch] = []
     @State private var headBranch: String = ""
@@ -23,6 +24,16 @@ struct PullRequestView: View {
     @State private var showSuccessSheet = false
 
     @Environment(\.dismiss) private var dismiss
+
+    init(owner: String, repo: String, currentBranch: String, draftPayload: PullRequestDraftPayload? = nil) {
+        self.owner = owner
+        self.repo = repo
+        self.currentBranch = currentBranch
+        self.draftPayload = draftPayload
+        _headBranch = State(initialValue: draftPayload == nil ? "" : currentBranch)
+        _title = State(initialValue: draftPayload?.title ?? "")
+        _bodyText = State(initialValue: draftPayload?.description ?? "")
+    }
 
     var body: some View {
         NavigationStack {
@@ -61,6 +72,12 @@ struct PullRequestView: View {
         }
         .preferredColorScheme(.dark)
         .task { await loadBranches() }
+        .onAppear {
+            if let draftPayload {
+                title = draftPayload.title
+                bodyText = draftPayload.description
+            }
+        }
     }
 
     // MARK: - Branch Selection
@@ -390,7 +407,7 @@ struct PullRequestView: View {
         do {
             let fetched = try await GitHubService.shared.listBranches(owner: owner, repo: repo)
             branches = fetched
-            headBranch = currentBranch
+            headBranch = draftPayload == nil ? currentBranch : headBranch
             baseBranch = fetched.first(where: { $0.name == "main" || $0.name == "master" })?.name
                 ?? fetched.first(where: { $0.name != currentBranch })?.name
                 ?? currentBranch

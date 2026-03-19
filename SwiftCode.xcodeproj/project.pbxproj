@@ -315,6 +315,7 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		CLB00000000000000000006A /* InviteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000006B /* InviteManager.swift */; };
 		CLB00000000000000000007A /* PermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000007B /* PermissionsManager.swift */; };
 		CLB00000000000000000008A /* PushManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000008B /* PushManager.swift */; };
+		CLB00000000000000000009A /* BranchWorkspaceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000009B /* BranchWorkspaceManager.swift */; };
 		CLV00000000000000000001A /* ActivityLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000001B /* ActivityLogView.swift */; };
 		CLV00000000000000000002A /* BranchGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000002B /* BranchGraphView.swift */; };
 		CLV00000000000000000003A /* CollaborationBranchManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000003B /* CollaborationBranchManagementView.swift */; };
@@ -328,6 +329,7 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		CLV00000000000000000011A /* InviteMembersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000011B /* InviteMembersView.swift */; };
 		CLV00000000000000000012A /* PushPullManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000012B /* PushPullManagerView.swift */; };
 		CLV00000000000000000013A /* PushPullView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000013B /* PushPullView.swift */; };
+		CLV00000000000000000014A /* BranchWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000014B /* BranchWorkspaceView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -634,6 +636,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		CLB00000000000000000006B /* InviteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/InviteManager.swift; sourceTree = SOURCE_ROOT; };
 		CLB00000000000000000007B /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/PermissionsManager.swift; sourceTree = SOURCE_ROOT; };
 		CLB00000000000000000008B /* PushManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/PushManager.swift; sourceTree = SOURCE_ROOT; };
+		CLB00000000000000000009B /* BranchWorkspaceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/BranchWorkspaceManager.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000001B /* ActivityLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/ActivityLogView.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000002B /* BranchGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/BranchGraphView.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000003B /* CollaborationBranchManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationBranchManagementView.swift; sourceTree = SOURCE_ROOT; };
@@ -647,6 +650,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		CLV00000000000000000011B /* InviteMembersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/InviteMembersView.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000012B /* PushPullManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/PushPullManagerView.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000013B /* PushPullView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/PushPullView.swift; sourceTree = SOURCE_ROOT; };
+		CLV00000000000000000014B /* BranchWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/BranchWorkspaceView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -1658,6 +1662,7 @@ children = (
 				CLV00000000000000000005B /* CollaborationCommitHistoryView.swift */,
 				CLV00000000000000000006B /* CollaborationDashboardView.swift */,
 				DVV000000000000000000001B /* CollaborationDiffViewerView.swift */,
+				CLV00000000000000000014B /* BranchWorkspaceView.swift */,
 				CLV00000000000000000007B /* CollaborationMainView.swift */,
 				PRV000000000000000000001B /* PullRequestView.swift */,
 				CLV00000000000000000008B /* CommitManagerView.swift */,
@@ -1683,6 +1688,7 @@ children = (
 				CLB00000000000000000007B /* PermissionsManager.swift */,
 				PRM000000000000000000001B /* PullRequestManager.swift */,
 				CLB00000000000000000008B /* PushManager.swift */,
+				CLB00000000000000000009B /* BranchWorkspaceManager.swift */,
 );
 path = Collaboration;
 sourceTree = "<group>";
@@ -1906,6 +1912,7 @@ files = (
 				CLB00000000000000000006A /* InviteManager.swift in Sources */,
 				CLB00000000000000000007A /* PermissionsManager.swift in Sources */,
 				CLB00000000000000000008A /* PushManager.swift in Sources */,
+				CLB00000000000000000009A /* BranchWorkspaceManager.swift in Sources */,
 				CLV00000000000000000001A /* ActivityLogView.swift in Sources */,
 				CLV00000000000000000002A /* BranchGraphView.swift in Sources */,
 				CLV00000000000000000003A /* CollaborationBranchManagementView.swift in Sources */,
@@ -1919,6 +1926,7 @@ files = (
 				CLV00000000000000000011A /* InviteMembersView.swift in Sources */,
 				CLV00000000000000000012A /* PushPullManagerView.swift in Sources */,
 				CLV00000000000000000013A /* PushPullView.swift in Sources */,
+				CLV00000000000000000014A /* BranchWorkspaceView.swift in Sources */,
 				RV0000000000000000000001A /* CodeReviewView.swift in Sources */,
 				GH0000000000000000000001A /* GitHistoryView.swift in Sources */,
 				PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */,
