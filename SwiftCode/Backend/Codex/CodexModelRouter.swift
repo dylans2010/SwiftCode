@@ -1,6 +1,7 @@
 import Foundation
 
 struct CodexModelRouter {
+    @MainActor
     func useCodex() -> Bool {
         AppSettings.shared.useCodexAsDefaultAgent
     }

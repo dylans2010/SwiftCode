@@ -45,7 +45,7 @@ struct ChatAIInterfaceView: View {
                 .onAppear {
                     loadHistory()
                 }
-                .onChange(of: messages.count) { _ in
+                .onChange(of: messages.count) { _, _ in
                     saveHistory()
                     if let last = messages.last {
                         withAnimation {
