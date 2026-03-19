@@ -2,89 +2,100 @@ import SwiftUI
 
 struct CodeReviewView: View {
     @ObservedObject var manager: CollaborationManager
-    let commit: Commit
-    @Environment(\.dismiss) private var dismiss
+    let actorID: String
+    @State private var selectedCommitID: UUID?
     @State private var commentText = ""
+    @State private var reviewerID = ""
+    @State private var inlinePath = "Sources/Editor/CollabSession.swift"
+    @State private var lineNumber = 42
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section("Commit Info") {
-                    Text(commit.message)
-                        .font(.headline)
-                    Text("Author: \(commit.authorID)")
-                    Text("Time: \(commit.timestamp.formatted())")
-                }
-
-                Section("Changes") {
-                    ForEach(Array(commit.changes.keys), id: \.self) { path in
+        List {
+            Section("Commits Pending Review") {
+                ForEach(manager.commits.commits(for: manager.branches.currentBranch.id)) { commit in
+                    Button {
+                        selectedCommitID = commit.id
+                        manager.reviews.initiateReview(for: commit.id)
+                    } label: {
                         HStack {
-                            Image(systemName: "doc.text")
-                            Text(path)
-                            Spacer()
-                            Text("Modified")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                        }
-                    }
-                }
-
-                Section("Comments") {
-                    if let review = manager.reviews.reviews[commit.id] {
-                        ForEach(review.comments) { comment in
-                            VStack(alignment: .leading) {
-                                Text(comment.authorID)
-                                    .font(.caption.bold())
-                                Text(comment.text)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(commit.message).font(.headline)
+                                Text(commit.authorID).font(.caption).foregroundStyle(.secondary)
                             }
+                            Spacer()
+                            Text(manager.reviews.reviews[commit.id]?.status.rawValue.capitalized ?? "Pending")
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.thinMaterial, in: Capsule())
                         }
-                    }
-
-                    HStack {
-                        TextField("Add a comment...", text: $commentText)
-                        Button("Send") {
-                            manager.reviews.addComment(to: commit.id, authorID: UIDevice.current.name, text: commentText)
-                            commentText = ""
-                        }
-                        .disabled(commentText.isEmpty)
-                    }
-                }
-
-                Section {
-                    HStack {
-                        Button {
-                            manager.reviews.approveReview(for: commit.id)
-                            dismiss()
-                        } label: {
-                            Label("Approve", systemImage: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                        }
-                        .frame(maxWidth: .infinity)
-
-                        Divider()
-
-                        Button {
-                            manager.reviews.rejectReview(for: commit.id)
-                            dismiss()
-                        } label: {
-                            Label("Reject", systemImage: "xmark.circle.fill")
-                                .foregroundStyle(.red)
-                        }
-                        .frame(maxWidth: .infinity)
                     }
                 }
             }
-            .navigationTitle("Code Review")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close") { dismiss() }
+
+            if let commit = selectedCommit {
+                Section("Reviewer Assignment") {
+                    TextField("Reviewer name", text: $reviewerID)
+                    Button("Assign Reviewer") {
+                        manager.reviews.assignReviewer(reviewerID, to: commit.id, actorID: actorID)
+                        reviewerID = ""
+                    }
+                    .disabled(reviewerID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    if let reviewers = manager.reviews.reviews[commit.id]?.reviewerIDs, !reviewers.isEmpty {
+                        ForEach(reviewers, id: \.self) { reviewer in
+                            Label(reviewer, systemImage: "person.crop.circle.badge.checkmark")
+                        }
+                    }
                 }
-            }
-            .onAppear {
-                if manager.reviews.reviews[commit.id] == nil {
-                    manager.reviews.initiateReview(for: commit.id)
+
+                Section("Inline Comments") {
+                    TextField("File path", text: $inlinePath)
+                    Stepper("Line \(lineNumber)", value: $lineNumber, in: 1...999)
+                    TextField("Add comment", text: $commentText)
+                    Button("Post Comment") {
+                        manager.reviews.addComment(to: commit.id, authorID: actorID, filePath: inlinePath, lineNumber: lineNumber, text: commentText)
+                        commentText = ""
+                    }
+                    .disabled(commentText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                    ForEach(manager.reviews.reviews[commit.id]?.comments ?? []) { comment in
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("\(comment.filePath):\(comment.lineNumber)")
+                                .font(.caption.bold())
+                            Text(comment.text)
+                            Text(comment.authorID)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+
+                Section("Decision") {
+                    Button {
+                        manager.reviews.approveReview(for: commit.id, actorID: actorID)
+                    } label: {
+                        Label("Approve", systemImage: "checkmark.seal.fill")
+                    }
+                    .tint(.green)
+
+                    Button(role: .destructive) {
+                        manager.reviews.rejectReview(for: commit.id, actorID: actorID)
+                    } label: {
+                        Label("Reject", systemImage: "xmark.seal.fill")
+                    }
                 }
             }
         }
+        .navigationTitle("Code Reviews")
+        .onAppear {
+            if selectedCommitID == nil {
+                selectedCommitID = manager.commits.commits(for: manager.branches.currentBranch.id).first?.id
+            }
+        }
+    }
+
+    private var selectedCommit: Commit? {
+        guard let selectedCommitID else { return nil }
+        return manager.commits.commits.first(where: { $0.id == selectedCommitID })
     }
 }

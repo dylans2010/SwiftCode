@@ -98,6 +98,7 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "symbol_navigator", name: "Symbol Navigator", icon: "list.bullet.indent", category: "Navigation", isEnabled: true, order: 7),
         ToolbarTool(id: "github_actions", name: "GitHub Actions", icon: "arrow.triangle.2.circlepath.circle.fill", category: "Git", isEnabled: true, order: 8),
         ToolbarTool(id: "local_simulation", name: "Preview", icon: "play.display", category: "Build", isEnabled: true, order: 9),
+        ToolbarTool(id: "collaboration", name: "Collaboration", icon: "person.2.badge.gearshape.fill", category: "Project", isEnabled: true, order: 10),
 
         ToolbarTool(id: "project_settings", name: "Project Settings", icon: "gearshape.fill", category: "Project", isEnabled: false, order: 10),
         ToolbarTool(id: "project_index", name: "Project Index", icon: "list.number", category: "Navigation", isEnabled: false, order: 11),
