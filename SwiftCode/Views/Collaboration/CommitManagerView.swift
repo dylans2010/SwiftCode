@@ -255,7 +255,7 @@ struct CommitManagerView: View {
         if change.isStaged {
             manager.commits.unstage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
         } else {
-            manager.commits.stage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
+            manager.commits.stage(path: change.path, authorID: actorID, branchID: manager.branches.currentBranch.id)
         }
     }
 
