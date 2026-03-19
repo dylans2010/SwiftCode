@@ -2,60 +2,71 @@ import SwiftUI
 
 struct AgentModeView: View {
     @ObservedObject private var agentManager = AgentManager.shared
-    @State private var taskInput: String = ""
+    @State private var taskInput = ""
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Task Input
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Assigned Task")
-                        .font(.headline)
+        VStack(spacing: 18) {
+            taskComposer
 
-                    HStack {
-                        TextField("Ask Agent", text: $taskInput)
-                            .textFieldStyle(.roundedBorder)
-
-                        Button {
-                            executeTask()
-                        } label: {
-                            Image(systemName: "play.fill")
-                                .padding(8)
-                                .background(Color.blue, in: Circle())
-                                .foregroundColor(.white)
-                        }
-                        .disabled(taskInput.isEmpty || agentManager.executionState.status == .running)
-                    }
-                }
-                .padding()
-                .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 12))
-
-                if !agentManager.executionState.taskDescription.isEmpty {
-                    // Modular Panels
+            if !agentManager.executionState.taskDescription.isEmpty {
+                VStack(spacing: 18) {
                     AgentTaskPanel(state: agentManager.executionState)
-
                     AgentPlanView(plan: agentManager.executionState.plan, currentIndex: agentManager.executionState.currentStepIndex)
-
                     ToolExecutionView()
-
                     CodeChangesView()
-
                     CodeReviewView()
-                        .frame(minHeight: 400) // Integration with existing view
-
+                        .frame(minHeight: 400)
                     AgentConsoleView()
                         .frame(minHeight: 300)
-                } else {
-                    ContentUnavailableView("No Active Task", systemImage: "bolt.shield", description: Text("Enter a task above to start the agent."))
-                        .padding(.top, 40)
                 }
+            } else {
+                ContentUnavailableView(
+                    "No Active Task",
+                    systemImage: "bolt.shield",
+                    description: Text("Describe a task and the assistant will build a plan, inspect context, and prepare code changes.")
+                )
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 48)
+                .assistantGlassCard()
             }
-            .padding()
         }
     }
 
+    private var taskComposer: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            AssistantSectionHeader(
+                eyebrow: "Agent mode",
+                title: "Launch a tool-driven task",
+                subtitle: "Create a task for the assistant to inspect files, draft edits, and report progress clearly."
+            )
+
+            HStack(alignment: .bottom, spacing: 12) {
+                TextField("Describe the task you want the agent to perform", text: $taskInput, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...5)
+                    .padding(16)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .foregroundStyle(.white)
+
+                Button {
+                    executeTask()
+                } label: {
+                    Label("Run", systemImage: "play.fill")
+                }
+                .buttonStyle(AssistantPrimaryButtonStyle())
+                .frame(maxWidth: 150)
+                .disabled(taskInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || agentManager.executionState.status == .running)
+            }
+        }
+        .padding(20)
+        .assistantGlassCard()
+    }
+
     private func executeTask() {
-        let task = taskInput
+        let task = taskInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !task.isEmpty else { return }
         taskInput = ""
 
         Task {

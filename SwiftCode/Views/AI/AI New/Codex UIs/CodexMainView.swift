@@ -164,7 +164,9 @@ final class CodexWorkspaceStore: ObservableObject {
     private static func detectFileName(in snippet: String) -> String? {
         for line in snippet.split(separator: "\n", omittingEmptySubsequences: false).prefix(5) {
             let trimmed = line.trimmingCharacters(in: .whitespaces)
-            if trimmed.hasSuffix(".swift") { return trimmed.replacingOccurrences(of: "//", with: "").trimmingCharacters(in: .whitespaces) }
+            if trimmed.hasSuffix(".swift") {
+                return trimmed.replacingOccurrences(of: "//", with: "").trimmingCharacters(in: .whitespaces)
+            }
         }
         if snippet.contains("import SwiftUI") || snippet.contains("import Foundation") { return "GeneratedFile.swift" }
         return nil
@@ -176,54 +178,85 @@ struct CodexMainView: View {
     @StateObject private var workspace = CodexWorkspaceStore.shared
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                header
-                CodexAPIKeyView()
-                CodexUsageView()
-
-                if let message = activeErrorMessage {
-                    CodexErrorView(message: message)
-                }
-
-                promptComposer
-                CodexUndoRedoView()
-                CodexRerunView { Task { await rerunPrompt() } }
-                CodexDiffViewer()
-                CodexFileHistoryView()
-                CodexPullRequestView()
-            }
-            .padding()
+        VStack(spacing: 18) {
+            header
+            responsiveColumns
         }
-        .background(Color(uiColor: .systemGroupedBackground))
         .animation(.easeInOut(duration: 0.25), value: manager.activeSession.updatedAt)
         .animation(.easeInOut(duration: 0.25), value: workspace.renderedOutput)
     }
 
     private var header: some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Codex Agent Workspace")
-                    .font(.title2.weight(.semibold))
-                Text("Streaming output, diffs, file history, reruns, and PR review in one place.")
+                    .font(.system(.largeTitle, design: .rounded).weight(.bold))
+                Text("A rebuilt Codex surface with secure key handling, richer controls, and production-ready review panels.")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Label(manager.isRequestInFlight ? "Streaming" : "Ready", systemImage: manager.isRequestInFlight ? "dot.radiowaves.left.and.right" : "checkmark.circle")
-                .font(.caption.weight(.medium))
+            Label(manager.isRequestInFlight ? "Streaming" : "Ready", systemImage: manager.isRequestInFlight ? "dot.radiowaves.left.and.right" : "checkmark.circle.fill")
+                .font(.caption.weight(.semibold))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(manager.isRequestInFlight ? Color.blue.opacity(0.12) : Color.green.opacity(0.12))
                 .clipShape(Capsule())
         }
-        .padding()
+        .padding(20)
         .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    private var responsiveColumns: some View {
+        GeometryReader { geometry in
+            let isCompact = geometry.size.width < 900
+
+            Group {
+                if isCompact {
+                    ScrollView {
+                        VStack(spacing: 16) {
+                            primaryColumn
+                            secondaryColumn
+                        }
+                        .padding(.vertical, 2)
+                    }
+                } else {
+                    HStack(alignment: .top, spacing: 16) {
+                        primaryColumn
+                            .frame(maxWidth: .infinity)
+                        secondaryColumn
+                            .frame(width: min(max(geometry.size.width * 0.34, 280), 380))
+                    }
+                }
+            }
+        }
+        .frame(minHeight: 900)
+    }
+
+    private var primaryColumn: some View {
+        VStack(spacing: 16) {
+            promptComposer
+            CodexUndoRedoView()
+            CodexRerunView { Task { await rerunPrompt() } }
+            CodexDiffViewer()
+        }
+    }
+
+    private var secondaryColumn: some View {
+        VStack(spacing: 16) {
+            CodexAPIKeyView()
+            CodexUsageView()
+            if let message = activeErrorMessage {
+                CodexErrorView(message: message)
+            }
+            CodexFileHistoryView()
+            CodexPullRequestView()
+        }
     }
 
     private var promptComposer: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack {
                 Label("Prompt", systemImage: "wand.and.stars")
                     .font(.headline)
@@ -237,10 +270,10 @@ struct CodexMainView: View {
 
             TextEditor(text: Binding(get: { workspace.prompt }, set: { workspace.updatePrompt($0) }))
                 .font(.system(.body, design: .monospaced))
-                .frame(minHeight: 140)
-                .padding(8)
-                .background(Color.secondary.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(minHeight: 160)
+                .padding(10)
+                .background(Color.secondary.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
             HStack {
                 if manager.isRequestInFlight {
@@ -259,25 +292,25 @@ struct CodexMainView: View {
                 .disabled(workspace.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || manager.isRequestInFlight || !manager.hasValidConfiguration)
             }
         }
-        .padding()
+        .padding(20)
         .background(.thinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     private var activeErrorMessage: String? {
-        let message = workspace.localError.isEmpty ? manager.activeSession.lastErrorMessage : workspace.localError
-        return message?.isEmpty == true ? nil : message
+        let local = workspace.localError.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !local.isEmpty { return local }
+        let sessionError = manager.activeSession.lastError?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return sessionError.isEmpty ? nil : sessionError
     }
 
     private func sendPrompt() async {
-        workspace.localError = ""
+        let prompt = workspace.prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !prompt.isEmpty else { return }
         do {
-            let response = try await manager.sendPrompt(workspace.prompt)
-            manager.streamResponse { streamed in
-                workspace.renderedOutput = streamed
-            }
-            workspace.setOutput(response, label: "Generated")
-            workspace.prStatus = .pending
+            let output = try await manager.sendPrompt(prompt)
+            workspace.localError = ""
+            workspace.setOutput(output, label: "Generate")
         } catch {
             workspace.localError = CodexErrorHandler.userFacingMessage(for: error)
         }
@@ -285,7 +318,6 @@ struct CodexMainView: View {
 
     private func rerunPrompt() async {
         guard !workspace.prompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        workspace.previousOutput = workspace.renderedOutput
         await sendPrompt()
     }
 }

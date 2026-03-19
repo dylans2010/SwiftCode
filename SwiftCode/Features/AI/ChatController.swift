@@ -35,9 +35,6 @@ final class ChatController: ObservableObject {
         guard !prompt.isEmpty, !isGenerating else { return }
 
         appendMessage(role: .user, content: prompt)
-        appendMessage(role: .assistant, content: "Agent thinking…")
-        appendMessage(role: .assistant, content: "Running tools and collecting context…")
-
         await generateAssistantReply(for: prompt, useContext: useContext)
     }
 
@@ -47,11 +44,9 @@ final class ChatController: ObservableObject {
 
         do {
             let response = try await CodexModelRouter().routePrompt(prompt, useContext: useContext)
-            let normalizedResponse = response.trimmingCharacters(in: .whitespacesAndNewlines)
+            let normalizedResponse = LLMService.shared.sanitizeResponse(response, relativeTo: prompt)
 
             if normalizedResponse.isEmpty {
-                appendMessage(role: .assistant, content: genericErrorMessage)
-            } else if normalizedResponse.caseInsensitiveCompare(prompt) == .orderedSame {
                 appendMessage(role: .assistant, content: "I couldn't generate a meaningful response. Please try rephrasing your request.")
             } else {
                 appendMessage(role: .assistant, content: normalizedResponse)

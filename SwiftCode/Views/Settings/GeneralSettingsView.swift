@@ -437,7 +437,7 @@ struct GeneralSettingsView: View {
     // Quick Setup section state
     @State private var showExtensions = false
     @State private var showOfflineModelsSheet = false
-    @State private var codexAPIKey: String = KeychainService.shared.get(forKey: KeychainService.codexUserAPIKey) ?? ""
+    @State private var codexAPIKey: String = ""
     @State private var codexValidationMessage: String = ""
     @State private var isValidatingCodexKey = false
 
@@ -693,7 +693,16 @@ struct GeneralSettingsView: View {
             }
 
             if useCodexAsAgent {
-                SecureField("OpenAI API Key", text: $codexAPIKey)
+                HStack {
+                    Label("Key visibility", systemImage: "lock.shield")
+                        .font(.caption.weight(.semibold))
+                    Spacer()
+                    Text(CodexManager.shared.userHasCustomAPIKey ? "Stored securely" : "Not configured")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(CodexManager.shared.userHasCustomAPIKey ? .green : .secondary)
+                }
+
+                SecureField(CodexManager.shared.userHasCustomAPIKey ? "Enter a new OpenAI API key to replace the current one" : "OpenAI API Key", text: $codexAPIKey)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
 
@@ -706,6 +715,7 @@ struct GeneralSettingsView: View {
                             KeychainService.shared.set(trimmed, forKey: KeychainService.codexUserAPIKey)
                         }
                         CodexManager.shared.refreshUsageMode()
+                        codexAPIKey = ""
                         codexValidationMessage = trimmed.isEmpty ? "User key removed. App-controlled mode will be used when an app key is available." : "Stored securely in Keychain. BYOK mode is unlimited and tracked locally only."
                     }
                     .buttonStyle(.borderedProminent)

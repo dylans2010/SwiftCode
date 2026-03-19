@@ -3,7 +3,6 @@ import SwiftUI
 struct AIAssistantView: View {
     @StateObject private var controller = ChatController.shared
     @State private var showHistory = false
-    @State private var showAgentInterface = false
     @State private var showNewAgentUI = false
 
     var body: some View {
@@ -15,34 +14,31 @@ struct AIAssistantView: View {
                     AICoreView()
                 }
             }
-            .navigationTitle("AI Assistant")
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Chat History") { showHistory = true }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button("Agent Mode (Legacy)") { showAgentInterface = true }
-                        Button("Agent Mode (New)") { showNewAgentUI = true }
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        showHistory = true
                     } label: {
-                        Label("Agent", systemImage: "cpu")
+                        Label("History", systemImage: "clock.arrow.circlepath")
+                    }
+                }
+
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showNewAgentUI = true
+                    } label: {
+                        Label("Workspace", systemImage: "square.grid.2x2.fill")
                     }
                 }
             }
             .sheet(isPresented: $showHistory) {
                 ChatHistorySheet(messages: controller.messages)
             }
-            .sheet(isPresented: $showAgentInterface) {
+            .sheet(isPresented: $showNewAgentUI) {
                 NavigationStack {
-                    AgentInterfaceView()
-                        .navigationTitle("Agent Interface")
-                        .navigationBarTitleDisplayMode(.inline)
+                    AgentNewView()
                 }
                 .presentationDetents([.large])
-            }
-            .sheet(isPresented: $showNewAgentUI) {
-                NavigationStack { AgentNewView() }
-                    .presentationDetents([.large])
             }
         }
     }
@@ -54,26 +50,40 @@ private struct ChatHistorySheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                if messages.isEmpty {
-                    Text("No messages yet")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(messages) { message in
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(message.role == .assistant ? "Assistant" : "You")
-                                .font(.caption)
-                                .foregroundStyle(message.role == .assistant ? .secondary : Color.accentColor)
-                            Text(message.content)
-                            Text(Self.timestampFormatter.string(from: message.timestamp))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+            ZStack {
+                AssistantTheme.canvas.ignoresSafeArea()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        AssistantSectionHeader(
+                            eyebrow: "Conversation history",
+                            title: "Recent AI sessions",
+                            subtitle: "Review prior prompts and responses without exposing any sensitive keys or settings."
+                        )
+
+                        if messages.isEmpty {
+                            ContentUnavailableView(
+                                "No Messages Yet",
+                                systemImage: "bubble.left.and.bubble.right",
+                                description: Text("Start a conversation to build your assistant history.")
+                            )
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 40)
+                            .assistantGlassCard()
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(messages) { message in
+                                    ChatMessageBubble(message: message)
+                                }
+                            }
                         }
-                        .padding(.vertical, 4)
                     }
+                    .padding()
                 }
             }
-            .navigationTitle("Chat History")
+            .navigationTitle("AI Assistant")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -82,11 +92,4 @@ private struct ChatHistorySheet: View {
         }
         .presentationDetents([.large])
     }
-
-    static let timestampFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .short
-        return formatter
-    }()
 }

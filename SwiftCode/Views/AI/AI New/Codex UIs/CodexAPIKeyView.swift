@@ -1,35 +1,39 @@
 import SwiftUI
 
 struct CodexAPIKeyView: View {
-    @State private var apiKey: String = KeychainService.shared.get(forKey: KeychainService.codexUserAPIKey) ?? ""
-    @State private var isSecured = true
+    @State private var apiKey = ""
     @State private var isValidating = false
     @State private var validationMessage = ""
 
+    private var hasStoredKey: Bool {
+        !(KeychainService.shared.get(forKey: KeychainService.codexUserAPIKey) ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Label("OpenAI API Key", systemImage: "key.fill")
-                    .font(.headline)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Label("OpenAI API Key", systemImage: "key.fill")
+                        .font(.headline)
+                    Text("Your key is stored securely in Keychain and is never rendered back on screen.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
-                Button(isSecured ? "Show" : "Hide") {
-                    isSecured.toggle()
-                }
-                .font(.caption)
+                Label(hasStoredKey ? "Stored Securely" : "Not Configured", systemImage: hasStoredKey ? "lock.shield.fill" : "exclamationmark.triangle.fill")
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(hasStoredKey ? Color.green.opacity(0.14) : Color.orange.opacity(0.14))
+                    .clipShape(Capsule())
             }
 
-            Group {
-                if isSecured {
-                    SecureField("sk-...", text: $apiKey)
-                } else {
-                    TextField("sk-...", text: $apiKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                }
-            }
-            .textFieldStyle(.roundedBorder)
+            SecureField(hasStoredKey ? "Enter a new API key to replace the current one" : "Enter OpenAI API key", text: $apiKey)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textFieldStyle(.roundedBorder)
 
-            HStack {
+            HStack(spacing: 12) {
                 Button("Save Key") {
                     let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
                     if trimmed.isEmpty {
@@ -38,7 +42,8 @@ struct CodexAPIKeyView: View {
                         KeychainService.shared.set(trimmed, forKey: KeychainService.codexUserAPIKey)
                     }
                     CodexManager.shared.refreshUsageMode()
-                    validationMessage = trimmed.isEmpty ? "User key removed. Restricted app-controlled mode will be used if an app key exists." : "User key stored securely in Keychain."
+                    validationMessage = trimmed.isEmpty ? "Stored key removed. App-managed restricted usage will be used when available." : "New key stored securely in Keychain."
+                    apiKey = ""
                 }
                 .buttonStyle(.borderedProminent)
 

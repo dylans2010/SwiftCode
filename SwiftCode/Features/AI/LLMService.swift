@@ -170,11 +170,12 @@ final class LLMService {
         let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPrompt.isEmpty else { return "" }
 
+        let antiRepeatInstruction = "Answer the request directly. Do not repeat or restate the user's message unless they explicitly ask for a quote."
         let messageContent: String
         if useContext {
-            messageContent = "[Use available project context when relevant.]\n\n\(trimmedPrompt)"
+            messageContent = "[Use available project context when relevant.]\n[\(antiRepeatInstruction)]\n\n\(trimmedPrompt)"
         } else {
-            messageContent = trimmedPrompt
+            messageContent = "[\(antiRepeatInstruction)]\n\n\(trimmedPrompt)"
         }
 
         let provider = try resolvedRoutingProvider()
@@ -192,6 +193,42 @@ final class LLMService {
         )
 
         return response.completionText
+    }
+
+
+    func sanitizeResponse(_ response: String, relativeTo prompt: String) -> String {
+        let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedResponse = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedResponse.isEmpty else { return "" }
+
+        if normalizedForComparison(trimmedResponse) == normalizedForComparison(trimmedPrompt) {
+            return ""
+        }
+
+        let responseLines = trimmedResponse
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { String($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        var cleanedLines: [String] = []
+        for (index, line) in responseLines.enumerated() {
+            if index < 2, !line.isEmpty, normalizedForComparison(line) == normalizedForComparison(trimmedPrompt) {
+                continue
+            }
+            if cleanedLines.last.map(normalizedForComparison) == normalizedForComparison(line) {
+                continue
+            }
+            cleanedLines.append(line)
+        }
+
+        let cleaned = cleanedLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return normalizedForComparison(cleaned) == normalizedForComparison(trimmedPrompt) ? "" : cleaned
+    }
+
+    private func normalizedForComparison(_ text: String) -> String {
+        text
+            .lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .joined()
     }
 
 
