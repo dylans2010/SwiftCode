@@ -143,7 +143,6 @@ CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */ = {isa
 		PRV000000000000000000001A /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRV000000000000000000001B /* PullRequestView.swift */; };
 		DVV000000000000000000001A /* CollaborationDiffViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DVV000000000000000000001B /* CollaborationDiffViewerView.swift */; };
 		MMV000000000000000000001A /* MemberManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MMV000000000000000000001B /* MemberManagementView.swift */; };
-RM0000000000000000000001A /* CodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RM0000000000000000000001B /* CodeReviewManager.swift */; };
 RV0000000000000000000001A /* CodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RV0000000000000000000001B /* CodeReviewView.swift */; };
 GH0000000000000000000001A /* GitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GH0000000000000000000001B /* GitHistoryView.swift */; };
 PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PT0000000000000000000001B /* ProjectTemplateManager.swift */; };
@@ -442,7 +441,6 @@ CM0000000000000000000001B /* CodeEditorManagementView.swift */ = {isa = PBXFileR
 		PRV000000000000000000001B /* PullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationPullRequestView.swift; sourceTree = SOURCE_ROOT; };
 		DVV000000000000000000001B /* CollaborationDiffViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationDiffViewerView.swift; sourceTree = SOURCE_ROOT; };
 		MMV000000000000000000001B /* MemberManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/MemberManagementView.swift; sourceTree = SOURCE_ROOT; };
-RM0000000000000000000001B /* CodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewManager.swift; sourceTree = "<group>"; };
 RV0000000000000000000001B /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewView.swift; sourceTree = "<group>"; };
 GH0000000000000000000001B /* GitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHistoryView.swift; sourceTree = "<group>"; };
 PT0000000000000000000001B /* ProjectTemplateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTemplateManager.swift; sourceTree = "<group>"; };
@@ -664,8 +662,7 @@ children = (
 				AA00001000000000000001AB /* AgentToolService.swift */,
 				AA00001000000000000002DB /* CodeIndexService.swift */,
 				PRM000000000000000000001B /* PullRequestManager.swift */,
-				RM0000000000000000000001B /* CodeReviewManager.swift */,
-				PT0000000000000000000001B /* ProjectTemplateManager.swift */,
+						PT0000000000000000000001B /* ProjectTemplateManager.swift */,
 				AM0000000000000000000002B /* AgentMemory.swift */,
 				AM0000000000000000000001B /* AgentMemoryManager.swift */,
 				TM0000000000000000000001B /* AgentTaskManager.swift */,
@@ -1817,7 +1814,6 @@ files = (
 				PRV000000000000000000001A /* PullRequestView.swift in Sources */,
 				DVV000000000000000000001A /* CollaborationDiffViewerView.swift in Sources */,
 				MMV000000000000000000001A /* MemberManagementView.swift in Sources */,
-				RM0000000000000000000001A /* CodeReviewManager.swift in Sources */,
 				RV0000000000000000000001A /* CodeReviewView.swift in Sources */,
 				GH0000000000000000000001A /* GitHistoryView.swift in Sources */,
 				PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */,
