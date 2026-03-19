@@ -414,6 +414,7 @@ struct GeneralSettingsView: View {
     @ObservedObject private var offlineModelDownloader = OfflineModelDownloader.shared
 
     @AppStorage("ai.routingMode") private var aiRoutingModeRawValue: String = AIRoutingMode.dynamic.rawValue
+    @AppStorage("useCodexAsAgent") private var useCodexAsAgent = false
 
     @State private var showAddSheet = false
     @State private var selectedProvider: APIKeyProvider?
@@ -678,7 +679,8 @@ struct GeneralSettingsView: View {
             }
             .disabled(!DeviceUtilityManager.shared.isAppleIntelligenceSupported())
 
-            Toggle(isOn: Binding(get: { settings.useCodexAsDefaultAgent }, set: {
+            Toggle(isOn: Binding(get: { useCodexAsAgent }, set: {
+                useCodexAsAgent = $0
                 settings.useCodexAsDefaultAgent = $0
                 CodexManager.shared.refreshUsageMode()
             })) {
@@ -690,7 +692,7 @@ struct GeneralSettingsView: View {
                 }
             }
 
-            if settings.useCodexAsDefaultAgent {
+            if useCodexAsAgent {
                 SecureField("OpenAI API Key", text: $codexAPIKey)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()

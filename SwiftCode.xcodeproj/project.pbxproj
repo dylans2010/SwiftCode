@@ -19,6 +19,12 @@ objects = {
 		C0D00000000000000000020A /* CodexAPIKeyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00000000000000000010A /* CodexAPIKeyView.swift */; };
 		C0D00000000000000000020B /* CodexUsageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00000000000000000010B /* CodexUsageView.swift */; };
 		C0D00000000000000000020C /* CodexErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00000000000000000010C /* CodexErrorView.swift */; };
+		C0D00000000000000000020D /* CodexDiffViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00000000000000000010D /* CodexDiffViewer.swift */; };
+		C0D00000000000000000020E /* CodexPullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00000000000000000010E /* CodexPullRequestView.swift */; };
+		C0D00000000000000000020F /* CodexUndoRedoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D00000000000000000010F /* CodexUndoRedoView.swift */; };
+		C0D000000000000000000210 /* CodexRerunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000110 /* CodexRerunView.swift */; };
+		C0D000000000000000000211 /* CodexFileHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000111 /* CodexFileHistoryView.swift */; };
+		C0D000000000000000000212 /* AICoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000112 /* AICoreView.swift */; };
 		A8FE3B4E78D74A97A9517309 /* OfflineModelMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2DE4216C3024885A1F6C00E /* OfflineModelMetadata.swift */; };
 		7897B7DD965943C19E6C7C46 /* HuggingFaceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 882B230F330E4276B1E38C44 /* HuggingFaceAPI.swift */; };
 		F0104F91B48646D0901577AD /* OfflineModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6D8D2419B14345A69FBC5D /* OfflineModelManager.swift */; };
@@ -310,6 +316,12 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		C0D00000000000000000010A /* CodexAPIKeyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexAPIKeyView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexAPIKeyView.swift"; sourceTree = SOURCE_ROOT; };
 		C0D00000000000000000010B /* CodexUsageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexUsageView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexUsageView.swift"; sourceTree = SOURCE_ROOT; };
 		C0D00000000000000000010C /* CodexErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexErrorView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexErrorView.swift"; sourceTree = SOURCE_ROOT; };
+		C0D00000000000000000010D /* CodexDiffViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexDiffViewer.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexDiffViewer.swift"; sourceTree = SOURCE_ROOT; };
+		C0D00000000000000000010E /* CodexPullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexPullRequestView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexPullRequestView.swift"; sourceTree = SOURCE_ROOT; };
+		C0D00000000000000000010F /* CodexUndoRedoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexUndoRedoView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexUndoRedoView.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000110 /* CodexRerunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexRerunView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexRerunView.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000111 /* CodexFileHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexFileHistoryView.swift"; path = "SwiftCode/Views/AI/AI New/Codex UIs/CodexFileHistoryView.swift"; sourceTree = SOURCE_ROOT; };
+		C0D000000000000000000112 /* AICoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AICoreView.swift"; path = "SwiftCode/Views/AI/AI New/AICoreView.swift"; sourceTree = SOURCE_ROOT; };
 		C2DE4216C3024885A1F6C00E /* OfflineModelMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelMetadata.swift"; sourceTree = "<group>"; };
 		882B230F330E4276B1E38C44 /* HuggingFaceAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HuggingFaceAPI.swift"; sourceTree = "<group>"; };
 		EA6D8D2419B14345A69FBC5D /* OfflineModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OfflineModelManager.swift"; sourceTree = "<group>"; };
@@ -1569,6 +1581,12 @@ children = (
 				C0D00000000000000000010A /* CodexAPIKeyView.swift */,
 				C0D00000000000000000010B /* CodexUsageView.swift */,
 				C0D00000000000000000010C /* CodexErrorView.swift */,
+				C0D00000000000000000010D /* CodexDiffViewer.swift */,
+				C0D00000000000000000010E /* CodexPullRequestView.swift */,
+				C0D00000000000000000010F /* CodexUndoRedoView.swift */,
+				C0D000000000000000000110 /* CodexRerunView.swift */,
+				C0D000000000000000000111 /* CodexFileHistoryView.swift */,
+				C0D000000000000000000112 /* AICoreView.swift */,
 );
 path = "Codex UIs";
 sourceTree = "<group>";
@@ -1926,6 +1944,12 @@ files = (
 				C0D00000000000000000020A /* CodexAPIKeyView.swift in Sources */,
 				C0D00000000000000000020B /* CodexUsageView.swift in Sources */,
 				C0D00000000000000000020C /* CodexErrorView.swift in Sources */,
+				C0D00000000000000000020D /* CodexDiffViewer.swift in Sources */,
+				C0D00000000000000000020E /* CodexPullRequestView.swift in Sources */,
+				C0D00000000000000000020F /* CodexUndoRedoView.swift in Sources */,
+				C0D000000000000000000210 /* CodexRerunView.swift in Sources */,
+				C0D000000000000000000211 /* CodexFileHistoryView.swift in Sources */,
+				C0D000000000000000000212 /* AICoreView.swift in Sources */,
 				D497EDED40E04EB690D087F1 /* CodeChangesView.swift in Sources */,
 				5A775CEADF264C1EB3C9AC3D /* ToolExecutionView.swift in Sources */,
 				TRP00000000000000000001A /* ProjectTransferManager.swift in Sources */,

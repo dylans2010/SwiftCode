@@ -58,13 +58,13 @@ struct AgentInterfaceView: View {
                     }
                     .padding(12)
                 }
-                .onChange(of: controller.messages.count) {
+                .onChange(of: controller.messages.count) { _, _ in
                     withAnimation(.easeOut(duration: 0.2)) {
                         proxy.scrollTo(controller.messages.last?.id, anchor: .bottom)
                     }
                 }
-                .onChange(of: controller.isGenerating) {
-                    if controller.isGenerating {
+                .onChange(of: controller.isGenerating) { _, newValue in
+                    if newValue {
                         withAnimation(.easeOut(duration: 0.2)) {
                             proxy.scrollTo("agent-typing", anchor: .bottom)
                         }
@@ -89,8 +89,8 @@ struct AgentInterfaceView: View {
                         .padding(.vertical, 10)
                         .background(Color.secondary.opacity(0.12))
                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .onChange(of: inputText) {
-                            showCommandList = inputText.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("/")
+                        .onChange(of: inputText) { _, newValue in
+                            showCommandList = newValue.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("/")
                         }
 
                     Toggle("Context", isOn: $useContext)

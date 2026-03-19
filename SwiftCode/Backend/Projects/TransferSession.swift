@@ -12,7 +12,7 @@ enum TransferSessionState: String, Codable {
 }
 
 public struct TransferAuditEntry: Identifiable, Codable, Hashable {
-    let id: UUID
+    public let id: UUID
     let timestamp: Date
     let actor: String
     let action: String
@@ -37,7 +37,7 @@ struct TransferParticipant: Codable, Hashable {
 }
 
 struct TransferSession: Identifiable, Codable, Hashable {
-    let id: UUID
+    public let id: UUID
     var projectID: UUID
     var projectName: String
     var sender: TransferParticipant
