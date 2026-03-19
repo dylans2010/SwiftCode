@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct CodeReviewView: View {
+struct CollaborationCodeReviewView: View {
     @ObservedObject var manager: CollaborationManager
     let actorID: String
     @State private var selectedCommitID: UUID?

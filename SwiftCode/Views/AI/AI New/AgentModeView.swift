@@ -14,7 +14,7 @@ struct AgentModeView: View {
                     AgentPlanView(plan: agentManager.executionState.plan, currentIndex: agentManager.executionState.currentStepIndex)
                     ToolExecutionView()
                     CodeChangesView()
-                    CodeReviewView()
+                    AICodeReviewView()
                         .frame(minHeight: 400)
                     AgentConsoleView()
                         .frame(minHeight: 300)

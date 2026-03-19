@@ -54,7 +54,7 @@ public final class CollaborationManager: ObservableObject {
     public let branches: BranchManager
     public let commits: CommitManager
     public let pushes: PushManager
-    public let reviews: CodeReviewManager
+    public let reviews: CollaborationCodeReviewManager
     public let invites: InviteManager
     public let pullRequests: PullRequestManager
 
@@ -72,7 +72,7 @@ public final class CollaborationManager: ObservableObject {
         self.branches = BranchManager()
         self.commits = CommitManager()
         self.pushes = PushManager()
-        self.reviews = CodeReviewManager()
+        self.reviews = CollaborationCodeReviewManager()
         self.invites = InviteManager()
         self.pullRequests = PullRequestManager()
 

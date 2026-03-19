@@ -48,7 +48,7 @@ public struct CodeReview: Identifiable, Codable, Equatable {
 }
 
 @MainActor
-public final class CodeReviewManager: ObservableObject {
+public final class CollaborationCodeReviewManager: ObservableObject {
     @Published public private(set) var reviews: [UUID: CodeReview] = [:]
     @Published public private(set) var lastEvent: ReviewEvent?
 

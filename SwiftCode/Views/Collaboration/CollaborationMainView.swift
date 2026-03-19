@@ -48,8 +48,8 @@ struct CollaborationMainView: View {
                 Section("Workspace") {
                     NavigationLink { BranchGraphView(manager: manager) } label: { Label("Branch Visualization", systemImage: "point.3.connected.trianglepath.dotted") }
                     NavigationLink { CommitManagerView(manager: manager, actorID: currentUserID) } label: { Label("Advanced Commit Manager", systemImage: "shippingbox.circle") }
-                    NavigationLink { PullRequestView(manager: manager, actorID: currentUserID) } label: { Label("Pull Requests", systemImage: "tray.full") }
-                    NavigationLink { CodeReviewView(manager: manager, actorID: currentUserID) } label: { Label("Code Review Dashboard", systemImage: "checkmark.seal.text.page") }
+                    NavigationLink { CollaborationPullRequestView(manager: manager, actorID: currentUserID) } label: { Label("Pull Requests", systemImage: "tray.full") }
+                    NavigationLink { CollaborationCodeReviewView(manager: manager, actorID: currentUserID) } label: { Label("Code Review Dashboard", systemImage: "checkmark.seal.text.page") }
                     NavigationLink { PushPullManagerView(manager: manager, actorID: currentUserID) } label: { Label("Push/Pull Management", systemImage: "arrow.up.arrow.down.circle") }
                     NavigationLink { MemberManagementView(manager: manager, actorID: currentUserID) } label: { Label("Collaborator Management", systemImage: "person.badge.plus") }
                     NavigationLink { ActivityLogView(manager: manager) } label: { Label("Activity Log & Notifications", systemImage: "clock.badge.checkmark") }
@@ -63,9 +63,9 @@ struct CollaborationMainView: View {
         case .commits:
             CommitManagerView(manager: manager, actorID: currentUserID)
         case .reviews:
-            CodeReviewView(manager: manager, actorID: currentUserID)
+            CollaborationCodeReviewView(manager: manager, actorID: currentUserID)
         case .pullRequests:
-            PullRequestView(manager: manager, actorID: currentUserID)
+            CollaborationPullRequestView(manager: manager, actorID: currentUserID)
         case .sync:
             PushPullManagerView(manager: manager, actorID: currentUserID)
         case .people:

@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Code Review View
 
-struct CodeReviewView: View {
+struct AICodeReviewView: View {
     @EnvironmentObject private var projectManager: ProjectManager
     @EnvironmentObject private var settings: AppSettings
     @StateObject private var reviewManager = CodeReviewManager.shared

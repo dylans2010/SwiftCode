@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct BranchManagementView: View {
+struct CollaborationBranchManagementView: View {
     @ObservedObject var manager: CollaborationManager
 
     var body: some View {
