@@ -8,6 +8,11 @@ struct CodexSession: Identifiable, Codable {
     var lastResponse: String
     var lastErrorMessage: String?
 
+    var lastError: String? {
+        get { lastErrorMessage }
+        set { lastErrorMessage = newValue }
+    }
+
     init(id: UUID = UUID(), createdAt: Date = Date(), updatedAt: Date = Date(), messages: [AIMessage] = [], lastResponse: String = "", lastErrorMessage: String? = nil) {
         self.id = id
         self.createdAt = createdAt
