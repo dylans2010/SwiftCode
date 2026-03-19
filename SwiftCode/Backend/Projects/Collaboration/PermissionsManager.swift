@@ -43,7 +43,7 @@ public final class PermissionsManager: ObservableObject {
         if role == .owner && actorRole != .owner { return false }
         memberRoles[memberID] = role
         memberPermissions[memberID] = defaultPermission(for: role)
-        lastEvent = PermissionEvent(actorID: actorID, title: "Role updated", detail: "\(memberID) is now \(role.rawValue.capitalized).", notifies: true)
+        lastEvent = PermissionEvent(actorID: actorID, title: "Role Updated", detail: "\(memberID) is now \(role.rawValue.capitalized).", notifies: true)
         return true
     }
 
@@ -51,7 +51,7 @@ public final class PermissionsManager: ObservableObject {
         guard canManageMembers(actorID: actorID) else { return false }
         guard memberRoles[memberID] != nil else { return false }
         memberPermissions[memberID] = permission
-        lastEvent = PermissionEvent(actorID: actorID, title: "Permissions updated", detail: "Live permissions changed for \(memberID).", notifies: true)
+        lastEvent = PermissionEvent(actorID: actorID, title: "Permissions Updated", detail: "Live permissions changed for \(memberID).", notifies: true)
         return true
     }
 
@@ -60,7 +60,7 @@ public final class PermissionsManager: ObservableObject {
         guard memberRoles[memberID] != .owner else { return false }
         memberRoles.removeValue(forKey: memberID)
         memberPermissions.removeValue(forKey: memberID)
-        lastEvent = PermissionEvent(actorID: actorID, title: "Collaborator removed", detail: "\(memberID) removed from project.", notifies: true)
+        lastEvent = PermissionEvent(actorID: actorID, title: "Collaborator Removed", detail: "\(memberID) removed from project.", notifies: true)
         return true
     }
 

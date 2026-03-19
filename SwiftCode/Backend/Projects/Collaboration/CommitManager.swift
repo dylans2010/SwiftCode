@@ -120,7 +120,7 @@ public final class CommitManager: ObservableObject {
             stagedChangesByBranch[branchID, default: [:]][path] = entry.diff
         }
         syncPublishedState(for: branchID)
-        lastEvent = CommitEvent(actorID: authorID, title: "Change staged", detail: path, notifies: false)
+        lastEvent = CommitEvent(actorID: authorID, title: "Change Staged", detail: path, notifies: false)
     }
 
     public func unstage(path: String, actorID: String = "System", branchID: UUID? = nil) {
@@ -130,7 +130,7 @@ public final class CommitManager: ObservableObject {
             workingChangesByBranch[branchID]?[index].isStaged = false
         }
         syncPublishedState(for: branchID)
-        lastEvent = CommitEvent(actorID: actorID, title: "Change unstaged", detail: path, notifies: false)
+        lastEvent = CommitEvent(actorID: actorID, title: "Change Unstaged", detail: path, notifies: false)
     }
 
     public func replaceWorkingChanges(_ changes: [CommitFileChange], stagedChanges: [String: String], for branchID: UUID) {
@@ -150,7 +150,7 @@ public final class CommitManager: ObservableObject {
     public func recordCommit(branchID: UUID, authorID: String, message: String, changes: [String: String]) -> Commit {
         let parent = commits(for: branchID).first?.id
         let payload = changes.isEmpty ? stagedChanges(for: branchID) : changes
-        let normalizedMessage = message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Update collaboration changes" : message
+        let normalizedMessage = message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Update Collaboration Changes" : message
         let commit = Commit(branchID: branchID, authorID: authorID, message: normalizedMessage, changes: payload, parentCommitID: parent)
         commits.insert(commit, at: 0)
         undoStack.append(commit)
@@ -159,7 +159,7 @@ public final class CommitManager: ObservableObject {
         workingChangesByBranch[branchID, default: []].removeAll { stagedPaths.contains($0.path) }
         stagedChangesByBranch[branchID] = [:]
         syncPublishedState(for: branchID)
-        lastEvent = CommitEvent(actorID: authorID, title: "Commit created", detail: normalizedMessage, notifies: true)
+        lastEvent = CommitEvent(actorID: authorID, title: "Commit Created", detail: normalizedMessage, notifies: true)
         return commit
     }
 
@@ -168,11 +168,11 @@ public final class CommitManager: ObservableObject {
         let combinedChanges = sourceCommits.reduce(into: [String: String]()) { partialResult, commit in
             commit.changes.forEach { partialResult[$0.key] = $0.value }
         }
-        let commit = Commit(branchID: targetID, authorID: authorID, message: "Merge branch changes", changes: combinedChanges, parentCommitID: commits(for: targetID).first?.id, mergedFromBranchID: sourceID)
+        let commit = Commit(branchID: targetID, authorID: authorID, message: "Merge Branch Changes", changes: combinedChanges, parentCommitID: commits(for: targetID).first?.id, mergedFromBranchID: sourceID)
         commits.insert(commit, at: 0)
         undoStack.append(commit)
         redoStack.removeAll()
-        lastEvent = CommitEvent(actorID: authorID, title: "Merge commit created", detail: "Merged \(sourceCommits.count) commits into target branch.", notifies: true)
+        lastEvent = CommitEvent(actorID: authorID, title: "Merge Commit Created", detail: "Merged \(sourceCommits.count) commits into target branch.", notifies: true)
         return commit
     }
 
@@ -180,7 +180,7 @@ public final class CommitManager: ObservableObject {
         guard let last = undoStack.popLast() else { return nil }
         redoStack.append(last)
         commits.removeAll { $0.id == last.id }
-        lastEvent = CommitEvent(actorID: last.authorID, title: "Commit undone", detail: last.message, notifies: true)
+        lastEvent = CommitEvent(actorID: last.authorID, title: "Commit Undone", detail: last.message, notifies: true)
         return last
     }
 
@@ -188,7 +188,7 @@ public final class CommitManager: ObservableObject {
         guard let last = redoStack.popLast() else { return nil }
         undoStack.append(last)
         commits.insert(last, at: 0)
-        lastEvent = CommitEvent(actorID: last.authorID, title: "Commit restored", detail: last.message, notifies: true)
+        lastEvent = CommitEvent(actorID: last.authorID, title: "Commit Restored", detail: last.message, notifies: true)
         return last
     }
 
@@ -207,7 +207,7 @@ public final class CommitManager: ObservableObject {
         commits.insert(revertCommit, at: 0)
         undoStack.append(revertCommit)
         redoStack.removeAll()
-        lastEvent = CommitEvent(actorID: actorID, title: "Commit reverted", detail: commit.message, notifies: true)
+        lastEvent = CommitEvent(actorID: actorID, title: "Commit Reverted", detail: commit.message, notifies: true)
         return revertCommit
     }
 

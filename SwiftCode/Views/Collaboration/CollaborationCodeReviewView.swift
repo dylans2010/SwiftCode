@@ -37,7 +37,7 @@ struct CollaborationCodeReviewView: View {
             if let commit = selectedCommit {
                 Section("Reviewer Assignment") {
                     HStack {
-                        TextField("Reviewer name", text: $reviewerID)
+                        TextField("Reviewer Name", text: $reviewerID)
                         Button("Assign") {
                             manager.reviews.assignReviewer(reviewerID, to: commit.id, actorID: actorID)
                             reviewerID = ""
@@ -50,9 +50,9 @@ struct CollaborationCodeReviewView: View {
                 }
 
                 Section("Inline Comments") {
-                    TextField("File path", text: $inlinePath)
+                    TextField("File Path", text: $inlinePath)
                     Stepper("Line \(lineNumber)", value: $lineNumber, in: 1...999)
-                    TextField(replyTargetID == nil ? "Add comment" : "Reply in thread", text: $commentText, axis: .vertical)
+                    TextField(replyTargetID == nil ? "Add Comment" : "Reply In Thread", text: $commentText, axis: .vertical)
                         .lineLimit(2...5)
                     Button("Post") {
                         manager.reviews.addComment(to: commit.id, authorID: actorID, filePath: inlinePath, lineNumber: lineNumber, text: commentText, parentID: replyTargetID)

@@ -12,7 +12,7 @@ struct InviteMembersView: View {
         List {
             Section("Nearby Collaborators") {
                 if peerManager.nearbyPeers.isEmpty {
-                    Text("Searching for peers on the local network…")
+                    Text("Searching for users on the local network…")
                         .foregroundStyle(.secondary)
                 }
                 ForEach(filteredPeers, id: \.self) { peer in

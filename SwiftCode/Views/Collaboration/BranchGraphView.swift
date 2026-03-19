@@ -30,7 +30,7 @@ struct BranchGraphView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             } else {
-                                Text("No commits yet")
+                                Text("No Commits Yet")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -40,7 +40,7 @@ struct BranchGraphView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "arrow.triangle.merge")
                                     .foregroundStyle(.green)
-                                Text("Merged from \(source.name) on \(merge.timestamp.formatted(date: .abbreviated, time: .shortened))")
+                                Text("Merged From \(source.name) On \(merge.timestamp.formatted(date: .abbreviated, time: .shortened))")
                                     .font(.caption)
                             }
                         }
@@ -57,7 +57,7 @@ struct BranchGraphView: View {
 
             Section("Recent Merge History") {
                 if manager.branches.merges.isEmpty {
-                    Text("No merges recorded yet.")
+                    Text("No Merges Recorded Yet.")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(manager.branches.merges) { merge in

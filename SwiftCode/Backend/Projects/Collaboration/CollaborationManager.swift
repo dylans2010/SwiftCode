@@ -87,7 +87,7 @@ public final class CollaborationManager: ObservableObject {
             self?.handleIncomingData(data, from: peerID)
         }
 
-        addActivity(actorID: creatorID, title: "Collaboration enabled", detail: "Project collaboration workspace is ready.", kind: .permissions, notify: true)
+        addActivity(actorID: creatorID, title: "Collaboration Enabled", detail: "Project collaboration workspace is ready.", kind: .permissions, notify: true)
         commits.setActiveBranch(branches.currentBranch.id)
         commits.seedWorkingChangesIfNeeded(authorID: creatorID, branchID: branches.currentBranch.id)
         _ = workspaces.loadWorkspace(for: branches.currentBranch.id, actorID: creatorID)
@@ -101,7 +101,7 @@ public final class CollaborationManager: ObservableObject {
         if state.activityLog.count > self.activityLog.count {
             self.restoreStateFromObject(state)
             saveState()
-            addActivity(actorID: peerID.displayName, title: "Synced from peer", detail: "Project state updated to match \(peerID.displayName).", kind: .sync, notify: true)
+            addActivity(actorID: peerID.displayName, title: "Synced From Peer", detail: "Project state updated to match \(peerID.displayName).", kind: .sync, notify: true)
         }
     }
 
@@ -213,7 +213,7 @@ public final class CollaborationManager: ObservableObject {
         if let conflict {
             pendingConflicts.removeAll { $0.id == conflict.id }
             pendingConflicts.append(conflict)
-            addActivity(actorID: actorID, title: "Conflict detected", detail: "\(conflict.filePath) requires resolution on \(branchName).", kind: .conflict, notify: true)
+            addActivity(actorID: actorID, title: "Conflict Detected", detail: "\(conflict.filePath) requires resolution on \(branchName).", kind: .conflict, notify: true)
         }
 
         // Generate data for P2P transfer
@@ -241,7 +241,7 @@ public final class CollaborationManager: ObservableObject {
         guard let index = pendingConflicts.firstIndex(where: { $0.id == conflictID }) else { return }
         let conflict = pendingConflicts.remove(at: index)
         pushes.resolveConflict(conflictID, using: resolution, actorID: actorID)
-        addActivity(actorID: actorID, title: "Conflict resolved", detail: "Resolved \(conflict.filePath) using \(resolution.displayName).", kind: .conflict, notify: true)
+        addActivity(actorID: actorID, title: "Conflict Resolved", detail: "Resolved \(conflict.filePath) using \(resolution.displayName).", kind: .conflict, notify: true)
     }
 
     public func lockFile(path: String, actorID: String) {
@@ -249,7 +249,7 @@ public final class CollaborationManager: ObservableObject {
         guard fileLocks.contains(where: { $0.path == path }) == false else { return }
         let lock = FileLock(path: path, lockedBy: actorID)
         fileLocks.append(lock)
-        addActivity(actorID: actorID, title: "File locked", detail: "\(path) is now locked for editing.", kind: .fileLock, notify: true)
+        addActivity(actorID: actorID, title: "File Locked", detail: "\(path) is now locked for editing.", kind: .fileLock, notify: true)
     }
 
     public func unlockFile(path: String, actorID: String) {
@@ -257,7 +257,7 @@ public final class CollaborationManager: ObservableObject {
         let lock = fileLocks[index]
         guard lock.lockedBy == actorID || permissions.memberRoles[actorID] == .owner || permissions.memberRoles[actorID] == .admin else { return }
         fileLocks.remove(at: index)
-        addActivity(actorID: actorID, title: "File unlocked", detail: "\(path) is available for collaborators again.", kind: .fileLock, notify: false)
+        addActivity(actorID: actorID, title: "File Unlocked", detail: "\(path) is available for collaborators again.", kind: .fileLock, notify: false)
     }
 
     public func invite(memberID: String, role: CollaborationRole, actorID: String) {

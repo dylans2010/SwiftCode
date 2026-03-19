@@ -16,7 +16,7 @@ struct MemberManagementView: View {
 
             Section("All Members") {
                 if manager.permissions.memberRoles.isEmpty {
-                    Text("No members registered.")
+                    Text("No Members Registered")
                         .foregroundStyle(.secondary)
                 }
                 ForEach(manager.permissions.memberRoles.keys.sorted(), id: \.self) { memberID in

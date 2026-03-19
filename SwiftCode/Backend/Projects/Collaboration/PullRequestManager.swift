@@ -115,7 +115,7 @@ public struct PullRequest: Identifiable, Codable, Equatable {
         self.linkedCommitIDs = linkedCommitIDs
         self.reviews = []
         self.timeline = [
-            PullRequestTimelineEvent(actorID: authorID, title: "Pull request created", detail: title)
+            PullRequestTimelineEvent(actorID: authorID, title: "Pull Request Created", detail: title)
         ]
         self.conflictSummary = conflictSummary
     }
@@ -150,7 +150,7 @@ public final class PullRequestManager: ObservableObject {
             conflictSummary: conflictSummary
         )
         pullRequests.insert(pr, at: 0)
-        lastEvent = PullRequestEvent(actorID: actorID, title: "Pull Request created", detail: normalizedTitle, notifies: true)
+        lastEvent = PullRequestEvent(actorID: actorID, title: "Pull Request Created", detail: normalizedTitle, notifies: true)
         return pr
     }
 
@@ -158,24 +158,24 @@ public final class PullRequestManager: ObservableObject {
         guard let index = pullRequests.firstIndex(where: { $0.id == prID }) else { return }
         pullRequests[index].title = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? pullRequests[index].title : title
         pullRequests[index].description = description
-        appendTimeline(to: index, actorID: actorID, title: "Details edited", detail: pullRequests[index].title)
-        lastEvent = PullRequestEvent(actorID: actorID, title: "Pull Request updated", detail: pullRequests[index].title, notifies: false)
+        appendTimeline(to: index, actorID: actorID, title: "Details Edited", detail: pullRequests[index].title)
+        lastEvent = PullRequestEvent(actorID: actorID, title: "Pull Request Updated", detail: pullRequests[index].title, notifies: false)
     }
 
     public func assignReviewer(_ reviewerID: String, to prID: UUID, actorID: String) {
         guard let index = pullRequests.firstIndex(where: { $0.id == prID }) else { return }
         guard pullRequests[index].reviewerIDs.contains(reviewerID) == false else { return }
         pullRequests[index].reviewerIDs.append(reviewerID)
-        appendTimeline(to: index, actorID: actorID, title: "Reviewer assigned", detail: reviewerID)
-        lastEvent = PullRequestEvent(actorID: actorID, title: "Reviewer assigned", detail: reviewerID, notifies: true)
+        appendTimeline(to: index, actorID: actorID, title: "Reviewer Assigned", detail: reviewerID)
+        lastEvent = PullRequestEvent(actorID: actorID, title: "Reviewer Assigned", detail: reviewerID, notifies: true)
     }
 
     public func linkCommit(_ commitID: UUID, to prID: UUID, actorID: String) {
         guard let index = pullRequests.firstIndex(where: { $0.id == prID }) else { return }
         guard pullRequests[index].linkedCommitIDs.contains(commitID) == false else { return }
         pullRequests[index].linkedCommitIDs.append(commitID)
-        appendTimeline(to: index, actorID: actorID, title: "Commit linked", detail: commitID.uuidString)
-        lastEvent = PullRequestEvent(actorID: actorID, title: "Commit linked", detail: pullRequests[index].title, notifies: false)
+        appendTimeline(to: index, actorID: actorID, title: "Commit Linked", detail: commitID.uuidString)
+        lastEvent = PullRequestEvent(actorID: actorID, title: "Commit Linked", detail: pullRequests[index].title, notifies: false)
     }
 
     public func addComment(to prID: UUID, authorID: String, text: String, filePath: String? = nil, lineNumber: Int? = nil, parentID: UUID? = nil) {
@@ -185,8 +185,8 @@ public final class PullRequestManager: ObservableObject {
         let comment = PullRequestComment(authorID: authorID, text: trimmed, filePath: filePath, lineNumber: lineNumber, parentID: parentID)
         pullRequests[index].comments.append(comment)
         let location = [filePath, lineNumber.map(String.init)].compactMap { $0 }.joined(separator: ":")
-        appendTimeline(to: index, actorID: authorID, title: parentID == nil ? "Comment added" : "Reply added", detail: location.isEmpty ? trimmed : location)
-        lastEvent = PullRequestEvent(actorID: authorID, title: "PR comment added", detail: pullRequests[index].title, notifies: true)
+        appendTimeline(to: index, actorID: authorID, title: parentID == nil ? "Comment Added" : "Reply Added", detail: location.isEmpty ? trimmed : location)
+        lastEvent = PullRequestEvent(actorID: authorID, title: "PR Comment Added", detail: pullRequests[index].title, notifies: true)
     }
 
     public func submitReview(prID: UUID, reviewerID: String, decision: PullRequestReviewDecision, summary: String) {
@@ -204,16 +204,16 @@ public final class PullRequestManager: ObservableObject {
             }
             pullRequests[index].status = .open
         }
-        appendTimeline(to: index, actorID: reviewerID, title: "Review submitted", detail: decision.title)
-        lastEvent = PullRequestEvent(actorID: reviewerID, title: "Review submitted", detail: pullRequests[index].title, notifies: true)
+        appendTimeline(to: index, actorID: reviewerID, title: "Review Submitted", detail: decision.title)
+        lastEvent = PullRequestEvent(actorID: reviewerID, title: "Review Submitted", detail: pullRequests[index].title, notifies: true)
     }
 
     public func updateStatus(prID: UUID, status: PullRequestStatus, actorID: String, mergeCommitID: UUID? = nil) {
         guard let index = pullRequests.firstIndex(where: { $0.id == prID }) else { return }
         pullRequests[index].status = status
         if let mergeCommitID { pullRequests[index].mergeCommitID = mergeCommitID }
-        appendTimeline(to: index, actorID: actorID, title: "Status changed", detail: status.rawValue.capitalized)
-        lastEvent = PullRequestEvent(actorID: actorID, title: "PR status updated", detail: pullRequests[index].title, notifies: true)
+        appendTimeline(to: index, actorID: actorID, title: "Status Changed", detail: status.rawValue.capitalized)
+        lastEvent = PullRequestEvent(actorID: actorID, title: "PR Status Updated", detail: pullRequests[index].title, notifies: true)
     }
 
     public func close(prID: UUID, actorID: String) {
@@ -231,7 +231,7 @@ public final class PullRequestManager: ObservableObject {
     public func updateConflictSummary(prID: UUID, summary: String?, actorID: String) {
         guard let index = pullRequests.firstIndex(where: { $0.id == prID }) else { return }
         pullRequests[index].conflictSummary = summary
-        appendTimeline(to: index, actorID: actorID, title: "Conflict summary updated", detail: summary ?? "No conflicts")
+        appendTimeline(to: index, actorID: actorID, title: "Conflict Summary Updated", detail: summary ?? "No conflicts")
     }
 
     public func restoreState(pullRequests: [PullRequest]) {

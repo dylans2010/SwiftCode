@@ -20,10 +20,10 @@ struct PushPullManagerView: View {
                     }
                 }
                 Button {
-                    statusMessage = "Sync in progress..."
+                    statusMessage = "Sync In Progress..."
                     Task {
                         await manager.syncCurrentBranch(actorID: actorID)
-                        statusMessage = "Sync complete."
+                        statusMessage = "Sync Complete."
                     }
                 } label: {
                     Label("Sync Branch Across Peers", systemImage: "arrow.triangle.2.circlepath.circle.fill")

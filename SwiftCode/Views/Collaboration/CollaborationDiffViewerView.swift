@@ -123,7 +123,7 @@ struct DiffViewerTestView: View {
                         CollaborationDiffViewerView(diff: lastCommit.changes.values.first ?? "No diff available")
                     }
                 } else {
-                    Text("No commits yet.")
+                    Text("No Commits Yet")
                         .foregroundStyle(.secondary)
                 }
             }

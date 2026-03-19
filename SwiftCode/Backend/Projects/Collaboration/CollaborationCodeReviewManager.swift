@@ -84,20 +84,20 @@ public final class CollaborationCodeReviewManager: ObservableObject {
         if reviews[commitID]?.reviewerIDs.contains(reviewerID) == false {
             reviews[commitID]?.reviewerIDs.append(reviewerID)
             reviews[commitID]?.history.insert(ReviewHistoryEntry(actorID: actorID, message: "Assigned reviewer \(reviewerID)"), at: 0)
-            lastEvent = ReviewEvent(actorID: actorID, title: "Reviewer assigned", detail: "\(reviewerID) added to review.", notifies: true)
+            lastEvent = ReviewEvent(actorID: actorID, title: "Reviewer Assigned", detail: "\(reviewerID) added to review.", notifies: true)
         }
     }
 
     public func approveReview(for commitID: UUID, actorID: String) {
-        updateStatus(for: commitID, status: .approved, actorID: actorID, message: "Approved review")
+        updateStatus(for: commitID, status: .approved, actorID: actorID, message: "Approved Review")
     }
 
     public func rejectReview(for commitID: UUID, actorID: String) {
-        updateStatus(for: commitID, status: .rejected, actorID: actorID, message: "Rejected review")
+        updateStatus(for: commitID, status: .rejected, actorID: actorID, message: "Rejected Review")
     }
 
     public func requestChanges(for commitID: UUID, actorID: String) {
-        updateStatus(for: commitID, status: .changesRequested, actorID: actorID, message: "Requested changes")
+        updateStatus(for: commitID, status: .changesRequested, actorID: actorID, message: "Requested Changes")
     }
 
     public func addComment(to commitID: UUID, authorID: String, filePath: String, lineNumber: Int, text: String, parentID: UUID? = nil) {
@@ -105,7 +105,7 @@ public final class CollaborationCodeReviewManager: ObservableObject {
         let comment = ReviewComment(authorID: authorID, filePath: filePath, lineNumber: lineNumber, text: text, parentID: parentID)
         reviews[commitID]?.comments.append(comment)
         reviews[commitID]?.history.insert(ReviewHistoryEntry(actorID: authorID, filePath: filePath, message: "Commented on \(filePath):\(lineNumber)"), at: 0)
-        lastEvent = ReviewEvent(actorID: authorID, title: "Inline comment added", detail: "\(filePath):\(lineNumber)", notifies: false)
+        lastEvent = ReviewEvent(actorID: authorID, title: "Inline Comment Added", detail: "\(filePath):\(lineNumber)", notifies: false)
     }
 
     public func restoreState(reviews: [UUID: CodeReview]) {
@@ -116,6 +116,6 @@ public final class CollaborationCodeReviewManager: ObservableObject {
         initiateReview(for: commitID)
         reviews[commitID]?.status = status
         reviews[commitID]?.history.insert(ReviewHistoryEntry(actorID: actorID, message: message), at: 0)
-        lastEvent = ReviewEvent(actorID: actorID, title: message, detail: "Commit review updated.", notifies: true)
+        lastEvent = ReviewEvent(actorID: actorID, title: message, detail: "Commit Rview Updated", notifies: true)
     }
 }

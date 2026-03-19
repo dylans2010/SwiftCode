@@ -142,7 +142,7 @@ public final class BranchWorkspaceManager: ObservableObject {
             branchManager.switchBranch(to: branchID, actorID: actorID)
         }
         commitManager.replaceWorkingChanges(workspace.pendingChanges, stagedChanges: Dictionary(uniqueKeysWithValues: workspace.pendingChanges.filter(\.isStaged).map { ($0.path, $0.diff) }), for: branchID)
-        publishSuccess("Loaded \(workspace.branchName) workspace.")
+        publishSuccess("Loaded \(workspace.branchName) Workspace.")
         return workspace
     }
 

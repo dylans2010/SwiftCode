@@ -8,7 +8,7 @@ struct ActivityLogView: View {
         List {
             Section("Notifications") {
                 if manager.notifications.isEmpty {
-                    Text("No notifications yet.")
+                    Text("No Notifications Yet")
                         .foregroundStyle(.secondary)
                 }
                 ForEach(manager.notifications) { item in

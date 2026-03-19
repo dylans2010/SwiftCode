@@ -34,8 +34,8 @@ struct CommitManagerView: View {
             }
 
             Section("Working Tree") {
-                TextField("File path", text: $customPath)
-                Picker("Change type", selection: $selectedKind) {
+                TextField("File Path", text: $customPath)
+                Picker("Change Type", selection: $selectedKind) {
                     ForEach(CommitChangeKind.allCases, id: \.self) { kind in
                         Text(kind.rawValue.capitalized).tag(kind)
                     }
@@ -77,12 +77,12 @@ struct CommitManagerView: View {
             }
 
             Section("Create Commit") {
-                TextField("Commit message", text: $commitMessage)
+                TextField("Commit Message", text: $commitMessage)
                 Button {
                     manager.commit(message: commitMessage, authorID: actorID, changes: [:])
                     manager.workspaces.syncWorkspaceStateFromCommitManager()
                     commitMessage = ""
-                    operationMessage = "Commit created successfully."
+                    operationMessage = "Commit Created Successfully."
                 } label: {
                     Label("Commit Staged Changes", systemImage: "checkmark.circle.fill")
                 }

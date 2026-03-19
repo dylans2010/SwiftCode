@@ -8,7 +8,7 @@ struct FilePermissionView: View {
     var body: some View {
         List {
             Section("File Locking") {
-                TextField("File path", text: $filePath)
+                TextField("File Path", text: $filePath)
                 HStack {
                     Button {
                         manager.lockFile(path: filePath, actorID: actorID)
@@ -34,7 +34,7 @@ struct FilePermissionView: View {
                 ForEach(manager.fileLocks) { lock in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(lock.path).font(.headline)
-                        Text("Locked by \(lock.lockedBy)")
+                        Text("Locked By \(lock.lockedBy)")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

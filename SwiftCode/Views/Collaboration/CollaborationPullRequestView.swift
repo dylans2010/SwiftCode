@@ -35,13 +35,13 @@ struct CollaborationPullRequestView: View {
                                 Spacer()
                                 statusBadge(pr.status)
                             }
-                            Text(pr.description.isEmpty ? "No description" : pr.description)
+                            Text(pr.description.isEmpty ? "No Description" : pr.description)
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
                                 .lineLimit(2)
                             HStack {
                                 Label(pr.authorID, systemImage: "person")
-                                Label("\(pr.linkedCommitIDs.count) commits", systemImage: "shippingbox")
+                                Label("\(pr.linkedCommitIDs.count) Commits", systemImage: "shippingbox")
                                 Label("\(pr.comments.count) comments", systemImage: "text.bubble")
                             }
                             .font(.caption)
@@ -74,7 +74,7 @@ struct CollaborationPullRequestView: View {
                         manager.pullRequests.submitReview(prID: pr.id, reviewerID: actorID, decision: .approve, summary: reviewSummary.isEmpty ? "Approved" : reviewSummary)
                     }
                     actionRow(title: "Request Changes", systemImage: "arrow.uturn.backward.circle.fill", tint: .orange) {
-                        manager.pullRequests.submitReview(prID: pr.id, reviewerID: actorID, decision: .requestChanges, summary: reviewSummary.isEmpty ? "Requested changes" : reviewSummary)
+                        manager.pullRequests.submitReview(prID: pr.id, reviewerID: actorID, decision: .requestChanges, summary: reviewSummary.isEmpty ? "Requested Changes" : reviewSummary)
                     }
                     actionRow(title: "Reject", systemImage: "xmark.seal.fill", tint: .red) {
                         manager.pullRequests.submitReview(prID: pr.id, reviewerID: actorID, decision: .reject, summary: reviewSummary.isEmpty ? "Rejected" : reviewSummary)
@@ -96,7 +96,7 @@ struct CollaborationPullRequestView: View {
 
                 Section("Reviewers & Linked Commits") {
                     HStack {
-                        TextField("Assign reviewer", text: $reviewerID)
+                        TextField("Assign Reviewer", text: $reviewerID)
                         Button("Add") {
                             manager.pullRequests.assignReviewer(reviewerID, to: pr.id, actorID: actorID)
                             reviewerID = ""
@@ -141,9 +141,9 @@ struct CollaborationPullRequestView: View {
                 }
 
                 Section("Inline Comments & Threads") {
-                    TextField("File path", text: $inlinePath)
+                    TextField("File Path", text: $inlinePath)
                     Stepper("Line \(inlineLine)", value: $inlineLine, in: 1...2000)
-                    TextField("Comment or reply", text: $commentText, axis: .vertical)
+                    TextField("Comment Or Reply", text: $commentText, axis: .vertical)
                         .lineLimit(2...5)
                     Button {
                         isSubmitting = true
@@ -171,7 +171,7 @@ struct CollaborationPullRequestView: View {
 
                 Section("Review History") {
                     if pr.reviews.isEmpty {
-                        Text("No reviews yet.").foregroundStyle(.secondary)
+                        Text("No Reviews Yet").foregroundStyle(.secondary)
                     }
                     ForEach(pr.reviews) { review in
                         VStack(alignment: .leading, spacing: 4) {
@@ -350,8 +350,8 @@ struct CreatePullRequestView: View {
                     TextField("Title", text: $title)
                     TextField("Description", text: $description, axis: .vertical)
                         .lineLimit(3...8)
-                    Toggle("Create as draft", isOn: $isDraft)
-                    Toggle("Allow empty pull request", isOn: $includeEmpty)
+                    Toggle("Create As Draft", isOn: $isDraft)
+                    Toggle("Empty Pull Request", isOn: $includeEmpty)
                 }
 
                 Section("Branches") {
@@ -390,7 +390,7 @@ struct CreatePullRequestView: View {
                 Section("Diff Preview") {
                     let preview = previewDiffs
                     if preview.isEmpty {
-                        Text("No diff selected.").foregroundStyle(.secondary)
+                        Text("No Diff Selected.").foregroundStyle(.secondary)
                     }
                     ForEach(preview, id: \.key) { entry in
                         NavigationLink(entry.key) {

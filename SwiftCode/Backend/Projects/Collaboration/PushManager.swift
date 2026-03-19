@@ -56,13 +56,13 @@ public final class PushManager: ObservableObject {
         let conflict = BranchConflict(branchName: branchName, filePath: "Sources/Shared/SyncState.swift", localChange: "local: commit count \(localCommitCount)", remoteChange: "remote: commit count \(remoteCommitCount)")
         conflicts.removeAll { $0.branchName == branchName }
         conflicts.append(conflict)
-        lastEvent = PushEvent(actorID: actorID, title: "Sync prepared", detail: "Local/remote comparison finished for \(branchName).", notifies: false)
+        lastEvent = PushEvent(actorID: actorID, title: "Sync Prepared", detail: "Local/remote comparison finished for \(branchName).", notifies: false)
         return conflict
     }
 
     public func resolveConflict(_ conflictID: UUID, using resolution: ConflictResolutionChoice, actorID: String) {
         conflicts.removeAll { $0.id == conflictID }
-        lastEvent = PushEvent(actorID: actorID, title: "Conflict resolution applied", detail: resolution.displayName, notifies: true)
+        lastEvent = PushEvent(actorID: actorID, title: "Conflict Resolution Applied", detail: resolution.displayName, notifies: true)
     }
 
     public func push(branchName: String, actorID: String, data: Data? = nil) async {
@@ -81,7 +81,7 @@ public final class PushManager: ObservableObject {
                 activePushes[index] = PushStatus(branchName: branchName, progress: Double(i) / 10.0, isComplete: i == 10, direction: "Push")
             }
         }
-        lastEvent = PushEvent(actorID: actorID, title: "Push complete", detail: "\(branchName) synced successfully.", notifies: true)
+        lastEvent = PushEvent(actorID: actorID, title: "Push Complete", detail: "\(branchName) synced successfully.", notifies: true)
         try? await Task.sleep(nanoseconds: 200_000_000)
         activePushes.removeAll { $0.branchName == branchName && $0.direction == "Push" }
     }
@@ -96,7 +96,7 @@ public final class PushManager: ObservableObject {
                 activePushes[index] = PushStatus(branchName: branchName, progress: Double(i) / 10.0, isComplete: i == 10, direction: "Pull")
             }
         }
-        lastEvent = PushEvent(actorID: actorID, title: "Pull complete", detail: "\(branchName) is up to date.", notifies: true)
+        lastEvent = PushEvent(actorID: actorID, title: "Pull Complete", detail: "\(branchName) is up to date.", notifies: true)
         try? await Task.sleep(nanoseconds: 200_000_000)
         activePushes.removeAll { $0.branchName == branchName && $0.direction == "Pull" }
     }

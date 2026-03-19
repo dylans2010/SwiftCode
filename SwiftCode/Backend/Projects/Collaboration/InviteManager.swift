@@ -42,13 +42,13 @@ public final class InviteManager: ObservableObject {
         var invite = CollaborationInvite(memberID: memberID, role: role, invitedBy: actorID)
         invite.status = .accepted
         invites.insert(invite, at: 0)
-        lastEvent = InviteEvent(actorID: actorID, title: "Invitation sent", detail: "\(memberID) invited as \(role.rawValue.capitalized).", notifies: true)
+        lastEvent = InviteEvent(actorID: actorID, title: "Invitation Sent", detail: "\(memberID) invited as \(role.rawValue.capitalized).", notifies: true)
     }
 
     public func revokeInvite(_ inviteID: UUID, actorID: String) {
         guard let index = invites.firstIndex(where: { $0.id == inviteID }) else { return }
         invites[index].status = .revoked
-        lastEvent = InviteEvent(actorID: actorID, title: "Invitation revoked", detail: "Invite withdrawn for \(invites[index].memberID).", notifies: true)
+        lastEvent = InviteEvent(actorID: actorID, title: "Invitation Revoked", detail: "Invite withdrawn for \(invites[index].memberID).", notifies: true)
     }
 
     public func restoreState(invites: [CollaborationInvite]) {

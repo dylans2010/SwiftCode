@@ -55,14 +55,14 @@ public final class BranchManager: ObservableObject {
         let newBranch = Branch(name: name, lastCommitID: baseBranch?.lastCommitID)
         branches.append(newBranch)
         let baseName = baseBranch?.name ?? currentBranch.name
-        lastEvent = BranchEvent(actorID: actorID, title: "Branch created", detail: "\(name) was created from \(baseName).", notifies: true)
+        lastEvent = BranchEvent(actorID: actorID, title: "Branch Created", detail: "\(name) was created from \(baseName).", notifies: true)
         return newBranch
     }
 
     public func switchBranch(to branchID: UUID, actorID: String = "System") {
         if let branch = branches.first(where: { $0.id == branchID }) {
             currentBranch = branch
-            lastEvent = BranchEvent(actorID: actorID, title: "Branch switched", detail: "Now working on \(branch.name).", notifies: false)
+            lastEvent = BranchEvent(actorID: actorID, title: "Branch Switched", detail: "Now working on \(branch.name).", notifies: false)
         }
     }
 
@@ -74,7 +74,7 @@ public final class BranchManager: ObservableObject {
         }
         branches.removeAll { $0.id == branchID }
         merges.removeAll { $0.sourceBranchID == branchID || $0.targetBranchID == branchID }
-        lastEvent = BranchEvent(actorID: actorID, title: "Branch deleted", detail: "\(branch.name) was removed.", notifies: true)
+        lastEvent = BranchEvent(actorID: actorID, title: "Branch Deleted", detail: "\(branch.name) was removed.", notifies: true)
     }
 
     public func renameBranch(_ branchID: UUID, to newName: String, actorID: String = "System") {
@@ -82,7 +82,7 @@ public final class BranchManager: ObservableObject {
             let oldName = branches[index].name
             branches[index].name = newName
             if currentBranch.id == branchID { currentBranch = branches[index] }
-            lastEvent = BranchEvent(actorID: actorID, title: "Branch renamed", detail: "\(oldName) is now \(newName).", notifies: false)
+            lastEvent = BranchEvent(actorID: actorID, title: "Branch Renamed", detail: "\(oldName) is now \(newName).", notifies: false)
         }
     }
 
@@ -107,6 +107,6 @@ public final class BranchManager: ObservableObject {
         merges.insert(merge, at: 0)
         let sourceName = branches.first(where: { $0.id == sourceID })?.name ?? "source"
         let targetName = branches.first(where: { $0.id == targetID })?.name ?? "target"
-        lastEvent = BranchEvent(actorID: actorID, title: "Branches merged", detail: "Merged \(sourceName) into \(targetName).", notifies: true)
+        lastEvent = BranchEvent(actorID: actorID, title: "Branches Merged", detail: "Merged \(sourceName) into \(targetName).", notifies: true)
     }
 }

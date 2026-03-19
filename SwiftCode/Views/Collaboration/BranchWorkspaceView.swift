@@ -24,7 +24,7 @@ struct BranchWorkspaceView: View {
             actionsSection
             statusSection
         }
-        .navigationTitle("Branch Workspace")
+        .navigationTitle("Branches")
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 if manager.workspaces.isLoadingWorkspace {
@@ -69,7 +69,7 @@ struct BranchWorkspaceView: View {
                     Text(workspace.workingDirectory)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    TextField("New branch name", text: $newBranchName)
+                    TextField("New Branch Name", text: $newBranchName)
                     Button {
                         let branch = manager.branches.createBranch(name: newBranchName, from: manager.branches.currentBranch.id, actorID: actorID)
                         _ = manager.workspaces.createWorkspace(for: branch, from: manager.branches.currentBranch.id, actorID: actorID)
@@ -94,7 +94,7 @@ struct BranchWorkspaceView: View {
     private var filesSection: some View {
         Section("Files") {
             if let workspace {
-                TextField("New file path", text: $newFilePath)
+                TextField("New File Path", text: $newFilePath)
                 Button {
                     manager.workspaces.createFile(path: newFilePath, authorID: actorID)
                     newFilePath = ""
@@ -140,7 +140,7 @@ struct BranchWorkspaceView: View {
     private var changesSection: some View {
         Section("Active Changes") {
             if let workspace, workspace.pendingChanges.isEmpty {
-                Text("No uncommitted changes.")
+                Text("No Uncommitted Changes")
                     .foregroundStyle(.secondary)
             } else if let workspace {
                 ForEach(workspace.pendingChanges) { change in
