@@ -17,13 +17,16 @@ struct BranchWorkspaceView: View {
     private var workspace: BranchWorkspace? { manager.workspaces.currentWorkspace }
 
     var body: some View {
-        List {
-            headerSection
-            filesSection
-            changesSection
-            actionsSection
-            statusSection
+        ScrollView {
+            VStack(spacing: 24) {
+                headerSection
+                filesSection
+                changesSection
+                actionsSection
+            }
+            .padding()
         }
+        .background(Color.clear)
         .navigationTitle("Branches")
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
@@ -61,80 +64,161 @@ struct BranchWorkspaceView: View {
     }
 
     private var headerSection: some View {
-        Section("Workspace") {
-            if let workspace {
-                VStack(alignment: .leading, spacing: 10) {
-                    Label(workspace.branchName, systemImage: "arrow.triangle.branch")
-                        .font(.headline)
-                    Text(workspace.workingDirectory)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextField("New Branch Name", text: $newBranchName)
-                    Button {
-                        let branch = manager.branches.createBranch(name: newBranchName, from: manager.branches.currentBranch.id, actorID: actorID)
-                        _ = manager.workspaces.createWorkspace(for: branch, from: manager.branches.currentBranch.id, actorID: actorID)
-                        newBranchName = ""
-                        selectCurrentFileIfNeeded()
-                    } label: {
-                        Label("Create Branch", systemImage: "plus")
-                    }
-                    .disabled(newBranchName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    HStack {
-                        statBadge(title: "Files", value: "\(workspace.files.count)")
-                        statBadge(title: "Changes", value: "\(workspace.pendingChanges.count)")
-                        statBadge(title: "Commits", value: "\(manager.commits.commits(for: workspace.branchID).count)")
-                    }
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Workspace")
+                        .font(.caption.bold())
+                        .foregroundStyle(.blue)
+                        .textCase(.uppercase)
+                    Text(workspace?.branchName ?? "No Branch")
+                        .font(.title2.bold())
+                        .foregroundStyle(.white)
                 }
-            } else {
-                ContentUnavailableView("No Workspace", systemImage: "externaldrive.badge.exclamationmark", description: Text("Create or load a branch workspace to start editing."))
+                Spacer()
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.title)
+                    .foregroundStyle(.blue.opacity(0.8))
+            }
+
+            if let workspace {
+                HStack(spacing: 16) {
+                    statBadge(title: "Files", value: "\(workspace.files.count)", icon: "doc.fill")
+                    statBadge(title: "Changes", value: "\(workspace.pendingChanges.count)", icon: "plus.forwardslash.minus")
+                    statBadge(title: "Commits", value: "\(manager.commits.commits(for: workspace.branchID).count)", icon: "shippingbox.fill")
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Create New Branch")
+                        .font(.subheadline.bold())
+                        .foregroundStyle(.secondary)
+
+                    HStack {
+                        TextField("Branch Name", text: $newBranchName)
+                            .textFieldStyle(.plain)
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        Button {
+                            let branch = manager.branches.createBranch(name: newBranchName, from: manager.branches.currentBranch.id, actorID: actorID)
+                            _ = manager.workspaces.createWorkspace(for: branch, from: manager.branches.currentBranch.id, actorID: actorID)
+                            newBranchName = ""
+                            selectCurrentFileIfNeeded()
+                        } label: {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title2)
+                        }
+                        .disabled(newBranchName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    Text("Work on changes without affecting main")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
             }
         }
+        .padding(20)
+        .background(Color.white.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.white.opacity(0.1), lineWidth: 1))
     }
 
     private var filesSection: some View {
-        Section("Files") {
-            if let workspace {
-                TextField("New File Path", text: $newFilePath)
-                Button {
-                    manager.workspaces.createFile(path: newFilePath, authorID: actorID)
-                    newFilePath = ""
-                    selectCurrentFileIfNeeded()
-                } label: {
-                    Label("Create File", systemImage: "doc.badge.plus")
-                }
-                .disabled(newFilePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Files")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Spacer()
+                Image(systemName: "doc.on.doc")
+                    .foregroundStyle(.secondary)
+            }
 
-                ForEach(workspace.files.sorted { $0.path < $1.path }) { file in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Button(file.path) {
-                                selectedFilePath = file.path
-                                editorText = file.content
-                            }
-                            Spacer()
-                            Button(role: .destructive) {
-                                manager.workspaces.deleteFile(path: file.path, authorID: actorID)
-                                if selectedFilePath == file.path {
-                                    selectedFilePath = nil
-                                    editorText = ""
+            if let workspace {
+                HStack {
+                    TextField("New File Path", text: $newFilePath)
+                        .textFieldStyle(.plain)
+                        .padding(12)
+                        .background(Color.white.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                    Button {
+                        manager.workspaces.createFile(path: newFilePath, authorID: actorID)
+                        newFilePath = ""
+                        selectCurrentFileIfNeeded()
+                    } label: {
+                        Image(systemName: "doc.badge.plus")
+                            .foregroundStyle(.blue)
+                    }
+                    .disabled(newFilePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+
+                VStack(spacing: 12) {
+                    ForEach(workspace.files.sorted { $0.path < $1.path }) { file in
+                        VStack(spacing: 0) {
+                            Button {
+                                withAnimation {
+                                    if selectedFilePath == file.path {
+                                        selectedFilePath = nil
+                                    } else {
+                                        selectedFilePath = file.path
+                                        editorText = file.content
+                                    }
                                 }
                             } label: {
-                                Image(systemName: "trash")
+                                HStack {
+                                    Image(systemName: "doc.text")
+                                        .foregroundStyle(.blue)
+                                    Text(file.path)
+                                        .foregroundStyle(.white)
+                                    Spacer()
+                                    Button(role: .destructive) {
+                                        manager.workspaces.deleteFile(path: file.path, authorID: actorID)
+                                        if selectedFilePath == file.path {
+                                            selectedFilePath = nil
+                                        }
+                                    } label: {
+                                        Image(systemName: "trash")
+                                            .font(.caption)
+                                            .foregroundStyle(.red.opacity(0.7))
+                                    }
+                                }
+                                .padding()
+                            }
+
+                            if selectedFilePath == file.path {
+                                VStack(spacing: 12) {
+                                    TextEditor(text: $editorText)
+                                        .font(.system(.caption, design: .monospaced))
+                                        .frame(height: 200)
+                                        .padding(8)
+                                        .background(Color.black.opacity(0.3))
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                                    Button {
+                                        manager.workspaces.updateFile(path: file.path, content: editorText, authorID: actorID)
+                                    } label: {
+                                        Label("Save Changes", systemImage: "checkmark.circle")
+                                            .font(.caption.bold())
+                                            .padding(.vertical, 8)
+                                            .frame(maxWidth: .infinity)
+                                            .background(Color.blue.opacity(0.2))
+                                            .clipShape(Capsule())
+                                    }
+                                }
+                                .padding()
+                                .background(Color.white.opacity(0.02))
                             }
                         }
-                        if selectedFilePath == file.path {
-                            TextEditor(text: $editorText)
-                                .frame(minHeight: 160)
-                            Button {
-                                manager.workspaces.updateFile(path: file.path, content: editorText, authorID: actorID)
-                            } label: {
-                                Label("Save File", systemImage: "square.and.arrow.down")
-                            }
-                        }
+                        .background(Color.white.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                 }
             }
         }
+        .padding(20)
+        .background(Color.white.opacity(0.03))
+        .clipShape(RoundedRectangle(cornerRadius: 24))
     }
 
     private var changesSection: some View {
@@ -235,13 +319,22 @@ struct BranchWorkspaceView: View {
         }
     }
 
-    private func statBadge(title: String, value: String) -> some View {
-        VStack(alignment: .leading) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(value).font(.headline)
+    private func statBadge(title: String, value: String, icon: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundStyle(.blue)
+            Text(value)
+                .font(.headline)
+                .foregroundStyle(.white)
+            Text(title)
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
         }
-        .padding(8)
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     private func selectCurrentFileIfNeeded() {

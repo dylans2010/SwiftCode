@@ -50,7 +50,8 @@ public struct CollaborationNotificationItem: Identifiable, Codable, Equatable {
 
 @MainActor
 public final class CollaborationManager: ObservableObject {
-    public let projectID: UUID
+    public let project: Project
+    public var projectID: UUID { project.id }
     public let creatorID: String
     public let permissions: PermissionsManager
     public let branches: BranchManager
@@ -68,8 +69,8 @@ public final class CollaborationManager: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
-    public init(projectID: UUID, creatorID: String) {
-        self.projectID = projectID
+    public init(project: Project, creatorID: String) {
+        self.project = project
         self.creatorID = creatorID
         self.permissions = PermissionsManager(creatorID: creatorID)
         self.branches = BranchManager()
@@ -81,6 +82,7 @@ public final class CollaborationManager: ObservableObject {
         self.workspaces = BranchWorkspaceManager(branchManager: branches, commitManager: commits, pullRequestManager: pullRequests)
 
         setupBindings()
+        workspaces.setProject(project)
         loadState()
 
         PeerSessionManager.shared.onData = { [weak self] data, peerID in
@@ -89,7 +91,6 @@ public final class CollaborationManager: ObservableObject {
 
         addActivity(actorID: creatorID, title: "Collaboration Enabled", detail: "Project collaboration workspace is ready.", kind: .permissions, notify: true)
         commits.setActiveBranch(branches.currentBranch.id)
-        commits.seedWorkingChangesIfNeeded(authorID: creatorID, branchID: branches.currentBranch.id)
         _ = workspaces.loadWorkspace(for: branches.currentBranch.id, actorID: creatorID)
     }
 
@@ -218,7 +219,7 @@ public final class CollaborationManager: ObservableObject {
 
         // Generate data for P2P transfer
         let state = ProjectState(
-            projectID: projectID,
+            projectID: project.id,
             creatorID: creatorID,
             activityLog: activityLog,
             notifications: notifications,
@@ -299,7 +300,7 @@ public final class CollaborationManager: ObservableObject {
 
     public func saveState() {
         let state = ProjectState(
-            projectID: projectID,
+            projectID: project.id,
             creatorID: creatorID,
             activityLog: activityLog,
             notifications: notifications,
@@ -328,6 +329,6 @@ public final class CollaborationManager: ObservableObject {
 
     private func getPersistenceURL() -> URL {
         let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-        return paths[0].appendingPathComponent("collaboration_\(projectID).json")
+        return paths[0].appendingPathComponent("collaboration_\(project.id).json")
     }
 }

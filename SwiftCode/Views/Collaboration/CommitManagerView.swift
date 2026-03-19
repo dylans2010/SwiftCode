@@ -12,129 +12,246 @@ struct CommitManagerView: View {
     @State private var operationMessage: String?
 
     var body: some View {
-        List {
-            Section("Branch Context") {
-                Label(manager.branches.currentBranch.name, systemImage: "arrow.triangle.branch")
-                Text("Working changes and history below are isolated to the active branch workspace.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Section("Undo / Redo") {
-                HStack(spacing: 12) {
-                    actionButton(title: "Undo", icon: "arrow.uturn.backward.circle.fill", tint: .orange, enabled: manager.commits.canUndo) {
-                        _ = manager.commits.undo()
+        ScrollView {
+            VStack(spacing: 24) {
+                VStack(alignment: .leading, spacing: 16) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Branch Context")
+                                .font(.caption.bold())
+                                .foregroundStyle(.blue)
+                                .textCase(.uppercase)
+                            Text(manager.branches.currentBranch.name)
+                                .font(.title2.bold())
+                                .foregroundStyle(.white)
+                        }
+                        Spacer()
+                        Image(systemName: "shippingbox.circle")
+                            .font(.title)
+                            .foregroundStyle(.blue.opacity(0.8))
                     }
-                    actionButton(title: "Redo", icon: "arrow.uturn.forward.circle.fill", tint: .blue, enabled: manager.commits.canRedo) {
-                        _ = manager.commits.redo()
-                    }
-                }
-                Text("Undo and redo stay synchronized with the collaboration backend commit history.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
 
-            Section("Working Tree") {
-                TextField("File Path", text: $customPath)
-                Picker("Change Type", selection: $selectedKind) {
-                    ForEach(CommitChangeKind.allCases, id: \.self) { kind in
-                        Text(kind.rawValue.capitalized).tag(kind)
+                    HStack(spacing: 12) {
+                        actionButton(title: "Undo", icon: "arrow.uturn.backward", tint: .orange, enabled: manager.commits.canUndo) {
+                            _ = manager.commits.undo()
+                        }
+                        actionButton(title: "Redo", icon: "arrow.uturn.forward", tint: .blue, enabled: manager.commits.canRedo) {
+                            _ = manager.commits.redo()
+                        }
                     }
-                }
-                TextField("Diff content", text: $customDiff, axis: .vertical)
-                    .lineLimit(3...8)
-                Button("Add / Update Change") {
-                    manager.commits.updateWorkingChange(path: customPath, diff: customDiff, kind: selectedKind, authorID: actorID, branchID: manager.branches.currentBranch.id)
-                    manager.workspaces.syncWorkspaceStateFromCommitManager()
-                    customPath = ""
-                    customDiff = ""
-                }
-                .disabled(customPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || customDiff.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                ForEach(manager.commits.workingChanges) { change in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(change.path).font(.headline)
-                                Text("\(change.kind.rawValue.capitalized) • \(change.authorID) • \(change.timestamp.formatted(date: .abbreviated, time: .shortened))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                    Text("Working changes and history are isolated to this branch.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(20)
+                .background(Color.white.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 24))
+                .overlay(RoundedRectangle(cornerRadius: 24).stroke(Color.white.opacity(0.1), lineWidth: 1))
+
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Working Tree")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+
+                    VStack(spacing: 12) {
+                        TextField("File Path", text: $customPath)
+                            .textFieldStyle(.plain)
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        Picker("Change Type", selection: $selectedKind) {
+                            ForEach(CommitChangeKind.allCases, id: \.self) { kind in
+                                Text(kind.rawValue.capitalized).tag(kind)
                             }
-                            Spacer()
-                            Button(change.isStaged ? "Unstage" : "Stage") {
-                                if change.isStaged {
-                                    manager.commits.unstage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
-                                } else {
-                                    manager.commits.stage(path: change.path, authorID: actorID, branchID: manager.branches.currentBranch.id)
+                        }
+                        .pickerStyle(.segmented)
+
+                        TextField("Diff content", text: $customDiff, axis: .vertical)
+                            .textFieldStyle(.plain)
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .lineLimit(3...8)
+
+                        Button {
+                            manager.commits.updateWorkingChange(path: customPath, diff: customDiff, kind: selectedKind, authorID: actorID, branchID: manager.branches.currentBranch.id)
+                            manager.workspaces.syncWorkspaceStateFromCommitManager()
+                            customPath = ""
+                            customDiff = ""
+                        } label: {
+                            Label("Add / Update Change", systemImage: "plus.circle")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .disabled(customPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || customDiff.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+
+                    VStack(spacing: 12) {
+                        ForEach(manager.commits.workingChanges) { change in
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(change.path).font(.headline).foregroundStyle(.white)
+                                        Text("\(change.kind.rawValue.capitalized) • \(change.authorID)")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Button(change.isStaged ? "Unstage" : "Stage") {
+                                        if change.isStaged {
+                                            manager.commits.unstage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
+                                        } else {
+                                            manager.commits.stage(path: change.path, actorID: actorID, branchID: manager.branches.currentBranch.id)
+                                        }
+                                    }
+                                    .font(.caption.bold())
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(change.isStaged ? Color.orange.opacity(0.2) : Color.blue.opacity(0.2))
+                                    .foregroundStyle(change.isStaged ? .orange : .blue)
+                                    .clipShape(Capsule())
+                                }
+
+                                NavigationLink {
+                                    CollaborationDiffViewerView(diff: change.diff)
+                                } label: {
+                                    HStack {
+                                        Image(systemName: "doc.text.magnifyingglass")
+                                        Text("Open Diff")
+                                        Spacer()
+                                        Image(systemName: "chevron.right")
+                                    }
+                                    .font(.caption)
+                                    .padding(8)
+                                    .background(Color.white.opacity(0.05))
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
                                 }
                             }
-                            .buttonStyle(.bordered)
-                        }
-                        NavigationLink("Open Diff") {
-                            CollaborationDiffViewerView(diff: change.diff)
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
                     }
                 }
-            }
+                .padding(20)
+                .background(Color.white.opacity(0.03))
+                .clipShape(RoundedRectangle(cornerRadius: 24))
 
-            Section("Create Commit") {
-                TextField("Commit Message", text: $commitMessage)
-                Button {
-                    manager.commit(message: commitMessage, authorID: actorID, changes: [:])
-                    manager.workspaces.syncWorkspaceStateFromCommitManager()
-                    commitMessage = ""
-                    operationMessage = "Commit Created Successfully."
-                } label: {
-                    Label("Commit Staged Changes", systemImage: "checkmark.circle.fill")
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Create Commit")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+
+                    VStack(spacing: 12) {
+                        TextField("Commit Message", text: $commitMessage)
+                            .textFieldStyle(.plain)
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                        Button {
+                            manager.commit(message: commitMessage, authorID: actorID, changes: [:])
+                            manager.workspaces.syncWorkspaceStateFromCommitManager()
+                            commitMessage = ""
+                            operationMessage = "Commit Created Successfully."
+                        } label: {
+                            Label("Commit Staged Changes", systemImage: "checkmark.circle.fill")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.green.opacity(0.2))
+                                .clipShape(RoundedRectangle(cornerRadius: 12))
+                        }
+                        .disabled(commitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || manager.commits.stagedChanges.isEmpty)
+                    }
                 }
-                .disabled(commitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || manager.commits.stagedChanges.isEmpty)
-            }
+                .padding(20)
+                .background(Color.white.opacity(0.03))
+                .clipShape(RoundedRectangle(cornerRadius: 24))
 
-            Section("History") {
-                ForEach(manager.commits.commits(for: manager.branches.currentBranch.id)) { commit in
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(commit.message).font(.headline)
-                                Text("\(commit.authorID) • \(commit.timestamp.formatted(date: .abbreviated, time: .shortened))")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            Menu {
-                                Button("Undo Last Commit") { _ = manager.commits.undo() }
-                                Button("Revert Commit") {
-                                    _ = manager.commits.revert(commitID: commit.id, actorID: actorID)
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("History")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+
+                    VStack(spacing: 12) {
+                        ForEach(manager.commits.commits(for: manager.branches.currentBranch.id)) { commit in
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(commit.message).font(.subheadline.bold()).foregroundStyle(.white)
+                                        Text("\(commit.authorID) • \(commit.timestamp.formatted(date: .abbreviated, time: .shortened))")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Menu {
+                                        Button("Undo Last Commit") { _ = manager.commits.undo() }
+                                        Button("Revert Commit") {
+                                            _ = manager.commits.revert(commitID: commit.id, actorID: actorID)
+                                        }
+                                    } label: {
+                                        Image(systemName: "ellipsis")
+                                            .foregroundStyle(.secondary)
+                                    }
                                 }
-                            } label: {
-                                Image(systemName: "ellipsis.circle")
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack {
+                                        ForEach(commit.changes.keys.sorted(), id: \.self) { path in
+                                            NavigationLink {
+                                                CollaborationDiffViewerView(diff: commit.changes[path] ?? "")
+                                            } label: {
+                                                Label(path, systemImage: "doc.text")
+                                                    .font(.system(size: 10))
+                                                    .padding(6)
+                                                    .background(Color.white.opacity(0.05))
+                                                    .clipShape(Capsule())
+                                            }
+                                        }
+                                    }
+                                }
                             }
-                        }
-                        ForEach(commit.changes.keys.sorted(), id: \.self) { path in
-                            NavigationLink(path) {
-                                CollaborationDiffViewerView(diff: commit.changes[path] ?? "")
-                            }
+                            .padding()
+                            .background(Color.white.opacity(0.05))
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
                     }
                 }
-            }
+                .padding(20)
+                .background(Color.white.opacity(0.03))
+                .clipShape(RoundedRectangle(cornerRadius: 24))
 
-            if let operationMessage {
-                Section {
+                if let operationMessage {
                     Label(operationMessage, systemImage: "checkmark.circle.fill")
+                        .font(.caption.bold())
                         .foregroundStyle(.green)
+                        .padding()
+                        .background(Color.green.opacity(0.1))
+                        .clipShape(Capsule())
                 }
             }
+            .padding()
         }
+        .background(Color.clear)
         .navigationTitle("Commit Manager")
     }
 
     private func actionButton(title: String, icon: String, tint: Color, enabled: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Label(title, systemImage: icon)
+                .font(.subheadline.bold())
                 .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(tint.opacity(0.2))
+                .foregroundStyle(tint)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
         }
-        .buttonStyle(.borderedProminent)
-        .tint(tint)
         .disabled(!enabled)
     }
 }

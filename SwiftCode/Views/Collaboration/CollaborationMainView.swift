@@ -8,36 +8,73 @@ struct CollaborationMainView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 16) {
-                headerCards
-                Picker("Section", selection: $selectedTab) {
-                    ForEach(CollaborationTab.allCases) { tab in
-                        Label(tab.title, systemImage: tab.icon).tag(tab)
-                    }
-                }
-                .pickerStyle(.segmented)
-
-                selectedContent
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            }
-            .padding()
-            .background(
-                LinearGradient(colors: [Color(.systemBackground), Color.blue.opacity(0.06)], startPoint: .topLeading, endPoint: .bottomTrailing)
+            ZStack {
+                // Background Gradient
+                LinearGradient(colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color(red: 0.1, green: 0.1, blue: 0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)
                     .ignoresSafeArea()
-            )
+
+                VStack(spacing: 20) {
+                    headerCards
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            ForEach(CollaborationTab.allCases) { tab in
+                                TabButton(tab: tab, isSelected: selectedTab == tab) {
+                                    selectedTab = tab
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+
+                    selectedContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                }
+                .padding(.vertical)
+            }
+            .collaborationFeedback(message: manager.workspaces.lastSuccessMessage, icon: "checkmark.circle.fill", color: .green)
+            .collaborationFeedback(message: manager.workspaces.lastErrorMessage, icon: "exclamationmark.triangle.fill", color: .red)
             .navigationTitle("Collaboration")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
+        }
+    }
+
+    private struct TabButton: View {
+        let tab: CollaborationTab
+        let isSelected: Bool
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                VStack(spacing: 6) {
+                    Image(systemName: tab.icon)
+                        .font(.system(size: 18, weight: isSelected ? .bold : .regular))
+                    Text(tab.title)
+                        .font(.system(size: 10, weight: isSelected ? .semibold : .regular))
+                }
+                .foregroundStyle(isSelected ? .white : .secondary)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 16)
+                .background(isSelected ? Color.blue.opacity(0.3) : Color.white.opacity(0.05))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(isSelected ? Color.blue.opacity(0.5) : Color.clear, lineWidth: 1)
+                )
+            }
         }
     }
 
     private var headerCards: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                statCard(title: "Branch", value: manager.branches.currentBranch.name, icon: "arrow.triangle.branch")
-                statCard(title: "Members", value: "\(manager.permissions.memberRoles.count)", icon: "person.3.fill")
-                statCard(title: "Pending Reviews", value: "\(manager.reviews.reviews.values.filter { $0.status == .pending }.count)", icon: "checkmark.bubble")
-                statCard(title: "Notifications", value: "\(manager.notifications.filter { !$0.isRead }.count)", icon: "bell.badge.fill")
+            HStack(spacing: 16) {
+                statCard(title: "Branch", value: manager.branches.currentBranch.name, icon: "arrow.triangle.branch", subtext: "Active development")
+                statCard(title: "Members", value: "\(manager.permissions.memberRoles.count)", icon: "person.3.fill", subtext: "Team members")
+                statCard(title: "Reviews", value: "\(manager.reviews.reviews.values.filter { $0.status == .pending }.count)", icon: "checkmark.bubble", subtext: "Pending approval")
+                statCard(title: "Alerts", value: "\(manager.notifications.filter { !$0.isRead }.count)", icon: "bell.badge.fill", subtext: "Unread notifications")
             }
+            .padding(.horizontal)
         }
     }
 
@@ -102,18 +139,32 @@ struct CollaborationMainView: View {
         }
     }
 
-    private func statCard(title: String, value: String, icon: String) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: icon)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.headline)
-                .foregroundStyle(.primary)
+    private func statCard(title: String, value: String, icon: String, subtext: String) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundStyle(.blue)
+                Text(title)
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.title3.bold())
+                    .foregroundStyle(.white)
+                Text(subtext)
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
         }
-        .padding()
-        .frame(width: 170, alignment: .leading)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(16)
+        .frame(width: 160, alignment: .leading)
+        .background(Color.white.opacity(0.07))
+        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
     }
 }
 
