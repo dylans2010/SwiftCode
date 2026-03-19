@@ -75,17 +75,20 @@ public struct TransferPermission: Codable, Hashable {
         var readOnlyZones: [String]
         var blockedExecutionExtensions: [String]
         var encryptionRequired: Bool
+        var hiddenFiles: Bool
+        var encryptedStorage: Bool
     }
 
     public struct AuditConfiguration: Codable, Hashable {
         var logAllActions: Bool
         var trackEdits: Bool
-        var trackDeletes: Bool
+        var trackDeletions: Bool
         var trackExecutions: Bool
         var allowAuditReview: Bool
     }
 
     public enum Scope: String, Codable, CaseIterable {
+        case isCollaborative
         case viewFiles
         case editFiles
         case createFiles
@@ -127,11 +130,12 @@ public struct TransferPermission: Codable, Hashable {
         case encryptionRequired
         case logAllActions
         case trackEdits
-        case trackDeletes
+        case trackDeletions
         case trackExecutions
         case allowAuditReview
     }
 
+    var isCollaborative: Bool
     var preset: AccessPreset
     var fileSystem: FileSystemPermissions
     var projectManagement: ProjectManagementPermissions
@@ -147,6 +151,7 @@ public struct TransferPermission: Codable, Hashable {
         switch preset {
         case .readOnly:
             return TransferPermission(
+                isCollaborative: false,
                 preset: preset,
                 fileSystem: .init(viewFiles: true, editFiles: false, createFiles: false, deleteFiles: false, renameFiles: false, moveFiles: false, bulkOperations: false),
                 projectManagement: .init(modifyProjectSettings: false, renameProject: false, editMetadata: false, manageDependencies: false, editEnvironmentConfigs: false),
@@ -155,8 +160,8 @@ public struct TransferPermission: Codable, Hashable {
                 plugin: .init(installPlugins: false, removePlugins: false, runPlugins: false, allowPluginFileModification: false),
                 agent: .init(allowAgentAccess: true, allowAgentFileModification: false, allowAgentCodeGeneration: false, allowAgentProjectRefactoring: false, allowAgentToRunCommands: false, allowAgentToInitiateTransfers: false),
                 transferControl: .init(allowRetransfer: false, allowExternalSharing: false, restrictToOriginalSender: true, expirationDate: nil, oneTimeAccessMode: false),
-                security: .init(restrictedSensitivePaths: [], readOnlyZones: [], blockedExecutionExtensions: ["sh", "command", "zsh"], encryptionRequired: true),
-                audit: .init(logAllActions: true, trackEdits: true, trackDeletes: true, trackExecutions: true, allowAuditReview: true)
+                security: .init(restrictedSensitivePaths: [], readOnlyZones: [], blockedExecutionExtensions: ["sh", "command", "zsh"], encryptionRequired: true, hiddenFiles: true, encryptedStorage: false),
+                audit: .init(logAllActions: true, trackEdits: true, trackDeletions: true, trackExecutions: true, allowAuditReview: true)
             )
         case .limitedEdit:
             var permission = makePreset(.readOnly)
@@ -174,6 +179,7 @@ public struct TransferPermission: Codable, Hashable {
             return permission
         case .fullAccess:
             return TransferPermission(
+                isCollaborative: true,
                 preset: preset,
                 fileSystem: .init(viewFiles: true, editFiles: true, createFiles: true, deleteFiles: true, renameFiles: true, moveFiles: true, bulkOperations: true),
                 projectManagement: .init(modifyProjectSettings: true, renameProject: true, editMetadata: true, manageDependencies: true, editEnvironmentConfigs: true),
@@ -182,8 +188,8 @@ public struct TransferPermission: Codable, Hashable {
                 plugin: .init(installPlugins: true, removePlugins: true, runPlugins: true, allowPluginFileModification: true),
                 agent: .init(allowAgentAccess: true, allowAgentFileModification: true, allowAgentCodeGeneration: true, allowAgentProjectRefactoring: true, allowAgentToRunCommands: true, allowAgentToInitiateTransfers: true),
                 transferControl: .init(allowRetransfer: true, allowExternalSharing: true, restrictToOriginalSender: false, expirationDate: nil, oneTimeAccessMode: false),
-                security: .init(restrictedSensitivePaths: [], readOnlyZones: [], blockedExecutionExtensions: [], encryptionRequired: true),
-                audit: .init(logAllActions: true, trackEdits: true, trackDeletes: true, trackExecutions: true, allowAuditReview: true)
+                security: .init(restrictedSensitivePaths: [], readOnlyZones: [], blockedExecutionExtensions: [], encryptionRequired: true, hiddenFiles: false, encryptedStorage: true),
+                audit: .init(logAllActions: true, trackEdits: true, trackDeletions: true, trackExecutions: true, allowAuditReview: true)
             )
         case .custom:
             return makePreset(.limitedEdit)
@@ -205,6 +211,7 @@ public struct TransferPermission: Codable, Hashable {
             return false
         }
         switch scope {
+        case .isCollaborative: return isCollaborative
         case .viewFiles: return fileSystem.viewFiles
         case .editFiles: return fileSystem.editFiles
         case .createFiles: return fileSystem.createFiles
@@ -246,7 +253,7 @@ public struct TransferPermission: Codable, Hashable {
         case .encryptionRequired: return security.encryptionRequired
         case .logAllActions: return audit.logAllActions
         case .trackEdits: return audit.trackEdits
-        case .trackDeletes: return audit.trackDeletes
+        case .trackDeletions: return audit.trackDeletions
         case .trackExecutions: return audit.trackExecutions
         case .allowAuditReview: return audit.allowAuditReview
         }
@@ -258,6 +265,7 @@ public struct TransferPermission: Codable, Hashable {
            security.readOnlyZones.contains(where: { path.hasPrefix($0) }) {
             return true
         }
+        if security.hiddenFiles && path.hasPrefix(".") { return true }
         return false
     }
 
