@@ -90,6 +90,14 @@ public final class BranchManager: ObservableObject {
         }
     }
 
+    public func restoreState(branches: [Branch], currentBranchID: UUID, merges: [BranchMerge]) {
+        self.branches = branches
+        if let current = branches.first(where: { $0.id == currentBranchID }) {
+            self.currentBranch = current
+        }
+        self.merges = merges
+    }
+
     public func registerMerge(from sourceID: UUID, into targetID: UUID, commitID: UUID, actorID: String) {
         updateLastCommit(for: targetID, commitID: commitID)
         let merge = BranchMerge(sourceBranchID: sourceID, targetBranchID: targetID, commitID: commitID)

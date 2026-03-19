@@ -48,9 +48,10 @@ struct CollaborationMainView: View {
                 Section("Workspace") {
                     NavigationLink { BranchGraphView(manager: manager) } label: { Label("Branch Visualization", systemImage: "point.3.connected.trianglepath.dotted") }
                     NavigationLink { CommitManagerView(manager: manager, actorID: currentUserID) } label: { Label("Advanced Commit Manager", systemImage: "shippingbox.circle") }
+                    NavigationLink { PullRequestView(manager: manager, actorID: currentUserID) } label: { Label("Pull Requests", systemImage: "tray.full") }
                     NavigationLink { CodeReviewView(manager: manager, actorID: currentUserID) } label: { Label("Code Review Dashboard", systemImage: "checkmark.seal.text.page") }
                     NavigationLink { PushPullManagerView(manager: manager, actorID: currentUserID) } label: { Label("Push/Pull Management", systemImage: "arrow.up.arrow.down.circle") }
-                    NavigationLink { InviteMembersView(manager: manager, actorID: currentUserID) } label: { Label("Collaborator Management", systemImage: "person.badge.plus") }
+                    NavigationLink { MemberManagementView(manager: manager, actorID: currentUserID) } label: { Label("Collaborator Management", systemImage: "person.badge.plus") }
                     NavigationLink { ActivityLogView(manager: manager) } label: { Label("Activity Log & Notifications", systemImage: "clock.badge.checkmark") }
                     NavigationLink { ConflictResolverView(manager: manager, actorID: currentUserID) } label: { Label("Conflict Resolver", systemImage: "arrow.triangle.merge") }
                     NavigationLink { FilePermissionView(manager: manager, actorID: currentUserID) } label: { Label("File Locking & Permissions", systemImage: "lock.doc") }
@@ -63,10 +64,12 @@ struct CollaborationMainView: View {
             CommitManagerView(manager: manager, actorID: currentUserID)
         case .reviews:
             CodeReviewView(manager: manager, actorID: currentUserID)
+        case .pullRequests:
+            PullRequestView(manager: manager, actorID: currentUserID)
         case .sync:
             PushPullManagerView(manager: manager, actorID: currentUserID)
         case .people:
-            InviteMembersView(manager: manager, actorID: currentUserID)
+            MemberManagementView(manager: manager, actorID: currentUserID)
         case .activity:
             ActivityLogView(manager: manager)
         case .conflicts:
@@ -113,7 +116,7 @@ struct CollaborationMainView: View {
 }
 
 private enum CollaborationTab: String, CaseIterable, Identifiable {
-    case overview, branches, commits, reviews, sync, people, activity, conflicts, files
+    case overview, branches, commits, pullRequests, reviews, sync, people, activity, conflicts, files
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
     var icon: String {
@@ -121,6 +124,7 @@ private enum CollaborationTab: String, CaseIterable, Identifiable {
         case .overview: return "square.grid.2x2"
         case .branches: return "arrow.triangle.branch"
         case .commits: return "shippingbox"
+        case .pullRequests: return "tray.full"
         case .reviews: return "text.badge.checkmark"
         case .sync: return "arrow.up.arrow.down"
         case .people: return "person.3"

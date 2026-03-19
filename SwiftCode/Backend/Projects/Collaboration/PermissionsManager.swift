@@ -57,6 +57,10 @@ public final class PermissionsManager: ObservableObject {
         return canManageRoles(role)
     }
 
+    public func restoreState(memberRoles: [String: CollaborationRole]) {
+        self.memberRoles = memberRoles
+    }
+
     public func hasPermission(_ permission: TransferPermission.Scope, for memberID: String, projectPermission: TransferPermission) -> Bool {
         guard let role = memberRoles[memberID] else { return false }
         if role == .owner { return true }

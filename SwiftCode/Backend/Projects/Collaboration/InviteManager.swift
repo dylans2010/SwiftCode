@@ -50,4 +50,8 @@ public final class InviteManager: ObservableObject {
         invites[index].status = .revoked
         lastEvent = InviteEvent(actorID: actorID, title: "Invitation revoked", detail: "Invite withdrawn for \(invites[index].memberID).", notifies: true)
     }
+
+    public func restoreState(invites: [CollaborationInvite]) {
+        self.invites = invites
+    }
 }
