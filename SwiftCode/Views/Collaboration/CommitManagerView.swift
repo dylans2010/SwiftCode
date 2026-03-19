@@ -3,7 +3,13 @@ import SwiftUI
 struct CommitManagerView: View {
     @ObservedObject var manager: CollaborationManager
     let actorID: String
+
     @State private var commitMessage = ""
+    @State private var selectedPath: String?
+    @State private var customPath = ""
+    @State private var customDiff = ""
+    @State private var selectedKind: CommitChangeKind = .modified
+    @State private var operationMessage: String?
 
     var body: some View {
         List {
@@ -16,32 +22,49 @@ struct CommitManagerView: View {
                         _ = manager.commits.redo()
                     }
                 }
+                Text("Undo and redo stay synchronized with the collaboration backend commit history.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
-            Section("Staging Area") {
-                if manager.commits.stagedChanges.isEmpty {
-                    Text("No staged changes. Tap a sample file below to stage live entries.")
-                        .foregroundStyle(.secondary)
-                }
-                ForEach(Array(manager.commits.stagedChanges.keys.sorted()), id: \.self) { path in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(path).font(.headline)
-                        Text(manager.commits.stagedChanges[path] ?? "")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .swipeActions {
-                        Button(role: .destructive) { manager.commits.unstage(path: path) } label: {
-                            Label("Unstage", systemImage: "minus.circle")
-                        }
+            Section("Working Tree") {
+                TextField("File path", text: $customPath)
+                Picker("Change type", selection: $selectedKind) {
+                    ForEach(CommitChangeKind.allCases, id: \.self) { kind in
+                        Text(kind.rawValue.capitalized).tag(kind)
                     }
                 }
+                TextField("Diff content", text: $customDiff, axis: .vertical)
+                    .lineLimit(3...8)
+                Button("Add / Update Change") {
+                    manager.commits.updateWorkingChange(path: customPath, diff: customDiff, kind: selectedKind, authorID: actorID)
+                    customPath = ""
+                    customDiff = ""
+                }
+                .disabled(customPath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || customDiff.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
 
-                ForEach(sampleStageEntries, id: \.0) { sample in
-                    Button {
-                        manager.commits.stage(path: sample.0, diff: sample.1)
-                    } label: {
-                        Label("Stage \(sample.0)", systemImage: "plus.circle")
+                ForEach(manager.commits.workingChanges) { change in
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(change.path).font(.headline)
+                                Text("\(change.kind.rawValue.capitalized) • \(change.authorID) • \(change.timestamp.formatted(date: .abbreviated, time: .shortened))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button(change.isStaged ? "Unstage" : "Stage") {
+                                if change.isStaged {
+                                    manager.commits.unstage(path: change.path, actorID: actorID)
+                                } else {
+                                    manager.commits.stage(path: change.path, authorID: actorID)
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                        NavigationLink("Open Diff") {
+                            CollaborationDiffViewerView(diff: change.diff)
+                        }
                     }
                 }
             }
@@ -51,6 +74,7 @@ struct CommitManagerView: View {
                 Button {
                     manager.commit(message: commitMessage, authorID: actorID, changes: [:])
                     commitMessage = ""
+                    operationMessage = "Commit created successfully."
                 } label: {
                     Label("Commit Staged Changes", systemImage: "checkmark.circle.fill")
                 }
@@ -59,23 +83,41 @@ struct CommitManagerView: View {
 
             Section("History") {
                 ForEach(manager.commits.commits(for: manager.branches.currentBranch.id)) { commit in
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(commit.message).font(.headline)
-                        Text("\(commit.authorID) • \(commit.timestamp.formatted(date: .abbreviated, time: .shortened))")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(commit.message).font(.headline)
+                                Text("\(commit.authorID) • \(commit.timestamp.formatted(date: .abbreviated, time: .shortened))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Menu {
+                                Button("Undo Last Commit") { _ = manager.commits.undo() }
+                                Button("Revert Commit") {
+                                    _ = manager.commits.revert(commitID: commit.id, actorID: actorID)
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis.circle")
+                            }
+                        }
+                        ForEach(commit.changes.keys.sorted(), id: \.self) { path in
+                            NavigationLink(path) {
+                                CollaborationDiffViewerView(diff: commit.changes[path] ?? "")
+                            }
+                        }
                     }
+                }
+            }
+
+            if let operationMessage {
+                Section {
+                    Label(operationMessage, systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
                 }
             }
         }
         .navigationTitle("Commit Manager")
-    }
-
-    private var sampleStageEntries: [(String, String)] {
-        [
-            ("Sources/Editor/CollabSession.swift", "+ add reviewer assignment hooks"),
-            ("Views/Projects/Toolbar.swift", "+ expose collaboration shortcut")
-        ]
     }
 
     private func actionButton(title: String, icon: String, tint: Color, enabled: Bool, action: @escaping () -> Void) -> some View {
