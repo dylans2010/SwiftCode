@@ -66,8 +66,8 @@ struct CodeReviewResult: Identifiable, Codable {
 // MARK: - Code Review Manager
 
 @MainActor
-final class CodeReviewManager: ObservableObject {
-    static let shared = CodeReviewManager()
+final class AgentCodeReviewManager: ObservableObject {
+    static let shared = AgentCodeReviewManager()
 
     @Published var reviewResults: [CodeReviewResult] = []
     @Published var isReviewing: Bool = false

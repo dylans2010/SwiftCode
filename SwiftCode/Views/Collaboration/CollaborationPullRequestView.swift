@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PullRequestView: View {
+struct CollaborationPullRequestView: View {
     @ObservedObject var manager: CollaborationManager
     let actorID: String
 

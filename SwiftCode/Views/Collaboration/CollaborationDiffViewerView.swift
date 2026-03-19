@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct DiffViewerView: View {
+struct CollaborationDiffViewerView: View {
     let diff: String
 
     var body: some View {
@@ -51,7 +51,7 @@ struct DiffViewerTestView: View {
             Section("Recent Commit Diff") {
                 if let lastCommit = manager.commits.commits.first {
                     NavigationLink(lastCommit.message) {
-                        DiffViewerView(diff: lastCommit.changes.values.first ?? "No diff available")
+                        CollaborationDiffViewerView(diff: lastCommit.changes.values.first ?? "No diff available")
                     }
                 } else {
                     Text("No commits yet.")

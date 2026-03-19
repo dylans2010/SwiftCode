@@ -141,7 +141,7 @@ PTV000000000000000000001A /* ProjectTemplateView.swift in Sources */ = {isa = PB
 CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CM0000000000000000000001B /* CodeEditorManagementView.swift */; };
 		PRM000000000000000000001A /* PullRequestManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRM000000000000000000001B /* PullRequestManager.swift */; };
 		PRV000000000000000000001A /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRV000000000000000000001B /* PullRequestView.swift */; };
-		DVV000000000000000000001A /* DiffViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DVV000000000000000000001B /* DiffViewerView.swift */; };
+		DVV000000000000000000001A /* CollaborationDiffViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DVV000000000000000000001B /* CollaborationDiffViewerView.swift */; };
 		MMV000000000000000000001A /* MemberManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MMV000000000000000000001B /* MemberManagementView.swift */; };
 RM0000000000000000000001A /* CodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = RM0000000000000000000001B /* CodeReviewManager.swift */; };
 RV0000000000000000000001A /* CodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RV0000000000000000000001B /* CodeReviewView.swift */; };
@@ -436,8 +436,8 @@ PMV000000000000000000001B /* PluginManagerView.swift */ = {isa = PBXFileReferenc
 PTV000000000000000000001B /* ProjectTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTemplateView.swift; sourceTree = "<group>"; };
 CM0000000000000000000001B /* CodeEditorManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeEditorManagementView.swift; sourceTree = "<group>"; };
 		PRM000000000000000000001B /* PullRequestManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestManager.swift; sourceTree = "<group>"; };
-		PRV000000000000000000001B /* PullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestView.swift; sourceTree = "<group>"; };
-		DVV000000000000000000001B /* DiffViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffViewerView.swift; sourceTree = "<group>"; };
+		PRV000000000000000000001B /* PullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollaborationPullRequestView.swift; sourceTree = "<group>"; };
+		DVV000000000000000000001B /* CollaborationDiffViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CollaborationDiffViewerView.swift; sourceTree = "<group>"; };
 		MMV000000000000000000001B /* MemberManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberManagementView.swift; sourceTree = "<group>"; };
 RM0000000000000000000001B /* CodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewManager.swift; sourceTree = "<group>"; };
 RV0000000000000000000001B /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewView.swift; sourceTree = "<group>"; };
@@ -1809,7 +1809,7 @@ files = (
 				CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */,
 				PRM000000000000000000001A /* PullRequestManager.swift in Sources */,
 				PRV000000000000000000001A /* PullRequestView.swift in Sources */,
-				DVV000000000000000000001A /* DiffViewerView.swift in Sources */,
+				DVV000000000000000000001A /* CollaborationDiffViewerView.swift in Sources */,
 				MMV000000000000000000001A /* MemberManagementView.swift in Sources */,
 				RM0000000000000000000001A /* CodeReviewManager.swift in Sources */,
 				RV0000000000000000000001A /* CodeReviewView.swift in Sources */,

@@ -30,7 +30,7 @@ final class AgentManager: ObservableObject {
                 await executionState.addLog("Modifications detected. Triggering automated code review...")
                 for filePath in response.modifiedFiles {
                     if let patch = await CodePatchEngine.shared.pendingPatches.first(where: { $0.filePath == filePath }) {
-                        await CodeReviewManager.shared.reviewCode(
+                        await AgentCodeReviewManager.shared.reviewCode(
                             code: patch.modifiedContent,
                             fileName: (filePath as NSString).lastPathComponent
                         )

@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct CommitHistoryView: View {
+struct CollaborationCommitHistoryView: View {
     @ObservedObject var manager: CollaborationManager
 
     var body: some View {
