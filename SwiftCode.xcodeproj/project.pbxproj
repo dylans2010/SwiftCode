@@ -305,6 +305,9 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		AGN00000000000000000002A /* FileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AGN00000000000000000002B /* FileTool.swift */; };
 		AGN00000000000000000003A /* ProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AGN00000000000000000003B /* ProjectTool.swift */; };
 		AGN00000000000000000004A /* TransferTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AGN00000000000000000004B /* TransferTool.swift */; };
+AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000012B /* AdvancedToolsSharedDesignSystem.swift */; };
+		ACR00000000000000000001A /* AgentCodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACR00000000000000000001B /* AgentCodeReviewManager.swift */; };
+		AICR0000000000000000001A /* AICodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AICR0000000000000000001B /* AICodeReviewView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -601,6 +604,9 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		AGN00000000000000000002B /* FileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "FileTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/FileTool.swift"; sourceTree = SOURCE_ROOT; };
 		AGN00000000000000000003B /* ProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ProjectTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/ProjectTool.swift"; sourceTree = SOURCE_ROOT; };
 		AGN00000000000000000004B /* TransferTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TransferTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/TransferTool.swift"; sourceTree = SOURCE_ROOT; };
+		AT000000000000000000012B /* AdvancedToolsSharedDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AdvancedToolsSharedDesignSystem.swift"; path = "SwiftCode/Features/AdvancedTools/Engines/AdvancedToolsSharedDesignSystem.swift"; sourceTree = SOURCE_ROOT; };
+		ACR00000000000000000001B /* AgentCodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentCodeReviewManager.swift"; path = "SwiftCode/Backend/Agent New/AgentCodeReviewManager.swift"; sourceTree = SOURCE_ROOT; };
+		AICR0000000000000000001B /* AICodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AICodeReviewView.swift"; path = "SwiftCode/Views/AI/AI New/AICodeReviewView.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -1872,7 +1878,10 @@ files = (
 				AT00000000000000000000FA /* SymbolIndexingEngine.swift in Sources */,
 				AT000000000000000000010A /* CodeIntelligenceEngine.swift in Sources */,
 				AT000000000000000000011A /* AdvancedToolsDesignSystem.swift in Sources */,
+				AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */,
 				DABA00000000000000000002 /* DocumentationAnalyzer.swift in Sources */,
+				ACR00000000000000000001A /* AgentCodeReviewManager.swift in Sources */,
+				AICR0000000000000000001A /* AICodeReviewView.swift in Sources */,
 				DAIV00000000000000000002 /* DocumentationAIInsightsView.swift in Sources */,
 				DT000000000000000000001A /* DebuggingToolsView.swift in Sources */,
 				DEP000000000000000000001A /* DeploymentKeychainManager.swift in Sources */,
