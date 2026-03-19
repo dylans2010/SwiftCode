@@ -74,16 +74,6 @@ public final class CommitManager: ObservableObject {
     public func seedWorkingChangesIfNeeded(authorID: String, branchID: UUID? = nil) {
         let seedBranchID = branchID ?? activeBranchID
         guard let seedBranchID else { return }
-        guard (workingChangesByBranch[seedBranchID] ?? []).isEmpty else {
-            syncPublishedState(for: seedBranchID)
-            return
-        }
-        workingChangesByBranch[seedBranchID] = [
-            CommitFileChange(path: "Sources/Editor/CollabSession.swift", diff: "@@ -10,3 +10,8 @@\n+ let reviewers = assignedReviewers\n+ session.refresh()", kind: .modified, isStaged: false, authorID: authorID),
-            CommitFileChange(path: "Views/Projects/Toolbar.swift", diff: "@@ -1,1 +1,4 @@\n+ Button(\"Collaborate\") { openCollaboration() }", kind: .added, isStaged: false, authorID: authorID),
-            CommitFileChange(path: "Docs/OldWorkflow.md", diff: "@@ -1,4 +0,0 @@\n- Legacy workflow guidance", kind: .deleted, isStaged: false, authorID: authorID)
-        ]
-        stagedChangesByBranch[seedBranchID] = [:]
         syncPublishedState(for: seedBranchID)
     }
 

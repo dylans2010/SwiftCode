@@ -12,7 +12,7 @@ final class CollaborationSessionStore: ObservableObject {
         if let existing = managers[project.id] {
             return existing
         }
-        let manager = CollaborationManager(projectID: project.id, creatorID: creatorID)
+        let manager = CollaborationManager(project: project, creatorID: creatorID)
         managers[project.id] = manager
         return manager
     }

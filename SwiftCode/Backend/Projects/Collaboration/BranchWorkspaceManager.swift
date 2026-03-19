@@ -84,11 +84,16 @@ public final class BranchWorkspaceManager: ObservableObject {
     private let branchManager: BranchManager
     private let commitManager: CommitManager
     private let pullRequestManager: PullRequestManager
+    private var project: Project?
 
     public init(branchManager: BranchManager, commitManager: CommitManager, pullRequestManager: PullRequestManager) {
         self.branchManager = branchManager
         self.commitManager = commitManager
         self.pullRequestManager = pullRequestManager
+    }
+
+    public func setProject(_ project: Project) {
+        self.project = project
         seedMainWorkspaceIfNeeded()
     }
 
@@ -219,7 +224,22 @@ public final class BranchWorkspaceManager: ObservableObject {
         workspace.updatedAt = Date()
         workspaces[branchID] = workspace
         commitManager.replaceWorkingChanges([], stagedChanges: [:], for: branchID)
+
+        // If we reset the main branch, we should potentially update the project on disk
+        if workspace.branchName == "main", let project = project {
+            syncMainToDisk(workspace: workspace, project: project)
+        }
+
         publishSuccess("Reset \(workspace.branchName) to match \(source.branchName).")
+    }
+
+    private func syncMainToDisk(workspace: BranchWorkspace, project: Project) {
+        let root = project.directoryURL
+        for file in workspace.files {
+            let fileURL = root.appendingPathComponent(file.path)
+            try? FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try? file.content.write(to: fileURL, atomically: true, encoding: .utf8)
+        }
     }
 
     public func commitCurrentWorkspace(message: String, authorID: String) -> Commit? {
@@ -241,12 +261,64 @@ public final class BranchWorkspaceManager: ObservableObject {
     }
 
     public func preparePullRequestPayload(targetBranchID: UUID, actorID: String) -> PullRequestDraftPayload? {
-        guard let workspace = currentWorkspace else { return nil }
+        guard let workspace = currentWorkspace,
+              let targetWorkspace = workspaces[targetBranchID] ?? branchManager.branches.first(where: { $0.id == targetBranchID }).map(makeWorkspace(for:)) else { return nil }
+
         let commits = commitManager.commits(for: workspace.branchID)
-        let diffs = workspace.pendingChanges.map { PullRequestDiffEntry(path: $0.path, diff: $0.diff) }
-        let title = "\(workspace.branchName) → \(branchManager.branches.first(where: { $0.id == targetBranchID })?.name ?? "target")"
-        let description = "Prepared by \(actorID) from isolated workspace \(workspace.workingDirectory).\n\nFiles changed: \(workspace.pendingChanges.count)."
-        return PullRequestDraftPayload(sourceBranchID: workspace.branchID, targetBranchID: targetBranchID, title: title, description: description, linkedCommitIDs: commits.map(\.id), diffEntries: diffs)
+
+        var diffEntries: [PullRequestDiffEntry] = []
+        let sourceFiles = workspace.files
+        let targetFiles = targetWorkspace.files
+
+        let allPaths = Set(sourceFiles.map { $0.path }).union(targetFiles.map { $0.path })
+
+        for path in allPaths.sorted() {
+            let sourceFile = sourceFiles.first(where: { $0.path == path })
+            let targetFile = targetFiles.first(where: { $0.path == path })
+
+            if sourceFile?.content != targetFile?.content {
+                let diff = generateDiff(from: targetFile?.content ?? "", to: sourceFile?.content ?? "", path: path)
+                diffEntries.append(PullRequestDiffEntry(path: path, diff: diff))
+            }
+        }
+
+        let title = "\(workspace.branchName) → \(targetWorkspace.branchName)"
+        let description = "Prepared by \(actorID) from isolated workspace \(workspace.workingDirectory).\n\nFiles changed: \(diffEntries.count)."
+        return PullRequestDraftPayload(sourceBranchID: workspace.branchID, targetBranchID: targetBranchID, title: title, description: description, linkedCommitIDs: commits.map(\.id), diffEntries: diffEntries)
+    }
+
+    private func generateDiff(from oldContent: String, to newContent: String, path: String) -> String {
+        if oldContent == newContent { return "No changes" }
+        if oldContent.isEmpty { return "@@ \(path) @@\n+\(newContent)" }
+        if newContent.isEmpty { return "@@ \(path) @@\n-\(oldContent)" }
+
+        let oldLines = oldContent.components(separatedBy: .newlines)
+        let newLines = newContent.components(separatedBy: .newlines)
+
+        var diff = "@@ \(path) @@\n"
+        let maxLines = max(oldLines.count, newLines.count)
+
+        for i in 0..<maxLines {
+            let oldLine = i < oldLines.count ? oldLines[i] : nil
+            let newLine = i < newLines.count ? newLines[i] : nil
+
+            if oldLine != newLine {
+                if let old = oldLine { diff += "-\(old)\n" }
+                if let new = newLine { diff += "+\(new)\n" }
+            } else if let line = oldLine {
+                // Show context lines only if they are near a change?
+                // For simplicity, just show the line as is
+                diff += " \(line)\n"
+            }
+
+            // Limit diff size to avoid massive strings
+            if diff.count > 10000 {
+                diff += "... diff truncated ..."
+                break
+            }
+        }
+
+        return diff
     }
 
     public func syncWorkspaceStateFromCommitManager() {
@@ -266,8 +338,29 @@ public final class BranchWorkspaceManager: ObservableObject {
     }
 
     private func makeWorkspace(for branch: Branch) -> BranchWorkspace {
+        var workspace = BranchWorkspace(
+            branchID: branch.id,
+            branchName: branch.name,
+            workingDirectory: "/DerivedData/Collaboration/\(branch.name)",
+            baseBranchID: nil,
+            files: [],
+            metadata: [:],
+            lastCommitID: branch.lastCommitID,
+            pendingChanges: commitManager.workingChanges(for: branch.id)
+        )
+
         let snapshot = lastCommittedSnapshot(for: branch.id)
-        return BranchWorkspace(branchID: branch.id, branchName: branch.name, workingDirectory: "/DerivedData/Collaboration/\(branch.name)", baseBranchID: nil, files: snapshot.files, metadata: snapshot.metadata, lastCommitID: branch.lastCommitID ?? snapshot.lastCommitID, pendingChanges: commitManager.workingChanges(for: branch.id))
+        if snapshot.files.isEmpty && branch.name == "main" {
+            // Initial seeding from project disk
+            let realFiles = scanProjectFiles()
+            workspace.files = realFiles
+        } else {
+            workspace.files = snapshot.files
+            workspace.lastCommitID = branch.lastCommitID ?? snapshot.lastCommitID
+        }
+
+        workspace.metadata = snapshot.metadata
+        return workspace
     }
 
     private func lastCommittedSnapshot(for branchID: UUID) -> BranchWorkspaceSnapshot {
@@ -280,6 +373,33 @@ public final class BranchWorkspaceManager: ObservableObject {
             BranchWorkspaceFile(path: path, content: fileMap[path] ?? "")
         }
         return BranchWorkspaceSnapshot(files: files, metadata: ["branchID": branchID.uuidString], basedOnBranchID: branchID, lastCommitID: latestCommit?.id)
+    }
+
+    private func scanProjectFiles() -> [BranchWorkspaceFile] {
+        guard let project = project else { return [] }
+        var files: [BranchWorkspaceFile] = []
+        let root = project.directoryURL
+
+        func scan(at url: URL) {
+            guard let contents = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: [.isDirectoryKey], options: .skipsHiddenFiles) else { return }
+            for item in contents {
+                if item.lastPathComponent == "project.json" { continue }
+                var isDir: ObjCBool = false
+                if FileManager.default.fileExists(atPath: item.path, isDirectory: &isDir) {
+                    if isDir.boolValue {
+                        scan(at: item)
+                    } else {
+                        if let content = try? String(contentsOf: item, encoding: .utf8) {
+                            let relativePath = item.path.replacingOccurrences(of: root.path + "/", with: "")
+                            files.append(BranchWorkspaceFile(path: relativePath, content: content))
+                        }
+                    }
+                }
+            }
+        }
+
+        scan(at: root)
+        return files
     }
 
     private func publishError(_ message: String) {
