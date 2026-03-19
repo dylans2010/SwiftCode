@@ -436,6 +436,9 @@ struct GeneralSettingsView: View {
     // Quick Setup section state
     @State private var showExtensions = false
     @State private var showOfflineModelsSheet = false
+    @State private var codexAPIKey: String = KeychainService.shared.get(forKey: KeychainService.codexUserAPIKey) ?? ""
+    @State private var codexValidationMessage: String = ""
+    @State private var isValidatingCodexKey = false
 
     var activeTheme: AppTheme {
         themeManager.theme(for: settings.selectedThemeID) ?? AppTheme.dark
@@ -674,6 +677,60 @@ struct GeneralSettingsView: View {
                 }
             }
             .disabled(!DeviceUtilityManager.shared.isAppleIntelligenceSupported())
+
+            Toggle(isOn: Binding(get: { settings.useCodexAsDefaultAgent }, set: {
+                settings.useCodexAsDefaultAgent = $0
+                CodexManager.shared.refreshUsageMode()
+            })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Use Codex as Default Agent")
+                    Text("When enabled, Codex becomes the primary AI execution engine and replaces the internal Agent for AI requests.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if settings.useCodexAsDefaultAgent {
+                SecureField("OpenAI API Key", text: $codexAPIKey)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+
+                HStack {
+                    Button("Save Codex Key") {
+                        let trimmed = codexAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if trimmed.isEmpty {
+                            KeychainService.shared.delete(forKey: KeychainService.codexUserAPIKey)
+                        } else {
+                            KeychainService.shared.set(trimmed, forKey: KeychainService.codexUserAPIKey)
+                        }
+                        CodexManager.shared.refreshUsageMode()
+                        codexValidationMessage = trimmed.isEmpty ? "User key removed. App-controlled mode will be used when an app key is available." : "Stored securely in Keychain. BYOK mode is unlimited and tracked locally only."
+                    }
+                    .buttonStyle(.borderedProminent)
+
+                    Button("Validate") {
+                        Task {
+                            isValidatingCodexKey = true
+                            let trimmed = codexAPIKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let isValid = await CodexManager.shared.validateUserAPIKey(trimmed)
+                            codexValidationMessage = isValid ? "Codex key validated successfully." : "Codex key validation failed."
+                            isValidatingCodexKey = false
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(codexAPIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isValidatingCodexKey)
+                }
+
+                Text(CodexManager.shared.userHasCustomAPIKey ? "Tracked only, not limited" : "No user key found. SwiftCode will fall back to restricted app-controlled usage when available.")
+                    .font(.caption)
+                    .foregroundStyle(CodexManager.shared.userHasCustomAPIKey ? .green : .secondary)
+
+                if !codexValidationMessage.isEmpty {
+                    Text(codexValidationMessage)
+                        .font(.caption)
+                        .foregroundStyle(codexValidationMessage.contains("failed") ? .red : .green)
+                }
+            }
 
             Button {
                 showCoreMLSheet = true
