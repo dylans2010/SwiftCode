@@ -438,7 +438,7 @@ CM0000000000000000000001B /* CodeEditorManagementView.swift */ = {isa = PBXFileR
 		PRM000000000000000000001B /* PullRequestManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/PullRequestManager.swift; sourceTree = SOURCE_ROOT; };
 		PRV000000000000000000001B /* PullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationPullRequestView.swift; sourceTree = SOURCE_ROOT; };
 		DVV000000000000000000001B /* CollaborationDiffViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationDiffViewerView.swift; sourceTree = SOURCE_ROOT; };
-		MMV000000000000000000001B /* MemberManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemberManagementView.swift; sourceTree = "<group>"; };
+		MMV000000000000000000001B /* MemberManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/MemberManagementView.swift; sourceTree = SOURCE_ROOT; };
 RM0000000000000000000001B /* CodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewManager.swift; sourceTree = "<group>"; };
 RV0000000000000000000001B /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewView.swift; sourceTree = "<group>"; };
 GH0000000000000000000001B /* GitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHistoryView.swift; sourceTree = "<group>"; };
@@ -511,7 +511,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		AT00000000000000000000EB /* WorkspaceProfilesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceProfilesManager.swift; sourceTree = "<group>"; };
 		AT00000000000000000000FB /* SymbolIndexingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolIndexingEngine.swift; sourceTree = "<group>"; };
 		AT000000000000000000010B /* CodeIntelligenceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeIntelligenceEngine.swift; sourceTree = "<group>"; };
-		AT000000000000000000011B /* AdvancedToolsDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedToolsDesignSystem.swift; sourceTree = "<group>"; };
+		AT000000000000000000011B /* AdvancedToolsDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Features/AdvancedTools/Views/AdvancedToolsDesignSystem.swift; sourceTree = SOURCE_ROOT; };
 		DABA00000000000000000001 /* DocumentationAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentationAnalyzer.swift; sourceTree = "<group>"; };
 		DAIV00000000000000000001 /* DocumentationAIInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentationAIInsightsView.swift; sourceTree = "<group>"; };
 		ONB000000000000000000001 /* OnboardingSplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingSplashView.swift; sourceTree = "<group>"; };
