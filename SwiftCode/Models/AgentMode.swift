@@ -46,7 +46,7 @@ enum AgentMode: String, CaseIterable, Identifiable {
     }
 }
 
-struct AIMessage: Identifiable, Codable {
+struct AIMessage: Identifiable, Codable, Hashable {
     var id: UUID = UUID()
     var role: String // "user", "assistant", "tool_call", or "tool_result"
     var content: String

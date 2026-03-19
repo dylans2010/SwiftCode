@@ -670,7 +670,7 @@ struct GeneralSettingsView: View {
                     Text("Apple Intelligence")
                     Text(DeviceUtilityManager.shared.isAppleIntelligenceSupported() ? "Use on-device AI instead of external providers." : "Apple Intelligence is not available on this device")
                         .font(.caption)
-                        .foregroundStyle(DeviceUtilityManager.shared.isAppleIntelligenceSupported() ? .secondary : .red)
+                        .foregroundStyle(DeviceUtilityManager.shared.isAppleIntelligenceSupported() ? Color.secondary : Color.red)
                 }
             }
             .disabled(!DeviceUtilityManager.shared.isAppleIntelligenceSupported())

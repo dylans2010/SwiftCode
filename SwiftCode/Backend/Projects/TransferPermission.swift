@@ -1,16 +1,16 @@
 import Foundation
 
-struct TransferPermission: Codable, Hashable {
-    enum AccessPreset: String, Codable, CaseIterable, Identifiable {
+public struct TransferPermission: Codable, Hashable {
+    public enum AccessPreset: String, Codable, CaseIterable, Identifiable {
         case readOnly = "read-only"
         case limitedEdit = "limited-edit"
         case fullAccess = "full-access"
         case custom
 
-        var id: String { rawValue }
+        public var id: String { rawValue }
     }
 
-    struct FileSystemPermissions: Codable, Hashable {
+    public struct FileSystemPermissions: Codable, Hashable {
         var viewFiles: Bool
         var editFiles: Bool
         var createFiles: Bool
@@ -20,7 +20,7 @@ struct TransferPermission: Codable, Hashable {
         var bulkOperations: Bool
     }
 
-    struct ProjectManagementPermissions: Codable, Hashable {
+    public struct ProjectManagementPermissions: Codable, Hashable {
         var modifyProjectSettings: Bool
         var renameProject: Bool
         var editMetadata: Bool
@@ -28,7 +28,7 @@ struct TransferPermission: Codable, Hashable {
         var editEnvironmentConfigs: Bool
     }
 
-    struct VersionControlPermissions: Codable, Hashable {
+    public struct VersionControlPermissions: Codable, Hashable {
         var enableDisableGit: Bool
         var commit: Bool
         var push: Bool
@@ -38,7 +38,7 @@ struct TransferPermission: Codable, Hashable {
         var revert: Bool
     }
 
-    struct ExecutionPermissions: Codable, Hashable {
+    public struct ExecutionPermissions: Codable, Hashable {
         var buildProject: Bool
         var runProject: Bool
         var executeScripts: Bool
@@ -46,14 +46,14 @@ struct TransferPermission: Codable, Hashable {
         var backgroundProcesses: Bool
     }
 
-    struct PluginPermissions: Codable, Hashable {
+    public struct PluginPermissions: Codable, Hashable {
         var installPlugins: Bool
         var removePlugins: Bool
         var runPlugins: Bool
         var allowPluginFileModification: Bool
     }
 
-    struct AgentPermissions: Codable, Hashable {
+    public struct AgentPermissions: Codable, Hashable {
         var allowAgentAccess: Bool
         var allowAgentFileModification: Bool
         var allowAgentCodeGeneration: Bool
@@ -62,7 +62,7 @@ struct TransferPermission: Codable, Hashable {
         var allowAgentToInitiateTransfers: Bool
     }
 
-    struct TransferControlPermissions: Codable, Hashable {
+    public struct TransferControlPermissions: Codable, Hashable {
         var allowRetransfer: Bool
         var allowExternalSharing: Bool
         var restrictToOriginalSender: Bool
@@ -70,14 +70,14 @@ struct TransferPermission: Codable, Hashable {
         var oneTimeAccessMode: Bool
     }
 
-    struct SecurityRestrictions: Codable, Hashable {
+    public struct SecurityRestrictions: Codable, Hashable {
         var restrictedSensitivePaths: [String]
         var readOnlyZones: [String]
         var blockedExecutionExtensions: [String]
         var encryptionRequired: Bool
     }
 
-    struct AuditConfiguration: Codable, Hashable {
+    public struct AuditConfiguration: Codable, Hashable {
         var logAllActions: Bool
         var trackEdits: Bool
         var trackDeletes: Bool
@@ -85,7 +85,7 @@ struct TransferPermission: Codable, Hashable {
         var allowAuditReview: Bool
     }
 
-    enum Scope: String, Codable, CaseIterable {
+    public enum Scope: String, Codable, CaseIterable {
         case viewFiles
         case editFiles
         case createFiles
