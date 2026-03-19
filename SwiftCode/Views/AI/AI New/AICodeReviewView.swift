@@ -5,7 +5,7 @@ import SwiftUI
 struct AICodeReviewView: View {
     @EnvironmentObject private var projectManager: ProjectManager
     @EnvironmentObject private var settings: AppSettings
-    @StateObject private var reviewManager = CodeReviewManager.shared
+    @StateObject private var reviewManager = AgentCodeReviewManager.shared
 
     @State private var selectedResult: CodeReviewResult?
     @State private var showIssueDetail: CodeReviewIssue?
