@@ -1,127 +1,117 @@
 import SwiftUI
 
 struct ChatAIInterfaceView: View {
-    @State private var messages: [ChatMessage] = []
-    @State private var input: String = ""
-    @State private var isTyping = false
+    @StateObject private var controller = ChatController.shared
+    @State private var input = ""
+    @State private var useContext = true
+    @State private var showSlashCommands = false
 
-    private let storageKey = "com.swiftcode.chatHistory"
+    private let commands = ["/summarize", "/explain", "/fix", "/plan"]
 
-    struct ChatMessage: Identifiable, Codable {
-        let id: UUID
-        let role: String
-        let content: String
-        let timestamp: Date
-
-        init(role: String, content: String) {
-            self.id = UUID()
-            self.role = role
-            self.content = content
-            self.timestamp = Date()
+    var body: some View {
+        VStack(spacing: 18) {
+            header
+            messagesPanel
+            composer
         }
     }
 
-    var body: some View {
-        VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 12) {
-                        ForEach(messages) { msg in
-                            ChatBubble(message: msg)
-                        }
+    private var header: some View {
+        HStack(alignment: .center) {
+            AssistantSectionHeader(
+                eyebrow: "Chat mode",
+                title: "Ask for code help naturally",
+                subtitle: "The assistant now avoids echoing your prompt and focuses on concise, useful output."
+            )
+            Spacer()
+            Toggle("Context", isOn: $useContext)
+                .toggleStyle(.switch)
+                .labelsHidden()
+        }
+        .padding(20)
+        .assistantGlassCard()
+    }
 
-                        if isTyping {
-                            HStack {
-                                Text("AI Is Thinking...")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 16)
-                                Spacer()
+    private var messagesPanel: some View {
+        VStack(spacing: 12) {
+            if controller.messages.isEmpty {
+                ContentUnavailableView(
+                    "Start a Conversation",
+                    systemImage: "wand.and.stars",
+                    description: Text("Ask about your codebase, request a refactor, or generate a plan.")
+                )
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, minHeight: 220)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(controller.messages) { message in
+                                ChatMessageBubble(message: message)
+                                    .id(message.id)
+                            }
+
+                            if controller.isGenerating {
+                                TypingIndicatorBubble()
+                            }
+                        }
+                        .padding(2)
+                    }
+                    .onChange(of: controller.messages.count) { _, _ in
+                        if let last = controller.messages.last {
+                            withAnimation(.easeOut(duration: 0.25)) {
+                                proxy.scrollTo(last.id, anchor: .bottom)
                             }
                         }
                     }
-                    .padding()
                 }
-                .onAppear {
-                    loadHistory()
-                }
-                .onChange(of: messages.count) { _, _ in
-                    saveHistory()
-                    if let last = messages.last {
-                        withAnimation {
-                            proxy.scrollTo(last.id, anchor: .bottom)
-                        }
-                    }
+            }
+        }
+        .padding(20)
+        .frame(minHeight: 320)
+        .assistantGlassCard()
+    }
+
+    private var composer: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if showSlashCommands {
+                SlashCommandList(commands: commands) { command in
+                    input = command + " "
+                    showSlashCommands = false
                 }
             }
 
-            Divider()
-
-            HStack {
-                TextField("Chat", text: $input)
-                    .textFieldStyle(.roundedBorder)
+            HStack(alignment: .bottom, spacing: 12) {
+                TextField("Message the AI assistant", text: $input, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...6)
+                    .padding(16)
+                    .background(Color.white.opacity(0.08))
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .foregroundStyle(.white)
+                    .onChange(of: input) { _, newValue in
+                        showSlashCommands = newValue.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("/")
+                    }
 
                 Button {
-                    sendMessage()
+                    Task { await sendMessage() }
                 } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.blue)
+                    Label("Send", systemImage: "paperplane.fill")
                 }
-                .disabled(input.isEmpty || isTyping)
+                .buttonStyle(AssistantPrimaryButtonStyle())
+                .frame(maxWidth: 140)
+                .disabled(input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || controller.isGenerating)
             }
-            .padding()
         }
+        .padding(20)
+        .assistantGlassCard()
     }
 
-    private func sendMessage() {
-        let userMsg = ChatMessage(role: "user", content: input)
-        messages.append(userMsg)
-        let prompt = input
+    private func sendMessage() async {
+        let prompt = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !prompt.isEmpty else { return }
         input = ""
-        isTyping = true
-
-        Task {
-            do {
-                let response = try await LLMService.shared.generateResponse(prompt: prompt, useContext: true)
-                let aiMsg = ChatMessage(role: "assistant", content: response)
-                messages.append(aiMsg)
-            } catch {
-                let errorMsg = ChatMessage(role: "assistant", content: "Error: \(error.localizedDescription)")
-                messages.append(errorMsg)
-            }
-            isTyping = false
-        }
-    }
-
-    private func saveHistory() {
-        if let data = try? JSONEncoder().encode(messages) {
-            UserDefaults.standard.set(data, forKey: storageKey)
-        }
-    }
-
-    private func loadHistory() {
-        if let data = UserDefaults.standard.data(forKey: storageKey),
-           let decoded = try? JSONDecoder().decode([ChatMessage].self, from: data) {
-            messages = decoded
-        }
-    }
-}
-
-struct ChatBubble: View {
-    let message: ChatAIInterfaceView.ChatMessage
-
-    var body: some View {
-        HStack {
-            if message.role == "user" { Spacer() }
-
-            Text(message.content)
-                .padding(12)
-                .background(message.role == "user" ? Color.blue : Color.secondary.opacity(0.2))
-                .foregroundColor(message.role == "user" ? .white : .primary)
-                .cornerRadius(16)
-
-            if message.role != "user" { Spacer() }
-        }
+        showSlashCommands = false
+        await controller.sendMessage(prompt, useContext: useContext)
     }
 }

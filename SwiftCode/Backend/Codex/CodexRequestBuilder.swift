@@ -1,7 +1,7 @@
 import Foundation
 
 struct CodexRequestBuilder {
-    let systemPrompt = "You are OpenAI Codex acting as the primary execution engine for SwiftCode. Produce concrete, developer-focused output, respect the current task, and prefer safe, precise actions."
+    let systemPrompt = "You are OpenAI Codex acting as the primary execution engine for SwiftCode. Produce concrete, developer-focused output, respect the current task, and prefer safe, precise actions. Never repeat or paraphrase the user's request unless explicitly asked to quote it. Start directly with the answer, plan, or code."
 
     func makeRequest(model: String, prompt: String, session: CodexSession, taskType: CodexTaskType, stream: Bool) throws -> URLRequest {
         guard let url = URL(string: "https://api.openai.com/v1/responses") else {
@@ -47,4 +47,3 @@ struct CodexRequestBuilder {
         return items
     }
 }
-

@@ -8,32 +8,16 @@ struct OnDeviceAIView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [.blue.opacity(0.8), .purple.opacity(0.7), .pink.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
+            AssistantTheme.canvas.ignoresSafeArea()
 
-            VStack(spacing: 16) {
-                headerCard
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(controller.messages) { message in
-                            ChatMessageBubble(message: message)
-                                .padding(.horizontal, 8)
-                        }
-                        if !streamedResponse.isEmpty {
-                            Text(streamedResponse)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(.ultraThinMaterial)
-                                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-                                .padding(.horizontal, 8)
-                                .transition(.opacity.combined(with: .move(edge: .bottom)))
-                        }
-                    }
-                    .padding(.bottom, 8)
+            ScrollView {
+                VStack(spacing: 18) {
+                    headerCard
+                    transcript
+                    composer
                 }
-                composer
+                .padding()
             }
-            .padding()
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.86), value: controller.messages)
         .navigationTitle("Apple Intelligence")
@@ -41,38 +25,65 @@ struct OnDeviceAIView: View {
     }
 
     private var headerCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Label("On-Device AI", systemImage: "sparkles")
-                    .font(.headline)
-                Spacer()
-                Text(DeviceUtilityManager.shared.getCapabilityLevel().rawValue.capitalized)
-                    .font(.caption.weight(.semibold))
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.thinMaterial)
-                    .clipShape(Capsule())
-            }
-            Text("Private, offline-first assistance with streaming responses and automatic fallback.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        HStack(alignment: .top) {
+            AssistantSectionHeader(
+                eyebrow: "On-device AI",
+                title: "Private local assistance",
+                subtitle: "Stream responses on device with the same rebuilt assistant interface and responsive controls."
+            )
+            Spacer()
+            Text(DeviceUtilityManager.shared.getCapabilityLevel().rawValue.capitalized)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.10))
+                .clipShape(Capsule())
         }
-        .padding()
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(20)
+        .assistantGlassCard()
+    }
+
+    private var transcript: some View {
+        VStack(spacing: 12) {
+            ForEach(controller.messages) { message in
+                ChatMessageBubble(message: message)
+            }
+            if !streamedResponse.isEmpty {
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Streaming")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(Color.white.opacity(0.72))
+                        Text(streamedResponse)
+                            .foregroundStyle(.white)
+                    }
+                    .padding(16)
+                    .background(AssistantTheme.assistantBubble)
+                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    Spacer(minLength: 56)
+                }
+            }
+        }
+        .padding(20)
+        .frame(maxWidth: .infinity)
+        .assistantGlassCard()
     }
 
     private var composer: some View {
         VStack(spacing: 12) {
             Toggle("Use project context", isOn: $useContext)
                 .toggleStyle(.switch)
-                .padding(.horizontal, 4)
+                .foregroundStyle(.white)
+
             HStack(spacing: 12) {
                 TextField("Ask Apple Intelligence", text: $inputText, axis: .vertical)
                     .lineLimit(1...5)
-                    .padding(14)
-                    .background(.ultraThinMaterial)
+                    .padding(16)
+                    .background(Color.white.opacity(0.08))
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .foregroundStyle(.white)
+
                 Button {
                     let prompt = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
                     guard !prompt.isEmpty else { return }
@@ -84,24 +95,24 @@ struct OnDeviceAIView: View {
                             for try await chunk in OnDeviceAIManager.shared.streamResponse(for: useContext ? "[Context Aware]\n\n\(prompt)" : prompt) {
                                 streamedResponse = chunk
                             }
-                            if !streamedResponse.isEmpty {
-                                controller.messages.append(ChatMessage(role: .assistant, content: streamedResponse, timestamp: Date()))
-                                streamedResponse = ""
+                            let cleaned = LLMService.shared.sanitizeResponse(streamedResponse, relativeTo: prompt)
+                            if !cleaned.isEmpty {
+                                controller.messages.append(ChatMessage(role: .assistant, content: cleaned, timestamp: Date()))
                             }
+                            streamedResponse = ""
                         } catch {
                             controller.messages.append(ChatMessage(role: .assistant, content: error.localizedDescription, timestamp: Date()))
                         }
                     }
                 } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 34))
-                        .symbolRenderingMode(.hierarchical)
+                    Label("Send", systemImage: "arrow.up.circle.fill")
                 }
+                .buttonStyle(AssistantPrimaryButtonStyle())
+                .frame(maxWidth: 140)
                 .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
-        .padding()
-        .background(.regularMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .padding(20)
+        .assistantGlassCard()
     }
 }
