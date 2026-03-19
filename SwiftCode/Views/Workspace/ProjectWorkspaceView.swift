@@ -425,6 +425,7 @@ final class CollaborationSessionStore: ObservableObject {
 
     private init() {}
 
+    @MainActor
     func manager(for project: Project, creatorID: String = UIDevice.current.name) -> CollaborationManager {
         if let manager = managers[project.id] {
             return manager
@@ -554,6 +555,7 @@ struct CollaborationMainView: View {
         }
     }
 
+    @ViewBuilder
     private var activitySection: some View {
         Section("Recent Activity") {
             ForEach(manager.recentActivity, id: \.self) { item in
