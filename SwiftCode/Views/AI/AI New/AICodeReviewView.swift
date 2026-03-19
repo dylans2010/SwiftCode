@@ -52,7 +52,7 @@ struct AICodeReviewView: View {
                 }
             }
             .sheet(item: $showIssueDetail) { issue in
-                IssueDetailSheet(issue: issue)
+                AICodeReviewIssueDetailSheet(issue: issue)
             }
             .sheet(isPresented: $showHistory) {
                 reviewHistorySheet
@@ -135,7 +135,7 @@ struct AICodeReviewView: View {
                         .padding(.horizontal, 16)
                 } else {
                     ForEach(filtered) { issue in
-                        IssueRowView(issue: issue) {
+                        AICodeReviewIssueRowView(issue: issue) {
                             showIssueDetail = issue
                         } onResolve: {
                             reviewManager.markResolved(issue, in: result)
@@ -305,7 +305,7 @@ struct AICodeReviewView: View {
 
 // MARK: - Issue Row View
 
-struct IssueRowView: View {
+struct AICodeReviewIssueRowView: View {
     let issue: CodeReviewIssue
     let onDetail: () -> Void
     let onResolve: () -> Void
@@ -376,7 +376,7 @@ struct IssueRowView: View {
 
 // MARK: - Issue Detail Sheet
 
-struct IssueDetailSheet: View {
+struct AICodeReviewIssueDetailSheet: View {
     let issue: CodeReviewIssue
     @Environment(\.dismiss) var dismiss
 

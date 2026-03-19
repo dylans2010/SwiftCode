@@ -1,9 +1,10 @@
 import SwiftUI
 
+@MainActor
 struct CollaborationMainView: View {
     @ObservedObject var manager: CollaborationManager
     @State private var selectedTab: CollaborationTab = .overview
-    private let currentUserID = UIDevice.current.name
+    private var currentUserID: String { UIDevice.current.name }
 
     var body: some View {
         NavigationStack {
