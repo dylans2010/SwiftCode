@@ -37,7 +37,7 @@ struct CodeReviewView: View {
                 Section("Reviewer Assignment") {
                     TextField("Reviewer name", text: $reviewerID)
                     Button("Assign Reviewer") {
-                        manager.reviews.assignReviewer(reviewerID, to: commit.id, actorID: actorID)
+                        manager.reviews.assignReviewer(reviewerID, to: commit.id, actorID: actorID, permissions: manager.permissions)
                         reviewerID = ""
                     }
                     .disabled(reviewerID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -72,14 +72,14 @@ struct CodeReviewView: View {
 
                 Section("Decision") {
                     Button {
-                        manager.reviews.approveReview(for: commit.id, actorID: actorID)
+                        manager.reviews.approveReview(for: commit.id, actorID: actorID, permissions: manager.permissions)
                     } label: {
                         Label("Approve", systemImage: "checkmark.seal.fill")
                     }
                     .tint(.green)
 
                     Button(role: .destructive) {
-                        manager.reviews.rejectReview(for: commit.id, actorID: actorID)
+                        manager.reviews.rejectReview(for: commit.id, actorID: actorID, permissions: manager.permissions)
                     } label: {
                         Label("Reject", systemImage: "xmark.seal.fill")
                     }

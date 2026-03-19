@@ -1,11 +1,5 @@
 import Foundation
-
-public struct InviteEvent: Equatable {
-    public let actorID: String
-    public let title: String
-    public let detail: String
-    public let notifies: Bool
-}
+import Combine
 
 public struct CollaborationInvite: Identifiable, Codable, Equatable {
     public enum Status: String, Codable, CaseIterable {
@@ -33,10 +27,23 @@ public struct CollaborationInvite: Identifiable, Codable, Equatable {
     }
 }
 
+public struct InviteEvent: Equatable {
+    public let actorID: String
+    public let title: String
+    public let detail: String
+    public let notifies: Bool
+}
+
 @MainActor
 public final class InviteManager: ObservableObject {
     @Published public private(set) var invites: [CollaborationInvite] = []
     @Published public private(set) var lastEvent: InviteEvent?
+
+    public init() {}
+
+    public func restore(invites: [CollaborationInvite]) {
+        self.invites = invites
+    }
 
     public func createInvite(memberID: String, role: CollaborationRole, actorID: String) {
         var invite = CollaborationInvite(memberID: memberID, role: role, invitedBy: actorID)

@@ -6,11 +6,12 @@ struct ActivityLogView: View {
     var body: some View {
         List {
             Section("Notifications") {
-                if manager.notifications.isEmpty {
-                    Text("No notifications yet.")
+                let unread = manager.activity.notifications.filter { !$0.isRead }
+                if unread.isEmpty {
+                    Text("No new notifications.")
                         .foregroundStyle(.secondary)
                 }
-                ForEach(manager.notifications) { item in
+                ForEach(unread) { item in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(item.title).font(.headline)
                         Text(item.detail).font(.caption)
@@ -26,7 +27,7 @@ struct ActivityLogView: View {
             }
 
             Section("Activity Log") {
-                ForEach(manager.activityLog) { entry in
+                ForEach(manager.activity.activityLog) { entry in
                     VStack(alignment: .leading, spacing: 4) {
                         HStack {
                             Text(entry.title).font(.headline)

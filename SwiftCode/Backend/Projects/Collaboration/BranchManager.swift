@@ -36,6 +36,12 @@ public struct Branch: Identifiable, Codable, Equatable {
     }
 }
 
+public enum BranchAction {
+    case create(Branch)
+    case delete(Branch)
+    case rename(UUID, String, String)
+}
+
 @MainActor
 public final class BranchManager: ObservableObject {
     @Published public private(set) var branches: [Branch] = []
@@ -43,15 +49,30 @@ public final class BranchManager: ObservableObject {
     @Published public private(set) var merges: [BranchMerge] = []
     @Published public private(set) var lastEvent: BranchEvent?
 
+    private var undoStack: [BranchAction] = []
+    private var redoStack: [BranchAction] = []
+
     public init(mainBranchName: String = "main") {
         let main = Branch(name: mainBranchName)
         self.branches = [main]
         self.currentBranch = main
     }
 
-    public func createBranch(name: String, actorID: String = "System") -> Branch {
+    public func restore(branches: [Branch], currentBranch: Branch, merges: [BranchMerge]) {
+        self.branches = branches
+        self.currentBranch = currentBranch
+        self.merges = merges
+    }
+
+    public func createBranch(name: String, actorID: String = "System", permissions: PermissionsManager? = nil) -> Branch? {
+        if let permissions = permissions {
+             guard permissions.hasPermission(.branchCreateDelete, for: actorID, projectPermission: .owner) else { return nil }
+        }
+
         let newBranch = Branch(name: name)
         branches.append(newBranch)
+        undoStack.append(.create(newBranch))
+        redoStack.removeAll()
         lastEvent = BranchEvent(actorID: actorID, title: "Branch created", detail: "\(name) was created.", notifies: true)
         return newBranch
     }
@@ -63,9 +84,17 @@ public final class BranchManager: ObservableObject {
         }
     }
 
-    public func deleteBranch(_ branchID: UUID, actorID: String = "System") {
+    public func deleteBranch(_ branchID: UUID, actorID: String = "System", permissions: PermissionsManager? = nil) {
+        if let permissions = permissions {
+             guard permissions.hasPermission(.branchCreateDelete, for: actorID, projectPermission: .owner) else { return }
+        }
+
         guard branches.count > 1 else { return }
         guard let branch = branches.first(where: { $0.id == branchID }) else { return }
+
+        undoStack.append(.delete(branch))
+        redoStack.removeAll()
+
         if currentBranch.id == branchID, let fallback = branches.first(where: { $0.id != branchID }) {
             currentBranch = fallback
         }
@@ -74,12 +103,47 @@ public final class BranchManager: ObservableObject {
         lastEvent = BranchEvent(actorID: actorID, title: "Branch deleted", detail: "\(branch.name) was removed.", notifies: true)
     }
 
-    public func renameBranch(_ branchID: UUID, to newName: String, actorID: String = "System") {
+    public func renameBranch(_ branchID: UUID, to newName: String, actorID: String = "System", permissions: PermissionsManager? = nil) {
+        if let permissions = permissions {
+             guard permissions.hasPermission(.renameFiles, for: actorID, projectPermission: .owner) else { return }
+        }
+
         if let index = branches.firstIndex(where: { $0.id == branchID }) {
             let oldName = branches[index].name
+            undoStack.append(.rename(branchID, oldName, newName))
+            redoStack.removeAll()
+
             branches[index].name = newName
             if currentBranch.id == branchID { currentBranch = branches[index] }
             lastEvent = BranchEvent(actorID: actorID, title: "Branch renamed", detail: "\(oldName) is now \(newName).", notifies: false)
+        }
+    }
+
+    public func undo() {
+        guard let action = undoStack.popLast() else { return }
+        redoStack.append(action)
+        applyAction(action, reverse: true)
+    }
+
+    public func redo() {
+        guard let action = redoStack.popLast() else { return }
+        undoStack.append(action)
+        applyAction(action, reverse: false)
+    }
+
+    private func applyAction(_ action: BranchAction, reverse: Bool) {
+        switch action {
+        case .create(let branch):
+            if reverse { branches.removeAll { $0.id == branch.id } }
+            else { branches.append(branch) }
+        case .delete(let branch):
+            if reverse { branches.append(branch) }
+            else { branches.removeAll { $0.id == branch.id } }
+        case .rename(let id, let old, let new):
+            if let index = branches.firstIndex(where: { $0.id == id }) {
+                branches[index].name = reverse ? old : new
+                if currentBranch.id == id { currentBranch = branches[index] }
+            }
         }
     }
 

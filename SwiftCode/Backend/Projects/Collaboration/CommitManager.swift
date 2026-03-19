@@ -41,7 +41,16 @@ public final class CommitManager: ObservableObject {
     public var canUndo: Bool { !undoStack.isEmpty }
     public var canRedo: Bool { !redoStack.isEmpty }
 
-    public func stage(path: String, diff: String) {
+    public init() {}
+
+    public func restore(commits: [Commit]) {
+        self.commits = commits
+    }
+
+    public func stage(path: String, diff: String, actorID: String, permissions: PermissionsManager? = nil) {
+        if let permissions = permissions {
+             guard permissions.hasPermission(.editFiles, for: actorID, projectPermission: .owner) else { return }
+        }
         stagedChanges[path] = diff
     }
 
@@ -49,7 +58,11 @@ public final class CommitManager: ObservableObject {
         stagedChanges.removeValue(forKey: path)
     }
 
-    public func recordCommit(branchID: UUID, authorID: String, message: String, changes: [String: String]) -> Commit {
+    public func recordCommit(branchID: UUID, authorID: String, message: String, changes: [String: String], permissions: PermissionsManager? = nil) -> Commit? {
+        if let permissions = permissions {
+             guard permissions.hasPermission(.commit, for: authorID, projectPermission: .owner) else { return nil }
+        }
+
         let parent = commits(for: branchID).first?.id
         let payload = changes.isEmpty ? stagedChanges : changes
         let commit = Commit(branchID: branchID, authorID: authorID, message: message, changes: payload, parentCommitID: parent)
@@ -61,7 +74,11 @@ public final class CommitManager: ObservableObject {
         return commit
     }
 
-    public func merge(branchID sourceID: UUID, into targetID: UUID, authorID: String) -> Commit? {
+    public func merge(branchID sourceID: UUID, into targetID: UUID, authorID: String, permissions: PermissionsManager? = nil) -> Commit? {
+        if let permissions = permissions {
+             guard permissions.hasPermission(.merge, for: actorID, projectPermission: .owner) else { return nil }
+        }
+
         let sourceCommits = commits(for: sourceID)
         guard sourceCommits.isEmpty == false else { return nil }
         let combinedChanges = sourceCommits.reduce(into: [String: String]()) { partialResult, commit in

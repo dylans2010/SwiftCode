@@ -6,11 +6,11 @@ struct ConflictResolverView: View {
 
     var body: some View {
         List {
-            if manager.pendingConflicts.isEmpty {
+            if manager.conflicts.pendingConflicts.isEmpty {
                 Text("No branch conflicts need attention.")
                     .foregroundStyle(.secondary)
             }
-            ForEach(manager.pendingConflicts) { conflict in
+            ForEach(manager.conflicts.pendingConflicts) { conflict in
                 Section(conflict.filePath) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Local")

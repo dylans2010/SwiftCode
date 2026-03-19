@@ -13,20 +13,6 @@ public enum CollaborationRole: String, Codable, CaseIterable {
     case member
 }
 
-public struct FileLock: Identifiable, Codable, Equatable {
-    public let id: UUID
-    public let path: String
-    public let lockedBy: String
-    public let timestamp: Date
-
-    public init(path: String, lockedBy: String) {
-        self.id = UUID()
-        self.path = path
-        self.lockedBy = lockedBy
-        self.timestamp = Date()
-    }
-}
-
 @MainActor
 public final class PermissionsManager: ObservableObject {
     @Published public private(set) var memberRoles: [String: CollaborationRole] = [:]
@@ -34,6 +20,10 @@ public final class PermissionsManager: ObservableObject {
 
     public init(creatorID: String) {
         self.memberRoles[creatorID] = .owner
+    }
+
+    public func restore(memberRoles: [String: CollaborationRole]) {
+        self.memberRoles = memberRoles
     }
 
     public func assignRole(_ role: CollaborationRole, to memberID: String, by actorID: String) -> Bool {

@@ -27,11 +27,11 @@ struct FilePermissionView: View {
             }
 
             Section("Active Locks") {
-                if manager.fileLocks.isEmpty {
+                if manager.locks.fileLocks.isEmpty {
                     Text("No files are locked.")
                         .foregroundStyle(.secondary)
                 }
-                ForEach(manager.fileLocks) { lock in
+                ForEach(manager.locks.fileLocks) { lock in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(lock.path).font(.headline)
                         Text("Locked by \(lock.lockedBy)")

@@ -7,6 +7,33 @@ objectVersion = 56;
 objects = {
 
 /* Begin PBXBuildFile section */
+		COL00000000000000000001B_SR /* CollaborationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001A /* CollaborationManager.swift */; };
+		COL00000000000000000001C_SR /* BranchManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001B /* BranchManager.swift */; };
+		COL00000000000000000001D_SR /* CommitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001C /* CommitManager.swift */; };
+		COL00000000000000000001E_SR /* CodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001D /* CodeReviewManager.swift */; };
+		COL00000000000000000001F_SR /* PushPullManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001E /* PushPullManager.swift */; };
+		COL00000000000000000001G_SR /* PermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001F /* PermissionsManager.swift */; };
+		COL00000000000000000001H_SR /* InviteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001G /* InviteManager.swift */; };
+		COL00000000000000000001I_SR /* FileLockManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001H /* FileLockManager.swift */; };
+		COL00000000000000000001J_SR /* ActivityLogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001I /* ActivityLogManager.swift */; };
+		COL00000000000000000001K_SR /* ConflictResolverManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001J /* ConflictResolverManager.swift */; };
+		COL00000000000000000001L_SR /* CollaborationSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = COL00000000000000000001K /* CollaborationSessionStore.swift */; };
+		COLV00000000000000000001B_SR /* CollaborationMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001A /* CollaborationMainView.swift */; };
+		COLV00000000000000000001C_SR /* BranchGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001B /* BranchGraphView.swift */; };
+		COLV00000000000000000001D_SR /* CommitManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001C /* CommitManagerView.swift */; };
+		COLV00000000000000000001E_SR /* CodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001D /* CodeReviewView.swift */; };
+		COLV00000000000000000001F_SR /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001E /* PullRequestView.swift */; };
+		COLV00000000000000000001G_SR /* PushPullManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001F /* PushPullManagerView.swift */; };
+		COLV00000000000000000001H_SR /* InviteMembersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001G /* InviteMembersView.swift */; };
+		COLV00000000000000000001I_SR /* ActivityLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001H /* ActivityLogView.swift */; };
+		COLV00000000000000000001J_SR /* ConflictResolverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001I /* ConflictResolverView.swift */; };
+		COLV00000000000000000001K_SR /* FilePermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001J /* FilePermissionView.swift */; };
+		COLV00000000000000000001L_SR /* MemberManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001K /* MemberManagementView.swift */; };
+		COLV00000000000000000001M_SR /* DiffViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001L /* DiffViewerView.swift */; };
+		COLV00000000000000000001N_SR /* CollaborationDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001M /* CollaborationDashboardView.swift */; };
+		COLV00000000000000000001O_SR /* BranchManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001N /* BranchManagementView.swift */; };
+		COLV00000000000000000001P_SR /* CommitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001O /* CommitHistoryView.swift */; };
+		COLV00000000000000000001Q_SR /* PushPullView.swift in Sources */ = {isa = PBXBuildFile; fileRef = COLV00000000000000000001P /* PushPullView.swift */; };
 		C0D000000000000000000201 /* CodexManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000101 /* CodexManager.swift */; };
 		C0D000000000000000000202 /* CodexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000102 /* CodexService.swift */; };
 		C0D000000000000000000203 /* CodexSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000103 /* CodexSession.swift */; };
@@ -154,8 +181,6 @@ PM0000000000000000000001A /* PluginManager.swift in Sources */ = {isa = PBXBuild
 FP0000000000000000000001A /* FilePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FP0000000000000000000001B /* FilePreviewView.swift */; };
 GI0000000000000000000001A /* GitHubIssuesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GI0000000000000000000001B /* GitHubIssuesView.swift */; };
 CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CX0000000000000000000001B /* ComplexityAnalyzerView.swift */; };
-BM0000000000000000000001A /* BranchManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BM0000000000000000000001B /* BranchManagementView.swift */; };
-CH0000000000000000000001A /* CommitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CH0000000000000000000001B /* CommitHistoryView.swift */; };
 PR0000000000000000000001A /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PR0000000000000000000001B /* PullRequestView.swift */; };
 EX0000000000000000000001A /* ExtensionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EX0000000000000000000001B /* ExtensionsView.swift */; };
 EM0000000000000000000001A /* ExtensionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EM0000000000000000000001B /* ExtensionManager.swift */; };
@@ -446,8 +471,6 @@ PM0000000000000000000001B /* PluginManager.swift */ = {isa = PBXFileReference; l
 FP0000000000000000000001B /* FilePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePreviewView.swift; sourceTree = "<group>"; };
 GI0000000000000000000001B /* GitHubIssuesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubIssuesView.swift; sourceTree = "<group>"; };
 CX0000000000000000000001B /* ComplexityAnalyzerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComplexityAnalyzerView.swift; sourceTree = "<group>"; };
-BM0000000000000000000001B /* BranchManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BranchManagementView.swift; sourceTree = "<group>"; };
-CH0000000000000000000001B /* CommitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommitHistoryView.swift; sourceTree = "<group>"; };
 PR0000000000000000000001B /* PullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PullRequestView.swift; sourceTree = "<group>"; };
 EX0000000000000000000001B /* ExtensionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionsView.swift; sourceTree = "<group>"; };
 EM0000000000000000000001B /* ExtensionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionManager.swift; sourceTree = "<group>"; };
@@ -593,6 +616,33 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		AGN00000000000000000002B /* FileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "FileTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/FileTool.swift"; sourceTree = SOURCE_ROOT; };
 		AGN00000000000000000003B /* ProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ProjectTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/ProjectTool.swift"; sourceTree = SOURCE_ROOT; };
 		AGN00000000000000000004B /* TransferTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TransferTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/TransferTool.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001A /* CollaborationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CollaborationManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/CollaborationManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001B /* BranchManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BranchManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/BranchManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001C /* CommitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CommitManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/CommitManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001D /* CodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodeReviewManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/CodeReviewManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001E /* PushPullManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PushPullManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/PushPullManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001F /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PermissionsManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/PermissionsManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001G /* InviteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "InviteManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/InviteManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001H /* FileLockManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "FileLockManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/FileLockManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001I /* ActivityLogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ActivityLogManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/ActivityLogManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001J /* ConflictResolverManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ConflictResolverManager.swift"; path = "SwiftCode/Backend/Projects/Collaboration/ConflictResolverManager.swift"; sourceTree = SOURCE_ROOT; };
+		COL00000000000000000001K /* CollaborationSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CollaborationSessionStore.swift"; path = "SwiftCode/Backend/Projects/Collaboration/CollaborationSessionStore.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001A /* CollaborationMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CollaborationMainView.swift"; path = "SwiftCode/Views/Collaboration/CollaborationMainView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001B /* BranchGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BranchGraphView.swift"; path = "SwiftCode/Views/Collaboration/BranchGraphView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001C /* CommitManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CommitManagerView.swift"; path = "SwiftCode/Views/Collaboration/CommitManagerView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001D /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodeReviewView.swift"; path = "SwiftCode/Views/Collaboration/CodeReviewView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001E /* PullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PullRequestView.swift"; path = "SwiftCode/Views/Collaboration/PullRequestView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001F /* PushPullManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PushPullManagerView.swift"; path = "SwiftCode/Views/Collaboration/PushPullManagerView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001G /* InviteMembersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "InviteMembersView.swift"; path = "SwiftCode/Views/Collaboration/InviteMembersView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001H /* ActivityLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ActivityLogView.swift"; path = "SwiftCode/Views/Collaboration/ActivityLogView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001I /* ConflictResolverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ConflictResolverView.swift"; path = "SwiftCode/Views/Collaboration/ConflictResolverView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001J /* FilePermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "FilePermissionView.swift"; path = "SwiftCode/Views/Collaboration/FilePermissionView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001K /* MemberManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "MemberManagementView.swift"; path = "SwiftCode/Views/Collaboration/MemberManagementView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001L /* DiffViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "DiffViewerView.swift"; path = "SwiftCode/Views/Collaboration/DiffViewerView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001M /* CollaborationDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CollaborationDashboardView.swift"; path = "SwiftCode/Views/Collaboration/CollaborationDashboardView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001N /* BranchManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "BranchManagementView.swift"; path = "SwiftCode/Views/Collaboration/BranchManagementView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001O /* CommitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CommitHistoryView.swift"; path = "SwiftCode/Views/Collaboration/CommitHistoryView.swift"; sourceTree = SOURCE_ROOT; };
+		COLV00000000000000000001P /* PushPullView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PushPullView.swift"; path = "SwiftCode/Views/Collaboration/PushPullView.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -695,6 +745,7 @@ children = (
 				EX0000000000000000000001B /* ExtensionsView.swift */,
 				6788B5B3B9EA40A0B3783183 /* Paywall */,
 				59FB829091674EF599B9D608 /* Developer */,
+				COLVG0000000000000000001 /* Collaboration */,
 			);
 path = Views;
 sourceTree = "<group>";
@@ -760,8 +811,6 @@ children = (
 				AA000010000000000000016B /* GitCommandView.swift */,
 				GH0000000000000000000001B /* GitHistoryView.swift */,
 				GI0000000000000000000001B /* GitHubIssuesView.swift */,
-				BM0000000000000000000001B /* BranchManagementView.swift */,
-				CH0000000000000000000001B /* CommitHistoryView.swift */,
 				PR0000000000000000000001B /* PullRequestView.swift */,
 				GC000000000000000000001B /* GitCLIView.swift */,
 			);
@@ -1515,6 +1564,7 @@ children = (
 				TRP00000000000000000003B /* TransferPermission.swift */,
 				TRP00000000000000000004B /* TransferSession.swift */,
 				TRP00000000000000000005B /* ProjectSerializer.swift */,
+				COLG0000000000000000001 /* Collaboration */,
 );
 path = Projects;
 sourceTree = "<group>";
@@ -1557,6 +1607,28 @@ children = (
 				AGN00000000000000000004B /* TransferTool.swift */,
 );
 path = Tools;
+};
+COLVG0000000000000000001 /* Collaboration */ = {
+isa = PBXGroup;
+children = (
+				COLV00000000000000000001A /* CollaborationMainView.swift */,
+				COLV00000000000000000001B /* BranchGraphView.swift */,
+				COLV00000000000000000001C /* CommitManagerView.swift */,
+				COLV00000000000000000001D /* CodeReviewView.swift */,
+				COLV00000000000000000001E /* PullRequestView.swift */,
+				COLV00000000000000000001F /* PushPullManagerView.swift */,
+				COLV00000000000000000001G /* InviteMembersView.swift */,
+				COLV00000000000000000001H /* ActivityLogView.swift */,
+				COLV00000000000000000001I /* ConflictResolverView.swift */,
+				COLV00000000000000000001J /* FilePermissionView.swift */,
+				COLV00000000000000000001K /* MemberManagementView.swift */,
+				COLV00000000000000000001L /* DiffViewerView.swift */,
+				COLV00000000000000000001M /* CollaborationDashboardView.swift */,
+				COLV00000000000000000001N /* BranchManagementView.swift */,
+				COLV00000000000000000001O /* CommitHistoryView.swift */,
+				COLV00000000000000000001P /* PushPullView.swift */,
+);
+path = Collaboration;
 sourceTree = "<group>";
 };
 C0D000000000000000000301 /* Codex */ = {
@@ -1572,6 +1644,23 @@ children = (
 				C0D000000000000000000108 /* CodexUsageTracker.swift */,
 );
 path = Codex;
+};
+COLG0000000000000000001 /* Collaboration */ = {
+isa = PBXGroup;
+children = (
+				COL00000000000000000001A /* CollaborationManager.swift */,
+				COL00000000000000000001B /* BranchManager.swift */,
+				COL00000000000000000001C /* CommitManager.swift */,
+				COL00000000000000000001D /* CodeReviewManager.swift */,
+				COL00000000000000000001E /* PushPullManager.swift */,
+				COL00000000000000000001F /* PermissionsManager.swift */,
+				COL00000000000000000001G /* InviteManager.swift */,
+				COL00000000000000000001H /* FileLockManager.swift */,
+				COL00000000000000000001I /* ActivityLogManager.swift */,
+				COL00000000000000000001J /* ConflictResolverManager.swift */,
+				COL00000000000000000001K /* CollaborationSessionStore.swift */,
+);
+path = Collaboration;
 sourceTree = "<group>";
 };
 C0D000000000000000000302 /* Codex UIs */ = {
@@ -1813,8 +1902,6 @@ files = (
 				FP0000000000000000000001A /* FilePreviewView.swift in Sources */,
 				GI0000000000000000000001A /* GitHubIssuesView.swift in Sources */,
 				CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */,
-				BM0000000000000000000001A /* BranchManagementView.swift in Sources */,
-				CH0000000000000000000001A /* CommitHistoryView.swift in Sources */,
 				PR0000000000000000000001A /* PullRequestView.swift in Sources */,
 				EX0000000000000000000001A /* ExtensionsView.swift in Sources */,
 				EM0000000000000000000001A /* ExtensionManager.swift in Sources */,
@@ -1973,6 +2060,33 @@ files = (
 				AGN00000000000000000002A /* FileTool.swift in Sources */,
 				AGN00000000000000000003A /* ProjectTool.swift in Sources */,
 				AGN00000000000000000004A /* TransferTool.swift in Sources */,
+				COL00000000000000000001B_SR /* CollaborationManager.swift in Sources */,
+				COL00000000000000000001C_SR /* BranchManager.swift in Sources */,
+				COL00000000000000000001D_SR /* CommitManager.swift in Sources */,
+				COL00000000000000000001E_SR /* CodeReviewManager.swift in Sources */,
+				COL00000000000000000001F_SR /* PushPullManager.swift in Sources */,
+				COL00000000000000000001G_SR /* PermissionsManager.swift in Sources */,
+				COL00000000000000000001H_SR /* InviteManager.swift in Sources */,
+				COL00000000000000000001I_SR /* FileLockManager.swift in Sources */,
+				COL00000000000000000001J_SR /* ActivityLogManager.swift in Sources */,
+				COL00000000000000000001K_SR /* ConflictResolverManager.swift in Sources */,
+				COL00000000000000000001L_SR /* CollaborationSessionStore.swift in Sources */,
+				COLV00000000000000000001B_SR /* CollaborationMainView.swift in Sources */,
+				COLV00000000000000000001C_SR /* BranchGraphView.swift in Sources */,
+				COLV00000000000000000001D_SR /* CommitManagerView.swift in Sources */,
+				COLV00000000000000000001E_SR /* CodeReviewView.swift in Sources */,
+				COLV00000000000000000001F_SR /* PullRequestView.swift in Sources */,
+				COLV00000000000000000001G_SR /* PushPullManagerView.swift in Sources */,
+				COLV00000000000000000001H_SR /* InviteMembersView.swift in Sources */,
+				COLV00000000000000000001I_SR /* ActivityLogView.swift in Sources */,
+				COLV00000000000000000001J_SR /* ConflictResolverView.swift in Sources */,
+				COLV00000000000000000001K_SR /* FilePermissionView.swift in Sources */,
+				COLV00000000000000000001L_SR /* MemberManagementView.swift in Sources */,
+				COLV00000000000000000001M_SR /* DiffViewerView.swift in Sources */,
+				COLV00000000000000000001N_SR /* CollaborationDashboardView.swift in Sources */,
+				COLV00000000000000000001O_SR /* BranchManagementView.swift in Sources */,
+				COLV00000000000000000001P_SR /* CommitHistoryView.swift in Sources */,
+				COLV00000000000000000001Q_SR /* PushPullView.swift in Sources */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };

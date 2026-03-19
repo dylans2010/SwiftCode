@@ -561,6 +561,14 @@ struct ProjectsDashboardView: View {
             Label("Add To Folder", systemImage: "folder.badge.plus")
         }
 
+        Button {
+            let creatorID = UIDevice.current.name
+            currentCollaborationManager = CollaborationSessionStore.shared.manager(for: project, creatorID: creatorID)
+            showCollaborationDashboard = true
+        } label: {
+            Label("Collaboration Dashboard", systemImage: "person.2.fill")
+        }
+
         Divider()
 
         Button(role: .destructive) {

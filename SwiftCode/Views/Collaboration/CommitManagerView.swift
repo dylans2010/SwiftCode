@@ -7,20 +7,9 @@ struct CommitManagerView: View {
 
     var body: some View {
         List {
-            Section("Undo / Redo") {
-                HStack(spacing: 12) {
-                    actionButton(title: "Undo", icon: "arrow.uturn.backward.circle.fill", tint: .orange, enabled: manager.commits.canUndo) {
-                        _ = manager.commits.undo()
-                    }
-                    actionButton(title: "Redo", icon: "arrow.uturn.forward.circle.fill", tint: .blue, enabled: manager.commits.canRedo) {
-                        _ = manager.commits.redo()
-                    }
-                }
-            }
-
             Section("Staging Area") {
                 if manager.commits.stagedChanges.isEmpty {
-                    Text("No staged changes. Tap a sample file below to stage live entries.")
+                    Text("No staged changes.")
                         .foregroundStyle(.secondary)
                 }
                 ForEach(Array(manager.commits.stagedChanges.keys.sorted()), id: \.self) { path in
@@ -34,14 +23,6 @@ struct CommitManagerView: View {
                         Button(role: .destructive) { manager.commits.unstage(path: path) } label: {
                             Label("Unstage", systemImage: "minus.circle")
                         }
-                    }
-                }
-
-                ForEach(sampleStageEntries, id: \.0) { sample in
-                    Button {
-                        manager.commits.stage(path: sample.0, diff: sample.1)
-                    } label: {
-                        Label("Stage \(sample.0)", systemImage: "plus.circle")
                     }
                 }
             }
@@ -64,27 +45,22 @@ struct CommitManagerView: View {
                         Text("\(commit.authorID) • \(commit.timestamp.formatted(date: .abbreviated, time: .shortened))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+
+                        NavigationLink("View Diff") {
+                            ScrollView {
+                                VStack(spacing: 12) {
+                                    ForEach(Array(commit.changes.keys.sorted()), id: \.self) { path in
+                                        DiffViewerView(filePath: path, diff: commit.changes[path] ?? "")
+                                    }
+                                }
+                                .padding()
+                            }
+                            .navigationTitle("Commit Diff")
+                        }
                     }
                 }
             }
         }
         .navigationTitle("Commit Manager")
-    }
-
-    private var sampleStageEntries: [(String, String)] {
-        [
-            ("Sources/Editor/CollabSession.swift", "+ add reviewer assignment hooks"),
-            ("Views/Projects/Toolbar.swift", "+ expose collaboration shortcut")
-        ]
-    }
-
-    private func actionButton(title: String, icon: String, tint: Color, enabled: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: icon)
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .tint(tint)
-        .disabled(!enabled)
     }
 }
