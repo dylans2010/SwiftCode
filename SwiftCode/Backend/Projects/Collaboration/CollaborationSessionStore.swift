@@ -8,7 +8,7 @@ final class CollaborationSessionStore: ObservableObject {
     private var managers: [UUID: CollaborationManager] = [:]
     private init() {}
 
-    func manager(for project: Project, creatorID: String = UIDevice.current.name) -> CollaborationManager {
+    func manager(for project: Project, creatorID: String) -> CollaborationManager {
         if let existing = managers[project.id] {
             return existing
         }

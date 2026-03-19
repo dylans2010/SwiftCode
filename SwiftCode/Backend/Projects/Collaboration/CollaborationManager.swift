@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import MultipeerConnectivity
 
 public struct CollaborationActivity: Identifiable, Codable, Equatable {
     public enum Kind: String, Codable {

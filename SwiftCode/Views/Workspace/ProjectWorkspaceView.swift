@@ -266,7 +266,7 @@ struct ProjectWorkspaceView: View {
         }
         .sheet(isPresented: $showCollaboration) {
             if let activeProject = projectManager.activeProject ?? Optional(project) {
-                CollaborationMainView(manager: CollaborationSessionStore.shared.manager(for: activeProject))
+                CollaborationMainView(manager: CollaborationSessionStore.shared.manager(for: activeProject, creatorID: UIDevice.current.name))
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .toolbarToolActivated)) { notification in
