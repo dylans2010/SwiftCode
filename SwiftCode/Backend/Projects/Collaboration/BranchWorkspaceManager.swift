@@ -54,13 +54,23 @@ public struct BranchWorkspace: Identifiable, Codable, Equatable {
     }
 }
 
+public struct PullRequestDiffEntry: Equatable {
+    public let path: String
+    public let diff: String
+
+    public init(path: String, diff: String) {
+        self.path = path
+        self.diff = diff
+    }
+}
+
 public struct PullRequestDraftPayload: Equatable {
     public let sourceBranchID: UUID
     public let targetBranchID: UUID
     public let title: String
     public let description: String
     public let linkedCommitIDs: [UUID]
-    public let diffEntries: [(path: String, diff: String)]
+    public let diffEntries: [PullRequestDiffEntry]
 }
 
 @MainActor
@@ -233,7 +243,7 @@ public final class BranchWorkspaceManager: ObservableObject {
     public func preparePullRequestPayload(targetBranchID: UUID, actorID: String) -> PullRequestDraftPayload? {
         guard let workspace = currentWorkspace else { return nil }
         let commits = commitManager.commits(for: workspace.branchID)
-        let diffs = workspace.pendingChanges.map { ($0.path, $0.diff) }
+        let diffs = workspace.pendingChanges.map { PullRequestDiffEntry(path: $0.path, diff: $0.diff) }
         let title = "\(workspace.branchName) → \(branchManager.branches.first(where: { $0.id == targetBranchID })?.name ?? "target")"
         let description = "Prepared by \(actorID) from isolated workspace \(workspace.workingDirectory).\n\nFiles changed: \(workspace.pendingChanges.count)."
         return PullRequestDraftPayload(sourceBranchID: workspace.branchID, targetBranchID: targetBranchID, title: title, description: description, linkedCommitIDs: commits.map(\.id), diffEntries: diffs)
