@@ -5,6 +5,17 @@ struct BranchGraphView: View {
 
     var body: some View {
         List {
+            Section("Branch Graph Visualization") {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 20) {
+                        ForEach(manager.branches.branches) { branch in
+                            branchCard(branch)
+                        }
+                    }
+                    .padding(.vertical)
+                }
+            }
+
             Section("Branches") {
                 ForEach(manager.branches.branches) { branch in
                     VStack(alignment: .leading, spacing: 8) {
@@ -34,6 +45,12 @@ struct BranchGraphView: View {
                         }
                     }
                     .padding(.vertical, 4)
+                    .swipeActions {
+                        Button("Switch") {
+                            manager.branches.switchBranch(to: branch.id, actorID: UIDevice.current.name)
+                        }
+                        .tint(.blue)
+                    }
                 }
             }
 
@@ -51,5 +68,31 @@ struct BranchGraphView: View {
             }
         }
         .navigationTitle("Branch Graph")
+    }
+
+    private func branchCard(_ branch: Branch) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: branch.id == manager.branches.currentBranch.id ? "largecircle.fill.circle" : "circle")
+                    .foregroundStyle(branch.id == manager.branches.currentBranch.id ? .blue : .secondary)
+                Text(branch.name).font(.headline)
+            }
+
+            if let commitID = branch.lastCommitID,
+               let commit = manager.commits.commits.first(where: { $0.id == commitID }) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(commit.message).font(.caption).lineLimit(1)
+                    Text(commit.authorID).font(.caption2).foregroundStyle(.secondary)
+                }
+            }
+
+            // Visual indicator of hierarchy
+            Rectangle()
+                .frame(height: 2)
+                .foregroundStyle(.quaternary)
+        }
+        .padding()
+        .frame(width: 150)
+        .background(Color(.systemGray6), in: RoundedRectangle(cornerRadius: 12))
     }
 }

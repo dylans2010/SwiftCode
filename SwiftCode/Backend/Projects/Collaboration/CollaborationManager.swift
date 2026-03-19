@@ -56,6 +56,7 @@ public final class CollaborationManager: ObservableObject {
     public let pushes: PushManager
     public let reviews: CodeReviewManager
     public let invites: InviteManager
+    public let pullRequests: PullRequestManager
 
     @Published public private(set) var activityLog: [CollaborationActivity] = []
     @Published public private(set) var notifications: [CollaborationNotificationItem] = []
@@ -73,9 +74,39 @@ public final class CollaborationManager: ObservableObject {
         self.pushes = PushManager()
         self.reviews = CodeReviewManager()
         self.invites = InviteManager()
+        self.pullRequests = PullRequestManager()
 
         setupBindings()
+        loadState()
+
+        PeerSessionManager.shared.onData = { [weak self] data, peerID in
+            self?.handleIncomingData(data, from: peerID)
+        }
+
         addActivity(actorID: creatorID, title: "Collaboration enabled", detail: "Project collaboration workspace is ready.", kind: .permissions, notify: true)
+    }
+
+    private func handleIncomingData(_ data: Data, from peerID: MCPeerID) {
+        guard let state = try? JSONDecoder().decode(ProjectState.self, from: data) else { return }
+
+        // Basic conflict detection: if incoming state has more activity, we adopt it.
+        // In a real system, we would perform more granular merging.
+        if state.activityLog.count > self.activityLog.count {
+            self.restoreStateFromObject(state)
+            saveState()
+            addActivity(actorID: peerID.displayName, title: "Synced from peer", detail: "Project state updated to match \(peerID.displayName).", kind: .sync, notify: true)
+        }
+    }
+
+    private func restoreStateFromObject(_ state: ProjectState) {
+        self.activityLog = state.activityLog
+        self.notifications = state.notifications
+        branches.restoreState(branches: state.branches, currentBranchID: state.currentBranchID, merges: state.merges)
+        commits.restoreState(commits: state.commits)
+        pullRequests.restoreState(pullRequests: state.pullRequests)
+        reviews.restoreState(reviews: state.reviews)
+        permissions.restoreState(memberRoles: state.memberRoles)
+        invites.restoreState(invites: state.invites)
     }
 
     private func setupBindings() {
@@ -120,6 +151,13 @@ public final class CollaborationManager: ObservableObject {
                 self?.addActivity(actorID: event.actorID, title: event.title, detail: event.detail, kind: .invite, notify: event.notifies)
             }
             .store(in: &cancellables)
+
+        pullRequests.$lastEvent
+            .compactMap { $0 }
+            .sink { [weak self] event in
+                self?.addActivity(actorID: event.actorID, title: event.title, detail: event.detail, kind: .branch, notify: event.notifies)
+            }
+            .store(in: &cancellables)
     }
 
     public func commit(message: String, authorID: String, changes: [String: String]) {
@@ -129,12 +167,20 @@ public final class CollaborationManager: ObservableObject {
         reviews.initiateReview(for: commit.id)
     }
 
-    public func merge(branch sourceID: UUID, into targetID: UUID, actorID: String) {
+    public func merge(branch sourceID: UUID, into targetID: UUID, actorID: String, pullRequestID: UUID? = nil) {
         guard permissions.hasPermission(.merge, for: actorID, projectPermission: .owner) else { return }
         if let mergedCommit = commits.merge(branchID: sourceID, into: targetID, authorID: actorID) {
             branches.registerMerge(from: sourceID, into: targetID, commitID: mergedCommit.id, actorID: actorID)
             reviews.initiateReview(for: mergedCommit.id)
+            if let pullRequestID {
+                pullRequests.markMerged(prID: pullRequestID, mergeCommitID: mergedCommit.id, actorID: actorID)
+            }
         }
+    }
+
+    public func createPullRequest(sourceID: UUID, targetID: UUID, title: String, description: String, actorID: String) {
+        guard permissions.hasPermission(.branchCreateDelete, for: actorID, projectPermission: .owner) else { return }
+        _ = pullRequests.createPullRequest(sourceBranchID: sourceID, targetBranchID: targetID, title: title, description: description, actorID: actorID)
     }
 
     public func syncCurrentBranch(actorID: String) async {
@@ -148,7 +194,25 @@ public final class CollaborationManager: ObservableObject {
             pendingConflicts.append(conflict)
             addActivity(actorID: actorID, title: "Conflict detected", detail: "\(conflict.filePath) requires resolution on \(branchName).", kind: .conflict, notify: true)
         }
-        await pushes.push(branchName: branchName, actorID: actorID)
+
+        // Generate data for P2P transfer
+        let state = ProjectState(
+            projectID: projectID,
+            creatorID: creatorID,
+            activityLog: activityLog,
+            notifications: notifications,
+            branches: branches.branches,
+            currentBranchID: branches.currentBranch.id,
+            merges: branches.merges,
+            commits: commits.commits,
+            pullRequests: pullRequests.pullRequests,
+            reviews: reviews.reviews,
+            memberRoles: permissions.memberRoles,
+            invites: invites.invites
+        )
+        let data = try? JSONEncoder().encode(state)
+
+        await pushes.push(branchName: branchName, actorID: actorID, data: data)
         await pushes.pull(branchName: branchName, actorID: actorID)
     }
 
@@ -192,5 +256,56 @@ public final class CollaborationManager: ObservableObject {
         if notify {
             notifications.insert(CollaborationNotificationItem(title: title, detail: detail), at: 0)
         }
+    }
+
+    // MARK: - Persistence
+
+    public struct ProjectState: Codable {
+        public let projectID: UUID
+        public let creatorID: String
+        public let activityLog: [CollaborationActivity]
+        public let notifications: [CollaborationNotificationItem]
+        public let branches: [Branch]
+        public let currentBranchID: UUID
+        public let merges: [BranchMerge]
+        public let commits: [Commit]
+        public let pullRequests: [PullRequest]
+        public let reviews: [UUID: CodeReview]
+        public let memberRoles: [String: CollaborationRole]
+        public let invites: [CollaborationInvite]
+    }
+
+    public func saveState() {
+        let state = ProjectState(
+            projectID: projectID,
+            creatorID: creatorID,
+            activityLog: activityLog,
+            notifications: notifications,
+            branches: branches.branches,
+            currentBranchID: branches.currentBranch.id,
+            merges: branches.merges,
+            commits: commits.commits,
+            pullRequests: pullRequests.pullRequests,
+            reviews: reviews.reviews,
+            memberRoles: permissions.memberRoles,
+            invites: invites.invites
+        )
+        if let data = try? JSONEncoder().encode(state) {
+            let url = getPersistenceURL()
+            try? data.write(to: url, options: .atomic)
+        }
+    }
+
+    public func loadState() {
+        let url = getPersistenceURL()
+        guard let data = try? Data(contentsOf: url),
+              let state = try? JSONDecoder().decode(ProjectState.self, from: data) else { return }
+
+        restoreStateFromObject(state)
+    }
+
+    private func getPersistenceURL() -> URL {
+        let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+        return paths[0].appendingPathComponent("collaboration_\(projectID).json")
     }
 }

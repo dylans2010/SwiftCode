@@ -84,4 +84,8 @@ public final class CodeReviewManager: ObservableObject {
         reviews[commitID]?.comments.append(comment)
         lastEvent = ReviewEvent(actorID: authorID, title: "Inline comment added", detail: "\(filePath):\(lineNumber)", notifies: false)
     }
+
+    public func restoreState(reviews: [UUID: CodeReview]) {
+        self.reviews = reviews
+    }
 }

@@ -91,6 +91,12 @@ public final class CommitManager: ObservableObject {
         return last
     }
 
+    public func restoreState(commits: [Commit]) {
+        self.commits = commits
+        self.undoStack = commits
+        self.redoStack = []
+    }
+
     public func commits(for branchID: UUID) -> [Commit] {
         commits.filter { $0.branchID == branchID }.sorted { $0.timestamp > $1.timestamp }
     }

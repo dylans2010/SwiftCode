@@ -65,24 +65,39 @@ public final class PushManager: ObservableObject {
         lastEvent = PushEvent(actorID: actorID, title: "Conflict resolution applied", detail: resolution.displayName, notifies: true)
     }
 
-    public func push(branchName: String, actorID: String) async {
-        await runTransfer(branchName: branchName, actorID: actorID, direction: "Push")
+    public func push(branchName: String, actorID: String, data: Data? = nil) async {
+        activePushes.append(PushStatus(branchName: branchName, progress: 0, isComplete: false, direction: "Push"))
+        if let data {
+            let peerManager = PeerSessionManager.shared
+            let peers = peerManager.session.connectedPeers
+            if !peers.isEmpty {
+                try? peerManager.send(data, to: peers)
+            }
+        }
+        // Artificial progress for UI feedback
+        for i in 1...10 {
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            if let index = activePushes.firstIndex(where: { $0.branchName == branchName && $0.direction == "Push" }) {
+                activePushes[index] = PushStatus(branchName: branchName, progress: Double(i) / 10.0, isComplete: i == 10, direction: "Push")
+            }
+        }
+        lastEvent = PushEvent(actorID: actorID, title: "Push complete", detail: "\(branchName) synced successfully.", notifies: true)
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        activePushes.removeAll { $0.branchName == branchName && $0.direction == "Push" }
     }
 
     public func pull(branchName: String, actorID: String) async {
-        await runTransfer(branchName: branchName, actorID: actorID, direction: "Pull")
-    }
-
-    private func runTransfer(branchName: String, actorID: String, direction: String) async {
-        activePushes.append(PushStatus(branchName: branchName, progress: 0, isComplete: false, direction: direction))
+        activePushes.append(PushStatus(branchName: branchName, progress: 0, isComplete: false, direction: "Pull"))
+        // Pull logic: in P2P, we normally wait for data or request it.
+        // For this implementation, we simulate the network request and response.
         for i in 1...10 {
-            try? await Task.sleep(nanoseconds: 100_000_000)
-            if let index = activePushes.firstIndex(where: { $0.branchName == branchName && $0.direction == direction }) {
-                activePushes[index] = PushStatus(branchName: branchName, progress: Double(i) / 10.0, isComplete: i == 10, direction: direction)
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            if let index = activePushes.firstIndex(where: { $0.branchName == branchName && $0.direction == "Pull" }) {
+                activePushes[index] = PushStatus(branchName: branchName, progress: Double(i) / 10.0, isComplete: i == 10, direction: "Pull")
             }
         }
-        lastEvent = PushEvent(actorID: actorID, title: "\(direction) complete", detail: "\(branchName) synced successfully.", notifies: true)
+        lastEvent = PushEvent(actorID: actorID, title: "Pull complete", detail: "\(branchName) is up to date.", notifies: true)
         try? await Task.sleep(nanoseconds: 200_000_000)
-        activePushes.removeAll { $0.branchName == branchName && $0.direction == direction }
+        activePushes.removeAll { $0.branchName == branchName && $0.direction == "Pull" }
     }
 }
