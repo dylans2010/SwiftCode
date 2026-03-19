@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ActivityLogView: View {
     @ObservedObject var manager: CollaborationManager
+    @State private var selectedKind: CollaborationActivity.Kind?
 
     var body: some View {
         List {
@@ -25,9 +26,20 @@ struct ActivityLogView: View {
                 }
             }
 
-            Section("Activity Log") {
-                ForEach(manager.activityLog) { entry in
-                    VStack(alignment: .leading, spacing: 4) {
+            Section("Filter") {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        filterChip(title: "All", kind: nil)
+                        ForEach(CollaborationActivity.Kind.allCases, id: \.self) { kind in
+                            filterChip(title: kind.rawValue.capitalized, kind: kind)
+                        }
+                    }
+                }
+            }
+
+            Section("Timeline") {
+                ForEach(filteredActivity) { entry in
+                    VStack(alignment: .leading, spacing: 6) {
                         HStack {
                             Text(entry.title).font(.headline)
                             Spacer()
@@ -44,5 +56,22 @@ struct ActivityLogView: View {
             }
         }
         .navigationTitle("Activity Log")
+    }
+
+    private var filteredActivity: [CollaborationActivity] {
+        guard let selectedKind else { return manager.activityLog }
+        return manager.activityLog.filter { $0.kind == selectedKind }
+    }
+
+    private func filterChip(title: String, kind: CollaborationActivity.Kind?) -> some View {
+        Button(title) { selectedKind = kind }
+            .buttonStyle(.borderedProminent)
+            .tint(selectedKind == kind ? .blue : .gray)
+    }
+}
+
+private extension CollaborationActivity.Kind {
+    static var allCases: [CollaborationActivity.Kind] {
+        [.branch, .commit, .review, .pullRequest, .sync, .invite, .permissions, .conflict, .fileLock]
     }
 }

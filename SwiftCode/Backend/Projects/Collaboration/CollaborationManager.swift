@@ -7,6 +7,7 @@ public struct CollaborationActivity: Identifiable, Codable, Equatable {
         case branch
         case commit
         case review
+        case pullRequest
         case sync
         case invite
         case permissions
@@ -85,6 +86,7 @@ public final class CollaborationManager: ObservableObject {
         }
 
         addActivity(actorID: creatorID, title: "Collaboration enabled", detail: "Project collaboration workspace is ready.", kind: .permissions, notify: true)
+        commits.seedWorkingChangesIfNeeded(authorID: creatorID)
     }
 
     private func handleIncomingData(_ data: Data, from peerID: MCPeerID) {
@@ -107,6 +109,7 @@ public final class CollaborationManager: ObservableObject {
         pullRequests.restoreState(pullRequests: state.pullRequests)
         reviews.restoreState(reviews: state.reviews)
         permissions.restoreState(memberRoles: state.memberRoles)
+        commits.seedWorkingChangesIfNeeded(authorID: creatorID)
         invites.restoreState(invites: state.invites)
     }
 
@@ -156,7 +159,7 @@ public final class CollaborationManager: ObservableObject {
         pullRequests.$lastEvent
             .compactMap { $0 }
             .sink { [weak self] event in
-                self?.addActivity(actorID: event.actorID, title: event.title, detail: event.detail, kind: .branch, notify: event.notifies)
+                self?.addActivity(actorID: event.actorID, title: event.title, detail: event.detail, kind: .pullRequest, notify: event.notifies)
             }
             .store(in: &cancellables)
     }
@@ -179,9 +182,9 @@ public final class CollaborationManager: ObservableObject {
         }
     }
 
-    public func createPullRequest(sourceID: UUID, targetID: UUID, title: String, description: String, actorID: String) {
+    public func createPullRequest(sourceID: UUID, targetID: UUID, title: String, description: String, actorID: String, status: PullRequestStatus = .open, linkedCommitIDs: [UUID] = [], conflictSummary: String? = nil) {
         guard permissions.hasPermission(.branchCreateDelete, for: actorID, projectPermission: .owner) else { return }
-        _ = pullRequests.createPullRequest(sourceBranchID: sourceID, targetBranchID: targetID, title: title, description: description, actorID: actorID)
+        _ = pullRequests.createPullRequest(sourceBranchID: sourceID, targetBranchID: targetID, title: title, description: description, actorID: actorID, status: status, linkedCommitIDs: linkedCommitIDs, conflictSummary: conflictSummary)
     }
 
     public func syncCurrentBranch(actorID: String) async {
@@ -257,6 +260,7 @@ public final class CollaborationManager: ObservableObject {
         if notify {
             notifications.insert(CollaborationNotificationItem(title: title, detail: detail), at: 0)
         }
+        saveState()
     }
 
     // MARK: - Persistence
