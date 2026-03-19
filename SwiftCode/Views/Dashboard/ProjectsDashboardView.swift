@@ -35,6 +35,8 @@ struct ProjectsDashboardView: View {
     @State private var showFolderRenameSheet = false
     @State private var folderToRename: ProjectFolder?
     @State private var folderRenameText = ""
+    @State private var showCollaborationDashboard = false
+    @State private var currentCollaborationManager: CollaborationManager?
 
     private var gridColumns: [GridItem] {
         [GridItem(.adaptive(minimum: 200, maximum: 280), spacing: 20)]
@@ -118,6 +120,13 @@ struct ProjectsDashboardView: View {
             }
             .sheet(isPresented: $showAddToFolderSheet) { addToFolderSheet }
             .sheet(isPresented: $showNewProjectSheet) { newProjectSheet }
+            .sheet(isPresented: $showCollaborationDashboard) {
+                if let manager = currentCollaborationManager {
+                    NavigationStack {
+                        CollaborationDashboardView(manager: manager)
+                    }
+                }
+            }
             .sheet(isPresented: $showTransferProjects) { NavigationStack { TransferProjectsHomeView().environmentObject(projectManager) } }
             .sheet(isPresented: $showImportPicker) {
                 FileImporterRepresentableView(
@@ -316,6 +325,28 @@ struct ProjectsDashboardView: View {
                     } icon: {
                         Image(systemName: "folder.badge.plus")
                             .foregroundStyle(.cyan)
+                            .font(.title3)
+                    }
+                }
+
+                Button {
+                    showCreationSheet = false
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        createCollaborativeProject()
+                    }
+                } label: {
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Collaboration Project")
+                                .font(.headline)
+                                .foregroundStyle(.primary)
+                            Text("Local Git-style branching, commits, and code review")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "person.2.fill")
+                            .foregroundStyle(.orange)
                             .font(.title3)
                     }
                 }
@@ -608,6 +639,19 @@ struct ProjectsDashboardView: View {
     }
 
     // MARK: - Actions
+
+    private func createCollaborativeProject() {
+        let name = "Collaborative Project \(projectManager.projects.count + 1)"
+        do {
+            let project = try projectManager.createProject(name: name)
+            let creatorID = UIDevice.current.name
+            let manager = CollaborationManager(projectID: project.id, creatorID: creatorID)
+            currentCollaborationManager = manager
+            showCollaborationDashboard = true
+        } catch {
+            showError(error)
+        }
+    }
 
     private func createProject() {
         let name = newProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
