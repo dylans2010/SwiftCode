@@ -43,7 +43,7 @@ struct SkillsView: View {
 
                 Section("Uploaded Skills") {
                     if manager.uploadedSkills.isEmpty {
-                        Text("No uploaded skills yet.")
+                        Text("No Uploaded Skills")
                             .foregroundStyle(.secondary)
                     }
                     ForEach(manager.uploadedSkills) { skill in

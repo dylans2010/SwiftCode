@@ -75,7 +75,7 @@ struct DocumentationBrowserView: View {
                         forwardTrigger: $forwardTrigger,
                         extractedContent: $extractedContent
                     )
-                    .padding(12) // WebView padding: 12
+                    .padding(12) 
                 } else {
                     ContentUnavailableView(
                         "No URL Loaded",
@@ -87,7 +87,7 @@ struct DocumentationBrowserView: View {
             }
             .navigationTitle("Documentation")
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $query, prompt: "Search API (e.g. SwiftUI/View)")
+            .searchable(text: $query, prompt: "Search")
             .onSubmit(of: .search) {
                 performSearch()
             }
@@ -106,7 +106,7 @@ struct DocumentationBrowserView: View {
                                 showingAIInsights = true
                             }
                         }) {
-                            Label("AI Insights", systemImage: "sparkles")
+                            Label("AI Insights", systemImage: "apple.intelligence")
                         }
 
                         Button(action: { reloadTrigger.toggle() }) {
@@ -114,7 +114,7 @@ struct DocumentationBrowserView: View {
                         }
 
                         Button(action: openInSafari) {
-                            Label("Open in Safari", systemImage: "safari")
+                            Label("Open In Safari", systemImage: "safari")
                         }
 
                         Divider()

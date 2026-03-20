@@ -20,7 +20,7 @@ struct DocumentationAIInsightsView: View {
                 }
                 .padding()
             }
-            .navigationTitle("AI Documentation Insights")
+            .navigationTitle("Insights")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {

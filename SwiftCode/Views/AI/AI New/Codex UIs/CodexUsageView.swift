@@ -15,7 +15,7 @@ struct CodexUsageView: View {
                 usageCard(title: "Sessions", value: "\(tracker.sessionCount)")
             }
 
-            Text(manager.usageMode == .unlimitedUserControlled ? "Tracked only, not limited" : "App-managed limits are enforced for requests and tokens.")
+            Text(manager.usageMode == .unlimitedUserControlled ? "Tracked only, not limited" : "App managed limits are enforced for requests and tokens.")
                 .font(.caption)
                 .foregroundStyle(manager.usageMode == .unlimitedUserControlled ? .green : .secondary)
         }

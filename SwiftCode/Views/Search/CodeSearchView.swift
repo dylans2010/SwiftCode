@@ -29,7 +29,7 @@ struct CodeSearchView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(.secondary)
-                    TextField("Search entire codebase…", text: $searchQuery)
+                    TextField("Search", text: $searchQuery)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .focused($searchFocused)
@@ -63,7 +63,7 @@ struct CodeSearchView: View {
                 // Results header
                 if !results.isEmpty {
                     HStack {
-                        Text("\(results.count) result\(results.count == 1 ? "" : "s")")
+                        Text("\(results.count) Result\(results.count == 1 ? "" : "s")")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         if !searchBackendHint.isEmpty {

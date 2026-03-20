@@ -30,7 +30,7 @@ struct CodexPullRequestView: View {
                             Image(systemName: "doc.text")
                             Text(file)
                             Spacer()
-                            Button("Open in History") {
+                            Button("Open In History") {
                                 if let revision = workspace.fileHistory.first(where: { $0.fileName == file }) {
                                     workspace.selectedRevisionID = revision.id
                                     workspace.previousOutput = workspace.renderedOutput
@@ -68,7 +68,7 @@ struct CodexPullRequestView: View {
                     }
 
                     if workspace.comments.isEmpty {
-                        Text("No comments yet.")
+                        Text("No Comments Yet")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else {

@@ -554,7 +554,7 @@ struct GeneralSettingsView: View {
         var errors: [String] = []
 
         if aiRoutingMode == .dynamic && !hasServerAPIKey && offlineModelManager.defaultOfflineModelRecord() == nil {
-            errors.append("Dynamic AI needs either a server API key or a default offline model.")
+            errors.append("Dynamic AI needs either a server API key and default offline model.")
         }
 
         if aiRoutingMode == .alwaysServer && !hasServerAPIKey {
@@ -672,7 +672,7 @@ struct GeneralSettingsView: View {
             Toggle(isOn: Binding(get: { settings.appleIntelligenceEnabled }, set: { settings.appleIntelligenceEnabled = $0 })) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Apple Intelligence")
-                    Text(DeviceUtilityManager.shared.isAppleIntelligenceSupported() ? "Use on-device AI instead of external providers." : "Apple Intelligence is not available on this device")
+                    Text(DeviceUtilityManager.shared.isAppleIntelligenceSupported() ? "Use Apple Intelligence to help you write code, fully on device and private." : "Apple Intelligence is not available on this device. Requires a iPhone 15 Pro or an iPad with M1 chip or later.")
                         .font(.caption)
                         .foregroundStyle(DeviceUtilityManager.shared.isAppleIntelligenceSupported() ? Color.secondary : Color.red)
                 }
@@ -686,7 +686,7 @@ struct GeneralSettingsView: View {
             })) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Use Codex as Default Agent")
-                    Text("When enabled, Codex becomes the primary AI execution engine and replaces the internal Agent for AI requests.")
+                    Text("When enabled, Codex becomes the default agent for AI requests instead of SwiftCode Agent.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -694,7 +694,7 @@ struct GeneralSettingsView: View {
 
             if useCodexAsAgent {
                 HStack {
-                    Label("Key visibility", systemImage: "lock.shield")
+                    Label("Key Visibility", systemImage: "lock.shield")
                         .font(.caption.weight(.semibold))
                     Spacer()
                     Text(CodexManager.shared.userHasCustomAPIKey ? "Stored securely" : "Not configured")

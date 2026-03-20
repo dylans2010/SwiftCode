@@ -27,8 +27,8 @@ struct OnDeviceAIView: View {
     private var headerCard: some View {
         HStack(alignment: .top) {
             AssistantSectionHeader(
-                eyebrow: "On-device AI",
-                title: "Private local assistance",
+                eyebrow: "On Device AI",
+                title: "Private Local Assistance",
                 subtitle: "Stream responses on device with the same rebuilt assistant interface and responsive controls."
             )
             Spacer()
@@ -72,7 +72,7 @@ struct OnDeviceAIView: View {
 
     private var composer: some View {
         VStack(spacing: 12) {
-            Toggle("Use project context", isOn: $useContext)
+            Toggle("Use Project Context", isOn: $useContext)
                 .toggleStyle(.switch)
                 .foregroundStyle(.white)
 

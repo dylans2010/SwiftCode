@@ -10,8 +10,8 @@ struct CodeRefactoringView: View {
     var body: some View {
         AdvancedToolScreen(title: "Code Refactoring") {
             AdvancedToolCard(title: "Global Rename") {
-                TextField("Old symbol", text: $fromText).textFieldStyle(.roundedBorder)
-                TextField("New symbol", text: $toText).textFieldStyle(.roundedBorder)
+                TextField("Old Symbol", text: $fromText).textFieldStyle(.roundedBorder)
+                TextField("New Symbol", text: $toText).textFieldStyle(.roundedBorder)
                 HStack {
                     Button("Preview Rename") { preview = projectManager.activeFileContent.replacingOccurrences(of: fromText, with: toText) }
                     Button("Apply Rename") { projectManager.activeFileContent = preview }

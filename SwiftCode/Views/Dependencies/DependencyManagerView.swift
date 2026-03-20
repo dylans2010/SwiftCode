@@ -24,7 +24,7 @@ struct DependencyManagerView: View {
                             .foregroundStyle(.secondary.opacity(0.5))
                         Text("No Dependencies Yet")
                             .foregroundStyle(.secondary)
-                        Text("Add Swift Package dependencies to your project.")
+                        Text("Add Swift Package dependencies to this project.")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }

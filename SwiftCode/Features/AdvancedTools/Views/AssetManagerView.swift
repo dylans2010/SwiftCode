@@ -29,7 +29,7 @@ struct AssetManagerView: View {
 
             AdvancedToolCard(title: "Assets") {
                 if importedAssets.isEmpty {
-                    Text("No assets imported yet.").foregroundStyle(.secondary)
+                    Text("No Assets Imported").foregroundStyle(.secondary)
                 }
                 ForEach(importedAssets, id: \.path) { asset in
                     HStack {

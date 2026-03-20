@@ -189,9 +189,9 @@ struct CodexMainView: View {
     private var header: some View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("Codex Agent Workspace")
+                Text("Codex Agent")
                     .font(.system(.largeTitle, design: .rounded).weight(.bold))
-                Text("A rebuilt Codex surface with secure key handling, richer controls, and production-ready review panels.")
+                Text("Use Codex as the default Agent on SwiftCode. This is still in progress and will be fully fixed soon..")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

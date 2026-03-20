@@ -108,7 +108,7 @@ struct AdvancedPlugin {
                     PluginAutomationStep(
                         title: "Step \(automationSteps.count + 1)",
                         instruction: "Describe what the plugin should do.",
-                        expectedOutput: "Expected result"
+                        expectedOutput: "Expected Result"
                     )
                 )
             } label: {

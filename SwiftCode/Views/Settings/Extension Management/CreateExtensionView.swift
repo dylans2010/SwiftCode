@@ -2,9 +2,6 @@ import SwiftUI
 
 // MARK: - Create Extension View
 
-/// Allows users to create a new SwiftCode Extension by defining its name,
-/// category, description, Swift files, assets, and installation status.
-/// The new Extension is saved under the Extensions directory and displayed in ExtensionsView.
 struct CreateExtensionView: View {
     @StateObject private var manager = ExtensionManager.shared
     @Environment(\.dismiss) private var dismiss
@@ -83,7 +80,7 @@ struct CreateExtensionView: View {
     private var basicInfoSection: some View {
         Section("Extension Info") {
             LabeledContent {
-                TextField("My Extension", text: $name)
+                TextField("Extension Name", text: $name)
                     .multilineTextAlignment(.trailing)
                     .autocorrectionDisabled()
             } label: {
@@ -117,7 +114,7 @@ struct CreateExtensionView: View {
                     .scrollContentBackground(.hidden)
                     .overlay(alignment: .topLeading) {
                         if description.isEmpty {
-                            Text("Describe what this extension does…")
+                            Text("Extension Description")
                                 .foregroundStyle(.tertiary)
                                 .font(.body)
                                 .padding(.top, 8)
@@ -187,16 +184,16 @@ struct CreateExtensionView: View {
         } header: {
             Text("Swift Files")
         } footer: {
-            Text("At least one Swift file is required. Tap a file to edit its content.")
+            Text("At least one Swift file is required for the Extension code logic. Tap a file to edit its content.")
         }
     }
 
     private var installationSection: some View {
         Section("Installation") {
-            Toggle("Install immediately", isOn: $installImmediately)
+            Toggle("Install Immediately", isOn: $installImmediately)
                 .tint(.orange)
             if installImmediately {
-                Label("Extension will be enabled in the IDE after creation.", systemImage: "info.circle")
+                Label("Extension will be enabled in the code editor after creation.", systemImage: "info.circle")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

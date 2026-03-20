@@ -14,14 +14,14 @@ struct SearchDocumentationView: View {
     }
 
     var body: some View {
-        AdvancedToolScreen(title: "Repository AI Search") {
+        AdvancedToolScreen(title: "Repository Search") {
             VStack(spacing: 20) {
                 // Input Section
                 VStack(alignment: .leading, spacing: 12) {
                     Label("Source Repository", systemImage: "server.rack")
                         .font(.headline)
 
-                    TextField("GitHub repository URL", text: $repositoryURL)
+                    TextField("GitHub Repository URL", text: $repositoryURL)
                         .textFieldStyle(.roundedBorder)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
