@@ -13,7 +13,7 @@ struct SymbolIndexView: View {
     var body: some View {
         AdvancedToolScreen(title: "Symbol Index") {
             AdvancedToolCard(title: "Search Symbols") {
-                TextField("Search symbol", text: $query)
+                TextField("Search Symbol", text: $query)
                     .textFieldStyle(.roundedBorder)
             }
 

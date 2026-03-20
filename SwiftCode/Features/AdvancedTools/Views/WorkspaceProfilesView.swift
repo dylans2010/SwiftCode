@@ -22,9 +22,9 @@ struct WorkspaceProfilesView: View {
             }
 
             AdvancedToolCard(title: "Create Workspace Profile") {
-                TextField("Workspace name", text: $draft.name)
+                TextField("Workspace Name", text: $draft.name)
                     .textFieldStyle(.roundedBorder)
-                TextField("Build configuration", text: $draft.buildConfiguration)
+                TextField("Build Configuration", text: $draft.buildConfiguration)
                     .textFieldStyle(.roundedBorder)
                 Button("Create Profile", action: createProfile)
                     .buttonStyle(.borderedProminent)
@@ -33,7 +33,7 @@ struct WorkspaceProfilesView: View {
 
             AdvancedToolCard(title: "Available Profiles", subtitle: "Switching updates all profile-bound labels immediately") {
                 if manager.profiles.isEmpty {
-                    Text("No profiles yet.")
+                    Text("No Profiles Yet")
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(manager.profiles) { profile in

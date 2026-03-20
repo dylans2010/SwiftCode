@@ -218,7 +218,7 @@ private final class RepositoryAnalysisViewModel: ObservableObject {
         scanTask?.cancel()
         isScanning = true
         progress = 0
-        statusMessage = "Preparing analysis..."
+        statusMessage = "Preparing Analysis..."
         reportError = nil
 
         scanTask = Task {

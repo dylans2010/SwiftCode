@@ -22,7 +22,7 @@ struct SnippetsLibraryView: View {
                         Text(snippet.title).font(.headline)
                         Text(snippet.code).font(.caption).lineLimit(3)
                         HStack {
-                            Button("Insert into Editor") { ProjectManager.shared.activeFileContent += "\n\n" + snippet.code }
+                            Button("Insert Into Editor") { ProjectManager.shared.activeFileContent += "\n\n" + snippet.code }
                             Button("Delete", role: .destructive) {
                                 snippets.removeAll { $0.id == snippet.id }
                                 CodeSnippetStore.save(snippets)
@@ -35,9 +35,9 @@ struct SnippetsLibraryView: View {
             }
 
             AdvancedToolCard(title: "Create Snippet") {
-                TextField("Snippet name", text: $draft.title)
+                TextField("Snippet Name", text: $draft.title)
                     .textFieldStyle(.roundedBorder)
-                TextField("Snippet code", text: $draft.code, axis: .vertical)
+                TextField("Snippet Code", text: $draft.code, axis: .vertical)
                     .textFieldStyle(.roundedBorder)
                 Button("Save Snippet") {
                     draft.category = selectedCategory
