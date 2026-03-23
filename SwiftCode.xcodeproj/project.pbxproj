@@ -7,6 +7,56 @@ objectVersion = 56;
 objects = {
 
 /* Begin PBXBuildFile section */
+		80879779E84E3A42F4EF445A /* GistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD609693E33B866DCE781BA /* GistModels.swift */; };
+		7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */; };
+		9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0949CB12552DEAB7E3F7C702 /* GistsView.swift */; };
+		80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E26536CAD3BDE720EAC90A /* CreateGistView.swift */; };
+		A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC5C97DD937DF40F6726993 /* GistDetailView.swift */; };
+		2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */; };
+		2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */; };
+		A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B71C01A4CA08055F618F0 /* GistRowView.swift */; };
+		80879779E84E3A42F4EF445A /* GistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD609693E33B866DCE781BA /* GistModels.swift */; };
+		7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */; };
+		9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0949CB12552DEAB7E3F7C702 /* GistsView.swift */; };
+		80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E26536CAD3BDE720EAC90A /* CreateGistView.swift */; };
+		A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC5C97DD937DF40F6726993 /* GistDetailView.swift */; };
+		2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */; };
+		2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */; };
+		A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B71C01A4CA08055F618F0 /* GistRowView.swift */; };
+		80879779E84E3A42F4EF445A /* GistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD609693E33B866DCE781BA /* GistModels.swift */; };
+		7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */; };
+		9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0949CB12552DEAB7E3F7C702 /* GistsView.swift */; };
+		80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E26536CAD3BDE720EAC90A /* CreateGistView.swift */; };
+		A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC5C97DD937DF40F6726993 /* GistDetailView.swift */; };
+		2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */; };
+		2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */; };
+		A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B71C01A4CA08055F618F0 /* GistRowView.swift */; };
+		80879779E84E3A42F4EF445A /* GistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD609693E33B866DCE781BA /* GistModels.swift */; };
+		7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */; };
+		9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0949CB12552DEAB7E3F7C702 /* GistsView.swift */; };
+		80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E26536CAD3BDE720EAC90A /* CreateGistView.swift */; };
+		A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC5C97DD937DF40F6726993 /* GistDetailView.swift */; };
+		2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */; };
+		2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */; };
+		A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B71C01A4CA08055F618F0 /* GistRowView.swift */; };
+		80879779E84E3A42F4EF445A /* GistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD609693E33B866DCE781BA /* GistModels.swift */; };
+		7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */; };
+		9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0949CB12552DEAB7E3F7C702 /* GistsView.swift */; };
+		80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E26536CAD3BDE720EAC90A /* CreateGistView.swift */; };
+		A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC5C97DD937DF40F6726993 /* GistDetailView.swift */; };
+		2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */; };
+		2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */; };
+		A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B71C01A4CA08055F618F0 /* GistRowView.swift */; };
+
+
+		80879779E84E3A42F4EF445A /* GistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD609693E33B866DCE781BA /* GistModels.swift */; };
+		A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC5C97DD937DF40F6726993 /* GistDetailView.swift */; };
+		2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */; };
+		A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B71C01A4CA08055F618F0 /* GistRowView.swift */; };
+		2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */; };
+		7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */; };
+		9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0949CB12552DEAB7E3F7C702 /* GistsView.swift */; };
+		80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E26536CAD3BDE720EAC90A /* CreateGistView.swift */; };
 		C0D000000000000000000201 /* CodexManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000101 /* CodexManager.swift */; };
 		C0D000000000000000000202 /* CodexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000102 /* CodexService.swift */; };
 		C0D000000000000000000203 /* CodexSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000103 /* CodexSession.swift */; };
@@ -331,9 +381,67 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		CLV00000000000000000013A /* PushPullView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000013B /* PushPullView.swift */; };
 		CLV00000000000000000014A /* BranchWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000014B /* BranchWorkspaceView.swift */; };
 		CLV00000000000000000015A /* CollaborationFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000015B /* CollaborationFeedbackView.swift */; };
+		80879779E84E3A42F4EF445A /* GistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD609693E33B866DCE781BA /* GistModels.swift */; };
+		7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */; };
+		9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0949CB12552DEAB7E3F7C702 /* GistsView.swift */; };
+		80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73E26536CAD3BDE720EAC90A /* CreateGistView.swift */; };
+		A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DC5C97DD937DF40F6726993 /* GistDetailView.swift */; };
+		2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */; };
+		2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */; };
+		A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B71C01A4CA08055F618F0 /* GistRowView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		7FD609693E33B866DCE781BA /* GistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistModels.swift; sourceTree = "<group>"; };
+		089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubGistService.swift; sourceTree = "<group>"; };
+		0949CB12552DEAB7E3F7C702 /* GistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistsView.swift; sourceTree = "<group>"; };
+		73E26536CAD3BDE720EAC90A /* CreateGistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGistView.swift; sourceTree = "<group>"; };
+		3DC5C97DD937DF40F6726993 /* GistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistDetailView.swift; sourceTree = "<group>"; };
+		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
+		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
+		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
+		7FD609693E33B866DCE781BA /* GistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistModels.swift; sourceTree = "<group>"; };
+		089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubGistService.swift; sourceTree = "<group>"; };
+		0949CB12552DEAB7E3F7C702 /* GistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistsView.swift; sourceTree = "<group>"; };
+		73E26536CAD3BDE720EAC90A /* CreateGistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGistView.swift; sourceTree = "<group>"; };
+		3DC5C97DD937DF40F6726993 /* GistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistDetailView.swift; sourceTree = "<group>"; };
+		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
+		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
+		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
+		7FD609693E33B866DCE781BA /* GistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistModels.swift; sourceTree = "<group>"; };
+		089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubGistService.swift; sourceTree = "<group>"; };
+		0949CB12552DEAB7E3F7C702 /* GistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistsView.swift; sourceTree = "<group>"; };
+		73E26536CAD3BDE720EAC90A /* CreateGistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGistView.swift; sourceTree = "<group>"; };
+		3DC5C97DD937DF40F6726993 /* GistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistDetailView.swift; sourceTree = "<group>"; };
+		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
+		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
+		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
+		7FD609693E33B866DCE781BA /* GistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistModels.swift; sourceTree = "<group>"; };
+		089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubGistService.swift; sourceTree = "<group>"; };
+		0949CB12552DEAB7E3F7C702 /* GistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistsView.swift; sourceTree = "<group>"; };
+		73E26536CAD3BDE720EAC90A /* CreateGistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGistView.swift; sourceTree = "<group>"; };
+		3DC5C97DD937DF40F6726993 /* GistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistDetailView.swift; sourceTree = "<group>"; };
+		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
+		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
+		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
+		7FD609693E33B866DCE781BA /* GistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistModels.swift; sourceTree = "<group>"; };
+		089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubGistService.swift; sourceTree = "<group>"; };
+		0949CB12552DEAB7E3F7C702 /* GistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistsView.swift; sourceTree = "<group>"; };
+		73E26536CAD3BDE720EAC90A /* CreateGistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGistView.swift; sourceTree = "<group>"; };
+		3DC5C97DD937DF40F6726993 /* GistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistDetailView.swift; sourceTree = "<group>"; };
+		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
+		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
+		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
+
+
+		7FD609693E33B866DCE781BA /* GistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistModels.swift; sourceTree = "<group>"; };
+		3DC5C97DD937DF40F6726993 /* GistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistDetailView.swift; sourceTree = "<group>"; };
+		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
+		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
+		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
+		089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubGistService.swift; sourceTree = "<group>"; };
+		0949CB12552DEAB7E3F7C702 /* GistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistsView.swift; sourceTree = "<group>"; };
+		73E26536CAD3BDE720EAC90A /* CreateGistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGistView.swift; sourceTree = "<group>"; };
 		C0D000000000000000000101 /* CodexManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexManager.swift"; path = "SwiftCode/Backend/Codex/CodexManager.swift"; sourceTree = SOURCE_ROOT; };
 		C0D000000000000000000102 /* CodexService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexService.swift"; path = "SwiftCode/Backend/Codex/CodexService.swift"; sourceTree = SOURCE_ROOT; };
 		C0D000000000000000000103 /* CodexSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexSession.swift"; path = "SwiftCode/Backend/Codex/CodexSession.swift"; sourceTree = SOURCE_ROOT; };
@@ -653,9 +761,202 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		CLV00000000000000000013B /* PushPullView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/PushPullView.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000014B /* BranchWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/BranchWorkspaceView.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000015B /* CollaborationFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationFeedbackView.swift; sourceTree = SOURCE_ROOT; };
+		7FD609693E33B866DCE781BA /* GistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistModels.swift; sourceTree = "<group>"; };
+		089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubGistService.swift; sourceTree = "<group>"; };
+		0949CB12552DEAB7E3F7C702 /* GistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistsView.swift; sourceTree = "<group>"; };
+		73E26536CAD3BDE720EAC90A /* CreateGistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGistView.swift; sourceTree = "<group>"; };
+		3DC5C97DD937DF40F6726993 /* GistDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistDetailView.swift; sourceTree = "<group>"; };
+		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
+		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
+		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		9E02FBCC861648AE49DA4D15 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
+				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
+				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A7ECF79906A849BA05852C21 /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				9E02FBCC861648AE49DA4D15 /* Components */,
+				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
+				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
+		9E02FBCC861648AE49DA4D15 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
+				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
+				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A7ECF79906A849BA05852C21 /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				9E02FBCC861648AE49DA4D15 /* Components */,
+				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
+				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
+		9E02FBCC861648AE49DA4D15 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
+				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
+				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A7ECF79906A849BA05852C21 /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				9E02FBCC861648AE49DA4D15 /* Components */,
+				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
+				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
+		9E02FBCC861648AE49DA4D15 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
+				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
+				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A7ECF79906A849BA05852C21 /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				9E02FBCC861648AE49DA4D15 /* Components */,
+				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
+				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
+		9E02FBCC861648AE49DA4D15 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
+				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
+				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A7ECF79906A849BA05852C21 /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				9E02FBCC861648AE49DA4D15 /* Components */,
+				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
+				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
+		998A721D9F6F2EC00525201E /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
+				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
+				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		B47A794D648B1018580D72CD /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				998A721D9F6F2EC00525201E /* Components */,
+				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
+				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
+		998A721D9F6F2EC00525201E /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		B47A794D648B1018580D72CD /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				998A721D9F6F2EC00525201E /* Components */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
+		998A721D9F6F2EC00525201E /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		B47A794D648B1018580D72CD /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				998A721D9F6F2EC00525201E /* Components */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
+		998A721D9F6F2EC00525201E /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
+				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
+				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		B47A794D648B1018580D72CD /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				998A721D9F6F2EC00525201E /* Components */,
+				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
+		9E02FBCC861648AE49DA4D15 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		A7ECF79906A849BA05852C21 /* Gists */ = {
+			isa = PBXGroup;
+			children = (
+				9E02FBCC861648AE49DA4D15 /* Components */,
+				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
+			);
+			path = Gists;
+			sourceTree = "<group>";
+		};
 AA000001000000000000000C_PRODUCTS /* Products */ = {
 isa = PBXGroup;
 children = (
@@ -686,6 +987,11 @@ sourceTree = "<group>";
 AA000010000000000000020F /* Models */ = {
 isa = PBXGroup;
 children = (
+				A7ECF79906A849BA05852C21 /* Gists */,
+				B47A794D648B1018580D72CD /* Gists */,
+				B47A794D648B1018580D72CD /* Gists */,
+				B47A794D648B1018580D72CD /* Gists */,
+				B47A794D648B1018580D72CD /* Gists */,
 				AA000010000000000000003B /* Project.swift */,
 				AA000010000000000000PFAB /* ProjectFolder.swift */,
 				AA000010000000000000004B /* FileNode.swift */,
@@ -734,6 +1040,16 @@ sourceTree = "<group>";
 AA000010000000000000040F /* Views */ = {
 isa = PBXGroup;
 children = (
+				A7ECF79906A849BA05852C21 /* Gists */,
+				A7ECF79906A849BA05852C21 /* Gists */,
+				A7ECF79906A849BA05852C21 /* Gists */,
+				A7ECF79906A849BA05852C21 /* Gists */,
+				A7ECF79906A849BA05852C21 /* Gists */,
+				B47A794D648B1018580D72CD /* Gists */,
+				B47A794D648B1018580D72CD /* Gists */,
+				B47A794D648B1018580D72CD /* Gists */,
+				B47A794D648B1018580D72CD /* Gists */,
+				A7ECF79906A849BA05852C21 /* Gists */,
 				AA000010000000000000041F /* Dashboard */,
 				AA000010000000000000042F /* Workspace */,
 				AA000010000000000000043F /* Editor */,
@@ -763,6 +1079,8 @@ sourceTree = "<group>";
 AA000010000000000000041F /* Dashboard */ = {
 isa = PBXGroup;
 children = (
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
 				AA00001000000000000000CB /* ProjectsDashboardView.swift */,
 				FCV00000000000000000001B /* FolderCreateView.swift */,
 				FOV00000000000000000001B /* FoldersView.swift */,
@@ -782,6 +1100,13 @@ sourceTree = "<group>";
 AA000010000000000000043F /* Editor */ = {
 isa = PBXGroup;
 children = (
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
 				AA00001000000000000000EB /* CodeEditorView.swift */,
 				AA00001000000000000003DB /* GoToLineView.swift */,
 				AA00001000000000000003EB /* MinimapSettingsView.swift */,
@@ -1168,6 +1493,11 @@ sourceTree = "<group>";
 DABA00000000000000000000 /* Documentation */ = {
 isa = PBXGroup;
 children = (
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
+				089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */,
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
+				089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */,
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
 				DABA00000000000000000001 /* DocumentationAnalyzer.swift */,
 			);
 path = Documentation;
@@ -1206,7 +1536,21 @@ sourceTree = "<group>";
 BG000000000000000000001F /* GitHub */ = {
 isa = PBXGroup;
 children = (
-				BG000000000000000000002B /* GitHubAuth.swift */,
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
+				089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */,
+				089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */,
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
+				089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */,
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
+				089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */,
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
+				089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */,
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
+				089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */,
+				7FD609693E33B866DCE781BA /* GistModels.swift */,
+								089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */,
+BG000000000000000000002B /* GitHubAuth.swift */,
 				BG000000000000000000003B /* GitHubAPI.swift */,
 				BG000000000000000000004B /* GitHubImport.swift */,
 				BG000000000000000000005B /* GitHubRepositoryManager.swift */,
@@ -1793,6 +2137,62 @@ AA000001000000000000000B_SRC /* Sources */ = {
 isa = PBXSourcesBuildPhase;
 buildActionMask = 2147483647;
 files = (
+				80879779E84E3A42F4EF445A /* GistModels.swift in Sources */,
+				7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */,
+				9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */,
+				80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */,
+				A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */,
+				2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */,
+				2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */,
+				A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */,
+				A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */,
+				2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */,
+				2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */,
+				A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */,
+				80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */,
+				9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */,
+				7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */,
+				80879779E84E3A42F4EF445A /* GistModels.swift in Sources */,
+				80879779E84E3A42F4EF445A /* GistModels.swift in Sources */,
+				7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */,
+				9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */,
+				80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */,
+				A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */,
+				2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */,
+				2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */,
+				A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */,
+				80879779E84E3A42F4EF445A /* GistModels.swift in Sources */,
+				7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */,
+				9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */,
+				80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */,
+				A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */,
+				2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */,
+				2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */,
+				A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */,
+				80879779E84E3A42F4EF445A /* GistModels.swift in Sources */,
+				7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */,
+				9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */,
+				80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */,
+				A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */,
+				2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */,
+				2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */,
+				A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */,
+				80879779E84E3A42F4EF445A /* GistModels.swift in Sources */,
+				7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */,
+				9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */,
+				80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */,
+				A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */,
+				2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */,
+				2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */,
+				A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */,
+				80879779E84E3A42F4EF445A /* GistModels.swift in Sources */,
+				A91E652CB14935973EB256CF /* GistDetailView.swift in Sources */,
+				2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */,
+				A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */,
+				2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */,
+				7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */,
+				9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */,
+				80727CCF1A850AC6F5E228F3 /* CreateGistView.swift in Sources */,
 				A8FE3B4E78D74A97A9517309 /* OfflineModelMetadata.swift in Sources */,
 				7897B7DD965943C19E6C7C46 /* HuggingFaceAPI.swift in Sources */,
 				F0104F91B48646D0901577AD /* OfflineModelManager.swift in Sources */,
