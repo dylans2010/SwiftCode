@@ -685,28 +685,6 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		9E02FBCC861648AE49DA4D15 /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-				CA000203 /* GistDiffView.swift */,
-				CA000204 /* GistRevisionsView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
 				CA000201 /* GistCommentSectionView.swift */,
 				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
 				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
@@ -722,151 +700,8 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 				9E02FBCC861648AE49DA4D15 /* Components */,
 				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
 				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		998A721D9F6F2EC00525201E /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		B47A794D648B1018580D72CD /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				998A721D9F6F2EC00525201E /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		998A721D9F6F2EC00525201E /* Components */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		B47A794D648B1018580D72CD /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				998A721D9F6F2EC00525201E /* Components */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		998A721D9F6F2EC00525201E /* Components */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		B47A794D648B1018580D72CD /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				998A721D9F6F2EC00525201E /* Components */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		998A721D9F6F2EC00525201E /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		B47A794D648B1018580D72CD /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				998A721D9F6F2EC00525201E /* Components */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
+				CA000203 /* GistDiffView.swift */,
+				CA000204 /* GistRevisionsView.swift */,
 				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
 			);
 			path = Gists;
@@ -903,7 +738,6 @@ AA000010000000000000020F /* Models */ = {
 isa = PBXGroup;
 children = (
 				A7ECF79906A849BA05852C21 /* Gists */,
-				B47A794D648B1018580D72CD /* Gists */,
 				AA000010000000000000003B /* Project.swift */,
 				AA000010000000000000PFAB /* ProjectFolder.swift */,
 				AA000010000000000000004B /* FileNode.swift */,
@@ -953,7 +787,6 @@ AA000010000000000000040F /* Views */ = {
 isa = PBXGroup;
 children = (
 				A7ECF79906A849BA05852C21 /* Gists */,
-				B47A794D648B1018580D72CD /* Gists */,
 				AA000010000000000000041F /* Dashboard */,
 				AA000010000000000000042F /* Workspace */,
 				AA000010000000000000043F /* Editor */,
