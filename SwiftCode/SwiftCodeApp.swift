@@ -12,6 +12,7 @@ struct SwiftCodeApp: App {
     @StateObject private var toolbarSettings = ToolbarSettings.shared
     @StateObject private var folderManager = FolderManager.shared
     @StateObject private var codeSuggestionsML = CodeSuggestionsML.shared
+    @StateObject private var gistService = GitHubGistService.shared
 
     var body: some Scene {
         WindowGroup {
@@ -21,6 +22,7 @@ struct SwiftCodeApp: App {
                 .environmentObject(toolbarSettings)
                 .environmentObject(folderManager)
                 .environmentObject(codeSuggestionsML)
+                .environmentObject(gistService)
                 .onOpenURL { url in
                     _ = GitHubOAuth.shared.handleOpenURL(url)
                 }

@@ -8,6 +8,7 @@ final class ToolbarActionManager {
 
     enum SheetDestination: String {
         case fileNavigator
+        case gistManager
         case aiAgent
         case buildStatus
         case gitHub
@@ -88,6 +89,8 @@ final class ToolbarActionManager {
 
         case "dependency_manager", "install_dependency":
             return .dependencyManager
+        case "gist_manager":
+            return .gistManager
         case "project_settings":
             return .projectSettings
 
