@@ -41,6 +41,78 @@ public final class GitHubGistService: ObservableObject {
         }
     }
 
+
+    private func normalizedFilename(_ filename: String?) -> String? {
+        guard let filename else { return nil }
+        let trimmed = filename.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func sanitize(_ files: [GistFile]) -> [String: String] {
+        Dictionary(uniqueKeysWithValues: files.compactMap { file in
+            guard let name = normalizedFilename(file.filename) else { return nil }
+            return (name, file.content)
+        })
+    }
+
+    public func cloneURL(for gist: GistResponse, useSSH: Bool) -> String {
+        if useSSH {
+            if let push = gist.gitPushUrl, !push.isEmpty {
+                return push
+            }
+            return "git@gist.github.com:\(gist.id).git"
+        }
+
+        if let pull = gist.gitPullUrl, !pull.isEmpty {
+            return pull
+        }
+        return "https://gist.github.com/\(gist.id).git"
+    }
+
+    public func uploadFilesToGist(id: String, urls: [URL]) async throws -> GistResponse {
+        var imported: [String: GistUpdateRequest.FileUpdateContent?] = [:]
+
+        for url in urls {
+            let entries = try collectFileEntries(from: url)
+            for entry in entries {
+                imported[entry.name] = .init(content: entry.content)
+            }
+        }
+
+        guard !imported.isEmpty else {
+            throw GistError.apiError("No readable files found in selection.")
+        }
+
+        return try await updateGist(id: id, description: nil, files: imported)
+    }
+
+    private func collectFileEntries(from url: URL) throws -> [(name: String, content: String)] {
+        let needsScoped = url.startAccessingSecurityScopedResource()
+        defer { if needsScoped { url.stopAccessingSecurityScopedResource() } }
+
+        let values = try url.resourceValues(forKeys: [.isDirectoryKey])
+        if values.isDirectory == true {
+            let enumerator = FileManager.default.enumerator(
+                at: url,
+                includingPropertiesForKeys: [.isDirectoryKey],
+                options: [.skipsHiddenFiles]
+            )
+
+            var output: [(name: String, content: String)] = []
+            while let item = enumerator?.nextObject() as? URL {
+                let itemValues = try item.resourceValues(forKeys: [.isDirectoryKey])
+                guard itemValues.isDirectory != true else { continue }
+                if let content = try? String(contentsOf: item) {
+                    output.append((item.lastPathComponent, content))
+                }
+            }
+            return output
+        }
+
+        guard let content = try? String(contentsOf: url) else { return [] }
+        return [(url.lastPathComponent, content)]
+    }
+
     // MARK: - API Methods
 
     public func fetchGists() async throws -> [GistResponse] {
@@ -89,7 +161,9 @@ public final class GitHubGistService: ObservableObject {
         var request = authorizedRequest(url: url, method: "POST")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        let fileDict = Dictionary(uniqueKeysWithValues: files.map { ($0.filename, $0.content) })
+        let fileDict = sanitize(files)
+        guard !fileDict.isEmpty else { throw GistError.apiError("Please name at least one file before creating a gist.") }
+
         let body = CreateGistRequest(description: description, isPublic: isPublic, files: fileDict)
         request.httpBody = try JSONEncoder().encode(body)
 
@@ -105,7 +179,7 @@ public final class GitHubGistService: ObservableObject {
         }
     }
 
-    public func updateGist(id: String, description: String, files: [String: GistUpdateRequest.FileUpdateContent?]) async throws -> GistResponse {
+    public func updateGist(id: String, description: String?, files: [String: GistUpdateRequest.FileUpdateContent?]) async throws -> GistResponse {
         isLoading = true
         defer { isLoading = false }
         errorMessage = nil
@@ -257,24 +331,20 @@ public final class GitHubGistService: ObservableObject {
     // MARK: - Download
 
     public func downloadGistZip(gistId: String) async throws -> URL {
-        // GitHub doesn't have a direct Gist ZIP API like repos,
-        // but we can use the repository-like URL if we know the ID.
-        // Actually, the common way is https://gist.github.com/OWNER/ID/archive/HEAD.zip
-        // But we don't always have the owner login easily for the URL if it's anonymous.
-        // A better way is to use the html_url + /archive/HEAD.zip
-
         let gist = try await fetchGist(id: gistId)
-        guard let url = URL(string: "\(gist.htmlUrl)/archive/HEAD.zip") else {
+        let revision = gist.history?.first?.version ?? "HEAD"
+        guard let zipURL = URL(string: "https://gist.github.com/\(gist.id)/archive/\(revision).zip") else {
             throw GistError.apiError("Invalid Gist URL for download")
         }
 
-        let (data, response) = try await URLSession.shared.data(from: url)
-        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-            throw GistError.apiError("Failed to download ZIP")
+        let request = authorizedRequest(url: zipURL)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
+            throw GistError.apiError("Failed to download ZIP archive")
         }
 
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(gistId).zip")
-        try data.write(to: tempURL)
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(gistId)-\(revision).zip")
+        try data.write(to: tempURL, options: .atomic)
         return tempURL
     }
 }

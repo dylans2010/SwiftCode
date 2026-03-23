@@ -69,22 +69,39 @@ public struct GistOwner: Codable {
 public struct GistResponse: Codable, Identifiable {
     public let id: String
     public let htmlUrl: String
+    public let gitPullUrl: String?
+    public let gitPushUrl: String?
     public let description: String?
     public let `public`: Bool
     public let createdAt: Date
     public let updatedAt: Date
     public let owner: GistOwner?
     public let files: [String: GistFile]
+    public let history: [GistHistoryEntry]?
 
     enum CodingKeys: String, CodingKey {
         case id
         case htmlUrl = "html_url"
+        case gitPullUrl = "git_pull_url"
+        case gitPushUrl = "git_push_url"
         case description
         case `public`
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case owner
         case files
+        case history
+    }
+}
+
+public struct GistHistoryEntry: Codable, Identifiable {
+    public var id: String { version }
+    public let version: String
+    public let committedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case version
+        case committedAt = "committed_at"
     }
 }
 

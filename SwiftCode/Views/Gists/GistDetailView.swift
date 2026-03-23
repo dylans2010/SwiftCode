@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct GistDetailView: View {
     @State var gistId: String
@@ -14,6 +15,8 @@ struct GistDetailView: View {
     @State private var fileIDToDelete: UUID?
     @State private var showComments = false
     @State private var showRevisions = false
+    @State private var showImportPicker = false
+    @State private var importedFilesCount = 0
     @State private var showZIPDownloadProgress = false
     @State private var downloadedZIPURL: URL?
 
@@ -25,11 +28,6 @@ struct GistDetailView: View {
                 if let currentGist = gist {
                     VStack(spacing: 0) {
                         headerView(currentGist)
-
-                        if showComments {
-                            GistCommentSectionView(gistId: gistId)
-                                .transition(.move(edge: .bottom))
-                        }
 
                         GistFileTabBar(
                             files: editableFiles,
@@ -76,17 +74,23 @@ struct GistDetailView: View {
                                 Button { openInBrowser() } label: { Label("Open in Browser", systemImage: "safari") }
                                 Button { forkGist() } label: { Label("Fork", systemImage: "arrow.branch") }
                                 Button { showRevisions = true } label: { Label("Revisions", systemImage: "clock.arrow.circlepath") }
-                                Button { showComments.toggle() } label: { Label(showComments ? "Hide Comments" : "Show Comments", systemImage: "bubble.left.and.bubble.right") }
+                                Button { showComments = true } label: { Label("Comments", systemImage: "bubble.left.and.bubble.right") }
 
                                 Divider()
 
                                 Menu("Clone") {
                                     Button { copyCloneURL(isSSH: false) } label: { Label("Clone via HTTPS", systemImage: "link") }
                                     Button { copyCloneURL(isSSH: true) } label: { Label("Clone via SSH", systemImage: "terminal") }
+                                    Divider()
+                                    Button { openCloneURL(isSSH: false) } label: { Label("Open HTTPS Remote", systemImage: "safari") }
+                                    Button { openCloneURL(isSSH: true) } label: { Label("Open SSH Remote", systemImage: "terminal.fill") }
                                 }
 
                                 Button { copyEmbedCode() } label: { Label("Embed", systemImage: "chevron.left.forwardslash.chevron.right") }
                                 Button { downloadZIP() } label: { Label("Download ZIP", systemImage: "archivebox") }
+                                Divider()
+                                Button { addFile() } label: { Label("Add Empty File", systemImage: "doc.badge.plus") }
+                                Button { showImportPicker = true } label: { Label("Import Files/Folders", systemImage: "folder.badge.plus") }
 
                                 if let urlString = gist?.htmlUrl, let url = URL(string: urlString) {
                                     ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
@@ -97,6 +101,31 @@ struct GistDetailView: View {
                         }
                     }
                 }
+            }
+            .sheet(isPresented: $showComments) {
+                NavigationStack {
+                    GistCommentSectionView(gistId: gistId)
+                        .navigationTitle("Comments")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("Done") { showComments = false }
+                            }
+                        }
+                }
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showImportPicker) {
+                FileImporterRepresentableView(
+                    allowedContentTypes: [.item, .folder],
+                    allowsMultipleSelection: true
+                ) { urls in
+                    showImportPicker = false
+                    guard !urls.isEmpty else { return }
+                    Task { await importFiles(urls) }
+                }
+                .ignoresSafeArea()
             }
             .alert("Delete File", isPresented: $showDeleteFileConfirmation) {
                 Button("Delete", role: .destructive) {
@@ -111,6 +140,23 @@ struct GistDetailView: View {
             .overlay {
                 if let error = gistService.errorMessage {
                     errorBanner(message: error)
+                }
+
+                if importedFilesCount > 0 {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Text("Imported \(importedFilesCount) file(s) into this gist")
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 8)
+                                .background(Color.green.opacity(0.85), in: Capsule())
+                                .foregroundStyle(.white)
+                                .padding(.top, 16)
+                                .padding(.trailing, 16)
+                        }
+                        Spacer()
+                    }
                 }
 
                 if showZIPDownloadProgress {
@@ -217,9 +263,12 @@ struct GistDetailView: View {
 
         // Identify updated and new files
         for file in editableFiles {
-            let originalFile = currentGist.files[file.filename]
+            let cleanedName = file.filename.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !cleanedName.isEmpty else { continue }
+
+            let originalFile = currentGist.files[cleanedName]
             if originalFile == nil || originalFile?.content != file.content {
-                fileUpdates[file.filename] = GistUpdateRequest.FileUpdateContent(content: file.content)
+                fileUpdates[cleanedName] = GistUpdateRequest.FileUpdateContent(content: file.content)
             }
         }
 
@@ -241,7 +290,7 @@ struct GistDetailView: View {
     }
 
     private func addFile() {
-        let newFile = GistFile(filename: "untitled-\(editableFiles.count + 1).swift", content: "")
+        let newFile = GistFile(filename: "", content: "")
         editableFiles.append(newFile)
         selectedFileID = newFile.id
         isEditing = true
@@ -275,9 +324,22 @@ struct GistDetailView: View {
 
     private func copyCloneURL(isSSH: Bool) {
         guard let currentGist = gist else { return }
-        // Gist clone URLs follow a pattern: https://gist.github.com/[id].git or git@gist.github.com:[id].git
-        let cloneURL = isSSH ? "git@gist.github.com:\(currentGist.id).git" : "https://gist.github.com/\(currentGist.id).git"
+        let cloneURL = gistService.cloneURL(for: currentGist, useSSH: isSSH)
         UIPasteboard.general.string = cloneURL
+    }
+
+    private func openCloneURL(isSSH: Bool) {
+        guard let currentGist = gist else { return }
+        let cloneString = gistService.cloneURL(for: currentGist, useSSH: isSSH)
+
+        if isSSH {
+            UIPasteboard.general.string = cloneString
+            return
+        }
+
+        if let url = URL(string: cloneString) {
+            UIApplication.shared.open(url)
+        }
     }
 
     private func copyEmbedCode() {
@@ -312,6 +374,23 @@ struct GistDetailView: View {
                 showZIPDownloadProgress = false
                 print("Failed to download ZIP: \(error)")
             }
+        }
+    }
+
+    private func importFiles(_ urls: [URL]) async {
+        do {
+            let updated = try await gistService.uploadFilesToGist(id: gistId, urls: urls)
+            gist = updated
+            editableDescription = updated.description ?? ""
+            editableFiles = updated.files.values.sorted { $0.filename < $1.filename }
+            selectedFileID = editableFiles.first?.id
+            importedFilesCount = urls.count
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                importedFilesCount = 0
+            }
+        } catch {
+            print("Failed to import files: \(error)")
         }
     }
 
