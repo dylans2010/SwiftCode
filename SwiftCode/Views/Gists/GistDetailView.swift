@@ -12,6 +12,10 @@ struct GistDetailView: View {
     @State private var selectedFileID: UUID?
     @State private var showDeleteFileConfirmation = false
     @State private var fileIDToDelete: UUID?
+    @State private var showComments = false
+    @State private var showRevisions = false
+    @State private var showZIPDownloadProgress = false
+    @State private var downloadedZIPURL: URL?
 
     var body: some View {
         NavigationStack {
@@ -21,6 +25,11 @@ struct GistDetailView: View {
                 if let currentGist = gist {
                     VStack(spacing: 0) {
                         headerView(currentGist)
+
+                        if showComments {
+                            GistCommentSectionView(gistId: gistId)
+                                .transition(.move(edge: .bottom))
+                        }
 
                         GistFileTabBar(
                             files: editableFiles,
@@ -66,6 +75,19 @@ struct GistDetailView: View {
                                 Button { copyLink() } label: { Label("Copy Link", systemImage: "link") }
                                 Button { openInBrowser() } label: { Label("Open in Browser", systemImage: "safari") }
                                 Button { forkGist() } label: { Label("Fork", systemImage: "arrow.branch") }
+                                Button { showRevisions = true } label: { Label("Revisions", systemImage: "clock.arrow.circlepath") }
+                                Button { showComments.toggle() } label: { Label(showComments ? "Hide Comments" : "Show Comments", systemImage: "bubble.left.and.bubble.right") }
+
+                                Divider()
+
+                                Menu("Clone") {
+                                    Button { copyCloneURL(isSSH: false) } label: { Label("Clone via HTTPS", systemImage: "link") }
+                                    Button { copyCloneURL(isSSH: true) } label: { Label("Clone via SSH", systemImage: "terminal") }
+                                }
+
+                                Button { copyEmbedCode() } label: { Label("Embed", systemImage: "chevron.left.forwardslash.chevron.right") }
+                                Button { downloadZIP() } label: { Label("Download ZIP", systemImage: "archivebox") }
+
                                 if let urlString = gist?.htmlUrl, let url = URL(string: urlString) {
                                     ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
                                 }
@@ -90,6 +112,24 @@ struct GistDetailView: View {
                 if let error = gistService.errorMessage {
                     errorBanner(message: error)
                 }
+
+                if showZIPDownloadProgress {
+                    ZStack {
+                        Color.black.opacity(0.4).ignoresSafeArea()
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .tint(.white)
+                            Text("Downloading ZIP...")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.white)
+                        }
+                        .padding(24)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $showRevisions) {
+                GistRevisionsView(gistId: gistId)
             }
         }
         .task {
@@ -229,6 +269,48 @@ struct GistDetailView: View {
             if let forked = try? await gistService.forkGist(id: gistId) {
                 self.gistId = forked.id
                 await loadGist()
+            }
+        }
+    }
+
+    private func copyCloneURL(isSSH: Bool) {
+        guard let currentGist = gist else { return }
+        // Gist clone URLs follow a pattern: https://gist.github.com/[id].git or git@gist.github.com:[id].git
+        let cloneURL = isSSH ? "git@gist.github.com:\(currentGist.id).git" : "https://gist.github.com/\(currentGist.id).git"
+        UIPasteboard.general.string = cloneURL
+    }
+
+    private func copyEmbedCode() {
+        guard let currentGist = gist, let owner = currentGist.owner?.login else { return }
+        let embedCode = "<script src=\"https://gist.github.com/\(owner)/\(currentGist.id).js\"></script>"
+        UIPasteboard.general.string = embedCode
+    }
+
+    private func downloadZIP() {
+        showZIPDownloadProgress = true
+        Task {
+            do {
+                let url = try await gistService.downloadGistZip(gistId: gistId)
+                showZIPDownloadProgress = false
+                downloadedZIPURL = url
+
+                DispatchQueue.main.async {
+                    let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let rootVC = windowScene.windows.first?.rootViewController {
+
+                        if let popover = activityVC.popoverPresentationController {
+                            popover.sourceView = rootVC.view
+                            popover.sourceRect = CGRect(x: rootVC.view.bounds.midX, y: rootVC.view.bounds.midY, width: 0, height: 0)
+                            popover.permittedArrowDirections = []
+                        }
+
+                        rootVC.present(activityVC, animated: true)
+                    }
+                }
+            } catch {
+                showZIPDownloadProgress = false
+                print("Failed to download ZIP: \(error)")
             }
         }
     }

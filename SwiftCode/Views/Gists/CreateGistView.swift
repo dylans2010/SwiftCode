@@ -7,6 +7,8 @@ struct CreateGistView: View {
 
     @State private var description = ""
     @State private var isPublic = false
+    @State private var commentsEnabled = true
+    @State private var creationStyle: CreationStyle = .tabs
     @State private var files: [GistFile]
     @State private var selectedFileID: UUID?
     @State private var successGist: GistResponse?
@@ -14,6 +16,12 @@ struct CreateGistView: View {
     @State private var showPasteSheet = false
     @State private var pasteContent = ""
     @State private var pasteFilename = ""
+
+    enum CreationStyle: String, CaseIterable, Identifiable {
+        case tabs = "Tabs"
+        case list = "List"
+        var id: String { self.rawValue }
+    }
 
     init(initialFilename: String? = nil, initialContent: String? = nil) {
         let defaultFile = GistFile(
@@ -40,8 +48,14 @@ struct CreateGistView: View {
                 } else {
                     VStack(spacing: 0) {
                         formSection
-                        GistFileTabBar(files: files, selectedFileID: $selectedFileID, isEditing: true, onRemoveFile: removeFile)
-                        editorSection
+
+                        if creationStyle == .tabs {
+                            GistFileTabBar(files: files, selectedFileID: $selectedFileID, isEditing: true, onRemoveFile: removeFile)
+                            editorSection
+                        } else {
+                            listViewSection
+                        }
+
                         importToolbar
                     }
                 }
@@ -65,12 +79,18 @@ struct CreateGistView: View {
                     }
                 }
             }
-            .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item]) { result in
-                switch result {
-                case .success(let url):
-                    handleFileImport(.success([url]))
-                case .failure(let error):
-                    handleFileImport(.failure(error))
+            .overlay {
+                if showFileImporter {
+                    FileImporterRepresentableView(
+                        allowedContentTypes: [.item],
+                        allowsMultipleSelection: true
+                    ) { urls in
+                        showFileImporter = false
+                        if !urls.isEmpty {
+                            handleFileImport(.success(urls))
+                        }
+                    }
+                    .ignoresSafeArea()
                 }
             }
             .sheet(isPresented: $showPasteSheet) {
@@ -102,16 +122,36 @@ struct CreateGistView: View {
                 .padding(12)
                 .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
 
-            Toggle(isOn: $isPublic) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Public Gist")
-                        .font(.subheadline.bold())
-                    Text("Anyone can see this Gist")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+            HStack(spacing: 16) {
+                Toggle(isOn: $isPublic) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Public Gist")
+                            .font(.subheadline.bold())
+                        Text("Anyone can see")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                Toggle(isOn: $commentsEnabled) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Comments")
+                            .font(.subheadline.bold())
+                        Text("Allow replies")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding(.horizontal, 4)
+
+            Picker("Creation Style", selection: $creationStyle) {
+                ForEach(CreationStyle.allCases) { style in
+                    Text(style.rawValue).tag(style)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.top, 4)
         }
         .padding()
         .background(Color(red: 0.12, green: 0.12, blue: 0.16))
@@ -126,6 +166,34 @@ struct CreateGistView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var listViewSection: some View {
+        List {
+            ForEach($files) { $file in
+                VStack(alignment: .leading, spacing: 8) {
+                    TextField("Filename", text: $file.filename)
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .padding(8)
+                        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 4))
+
+                    TextEditor(text: $file.content)
+                        .font(.system(size: 13, design: .monospaced))
+                        .frame(minHeight: 100)
+                        .padding(8)
+                        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 4))
+                        .scrollContentBackground(.hidden)
+                }
+                .padding(.vertical, 8)
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
+            .onDelete { indices in
+                files.remove(atOffsets: indices)
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
     }
 
     private var importToolbar: some View {
@@ -275,13 +343,14 @@ struct CreateGistView: View {
     private func handleFileImport(_ result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
-            guard let url = urls.first else { return }
-            if url.startAccessingSecurityScopedResource() {
-                defer { url.stopAccessingSecurityScopedResource() }
-                if let content = try? String(contentsOf: url) {
-                    let newFile = GistFile(filename: url.lastPathComponent, content: content)
-                    files.append(newFile)
-                    selectedFileID = newFile.id
+            for url in urls {
+                if url.startAccessingSecurityScopedResource() {
+                    defer { url.stopAccessingSecurityScopedResource() }
+                    if let content = try? String(contentsOf: url) {
+                        let newFile = GistFile(filename: url.lastPathComponent, content: content)
+                        files.append(newFile)
+                        selectedFileID = newFile.id
+                    }
                 }
             }
         case .failure(let error):

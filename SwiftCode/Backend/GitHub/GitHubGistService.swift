@@ -213,4 +213,68 @@ public final class GitHubGistService: ObservableObject {
             throw error
         }
     }
+
+    // MARK: - Comments
+
+    public func fetchComments(gistId: String) async throws -> [GistComment] {
+        let url = baseURL.appendingPathComponent("gists/\(gistId)/comments")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return try decoder().decode([GistComment].self, from: data)
+    }
+
+    public func createComment(gistId: String, body: String) async throws -> GistComment {
+        let url = baseURL.appendingPathComponent("gists/\(gistId)/comments")
+        var request = authorizedRequest(url: url, method: "POST")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let payload = ["body": body]
+        request.httpBody = try JSONEncoder().encode(payload)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return try decoder().decode(GistComment.self, from: data)
+    }
+
+    // MARK: - Revisions
+
+    public func fetchRevisions(gistId: String) async throws -> [GistRevision] {
+        let url = baseURL.appendingPathComponent("gists/\(gistId)/commits")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return try decoder().decode([GistRevision].self, from: data)
+    }
+
+    public func fetchGistAtRevision(gistId: String, sha: String) async throws -> GistResponse {
+        let url = baseURL.appendingPathComponent("gists/\(gistId)/\(sha)")
+        let request = authorizedRequest(url: url)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        try validateResponse(response, data: data)
+        return try decoder().decode(GistResponse.self, from: data)
+    }
+
+    // MARK: - Download
+
+    public func downloadGistZip(gistId: String) async throws -> URL {
+        // GitHub doesn't have a direct Gist ZIP API like repos,
+        // but we can use the repository-like URL if we know the ID.
+        // Actually, the common way is https://gist.github.com/OWNER/ID/archive/HEAD.zip
+        // But we don't always have the owner login easily for the URL if it's anonymous.
+        // A better way is to use the html_url + /archive/HEAD.zip
+
+        let gist = try await fetchGist(id: gistId)
+        guard let url = URL(string: "\(gist.htmlUrl)/archive/HEAD.zip") else {
+            throw GistError.apiError("Invalid Gist URL for download")
+        }
+
+        let (data, response) = try await URLSession.shared.data(from: url)
+        guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+            throw GistError.apiError("Failed to download ZIP")
+        }
+
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(gistId).zip")
+        try data.write(to: tempURL)
+        return tempURL
+    }
 }

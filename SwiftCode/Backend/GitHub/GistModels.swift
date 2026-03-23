@@ -17,8 +17,20 @@ public struct GistFile: Codable, Identifiable, Equatable {
         self.size = size
     }
 
+    public var patch: String?
+
+    public init(id: UUID = UUID(), filename: String, content: String, language: String? = nil, rawUrl: String? = nil, size: Int? = nil, patch: String? = nil) {
+        self.id = id
+        self.filename = filename
+        self.content = content
+        self.language = language
+        self.rawUrl = rawUrl
+        self.size = size
+        self.patch = patch
+    }
+
     public enum CodingKeys: String, CodingKey {
-        case filename, content, language, size
+        case filename, content, language, size, patch
         case rawUrl = "raw_url"
     }
 
@@ -30,6 +42,7 @@ public struct GistFile: Codable, Identifiable, Equatable {
         self.language = try container.decodeIfPresent(String.self, forKey: .language)
         self.rawUrl = try container.decodeIfPresent(String.self, forKey: .rawUrl)
         self.size = try container.decodeIfPresent(Int.self, forKey: .size)
+        self.patch = try container.decodeIfPresent(String.self, forKey: .patch)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -39,6 +52,7 @@ public struct GistFile: Codable, Identifiable, Equatable {
         try container.encodeIfPresent(language, forKey: .language)
         try container.encodeIfPresent(rawUrl, forKey: .rawUrl)
         try container.encodeIfPresent(size, forKey: .size)
+        try container.encodeIfPresent(patch, forKey: .patch)
     }
 }
 
@@ -71,6 +85,40 @@ public struct GistResponse: Codable, Identifiable {
         case updatedAt = "updated_at"
         case owner
         case files
+    }
+}
+
+public struct GistComment: Codable, Identifiable {
+    public let id: Int
+    public let body: String
+    public let user: GistOwner?
+    public let createdAt: Date
+    public let updatedAt: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id, body, user
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+public struct GistRevision: Codable, Identifiable {
+    public var id: String { version }
+    public let version: String
+    public let user: GistOwner?
+    public let changeStatus: ChangeStatus?
+    public let committedAt: Date
+
+    public struct ChangeStatus: Codable {
+        public let total: Int?
+        public let additions: Int?
+        public let deletions: Int?
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case version, user
+        case changeStatus = "change_status"
+        case committedAt = "committed_at"
     }
 }
 
