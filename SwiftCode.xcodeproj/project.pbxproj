@@ -355,9 +355,9 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
 		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
 		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
-		CA000201 /* GistCommentSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistCommentSectionView.swift; sourceTree = "<group>"; };
-		CA000202 /* MarkdownToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownToolbar.swift; sourceTree = "<group>"; };
-		CA000203 /* GistDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistDiffView.swift; sourceTree = "<group>"; };
+		CA000201 /* GistCommentSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Gists/Components/GistCommentSectionView.swift"; sourceTree = SOURCE_ROOT; };
+		CA000202 /* MarkdownToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Gists/Components/MarkdownToolbar.swift"; sourceTree = SOURCE_ROOT; };
+		CA000203 /* GistDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Gists/GistDiffView.swift"; sourceTree = SOURCE_ROOT; };
 		CA000204 /* GistRevisionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRevisionsView.swift; sourceTree = "<group>"; };
 
 		C0D000000000000000000101 /* CodexManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexManager.swift"; path = "SwiftCode/Backend/Codex/CodexManager.swift"; sourceTree = SOURCE_ROOT; };
