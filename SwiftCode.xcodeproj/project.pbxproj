@@ -15,6 +15,10 @@ objects = {
 		2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */; };
 		2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */; };
 		A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B71C01A4CA08055F618F0 /* GistRowView.swift */; };
+		CA000101 /* GistCommentSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA000201 /* GistCommentSectionView.swift */; };
+		CA000102 /* MarkdownToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA000202 /* MarkdownToolbar.swift */; };
+		CA000103 /* GistDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA000203 /* GistDiffView.swift */; };
+		CA000104 /* GistRevisionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA000204 /* GistRevisionsView.swift */; };
 
 		C0D000000000000000000201 /* CodexManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000101 /* CodexManager.swift */; };
 		C0D000000000000000000202 /* CodexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000102 /* CodexService.swift */; };
@@ -351,6 +355,10 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
 		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
 		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
+		CA000201 /* GistCommentSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistCommentSectionView.swift; sourceTree = "<group>"; };
+		CA000202 /* MarkdownToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownToolbar.swift; sourceTree = "<group>"; };
+		CA000203 /* GistDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistDiffView.swift; sourceTree = "<group>"; };
+		CA000204 /* GistRevisionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRevisionsView.swift; sourceTree = "<group>"; };
 
 		C0D000000000000000000101 /* CodexManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexManager.swift"; path = "SwiftCode/Backend/Codex/CodexManager.swift"; sourceTree = SOURCE_ROOT; };
 		C0D000000000000000000102 /* CodexService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexService.swift"; path = "SwiftCode/Backend/Codex/CodexService.swift"; sourceTree = SOURCE_ROOT; };
@@ -690,6 +698,8 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 				9E02FBCC861648AE49DA4D15 /* Components */,
 				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
 				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
+				CA000203 /* GistDiffView.swift */,
+				CA000204 /* GistRevisionsView.swift */,
 			);
 			path = Gists;
 			sourceTree = "<group>";
@@ -697,9 +707,11 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		9E02FBCC861648AE49DA4D15 /* Components */ = {
 			isa = PBXGroup;
 			children = (
+				CA000201 /* GistCommentSectionView.swift */,
 				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
 				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
 				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
+				CA000202 /* MarkdownToolbar.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -2011,6 +2023,10 @@ files = (
 				2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */,
 				2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */,
 				A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */,
+				CA000101 /* GistCommentSectionView.swift in Sources */,
+				CA000102 /* MarkdownToolbar.swift in Sources */,
+				CA000103 /* GistDiffView.swift in Sources */,
+				CA000104 /* GistRevisionsView.swift in Sources */,
 				A8FE3B4E78D74A97A9517309 /* OfflineModelMetadata.swift in Sources */,
 				7897B7DD965943C19E6C7C46 /* HuggingFaceAPI.swift in Sources */,
 				F0104F91B48646D0901577AD /* OfflineModelManager.swift in Sources */,
