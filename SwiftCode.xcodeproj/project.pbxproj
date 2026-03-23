@@ -855,6 +855,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 			children = (
 				9E02FBCC861648AE49DA4D15 /* Components */,
 				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
+				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
 			);
 			path = Gists;
 			sourceTree = "<group>";
@@ -970,7 +971,6 @@ sourceTree = "<group>";
 AA000010000000000000041F /* Dashboard */ = {
 isa = PBXGroup;
 children = (
-				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
 				AA00001000000000000000CB /* ProjectsDashboardView.swift */,
 				FCV00000000000000000001B /* FolderCreateView.swift */,
 				FOV00000000000000000001B /* FoldersView.swift */,
@@ -990,7 +990,6 @@ sourceTree = "<group>";
 AA000010000000000000043F /* Editor */ = {
 isa = PBXGroup;
 children = (
-				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
 				AA00001000000000000000EB /* CodeEditorView.swift */,
 				AA00001000000000000003DB /* GoToLineView.swift */,
 				AA00001000000000000003EB /* MinimapSettingsView.swift */,
