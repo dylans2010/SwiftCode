@@ -52,6 +52,7 @@ struct ProjectWorkspaceView: View {
     @State private var showAllToolsSheet = false
     @State private var showPaywall = false
     @State private var showCollaboration = false
+    @State private var showGistManager = false
 
     var body: some View {
         ZStack {
@@ -269,6 +270,9 @@ struct ProjectWorkspaceView: View {
                 CollaborationMainView(manager: CollaborationSessionStore.shared.manager(for: activeProject, creatorID: UIDevice.current.name))
             }
         }
+        .sheet(isPresented: $showGistManager) {
+            GistsView()
+        }
         .onReceive(NotificationCenter.default.publisher(for: .toolbarToolActivated)) { notification in
             guard
                 let toolId = notification.userInfo?["toolID"] as? String,
@@ -379,6 +383,7 @@ struct ProjectWorkspaceView: View {
         case .deployments: showDeployments = true
         case .testTools: showTestTools = true
         case .collaboration: showCollaboration = true
+        case .gistManager: showGistManager = true
         }
     }
 

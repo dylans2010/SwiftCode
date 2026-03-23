@@ -167,6 +167,7 @@ struct MainToolbarView: View {
         case "file_preview": return .yellow
         case "deployments": return .orange
         case "run_tests": return .green
+        case "gist_manager": return .purple
         default: return .secondary
         }
     }

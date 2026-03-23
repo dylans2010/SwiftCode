@@ -1,0 +1,247 @@
+import SwiftUI
+
+struct GistDetailView: View {
+    @State var gistId: String
+    @EnvironmentObject private var gistService: GitHubGistService
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var gist: GistResponse?
+    @State private var isEditing = false
+    @State private var editableDescription = ""
+    @State private var editableFiles: [GistFile] = []
+    @State private var selectedFileID: UUID?
+    @State private var showDeleteFileConfirmation = false
+    @State private var fileIDToDelete: UUID?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color(red: 0.10, green: 0.10, blue: 0.14).ignoresSafeArea()
+
+                if let currentGist = gist {
+                    VStack(spacing: 0) {
+                        headerView(currentGist)
+
+                        GistFileTabBar(
+                            files: editableFiles,
+                            selectedFileID: $selectedFileID,
+                            isEditing: isEditing,
+                            onRemoveFile: { id in
+                                fileIDToDelete = id
+                                showDeleteFileConfirmation = true
+                            }
+                        )
+
+                        if let selectedFileIndex = editableFiles.firstIndex(where: { $0.id == selectedFileID }) {
+                            GistFileEditorView(file: $editableFiles[selectedFileIndex], isEditing: isEditing)
+                        } else {
+                            Text("Select a file to view content")
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                    }
+                } else {
+                    ProgressView("Fetching Gist details...")
+                }
+            }
+            .navigationTitle(isEditing ? "Editing Gist" : "Gist Details")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Done") { dismiss() }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack {
+                        if isEditing {
+                            Button("Save") {
+                                Task { await saveGist() }
+                            }
+                            .bold()
+                        } else {
+                            Menu {
+                                Button { isEditing = true } label: { Label("Edit", systemImage: "pencil") }
+                                Button { addFile() } label: { Label("Add File", systemImage: "plus") }
+                                Divider()
+                                Button { copyLink() } label: { Label("Copy Link", systemImage: "link") }
+                                Button { openInBrowser() } label: { Label("Open in Browser", systemImage: "safari") }
+                                Button { forkGist() } label: { Label("Fork", systemImage: "arrow.branch") }
+                                if let urlString = gist?.htmlUrl, let url = URL(string: urlString) {
+                                    ShareLink(item: url) { Label("Share", systemImage: "square.and.arrow.up") }
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis.circle")
+                            }
+                        }
+                    }
+                }
+            }
+            .alert("Delete File", isPresented: $showDeleteFileConfirmation) {
+                Button("Delete", role: .destructive) {
+                    if let id = fileIDToDelete {
+                        removeFile(id: id)
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Are you sure you want to remove this file from the Gist?")
+            }
+            .overlay {
+                if let error = gistService.errorMessage {
+                    errorBanner(message: error)
+                }
+            }
+        }
+        .task {
+            await loadGist()
+        }
+        .onChange(of: gistId) { _, _ in
+            Task { await loadGist() }
+        }
+    }
+
+    private func headerView(_ currentGist: GistResponse) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .top) {
+                if isEditing {
+                    TextField("Description (optional)", text: $editableDescription)
+                        .font(.headline)
+                        .padding(8)
+                        .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+                } else {
+                    Text(currentGist.description ?? "No description")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                }
+
+                Spacer()
+
+                Text(currentGist.public ? "Public" : "Secret")
+                    .font(.caption2.weight(.bold))
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(currentGist.public ? Color.green.opacity(0.2) : Color.secondary.opacity(0.2))
+                    .foregroundStyle(currentGist.public ? .green : .secondary)
+                    .clipShape(Capsule())
+            }
+
+            HStack(spacing: 8) {
+                if let avatar = currentGist.owner?.avatarUrl, let url = URL(string: avatar) {
+                    AsyncImage(url: url) { image in
+                        image.resizable()
+                    } placeholder: {
+                        Color.gray
+                    }
+                    .frame(width: 16, height: 16)
+                    .clipShape(Circle())
+                }
+
+                Text(currentGist.owner?.login ?? "anonymous")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Spacer()
+
+                Text("Updated \(currentGist.updatedAt, style: .relative)")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding()
+        .background(Color.white.opacity(0.05))
+    }
+
+    private func loadGist() async {
+        do {
+            let fetchedGist = try await gistService.fetchGist(id: gistId)
+            let previousFilename = editableFiles.first { $0.id == selectedFileID }?.filename
+            self.gist = fetchedGist
+            self.editableDescription = fetchedGist.description ?? ""
+            self.editableFiles = fetchedGist.files.values.sorted { $0.filename < $1.filename }
+
+            if let prevName = previousFilename,
+               let matchedFile = editableFiles.first(where: { $0.filename == prevName }) {
+                self.selectedFileID = matchedFile.id
+            } else {
+                self.selectedFileID = editableFiles.first?.id
+            }
+        } catch {
+            print("Failed to load gist: \(error)")
+        }
+    }
+
+    private func saveGist() async {
+        guard let currentGist = gist else { return }
+
+        var fileUpdates: [String: GistUpdateRequest.FileUpdateContent?] = [:]
+
+        // Identify updated and new files
+        for file in editableFiles {
+            let originalFile = currentGist.files[file.filename]
+            if originalFile == nil || originalFile?.content != file.content {
+                fileUpdates[file.filename] = GistUpdateRequest.FileUpdateContent(content: file.content)
+            }
+        }
+
+        // Identify deleted files
+        for originalFilename in currentGist.files.keys {
+            if !editableFiles.contains(where: { $0.filename == originalFilename }) {
+                fileUpdates[originalFilename] = nil
+            }
+        }
+
+        do {
+            let updated = try await gistService.updateGist(id: gistId, description: editableDescription, files: fileUpdates)
+            self.gist = updated
+            self.isEditing = false
+            await loadGist() // Refresh to ensure state consistency
+        } catch {
+            print("Failed to update gist: \(error)")
+        }
+    }
+
+    private func addFile() {
+        let newFile = GistFile(filename: "untitled-\(editableFiles.count + 1).swift", content: "")
+        editableFiles.append(newFile)
+        selectedFileID = newFile.id
+        isEditing = true
+    }
+
+    private func removeFile(id: UUID) {
+        editableFiles.removeAll { $0.id == id }
+        if selectedFileID == id {
+            selectedFileID = editableFiles.first?.id
+        }
+    }
+
+    private func copyLink() {
+        UIPasteboard.general.string = gist?.htmlUrl
+    }
+
+    private func openInBrowser() {
+        if let urlStr = gist?.htmlUrl, let url = URL(string: urlStr) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func forkGist() {
+        Task {
+            if let forked = try? await gistService.forkGist(id: gistId) {
+                self.gistId = forked.id
+                await loadGist()
+            }
+        }
+    }
+
+    private func errorBanner(message: String) -> some View {
+        VStack {
+            Spacer()
+            Text(message)
+                .font(.subheadline)
+                .padding()
+                .background(Color.red.opacity(0.9), in: RoundedRectangle(cornerRadius: 12))
+                .padding()
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+    }
+}

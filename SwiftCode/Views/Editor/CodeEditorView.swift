@@ -13,6 +13,7 @@ struct CodeEditorView: View {
     @State private var showFileLoadError = false
     @State private var showSuggestionToast = false
     @State private var showSuggestionsView = false
+    @State private var showGistComposer = false
     @AppStorage("minimapEnabled") private var minimapEnabled = true
 
     var body: some View {
@@ -93,6 +94,12 @@ struct CodeEditorView: View {
         .sheet(isPresented: $showSuggestionsView) {
             CodeSuggestionsView()
                 .environmentObject(suggestionsManager)
+        }
+        .sheet(isPresented: $showGistComposer) {
+            CreateGistView(
+                initialFilename: projectManager.activeFileNode?.name,
+                initialContent: projectManager.activeFileContent
+            )
         }
         .onChange(of: projectManager.fileLoadError) {
             if projectManager.fileLoadError != nil {
@@ -214,6 +221,30 @@ struct CodeEditorView: View {
                 .background(
                     RoundedRectangle(cornerRadius: 5)
                         .fill(Color(red: 0.22, green: 0.22, blue: 0.28))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                )
+            }
+            .buttonStyle(.plain)
+            .padding(.trailing, 10)
+
+            Button {
+                showGistComposer = true
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.doc")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text("Gist")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .foregroundStyle(.white.opacity(0.8))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .background(
+                    RoundedRectangle(cornerRadius: 5)
+                        .fill(Color.orange.opacity(0.6))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 5)

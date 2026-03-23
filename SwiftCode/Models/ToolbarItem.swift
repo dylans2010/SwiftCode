@@ -131,6 +131,7 @@ final class ToolbarManager: ObservableObject {
         ToolbarTool(id: "debug_tools", name: "Debug Tools", icon: "ladybug.fill", category: "Diagnostics", isEnabled: false, order: 38),
         ToolbarTool(id: "deployments", name: "Deployments", icon: "cloud.fill", category: "Tools", isEnabled: true, order: 39),
         ToolbarTool(id: "run_tests", name: "Run Tests", icon: "play.shield.fill", category: "Diagnostics", isEnabled: true, order: 40),
+        ToolbarTool(id: "gist_manager", name: "Gist Manager", icon: "tray.full.fill", category: "Git", isEnabled: true, order: 41),
     ]
 }
 
