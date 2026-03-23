@@ -16,6 +16,7 @@ struct CreateGistView: View {
     @State private var showPasteSheet = false
     @State private var pasteContent = ""
     @State private var pasteFilename = ""
+    @State private var preserveFolderStructure = true
 
     enum CreationStyle: String, CaseIterable, Identifiable {
         case tabs = "Tabs"
@@ -25,7 +26,7 @@ struct CreateGistView: View {
 
     init(initialFilename: String? = nil, initialContent: String? = nil) {
         let defaultFile = GistFile(
-            filename: initialFilename ?? "untitled.swift",
+            filename: initialFilename ?? "",
             content: initialContent ?? ""
         )
         _files = State(initialValue: [defaultFile])
@@ -42,7 +43,7 @@ struct CreateGistView: View {
                         successGist = nil
                         description = ""
                         isPublic = false
-                        files = [GistFile(filename: "untitled.swift", content: "")]
+                        files = [GistFile(filename: "", content: "")]
                         selectedFileID = files[0].id
                     })
                 } else {
@@ -74,7 +75,7 @@ struct CreateGistView: View {
                             Button("Create") {
                                 Task { await createGist() }
                             }
-                            .disabled(files.allSatisfy { $0.content.isEmpty })
+                            .disabled(files.allSatisfy { $0.content.isEmpty } || files.allSatisfy { $0.filename.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
                         }
                     }
                 }
@@ -152,6 +153,10 @@ struct CreateGistView: View {
             }
             .pickerStyle(.segmented)
             .padding(.top, 4)
+
+            Toggle("Preserve folder names when importing", isOn: $preserveFolderStructure)
+                .font(.caption)
+                .tint(.blue)
         }
         .padding()
         .background(Color(red: 0.12, green: 0.12, blue: 0.16))
@@ -200,7 +205,7 @@ struct CreateGistView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 12) {
                 importButton(title: "Add File", icon: "plus.circle") {
-                    let newFile = GistFile(filename: "file-\(files.count + 1).swift", content: "")
+                    let newFile = GistFile(filename: "", content: "")
                     files.append(newFile)
                     selectedFileID = newFile.id
                 }
@@ -273,7 +278,7 @@ struct CreateGistView: View {
                         .padding()
                     Spacer()
                     Button("Import Snippet") {
-                        let filename = pasteFilename.isEmpty ? "snippet.swift" : pasteFilename
+                        let filename = pasteFilename.isEmpty ? "snippet-\(files.count + 1).txt" : pasteFilename
                         let newFile = GistFile(filename: filename, content: pasteContent)
                         files.append(newFile)
                         selectedFileID = newFile.id
@@ -301,7 +306,7 @@ struct CreateGistView: View {
 
     private func importFromEditor() {
         let activeContent = ProjectManager.shared.activeFileContent
-        let activeName = ProjectManager.shared.activeFileNode?.name ?? "editor.swift"
+        let activeName = ProjectManager.shared.activeFileNode?.name ?? ""
         let newFile = GistFile(filename: activeName, content: activeContent)
         files.append(newFile)
         selectedFileID = newFile.id
@@ -344,10 +349,9 @@ struct CreateGistView: View {
         switch result {
         case .success(let urls):
             for url in urls {
-                if url.startAccessingSecurityScopedResource() {
-                    defer { url.stopAccessingSecurityScopedResource() }
-                    if let content = try? String(contentsOf: url) {
-                        let newFile = GistFile(filename: url.lastPathComponent, content: content)
+                if let imported = importEntries(from: url) {
+                    for entry in imported {
+                        let newFile = GistFile(filename: entry.name, content: entry.content)
                         files.append(newFile)
                         selectedFileID = newFile.id
                     }
@@ -356,6 +360,39 @@ struct CreateGistView: View {
         case .failure(let error):
             print("File import failed: \(error)")
         }
+    }
+
+    private func importEntries(from url: URL) -> [(name: String, content: String)]? {
+        let hasAccess = url.startAccessingSecurityScopedResource()
+        defer { if hasAccess { url.stopAccessingSecurityScopedResource() } }
+
+        guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey]) else { return nil }
+
+        if values.isDirectory == true {
+            guard let enumerator = FileManager.default.enumerator(at: url, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles]) else {
+                return nil
+            }
+
+            var entries: [(name: String, content: String)] = []
+            while let fileURL = enumerator.nextObject() as? URL {
+                let fileValues = try? fileURL.resourceValues(forKeys: [.isDirectoryKey])
+                guard fileValues?.isDirectory != true else { continue }
+                guard let content = try? String(contentsOf: fileURL) else { continue }
+
+                let filename: String
+                if preserveFolderStructure {
+                    let relative = fileURL.path.replacingOccurrences(of: url.path + "/", with: "")
+                    filename = relative
+                } else {
+                    filename = fileURL.lastPathComponent
+                }
+                entries.append((filename, content))
+            }
+            return entries
+        }
+
+        guard let content = try? String(contentsOf: url) else { return nil }
+        return [(url.lastPathComponent, content)]
     }
 }
 
