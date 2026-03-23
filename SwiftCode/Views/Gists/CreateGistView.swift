@@ -66,7 +66,12 @@ struct CreateGistView: View {
                 }
             }
             .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.item]) { result in
-                handleFileImport(result)
+                switch result {
+                case .success(let url):
+                    handleFileImport(.success([url]))
+                case .failure(let error):
+                    handleFileImport(.failure(error))
+                }
             }
             .sheet(isPresented: $showPasteSheet) {
                 pasteSnippetSheet
