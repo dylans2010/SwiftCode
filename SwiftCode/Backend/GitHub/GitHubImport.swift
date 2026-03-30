@@ -15,7 +15,7 @@ final class GitHubImporter {
 
     /// Import a repository from a GitHub URL such as "https://github.com/owner/repo".
     func importRepository(from urlString: String, branch: String = "main") async throws -> Project {
-        let (owner, repo) = try parseRepoURL(urlString)
+        let (owner, repo) = try Self.parseRepoURL(urlString)
         return try await importRepository(owner: owner, repo: repo, branch: branch)
     }
 
@@ -85,19 +85,35 @@ final class GitHubImporter {
 
     // MARK: - Private Helpers
 
-    private func parseRepoURL(_ urlString: String) throws -> (owner: String, repo: String) {
-        let cleaned = urlString
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "https://github.com/", with: "")
-            .replacingOccurrences(of: "http://github.com/", with: "")
+    /// Validates if the string is a valid GitHub repository URL.
+    func validateRepositoryURL(_ urlString: String) -> Bool {
+        let pattern = "^(https?://)?(www\\.)?github\\.com/[\\w.-]+/[\\w.-]+/?$"
+        let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive)
+        let range = NSRange(location: 0, length: urlString.utf16.count)
+        return regex?.firstMatch(in: urlString, options: [], range: range) != nil
+    }
+
+    static func parseRepoURL(_ urlString: String) throws -> (owner: String, repo: String) {
+        let trimmed = urlString.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // Ensure it starts with http/https and contains github.com as per "Accept full repo URL only"
+        guard trimmed.lowercased().hasPrefix("http") && trimmed.lowercased().contains("github.com") else {
+            throw GitHubImporterError.invalidURL(urlString)
+        }
+
+        let cleaned = trimmed
+            .replacingOccurrences(of: "https://github.com/", with: "", options: .caseInsensitive)
+            .replacingOccurrences(of: "http://github.com/", with: "", options: .caseInsensitive)
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
 
-        let parts = cleaned.split(separator: "/", maxSplits: 2)
+        let parts = cleaned.split(separator: "/")
         guard parts.count >= 2 else {
             throw GitHubImporterError.invalidURL(urlString)
         }
+
         let owner = String(parts[0])
-        let repo = String(parts[1]).replacingOccurrences(of: ".git", with: "")
+        let repo = String(parts[1]).replacingOccurrences(of: ".git", with: "", options: .caseInsensitive)
+
         guard !owner.isEmpty, !repo.isEmpty else {
             throw GitHubImporterError.invalidURL(urlString)
         }

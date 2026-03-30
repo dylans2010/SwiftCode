@@ -807,7 +807,13 @@ struct GitHubIntegrationView: View {
             verifyToken()
         }
         if let savedRepo = project.githubRepo {
-            repoURL = "https://github.com/\(savedRepo)"
+            // Keep internal repo storage as owner/repo, but display as full URL if it is one,
+            // or reconstruct if it's just owner/repo.
+            if savedRepo.lowercased().hasPrefix("http") {
+                repoURL = savedRepo
+            } else {
+                repoURL = "https://github.com/\(savedRepo)"
+            }
         }
     }
 

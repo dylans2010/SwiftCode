@@ -7,6 +7,79 @@ objectVersion = 56;
 objects = {
 
 /* Begin PBXBuildFile section */
+		CCF46162D84110F654501390 /* CollaborationRolesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 253AE4EEC04CFDC9829D323D /* CollaborationRolesManager.swift */; };
+		EF8B9A4B00BA948CDFB296A5 /* PullRequestManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47E6584917ECF02D222D4BBC /* PullRequestManager.swift */; };
+		A9D95F66CBCCCED532A1E887 /* AuditLogManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96595460CCE9526691F0CE10 /* AuditLogManager.swift */; };
+		3367F864836DD12228DDADAB /* PermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17C78017C71DB3213BD34828 /* PermissionsManager.swift */; };
+		E99A8FFB8C99C34080B714BA /* PushManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61DA9787CB3DBD8F916D1ADB /* PushManager.swift */; };
+		1C0E8638E05E2A096EC664A1 /* OfflineSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8B6B7BFA5198D0DB63B99C2 /* OfflineSyncManager.swift */; };
+		65C8DB15F946609C7615B2EA /* CollaborationCodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 022D393EDAB9FB2C601D8B47 /* CollaborationCodeReviewManager.swift */; };
+		DD58460734B40FF280C32ACB /* BranchManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29B928B7DE047C3C1BD639B8 /* BranchManager.swift */; };
+		563F8E90A651AEFB2D461A56 /* CommitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0ECBB2D4F773D8272B1B573 /* CommitManager.swift */; };
+		2EF506348024C15D023C3014 /* CollaborationSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEA6019004D03EBD8C360C82 /* CollaborationSessionStore.swift */; };
+		B9BE28BA977E208E1F879F9E /* BranchWorkspaceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4714FC1A54AE60643D3D365 /* BranchWorkspaceManager.swift */; };
+		A229CB0CA2D4D15F11EF157C /* PresenceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03F1E07338E032FAA052676 /* PresenceManager.swift */; };
+		9AE4BA78808C440BC48068B1 /* CollaborationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DE1465BEB10045597F1283D /* CollaborationManager.swift */; };
+		9564CB98F1EE16188C254194 /* InviteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C9EE9432B4C148031434749 /* InviteManager.swift */; };
+		12CDB8EA384C2042EE49DCCD /* PushPullManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C159F3159A024535841EDF4D /* PushPullManagerView.swift */; };
+		532EB763BEA19FAC855AD6E5 /* CollaborationDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C7E2CB203DE67AAE35C9310 /* CollaborationDashboardView.swift */; };
+		DAD3734FD8BA679B22F12441 /* CollaborationMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48DBA53B4A80CBF62643BF6E /* CollaborationMainView.swift */; };
+		9863D4D0CEF6A9A8901D04C1 /* InviteMembersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63C5717F35B638B79A1385A1 /* InviteMembersView.swift */; };
+		173D55433AFF50A0677D4298 /* PushPullView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC7E9D9342E29FE6EC3F468 /* PushPullView.swift */; };
+		56E18D533A227976815A361B /* BranchWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF40958C1A3BA3612CFFAC64 /* BranchWorkspaceView.swift */; };
+		EA7303C764A0208DCE5932AD /* FilePermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3D89FDF89F9C7C047253F68 /* FilePermissionView.swift */; };
+		E6BF4A44F6E51CF27EA483AF /* BranchGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54EF8FB314A6CABBAB9C5546 /* BranchGraphView.swift */; };
+		BA447F4492EAF8DDD6FB062C /* CollaborationPullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E582C14BEBE5EE096FF6262 /* CollaborationPullRequestView.swift */; };
+		10FB44DC394A811C0FC78132 /* CollaborationDiffViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6085CA2F65BB31F77FF4F9C /* CollaborationDiffViewerView.swift */; };
+		708BB134DDD6073D69510231 /* ActivityLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F5523FC6E1C6B16570654EF /* ActivityLogView.swift */; };
+		DE0B3F321DD4BBD6526165E1 /* CollaborationChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD7F8FC795FACE2767F21CFE /* CollaborationChatView.swift */; };
+		A5780DCE9AB956A02896CBEA /* CommitManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7214B4C4127D0291DED5C345 /* CommitManagerView.swift */; };
+		9D4FB1CDF3BCF9DCF6169D61 /* CollaborationNotificationCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E3CC9AC01B64E03D9F769C5 /* CollaborationNotificationCenterView.swift */; };
+		895B1F436390AA740BC906BB /* CollaborationBranchManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E07B2F2CD82591600DF9378C /* CollaborationBranchManagementView.swift */; };
+		BFB1A0D1AE77524E0E23F047 /* CollaborationCodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B9F9428E496CA31C235825F /* CollaborationCodeReviewView.swift */; };
+		E1D15BC381678A70CF5F4179 /* ConflictResolverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AD2134DD1FC346C6B1C0A07 /* ConflictResolverView.swift */; };
+		715DCDF9EB32DA5FB194FC69 /* CollaborationFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 442B836AC86AD7BF14601294 /* CollaborationFeedbackView.swift */; };
+		EDDF19A4758E3198D5E37D27 /* MemberManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96DF10A1AA632E671C2C552A /* MemberManagementView.swift */; };
+		AED110A943204D272C9088BF /* CollaborationCommitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97A0D5955970FCD12C0F2F5 /* CollaborationCommitHistoryView.swift */; };
+		E8E0243DC08D2427E562836B /* SwiftCodeAssistAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4862A25BA839DF0D4C5AEEC2 /* SwiftCodeAssistAPI.swift */; };
+		3A9037DD44B754876CFC3C19 /* AssistManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0329AD88A4507FC1CDB61EC0 /* AssistManager.swift */; };
+		90F82077AEA0834A6F8225F7 /* AssistMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFCE219CA64CC29624D086C /* AssistMainView.swift */; };
+		2A7BF6CF2996EF138DAC6677 /* AssistDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE37332F6843D03268BB843F /* AssistDiffView.swift */; };
+		649118AC894C95A0A192D68A /* FileSystemInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48EA97A513E72AE1B3D576AC /* FileSystemInspectorView.swift */; };
+		E5503A0DB77045F0DA36B985 /* StoreKitDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E87DC74C609D11DD9FCD2C1C /* StoreKitDebugView.swift */; };
+		3FC2CC0C3F4E31E296B6889E /* WebViewDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F198A468622C72DDAF11CEC /* WebViewDebuggerView.swift */; };
+		763DD9030C368BC96F4E4763 /* DebugOverlaysView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 41141D9A47EEF271EC1021B1 /* DebugOverlaysView.swift */; };
+		34AFA2680DAF9101F3BE4322 /* DatabaseInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1E6E7DFEF838732E7AFAB74 /* DatabaseInspectorView.swift */; };
+		0ED2FA3EC502AB7DE8686906 /* PermissionsCheckerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 327D2B0A989A4B13E055C1DF /* PermissionsCheckerView.swift */; };
+		2247096D7D296BD7B3CA90B1 /* VerboseLoggingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B266A6718881BB743DCF2191 /* VerboseLoggingView.swift */; };
+		BD5E49E04B35ED6CCBC8032F /* CacheInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07707EA41CFBC5813E9F195F /* CacheInspectorView.swift */; };
+		F844F392D00C4A439A2E7B96 /* DependencyHealthView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD3ABD20D70281B0A061A829 /* DependencyHealthView.swift */; };
+		5AC3E254866FF846477E72DD /* APIInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 171CEE03A480207C17C2ABFF /* APIInspectorView.swift */; };
+		3FAAC3B024AB17B07F9DBFC8 /* MetricsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78B8262D036A82E215CACEC /* MetricsDashboardView.swift */; };
+		A1129C1CF8491172276A0FF0 /* PaywallDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCB6CD207AFE980E02F2F35 /* PaywallDebugView.swift */; };
+		9C2EC55BF4ABD2C4E284DCE4 /* AIModelDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A081E3BF2F93B7019C497D43 /* AIModelDebuggerView.swift */; };
+		D5B177205A2FE8F0FE072556 /* ConsoleCommandView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD04D38D9F894221A8F88D79 /* ConsoleCommandView.swift */; };
+		11C6223E539B343D18C3D822 /* CrashDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D81F2E1F53D7BEB76691C718 /* CrashDebuggerView.swift */; };
+		8571FDBA655C1380CFD76F3A /* FeatureFlagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27F09942A9B704CE31B34B29 /* FeatureFlagsView.swift */; };
+		8D94AB36C286C886E72482C3 /* ErrorFrequencyTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACF5AEE3A1A5E6AF65A07177 /* ErrorFrequencyTrackerView.swift */; };
+		431EFC4B7313CB656667422C /* GitHubAPIDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACA2254F8FA5F2BF0F039A01 /* GitHubAPIDebugView.swift */; };
+		88785CCEB278BBE70C96A7FC /* CoreMLInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32BA9239AD2D92D8DA2C6C5E /* CoreMLInspectorView.swift */; };
+		AEE2E082D0C606E7FA8DAF98 /* APILatencyTrackerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AF6F9F18C4D7A519E72DF87 /* APILatencyTrackerView.swift */; };
+		6D07D0152A4E5C22A8753ACE /* RuntimeFlagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01B02F821E4ED06E6A8523DB /* RuntimeFlagsView.swift */; };
+		672769AA591645A3CBE19888 /* BuildPipelineDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE4E4FCD96722308CD80563D /* BuildPipelineDebuggerView.swift */; };
+		E9F2E27E829267BE073EB375 /* BackgroundTaskMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E89AA44D03B028DC958EBA46 /* BackgroundTaskMonitorView.swift */; };
+		E9C25ED452DACC510DA7D079 /* ThreadInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28E9FA60A763B970F185335 /* ThreadInspectorView.swift */; };
+		FEC9E949BAD76E833EA170B5 /* BinaryToolsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7019AEB3D8D76FDF1534BAC1 /* BinaryToolsViews.swift */; };
+		E72A852BA9AFE8D9456FE2F9 /* EnvironmentSwitcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29DBEEEEAF3D46F0F28020F2 /* EnvironmentSwitcherView.swift */; };
+		275034FD8EFBABC5E2B0C528 /* MemoryInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E7E7CA274E9D96593566799 /* MemoryInspectorView.swift */; };
+		1C29EB2CE049306CDDEDC336 /* DeploymentDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30D7E3CA1821C9678CBA7120 /* DeploymentDebugView.swift */; };
+		8EB2A50D1F0BC2D77EB83485 /* NetworkInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E761E88F5C38E5FAB09E28EF /* NetworkInspectorView.swift */; };
+		A898A5D269FC24C2F62964B8 /* PerformanceMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524013ADC192F653ABF3F60F /* PerformanceMonitorView.swift */; };
+		0A5A64E32D5E30EFC74EEBF1 /* ExtensionDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E6D32FB402AD308A442D15 /* ExtensionDebuggerView.swift */; };
+		D5B0E74828210281A57A0E24 /* LogConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2CF75A717A40EFDEC5A2DB7 /* LogConsoleView.swift */; };
+		1DC8F0EE5F58588CB4CB3619 /* BuildDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B919A430535E1E1CF488188 /* BuildDiagnosticsView.swift */; };
+		94B047464594F9AD1727E5CA /* DeveloperDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B700EB2FAF6AE072AA46E30 /* DeveloperDashboardView.swift */; };
+		01AA3D419E2E8944F88CBA26 /* StateInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E403902F09F85D51485C330 /* StateInspectorView.swift */; };
 		80879779E84E3A42F4EF445A /* GistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD609693E33B866DCE781BA /* GistModels.swift */; };
 		7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */; };
 		9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0949CB12552DEAB7E3F7C702 /* GistsView.swift */; };
@@ -15,10 +88,10 @@ objects = {
 		2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */; };
 		2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */; };
 		A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B71C01A4CA08055F618F0 /* GistRowView.swift */; };
-		CA000101 /* GistCommentSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA000201 /* GistCommentSectionView.swift */; };
-		CA000102 /* MarkdownToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA000202 /* MarkdownToolbar.swift */; };
-		CA000103 /* GistDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA000203 /* GistDiffView.swift */; };
-		CA000104 /* GistRevisionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA000204 /* GistRevisionsView.swift */; };
+		61608E0422FD6F89395A4E91 /* GistCommentSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F08B2200CA4409AFDF10DE4 /* GistCommentSectionView.swift */; };
+		A9CA0385586616BA756E7B98 /* MarkdownToolbar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75C75F197F70480CD4DFA7A7 /* MarkdownToolbar.swift */; };
+		6888C10BBF86641AC5626D8E /* GistDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439B7CCAE574C370D2BE5E38 /* GistDiffView.swift */; };
+		729A2B7EB87C14EB8EE03611 /* GistRevisionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA70E624835A1C1D5DBF7511 /* GistRevisionsView.swift */; };
 
 		C0D000000000000000000201 /* CodexManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000101 /* CodexManager.swift */; };
 		C0D000000000000000000202 /* CodexService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0D000000000000000000102 /* CodexService.swift */; };
@@ -59,13 +132,13 @@ objects = {
 		0324247B4DD24681AA8A8F0E /* MacDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9FC4267E4F840ABAE5D9ACA /* MacDiscoveryService.swift */; };
 		9761876CF9AA47A6A9774A6C /* LocalBuildDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74800A4834DA43F6AA725284 /* LocalBuildDemoView.swift */; };
 		284F27E6F05844958BFD3332 /* LocalBuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030CC42C1F184196A05B7808 /* LocalBuildView.swift */; };
-		ZIPFOUND000000000000003 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = ZIPFOUND000000000000002 /* ZIPFoundation */; };
-		MLXPKG00000000000000003 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = MLXPKG00000000000000002 /* MLX */; };
-		MLXPKG00000000000000005 /* MLXNN in Frameworks */ = {isa = PBXBuildFile; productRef = MLXPKG00000000000000004 /* MLXNN */; };
-		MLXPKG00000000000000007 /* MLXOptimizers in Frameworks */ = {isa = PBXBuildFile; productRef = MLXPKG00000000000000006 /* MLXOptimizers */; };
-		MLXPKG00000000000000009 /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = MLXPKG00000000000000008 /* MLXRandom */; };
-		TT000000000000000000001A /* TestTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000001B /* TestTools.swift */; };
-		TTV000000000000000000001A /* TestToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TTV000000000000000000001B /* TestToolsView.swift */; };
+		672FD76543E10690E5FAF7DD /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 41DFBB1D2E111B79D3DD8618 /* ZIPFoundation */; };
+		60FB0E1D566F4CB99300EE31 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = EF71AA730650C0F16C111D15 /* MLX */; };
+		8B0762DA3DEBDE72E54DB595 /* MLXNN in Frameworks */ = {isa = PBXBuildFile; productRef = 32955A4DE0BE2052EF06D40B /* MLXNN */; };
+		0CF57975B7C43C8563A0244E /* MLXOptimizers in Frameworks */ = {isa = PBXBuildFile; productRef = B1E8DF3C7AFE9E7601758E46 /* MLXOptimizers */; };
+		DCDCFC81AE3B5F7C17B5DDC5 /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = AC3BDF9AE0DBD826634E4E49 /* MLXRandom */; };
+		5DC6D389B40B8A3576088DB4 /* TestTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48970902A45B587483F5E5EF /* TestTools.swift */; };
+		C46CC01BBCC62137C286FC8D /* TestToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCE6EA503AE100A8662D30D /* TestToolsView.swift */; };
 AA000010000000000000001A /* SwiftCodeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000001B /* SwiftCodeApp.swift */; };
 AA000010000000000000002A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000002B /* ContentView.swift */; };
 AA000010000000000000003A /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000003B /* Project.swift */; };
@@ -145,17 +218,14 @@ TV0000000000000000000001A /* TerminalView.swift in Sources */ = {isa = PBXBuildF
 PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PC0000000000000000000001B /* PrepareCompileWaitingView.swift */; };
 AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AS0000000000000000000001B /* AISuggestionEngine.swift */; };
 SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */; };
-CA0000000000000000000001A /* CodeStructureAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0000000000000000000001B /* CodeStructureAnalyzer.swift */; };
+714148EBB64DC18E7A97DE0A /* CodeStructureAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5606E090121C4D6D0CCAF46E /* CodeStructureAnalyzer.swift */; };
 CE0000000000000000000001A /* CodeExecutionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE0000000000000000000001B /* CodeExecutionManager.swift */; };
 CT0000000000000000000001A /* CodeColoringTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CT0000000000000000000001B /* CodeColoringTheme.swift */; };
 TLE000000000000000000001A /* TextLayoutEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = TLE000000000000000000001B /* TextLayoutEngine.swift */; };
 PMV000000000000000000001A /* PluginManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PMV000000000000000000001B /* PluginManagerView.swift */; };
 PTV000000000000000000001A /* ProjectTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PTV000000000000000000001B /* ProjectTemplateView.swift */; };
 CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CM0000000000000000000001B /* CodeEditorManagementView.swift */; };
-		PRM000000000000000000001A /* PullRequestManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRM000000000000000000001B /* PullRequestManager.swift */; };
-		PRV000000000000000000001A /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRV000000000000000000001B /* PullRequestView.swift */; };
-		DVV000000000000000000001A /* CollaborationDiffViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DVV000000000000000000001B /* CollaborationDiffViewerView.swift */; };
-		MMV000000000000000000001A /* MemberManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MMV000000000000000000001B /* MemberManagementView.swift */; };
+		70EC46B3AD63BAD581477E77 /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAB49960506ED795D1A3BF35 /* PullRequestView.swift */; };
 RV0000000000000000000001A /* CodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RV0000000000000000000001B /* CodeReviewView.swift */; };
 GH0000000000000000000001A /* GitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GH0000000000000000000001B /* GitHistoryView.swift */; };
 PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PT0000000000000000000001B /* ProjectTemplateManager.swift */; };
@@ -221,7 +291,6 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		AT000000000000000000007A /* CrashLogAnalyzerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000007B /* CrashLogAnalyzerView.swift */; };
 		AT000000000000000000008A /* ProjectDependencyGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000008B /* ProjectDependencyGraphView.swift */; };
 		AT000000000000000000009A /* SymbolIndexView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000009B /* SymbolIndexView.swift */; };
-		AT00000000000000000000AA /* CodeMetricsDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000AB /* CodeMetricsDashboardView.swift */; };
 		AT00000000000000000000BA /* DocumentationBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT00000000000000000000BB /* DocumentationBrowserView.swift */; };
 		BN000000000000000000001A /* BinaryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BN000000000000000000001B /* BinaryManager.swift */; };
 		GC000000000000000000001A /* GitCLIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GC000000000000000000001B /* GitCLIView.swift */; };
@@ -241,29 +310,6 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		55692774D3694350B609B803 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAC49B596AA46DDA825C53E /* FeatureFlags.swift */; };
 		2EC2F9D75DE64A1FB30D011F /* InternalLoggingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0FB4EA55FA4E7EBA7358A8 /* InternalLoggingManager.swift */; };
 		BE8188B67B8D4127A2024B0B /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF997D8EF6994D92B4B52CA1 /* PaywallView.swift */; };
-		8F59BBB2AB834D09A602D4DB /* DeveloperDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C881F28FC23948CE91255D64 /* DeveloperDashboardView.swift */; };
-		C48CC734575E44B1BD920D2C /* VerboseLoggingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117AAF2E96B14FE6B66351C3 /* VerboseLoggingView.swift */; };
-		C815E4364BE64EDA803817E7 /* NetworkInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1776C20AD9EE4D5E85BFE146 /* NetworkInspectorView.swift */; };
-		F94F6063217746B798ED5D35 /* APIInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B206E7970E4D5FAE89F1B9 /* APIInspectorView.swift */; };
-		3F321C450B924BAB90F8FF50 /* CrashDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C94C0630A849DCBD8B2D49 /* CrashDebuggerView.swift */; };
-		E35511C445BA431F8207A66E /* LogConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2627ECC0E9F4C5C8AAF7E3F /* LogConsoleView.swift */; };
-		D3709213CC5045C68EBF5EC8 /* WebViewDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A413EF2076BE41428650FDE9 /* WebViewDebuggerView.swift */; };
-		30EC0A259CCA489E81514C37 /* GitHubAPIDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2F62CFE24244AF4A04556FF /* GitHubAPIDebugView.swift */; };
-		FEFAC29E9C51412FAE4E54F0 /* FeatureFlagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03F8DC6162E4691A2242642 /* FeatureFlagsView.swift */; };
-		94D9599C874C47EDB825D854 /* RuntimeFlagsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38534A77EBD64613B025A0F5 /* RuntimeFlagsView.swift */; };
-		92A6F4C3CE3E43DEAF5583F0 /* MemoryInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AD2C8761C8C43E4B5960DD1 /* MemoryInspectorView.swift */; };
-		994FA8509D6F48C2AD17B910 /* ThreadInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B91E3E1FDDB43ACA73DEF20 /* ThreadInspectorView.swift */; };
-		C1C704F795744C18AB83664F /* FileSystemInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B21E4635A449C8B296E0F0 /* FileSystemInspectorView.swift */; };
-		3C3D335FBD164D74BB7B1058 /* DatabaseInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E7FE37355342788AB5D694 /* DatabaseInspectorView.swift */; };
-		435DF726DEB14427AB99D72F /* PaywallDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADE55E5025AD466AB310DF5A /* PaywallDebugView.swift */; };
-		C15ABC97D5FC4E0FA3DA99BB /* StoreKitDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5F581DFC25D452EB65C4557 /* StoreKitDebugView.swift */; };
-		DD8D7C3E05DC40F09C85F4F6 /* PerformanceMonitorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3FB1237CDDB540FD8C71111C /* PerformanceMonitorView.swift */; };
-		8D289E52CECF4D1BBA2B388F /* CoreMLInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D02CE893A4AC401E9C93EEF8 /* CoreMLInspectorView.swift */; };
-		2F6F884FC3AC4EC7B6DECF2D /* AIModelDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34E0B4ED7C904393B938C59F /* AIModelDebuggerView.swift */; };
-		515C73DCDD6D426FB2863F8A /* BuildPipelineDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDDFFF8094E44490822742E9 /* BuildPipelineDebuggerView.swift */; };
-		64FE62C5E45D4870A7C4D5B0 /* ExtensionDebuggerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AF676BF61B1427D84CBD9C8 /* ExtensionDebuggerView.swift */; };
-		19CBF295160D44C398DA0FE0 /* DeploymentDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 396AC91935E9439DBB45D345 /* DeploymentDebugView.swift */; };
-		86C4B2D064364A479708F0F9 /* BinaryToolsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97C097D500804667A45947D8 /* BinaryToolsViews.swift */; };
 		9DB89E5FB93B4015BCBF1773 /* SwiftCode.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 879B1052D19145C0A7450391 /* SwiftCode.storekit */; };
 		CC000000000000000000001A /* ChatController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC000000000000000000001B /* ChatController.swift */; };
 		CU000000000000000000001A /* ChatUIComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CU000000000000000000001B /* ChatUIComponents.swift */; };
@@ -318,35 +364,84 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 		AGN00000000000000000003A /* ProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AGN00000000000000000003B /* ProjectTool.swift */; };
 		AGN00000000000000000004A /* TransferTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AGN00000000000000000004B /* TransferTool.swift */; };
 AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000012B /* AdvancedToolsSharedDesignSystem.swift */; };
-		ACR00000000000000000001A /* AgentCodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACR00000000000000000001B /* AgentCodeReviewManager.swift */; };
-		AICR0000000000000000001A /* AICodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AICR0000000000000000001B /* AICodeReviewView.swift */; };
-		CLB00000000000000000001A /* BranchManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000001B /* BranchManager.swift */; };
-		CLB00000000000000000002A /* CollaborationCodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000002B /* CollaborationCodeReviewManager.swift */; };
-		CLB00000000000000000003A /* CollaborationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000003B /* CollaborationManager.swift */; };
-		CLB00000000000000000004A /* CollaborationSessionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000004B /* CollaborationSessionStore.swift */; };
-		CLB00000000000000000005A /* CommitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000005B /* CommitManager.swift */; };
-		CLB00000000000000000006A /* InviteManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000006B /* InviteManager.swift */; };
-		CLB00000000000000000007A /* PermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000007B /* PermissionsManager.swift */; };
-		CLB00000000000000000008A /* PushManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000008B /* PushManager.swift */; };
-		CLB00000000000000000009A /* BranchWorkspaceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000009B /* BranchWorkspaceManager.swift */; };
-		CLV00000000000000000001A /* ActivityLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000001B /* ActivityLogView.swift */; };
-		CLV00000000000000000002A /* BranchGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000002B /* BranchGraphView.swift */; };
-		CLV00000000000000000003A /* CollaborationBranchManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000003B /* CollaborationBranchManagementView.swift */; };
-		CLV00000000000000000004A /* CollaborationCodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000004B /* CollaborationCodeReviewView.swift */; };
-		CLV00000000000000000005A /* CollaborationCommitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000005B /* CollaborationCommitHistoryView.swift */; };
-		CLV00000000000000000006A /* CollaborationDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000006B /* CollaborationDashboardView.swift */; };
-		CLV00000000000000000007A /* CollaborationMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000007B /* CollaborationMainView.swift */; };
-		CLV00000000000000000008A /* CommitManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000008B /* CommitManagerView.swift */; };
-		CLV00000000000000000009A /* ConflictResolverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000009B /* ConflictResolverView.swift */; };
-		CLV00000000000000000010A /* FilePermissionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000010B /* FilePermissionView.swift */; };
-		CLV00000000000000000011A /* InviteMembersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000011B /* InviteMembersView.swift */; };
-		CLV00000000000000000012A /* PushPullManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000012B /* PushPullManagerView.swift */; };
-		CLV00000000000000000013A /* PushPullView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000013B /* PushPullView.swift */; };
-		CLV00000000000000000014A /* BranchWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000014B /* BranchWorkspaceView.swift */; };
-		CLV00000000000000000015A /* CollaborationFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000015B /* CollaborationFeedbackView.swift */; };
+		13250CB406953D642562A86F /* AgentCodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6D98CC81F3F181EFE49C97D /* AgentCodeReviewManager.swift */; };
+		F54438B2E1C31D821B03B823 /* AICodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D97368C603FF4497BA26F95F /* AICodeReviewView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		253AE4EEC04CFDC9829D323D /* CollaborationRolesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/CollaborationRolesManager.swift"; sourceTree = SOURCE_ROOT; };
+		47E6584917ECF02D222D4BBC /* PullRequestManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/PullRequestManager.swift"; sourceTree = SOURCE_ROOT; };
+		96595460CCE9526691F0CE10 /* AuditLogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/AuditLogManager.swift"; sourceTree = SOURCE_ROOT; };
+		17C78017C71DB3213BD34828 /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/PermissionsManager.swift"; sourceTree = SOURCE_ROOT; };
+		61DA9787CB3DBD8F916D1ADB /* PushManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/PushManager.swift"; sourceTree = SOURCE_ROOT; };
+		A8B6B7BFA5198D0DB63B99C2 /* OfflineSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/OfflineSyncManager.swift"; sourceTree = SOURCE_ROOT; };
+		022D393EDAB9FB2C601D8B47 /* CollaborationCodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/CollaborationCodeReviewManager.swift"; sourceTree = SOURCE_ROOT; };
+		29B928B7DE047C3C1BD639B8 /* BranchManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/BranchManager.swift"; sourceTree = SOURCE_ROOT; };
+		A0ECBB2D4F773D8272B1B573 /* CommitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/CommitManager.swift"; sourceTree = SOURCE_ROOT; };
+		AEA6019004D03EBD8C360C82 /* CollaborationSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/CollaborationSessionStore.swift"; sourceTree = SOURCE_ROOT; };
+		C4714FC1A54AE60643D3D365 /* BranchWorkspaceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/BranchWorkspaceManager.swift"; sourceTree = SOURCE_ROOT; };
+		D03F1E07338E032FAA052676 /* PresenceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/PresenceManager.swift"; sourceTree = SOURCE_ROOT; };
+		7DE1465BEB10045597F1283D /* CollaborationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/CollaborationManager.swift"; sourceTree = SOURCE_ROOT; };
+		0C9EE9432B4C148031434749 /* InviteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Projects/Collaboration/InviteManager.swift"; sourceTree = SOURCE_ROOT; };
+		C159F3159A024535841EDF4D /* PushPullManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/PushPullManagerView.swift"; sourceTree = SOURCE_ROOT; };
+		6C7E2CB203DE67AAE35C9310 /* CollaborationDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationDashboardView.swift"; sourceTree = SOURCE_ROOT; };
+		48DBA53B4A80CBF62643BF6E /* CollaborationMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationMainView.swift"; sourceTree = SOURCE_ROOT; };
+		63C5717F35B638B79A1385A1 /* InviteMembersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/InviteMembersView.swift"; sourceTree = SOURCE_ROOT; };
+		CFC7E9D9342E29FE6EC3F468 /* PushPullView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/PushPullView.swift"; sourceTree = SOURCE_ROOT; };
+		EF40958C1A3BA3612CFFAC64 /* BranchWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/BranchWorkspaceView.swift"; sourceTree = SOURCE_ROOT; };
+		F3D89FDF89F9C7C047253F68 /* FilePermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/FilePermissionView.swift"; sourceTree = SOURCE_ROOT; };
+		54EF8FB314A6CABBAB9C5546 /* BranchGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/BranchGraphView.swift"; sourceTree = SOURCE_ROOT; };
+		3E582C14BEBE5EE096FF6262 /* CollaborationPullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationPullRequestView.swift"; sourceTree = SOURCE_ROOT; };
+		B6085CA2F65BB31F77FF4F9C /* CollaborationDiffViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationDiffViewerView.swift"; sourceTree = SOURCE_ROOT; };
+		7F5523FC6E1C6B16570654EF /* ActivityLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/ActivityLogView.swift"; sourceTree = SOURCE_ROOT; };
+		AD7F8FC795FACE2767F21CFE /* CollaborationChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationChatView.swift"; sourceTree = SOURCE_ROOT; };
+		7214B4C4127D0291DED5C345 /* CommitManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CommitManagerView.swift"; sourceTree = SOURCE_ROOT; };
+		4E3CC9AC01B64E03D9F769C5 /* CollaborationNotificationCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationNotificationCenterView.swift"; sourceTree = SOURCE_ROOT; };
+		E07B2F2CD82591600DF9378C /* CollaborationBranchManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationBranchManagementView.swift"; sourceTree = SOURCE_ROOT; };
+		7B9F9428E496CA31C235825F /* CollaborationCodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationCodeReviewView.swift"; sourceTree = SOURCE_ROOT; };
+		5AD2134DD1FC346C6B1C0A07 /* ConflictResolverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/ConflictResolverView.swift"; sourceTree = SOURCE_ROOT; };
+		442B836AC86AD7BF14601294 /* CollaborationFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationFeedbackView.swift"; sourceTree = SOURCE_ROOT; };
+		96DF10A1AA632E671C2C552A /* MemberManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/MemberManagementView.swift"; sourceTree = SOURCE_ROOT; };
+		E97A0D5955970FCD12C0F2F5 /* CollaborationCommitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Collaboration/CollaborationCommitHistoryView.swift"; sourceTree = SOURCE_ROOT; };
+		4862A25BA839DF0D4C5AEEC2 /* SwiftCodeAssistAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/SwiftCodeAssistAPI.swift"; sourceTree = SOURCE_ROOT; };
+		0329AD88A4507FC1CDB61EC0 /* AssistManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/AssistManager.swift"; sourceTree = SOURCE_ROOT; };
+		9EFCE219CA64CC29624D086C /* AssistMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Assist/AssistMainView.swift"; sourceTree = SOURCE_ROOT; };
+		CE37332F6843D03268BB843F /* AssistDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Assist/AssistDiffView.swift"; sourceTree = SOURCE_ROOT; };
+		48EA97A513E72AE1B3D576AC /* FileSystemInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/FileSystemInspector/FileSystemInspectorView.swift"; sourceTree = SOURCE_ROOT; };
+		E87DC74C609D11DD9FCD2C1C /* StoreKitDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/StoreKitDebug/StoreKitDebugView.swift"; sourceTree = SOURCE_ROOT; };
+		7F198A468622C72DDAF11CEC /* WebViewDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/WebViewDebugger/WebViewDebuggerView.swift"; sourceTree = SOURCE_ROOT; };
+		41141D9A47EEF271EC1021B1 /* DebugOverlaysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/DebugOverlays/DebugOverlaysView.swift"; sourceTree = SOURCE_ROOT; };
+		A1E6E7DFEF838732E7AFAB74 /* DatabaseInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/DatabaseInspector/DatabaseInspectorView.swift"; sourceTree = SOURCE_ROOT; };
+		327D2B0A989A4B13E055C1DF /* PermissionsCheckerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/Permissions/PermissionsCheckerView.swift"; sourceTree = SOURCE_ROOT; };
+		B266A6718881BB743DCF2191 /* VerboseLoggingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/VerboseLogging/VerboseLoggingView.swift"; sourceTree = SOURCE_ROOT; };
+		07707EA41CFBC5813E9F195F /* CacheInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/CacheInspector/CacheInspectorView.swift"; sourceTree = SOURCE_ROOT; };
+		BD3ABD20D70281B0A061A829 /* DependencyHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/DependencyHealth/DependencyHealthView.swift"; sourceTree = SOURCE_ROOT; };
+		171CEE03A480207C17C2ABFF /* APIInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/APIInspector/APIInspectorView.swift"; sourceTree = SOURCE_ROOT; };
+		B78B8262D036A82E215CACEC /* MetricsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/Metrics/MetricsDashboardView.swift"; sourceTree = SOURCE_ROOT; };
+		ACCB6CD207AFE980E02F2F35 /* PaywallDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/PaywallDebug/PaywallDebugView.swift"; sourceTree = SOURCE_ROOT; };
+		A081E3BF2F93B7019C497D43 /* AIModelDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/AIModelDebugger/AIModelDebuggerView.swift"; sourceTree = SOURCE_ROOT; };
+		FD04D38D9F894221A8F88D79 /* ConsoleCommandView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/ConsoleCommand/ConsoleCommandView.swift"; sourceTree = SOURCE_ROOT; };
+		D81F2E1F53D7BEB76691C718 /* CrashDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/CrashDebugger/CrashDebuggerView.swift"; sourceTree = SOURCE_ROOT; };
+		27F09942A9B704CE31B34B29 /* FeatureFlagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/FeatureFlags/FeatureFlagsView.swift"; sourceTree = SOURCE_ROOT; };
+		ACF5AEE3A1A5E6AF65A07177 /* ErrorFrequencyTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/ErrorFrequency/ErrorFrequencyTrackerView.swift"; sourceTree = SOURCE_ROOT; };
+		ACA2254F8FA5F2BF0F039A01 /* GitHubAPIDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/GitHubAPIDebug/GitHubAPIDebugView.swift"; sourceTree = SOURCE_ROOT; };
+		32BA9239AD2D92D8DA2C6C5E /* CoreMLInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/CoreMLInspector/CoreMLInspectorView.swift"; sourceTree = SOURCE_ROOT; };
+		7AF6F9F18C4D7A519E72DF87 /* APILatencyTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/APILatency/APILatencyTrackerView.swift"; sourceTree = SOURCE_ROOT; };
+		01B02F821E4ED06E6A8523DB /* RuntimeFlagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/RuntimeFlags/RuntimeFlagsView.swift"; sourceTree = SOURCE_ROOT; };
+		FE4E4FCD96722308CD80563D /* BuildPipelineDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/BuildPipelineDebugger/BuildPipelineDebuggerView.swift"; sourceTree = SOURCE_ROOT; };
+		E89AA44D03B028DC958EBA46 /* BackgroundTaskMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/BackgroundTask/BackgroundTaskMonitorView.swift"; sourceTree = SOURCE_ROOT; };
+		A28E9FA60A763B970F185335 /* ThreadInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/ThreadInspector/ThreadInspectorView.swift"; sourceTree = SOURCE_ROOT; };
+		7019AEB3D8D76FDF1534BAC1 /* BinaryToolsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/BinaryTools/BinaryToolsViews.swift"; sourceTree = SOURCE_ROOT; };
+		29DBEEEEAF3D46F0F28020F2 /* EnvironmentSwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/EnvironmentSwitcher/EnvironmentSwitcherView.swift"; sourceTree = SOURCE_ROOT; };
+		0E7E7CA274E9D96593566799 /* MemoryInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/MemoryInspector/MemoryInspectorView.swift"; sourceTree = SOURCE_ROOT; };
+		30D7E3CA1821C9678CBA7120 /* DeploymentDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/DeploymentDebug/DeploymentDebugView.swift"; sourceTree = SOURCE_ROOT; };
+		E761E88F5C38E5FAB09E28EF /* NetworkInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/NetworkInspector/NetworkInspectorView.swift"; sourceTree = SOURCE_ROOT; };
+		524013ADC192F653ABF3F60F /* PerformanceMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/PerformanceMonitor/PerformanceMonitorView.swift"; sourceTree = SOURCE_ROOT; };
+		80E6D32FB402AD308A442D15 /* ExtensionDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/ExtensionDebugger/ExtensionDebuggerView.swift"; sourceTree = SOURCE_ROOT; };
+		F2CF75A717A40EFDEC5A2DB7 /* LogConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/LogConsole/LogConsoleView.swift"; sourceTree = SOURCE_ROOT; };
+		9B919A430535E1E1CF488188 /* BuildDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/BuildDiagnostics/BuildDiagnosticsView.swift"; sourceTree = SOURCE_ROOT; };
+		6B700EB2FAF6AE072AA46E30 /* DeveloperDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/DeveloperDashboard/DeveloperDashboardView.swift"; sourceTree = SOURCE_ROOT; };
+		9E403902F09F85D51485C330 /* StateInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Developer/StateInspector/StateInspectorView.swift"; sourceTree = SOURCE_ROOT; };
 		7FD609693E33B866DCE781BA /* GistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistModels.swift; sourceTree = "<group>"; };
 		089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubGistService.swift; sourceTree = "<group>"; };
 		0949CB12552DEAB7E3F7C702 /* GistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistsView.swift; sourceTree = "<group>"; };
@@ -355,10 +450,7 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileEditorView.swift; sourceTree = "<group>"; };
 		1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistFileTabBar.swift; sourceTree = "<group>"; };
 		1A0B71C01A4CA08055F618F0 /* GistRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistRowView.swift; sourceTree = "<group>"; };
-		CA000201 /* GistCommentSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Gists/Components/GistCommentSectionView.swift"; sourceTree = SOURCE_ROOT; };
-		CA000202 /* MarkdownToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Gists/Components/MarkdownToolbar.swift"; sourceTree = SOURCE_ROOT; };
-		CA000203 /* GistDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Gists/GistDiffView.swift"; sourceTree = SOURCE_ROOT; };
-		CA000204 /* GistRevisionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Gists/GistRevisionsView.swift"; sourceTree = SOURCE_ROOT; };
+		7F08B2200CA4409AFDF10DE4 /* GistCommentSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/Gists/Components/GistCommentSectionView.swift"; sourceTree = SOURCE_ROOT; };
 
 		C0D000000000000000000101 /* CodexManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexManager.swift"; path = "SwiftCode/Backend/Codex/CodexManager.swift"; sourceTree = SOURCE_ROOT; };
 		C0D000000000000000000102 /* CodexService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "CodexService.swift"; path = "SwiftCode/Backend/Codex/CodexService.swift"; sourceTree = SOURCE_ROOT; };
@@ -480,17 +572,13 @@ TV0000000000000000000001B /* TerminalView.swift */ = {isa = PBXFileReference; la
 PC0000000000000000000001B /* PrepareCompileWaitingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareCompileWaitingView.swift; sourceTree = "<group>"; };
 AS0000000000000000000001B /* AISuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISuggestionEngine.swift; sourceTree = "<group>"; };
 SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightingEngine.swift; sourceTree = "<group>"; };
-CA0000000000000000000001B /* CodeStructureAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeStructureAnalyzer.swift; sourceTree = "<group>"; };
+5606E090121C4D6D0CCAF46E /* CodeStructureAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeStructureAnalyzer.swift; sourceTree = "<group>"; };
 CE0000000000000000000001B /* CodeExecutionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeExecutionManager.swift; sourceTree = "<group>"; };
 CT0000000000000000000001B /* CodeColoringTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeColoringTheme.swift; sourceTree = "<group>"; };
 TLE000000000000000000001B /* TextLayoutEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextLayoutEngine.swift; sourceTree = "<group>"; };
 PMV000000000000000000001B /* PluginManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PluginManagerView.swift; sourceTree = "<group>"; };
 PTV000000000000000000001B /* ProjectTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTemplateView.swift; sourceTree = "<group>"; };
 CM0000000000000000000001B /* CodeEditorManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeEditorManagementView.swift; sourceTree = "<group>"; };
-		PRM000000000000000000001B /* PullRequestManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/PullRequestManager.swift; sourceTree = SOURCE_ROOT; };
-		PRV000000000000000000001B /* PullRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationPullRequestView.swift; sourceTree = SOURCE_ROOT; };
-		DVV000000000000000000001B /* CollaborationDiffViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationDiffViewerView.swift; sourceTree = SOURCE_ROOT; };
-		MMV000000000000000000001B /* MemberManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/MemberManagementView.swift; sourceTree = SOURCE_ROOT; };
 RV0000000000000000000001B /* CodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeReviewView.swift; sourceTree = "<group>"; };
 GH0000000000000000000001B /* GitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHistoryView.swift; sourceTree = "<group>"; };
 PT0000000000000000000001B /* ProjectTemplateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectTemplateManager.swift; sourceTree = "<group>"; };
@@ -521,8 +609,8 @@ AA0000100000000000000PFR /* ProjectFilesExtracter.swift */ = {isa = PBXFileRefer
 		DEP000000000000000000003 /* GitHubPagesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubPagesManager.swift; sourceTree = "<group>"; };
 		DEP000000000000000000004 /* NetlifyManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetlifyManager.swift; sourceTree = "<group>"; };
 		DEP000000000000000000005 /* VercelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VercelManager.swift; sourceTree = "<group>"; };
-		TT000000000000000000001B /* TestTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestTools.swift; sourceTree = "<group>"; };
-		TTV000000000000000000001B /* TestToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestToolsView.swift; sourceTree = "<group>"; };
+		48970902A45B587483F5E5EF /* TestTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestTools.swift; sourceTree = "<group>"; };
+		AFCE6EA503AE100A8662D30D /* TestToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestToolsView.swift; sourceTree = "<group>"; };
 CB000000000000000000001B /* build-project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "build-project.yml"; sourceTree = "<group>"; };
 		AA0000100000000000000F8B /* ModernGroupBoxStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernGroupBoxStyle.swift; sourceTree = "<group>"; };
 		AA0000100000000000000F6B /* ChooseModelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChooseModelView.swift; sourceTree = "<group>"; };
@@ -552,7 +640,6 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		AT000000000000000000007B /* CrashLogAnalyzerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashLogAnalyzerView.swift; sourceTree = "<group>"; };
 		AT000000000000000000008B /* ProjectDependencyGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectDependencyGraphView.swift; sourceTree = "<group>"; };
 		AT000000000000000000009B /* SymbolIndexView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolIndexView.swift; sourceTree = "<group>"; };
-		AT00000000000000000000AB /* CodeMetricsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeMetricsDashboardView.swift; sourceTree = "<group>"; };
 		AT00000000000000000000BB /* DocumentationBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentationBrowserView.swift; sourceTree = "<group>"; };
 		BN000000000000000000001B /* BinaryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryManager.swift; sourceTree = "<group>"; };
 		GC000000000000000000001B /* GitCLIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitCLIView.swift; sourceTree = "<group>"; };
@@ -576,29 +663,6 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		8CAC49B596AA46DDA825C53E /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		EC0FB4EA55FA4E7EBA7358A8 /* InternalLoggingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalLoggingManager.swift; sourceTree = "<group>"; };
 		BF997D8EF6994D92B4B52CA1 /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
-		C881F28FC23948CE91255D64 /* DeveloperDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperDashboardView.swift; sourceTree = "<group>"; };
-		117AAF2E96B14FE6B66351C3 /* VerboseLoggingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerboseLoggingView.swift; sourceTree = "<group>"; };
-		1776C20AD9EE4D5E85BFE146 /* NetworkInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInspectorView.swift; sourceTree = "<group>"; };
-		A9B206E7970E4D5FAE89F1B9 /* APIInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIInspectorView.swift; sourceTree = "<group>"; };
-		B4C94C0630A849DCBD8B2D49 /* CrashDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashDebuggerView.swift; sourceTree = "<group>"; };
-		B2627ECC0E9F4C5C8AAF7E3F /* LogConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogConsoleView.swift; sourceTree = "<group>"; };
-		A413EF2076BE41428650FDE9 /* WebViewDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewDebuggerView.swift; sourceTree = "<group>"; };
-		B2F62CFE24244AF4A04556FF /* GitHubAPIDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubAPIDebugView.swift; sourceTree = "<group>"; };
-		C03F8DC6162E4691A2242642 /* FeatureFlagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlagsView.swift; sourceTree = "<group>"; };
-		38534A77EBD64613B025A0F5 /* RuntimeFlagsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuntimeFlagsView.swift; sourceTree = "<group>"; };
-		0AD2C8761C8C43E4B5960DD1 /* MemoryInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryInspectorView.swift; sourceTree = "<group>"; };
-		5B91E3E1FDDB43ACA73DEF20 /* ThreadInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadInspectorView.swift; sourceTree = "<group>"; };
-		66B21E4635A449C8B296E0F0 /* FileSystemInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileSystemInspectorView.swift; sourceTree = "<group>"; };
-		B7E7FE37355342788AB5D694 /* DatabaseInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseInspectorView.swift; sourceTree = "<group>"; };
-		ADE55E5025AD466AB310DF5A /* PaywallDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallDebugView.swift; sourceTree = "<group>"; };
-		D5F581DFC25D452EB65C4557 /* StoreKitDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitDebugView.swift; sourceTree = "<group>"; };
-		3FB1237CDDB540FD8C71111C /* PerformanceMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceMonitorView.swift; sourceTree = "<group>"; };
-		D02CE893A4AC401E9C93EEF8 /* CoreMLInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreMLInspectorView.swift; sourceTree = "<group>"; };
-		34E0B4ED7C904393B938C59F /* AIModelDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIModelDebuggerView.swift; sourceTree = "<group>"; };
-		DDDFFF8094E44490822742E9 /* BuildPipelineDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildPipelineDebuggerView.swift; sourceTree = "<group>"; };
-		6AF676BF61B1427D84CBD9C8 /* ExtensionDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDebuggerView.swift; sourceTree = "<group>"; };
-		396AC91935E9439DBB45D345 /* DeploymentDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeploymentDebugView.swift; sourceTree = "<group>"; };
-		97C097D500804667A45947D8 /* BinaryToolsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryToolsViews.swift; sourceTree = "<group>"; };
 		879B1052D19145C0A7450391 /* SwiftCode.storekit */ = {isa = PBXFileReference; lastKnownFileType = text; path = SwiftCode.storekit; sourceTree = "<group>"; };
 		CC000000000000000000001B /* ChatController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatController.swift; sourceTree = "<group>"; };
 		CU000000000000000000001B /* ChatUIComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatUIComponents.swift; sourceTree = "<group>"; };
@@ -653,35 +717,119 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		AGN00000000000000000003B /* ProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ProjectTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/ProjectTool.swift"; sourceTree = SOURCE_ROOT; };
 		AGN00000000000000000004B /* TransferTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "TransferTool.swift"; path = "SwiftCode/Backend/Agent New/Tools/TransferTool.swift"; sourceTree = SOURCE_ROOT; };
 		AT000000000000000000012B /* AdvancedToolsSharedDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AdvancedToolsSharedDesignSystem.swift"; path = "SwiftCode/Features/AdvancedTools/Engines/AdvancedToolsSharedDesignSystem.swift"; sourceTree = SOURCE_ROOT; };
-		ACR00000000000000000001B /* AgentCodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentCodeReviewManager.swift"; path = "SwiftCode/Backend/Agent New/AgentCodeReviewManager.swift"; sourceTree = SOURCE_ROOT; };
-		AICR0000000000000000001B /* AICodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AICodeReviewView.swift"; path = "SwiftCode/Views/AI/AI New/AICodeReviewView.swift"; sourceTree = SOURCE_ROOT; };
-		CLB00000000000000000001B /* BranchManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/BranchManager.swift; sourceTree = SOURCE_ROOT; };
-		CLB00000000000000000002B /* CollaborationCodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/CollaborationCodeReviewManager.swift; sourceTree = SOURCE_ROOT; };
-		CLB00000000000000000003B /* CollaborationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/CollaborationManager.swift; sourceTree = SOURCE_ROOT; };
-		CLB00000000000000000004B /* CollaborationSessionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/CollaborationSessionStore.swift; sourceTree = SOURCE_ROOT; };
-		CLB00000000000000000005B /* CommitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/CommitManager.swift; sourceTree = SOURCE_ROOT; };
-		CLB00000000000000000006B /* InviteManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/InviteManager.swift; sourceTree = SOURCE_ROOT; };
-		CLB00000000000000000007B /* PermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/PermissionsManager.swift; sourceTree = SOURCE_ROOT; };
-		CLB00000000000000000008B /* PushManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/PushManager.swift; sourceTree = SOURCE_ROOT; };
-		CLB00000000000000000009B /* BranchWorkspaceManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/BranchWorkspaceManager.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000001B /* ActivityLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/ActivityLogView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000002B /* BranchGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/BranchGraphView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000003B /* CollaborationBranchManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationBranchManagementView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000004B /* CollaborationCodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationCodeReviewView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000005B /* CollaborationCommitHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationCommitHistoryView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000006B /* CollaborationDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationDashboardView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000007B /* CollaborationMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationMainView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000008B /* CommitManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CommitManagerView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000009B /* ConflictResolverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/ConflictResolverView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000010B /* FilePermissionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/FilePermissionView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000011B /* InviteMembersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/InviteMembersView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000012B /* PushPullManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/PushPullManagerView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000013B /* PushPullView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/PushPullView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000014B /* BranchWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/BranchWorkspaceView.swift; sourceTree = SOURCE_ROOT; };
-		CLV00000000000000000015B /* CollaborationFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationFeedbackView.swift; sourceTree = SOURCE_ROOT; };
+		B6D98CC81F3F181EFE49C97D /* AgentCodeReviewManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentCodeReviewManager.swift"; path = "SwiftCode/Backend/Agent New/AgentCodeReviewManager.swift"; sourceTree = SOURCE_ROOT; };
+		D97368C603FF4497BA26F95F /* AICodeReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AICodeReviewView.swift"; path = "SwiftCode/Views/AI/AI New/AICodeReviewView.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		6D93F7D6F179369465168692 /* Collaboration */ = {
+			isa = PBXGroup;
+			children = (
+				253AE4EEC04CFDC9829D323D /* CollaborationRolesManager.swift */,
+				47E6584917ECF02D222D4BBC /* PullRequestManager.swift */,
+				96595460CCE9526691F0CE10 /* AuditLogManager.swift */,
+				17C78017C71DB3213BD34828 /* PermissionsManager.swift */,
+				61DA9787CB3DBD8F916D1ADB /* PushManager.swift */,
+				A8B6B7BFA5198D0DB63B99C2 /* OfflineSyncManager.swift */,
+				022D393EDAB9FB2C601D8B47 /* CollaborationCodeReviewManager.swift */,
+				29B928B7DE047C3C1BD639B8 /* BranchManager.swift */,
+				A0ECBB2D4F773D8272B1B573 /* CommitManager.swift */,
+				AEA6019004D03EBD8C360C82 /* CollaborationSessionStore.swift */,
+				C4714FC1A54AE60643D3D365 /* BranchWorkspaceManager.swift */,
+				D03F1E07338E032FAA052676 /* PresenceManager.swift */,
+				7DE1465BEB10045597F1283D /* CollaborationManager.swift */,
+				0C9EE9432B4C148031434749 /* InviteManager.swift */,
+			);
+			path = "Collaboration";
+			sourceTree = "<group>";
+		};
+		59F91C0A4470E1FBEC24BD7F /* Collaboration */ = {
+			isa = PBXGroup;
+			children = (
+				C159F3159A024535841EDF4D /* PushPullManagerView.swift */,
+				6C7E2CB203DE67AAE35C9310 /* CollaborationDashboardView.swift */,
+				48DBA53B4A80CBF62643BF6E /* CollaborationMainView.swift */,
+				63C5717F35B638B79A1385A1 /* InviteMembersView.swift */,
+				CFC7E9D9342E29FE6EC3F468 /* PushPullView.swift */,
+				EF40958C1A3BA3612CFFAC64 /* BranchWorkspaceView.swift */,
+				F3D89FDF89F9C7C047253F68 /* FilePermissionView.swift */,
+				54EF8FB314A6CABBAB9C5546 /* BranchGraphView.swift */,
+				3E582C14BEBE5EE096FF6262 /* CollaborationPullRequestView.swift */,
+				B6085CA2F65BB31F77FF4F9C /* CollaborationDiffViewerView.swift */,
+				7F5523FC6E1C6B16570654EF /* ActivityLogView.swift */,
+				AD7F8FC795FACE2767F21CFE /* CollaborationChatView.swift */,
+				7214B4C4127D0291DED5C345 /* CommitManagerView.swift */,
+				4E3CC9AC01B64E03D9F769C5 /* CollaborationNotificationCenterView.swift */,
+				E07B2F2CD82591600DF9378C /* CollaborationBranchManagementView.swift */,
+				7B9F9428E496CA31C235825F /* CollaborationCodeReviewView.swift */,
+				5AD2134DD1FC346C6B1C0A07 /* ConflictResolverView.swift */,
+				442B836AC86AD7BF14601294 /* CollaborationFeedbackView.swift */,
+				96DF10A1AA632E671C2C552A /* MemberManagementView.swift */,
+				E97A0D5955970FCD12C0F2F5 /* CollaborationCommitHistoryView.swift */,
+			);
+			path = "Collaboration";
+			sourceTree = "<group>";
+		};
+		4042210355C42908E262BAFF /* Assist */ = {
+			isa = PBXGroup;
+			children = (
+				4862A25BA839DF0D4C5AEEC2 /* SwiftCodeAssistAPI.swift */,
+				0329AD88A4507FC1CDB61EC0 /* AssistManager.swift */,
+			);
+			path = "Assist";
+			sourceTree = "<group>";
+		};
+		2DDF8FC904FEECC959D0D6C4 /* Assist */ = {
+			isa = PBXGroup;
+			children = (
+				9EFCE219CA64CC29624D086C /* AssistMainView.swift */,
+				CE37332F6843D03268BB843F /* AssistDiffView.swift */,
+			);
+			path = "Assist";
+			sourceTree = "<group>";
+		};
+		781A8CB9C057129F0E38F4EB /* Developer */ = {
+			isa = PBXGroup;
+			children = (
+				48EA97A513E72AE1B3D576AC /* FileSystemInspectorView.swift */,
+				E87DC74C609D11DD9FCD2C1C /* StoreKitDebugView.swift */,
+				7F198A468622C72DDAF11CEC /* WebViewDebuggerView.swift */,
+				41141D9A47EEF271EC1021B1 /* DebugOverlaysView.swift */,
+				A1E6E7DFEF838732E7AFAB74 /* DatabaseInspectorView.swift */,
+				327D2B0A989A4B13E055C1DF /* PermissionsCheckerView.swift */,
+				B266A6718881BB743DCF2191 /* VerboseLoggingView.swift */,
+				07707EA41CFBC5813E9F195F /* CacheInspectorView.swift */,
+				BD3ABD20D70281B0A061A829 /* DependencyHealthView.swift */,
+				171CEE03A480207C17C2ABFF /* APIInspectorView.swift */,
+				B78B8262D036A82E215CACEC /* MetricsDashboardView.swift */,
+				ACCB6CD207AFE980E02F2F35 /* PaywallDebugView.swift */,
+				A081E3BF2F93B7019C497D43 /* AIModelDebuggerView.swift */,
+				FD04D38D9F894221A8F88D79 /* ConsoleCommandView.swift */,
+				D81F2E1F53D7BEB76691C718 /* CrashDebuggerView.swift */,
+				27F09942A9B704CE31B34B29 /* FeatureFlagsView.swift */,
+				ACF5AEE3A1A5E6AF65A07177 /* ErrorFrequencyTrackerView.swift */,
+				ACA2254F8FA5F2BF0F039A01 /* GitHubAPIDebugView.swift */,
+				32BA9239AD2D92D8DA2C6C5E /* CoreMLInspectorView.swift */,
+				7AF6F9F18C4D7A519E72DF87 /* APILatencyTrackerView.swift */,
+				01B02F821E4ED06E6A8523DB /* RuntimeFlagsView.swift */,
+				FE4E4FCD96722308CD80563D /* BuildPipelineDebuggerView.swift */,
+				E89AA44D03B028DC958EBA46 /* BackgroundTaskMonitorView.swift */,
+				A28E9FA60A763B970F185335 /* ThreadInspectorView.swift */,
+				7019AEB3D8D76FDF1534BAC1 /* BinaryToolsViews.swift */,
+				29DBEEEEAF3D46F0F28020F2 /* EnvironmentSwitcherView.swift */,
+				0E7E7CA274E9D96593566799 /* MemoryInspectorView.swift */,
+				30D7E3CA1821C9678CBA7120 /* DeploymentDebugView.swift */,
+				E761E88F5C38E5FAB09E28EF /* NetworkInspectorView.swift */,
+				524013ADC192F653ABF3F60F /* PerformanceMonitorView.swift */,
+				80E6D32FB402AD308A442D15 /* ExtensionDebuggerView.swift */,
+				F2CF75A717A40EFDEC5A2DB7 /* LogConsoleView.swift */,
+				9B919A430535E1E1CF488188 /* BuildDiagnosticsView.swift */,
+				6B700EB2FAF6AE072AA46E30 /* DeveloperDashboardView.swift */,
+				9E403902F09F85D51485C330 /* StateInspectorView.swift */,
+			);
+			path = "Developer";
+			sourceTree = "<group>";
+		};
 		9E02FBCC861648AE49DA4D15 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -698,90 +846,8 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 				9E02FBCC861648AE49DA4D15 /* Components */,
 				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
 				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-				CA000203 /* GistDiffView.swift */,
-				CA000204 /* GistRevisionsView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				CA000201 /* GistCommentSectionView.swift */,
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-				CA000202 /* MarkdownToolbar.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
+				439B7CCAE574C370D2BE5E38 /* GistDiffView.swift */,
+				CA70E624835A1C1D5DBF7511 /* GistRevisionsView.swift */,
 			);
 			path = Gists;
 			sourceTree = "<group>";
@@ -802,72 +868,6 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 				998A721D9F6F2EC00525201E /* Components */,
 				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
 				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		998A721D9F6F2EC00525201E /* Components */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		B47A794D648B1018580D72CD /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				998A721D9F6F2EC00525201E /* Components */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		998A721D9F6F2EC00525201E /* Components */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		B47A794D648B1018580D72CD /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				998A721D9F6F2EC00525201E /* Components */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		998A721D9F6F2EC00525201E /* Components */ = {
-			isa = PBXGroup;
-			children = (
-				1F542E21B817FD6D96AB618C /* GistFileTabBar.swift */,
-				1A0B71C01A4CA08055F618F0 /* GistRowView.swift */,
-				54D2D9E8EE7EB21241FD8722 /* GistFileEditorView.swift */,
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		B47A794D648B1018580D72CD /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				998A721D9F6F2EC00525201E /* Components */,
-				3DC5C97DD937DF40F6726993 /* GistDetailView.swift */,
-			);
-			path = Gists;
-			sourceTree = "<group>";
-		};
-		9E02FBCC861648AE49DA4D15 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
-		A7ECF79906A849BA05852C21 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				9E02FBCC861648AE49DA4D15 /* Components */,
-				0949CB12552DEAB7E3F7C702 /* GistsView.swift */,
-				73E26536CAD3BDE720EAC90A /* CreateGistView.swift */,
 			);
 			path = Gists;
 			sourceTree = "<group>";
@@ -902,6 +902,11 @@ sourceTree = "<group>";
 AA000010000000000000020F /* Models */ = {
 isa = PBXGroup;
 children = (
+				781A8CB9C057129F0E38F4EB /* Developer */,
+				2DDF8FC904FEECC959D0D6C4 /* Assist */,
+				59F91C0A4470E1FBEC24BD7F /* Collaboration */,
+				4042210355C42908E262BAFF /* Assist */,
+				6D93F7D6F179369465168692 /* Collaboration */,
 				A7ECF79906A849BA05852C21 /* Gists */,
 				B47A794D648B1018580D72CD /* Gists */,
 				AA000010000000000000003B /* Project.swift */,
@@ -927,7 +932,6 @@ children = (
 				AA00001000000000000000BB /* SyntaxHighlighter.swift */,
 				AA00001000000000000001AB /* AgentToolService.swift */,
 				AA00001000000000000002DB /* CodeIndexService.swift */,
-				PRM000000000000000000001B /* PullRequestManager.swift */,
 						PT0000000000000000000001B /* ProjectTemplateManager.swift */,
 				AM0000000000000000000002B /* AgentMemory.swift */,
 				AM0000000000000000000001B /* AgentMemoryManager.swift */,
@@ -952,6 +956,9 @@ sourceTree = "<group>";
 AA000010000000000000040F /* Views */ = {
 isa = PBXGroup;
 children = (
+				781A8CB9C057129F0E38F4EB /* Developer */,
+				2DDF8FC904FEECC959D0D6C4 /* Assist */,
+				59F91C0A4470E1FBEC24BD7F /* Collaboration */,
 				A7ECF79906A849BA05852C21 /* Gists */,
 				B47A794D648B1018580D72CD /* Gists */,
 				AA000010000000000000041F /* Dashboard */,
@@ -959,12 +966,10 @@ children = (
 				AA000010000000000000043F /* Editor */,
 				AA000010000000000000044F /* Navigator */,
 				AA000010000000000000045F /* AI */,
-				TPVG0000000000000000001 /* Transfer Projects */,
 				AA000010000000000000046F /* GitHub */,
 				AA000010000000000000047F /* Build */,
 				AA000010000000000000048F /* Settings */,
 				AA000010000000000000049F /* Utilities */,
-				CLVG0000000000000000001 /* Collaboration */,
 				AA00001000000000000007FF /* CommandPalette */,
 				AA00001000000000000008FF /* Dependencies */,
 				AA00001000000000000009FF /* DiffViewer */,
@@ -1172,7 +1177,7 @@ sourceTree = "<group>";
 TSV00000000000000000001F /* Views */ = {
 isa = PBXGroup;
 children = (
-				TTV000000000000000000001B /* TestToolsView.swift */,
+				AFCE6EA503AE100A8662D30D /* TestToolsView.swift */,
 			);
 path = Views;
 sourceTree = "<group>";
@@ -1200,7 +1205,6 @@ children = (
 				AT000000000000000000007B /* CrashLogAnalyzerView.swift */,
 				AT000000000000000000008B /* ProjectDependencyGraphView.swift */,
 				AT000000000000000000009B /* SymbolIndexView.swift */,
-				AT00000000000000000000AB /* CodeMetricsDashboardView.swift */,
 				AT00000000000000000000BB /* DocumentationBrowserView.swift */,
 				DAIV00000000000000000001 /* DocumentationAIInsightsView.swift */,
 				AT00000000000000000000CB /* WorkspaceProfilesView.swift */,
@@ -1288,7 +1292,7 @@ isa = PBXGroup;
 children = (
 				AS0000000000000000000001B /* AISuggestionEngine.swift */,
 				SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */,
-				CA0000000000000000000001B /* CodeStructureAnalyzer.swift */,
+				5606E090121C4D6D0CCAF46E /* CodeStructureAnalyzer.swift */,
 				CE0000000000000000000001B /* CodeExecutionManager.swift */,
 				CT0000000000000000000001B /* CodeColoringTheme.swift */,
 				TLE000000000000000000001B /* TextLayoutEngine.swift */,
@@ -1365,9 +1369,8 @@ sourceTree = "<group>";
 BE000000000000000000001F /* Backend */ = {
 isa = PBXGroup;
 children = (
-				TRPG0000000000000000001 /* Projects */,
-				ODIG0000000000000000001 /* On Device Intelligence */,
-				AGNG0000000000000000001 /* Agent New */,
+				4042210355C42908E262BAFF /* Assist */,
+				6D93F7D6F179369465168692 /* Collaboration */,
 				C0D000000000000000000301 /* Codex */,
 				DE1546866FBA40E9A4F3D437 /* Offline Models */,
 				1553F8B054AE453E91485DEE /* Local Building */,
@@ -1378,7 +1381,7 @@ children = (
 				CB000000000000000000001F /* CI Building */,
 				DEP000000000000000000201 /* Deployments */,
 				DABA00000000000000000000 /* Documentation */,
-				TT000000000000000000001B /* TestTools.swift */,
+				48970902A45B587483F5E5EF /* TestTools.swift */,
 				E747261C4C724E6ABAF256AC /* Store */,
 				00C7A193457C46B8B87727C8 /* Developer */,
 			);
@@ -1540,7 +1543,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		CF9C1B8DFD9F474AA7E8C8CE /* DeveloperDashboard */ = {
 			isa = PBXGroup;
 			children = (
-				C881F28FC23948CE91255D64 /* DeveloperDashboardView.swift */,
 			);
 			path = DeveloperDashboard;
 			sourceTree = "<group>";
@@ -1548,7 +1550,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		05A90B78D13744218B188056 /* VerboseLogging */ = {
 			isa = PBXGroup;
 			children = (
-				117AAF2E96B14FE6B66351C3 /* VerboseLoggingView.swift */,
 			);
 			path = VerboseLogging;
 			sourceTree = "<group>";
@@ -1556,7 +1557,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		60A3A882CDA04962B795A12D /* NetworkInspector */ = {
 			isa = PBXGroup;
 			children = (
-				1776C20AD9EE4D5E85BFE146 /* NetworkInspectorView.swift */,
 			);
 			path = NetworkInspector;
 			sourceTree = "<group>";
@@ -1564,7 +1564,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		E7788ABCAEC7410ABCAD71AA /* APIInspector */ = {
 			isa = PBXGroup;
 			children = (
-				A9B206E7970E4D5FAE89F1B9 /* APIInspectorView.swift */,
 			);
 			path = APIInspector;
 			sourceTree = "<group>";
@@ -1572,7 +1571,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		E0DAF6A5E08A40B8B49D1201 /* CrashDebugger */ = {
 			isa = PBXGroup;
 			children = (
-				B4C94C0630A849DCBD8B2D49 /* CrashDebuggerView.swift */,
 			);
 			path = CrashDebugger;
 			sourceTree = "<group>";
@@ -1580,7 +1578,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		4FA3A87F007545809CEBCBEC /* LogConsole */ = {
 			isa = PBXGroup;
 			children = (
-				B2627ECC0E9F4C5C8AAF7E3F /* LogConsoleView.swift */,
 			);
 			path = LogConsole;
 			sourceTree = "<group>";
@@ -1588,7 +1585,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		77FF619A091143039A18FC66 /* WebViewDebugger */ = {
 			isa = PBXGroup;
 			children = (
-				A413EF2076BE41428650FDE9 /* WebViewDebuggerView.swift */,
 			);
 			path = WebViewDebugger;
 			sourceTree = "<group>";
@@ -1596,7 +1592,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		1DC7ECDE3FB24CD483E662CB /* GitHubAPIDebug */ = {
 			isa = PBXGroup;
 			children = (
-				B2F62CFE24244AF4A04556FF /* GitHubAPIDebugView.swift */,
 			);
 			path = GitHubAPIDebug;
 			sourceTree = "<group>";
@@ -1604,7 +1599,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		0B4FDF97654D4A4F9890A508 /* FeatureFlags */ = {
 			isa = PBXGroup;
 			children = (
-				C03F8DC6162E4691A2242642 /* FeatureFlagsView.swift */,
 			);
 			path = FeatureFlags;
 			sourceTree = "<group>";
@@ -1612,7 +1606,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		FCDBB1FD57CD457E88E4AF4C /* RuntimeFlags */ = {
 			isa = PBXGroup;
 			children = (
-				38534A77EBD64613B025A0F5 /* RuntimeFlagsView.swift */,
 			);
 			path = RuntimeFlags;
 			sourceTree = "<group>";
@@ -1620,7 +1613,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		57C221B2175A4D679976D7B1 /* MemoryInspector */ = {
 			isa = PBXGroup;
 			children = (
-				0AD2C8761C8C43E4B5960DD1 /* MemoryInspectorView.swift */,
 			);
 			path = MemoryInspector;
 			sourceTree = "<group>";
@@ -1628,7 +1620,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		AA4BF6294AC6428184A92F1A /* ThreadInspector */ = {
 			isa = PBXGroup;
 			children = (
-				5B91E3E1FDDB43ACA73DEF20 /* ThreadInspectorView.swift */,
 			);
 			path = ThreadInspector;
 			sourceTree = "<group>";
@@ -1636,7 +1627,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		977BE158DE8D4621823A1C18 /* FileSystemInspector */ = {
 			isa = PBXGroup;
 			children = (
-				66B21E4635A449C8B296E0F0 /* FileSystemInspectorView.swift */,
 			);
 			path = FileSystemInspector;
 			sourceTree = "<group>";
@@ -1644,7 +1634,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		CFE9EA8967AC4E35A475DB8D /* DatabaseInspector */ = {
 			isa = PBXGroup;
 			children = (
-				B7E7FE37355342788AB5D694 /* DatabaseInspectorView.swift */,
 			);
 			path = DatabaseInspector;
 			sourceTree = "<group>";
@@ -1652,7 +1641,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		37727872002045C28E63D057 /* PaywallDebug */ = {
 			isa = PBXGroup;
 			children = (
-				ADE55E5025AD466AB310DF5A /* PaywallDebugView.swift */,
 			);
 			path = PaywallDebug;
 			sourceTree = "<group>";
@@ -1660,7 +1648,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		CD2C0794C1734D30A06BBBDB /* StoreKitDebug */ = {
 			isa = PBXGroup;
 			children = (
-				D5F581DFC25D452EB65C4557 /* StoreKitDebugView.swift */,
 			);
 			path = StoreKitDebug;
 			sourceTree = "<group>";
@@ -1668,7 +1655,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		1C988281A5F242F3B964E3E1 /* PerformanceMonitor */ = {
 			isa = PBXGroup;
 			children = (
-				3FB1237CDDB540FD8C71111C /* PerformanceMonitorView.swift */,
 			);
 			path = PerformanceMonitor;
 			sourceTree = "<group>";
@@ -1676,7 +1662,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		0961DA38B71142F998F32652 /* CoreMLInspector */ = {
 			isa = PBXGroup;
 			children = (
-				D02CE893A4AC401E9C93EEF8 /* CoreMLInspectorView.swift */,
 			);
 			path = CoreMLInspector;
 			sourceTree = "<group>";
@@ -1684,7 +1669,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		826A08B5394D4899A3741BE7 /* AIModelDebugger */ = {
 			isa = PBXGroup;
 			children = (
-				34E0B4ED7C904393B938C59F /* AIModelDebuggerView.swift */,
 			);
 			path = AIModelDebugger;
 			sourceTree = "<group>";
@@ -1692,7 +1676,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		A214B578677E4CABA09C978A /* BuildPipelineDebugger */ = {
 			isa = PBXGroup;
 			children = (
-				DDDFFF8094E44490822742E9 /* BuildPipelineDebuggerView.swift */,
 			);
 			path = BuildPipelineDebugger;
 			sourceTree = "<group>";
@@ -1700,7 +1683,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		19528BE5591F4684BFFD1CCF /* ExtensionDebugger */ = {
 			isa = PBXGroup;
 			children = (
-				6AF676BF61B1427D84CBD9C8 /* ExtensionDebuggerView.swift */,
 			);
 			path = ExtensionDebugger;
 			sourceTree = "<group>";
@@ -1708,7 +1690,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		E4776A4CFA694C5B81DE5863 /* DeploymentDebug */ = {
 			isa = PBXGroup;
 			children = (
-				396AC91935E9439DBB45D345 /* DeploymentDebugView.swift */,
 			);
 			path = DeploymentDebug;
 			sourceTree = "<group>";
@@ -1716,7 +1697,6 @@ DEP000000000000000000101 /* Deployments */ = {
 		CB14884490CA4581BBE1D071 /* BinaryTools */ = {
 			isa = PBXGroup;
 			children = (
-				97C097D500804667A45947D8 /* BinaryToolsViews.swift */,
 			);
 			path = BinaryTools;
 			sourceTree = "<group>";
@@ -1778,7 +1758,6 @@ DEP000000000000000000101 /* Deployments */ = {
 			sourceTree = "<group>";
 		};
 
-TPVG0000000000000000001 /* Transfer Projects */ = {
 isa = PBXGroup;
 children = (
 				TPV00000000000000000001B /* TransferProjectsHomeView.swift */,
@@ -1790,7 +1769,6 @@ children = (
 path = "Transfer Projects";
 sourceTree = "<group>";
 };
-TRPG0000000000000000001 /* Projects */ = {
 isa = PBXGroup;
 children = (
 				TRP00000000000000000001B /* ProjectTransferManager.swift */,
@@ -1798,12 +1776,10 @@ children = (
 				TRP00000000000000000003B /* TransferPermission.swift */,
 				TRP00000000000000000004B /* TransferSession.swift */,
 				TRP00000000000000000005B /* ProjectSerializer.swift */,
-				CLBG0000000000000000001 /* Collaboration */,
 );
 path = Projects;
 sourceTree = "<group>";
 };
-ODIG0000000000000000001 /* On Device Intelligence */ = {
 isa = PBXGroup;
 children = (
 				ODI00000000000000000001B /* OnDeviceAIManager.swift */,
@@ -1816,16 +1792,15 @@ children = (
 path = "On Device Intelligence";
 sourceTree = "<group>";
 };
-AGNG0000000000000000001 /* Agent New */ = {
 isa = PBXGroup;
 children = (
-				AGNC0000000000000000001 /* Core */,
-				AGNT0000000000000000001 /* Tools */,
+				90373B19F0B66923BABAAC26 /* Core */,
+				10321185580FF9A495F49767 /* Tools */,
 );
 path = "Agent New";
 sourceTree = "<group>";
 };
-AGNC0000000000000000001 /* Core */ = {
+90373B19F0B66923BABAAC26 /* Core */ = {
 isa = PBXGroup;
 children = (
 				AGN00000000000000000001B /* AgentPermissionAuthority.swift */,
@@ -1833,7 +1808,7 @@ children = (
 path = Core;
 sourceTree = "<group>";
 };
-AGNT0000000000000000001 /* Tools */ = {
+10321185580FF9A495F49767 /* Tools */ = {
 isa = PBXGroup;
 children = (
 				AGN00000000000000000002B /* FileTool.swift */,
@@ -1876,44 +1851,15 @@ path = "Codex UIs";
 sourceTree = "<group>";
 };
 
-CLVG0000000000000000001 /* Collaboration */ = {
 isa = PBXGroup;
 children = (
-				CLV00000000000000000001B /* ActivityLogView.swift */,
-				CLV00000000000000000002B /* BranchGraphView.swift */,
-				CLV00000000000000000003B /* CollaborationBranchManagementView.swift */,
-				CLV00000000000000000004B /* CollaborationCodeReviewView.swift */,
-				CLV00000000000000000005B /* CollaborationCommitHistoryView.swift */,
-				CLV00000000000000000006B /* CollaborationDashboardView.swift */,
-				DVV000000000000000000001B /* CollaborationDiffViewerView.swift */,
-				CLV00000000000000000014B /* BranchWorkspaceView.swift */,
-				CLV00000000000000000015B /* CollaborationFeedbackView.swift */,
-				CLV00000000000000000007B /* CollaborationMainView.swift */,
-				PRV000000000000000000001B /* PullRequestView.swift */,
-				CLV00000000000000000008B /* CommitManagerView.swift */,
-				CLV00000000000000000009B /* ConflictResolverView.swift */,
-				CLV00000000000000000010B /* FilePermissionView.swift */,
-				CLV00000000000000000011B /* InviteMembersView.swift */,
-				MMV000000000000000000001B /* MemberManagementView.swift */,
-				CLV00000000000000000012B /* PushPullManagerView.swift */,
-				CLV00000000000000000013B /* PushPullView.swift */,
+				EAB49960506ED795D1A3BF35 /* PullRequestView.swift */,
 );
 path = Collaboration;
 sourceTree = "<group>";
 };
-CLBG0000000000000000001 /* Collaboration */ = {
 isa = PBXGroup;
 children = (
-				CLB00000000000000000001B /* BranchManager.swift */,
-				CLB00000000000000000002B /* CollaborationCodeReviewManager.swift */,
-				CLB00000000000000000003B /* CollaborationManager.swift */,
-				CLB00000000000000000004B /* CollaborationSessionStore.swift */,
-				CLB00000000000000000005B /* CommitManager.swift */,
-				CLB00000000000000000006B /* InviteManager.swift */,
-				CLB00000000000000000007B /* PermissionsManager.swift */,
-				PRM000000000000000000001B /* PullRequestManager.swift */,
-				CLB00000000000000000008B /* PushManager.swift */,
-				CLB00000000000000000009B /* BranchWorkspaceManager.swift */,
 );
 path = Collaboration;
 sourceTree = "<group>";
@@ -1927,7 +1873,7 @@ buildConfigurationList = AA000001000000000000000B_CL /* Build configuration list
 buildPhases = (
 AA000001000000000000000B_SRC /* Sources */,
 AA000001000000000000000B_RES /* Resources */,
-ZIPFOUND000000000000004 /* Frameworks */,
+A991B7A7F1D7BAE20FA1D0F1 /* Frameworks */,
 );
 buildRules = (
 );
@@ -1935,11 +1881,11 @@ dependencies = (
 );
 name = SwiftCode;
 packageProductDependencies = (
-ZIPFOUND000000000000002 /* ZIPFoundation */,
-MLXPKG00000000000000002 /* MLX */,
-MLXPKG00000000000000004 /* MLXNN */,
-MLXPKG00000000000000006 /* MLXOptimizers */,
-MLXPKG00000000000000008 /* MLXRandom */,
+41DFBB1D2E111B79D3DD8618 /* ZIPFoundation */,
+EF71AA730650C0F16C111D15 /* MLX */,
+32955A4DE0BE2052EF06D40B /* MLXNN */,
+B1E8DF3C7AFE9E7601758E46 /* MLXOptimizers */,
+AC3BDF9AE0DBD826634E4E49 /* MLXRandom */,
 );
 productName = SwiftCode;
 productReference = AA000001000000000000000C /* SwiftCode.app */;
@@ -1973,8 +1919,8 @@ productRefGroup = AA000001000000000000000C_PRODUCTS /* Products */;
 projectDirPath = "";
 projectRoot = "";
 packageReferences = (
-ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
-MLXPKG00000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift" */,
+6D075811828B9EFBF14AE1F2 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+C86ECEBE833F0A3BB4005E25 /* XCRemoteSwiftPackageReference "mlx-swift" */,
 );
 targets = (
 AA000001000000000000000B /* SwiftCode */,
@@ -1996,15 +1942,15 @@ runOnlyForDeploymentPostprocessing = 0;
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXFrameworksBuildPhase section */
-ZIPFOUND000000000000004 /* Frameworks */ = {
+A991B7A7F1D7BAE20FA1D0F1 /* Frameworks */ = {
 isa = PBXFrameworksBuildPhase;
 buildActionMask = 2147483647;
 files = (
-				ZIPFOUND000000000000003 /* ZIPFoundation in Frameworks */,
-				MLXPKG00000000000000003 /* MLX in Frameworks */,
-				MLXPKG00000000000000005 /* MLXNN in Frameworks */,
-				MLXPKG00000000000000007 /* MLXOptimizers in Frameworks */,
-				MLXPKG00000000000000009 /* MLXRandom in Frameworks */,
+				672FD76543E10690E5FAF7DD /* ZIPFoundation in Frameworks */,
+				60FB0E1D566F4CB99300EE31 /* MLX in Frameworks */,
+				8B0762DA3DEBDE72E54DB595 /* MLXNN in Frameworks */,
+				0CF57975B7C43C8563A0244E /* MLXOptimizers in Frameworks */,
+				DCDCFC81AE3B5F7C17B5DDC5 /* MLXRandom in Frameworks */,
 			);
 runOnlyForDeploymentPostprocessing = 0;
 };
@@ -2015,6 +1961,79 @@ AA000001000000000000000B_SRC /* Sources */ = {
 isa = PBXSourcesBuildPhase;
 buildActionMask = 2147483647;
 files = (
+				CCF46162D84110F654501390 /* CollaborationRolesManager.swift in Sources */,
+				EF8B9A4B00BA948CDFB296A5 /* PullRequestManager.swift in Sources */,
+				A9D95F66CBCCCED532A1E887 /* AuditLogManager.swift in Sources */,
+				3367F864836DD12228DDADAB /* PermissionsManager.swift in Sources */,
+				E99A8FFB8C99C34080B714BA /* PushManager.swift in Sources */,
+				1C0E8638E05E2A096EC664A1 /* OfflineSyncManager.swift in Sources */,
+				65C8DB15F946609C7615B2EA /* CollaborationCodeReviewManager.swift in Sources */,
+				DD58460734B40FF280C32ACB /* BranchManager.swift in Sources */,
+				563F8E90A651AEFB2D461A56 /* CommitManager.swift in Sources */,
+				2EF506348024C15D023C3014 /* CollaborationSessionStore.swift in Sources */,
+				B9BE28BA977E208E1F879F9E /* BranchWorkspaceManager.swift in Sources */,
+				A229CB0CA2D4D15F11EF157C /* PresenceManager.swift in Sources */,
+				9AE4BA78808C440BC48068B1 /* CollaborationManager.swift in Sources */,
+				9564CB98F1EE16188C254194 /* InviteManager.swift in Sources */,
+				12CDB8EA384C2042EE49DCCD /* PushPullManagerView.swift in Sources */,
+				532EB763BEA19FAC855AD6E5 /* CollaborationDashboardView.swift in Sources */,
+				DAD3734FD8BA679B22F12441 /* CollaborationMainView.swift in Sources */,
+				9863D4D0CEF6A9A8901D04C1 /* InviteMembersView.swift in Sources */,
+				173D55433AFF50A0677D4298 /* PushPullView.swift in Sources */,
+				56E18D533A227976815A361B /* BranchWorkspaceView.swift in Sources */,
+				EA7303C764A0208DCE5932AD /* FilePermissionView.swift in Sources */,
+				E6BF4A44F6E51CF27EA483AF /* BranchGraphView.swift in Sources */,
+				BA447F4492EAF8DDD6FB062C /* CollaborationPullRequestView.swift in Sources */,
+				10FB44DC394A811C0FC78132 /* CollaborationDiffViewerView.swift in Sources */,
+				708BB134DDD6073D69510231 /* ActivityLogView.swift in Sources */,
+				DE0B3F321DD4BBD6526165E1 /* CollaborationChatView.swift in Sources */,
+				A5780DCE9AB956A02896CBEA /* CommitManagerView.swift in Sources */,
+				9D4FB1CDF3BCF9DCF6169D61 /* CollaborationNotificationCenterView.swift in Sources */,
+				895B1F436390AA740BC906BB /* CollaborationBranchManagementView.swift in Sources */,
+				BFB1A0D1AE77524E0E23F047 /* CollaborationCodeReviewView.swift in Sources */,
+				E1D15BC381678A70CF5F4179 /* ConflictResolverView.swift in Sources */,
+				715DCDF9EB32DA5FB194FC69 /* CollaborationFeedbackView.swift in Sources */,
+				EDDF19A4758E3198D5E37D27 /* MemberManagementView.swift in Sources */,
+				AED110A943204D272C9088BF /* CollaborationCommitHistoryView.swift in Sources */,
+				E8E0243DC08D2427E562836B /* SwiftCodeAssistAPI.swift in Sources */,
+				3A9037DD44B754876CFC3C19 /* AssistManager.swift in Sources */,
+				90F82077AEA0834A6F8225F7 /* AssistMainView.swift in Sources */,
+				2A7BF6CF2996EF138DAC6677 /* AssistDiffView.swift in Sources */,
+				649118AC894C95A0A192D68A /* FileSystemInspectorView.swift in Sources */,
+				E5503A0DB77045F0DA36B985 /* StoreKitDebugView.swift in Sources */,
+				3FC2CC0C3F4E31E296B6889E /* WebViewDebuggerView.swift in Sources */,
+				763DD9030C368BC96F4E4763 /* DebugOverlaysView.swift in Sources */,
+				34AFA2680DAF9101F3BE4322 /* DatabaseInspectorView.swift in Sources */,
+				0ED2FA3EC502AB7DE8686906 /* PermissionsCheckerView.swift in Sources */,
+				2247096D7D296BD7B3CA90B1 /* VerboseLoggingView.swift in Sources */,
+				BD5E49E04B35ED6CCBC8032F /* CacheInspectorView.swift in Sources */,
+				F844F392D00C4A439A2E7B96 /* DependencyHealthView.swift in Sources */,
+				5AC3E254866FF846477E72DD /* APIInspectorView.swift in Sources */,
+				3FAAC3B024AB17B07F9DBFC8 /* MetricsDashboardView.swift in Sources */,
+				A1129C1CF8491172276A0FF0 /* PaywallDebugView.swift in Sources */,
+				9C2EC55BF4ABD2C4E284DCE4 /* AIModelDebuggerView.swift in Sources */,
+				D5B177205A2FE8F0FE072556 /* ConsoleCommandView.swift in Sources */,
+				11C6223E539B343D18C3D822 /* CrashDebuggerView.swift in Sources */,
+				8571FDBA655C1380CFD76F3A /* FeatureFlagsView.swift in Sources */,
+				8D94AB36C286C886E72482C3 /* ErrorFrequencyTrackerView.swift in Sources */,
+				431EFC4B7313CB656667422C /* GitHubAPIDebugView.swift in Sources */,
+				88785CCEB278BBE70C96A7FC /* CoreMLInspectorView.swift in Sources */,
+				AEE2E082D0C606E7FA8DAF98 /* APILatencyTrackerView.swift in Sources */,
+				6D07D0152A4E5C22A8753ACE /* RuntimeFlagsView.swift in Sources */,
+				672769AA591645A3CBE19888 /* BuildPipelineDebuggerView.swift in Sources */,
+				E9F2E27E829267BE073EB375 /* BackgroundTaskMonitorView.swift in Sources */,
+				E9C25ED452DACC510DA7D079 /* ThreadInspectorView.swift in Sources */,
+				FEC9E949BAD76E833EA170B5 /* BinaryToolsViews.swift in Sources */,
+				E72A852BA9AFE8D9456FE2F9 /* EnvironmentSwitcherView.swift in Sources */,
+				275034FD8EFBABC5E2B0C528 /* MemoryInspectorView.swift in Sources */,
+				1C29EB2CE049306CDDEDC336 /* DeploymentDebugView.swift in Sources */,
+				8EB2A50D1F0BC2D77EB83485 /* NetworkInspectorView.swift in Sources */,
+				A898A5D269FC24C2F62964B8 /* PerformanceMonitorView.swift in Sources */,
+				0A5A64E32D5E30EFC74EEBF1 /* ExtensionDebuggerView.swift in Sources */,
+				D5B0E74828210281A57A0E24 /* LogConsoleView.swift in Sources */,
+				1DC8F0EE5F58588CB4CB3619 /* BuildDiagnosticsView.swift in Sources */,
+				94B047464594F9AD1727E5CA /* DeveloperDashboardView.swift in Sources */,
+				01AA3D419E2E8944F88CBA26 /* StateInspectorView.swift in Sources */,
 				80879779E84E3A42F4EF445A /* GistModels.swift in Sources */,
 				7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */,
 				9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */,
@@ -2023,10 +2042,10 @@ files = (
 				2E8A42D5F12C7ABA0E60FB12 /* GistFileEditorView.swift in Sources */,
 				2F815219FB20D8CEDBE73D78 /* GistFileTabBar.swift in Sources */,
 				A5C36B3DA4BB43ACC6FBE25D /* GistRowView.swift in Sources */,
-				CA000101 /* GistCommentSectionView.swift in Sources */,
-				CA000102 /* MarkdownToolbar.swift in Sources */,
-				CA000103 /* GistDiffView.swift in Sources */,
-				CA000104 /* GistRevisionsView.swift in Sources */,
+				61608E0422FD6F89395A4E91 /* GistCommentSectionView.swift in Sources */,
+				A9CA0385586616BA756E7B98 /* MarkdownToolbar.swift in Sources */,
+				6888C10BBF86641AC5626D8E /* GistDiffView.swift in Sources */,
+				729A2B7EB87C14EB8EE03611 /* GistRevisionsView.swift in Sources */,
 				A8FE3B4E78D74A97A9517309 /* OfflineModelMetadata.swift in Sources */,
 				7897B7DD965943C19E6C7C46 /* HuggingFaceAPI.swift in Sources */,
 				F0104F91B48646D0901577AD /* OfflineModelManager.swift in Sources */,
@@ -2130,41 +2149,14 @@ files = (
 				TV0000000000000000000001A /* TerminalView.swift in Sources */,
 				AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */,
 				SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */,
-				CA0000000000000000000001A /* CodeStructureAnalyzer.swift in Sources */,
+				714148EBB64DC18E7A97DE0A /* CodeStructureAnalyzer.swift in Sources */,
 				CE0000000000000000000001A /* CodeExecutionManager.swift in Sources */,
 				CT0000000000000000000001A /* CodeColoringTheme.swift in Sources */,
 				TLE000000000000000000001A /* TextLayoutEngine.swift in Sources */,
 				PMV000000000000000000001A /* PluginManagerView.swift in Sources */,
 				PTV000000000000000000001A /* ProjectTemplateView.swift in Sources */,
 				CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */,
-				PRM000000000000000000001A /* PullRequestManager.swift in Sources */,
-				PRV000000000000000000001A /* PullRequestView.swift in Sources */,
-				DVV000000000000000000001A /* CollaborationDiffViewerView.swift in Sources */,
-				MMV000000000000000000001A /* MemberManagementView.swift in Sources */,
-				CLB00000000000000000001A /* BranchManager.swift in Sources */,
-				CLB00000000000000000002A /* CollaborationCodeReviewManager.swift in Sources */,
-				CLB00000000000000000003A /* CollaborationManager.swift in Sources */,
-				CLB00000000000000000004A /* CollaborationSessionStore.swift in Sources */,
-				CLB00000000000000000005A /* CommitManager.swift in Sources */,
-				CLB00000000000000000006A /* InviteManager.swift in Sources */,
-				CLB00000000000000000007A /* PermissionsManager.swift in Sources */,
-				CLB00000000000000000008A /* PushManager.swift in Sources */,
-				CLB00000000000000000009A /* BranchWorkspaceManager.swift in Sources */,
-				CLV00000000000000000001A /* ActivityLogView.swift in Sources */,
-				CLV00000000000000000002A /* BranchGraphView.swift in Sources */,
-				CLV00000000000000000003A /* CollaborationBranchManagementView.swift in Sources */,
-				CLV00000000000000000004A /* CollaborationCodeReviewView.swift in Sources */,
-				CLV00000000000000000005A /* CollaborationCommitHistoryView.swift in Sources */,
-				CLV00000000000000000006A /* CollaborationDashboardView.swift in Sources */,
-				CLV00000000000000000007A /* CollaborationMainView.swift in Sources */,
-				CLV00000000000000000008A /* CommitManagerView.swift in Sources */,
-				CLV00000000000000000009A /* ConflictResolverView.swift in Sources */,
-				CLV00000000000000000010A /* FilePermissionView.swift in Sources */,
-				CLV00000000000000000011A /* InviteMembersView.swift in Sources */,
-				CLV00000000000000000012A /* PushPullManagerView.swift in Sources */,
-				CLV00000000000000000013A /* PushPullView.swift in Sources */,
-				CLV00000000000000000014A /* BranchWorkspaceView.swift in Sources */,
-				CLV00000000000000000015A /* CollaborationFeedbackView.swift in Sources */,
+				70EC46B3AD63BAD581477E77 /* PullRequestView.swift in Sources */,
 				RV0000000000000000000001A /* CodeReviewView.swift in Sources */,
 				GH0000000000000000000001A /* GitHistoryView.swift in Sources */,
 				PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */,
@@ -2217,7 +2209,6 @@ files = (
 				AT000000000000000000007A /* CrashLogAnalyzerView.swift in Sources */,
 				AT000000000000000000008A /* ProjectDependencyGraphView.swift in Sources */,
 				AT000000000000000000009A /* SymbolIndexView.swift in Sources */,
-				AT00000000000000000000AA /* CodeMetricsDashboardView.swift in Sources */,
 				AT00000000000000000000BA /* DocumentationBrowserView.swift in Sources */,
 				AT00000000000000000000CA /* WorkspaceProfilesView.swift in Sources */,
 				AT00000000000000000000DA /* AssetManagerView.swift in Sources */,
@@ -2227,8 +2218,8 @@ files = (
 				AT000000000000000000011A /* AdvancedToolsDesignSystem.swift in Sources */,
 				AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */,
 				DABA00000000000000000002 /* DocumentationAnalyzer.swift in Sources */,
-				ACR00000000000000000001A /* AgentCodeReviewManager.swift in Sources */,
-				AICR0000000000000000001A /* AICodeReviewView.swift in Sources */,
+				13250CB406953D642562A86F /* AgentCodeReviewManager.swift in Sources */,
+				F54438B2E1C31D821B03B823 /* AICodeReviewView.swift in Sources */,
 				DAIV00000000000000000002 /* DocumentationAIInsightsView.swift in Sources */,
 				DT000000000000000000001A /* DebuggingToolsView.swift in Sources */,
 				DEP000000000000000000001A /* DeploymentKeychainManager.swift in Sources */,
@@ -2242,38 +2233,15 @@ files = (
 				ONB000000000000000000002A /* OnboardingFeaturesView.swift in Sources */,
 				ONB000000000000000000003A /* OnboardingWelcomeView.swift in Sources */,
 				ONB000000000000000000004A /* OnboardingView.swift in Sources */,
-				TT000000000000000000001A /* TestTools.swift in Sources */,
-				TTV000000000000000000001A /* TestToolsView.swift in Sources */,
+				5DC6D389B40B8A3576088DB4 /* TestTools.swift in Sources */,
+				C46CC01BBCC62137C286FC8D /* TestToolsView.swift in Sources */,
 				160FE5122C6B4BF28B24411B /* StoreKitManager.swift in Sources */,
 				A55708E00000000000000001 /* AppStore.swift in Sources */,
 				3A8F4E173A664A43B945D8D2 /* EntitlementManager.swift in Sources */,
 				62ABAC57969544DB80231017 /* DeveloperModeManager.swift in Sources */,
 				BE8188B67B8D4127A2024B0B /* PaywallView.swift in Sources */,
-				8F59BBB2AB834D09A602D4DB /* DeveloperDashboardView.swift in Sources */,
 					55692774D3694350B609B803 /* FeatureFlags.swift in Sources */,
 					2EC2F9D75DE64A1FB30D011F /* InternalLoggingManager.swift in Sources */,
-					C48CC734575E44B1BD920D2C /* VerboseLoggingView.swift in Sources */,
-					C815E4364BE64EDA803817E7 /* NetworkInspectorView.swift in Sources */,
-					F94F6063217746B798ED5D35 /* APIInspectorView.swift in Sources */,
-					3F321C450B924BAB90F8FF50 /* CrashDebuggerView.swift in Sources */,
-					E35511C445BA431F8207A66E /* LogConsoleView.swift in Sources */,
-					D3709213CC5045C68EBF5EC8 /* WebViewDebuggerView.swift in Sources */,
-					30EC0A259CCA489E81514C37 /* GitHubAPIDebugView.swift in Sources */,
-					435DF726DEB14427AB99D72F /* PaywallDebugView.swift in Sources */,
-					C15ABC97D5FC4E0FA3DA99BB /* StoreKitDebugView.swift in Sources */,
-					2F6F884FC3AC4EC7B6DECF2D /* AIModelDebuggerView.swift in Sources */,
-					515C73DCDD6D426FB2863F8A /* BuildPipelineDebuggerView.swift in Sources */,
-					64FE62C5E45D4870A7C4D5B0 /* ExtensionDebuggerView.swift in Sources */,
-					19CBF295160D44C398DA0FE0 /* DeploymentDebugView.swift in Sources */,
-					86C4B2D064364A479708F0F9 /* BinaryToolsViews.swift in Sources */,
-					FEFAC29E9C51412FAE4E54F0 /* FeatureFlagsView.swift in Sources */,
-					94D9599C874C47EDB825D854 /* RuntimeFlagsView.swift in Sources */,
-					92A6F4C3CE3E43DEAF5583F0 /* MemoryInspectorView.swift in Sources */,
-					994FA8509D6F48C2AD17B910 /* ThreadInspectorView.swift in Sources */,
-					C1C704F795744C18AB83664F /* FileSystemInspectorView.swift in Sources */,
-					3C3D335FBD164D74BB7B1058 /* DatabaseInspectorView.swift in Sources */,
-					DD8D7C3E05DC40F09C85F4F6 /* PerformanceMonitorView.swift in Sources */,
-					8D289E52CECF4D1BBA2B388F /* CoreMLInspectorView.swift in Sources */,
 				00B15C78C85946BFAABEF43F /* AgentServiceRouter.swift in Sources */,
 				65A22F6423D24E1DA37E16E2 /* PluginAgentRequest.swift in Sources */,
 				B5C29EAA7AC44639AADC3902 /* PluginAgentResponse.swift in Sources */,
@@ -2536,7 +2504,7 @@ defaultConfigurationName = Release;
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+6D075811828B9EFBF14AE1F2 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
 isa = XCRemoteSwiftPackageReference;
 repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
 requirement = {
@@ -2544,7 +2512,7 @@ kind = upToNextMajorVersion;
 minimumVersion = "0.9.0";
 };
 };
-MLXPKG00000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
+C86ECEBE833F0A3BB4005E25 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
 isa = XCRemoteSwiftPackageReference;
 repositoryURL = "https://github.com/ml-explore/mlx-swift";
 requirement = {
@@ -2555,29 +2523,29 @@ minimumVersion = "0.21.0";
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-ZIPFOUND000000000000002 /* ZIPFoundation */ = {
+41DFBB1D2E111B79D3DD8618 /* ZIPFoundation */ = {
 isa = XCSwiftPackageProductDependency;
-package = ZIPFOUND000000000000001 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+package = 6D075811828B9EFBF14AE1F2 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
 productName = ZIPFoundation;
 };
-MLXPKG00000000000000002 /* MLX */ = {
+EF71AA730650C0F16C111D15 /* MLX */ = {
 isa = XCSwiftPackageProductDependency;
-package = MLXPKG00000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+package = C86ECEBE833F0A3BB4005E25 /* XCRemoteSwiftPackageReference "mlx-swift" */;
 productName = MLX;
 };
-MLXPKG00000000000000004 /* MLXNN */ = {
+32955A4DE0BE2052EF06D40B /* MLXNN */ = {
 isa = XCSwiftPackageProductDependency;
-package = MLXPKG00000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+package = C86ECEBE833F0A3BB4005E25 /* XCRemoteSwiftPackageReference "mlx-swift" */;
 productName = MLXNN;
 };
-MLXPKG00000000000000006 /* MLXOptimizers */ = {
+B1E8DF3C7AFE9E7601758E46 /* MLXOptimizers */ = {
 isa = XCSwiftPackageProductDependency;
-package = MLXPKG00000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+package = C86ECEBE833F0A3BB4005E25 /* XCRemoteSwiftPackageReference "mlx-swift" */;
 productName = MLXOptimizers;
 };
-MLXPKG00000000000000008 /* MLXRandom */ = {
+AC3BDF9AE0DBD826634E4E49 /* MLXRandom */ = {
 isa = XCSwiftPackageProductDependency;
-package = MLXPKG00000000000000001 /* XCRemoteSwiftPackageReference "mlx-swift" */;
+package = C86ECEBE833F0A3BB4005E25 /* XCRemoteSwiftPackageReference "mlx-swift" */;
 productName = MLXRandom;
 };
 /* End XCSwiftPackageProductDependency section */

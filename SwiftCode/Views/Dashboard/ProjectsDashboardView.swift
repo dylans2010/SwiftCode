@@ -661,12 +661,12 @@ struct ProjectsDashboardView: View {
             var project = try projectManager.createProject(name: name)
             // Link project-specific GitHub repo if provided (overrides global setting)
             if !repoInput.isEmpty {
-                let normalized = repoInput
-                    .replacingOccurrences(of: "https://github.com/", with: "")
-                    .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                if let idx = projectManager.projects.firstIndex(where: { $0.id == project.id }) {
-                    projectManager.projects[idx].githubRepo = normalized
-                    project = projectManager.projects[idx]
+                if let (owner, repo) = try? GitHubImporter.parseRepoURL(repoInput) {
+                    let normalized = "\(owner)/\(repo)"
+                    if let idx = projectManager.projects.firstIndex(where: { $0.id == project.id }) {
+                        projectManager.projects[idx].githubRepo = normalized
+                        project = projectManager.projects[idx]
+                    }
                 }
             }
             newProjectName = ""
@@ -697,6 +697,13 @@ struct ProjectsDashboardView: View {
     private func importFromGitHub() {
         let url = githubImportURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !url.isEmpty else { return }
+
+        guard GitHubImporter.shared.validateRepositoryURL(url) else {
+            errorMessage = "Please enter a valid GitHub repository URL (e.g., https://github.com/owner/repo)."
+            showError = true
+            return
+        }
+
         isImporting = true
         Task {
             do {
