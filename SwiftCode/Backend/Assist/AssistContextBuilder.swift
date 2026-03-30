@@ -24,7 +24,7 @@ public final class AssistContextBuilder {
     @MainActor
     public func buildContext(sessionId: UUID) -> AssistContext {
         let project = ProjectManager.shared.currentProject
-        let workspaceRoot = project?.rootURL ?? URL(fileURLWithPath: "/")
+        let workspaceRoot = project?.directoryURL ?? URL(fileURLWithPath: "/")
 
         return AssistContext(
             sessionId: sessionId,

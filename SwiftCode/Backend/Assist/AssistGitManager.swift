@@ -14,7 +14,7 @@ public final class AssistGitManager: AssistGitManagerProtocol {
 
     public func commit(message: String) throws {
         // Internal project snapshotting replaces git commits in iOS sandbox
-        try AssistSnapshotFunctions.createSnapshot(project: project?.rootURL ?? URL(fileURLWithPath: "/"))
+        try AssistSnapshotFunctions.createSnapshot(project: project?.directoryURL ?? URL(fileURLWithPath: "/"), message: message)
     }
 
     public func push() async throws {

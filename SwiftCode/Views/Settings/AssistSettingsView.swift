@@ -88,13 +88,13 @@ public struct AssistSettingsView: View {
 
     private func loadApiKey() {
         if let provider = AssistModelProvider(rawValue: selectedProvider) {
-            apiKey = APIKeyManager.shared.retrieveKey(for: provider.rawValue) ?? ""
+            apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider) ?? ""
         }
     }
 
     private func saveApiKey() {
         if let provider = AssistModelProvider(rawValue: selectedProvider) {
-            APIKeyManager.shared.storeKey(apiKey, for: provider.rawValue)
+            APIKeyManager.shared.storeKey(service: provider.apiKeyProvider, key: apiKey)
         }
     }
 
