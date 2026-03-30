@@ -22,27 +22,50 @@ public final class TasksAIPlanner: ObservableObject {
         \(AssistAgenticPrompt.systemPrompt)
 
         # TASK
-        Analyze the user's intent and generate a structured execution plan.
+        Analyze the user's intent and generate a structured execution plan for an iOS application.
         Intent: "\(intent)"
 
         # RESPONSE REQUIREMENTS
-        You must output a JSON object representing the plan.
-        Format:
+        You must output a VALID JSON object representing the plan. Do not include any text before or after the JSON.
+
+        JSON SCHEMA:
         {
           "goal": "Clear summary of the goal",
           "steps": [
             {
-              "toolId": "The ID of the tool to use (e.g., AssistReadFileTool)",
+              "toolId": "The ID of the tool to use",
               "description": "Clear description of what this step achieves",
-              "input": { "path": "example/path.swift", "content": "..." }
+              "input": { "key": "value" }
             }
+          ]
+        }
+
+        # AVAILABLE TOOLS
+        - file_read (input: { "path": "..." })
+        - file_write (input: { "path": "...", "content": "..." })
+        - search_text (input: { "pattern": "..." })
+        - code_refactor (input: { "path": "...", "action": "..." })
+        - project_build (input: { "project": "..." })
+        - project_test (input: { "path": "..." })
+        - tree_view (input: { "path": "...", "maxDepth": "3" })
+
+        # EXAMPLES
+        User: "Add a login screen"
+        Response:
+        {
+          "goal": "Implement a new SwiftUI LoginView and integrate it.",
+          "steps": [
+            { "toolId": "tree_view", "description": "Explore project structure.", "input": { "path": "." } },
+            { "toolId": "file_write", "description": "Create LoginView.swift", "input": { "path": "Views/LoginView.swift", "content": "import SwiftUI..." } },
+            { "toolId": "project_build", "description": "Verify build.", "input": { "project": "SwiftCode.xcodeproj" } }
           ]
         }
 
         # CONSTRAINTS
         - Minimum 3 steps.
         - Never return an empty steps array.
-        - Use real file paths and full implementations.
+        - Use real file paths and FULL, production-ready implementations.
+        - No mock data.
         """
 
         let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
@@ -74,9 +97,9 @@ public final class TasksAIPlanner: ObservableObject {
     public func fallbackPlan(intent: String) -> AssistExecutionPlan {
         var plan = AssistExecutionPlan(goal: intent)
         plan.steps = [
-            AssistExecutionStep(toolId: "AssistSearchTool", input: ["query": intent], description: "Search codebase for context related to intent."),
-            AssistExecutionStep(toolId: "AssistExplainCodeTool", input: ["query": intent], description: "Analyze relevant code sections."),
-            AssistExecutionStep(toolId: "AssistRefactorTool", input: ["instructions": intent], description: "Apply requested changes or fixes.")
+            AssistExecutionStep(toolId: "search_text", input: ["pattern": intent], description: "Search codebase for context related to intent."),
+            AssistExecutionStep(toolId: "tree_view", input: ["path": "."], description: "Explore project structure."),
+            AssistExecutionStep(toolId: "code_refactor", input: ["path": "README.md", "action": "Analyze: \(intent)"], description: "Perform initial analysis.")
         ]
         self.currentPlan = plan
         return plan
@@ -95,42 +118,48 @@ public final class TasksAIPlanner: ObservableObject {
     }
 
     private func parsePlan(from response: String) throws -> AssistExecutionPlan {
-        let pattern = "\\{(?:[^{}]|\\{(?:[^{}]|\\{[^{}]*\\})*\\})*\\}"
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]),
-              let match = regex.firstMatch(in: response, options: [], range: NSRange(response.startIndex..., in: response)),
-              let range = Range(match.range, in: response) else {
-            throw AssistPlannerError.invalidResponse
+        // Find JSON block (handles ```json ... ``` or just { ... })
+        var jsonStr = response
+        if let range = response.range(of: "\\{.*\\}", options: .regularExpression, range: nil, locale: nil) {
+            jsonStr = String(response[range])
         }
 
-        let jsonStr = String(response[range])
         guard let data = jsonStr.data(using: .utf8) else {
             throw AssistPlannerError.invalidResponse
         }
 
-        struct RawPlan: Decodable {
-            let goal: String
-            let steps: [RawStep]
-        }
-        struct RawStep: Decodable {
-            let toolId: String
-            let description: String
-            let input: [String: String]
-        }
+        do {
+            struct RawPlan: Decodable {
+                let goal: String
+                let steps: [RawStep]
+            }
+            struct RawStep: Decodable {
+                let toolId: String
+                let description: String
+                let input: [String: String]
+            }
 
-        let raw = try JSONDecoder().decode(RawPlan.self, from: data)
+            let raw = try JSONDecoder().decode(RawPlan.self, from: data)
 
-        guard !raw.steps.isEmpty else {
-            throw AssistPlannerError.invalidResponse
-        }
+            guard !raw.steps.isEmpty else {
+                throw AssistPlannerError.invalidResponse
+            }
 
-        var plan = AssistExecutionPlan(goal: raw.goal)
-        plan.steps = raw.steps.map { step in
-            AssistExecutionStep(
-                toolId: step.toolId,
-                input: step.input,
-                description: step.description
-            )
+            var plan = AssistExecutionPlan(goal: raw.goal)
+            plan.steps = raw.steps.map { step in
+                AssistExecutionStep(
+                    toolId: step.toolId,
+                    input: step.input,
+                    description: step.description
+                )
+            }
+            return plan
+        } catch {
+            // Last ditch attempt: if it's a simple list but not proper JSON, try to extract goal at least
+            if response.contains("goal") {
+                 return fallbackPlan(intent: "Refined Task: \(jsonStr.prefix(100))...")
+            }
+            throw error
         }
-        return plan
     }
 }

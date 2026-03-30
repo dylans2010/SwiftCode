@@ -25,11 +25,17 @@ public final class AssistExecutionEngine {
             }
 
             do {
+                // Unified tool execution logic (integrating what was previously in AssistLoop)
                 guard let tool = registry.getTool(step.toolId) else {
                     throw AssistExecutionError.toolNotFound(step.toolId)
                 }
 
-                let result = try await tool.execute(input: step.input, context: context)
+                context.logger.info("Executing tool: \(tool.name)", toolId: step.toolId)
+
+                // Map the input to [String: Any] as required by AssistTool protocol
+                let toolInput = step.input as [String: Any]
+
+                let result = try await tool.execute(input: toolInput, context: context)
 
                 await MainActor.run {
                     step.result = result
@@ -43,6 +49,15 @@ public final class AssistExecutionEngine {
                     if context.safetyLevel == .conservative {
                         await MainActor.run { plan.status = .failed }
                         return
+                    }
+                } else {
+                    // Force project refresh on successful file writes or modifications
+                    if step.toolId == "file_write" || step.toolId == "code_refactor" || step.toolId == "file_create" {
+                        await MainActor.run {
+                            if let project = ProjectManager.shared.activeProject {
+                                ProjectManager.shared.refreshFileTree(for: project)
+                            }
+                        }
                     }
                 }
             } catch {

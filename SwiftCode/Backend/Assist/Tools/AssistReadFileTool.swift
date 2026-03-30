@@ -13,7 +13,7 @@ public struct AssistReadFileTool: AssistTool {
         }
 
         do {
-            let content = try AssistFileFunctions.readFile(at: context.workspaceRoot.appendingPathComponent(path))
+            let content = try context.fileSystem.readFile(at: path)
             return .success("Successfully read file: \(path)", data: ["content": content])
         } catch {
             return .failure("Failed to read file at \(path): \(error.localizedDescription)")

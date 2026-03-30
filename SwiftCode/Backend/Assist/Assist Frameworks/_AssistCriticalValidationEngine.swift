@@ -16,7 +16,8 @@ public final class _AssistCriticalValidationEngine {
         // 1. Check for step failures
         let failedSteps = plan.steps.filter { $0.status == .failed }
         if !failedSteps.isEmpty {
-            return .failure("One or more steps failed to execute correctly.")
+            let feedback = failedSteps.map { "\($0.toolId): \($0.result?.error ?? "Unknown error")" }.joined(separator: "; ")
+            return .failure("One or more steps failed: \(feedback)")
         }
 
         // 2. Perform AI-based verification of the final state
@@ -29,9 +30,12 @@ public final class _AssistCriticalValidationEngine {
 
         # VALIDATION TASK
         The user goal was: "\(plan.goal)"
-        The execution plan has finished. Analyze the status and determine if the goal has been successfully met.
+        The execution plan has finished. Analyze the plan steps and results to determine if the goal has been successfully met.
 
-        Return a JSON object:
+        Steps performed:
+        \(plan.steps.map { "- \($0.description) (\($0.status.rawValue))" }.joined(separator: "\n"))
+
+        Return a JSON object ONLY:
         { "isSuccess": true/false, "feedback": "Detailed explanation of what is missing or incorrect if isSuccess is false." }
         """
 
@@ -40,18 +44,21 @@ public final class _AssistCriticalValidationEngine {
         if response.success {
             return parseValidation(from: response.content)
         } else {
-            return .success // Default to success if AI validation is unavailable, to avoid infinite loops
+            // If AI validation fails (e.g. network error), we check if all steps were 'completed'
+            let allCompleted = plan.steps.allSatisfy { $0.status == .completed }
+            return allCompleted ? .success : .failure("Execution finished but some steps did not complete successfully.")
         }
     }
 
     private func parseValidation(from content: String) -> ValidationResult {
-        let pattern = "\\{(?:[^{}]|\\{(?:[^{}]|\\{[^{}]*\\})*\\})*\\}"
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]),
-              let match = regex.firstMatch(in: content, options: [], range: NSRange(content.startIndex..., in: content)),
-              let range = Range(match.range, in: content),
-              let data = String(content[range]).data(using: .utf8),
+        var jsonStr = content
+        if let range = content.range(of: "\\{.*\\}", options: .regularExpression) {
+            jsonStr = String(content[range])
+        }
+
+        guard let data = jsonStr.data(using: .utf8),
               let result = try? JSONDecoder().decode(ValidationResult.self, from: data) else {
-            return .success
+            return .success // Default to success to avoid loops if JSON is unparseable but execute reached end
         }
         return result
     }

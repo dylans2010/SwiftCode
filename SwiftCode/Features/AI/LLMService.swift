@@ -158,15 +158,15 @@ final class LLMService {
     // MARK: - Core Methods
 
     @MainActor
-    func generateResponse(prompt: String, useContext: Bool) async throws -> String {
-        if OnDeviceModelRouter.shared.useOnDeviceAI() {
+    func generateResponse(prompt: String, useContext: Bool, modelOverride: String? = nil, providerOverride: LLMProvider? = nil) async throws -> String {
+        if modelOverride == nil && providerOverride == nil && OnDeviceModelRouter.shared.useOnDeviceAI() {
             return try await OnDeviceModelRouter.shared.generateResponse(prompt: prompt, useContext: useContext)
         }
-        return try await generateExternalResponse(prompt: prompt, useContext: useContext)
+        return try await generateExternalResponse(prompt: prompt, useContext: useContext, modelOverride: modelOverride, providerOverride: providerOverride)
     }
 
     @MainActor
-    func generateExternalResponse(prompt: String, useContext: Bool) async throws -> String {
+    func generateExternalResponse(prompt: String, useContext: Bool, modelOverride: String? = nil, providerOverride: LLMProvider? = nil) async throws -> String {
         let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPrompt.isEmpty else { return "" }
 
@@ -178,18 +178,19 @@ final class LLMService {
             messageContent = "[\(antiRepeatInstruction)]\n\n\(trimmedPrompt)"
         }
 
-        let provider = try resolvedRoutingProvider()
+        let provider = try providerOverride ?? resolvedRoutingProvider()
         let model: String
         if provider == .offline {
             model = try await defaultOfflineModelName()
         } else {
-            let selected = AppSettings.shared.selectedModel.trimmingCharacters(in: .whitespacesAndNewlines)
+            let selected = modelOverride ?? AppSettings.shared.selectedModel.trimmingCharacters(in: .whitespacesAndNewlines)
             model = selected.isEmpty ? "openai/gpt-4o-mini" : selected
         }
 
         let response = try await sendChatRequest(
             model: model,
-            messages: [AIMessage(role: "user", content: messageContent)]
+            messages: [AIMessage(role: "user", content: messageContent)],
+            providerOverride: providerOverride
         )
 
         return response.completionText
@@ -261,8 +262,8 @@ final class LLMService {
         return decoded.data.map { $0.id }
     }
 
-    func sendChatRequest(model: String, messages: [AIMessage], key: String? = nil) async throws -> LLMResponse {
-        let provider = try await resolvedRoutingProvider()
+    func sendChatRequest(model: String, messages: [AIMessage], key: String? = nil, providerOverride: LLMProvider? = nil) async throws -> LLMResponse {
+        let provider = try await providerOverride ?? resolvedRoutingProvider()
 
         if provider == .offline {
             return try await runOfflineResponse(messages: messages)

@@ -15,23 +15,17 @@ public struct AssistBuildProjectTool: AssistTool {
 
         do {
             // 1. Validate Project File Existence
-            let projectURL = context.workspaceRoot.appendingPathComponent(projectPath.isEmpty ? "." : projectPath)
-            var isDir: ObjCBool = false
-            guard FileManager.default.fileExists(atPath: projectURL.path, isDirectory: &isDir) else {
-                return .failure("Project or directory not found at: \(projectPath)")
-            }
-
-            // 2. Scan for .xcodeproj or Package.swift if path is a directory
-            var foundProject = false
-            if isDir.boolValue {
-                let contents = try FileManager.default.contentsOfDirectory(at: projectURL, includingPropertiesForKeys: nil)
-                foundProject = contents.contains { $0.pathExtension == "xcodeproj" || $0.lastPathComponent == "Package.swift" }
+            if projectPath.isEmpty {
+                 // Check if workspace root has a project
+                 let contents = try context.fileSystem.listDirectory(at: ".")
+                 let hasProject = contents.contains { $0.hasSuffix(".xcodeproj") || $0 == "Package.swift" || $0 == "SwiftCode.xcodeproj" }
+                 guard hasProject else {
+                     return .failure("No Xcode project or Swift Package found in workspace root.")
+                 }
             } else {
-                foundProject = projectURL.pathExtension == "xcodeproj" || projectURL.lastPathComponent == "Package.swift"
-            }
-
-            guard foundProject else {
-                return .failure("No Xcode project or Swift Package found at path: \(projectPath)")
+                guard context.fileSystem.exists(at: projectPath) else {
+                    return .failure("Project or directory not found at: \(projectPath)")
+                }
             }
 
             // 3. Simulate Build Steps

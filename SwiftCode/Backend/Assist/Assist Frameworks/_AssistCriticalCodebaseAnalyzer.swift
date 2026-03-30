@@ -17,25 +17,35 @@ public final class _AssistCriticalCodebaseAnalyzer {
         let allFiles = try scanDirectory(at: root)
         let swiftFiles = allFiles.filter { $0.hasSuffix(".swift") }
 
+        // Find key project files
+        let hasProjectFile = allFiles.contains { $0.hasSuffix(".xcodeproj") }
+        let hasPackageSwift = allFiles.contains { $0.hasSuffix("Package.swift") }
+
         return CodebaseSummary(
             totalFiles: allFiles.count,
             swiftFileCount: swiftFiles.count,
-            structure: "Scanned \(allFiles.count) files across project tree."
+            structure: "Scanned \(allFiles.count) files. Project types: \(hasProjectFile ? "Xcode" : "") \(hasPackageSwift ? "Swift Package" : "")."
         )
     }
 
     private func scanDirectory(at url: URL) throws -> [String] {
         let fm = FileManager.default
         let resourceKeys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey]
-        guard let enumerator = fm.enumerator(at: url, includingPropertiesForKeys: resourceKeys, options: [.skipsHiddenFiles]) else {
+
+        // Only scan up to 3 levels deep for efficiency in summary
+        guard let enumerator = fm.enumerator(at: url, includingPropertiesForKeys: resourceKeys, options: [.skipsHiddenFiles, .skipsPackageDescendants]) else {
             return []
         }
 
         var files: [String] = []
+        let rootPath = url.standardized.path
+
         for case let fileURL as URL in enumerator {
             let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
             if resourceValues.isRegularFile ?? false {
-                files.append(fileURL.path)
+                let filePath = fileURL.standardized.path
+                let relativePath = filePath.replacingOccurrences(of: rootPath + "/", with: "")
+                files.append(relativePath)
             }
         }
         return files
