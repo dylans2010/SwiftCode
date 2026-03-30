@@ -1,7 +1,7 @@
 import SwiftUI
 
 public struct TestToolsView: View {
-    @ObservedObject var project: Project
+    let project: Project
     @StateObject private var testManager = TestToolsManager.shared
     @StateObject private var coverageManager = TestCoverageManager()
     @State private var selectedCategory: TestCategory? = nil

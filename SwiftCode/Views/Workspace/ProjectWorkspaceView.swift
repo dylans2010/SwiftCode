@@ -86,11 +86,12 @@ struct ProjectWorkspaceView: View {
                     .background(Color(red: 0.12, green: 0.12, blue: 0.16))
                     .navigationTitle("Files")
                     .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
+                    .toolbar(content: {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") { showNavigatorSheet = false }
                         }
                     }
+                    })
             }
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
@@ -254,7 +255,7 @@ struct ProjectWorkspaceView: View {
                 .presentationDragIndicator(.visible)
         }
         .sheet(isPresented: $showTestTools) {
-            TestToolsView()
+            TestToolsView(project: projectManager.activeProject ?? project)
                 .environmentObject(projectManager)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)

@@ -12,6 +12,7 @@ public enum CollaborationRole: String, Codable, CaseIterable {
     case admin
     case editor
     case viewer
+    case collaborator
 }
 
 public struct FileLock: Identifiable, Codable, Equatable {
@@ -111,6 +112,11 @@ public final class PermissionsManager: ObservableObject {
             return permission
         case .viewer:
             return .makePreset(.readOnly)
+        case .collaborator:
+            var permission = TransferPermission.makePreset(.limitedEdit)
+            permission.isCollaborative = true
+            permission.versionControl.pull = true
+            return permission
         }
     }
 }
