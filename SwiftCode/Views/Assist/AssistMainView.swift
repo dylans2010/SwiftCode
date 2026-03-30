@@ -71,7 +71,7 @@ public struct AssistMainView: View {
                         } label: {
                             Image(systemName: "arrow.up.circle.fill")
                                 .font(.title)
-                                .foregroundStyle(inputText.isEmpty ? .secondary : .orange)
+                                .foregroundStyle(inputText.isEmpty ? Color.secondary : Color.orange)
                         }
                         .disabled(inputText.isEmpty || assistManager.isProcessing)
                     }
