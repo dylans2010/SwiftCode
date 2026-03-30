@@ -160,6 +160,7 @@ struct AssistExecutionTimelineView: View {
                 ForEach(plan.steps) { step in
                     HStack(spacing: 12) {
                         statusIcon(for: step.status)
+                            .foregroundStyle(statusColor(for: step.status))
 
                         VStack(alignment: .leading) {
                             Text(step.description)
@@ -180,14 +181,54 @@ struct AssistExecutionTimelineView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
-    private func statusIcon(for status: AssistExecutionStatus) -> some View {
+    private func statusIcon(for status: AssistExecutionStatus) -> Image {
         switch status {
-        case .pending: return Image(systemName: "circle").foregroundStyle(.secondary)
-        case .running: return Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(.orange)
-        case .completed: return Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-        case .failed: return Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
-        case .skipped: return Image(systemName: "slash.circle").foregroundStyle(.gray)
+        case .pending: return Image(systemName: "circle")
+        case .running: return Image(systemName: "arrow.triangle.2.circlepath")
+        case .completed: return Image(systemName: "checkmark.circle.fill")
+        case .failed: return Image(systemName: "xmark.circle.fill")
+        case .skipped: return Image(systemName: "slash.circle")
         }
+    }
+
+    private func statusColor(for status: AssistExecutionStatus) -> Color {
+        switch status {
+        case .pending: return .secondary
+        case .running: return .orange
+        case .completed: return .green
+        case .failed: return .red
+        case .skipped: return .gray
+        }
+    }
+}
+
+private struct AssistChatBubble: View {
+    let message: AssistMessage
+
+    private var alignment: HorizontalAlignment {
+        message.role == .user ? .trailing : .leading
+    }
+
+    private var bubbleColor: Color {
+        switch message.role {
+        case .user: return Color.orange.opacity(0.85)
+        case .assistant: return Color.white.opacity(0.12)
+        case .system: return Color.blue.opacity(0.2)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: alignment, spacing: 4) {
+            Text(message.role.rawValue.capitalized)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(message.content)
+                .font(.body)
+                .foregroundStyle(.white)
+                .padding(12)
+                .background(bubbleColor, in: RoundedRectangle(cornerRadius: 14))
+        }
+        .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
     }
 }
 
