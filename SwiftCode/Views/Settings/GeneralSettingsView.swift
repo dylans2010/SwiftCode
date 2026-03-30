@@ -474,6 +474,16 @@ struct GeneralSettingsView: View {
                 aiSection
                 deploymentAndAPIKeysSection
                 editorSection
+                Section {
+                    NavigationLink {
+                        AssistSettingsView()
+                    } label: {
+                        Label("Assist Settings", systemImage: "sparkles.rectangle.stack.fill")
+                            .foregroundStyle(.orange)
+                    }
+                } header: {
+                    Label("Assist", systemImage: "sparkles")
+                }
                 dashboardSection
                 fileNavigatorCustomizationSection
                 themesSection

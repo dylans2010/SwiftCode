@@ -1,9 +1,9 @@
 import SwiftUI
 
 public struct AssistMainView: View {
-    @StateObject private var assistManager = AssistManager.shared
+    @StateObject private var manager = AssistManager.shared
     @State private var inputText: String = ""
-    @State private var showTools = false
+    @State private var showSettings = false
     @Environment(\.dismiss) private var dismiss
 
     public init() {}
@@ -11,69 +11,60 @@ public struct AssistMainView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                // Background
+                // Modern Dark Background
                 Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
 
                 VStack(spacing: 0) {
-                    AssistHeaderCard(
-                        modelName: assistManager.selectedModel.displayName,
-                        provider: assistManager.selectedModel.provider,
-                        tools: assistManager.availableTools,
-                        showTools: $showTools
-                    )
-                    .padding([.horizontal, .top])
+                    // Header with execution status
+                    headerArea
 
                     ScrollViewReader { proxy in
                         ScrollView {
-                            LazyVStack(spacing: 16) {
-                                ForEach(assistManager.messages) { message in
+                            LazyVStack(spacing: 20) {
+                                ForEach(manager.messages) { message in
                                     AssistChatBubble(message: message)
                                 }
 
-                                if assistManager.isProcessing {
-                                    HStack {
-                                        ProgressView().scaleEffect(0.8)
-                                        Text("Thinking…").font(.caption).foregroundStyle(.secondary)
-                                        Spacer()
+                                if let plan = manager.session.currentPlan {
+                                    AssistExecutionTimelineView(plan: plan)
+
+                                    // If any step has a diff or modified content, show it
+                                    ForEach(plan.steps) { step in
+                                        if let result = step.result, let content = result.data?["content"], step.toolId == "file_read" {
+                                            VStack(alignment: .leading) {
+                                                Text("File Preview: \(step.input["path"] ?? "")")
+                                                    .font(.caption.bold())
+                                                    .foregroundStyle(.secondary)
+                                                Text(content)
+                                                    .font(.system(.caption2, design: .monospaced))
+                                                    .padding(8)
+                                                    .background(Color.black.opacity(0.3))
+                                                    .cornerRadius(8)
+                                            }
+                                            .padding(.horizontal)
+                                        }
                                     }
-                                    .padding(.horizontal)
+                                }
+
+                                if manager.isProcessing {
+                                    thinkingIndicator
                                 }
                             }
                             .padding()
                             .id("Bottom")
                         }
-                        .onChange(of: assistManager.messages.count) {
-                            withAnimation {
-                                proxy.scrollTo("Bottom", anchor: .bottom)
-                            }
+                        .onChange(of: manager.messages.count) {
+                            withAnimation { proxy.scrollTo("Bottom", anchor: .bottom) }
                         }
                     }
 
-                    if let plan = assistManager.currentPlan {
-                        AssistPlanView(plan: plan)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                    }
-
-                    // Input Area
-                    HStack(spacing: 12) {
-                        TextField("Ask SwiftCode Assist...", text: $inputText, axis: .vertical)
-                            .padding(10)
-                            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
-                            .lineLimit(1...5)
-                            .foregroundStyle(.white)
-
-                        Button {
-                            Task {
-                                let text = inputText
-                                inputText = ""
-                                await assistManager.sendMessage(text)
-                            }
-                        } label: {
-                            Image(systemName: "arrow.up.circle.fill")
-                                .font(.title)
-                                .foregroundStyle(inputText.isEmpty ? Color.secondary : Color.orange)
+                    // Bottom Tool Feed & Input
+                    VStack(spacing: 12) {
+                        if !manager.logger.logs.isEmpty {
+                            MiniLogFeed(logger: manager.logger)
                         }
-                        .disabled(inputText.isEmpty || assistManager.isProcessing)
+
+                        inputArea
                     }
                     .padding()
                     .background(.ultraThinMaterial)
@@ -83,94 +74,144 @@ public struct AssistMainView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Clear") {
-                        assistManager.clearChat()
-                    }
-                }
-                ToolbarItem(placement: .principal) {
-                    Text("Assist")
-                        .font(.headline)
+                    Button("Clear") { manager.clearChat() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct AssistHeaderCard: View {
-    let modelName: String
-    let provider: String
-    let tools: [AssistTool]
-    @Binding var showTools: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(modelName)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white)
-                    Text(provider)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button(showTools ? "Hide Tools" : "Show Tools") {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showTools.toggle()
-                    }
-                }
-                .font(.caption.weight(.semibold))
-            }
-
-            if showTools {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(tools) { tool in
-                            Text(tool.rawValue)
-                                .font(.caption2.weight(.medium))
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .background(Color.orange.opacity(0.18), in: Capsule())
-                                .foregroundStyle(.orange)
+                    HStack {
+                        Button { showSettings = true } label: {
+                            Image(systemName: "gearshape")
                         }
+                        Button("Done") { dismiss() }
                     }
                 }
             }
+            .sheet(isPresented: $showSettings) {
+                NavigationStack { AssistSettingsView() }
+            }
         }
-        .padding(12)
-        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var headerArea: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Circle()
+                    .fill(manager.isProcessing ? Color.orange : Color.green)
+                    .frame(width: 8, height: 8)
+                Text(manager.isProcessing ? "Agent Active" : "Agent Ready")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(manager.selectedModel.displayName)
+                    .font(.caption2)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.white.opacity(0.1))
+                    .clipShape(Capsule())
+            }
+        }
+        .padding()
+        .background(Color.white.opacity(0.03))
+    }
+
+    private var thinkingIndicator: some View {
+        HStack {
+            ProgressView()
+                .scaleEffect(0.8)
+                .tint(.orange)
+            Text("Planning next steps…")
+                .font(.caption)
+                .foregroundStyle(.orange)
+            Spacer()
+        }
+        .padding(.horizontal)
+    }
+
+    private var inputArea: some View {
+        HStack(spacing: 12) {
+            TextField("What should I build next?", text: $inputText, axis: .vertical)
+                .padding(12)
+                .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
+                .lineLimit(1...6)
+                .foregroundStyle(.white)
+
+            Button {
+                let text = inputText
+                inputText = ""
+                Task { await manager.sendMessage(text) }
+            } label: {
+                Image(systemName: "arrow.up.circle.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(inputText.isEmpty ? Color.secondary : Color.orange)
+            }
+            .disabled(inputText.isEmpty || manager.isProcessing)
+        }
     }
 }
 
-struct AssistChatBubble: View {
-    let message: AssistMessage
+struct AssistExecutionTimelineView: View {
+    let plan: AssistExecutionPlan
 
     var body: some View {
-        HStack {
-            if message.role == .user { Spacer() }
+        VStack(alignment: .leading, spacing: 12) {
+            Label(plan.goal, systemImage: "target")
+                .font(.headline)
 
-            VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
-                Text(message.content)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(
-                        message.role == .user ? Color.blue.opacity(0.3) : Color.white.opacity(0.1),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    )
-                    .foregroundStyle(.white)
-                    .font(.subheadline)
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(plan.steps) { step in
+                    HStack(spacing: 12) {
+                        statusIcon(for: step.status)
 
-                Text(message.timestamp, style: .time)
-                    .font(.system(size: 8))
-                    .foregroundStyle(.tertiary)
+                        VStack(alignment: .leading) {
+                            Text(step.description)
+                                .font(.subheadline)
+                            Text(step.toolId)
+                                .font(.caption2.monospaced())
+                                .foregroundStyle(.tertiary)
+                        }
+
+                        Spacer()
+                    }
+                    .padding(.leading, 4)
+                }
             }
-
-            if message.role != .user { Spacer() }
         }
+        .padding()
+        .background(Color.white.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func statusIcon(for status: AssistExecutionStatus) -> some View {
+        switch status {
+        case .pending: return Image(systemName: "circle").foregroundStyle(.secondary)
+        case .running: return Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(.orange)
+        case .completed: return Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+        case .failed: return Image(systemName: "xmark.circle.fill").foregroundStyle(.red)
+        case .skipped: return Image(systemName: "slash.circle").foregroundStyle(.gray)
+        }
+    }
+}
+
+struct MiniLogFeed: View {
+    @ObservedObject var logger: AssistLogger
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            ForEach(logger.logs.suffix(2)) { log in
+                HStack {
+                    Text(log.toolId ?? "system")
+                        .font(.system(size: 8, weight: .bold, design: .monospaced))
+                        .padding(.horizontal, 4)
+                        .background(Color.orange.opacity(0.2))
+                    Text(log.message)
+                        .font(.system(size: 10))
+                        .lineLimit(1)
+                }
+                .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(8)
+        .background(Color.black.opacity(0.2))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
