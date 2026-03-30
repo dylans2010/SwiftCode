@@ -9,6 +9,11 @@ final class ProjectManager: ObservableObject {
         didSet { persistProjectList() }
     }
     @Published var activeProject: Project?
+    /// Backward-compatible alias used by older Assist code paths.
+    var currentProject: Project? {
+        get { activeProject }
+        set { activeProject = newValue }
+    }
     @Published var activeFileNode: FileNode?
     @Published var activeFileContent: String = ""
 

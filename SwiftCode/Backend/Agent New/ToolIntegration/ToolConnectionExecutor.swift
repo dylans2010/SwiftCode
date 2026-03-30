@@ -5,7 +5,7 @@ final class ToolConnectionExecutor {
     private init() {}
 
     func execute(_ connection: CustomAgentConnection, parameters: [String: Any]) async throws -> String {
-        AssistCapabilityExecutor.executeIfNeeded(
+        await AssistCapabilityExecutor.executeIfNeeded(
             kind: AssistCapabilityKind.connection,
             name: connection.name,
             identifiers: connection.identificationTags,
