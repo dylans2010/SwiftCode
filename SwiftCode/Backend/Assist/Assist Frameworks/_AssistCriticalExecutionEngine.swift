@@ -91,13 +91,16 @@ struct \( (path as NSString).lastPathComponent.replacingOccurrences(of: ".swift"
 
         let fullCmd = "\(addFileRefCmd) && \(addBuildFileCmd) && \(addGroupChildCmd) && \(addBuildPhaseCmd)"
 
+        #if os(macOS)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
         process.arguments = ["-c", fullCmd]
         try? process.run()
         process.waitUntilExit()
-
         context.logger.info("Registered \(fileName) in Xcode project with ID \(fileId)", toolId: "CriticalExecution")
+        #else
+        context.logger.warning("Skipping Xcode registration for \(fileName): Process is only supported on macOS.", toolId: "CriticalExecution")
+        #endif
     }
 
     private func generateRandomHexID() -> String {
