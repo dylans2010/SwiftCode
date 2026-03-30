@@ -24,6 +24,7 @@ public final class AssistManager: ObservableObject {
     }
 
     private init() {
+        AssistExecutionFunctions.initializeRegistry()
         loadHistory()
         setupAgent()
     }

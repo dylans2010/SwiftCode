@@ -38,21 +38,16 @@ public final class AssistToolRegistry {
         register(AssistGenerateFileTool())
         register(AssistInsertCodeBlockTool())
 
-        // Git
-        register(AssistGitInitTool())
-        register(AssistGitStatusTool())
-        register(AssistGitAddTool())
-        register(AssistGitCommitTool())
-        register(AssistGitBranchTool())
-        register(AssistGitCheckoutTool())
-        register(AssistGitMergeTool())
-        register(AssistGitDiffTool())
-        register(AssistGitStashTool())
-        register(AssistGitPRTool())
+        // Snapshot System (Replacing Git)
+        register(AssistSnapshotProjectTool())
+        register(AssistRestoreSnapshotTool())
+        register(AssistDiffTool())
+        register(AssistChangeLogTool())
+        register(AssistUndoTool())
+        register(AssistValidateChangesTool())
 
-        // Execution
-        register(AssistRunCommandTool())
-        register(AssistRunScriptTool())
+        // Execution (Internal Sandbox Only)
+        register(AssistTaskRunnerTool())
         register(AssistBuildProjectTool())
         register(AssistTestRunnerTool())
         register(AssistLogCaptureTool())
@@ -70,12 +65,6 @@ public final class AssistToolRegistry {
         register(AssistRetrieveMemoryTool())
         register(AssistClearMemoryTool())
         register(AssistContextSnapshotTool())
-
-        // Safety
-        register(AssistSnapshotProjectTool())
-        register(AssistRestoreSnapshotTool())
-        register(AssistUndoTool())
-        register(AssistValidateChangesTool())
     }
 
     public func register(_ tool: AssistTool) {

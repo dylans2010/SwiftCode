@@ -7,6 +7,17 @@ objectVersion = 56;
 objects = {
 
 /* Begin PBXBuildFile section */
+		ASBF0001BF /* AssistFileFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0001 /* AssistFileFunctions.swift */; };
+		ASBF0002BF /* AssistSearchFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0002 /* AssistSearchFunctions.swift */; };
+		ASBF0003BF /* AssistCodeFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0003 /* AssistCodeFunctions.swift */; };
+		ASBF0004BF /* AssistExecutionFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0004 /* AssistExecutionFunctions.swift */; };
+		ASBF0005BF /* AssistSnapshotFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0005 /* AssistSnapshotFunctions.swift */; };
+		ASBT0001BF /* AssistSnapshotProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBT0001 /* AssistSnapshotProjectTool.swift */; };
+		ASBT0002BF /* AssistRestoreSnapshotTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBT0002 /* AssistRestoreSnapshotTool.swift */; };
+		ASBT0003BF /* AssistDiffTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBT0003 /* AssistDiffTool.swift */; };
+		ASBT0004BF /* AssistChangeLogTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBT0004 /* AssistChangeLogTool.swift */; };
+		ASBT0005BF /* AssistTaskRunnerTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBT0005 /* AssistTaskRunnerTool.swift */; };
+		ASBM0001BF /* AssistSnapshotModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBM0001 /* AssistSnapshotModels.swift */; };
 		80879779E84E3A42F4EF445A /* GistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FD609693E33B866DCE781BA /* GistModels.swift */; };
 		7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */; };
 		9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0949CB12552DEAB7E3F7C702 /* GistsView.swift */; };
@@ -776,6 +787,17 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		6C29B5806AEE4256885530A8 /* SwiftCodeUseAgentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SwiftCodeUseAgentService.swift"; path = "SwiftCode/Backend/Agent New/AgentAPI/SwiftCodeUseAgentService.swift"; sourceTree = SOURCE_ROOT; };
 		ASB000000000000000000001 /* AssistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/AssistModels.swift; sourceTree = SOURCE_ROOT; };
 		ASB000000000000000000002 /* AssistManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/AssistManager.swift; sourceTree = SOURCE_ROOT; };
+		ASBF0001 /* AssistFileFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Functions/AssistFileFunctions.swift; sourceTree = SOURCE_ROOT; };
+		ASBF0002 /* AssistSearchFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Functions/AssistSearchFunctions.swift; sourceTree = SOURCE_ROOT; };
+		ASBF0003 /* AssistCodeFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Functions/AssistCodeFunctions.swift; sourceTree = SOURCE_ROOT; };
+		ASBF0004 /* AssistExecutionFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Functions/AssistExecutionFunctions.swift; sourceTree = SOURCE_ROOT; };
+		ASBF0005 /* AssistSnapshotFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Functions/AssistSnapshotFunctions.swift; sourceTree = SOURCE_ROOT; };
+		ASBT0001 /* AssistSnapshotProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistSnapshotProjectTool.swift; sourceTree = SOURCE_ROOT; };
+		ASBT0002 /* AssistRestoreSnapshotTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistRestoreSnapshotTool.swift; sourceTree = SOURCE_ROOT; };
+		ASBT0003 /* AssistDiffTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistDiffTool.swift; sourceTree = SOURCE_ROOT; };
+		ASBT0004 /* AssistChangeLogTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistChangeLogTool.swift; sourceTree = SOURCE_ROOT; };
+		ASBT0005 /* AssistTaskRunnerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistTaskRunnerTool.swift; sourceTree = SOURCE_ROOT; };
+		ASBM0001 /* AssistSnapshotModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Models/AssistSnapshotModels.swift; sourceTree = SOURCE_ROOT; };
 		ASB000000000000000000003 /* AssistLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/AssistLoop.swift; sourceTree = SOURCE_ROOT; };
 		ASA000000000000000000001B /* AssistCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/API/AssistCapability.swift; sourceTree = SOURCE_ROOT; };
 		ASA000000000000000000002B /* AssistCapabilityExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/API/AssistCapabilityExecutor.swift; sourceTree = SOURCE_ROOT; };
@@ -1717,10 +1739,32 @@ children = (
 			);
 sourceTree = "<group>";
 };
+		ASBFG0000000000000000001 /* Functions */ = {
+			isa = PBXGroup;
+			children = (
+				ASBF0001 /* AssistFileFunctions.swift */,
+				ASBF0002 /* AssistSearchFunctions.swift */,
+				ASBF0003 /* AssistCodeFunctions.swift */,
+				ASBF0004 /* AssistExecutionFunctions.swift */,
+				ASBF0005 /* AssistSnapshotFunctions.swift */,
+			);
+			path = Functions;
+			sourceTree = "<group>";
+		};
+		ASBMG0000000000000000001 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				ASBM0001 /* AssistSnapshotModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
 		ASBG0000000000000000001 /* Assist */ = {
 			isa = PBXGroup;
 			children = (
+				ASBFG0000000000000000001 /* Functions */,
 				ASBTG0000000000000000001 /* Tools */,
+				ASBMG0000000000000000001 /* Models */,
 				8EF18552F63940CEAA60F518 /* AssistAgent.swift */,
 				C53E4D3A12194CB0ADE0E756 /* AssistToolRegistry.swift */,
 				DF8A997284694A50A7DB781A /* AssistExecutionEngine.swift */,
@@ -2343,10 +2387,13 @@ sourceTree = "<group>";
 		ASBTG0000000000000000001 /* Tools */ = {
 			isa = PBXGroup;
 			children = (
+				ASBT0001 /* AssistSnapshotProjectTool.swift */,
+				ASBT0002 /* AssistRestoreSnapshotTool.swift */,
+				ASBT0003 /* AssistDiffTool.swift */,
+				ASBT0004 /* AssistChangeLogTool.swift */,
+				ASBT0005 /* AssistTaskRunnerTool.swift */,
 				D16E783E443C4E4F9EEAB08B /* AssistValidateChangesTool.swift */,
 				346A365871EF4A1F82C18FF7 /* AssistUndoTool.swift */,
-				44BC9B7DB1CA421EB73BFF7D /* AssistRestoreSnapshotTool.swift */,
-				A63E72CD131C4518AEFD68CA /* AssistSnapshotProjectTool.swift */,
 				E27282F9DEF9416CAEEC1172 /* AssistContextSnapshotTool.swift */,
 				7CEAE286CF66498EA362285E /* AssistClearMemoryTool.swift */,
 				594AFD751A1F4937AF39527F /* AssistRetrieveMemoryTool.swift */,
@@ -2360,18 +2407,6 @@ sourceTree = "<group>";
 				BFA06445FBCA40468B7FE2C4 /* AssistLogCaptureTool.swift */,
 				E4E3FC50CA22424DB6A5296E /* AssistTestRunnerTool.swift */,
 				5DE2A4343F4B4346932B84A7 /* AssistBuildProjectTool.swift */,
-				98CBFBBDFFE140F5977C54E3 /* AssistRunScriptTool.swift */,
-				F2ED6D61904F4F64832965C0 /* AssistRunCommandTool.swift */,
-				247F50A1513F4577BEE9DD38 /* AssistGitPRTool.swift */,
-				7D6FD346A9504AC297734B09 /* AssistGitStashTool.swift */,
-				7EB7E65869F44F32B219D22E /* AssistGitDiffTool.swift */,
-				C432EE29F89F4D5E84CDBC7D /* AssistGitMergeTool.swift */,
-				603A0C886D964047AB37A529 /* AssistGitCheckoutTool.swift */,
-				1A15F0E23B654688B6730A4A /* AssistGitBranchTool.swift */,
-				8EF727A9380443239AF2A7F5 /* AssistGitCommitTool.swift */,
-				7B5D8B5840D04543B3571705 /* AssistGitAddTool.swift */,
-				C4E7B94A0AAD42AD9440DFC8 /* AssistGitStatusTool.swift */,
-				635F663298464EC384D0EEAD /* AssistGitInitTool.swift */,
 				F548A53AC0CC43B789DCDB55 /* AssistInsertCodeBlockTool.swift */,
 				564B58CF524145AB8870D4D8 /* AssistGenerateFileTool.swift */,
 				0B599ED8BE9B4C83A0698615 /* AssistFormatCodeTool.swift */,
@@ -2504,6 +2539,17 @@ AA000001000000000000000B_SRC /* Sources */ = {
 isa = PBXSourcesBuildPhase;
 buildActionMask = 2147483647;
 files = (
+				ASBF0001BF /* AssistFileFunctions.swift in Sources */,
+				ASBF0002BF /* AssistSearchFunctions.swift in Sources */,
+				ASBF0003BF /* AssistCodeFunctions.swift in Sources */,
+				ASBF0004BF /* AssistExecutionFunctions.swift in Sources */,
+				ASBF0005BF /* AssistSnapshotFunctions.swift in Sources */,
+				ASBT0001BF /* AssistSnapshotProjectTool.swift in Sources */,
+				ASBT0002BF /* AssistRestoreSnapshotTool.swift in Sources */,
+				ASBT0003BF /* AssistDiffTool.swift in Sources */,
+				ASBT0004BF /* AssistChangeLogTool.swift in Sources */,
+				ASBT0005BF /* AssistTaskRunnerTool.swift in Sources */,
+				ASBM0001BF /* AssistSnapshotModels.swift in Sources */,
 				1183E990121D4FB49DDE1896 /* AssistSettingsView.swift in Sources */,
 				193E8E00276A4E0DB5E10C00 /* AssistValidateChangesTool.swift in Sources */,
 				47839397FCBD4DBFAE478946 /* AssistUndoTool.swift in Sources */,

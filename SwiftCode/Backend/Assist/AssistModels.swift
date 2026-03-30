@@ -1,6 +1,127 @@
 import Foundation
 import SwiftUI
 
+// MARK: - AI Models & Providers
+
+public enum AssistModelProvider: String, Codable, CaseIterable {
+    case openAI = "ChatGPT"
+    case anthropic = "Claude"
+    case gemini = "Gemini"
+    case mistral = "Mistral"
+    case meta = "Meta AI"
+    case kimi = "Kimi"
+    case openRouter = "OpenRouter"
+
+    public var endpoint: URL? {
+        switch self {
+        case .openAI: return URL(string: "https://api.openai.com/v1/chat/completions")
+        case .anthropic: return URL(string: "https://api.anthropic.com/v1/messages")
+        case .gemini: return URL(string: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent")
+        case .mistral: return URL(string: "https://api.mistral.ai/v1/chat/completions")
+        case .meta: return URL(string: "https://api.meta.ai/v1/chat/completions") // Example
+        case .kimi: return URL(string: "https://api.moonshot.cn/v1/chat/completions")
+        case .openRouter: return URL(string: "https://openrouter.ai/api/v1/chat/completions")
+        }
+    }
+}
+
+public struct AssistLLMService {
+    public static func generateResponse(prompt: String, provider: AssistModelProvider, apiKey: String) async throws -> String {
+        guard let url = provider.endpoint else {
+            throw NSError(domain: "AssistLLM", code: 400, userInfo: [NSLocalizedDescriptionKey: "Invalid endpoint for \(provider.rawValue)"])
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+
+        // Add Provider specific headers
+        switch provider {
+        case .openAI, .mistral, .kimi, .openRouter:
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        case .anthropic:
+            request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
+            request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        case .gemini:
+             // Gemini often uses key in URL or different header
+             var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
+             components?.queryItems = [URLQueryItem(name: "key", value: apiKey)]
+             if let finalURL = components?.url {
+                 request.url = finalURL
+             }
+        default:
+            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        let body = try prepareBody(prompt: prompt, provider: provider)
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+            let errorMsg = String(data: data, encoding: .utf8) ?? "Unknown error"
+            throw NSError(domain: "AssistLLM", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: "HTTP Error: \(errorMsg)"])
+        }
+
+        return try parseResponse(data: data, provider: provider)
+    }
+
+    private static func prepareBody(prompt: String, provider: AssistModelProvider) throws -> [String: Any] {
+        switch provider {
+        case .anthropic:
+            return [
+                "model": "claude-3-sonnet-20240229",
+                "max_tokens": 4096,
+                "messages": [["role": "user", "content": prompt]]
+            ]
+        case .gemini:
+            return [
+                "contents": [["parts": [["text": prompt]]]]
+            ]
+        default:
+             // Standard OpenAI-like format
+             let model: String
+             switch provider {
+             case .openAI: model = "gpt-4-turbo-preview"
+             case .mistral: model = "mistral-large-latest"
+             case .kimi: model = "moonshot-v1-8k"
+             case .openRouter: model = "openai/gpt-3.5-turbo"
+             default: model = "default"
+             }
+             return [
+                "model": model,
+                "messages": [["role": "user", "content": prompt]]
+             ]
+        }
+    }
+
+    private static func parseResponse(data: Data, provider: AssistModelProvider) throws -> String {
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+
+        switch provider {
+        case .anthropic:
+            if let content = json?["content"] as? [[String: Any]], let text = content.first?["text"] as? String {
+                return text
+            }
+        case .gemini:
+            if let candidates = json?["candidates"] as? [[String: Any]],
+               let content = candidates.first?["content"] as? [String: Any],
+               let parts = content["parts"] as? [[String: Any]],
+               let text = parts.first?["text"] as? String {
+                return text
+            }
+        default:
+            if let choices = json?["choices"] as? [[String: Any]],
+               let message = choices.first?["message"] as? [String: Any],
+               let content = message["content"] as? String {
+                return content
+            }
+        }
+
+        throw NSError(domain: "AssistLLM", code: 500, userInfo: [NSLocalizedDescriptionKey: "Failed to parse response from \(provider.rawValue)"])
+    }
+}
+
 // MARK: - Core Protocols
 
 /// Protocol for all Assist tools.
@@ -201,6 +322,9 @@ public protocol AssistFileSystemProtocol {
     func moveFile(from: String, to: String) throws
     func copyFile(from: String, to: String) throws
     func exists(at path: String) -> Bool
+    func appendFile(at path: String, content: String) throws
+    func listDirectory(at path: String) throws -> [String]
+    func createDirectory(at path: String) throws
 }
 
 public protocol AssistGitManagerProtocol {
