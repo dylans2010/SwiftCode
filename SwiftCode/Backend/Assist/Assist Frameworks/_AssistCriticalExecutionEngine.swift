@@ -75,12 +75,12 @@ struct \( (path as NSString).lastPathComponent.replacingOccurrences(of: ".swift"
         let pbxPath = "SwiftCode.xcodeproj/project.pbxproj"
 
         // 1. Add to PBXFileReference
-        let fileRefEntry = "		\(fileId) /* \(fileName) */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = \"\(path)\"; sourceTree = \"<group>\"; };"
+        let fileRefEntry = "\t\t\(fileId) /* \(fileName) */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = \"\(path)\"; sourceTree = \"<group>\"; };"
         // macOS sed -i '' compatibility
         let addFileRefCmd = "sed -i '' '/\\/* Begin PBXFileReference section *\\//a\\\\\\n\(fileRefEntry)' \(pbxPath)"
 
         // 2. Add to PBXBuildFile
-        let buildFileEntry = "		\(buildFileId) /* \(fileName) in Sources */ = {isa = PBXBuildFile; fileRef = \(fileId) /* \(fileName) */; };"
+        let buildFileEntry = "\t\t\(buildFileId) /* \(fileName) in Sources */ = {isa = PBXBuildFile; fileRef = \(fileId) /* \(fileName) */; };"
         let addBuildFileCmd = "sed -i '' '/\\/* Begin PBXBuildFile section *\\//a\\\\\\n\(buildFileEntry)' \(pbxPath)"
 
         // 3. Add to Assist Group (ASBG0000000000000000001)
