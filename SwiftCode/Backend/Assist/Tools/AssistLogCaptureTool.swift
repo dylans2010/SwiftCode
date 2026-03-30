@@ -8,6 +8,16 @@ public struct AssistLogCaptureTool: AssistTool {
     public init() {}
 
     public func execute(input: [String: Any], context: AssistContext) async throws -> AssistToolResult {
-        return .success("Logs captured (Simulated)", data: ["logs": "No log data available."])
+        let snapshots = (try? AssistSnapshotFunctions.listSnapshots().prefix(10)) ?? []
+        let logLines = snapshots.map { "\($0.timestamp): \($0.message) [\($0.id)]" }
+        let memoryPreview = context.memory.retrieve(key: input["memoryKey"] as? String ?? "") ?? ""
+        var logs = logLines.joined(separator: "\n")
+        if !memoryPreview.isEmpty {
+            logs += "\nMemory: \(memoryPreview.prefix(500))"
+        }
+        if logs.isEmpty {
+            logs = "No logs found in snapshot history."
+        }
+        return .success("Logs captured", data: ["logs": logs])
     }
 }

@@ -8,6 +8,16 @@ public struct AssistUndoTool: AssistTool {
     public init() {}
 
     public func execute(input: [String: Any], context: AssistContext) async throws -> AssistToolResult {
-        return .success("Last action undone (Simulated)")
+        do {
+            let snapshots = try AssistSnapshotFunctions.listSnapshots()
+            guard snapshots.count >= 2 else {
+                return .failure("At least two snapshots are required to undo (current baseline + previous state).")
+            }
+            let previous = snapshots[1]
+            try AssistSnapshotFunctions.restoreSnapshot(id: previous.id, to: context.workspaceRoot)
+            return .success("Last action undone by restoring snapshot \(previous.id)", data: ["restored_snapshot": previous.id])
+        } catch {
+            return .failure("Undo failed: \(error.localizedDescription)")
+        }
     }
 }

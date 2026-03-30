@@ -8,6 +8,30 @@ public struct AssistDependencyGraphTool: AssistTool {
     public init() {}
 
     public func execute(input: [String: Any], context: AssistContext) async throws -> AssistToolResult {
-        return .success("Dependency graph generated (Simulated)", data: ["graph": "{}"])
+        let root = AssistToolingSupport.resolvePath(input["path"] as? String, workspaceRoot: context.workspaceRoot)
+        let files = AssistToolingSupport.enumeratedFiles(at: root, allowedExtensions: ["swift"], maxFileSize: 200_000)
+
+        var nodes = Set<String>()
+        var edges: [String] = []
+
+        let importRegex = try? NSRegularExpression(pattern: "^\\s*import\\s+([A-Za-z0-9_\.]+)", options: [.anchorsMatchLines])
+        for file in files {
+            guard let content = AssistToolingSupport.readText(file), let importRegex else { continue }
+            let source = AssistToolingSupport.relativePath(for: file, workspaceRoot: context.workspaceRoot)
+            nodes.insert(source)
+            let nsRange = NSRange(location: 0, length: content.utf16.count)
+            for match in importRegex.matches(in: content, options: [], range: nsRange) {
+                guard match.numberOfRanges > 1, let r = Range(match.range(at: 1), in: content) else { continue }
+                let module = String(content[r])
+                nodes.insert(module)
+                edges.append("\(source)->\(module)")
+            }
+        }
+
+        let graph = [
+            "nodes": nodes.sorted().joined(separator: ","),
+            "edges": edges.sorted().joined(separator: "\n")
+        ]
+        return .success("Dependency graph generated", data: graph)
     }
 }

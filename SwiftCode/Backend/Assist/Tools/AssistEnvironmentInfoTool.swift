@@ -8,6 +8,17 @@ public struct AssistEnvironmentInfoTool: AssistTool {
     public init() {}
 
     public func execute(input: [String: Any], context: AssistContext) async throws -> AssistToolResult {
-        return .success("Environment info retrieved (Simulated)", data: ["os": "iOS", "version": "17.0"])
+        let processInfo = ProcessInfo.processInfo
+        let locale = Locale.current.identifier
+        let tz = TimeZone.current.identifier
+        let env = [
+            "os": processInfo.operatingSystemVersionString,
+            "locale": locale,
+            "timezone": tz,
+            "cpu_count": "\(processInfo.processorCount)",
+            "physical_memory_bytes": "\(processInfo.physicalMemory)",
+            "workspace_root": context.workspaceRoot.path
+        ]
+        return .success("Environment info retrieved", data: env)
     }
 }
