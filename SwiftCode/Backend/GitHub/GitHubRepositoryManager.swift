@@ -102,6 +102,7 @@ final class GitHubRepositoryManager {
             .trimmingCharacters(in: .whitespacesAndNewlines)
             .replacingOccurrences(of: "https://github.com/", with: "")
             .replacingOccurrences(of: "http://github.com/", with: "")
+            .replacingOccurrences(of: "git@github.com:", with: "")
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
 
         let parts = cleaned.split(separator: "/", maxSplits: 2)

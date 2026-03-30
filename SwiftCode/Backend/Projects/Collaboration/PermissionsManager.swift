@@ -10,7 +10,8 @@ public struct PermissionEvent: Equatable {
 public enum CollaborationRole: String, Codable, CaseIterable {
     case owner
     case admin
-    case collaborator
+    case editor
+    case viewer
 }
 
 public struct FileLock: Identifiable, Codable, Equatable {
@@ -99,7 +100,7 @@ public final class PermissionsManager: ObservableObject {
             return .owner
         case .admin:
             return .makePreset(.fullAccess)
-        case .collaborator:
+        case .editor:
             var permission = TransferPermission.makePreset(.limitedEdit)
             permission.isCollaborative = true
             permission.versionControl.push = true
@@ -108,6 +109,8 @@ public final class PermissionsManager: ObservableObject {
             permission.versionControl.merge = true
             permission.versionControl.revert = true
             return permission
+        case .viewer:
+            return .makePreset(.readOnly)
         }
     }
 }

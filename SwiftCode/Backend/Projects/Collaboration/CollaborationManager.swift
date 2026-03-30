@@ -13,6 +13,7 @@ public struct CollaborationActivity: Identifiable, Codable, Equatable {
         case permissions
         case conflict
         case fileLock
+        case chat
     }
 
     public let id: UUID
@@ -48,6 +49,22 @@ public struct CollaborationNotificationItem: Identifiable, Codable, Equatable {
     }
 }
 
+public struct UserPresence: Identifiable, Codable, Equatable {
+    public let id: String
+    public var lastSeen: Date
+    public var currentFile: String?
+    public var cursorPosition: Int?
+    public var selectionRange: NSRange?
+
+    public init(id: String, lastSeen: Date = Date(), currentFile: String? = nil, cursorPosition: Int? = nil, selectionRange: NSRange? = nil) {
+        self.id = id
+        self.lastSeen = lastSeen
+        self.currentFile = currentFile
+        self.cursorPosition = cursorPosition
+        self.selectionRange = selectionRange
+    }
+}
+
 @MainActor
 public final class CollaborationManager: ObservableObject {
     public let project: Project
@@ -66,6 +83,7 @@ public final class CollaborationManager: ObservableObject {
     @Published public private(set) var notifications: [CollaborationNotificationItem] = []
     @Published public private(set) var pendingConflicts: [BranchConflict] = []
     @Published public private(set) var fileLocks: [FileLock] = []
+    @Published public private(set) var activeUsers: [UserPresence] = []
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -92,17 +110,19 @@ public final class CollaborationManager: ObservableObject {
         addActivity(actorID: creatorID, title: "Collaboration Enabled", detail: "Project collaboration workspace is ready.", kind: .permissions, notify: true)
         commits.setActiveBranch(branches.currentBranch.id)
         _ = workspaces.loadWorkspace(for: branches.currentBranch.id, actorID: creatorID)
+
+        startPresenceHeartbeat()
     }
 
     private func handleIncomingData(_ data: Data, from peerID: MCPeerID) {
-        guard let state = try? JSONDecoder().decode(ProjectState.self, from: data) else { return }
-
-        // Basic conflict detection: if incoming state has more activity, we adopt it.
-        // In a real system, we would perform more granular merging.
-        if state.activityLog.count > self.activityLog.count {
-            self.restoreStateFromObject(state)
-            saveState()
-            addActivity(actorID: peerID.displayName, title: "Synced From Peer", detail: "Project state updated to match \(peerID.displayName).", kind: .sync, notify: true)
+        if let state = try? JSONDecoder().decode(ProjectState.self, from: data) {
+            if state.activityLog.count > self.activityLog.count {
+                self.restoreStateFromObject(state)
+                saveState()
+                addActivity(actorID: peerID.displayName, title: "Synced From Peer", detail: "Project state updated to match \(peerID.displayName).", kind: .sync, notify: true)
+            }
+        } else if let presence = try? JSONDecoder().decode(UserPresence.self, from: data) {
+            updateUserPresence(presence)
         }
     }
 
@@ -217,7 +237,6 @@ public final class CollaborationManager: ObservableObject {
             addActivity(actorID: actorID, title: "Conflict Detected", detail: "\(conflict.filePath) requires resolution on \(branchName).", kind: .conflict, notify: true)
         }
 
-        // Generate data for P2P transfer
         let state = ProjectState(
             projectID: project.id,
             creatorID: creatorID,
@@ -279,6 +298,39 @@ public final class CollaborationManager: ObservableObject {
             notifications.insert(CollaborationNotificationItem(title: title, detail: detail), at: 0)
         }
         saveState()
+    }
+
+    // MARK: - Presence Management
+
+    public func broadcastPresence(currentFile: String? = nil, cursorPosition: Int? = nil, selectionRange: NSRange? = nil) {
+        let presence = UserPresence(id: creatorID, currentFile: currentFile, cursorPosition: cursorPosition, selectionRange: selectionRange)
+        updateUserPresence(presence)
+        if let data = try? JSONEncoder().encode(presence) {
+            PeerSessionManager.shared.sendDataToAll(data)
+        }
+    }
+
+    private func updateUserPresence(_ presence: UserPresence) {
+        if let index = activeUsers.firstIndex(where: { $0.id == presence.id }) {
+            activeUsers[index] = presence
+        } else {
+            activeUsers.append(presence)
+        }
+    }
+
+    private func startPresenceHeartbeat() {
+        Timer.publish(every: 5.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.broadcastPresence()
+                self?.cleanupInactiveUsers()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func cleanupInactiveUsers() {
+        let timeout: TimeInterval = 15.0
+        activeUsers.removeAll { Date().timeIntervalSince($0.lastSeen) > timeout && $0.id != creatorID }
     }
 
     // MARK: - Persistence
