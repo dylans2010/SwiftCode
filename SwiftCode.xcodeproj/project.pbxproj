@@ -159,6 +159,12 @@ CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */ = {isa
 		PRV000000000000000000001A /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PRV000000000000000000001B /* PullRequestView.swift */; };
 		DVV000000000000000000001A /* CollaborationDiffViewerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DVV000000000000000000001B /* CollaborationDiffViewerView.swift */; };
 		MMV000000000000000000001A /* MemberManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MMV000000000000000000001B /* MemberManagementView.swift */; };
+		ASB000000000000000000001A /* AssistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASB000000000000000000001 /* AssistModels.swift */; };
+		ASB000000000000000000002A /* AssistManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASB000000000000000000002 /* AssistManager.swift */; };
+		ASB000000000000000000003A /* AssistLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASB000000000000000000003 /* AssistLoop.swift */; };
+		ASV000000000000000000001A /* AssistMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASV000000000000000000001 /* AssistMainView.swift */; };
+		ASV000000000000000000002A /* AssistPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASV000000000000000000002 /* AssistPlanView.swift */; };
+		ASV000000000000000000003A /* AssistDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASV000000000000000000003 /* AssistDiffView.swift */; };
 RV0000000000000000000001A /* CodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = RV0000000000000000000001B /* CodeReviewView.swift */; };
 GH0000000000000000000001A /* GitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GH0000000000000000000001B /* GitHistoryView.swift */; };
 PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = PT0000000000000000000001B /* ProjectTemplateManager.swift */; };
