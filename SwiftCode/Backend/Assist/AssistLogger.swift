@@ -36,13 +36,6 @@ public final class AssistLogger: ObservableObject, AssistLoggerProtocol {
     }
 }
 
-public protocol AssistLoggerProtocol {
-    func info(_ message: String, toolId: String?)
-    func warning(_ message: String, toolId: String?)
-    func error(_ message: String, toolId: String?)
-    func debug(_ message: String, toolId: String?)
-}
-
 extension AssistLoggerProtocol {
     public func info(_ message: String) { info(message, toolId: nil) }
     public func warning(_ message: String) { warning(message, toolId: nil) }
