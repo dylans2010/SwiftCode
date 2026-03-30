@@ -486,6 +486,15 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		B78E1C6B1F9D5BA1C33BD3A2 /* AssistToolingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78E1C6B1F9D5BA1C33BD3A1 /* AssistToolingSupport.swift */; };
 		193E8E00276A4E0DB5E10C00 /* AssistValidateChangesTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16E783E443C4E4F9EEAB08B /* AssistValidateChangesTool.swift */; };
 		1183E990121D4FB49DDE1896 /* AssistSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A9A85E8474C1DA7571594 /* AssistSettingsView.swift */; };
+		ASBP0001BF /* AssistAgenticPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBP0001 /* AssistAgenticPrompt.swift */; };
+		ASBP0002BF /* TasksAIPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBP0002 /* TasksAIPlanner.swift */; };
+		ASVV0001BF /* AssistPlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASVV0001 /* AssistPlannerView.swift */; };
+		ASVV0002BF /* AssistUserTakeover.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASVV0002 /* AssistUserTakeover.swift */; };
+		ASFR0001BF /* _AssistCriticalAutonomousEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0001 /* _AssistCriticalAutonomousEngine.swift */; };
+		ASFR0002BF /* _AssistCriticalTaskOrchestrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0002 /* _AssistCriticalTaskOrchestrator.swift */; };
+		ASFR0003BF /* _AssistCriticalCodebaseAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0003 /* _AssistCriticalCodebaseAnalyzer.swift */; };
+		ASFR0004BF /* _AssistCriticalExecutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0004 /* _AssistCriticalExecutionEngine.swift */; };
+		ASFR0005BF /* _AssistCriticalValidationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0005 /* _AssistCriticalValidationEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -1001,6 +1010,15 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		B78E1C6B1F9D5BA1C33BD3A1 /* AssistToolingSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistToolingSupport.swift; sourceTree = SOURCE_ROOT; };
 		D16E783E443C4E4F9EEAB08B /* AssistValidateChangesTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistValidateChangesTool.swift; sourceTree = SOURCE_ROOT; };
 		3F7A9A85E8474C1DA7571594 /* AssistSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSettingsView.swift; sourceTree = "<group>"; };
+		ASBP0001 /* AssistAgenticPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/AssistAgenticPrompt.swift; sourceTree = SOURCE_ROOT; };
+		ASBP0002 /* TasksAIPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/TasksAIPlanner.swift; sourceTree = SOURCE_ROOT; };
+		ASVV0001 /* AssistPlannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Assist/AssistPlannerView.swift; sourceTree = SOURCE_ROOT; };
+		ASVV0002 /* AssistUserTakeover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Assist/AssistUserTakeover.swift; sourceTree = SOURCE_ROOT; };
+		ASFR0001 /* _AssistCriticalAutonomousEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalAutonomousEngine.swift"; sourceTree = SOURCE_ROOT; };
+		ASFR0002 /* _AssistCriticalTaskOrchestrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalTaskOrchestrator.swift"; sourceTree = SOURCE_ROOT; };
+		ASFR0003 /* _AssistCriticalCodebaseAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalCodebaseAnalyzer.swift"; sourceTree = SOURCE_ROOT; };
+		ASFR0004 /* _AssistCriticalExecutionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalExecutionEngine.swift"; sourceTree = SOURCE_ROOT; };
+		ASFR0005 /* _AssistCriticalValidationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalValidationEngine.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -1277,6 +1295,8 @@ sourceTree = "<group>";
 				ASV000000000000000000001 /* AssistMainView.swift */,
 				ASV000000000000000000002 /* AssistPlanView.swift */,
 				ASV000000000000000000003 /* AssistDiffView.swift */,
+				ASVV0001 /* AssistPlannerView.swift */,
+				ASVV0002 /* AssistUserTakeover.swift */,
 			);
 			path = Assist;
 			sourceTree = "<group>";
@@ -1718,12 +1738,27 @@ sourceTree = "<group>";
 			path = Models;
 			sourceTree = "<group>";
 		};
+		ASFRG0000000000000000001 /* Assist Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				ASFR0001 /* _AssistCriticalAutonomousEngine.swift */,
+				ASFR0002 /* _AssistCriticalTaskOrchestrator.swift */,
+				ASFR0003 /* _AssistCriticalCodebaseAnalyzer.swift */,
+				ASFR0004 /* _AssistCriticalExecutionEngine.swift */,
+				ASFR0005 /* _AssistCriticalValidationEngine.swift */,
+			);
+			path = "Assist Frameworks";
+			sourceTree = "<group>";
+		};
 		ASBG0000000000000000001 /* Assist */ = {
 			isa = PBXGroup;
 			children = (
+				ASFRG0000000000000000001 /* Assist Frameworks */,
 				ASBFG0000000000000000001 /* Functions */,
 				ASBTG0000000000000000001 /* Tools */,
 				ASBMG0000000000000000001 /* Models */,
+				ASBP0001 /* AssistAgenticPrompt.swift */,
+				ASBP0002 /* TasksAIPlanner.swift */,
 				8EF18552F63940CEAA60F518 /* AssistAgent.swift */,
 				C53E4D3A12194CB0ADE0E756 /* AssistToolRegistry.swift */,
 				DF8A997284694A50A7DB781A /* AssistExecutionEngine.swift */,
@@ -2512,6 +2547,15 @@ files = (
 				ASBT0005BF /* AssistTaskRunnerTool.swift in Sources */,
 				ASBM0001BF /* AssistSnapshotModels.swift in Sources */,
 				1183E990121D4FB49DDE1896 /* AssistSettingsView.swift in Sources */,
+				ASBP0001BF /* AssistAgenticPrompt.swift in Sources */,
+				ASBP0002BF /* TasksAIPlanner.swift in Sources */,
+				ASVV0001BF /* AssistPlannerView.swift in Sources */,
+				ASVV0002BF /* AssistUserTakeover.swift in Sources */,
+				ASFR0001BF /* _AssistCriticalAutonomousEngine.swift in Sources */,
+				ASFR0002BF /* _AssistCriticalTaskOrchestrator.swift in Sources */,
+				ASFR0003BF /* _AssistCriticalCodebaseAnalyzer.swift in Sources */,
+				ASFR0004BF /* _AssistCriticalExecutionEngine.swift in Sources */,
+				ASFR0005BF /* _AssistCriticalValidationEngine.swift in Sources */,
 				193E8E00276A4E0DB5E10C00 /* AssistValidateChangesTool.swift in Sources */,
 				47839397FCBD4DBFAE478946 /* AssistUndoTool.swift in Sources */,
 				B78E1C6B1F9D5BA1C33BD3A2 /* AssistToolingSupport.swift in Sources */,

@@ -21,6 +21,7 @@ public final class AssistExecutionEngine {
             await MainActor.run {
                 step.status = .running
                 plan.steps[i] = step
+                TasksAIPlanner.shared.updateStep(id: step.id, status: .running)
             }
 
             do {
@@ -34,6 +35,7 @@ public final class AssistExecutionEngine {
                     step.result = result
                     step.status = result.success ? .completed : .failed
                     plan.steps[i] = step
+                    TasksAIPlanner.shared.updateStep(id: step.id, status: step.status, result: result)
                 }
 
                 if !result.success {
@@ -54,7 +56,12 @@ public final class AssistExecutionEngine {
             }
         }
 
-        await MainActor.run { plan.status = .completed }
+        await MainActor.run {
+            plan.status = .completed
+            if TasksAIPlanner.shared.currentPlan?.id == plan.id {
+                TasksAIPlanner.shared.currentPlan?.status = .completed
+            }
+        }
         context.logger.info("Plan execution completed: \(plan.goal)")
     }
 }

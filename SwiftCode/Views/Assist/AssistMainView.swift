@@ -31,16 +31,7 @@ public struct AssistMainView: View {
                                     AssistChatBubble(message: message)
                                 }
 
-                                if let plan = manager.session.currentPlan {
-                                    AssistExecutionTimelineView(plan: plan)
-
-                                    // Display tool outputs safely
-                                    ForEach(plan.steps) { step in
-                                        if let result = step.result, result.success, let data = result.data {
-                                            ToolResultPreview(step: step, data: data)
-                                        }
-                                    }
-                                }
+                                AssistPlannerView()
 
                                 if let error = manager.lastError {
                                     AssistErrorBubble(error: error)
@@ -51,6 +42,22 @@ public struct AssistMainView: View {
                                 }
                             }
                             .padding()
+                            .blur(radius: manager.takeoverReason != nil ? 10 : 0)
+                            .overlay {
+                                if let reason = manager.takeoverReason {
+                                    AssistUserTakeover(
+                                        reason: reason,
+                                        onResume: {
+                                            manager.takeoverReason = nil
+                                            // Resume logic would go here, currently it just clears the UI block
+                                        },
+                                        onAbort: {
+                                            manager.takeoverReason = nil
+                                            manager.clearChat()
+                                        }
+                                    )
+                                }
+                            }
                             .id("Bottom")
                         }
                         .onChange(of: manager.messages.count, initial: false) { _, _ in
@@ -141,6 +148,20 @@ public struct AssistMainView: View {
 
     private var inputArea: some View {
         HStack(spacing: 12) {
+            Button {
+                expandPrompt()
+            } label: {
+                Image(systemName: "apple.intelligence")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .padding(8)
+                    .background(
+                        LinearGradient(colors: [.blue, .purple, .pink], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        in: Circle()
+                    )
+            }
+            .disabled(inputText.isEmpty || manager.isProcessing || isLoading)
+
             TextField("What should I build next?", text: $inputText, axis: .vertical)
                 .padding(12)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
@@ -169,6 +190,35 @@ public struct AssistMainView: View {
                 .foregroundStyle(inputText.isEmpty ? Color.secondary : Color.primary)
             }
             .disabled(inputText.isEmpty || manager.isProcessing || isLoading)
+        }
+    }
+
+    private func expandPrompt() {
+        let currentPrompt = inputText
+        Task {
+            await MainActor.run { isLoading = true }
+
+            let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
+            let provider = AssistModelProvider(rawValue: providerRawValue) ?? .openAI
+            let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
+
+            let prompt = """
+            You are an Apple Intelligence prompt expander.
+            Take the following vague engineering instruction and expand it into a detailed, executable, and technically precise prompt for an autonomous software agent.
+
+            Original Prompt: "\(currentPrompt)"
+
+            Expanded Prompt:
+            """
+
+            let response = await AssistLLMService.generateResponse(prompt: prompt, provider: provider, apiKey: apiKey)
+
+            await MainActor.run {
+                if response.success {
+                    inputText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+                isLoading = false
+            }
         }
     }
 }
