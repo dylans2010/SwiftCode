@@ -14,7 +14,7 @@ public struct AssistDependencyGraphTool: AssistTool {
         var nodes = Set<String>()
         var edges: [String] = []
 
-        let importRegex = try? NSRegularExpression(pattern: "^\\s*import\\s+([A-Za-z0-9_\.]+)", options: [.anchorsMatchLines])
+        let importRegex = try? NSRegularExpression(pattern: "^\\s*import\\s+([A-Za-z0-9_\\.]+)", options: [.anchorsMatchLines])
         for file in files {
             guard let content = AssistToolingSupport.readText(file), let importRegex else { continue }
             let source = AssistToolingSupport.relativePath(for: file, workspaceRoot: context.workspaceRoot)
