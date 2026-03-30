@@ -65,6 +65,7 @@ objects = {
 		MLXPKG00000000000000007 /* MLXOptimizers in Frameworks */ = {isa = PBXBuildFile; productRef = MLXPKG00000000000000006 /* MLXOptimizers */; };
 		MLXPKG00000000000000009 /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = MLXPKG00000000000000008 /* MLXRandom */; };
 		TT000000000000000000001A /* TestTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = TT000000000000000000001B /* TestTools.swift */; };
+		TSB000000000000000000001A /* TestCoverageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSB000000000000000000001 /* TestCoverageManager.swift */; };
 		TTV000000000000000000001A /* TestToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TTV000000000000000000001B /* TestToolsView.swift */; };
 AA000010000000000000001A /* SwiftCodeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000001B /* SwiftCodeApp.swift */; };
 AA000010000000000000002A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000010000000000000002B /* ContentView.swift */; };
@@ -320,6 +321,11 @@ CSV00000000000000000001A /* CodeSuggestionsView.swift in Sources */ = {isa = PBX
 AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AT000000000000000000012B /* AdvancedToolsSharedDesignSystem.swift */; };
 		ACR00000000000000000001A /* AgentCodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACR00000000000000000001B /* AgentCodeReviewManager.swift */; };
 		AICR0000000000000000001A /* AICodeReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AICR0000000000000000001B /* AICodeReviewView.swift */; };
+		CLB000000000000000000004A /* ActivityAuditManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB000000000000000000004 /* ActivityAuditManager.swift */; };
+		CLB000000000000000000005A /* CollaborationChatManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB000000000000000000005 /* CollaborationChatManager.swift */; };
+		CLB000000000000000000006A /* CollaborationNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB000000000000000000006 /* CollaborationNotificationManager.swift */; };
+		CLB000000000000000000007A /* CollaborationConflictResolutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB000000000000000000007 /* CollaborationConflictResolutionEngine.swift */; };
+		CLB000000000000000000008A /* OfflineSyncManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB000000000000000000008 /* OfflineSyncManager.swift */; };
 		CLB00000000000000000001A /* BranchManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000001B /* BranchManager.swift */; };
 		CLB00000000000000000002A /* CollaborationCodeReviewManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000002B /* CollaborationCodeReviewManager.swift */; };
 		CLB00000000000000000003A /* CollaborationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLB00000000000000000003B /* CollaborationManager.swift */; };
@@ -343,6 +349,13 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		CLV00000000000000000012A /* PushPullManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000012B /* PushPullManagerView.swift */; };
 		CLV00000000000000000013A /* PushPullView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000013B /* PushPullView.swift */; };
 		CLV00000000000000000014A /* BranchWorkspaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000014B /* BranchWorkspaceView.swift */; };
+		CLV000000000000000000016A /* CollaborationSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000016 /* CollaborationSidebarView.swift */; };
+		CLV000000000000000000017A /* CollaborationBranchGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000017 /* CollaborationBranchGraphView.swift */; };
+		CLV000000000000000000018A /* CollaborationConflictResolverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000018 /* CollaborationConflictResolverView.swift */; };
+		CLV000000000000000000019A /* CollaborationChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000019 /* CollaborationChatView.swift */; };
+		CLV000000000000000000020A /* CollaborationAuditLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000020 /* CollaborationAuditLogView.swift */; };
+		CLV000000000000000000021A /* CollaborationNotificationCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000021 /* CollaborationNotificationCenterView.swift */; };
+		CLV000000000000000000022A /* CollaborationFilePresenceOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000022 /* CollaborationFilePresenceOverlay.swift */; };
 		CLV00000000000000000015A /* CollaborationFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000015B /* CollaborationFeedbackView.swift */; };
 /* End PBXBuildFile section */
 
@@ -523,6 +536,7 @@ AA0000100000000000000PFR /* ProjectFilesExtracter.swift */ = {isa = PBXFileRefer
 		DEP000000000000000000005 /* VercelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VercelManager.swift; sourceTree = "<group>"; };
 		TT000000000000000000001B /* TestTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestTools.swift; sourceTree = "<group>"; };
 		TTV000000000000000000001B /* TestToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TestToolsView.swift; sourceTree = "<group>"; };
+		TSB000000000000000000001 /* TestCoverageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/TestCoverageManager.swift; sourceTree = SOURCE_ROOT; };
 CB000000000000000000001B /* build-project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = "build-project.yml"; sourceTree = "<group>"; };
 		AA0000100000000000000F8B /* ModernGroupBoxStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernGroupBoxStyle.swift; sourceTree = "<group>"; };
 		AA0000100000000000000F6B /* ChooseModelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChooseModelView.swift; sourceTree = "<group>"; };
@@ -579,6 +593,21 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		C881F28FC23948CE91255D64 /* DeveloperDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeveloperDashboardView.swift; sourceTree = "<group>"; };
 		117AAF2E96B14FE6B66351C3 /* VerboseLoggingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerboseLoggingView.swift; sourceTree = "<group>"; };
 		1776C20AD9EE4D5E85BFE146 /* NetworkInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkInspectorView.swift; sourceTree = "<group>"; };
+		DEV000000000000000000001 /* PerformanceMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/PerformanceMonitor/PerformanceMonitorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000002 /* APILatencyTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/APILatencyTrackerView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000003 /* BackgroundTaskMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/BackgroundTaskMonitorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000004 /* RealtimeMetricsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/RealtimeMetricsDashboardView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000005 /* StateInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/StateInspectorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000006 /* CacheInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/CacheInspectorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000007 /* DatabaseInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/DatabaseInspectorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000008 /* DependencyHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/DependencyHealthView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000009 /* ErrorFrequencyTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/ErrorFrequencyTrackerView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000010 /* MemoryLeakDetectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/MemoryLeakDetectionView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000011 /* BuildDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/BuildDiagnosticsView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000012 /* DebugOverlaysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/DebugOverlaysView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000013 /* EnvironmentSwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/EnvironmentSwitcherView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000014 /* ConsoleCommandRunnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/ConsoleCommandRunnerView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000015 /* PermissionsCheckerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/PermissionsCheckerView.swift; sourceTree = SOURCE_ROOT; };
 		A9B206E7970E4D5FAE89F1B9 /* APIInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIInspectorView.swift; sourceTree = "<group>"; };
 		B4C94C0630A849DCBD8B2D49 /* CrashDebuggerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashDebuggerView.swift; sourceTree = "<group>"; };
 		B2627ECC0E9F4C5C8AAF7E3F /* LogConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogConsoleView.swift; sourceTree = "<group>"; };
@@ -606,6 +635,40 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		190114FD0FC84A288C58C17B /* PluginAgentRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PluginAgentRequest.swift"; path = "SwiftCode/Backend/Agent New/AgentAPI/PluginAgentRequest.swift"; sourceTree = SOURCE_ROOT; };
 		AD24D5D20CA249E99A39F9E6 /* PluginAgentResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "PluginAgentResponse.swift"; path = "SwiftCode/Backend/Agent New/AgentAPI/PluginAgentResponse.swift"; sourceTree = SOURCE_ROOT; };
 		6C29B5806AEE4256885530A8 /* SwiftCodeUseAgentService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "SwiftCodeUseAgentService.swift"; path = "SwiftCode/Backend/Agent New/AgentAPI/SwiftCodeUseAgentService.swift"; sourceTree = SOURCE_ROOT; };
+		ASB000000000000000000001 /* AssistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/AssistModels.swift; sourceTree = SOURCE_ROOT; };
+		ASB000000000000000000002 /* AssistManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/AssistManager.swift; sourceTree = SOURCE_ROOT; };
+		ASB000000000000000000003 /* AssistLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/AssistLoop.swift; sourceTree = SOURCE_ROOT; };
+		ASV000000000000000000001 /* AssistMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Assist/AssistMainView.swift; sourceTree = SOURCE_ROOT; };
+		ASV000000000000000000002 /* AssistPlanView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Assist/AssistPlanView.swift; sourceTree = SOURCE_ROOT; };
+		ASV000000000000000000003 /* AssistDiffView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Assist/AssistDiffView.swift; sourceTree = SOURCE_ROOT; };
+		CLB000000000000000000004 /* ActivityAuditManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/ActivityAuditManager.swift; sourceTree = SOURCE_ROOT; };
+		CLB000000000000000000005 /* CollaborationChatManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/CollaborationChatManager.swift; sourceTree = SOURCE_ROOT; };
+		CLB000000000000000000006 /* CollaborationNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/CollaborationNotificationManager.swift; sourceTree = SOURCE_ROOT; };
+		CLB000000000000000000007 /* CollaborationConflictResolutionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/CollaborationConflictResolutionEngine.swift; sourceTree = SOURCE_ROOT; };
+		CLB000000000000000000008 /* OfflineSyncManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Projects/Collaboration/OfflineSyncManager.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000016 /* CollaborationSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationSidebarView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000017 /* CollaborationBranchGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationBranchGraphView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000018 /* CollaborationConflictResolverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationConflictResolverView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000019 /* CollaborationChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationChatView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000020 /* CollaborationAuditLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationAuditLogView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000021 /* CollaborationNotificationCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationNotificationCenterView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000022 /* CollaborationFilePresenceOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationFilePresenceOverlay.swift; sourceTree = SOURCE_ROOT; };
+		DEB000000000000000000001 /* DebugToolsRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Developer/DebugToolsRegistry.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000001 /* PerformanceMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/PerformanceMonitor/PerformanceMonitorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000002 /* APILatencyTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/APILatencyTrackerView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000003 /* BackgroundTaskMonitorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/BackgroundTaskMonitorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000004 /* RealtimeMetricsDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/RealtimeMetricsDashboardView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000005 /* StateInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/StateInspectorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000006 /* CacheInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/CacheInspectorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000007 /* DatabaseInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/DatabaseInspectorView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000008 /* DependencyHealthView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/DependencyHealthView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000009 /* ErrorFrequencyTrackerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/ErrorFrequencyTrackerView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000010 /* MemoryLeakDetectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/MemoryLeakDetectionView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000011 /* BuildDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/BuildDiagnosticsView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000012 /* DebugOverlaysView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/DebugOverlaysView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000013 /* EnvironmentSwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/EnvironmentSwitcherView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000014 /* ConsoleCommandRunnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/ConsoleCommandRunnerView.swift; sourceTree = SOURCE_ROOT; };
+		DEV000000000000000000015 /* PermissionsCheckerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Developer/PermissionsCheckerView.swift; sourceTree = SOURCE_ROOT; };
 		B1BDC6E8DF504CDE979DB510 /* AgentExecutionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentExecutionState.swift"; path = "SwiftCode/Backend/Agent New/AgentExecutionState.swift"; sourceTree = SOURCE_ROOT; };
 		BC1F00011C044D14A9EBA6FC /* ListFilesTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "ListFilesTool.swift"; path = "SwiftCode/Backend/Agent New/ListFilesTool.swift"; sourceTree = SOURCE_ROOT; };
 		23AD9F90D6A648D988920A37 /* AgentLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = "AgentLogger.swift"; path = "SwiftCode/Backend/Agent New/AgentLogger.swift"; sourceTree = SOURCE_ROOT; };
@@ -678,6 +741,13 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		CLV00000000000000000012B /* PushPullManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/PushPullManagerView.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000013B /* PushPullView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/PushPullView.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000014B /* BranchWorkspaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/BranchWorkspaceView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000016 /* CollaborationSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationSidebarView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000017 /* CollaborationBranchGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationBranchGraphView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000018 /* CollaborationConflictResolverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationConflictResolverView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000019 /* CollaborationChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationChatView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000020 /* CollaborationAuditLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationAuditLogView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000021 /* CollaborationNotificationCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationNotificationCenterView.swift; sourceTree = SOURCE_ROOT; };
+		CLV000000000000000000022 /* CollaborationFilePresenceOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationFilePresenceOverlay.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000015B /* CollaborationFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationFeedbackView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -949,9 +1019,20 @@ children = (
 path = Services;
 sourceTree = "<group>";
 };
+		ASVG0000000000000000001 /* Assist */ = {
+			isa = PBXGroup;
+			children = (
+				ASV000000000000000000001 /* AssistMainView.swift */,
+				ASV000000000000000000002 /* AssistPlanView.swift */,
+				ASV000000000000000000003 /* AssistDiffView.swift */,
+			);
+			path = Assist;
+			sourceTree = "<group>";
+		};
 AA000010000000000000040F /* Views */ = {
 isa = PBXGroup;
 children = (
+				ASVG0000000000000000001 /* Assist */,
 				A7ECF79906A849BA05852C21 /* Gists */,
 				B47A794D648B1018580D72CD /* Gists */,
 				AA000010000000000000041F /* Dashboard */,
@@ -1362,9 +1443,22 @@ children = (
 			);
 sourceTree = "<group>";
 };
+		ASBG0000000000000000001 /* Assist */ = {
+			isa = PBXGroup;
+			children = (
+				ASB000000000000000000001 /* AssistModels.swift */,
+				ASB000000000000000000002 /* AssistManager.swift */,
+				ASB000000000000000000003 /* AssistLoop.swift */,
+			);
+			path = Assist;
+			sourceTree = "<group>";
+		};
 BE000000000000000000001F /* Backend */ = {
 isa = PBXGroup;
 children = (
+				ASBG0000000000000000001 /* Assist */,
+				TSB000000000000000000001 /* TestCoverageManager.swift */,
+				DEB000000000000000000001 /* DebugToolsRegistry.swift */,
 				TRPG0000000000000000001 /* Projects */,
 				ODIG0000000000000000001 /* On Device Intelligence */,
 				AGNG0000000000000000001 /* Agent New */,
@@ -1556,6 +1650,21 @@ DEP000000000000000000101 /* Deployments */ = {
 		60A3A882CDA04962B795A12D /* NetworkInspector */ = {
 			isa = PBXGroup;
 			children = (
+				DEV000000000000000000001 /* PerformanceMonitorView.swift */,
+				DEV000000000000000000002 /* APILatencyTrackerView.swift */,
+				DEV000000000000000000003 /* BackgroundTaskMonitorView.swift */,
+				DEV000000000000000000004 /* RealtimeMetricsDashboardView.swift */,
+				DEV000000000000000000005 /* StateInspectorView.swift */,
+				DEV000000000000000000006 /* CacheInspectorView.swift */,
+				DEV000000000000000000007 /* DatabaseInspectorView.swift */,
+				DEV000000000000000000008 /* DependencyHealthView.swift */,
+				DEV000000000000000000009 /* ErrorFrequencyTrackerView.swift */,
+				DEV000000000000000000010 /* MemoryLeakDetectionView.swift */,
+				DEV000000000000000000011 /* BuildDiagnosticsView.swift */,
+				DEV000000000000000000012 /* DebugOverlaysView.swift */,
+				DEV000000000000000000013 /* EnvironmentSwitcherView.swift */,
+				DEV000000000000000000014 /* ConsoleCommandRunnerView.swift */,
+				DEV000000000000000000015 /* PermissionsCheckerView.swift */,
 				1776C20AD9EE4D5E85BFE146 /* NetworkInspectorView.swift */,
 			);
 			path = NetworkInspector;
@@ -1879,6 +1988,13 @@ sourceTree = "<group>";
 CLVG0000000000000000001 /* Collaboration */ = {
 isa = PBXGroup;
 children = (
+				CLV000000000000000000016 /* CollaborationSidebarView.swift */,
+				CLV000000000000000000017 /* CollaborationBranchGraphView.swift */,
+				CLV000000000000000000018 /* CollaborationConflictResolverView.swift */,
+				CLV000000000000000000019 /* CollaborationChatView.swift */,
+				CLV000000000000000000020 /* CollaborationAuditLogView.swift */,
+				CLV000000000000000000021 /* CollaborationNotificationCenterView.swift */,
+				CLV000000000000000000022 /* CollaborationFilePresenceOverlay.swift */,
 				CLV00000000000000000001B /* ActivityLogView.swift */,
 				CLV00000000000000000002B /* BranchGraphView.swift */,
 				CLV00000000000000000003B /* CollaborationBranchManagementView.swift */,
@@ -1904,6 +2020,11 @@ sourceTree = "<group>";
 CLBG0000000000000000001 /* Collaboration */ = {
 isa = PBXGroup;
 children = (
+		CLB000000000000000000004 /* ActivityAuditManager.swift */,
+		CLB000000000000000000005 /* CollaborationChatManager.swift */,
+		CLB000000000000000000006 /* CollaborationNotificationManager.swift */,
+		CLB000000000000000000007 /* CollaborationConflictResolutionEngine.swift */,
+		CLB000000000000000000008 /* OfflineSyncManager.swift */,
 				CLB00000000000000000001B /* BranchManager.swift */,
 				CLB00000000000000000002B /* CollaborationCodeReviewManager.swift */,
 				CLB00000000000000000003B /* CollaborationManager.swift */,
@@ -2252,6 +2373,7 @@ files = (
 				8F59BBB2AB834D09A602D4DB /* DeveloperDashboardView.swift in Sources */,
 					55692774D3694350B609B803 /* FeatureFlags.swift in Sources */,
 					2EC2F9D75DE64A1FB30D011F /* InternalLoggingManager.swift in Sources */,
+					DEB000000000000000000001A /* DebugToolsRegistry.swift in Sources */,
 					C48CC734575E44B1BD920D2C /* VerboseLoggingView.swift in Sources */,
 					C815E4364BE64EDA803817E7 /* NetworkInspectorView.swift in Sources */,
 					F94F6063217746B798ED5D35 /* APIInspectorView.swift in Sources */,
@@ -2279,6 +2401,40 @@ files = (
 				B5C29EAA7AC44639AADC3902 /* PluginAgentResponse.swift in Sources */,
 				4126E4562EC44461A76CFA38 /* SwiftCodeUseAgentService.swift in Sources */,
 				AD89989EF990494380185AD5 /* AgentExecutionState.swift in Sources */,
+				ASB000000000000000000001A /* AssistModels.swift in Sources */,
+				ASB000000000000000000002A /* AssistManager.swift in Sources */,
+				ASB000000000000000000003A /* AssistLoop.swift in Sources */,
+				ASV000000000000000000001A /* AssistMainView.swift in Sources */,
+				ASV000000000000000000002A /* AssistPlanView.swift in Sources */,
+				ASV000000000000000000003A /* AssistDiffView.swift in Sources */,
+				CLB000000000000000000004A /* ActivityAuditManager.swift in Sources */,
+				CLB000000000000000000005A /* CollaborationChatManager.swift in Sources */,
+				CLB000000000000000000006A /* CollaborationNotificationManager.swift in Sources */,
+				CLB000000000000000000007A /* CollaborationConflictResolutionEngine.swift in Sources */,
+				CLB000000000000000000008A /* OfflineSyncManager.swift in Sources */,
+				CLV000000000000000000016A /* CollaborationSidebarView.swift in Sources */,
+				CLV000000000000000000017A /* CollaborationBranchGraphView.swift in Sources */,
+				CLV000000000000000000018A /* CollaborationConflictResolverView.swift in Sources */,
+				CLV000000000000000000019A /* CollaborationChatView.swift in Sources */,
+				CLV000000000000000000020A /* CollaborationAuditLogView.swift in Sources */,
+				CLV000000000000000000021A /* CollaborationNotificationCenterView.swift in Sources */,
+				CLV000000000000000000022A /* CollaborationFilePresenceOverlay.swift in Sources */,
+				DEB000000000000000000001A /* DebugToolsRegistry.swift in Sources */,
+				DEV000000000000000000002A /* APILatencyTrackerView.swift in Sources */,
+				DEV000000000000000000003A /* BackgroundTaskMonitorView.swift in Sources */,
+				DEV000000000000000000004A /* RealtimeMetricsDashboardView.swift in Sources */,
+				DEV000000000000000000005A /* StateInspectorView.swift in Sources */,
+				DEV000000000000000000006A /* CacheInspectorView.swift in Sources */,
+				DEV000000000000000000007A /* DatabaseInspectorView.swift in Sources */,
+				DEV000000000000000000008A /* DependencyHealthView.swift in Sources */,
+				DEV000000000000000000009A /* ErrorFrequencyTrackerView.swift in Sources */,
+				DEV000000000000000000010A /* MemoryLeakDetectionView.swift in Sources */,
+				DEV000000000000000000011A /* BuildDiagnosticsView.swift in Sources */,
+				DEV000000000000000000012A /* DebugOverlaysView.swift in Sources */,
+				DEV000000000000000000013A /* EnvironmentSwitcherView.swift in Sources */,
+				DEV000000000000000000014A /* ConsoleCommandRunnerView.swift in Sources */,
+				DEV000000000000000000015A /* PermissionsCheckerView.swift in Sources */,
+				TSB000000000000000000001A /* TestCoverageManager.swift in Sources */,
 				BC1F0000214D489ABFAC44DB /* ListFilesTool.swift in Sources */,
 				4F57DD2F77FB464CA2DAC210 /* AgentLogger.swift in Sources */,
 				3EF8C02A214D489ABFAC44DB /* AgentLoop.swift in Sources */,

@@ -661,8 +661,8 @@ struct ProjectsDashboardView: View {
             var project = try projectManager.createProject(name: name)
             // Link project-specific GitHub repo if provided (overrides global setting)
             if !repoInput.isEmpty {
-                let normalized = repoInput
-                    .replacingOccurrences(of: "https://github.com/", with: "")
+                // Keep the full URL or owner/repo as provided, but trim whitespace and slashes
+                let normalized = repoInput.trimmingCharacters(in: .whitespacesAndNewlines)
                     .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
                 if let idx = projectManager.projects.firstIndex(where: { $0.id == project.id }) {
                     projectManager.projects[idx].githubRepo = normalized
