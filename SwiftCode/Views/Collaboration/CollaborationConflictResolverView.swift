@@ -36,7 +36,7 @@ public struct CollaborationConflictResolverView: View {
     private var conflictListView: some View {
         ScrollView {
             VStack(spacing: 20) {
-                ForEach(manager.pendingConflicts) { conflict in
+                ForEach(self.manager.pendingConflicts, id: \.id) { conflict in
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Image(systemName: "exclamationmark.triangle.fill")
@@ -52,17 +52,17 @@ public struct CollaborationConflictResolverView: View {
 
                         // Diff Preview
                         HStack(spacing: 12) {
-                            diffCard(title: "Current", content: conflict.currentContent, color: .blue)
-                            diffCard(title: "Incoming", content: conflict.incomingContent, color: .orange)
+                            diffCard(title: "Local", content: conflict.localChange, color: .blue)
+                            diffCard(title: "Remote", content: conflict.remoteChange, color: .orange)
                         }
 
                         // Resolution Actions
                         VStack(spacing: 10) {
                             resolutionButton(title: "Accept Current", icon: "arrow.uturn.backward", color: .blue) {
-                                manager.resolveConflict(conflict.id, using: .useCurrent, actorID: actorID)
+                                self.manager.resolveConflict(conflict.id, using: .useCurrent, actorID: self.actorID)
                             }
                             resolutionButton(title: "Accept Incoming", icon: "arrow.uturn.forward", color: .orange) {
-                                manager.resolveConflict(conflict.id, using: .useIncoming, actorID: actorID)
+                                self.manager.resolveConflict(conflict.id, using: .useIncoming, actorID: self.actorID)
                             }
                         }
                     }

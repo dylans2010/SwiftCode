@@ -336,55 +336,55 @@ struct ProjectWorkspaceView: View {
 
     private func openSheet(for destination: ToolbarActionManager.SheetDestination) {
         if destination.isPro && !EntitlementManager.shared.proAccess {
-            showPaywall = true
+            self.showPaywall = true
             return
         }
 
         switch destination {
-        case .fileNavigator: showNavigatorSheet = true
-        case .aiAgent: showAISheet = true
-        case .buildStatus: showBuildStatus = true
-        case .gitHub: showGitHubSheet = true
-        case .codeSearch: showCodeSearch = true
-        case .errorsPanel: showErrorsPanel = true
-        case .dependencyManager: showDependencyManager = true
-        case .commandPalette: showCommandPalette = true
-        case .goToLine: showGoToLine = true
-        case .symbolNavigator: showSymbolNavigator = true
-        case .diffViewer: showDiffViewer = true
-        case .toolbarCustomization: showToolbarCustomization = true
-        case .projectSettings: showProjectSettings = true
-        case .buildLogs: showBuildLogs = true
-        case .minimapSettings: showMinimapSettings = true
-        case .sfSymbolsBrowser: showSFSymbolsBrowser = true
-        case .settings: showSettingsSheet = true
-        case .terminal: showTerminal = true
-        case .codeReview: showCodeReview = true
-        case .gitHistory: showGitHistory = true
-        case .filePreview: showFilePreview = true
-        case .gitHubIssues: showGitHubIssues = true
-        case .complexityAnalyzer: showComplexityAnalyzer = true
-        case .symbolOutline: showSymbolOutline = true
-        case .localSimulation: showLocalSimulation = true
-        case .pluginManager: showPluginManager = true
-        case .searchDocumentation: showSearchDocumentation = true
-        case .snippetsLibrary: showSnippetsLibrary = true
-        case .codeRefactoring: showCodeRefactoring = true
-        case .errorDiagnostics: showErrorDiagnostics = true
-        case .extensionMarketplace: showExtensionMarketplace = true
-        case .codeIntelligence: showCodeIntelligence = true
-        case .crashLogAnalyzer: showCrashLogAnalyzer = true
-        case .projectDependencyGraph: showProjectDependencyGraph = true
-        case .symbolIndex: showSymbolIndex = true
-        case .codeMetrics: showCodeMetrics = true
-        case .documentationBrowser: showDocumentationBrowser = true
-        case .workspaceProfiles: showWorkspaceProfiles = true
-        case .assetManager: showAssetManager = true
-        case .debugTools: showDebugTools = true
-        case .deployments: showDeployments = true
-        case .testTools: showTestTools = true
-        case .collaboration: showCollaboration = true
-        case .gistManager: showGistManager = true
+        case .fileNavigator: self.showNavigatorSheet = true
+        case .aiAgent: self.showAISheet = true
+        case .buildStatus: self.showBuildStatus = true
+        case .gitHub: self.showGitHubSheet = true
+        case .codeSearch: self.showCodeSearch = true
+        case .errorsPanel: self.showErrorsPanel = true
+        case .dependencyManager: self.showDependencyManager = true
+        case .commandPalette: self.showCommandPalette = true
+        case .goToLine: self.showGoToLine = true
+        case .symbolNavigator: self.showSymbolNavigator = true
+        case .diffViewer: self.showDiffViewer = true
+        case .toolbarCustomization: self.showToolbarCustomization = true
+        case .projectSettings: self.showProjectSettings = true
+        case .buildLogs: self.showBuildLogs = true
+        case .minimapSettings: self.showMinimapSettings = true
+        case .sfSymbolsBrowser: self.showSFSymbolsBrowser = true
+        case .settings: self.showSettingsSheet = true
+        case .terminal: self.showTerminal = true
+        case .codeReview: self.showCodeReview = true
+        case .gitHistory: self.showGitHistory = true
+        case .filePreview: self.showFilePreview = true
+        case .gitHubIssues: self.showGitHubIssues = true
+        case .complexityAnalyzer: self.showComplexityAnalyzer = true
+        case .symbolOutline: self.showSymbolOutline = true
+        case .localSimulation: self.showLocalSimulation = true
+        case .pluginManager: self.showPluginManager = true
+        case .searchDocumentation: self.showSearchDocumentation = true
+        case .snippetsLibrary: self.showSnippetsLibrary = true
+        case .codeRefactoring: self.showCodeRefactoring = true
+        case .errorDiagnostics: self.showErrorDiagnostics = true
+        case .extensionMarketplace: self.showExtensionMarketplace = true
+        case .codeIntelligence: self.showCodeIntelligence = true
+        case .crashLogAnalyzer: self.showCrashLogAnalyzer = true
+        case .projectDependencyGraph: self.showProjectDependencyGraph = true
+        case .symbolIndex: self.showSymbolIndex = true
+        case .codeMetrics: self.showCodeMetrics = true
+        case .documentationBrowser: self.showDocumentationBrowser = true
+        case .workspaceProfiles: self.showWorkspaceProfiles = true
+        case .assetManager: self.showAssetManager = true
+        case .debugTools: self.showDebugTools = true
+        case .deployments: self.showDeployments = true
+        case .testTools: self.showTestTools = true
+        case .collaboration: self.showCollaboration = true
+        case .gistManager: self.showGistManager = true
         }
     }
 
@@ -392,20 +392,20 @@ struct ProjectWorkspaceView: View {
 
     private func handleCommandAction(_ action: CommandPaletteView.CommandAction) {
         switch action {
-        case .createFile, .createFolder: showNavigatorSheet = true
-        case .searchProject: showCodeSearch = true
-        case .runAgent: showAISheet = true
-        case .installDependency, .openDependencies: showDependencyManager = true
-        case .openSettings: showSettingsSheet = true
-        case .runBuild: showBuildStatus = true
-        case .goToLine: showGoToLine = true
-        case .openSymbolNav: showSymbolNavigator = true
-        case .openDiffViewer: showDiffViewer = true
-        case .openErrors: showErrorsPanel = true
-        case .openBuildLogs: showBuildLogs = true
-        case .customizeToolbar: showToolbarCustomization = true
-        case .openProjectSettings: showProjectSettings = true
-        case .openMinimap: showMinimapSettings = true
+        case .createFile, .createFolder: self.showNavigatorSheet = true
+        case .searchProject: self.showCodeSearch = true
+        case .runAgent: self.showAISheet = true
+        case .installDependency, .openDependencies: self.showDependencyManager = true
+        case .openSettings: self.showSettingsSheet = true
+        case .runBuild: self.showBuildStatus = true
+        case .goToLine: self.showGoToLine = true
+        case .openSymbolNav: self.showSymbolNavigator = true
+        case .openDiffViewer: self.showDiffViewer = true
+        case .openErrors: self.showErrorsPanel = true
+        case .openBuildLogs: self.showBuildLogs = true
+        case .customizeToolbar: self.showToolbarCustomization = true
+        case .openProjectSettings: self.showProjectSettings = true
+        case .openMinimap: self.showMinimapSettings = true
         }
     }
 
