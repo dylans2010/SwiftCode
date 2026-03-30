@@ -13,6 +13,10 @@ public struct CollaborationActivity: Identifiable, Codable, Equatable {
         case permissions
         case conflict
         case fileLock
+        case chat
+        case notification
+        case presence
+        case pullRequestReview
     }
 
     public let id: UUID
@@ -29,6 +33,65 @@ public struct CollaborationActivity: Identifiable, Codable, Equatable {
         self.title = title
         self.detail = detail
         self.kind = kind
+    }
+}
+
+
+
+public struct CollaborationPresence: Identifiable, Codable, Equatable {
+    public let id: UUID
+    public var userID: String
+    public var filePath: String
+    public var cursorLine: Int
+    public var selection: ClosedRange<Int>?
+    public var isEditing: Bool
+    public var updatedAt: Date
+
+    public init(userID: String, filePath: String, cursorLine: Int = 1, selection: ClosedRange<Int>? = nil, isEditing: Bool = false) {
+        self.id = UUID()
+        self.userID = userID
+        self.filePath = filePath
+        self.cursorLine = cursorLine
+        self.selection = selection
+        self.isEditing = isEditing
+        self.updatedAt = Date()
+    }
+}
+
+public struct CollaborationChatMessage: Identifiable, Codable, Equatable {
+    public enum Channel: String, Codable, CaseIterable { case general, file, pullRequest }
+    public let id: UUID
+    public let channel: Channel
+    public let scopeID: String
+    public let authorID: String
+    public let text: String
+    public let codeSnippet: String?
+    public let timestamp: Date
+
+    public init(channel: Channel, scopeID: String, authorID: String, text: String, codeSnippet: String? = nil) {
+        self.id = UUID()
+        self.channel = channel
+        self.scopeID = scopeID
+        self.authorID = authorID
+        self.text = text
+        self.codeSnippet = codeSnippet
+        self.timestamp = Date()
+    }
+}
+
+public struct CollaborationQueuedChange: Identifiable, Codable, Equatable {
+    public let id: UUID
+    public let actorID: String
+    public let path: String
+    public let diff: String
+    public let timestamp: Date
+
+    public init(actorID: String, path: String, diff: String) {
+        self.id = UUID()
+        self.actorID = actorID
+        self.path = path
+        self.diff = diff
+        self.timestamp = Date()
     }
 }
 
@@ -66,6 +129,10 @@ public final class CollaborationManager: ObservableObject {
     @Published public private(set) var notifications: [CollaborationNotificationItem] = []
     @Published public private(set) var pendingConflicts: [BranchConflict] = []
     @Published public private(set) var fileLocks: [FileLock] = []
+    @Published public private(set) var presence: [CollaborationPresence] = []
+    @Published public private(set) var chatMessages: [CollaborationChatMessage] = []
+    @Published public private(set) var offlineQueue: [CollaborationQueuedChange] = []
+    @Published public var isOfflineMode = false
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -179,8 +246,59 @@ public final class CollaborationManager: ObservableObject {
             .store(in: &cancellables)
     }
 
+
+    public func updatePresence(userID: String, filePath: String, cursorLine: Int, selection: ClosedRange<Int>?, isEditing: Bool) {
+        if let idx = presence.firstIndex(where: { $0.userID == userID && $0.filePath == filePath }) {
+            presence[idx].cursorLine = cursorLine
+            presence[idx].selection = selection
+            presence[idx].isEditing = isEditing
+            presence[idx].updatedAt = Date()
+        } else {
+            presence.append(CollaborationPresence(userID: userID, filePath: filePath, cursorLine: cursorLine, selection: selection, isEditing: isEditing))
+        }
+        addActivity(actorID: userID, title: "Presence Updated", detail: "\(userID) on \(filePath)", kind: .presence, notify: false)
+    }
+
+    public func sendChat(channel: CollaborationChatMessage.Channel, scopeID: String, authorID: String, text: String, codeSnippet: String? = nil) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let message = CollaborationChatMessage(channel: channel, scopeID: scopeID, authorID: authorID, text: trimmed, codeSnippet: codeSnippet)
+        chatMessages.insert(message, at: 0)
+        if trimmed.contains("@") {
+            notifications.insert(CollaborationNotificationItem(title: "Mentioned in chat", detail: trimmed), at: 0)
+        }
+        addActivity(actorID: authorID, title: "Chat Message", detail: trimmed, kind: .chat, notify: true)
+    }
+
+    public func queueOfflineChange(actorID: String, path: String, diff: String) {
+        offlineQueue.append(CollaborationQueuedChange(actorID: actorID, path: path, diff: diff))
+    }
+
+    public func flushOfflineQueue() {
+        guard !isOfflineMode else { return }
+        for change in offlineQueue {
+            commits.updateWorkingChange(path: change.path, diff: change.diff, kind: .modified, authorID: change.actorID, branchID: branches.currentBranch.id)
+            commits.stage(path: change.path, diff: change.diff, authorID: change.actorID, branchID: branches.currentBranch.id)
+        }
+        if !offlineQueue.isEmpty {
+            addActivity(actorID: creatorID, title: "Offline Sync Completed", detail: "Applied \(offlineQueue.count) queued changes.", kind: .sync, notify: true)
+        }
+        offlineQueue.removeAll()
+    }
+
+    public func branchDivergence(source: UUID, target: UUID) -> (ahead: Int, behind: Int) {
+        let sourceCount = commits.commits(for: source).count
+        let targetCount = commits.commits(for: target).count
+        return (ahead: max(0, sourceCount - targetCount), behind: max(0, targetCount - sourceCount))
+    }
+
     public func commit(message: String, authorID: String, changes: [String: String]) {
         guard permissions.hasPermission(.commit, for: authorID, projectPermission: .owner) else { return }
+        if isOfflineMode {
+            changes.forEach { queueOfflineChange(actorID: authorID, path: $0.key, diff: $0.value) }
+            addActivity(actorID: authorID, title: "Queued Offline Commit", detail: "Changes queued while offline.", kind: .sync, notify: true)
+            return
+        }
         let commit = commits.recordCommit(branchID: branches.currentBranch.id, authorID: authorID, message: message, changes: changes)
         workspaces.syncWorkspaceStateFromCommitManager()
         branches.updateLastCommit(for: branches.currentBranch.id, commitID: commit.id)

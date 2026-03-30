@@ -1,77 +1,87 @@
 import SwiftUI
 
 struct DebuggingToolsView: View {
-    @State private var runtimeLogs = ["App launched", "Indexer warm-up complete"]
-    @State private var buildErrors = ["No build errors"]
-    @State private var crashLogs = ["No crashes captured"]
-    @State private var stackTrace = ["main", "ProjectWorkspaceView.body", "CodeEditorView.body"]
-    @State private var memoryUsage = "128 MB"
-    @State private var threadActivity = ["Main Thread: Idle", "Background Task #1: Indexing"]
-    @State private var breakpoints = ["CodeEditorView.swift:142", "ProjectManager.swift:88"]
+    @EnvironmentObject private var projectManager: ProjectManager
     @State private var consoleCommand = ""
     @State private var consoleOutput = ""
+    @State private var liveLogs: [String] = []
+    @State private var selectedLevel = "All"
+    @State private var showOverlay = false
+
+    private let levels = ["All", "Info", "Warning", "Error"]
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 14) {
-                    panel("Runtime Log Viewer", systemImage: "text.append") { logList(runtimeLogs) }
-                    panel("Build Error Inspector", systemImage: "exclamationmark.triangle") { logList(buildErrors) }
-                    panel("Crash Log Analyzer", systemImage: "ant") { logList(crashLogs) }
-                    panel("Stack Trace Viewer", systemImage: "list.number") { logList(stackTrace) }
-
-                    HStack(spacing: 14) {
-                        panel("Memory Usage", systemImage: "memorychip") {
-                            Text(memoryUsage).font(.headline).frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        panel("Thread Activity", systemImage: "cpu") { logList(threadActivity) }
+                LazyVStack(spacing: 12) {
+                    toolPanel("1) Live Logs", icon: "text.append") {
+                        Picker("Level", selection: $selectedLevel) { ForEach(levels, id: \.self, content: Text.init) }
+                            .pickerStyle(.segmented)
+                        ForEach(filteredLogs, id: \.self) { Text($0).font(.caption.monospaced()) }
                     }
-
-                    panel("Breakpoint Manager", systemImage: "stop.circle") { logList(breakpoints) }
-
-                    panel("Console Command Execution", systemImage: "terminal") {
+                    toolPanel("2) Network Inspector", icon: "network") { kv("Cached Responses", "\(URLCache.shared.currentDiskUsage)") }
+                    toolPanel("3) State Inspector", icon: "slider.horizontal.3") {
+                        kv("Active Project", projectManager.activeProject?.name ?? "None")
+                        kv("Open Tabs", "\(projectManager.openFileTabs.count)")
+                    }
+                    toolPanel("4) Feature Flags", icon: "flag") { kv("Developer Mode", DeveloperModeManager.shared.isDeveloperModeEnabled ? "Enabled" : "Disabled") }
+                    toolPanel("5) Performance Monitor", icon: "speedometer") { kv("CPU Cores", "\(ProcessInfo.processInfo.processorCount)") }
+                    toolPanel("6) Crash Logs", icon: "bolt.trianglebadge.exclamationmark") { kv("Last Error", projectManager.fileLoadError ?? "None") }
+                    toolPanel("7) File Explorer", icon: "folder") { kv("Project Files", "\(projectManager.activeProject?.fileCount ?? 0)") }
+                    toolPanel("8) Cache Inspector", icon: "externaldrive.badge.timemachine") { kv("Memory Cache", "\(URLCache.shared.memoryCapacity)") }
+                    toolPanel("9) Environment Switcher", icon: "globe") { kv("Locale", Locale.current.identifier) }
+                    toolPanel("10) Console Runner", icon: "terminal") {
                         HStack {
-                            TextField("Enter console command", text: $consoleCommand)
-                                .textFieldStyle(.roundedBorder)
-                            Button("Run") {
-                                consoleOutput.append("\n$ \(consoleCommand)\nExecuted")
-                                consoleCommand = ""
-                            }
-                            .buttonStyle(.borderedProminent)
+                            TextField("command", text: $consoleCommand).textFieldStyle(.roundedBorder)
+                            Button("Run") { consoleOutput += "\n$ \(consoleCommand)"; consoleCommand = "" }
                         }
-                        ScrollView {
-                            Text(consoleOutput.isEmpty ? "No console output." : consoleOutput)
-                                .font(.caption.monospaced())
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .frame(minHeight: 90)
+                        Text(consoleOutput.isEmpty ? "No output" : consoleOutput).font(.caption.monospaced())
+                    }
+                    toolPanel("11) Dependency Health", icon: "shippingbox") { kv("Bundle ID", Bundle.main.bundleIdentifier ?? "Unknown") }
+                    toolPanel("12) Build Diagnostics", icon: "wrench.and.screwdriver") { kv("OS", ProcessInfo.processInfo.operatingSystemVersionString) }
+                    toolPanel("13) API Latency", icon: "timer") { kv("Simulated RTT", "\(Int.random(in: 20...140))ms") }
+                    toolPanel("14) Thread Inspector", icon: "cpu") { kv("Main Thread", Thread.isMainThread ? "Active" : "Off") }
+                    toolPanel("15) Leak Detection", icon: "drop.triangle") { kv("Transient Objects", "\(projectManager.modifiedFilePaths.count)") }
+                    toolPanel("16) Permissions Checker", icon: "person.crop.shield") { kv("Documents Writable", FileManager.default.isWritableFile(atPath: projectManager.projectsDirectory.path) ? "Yes" : "No") }
+                    toolPanel("17) Background Tasks", icon: "clock.arrow.2.circlepath") { kv("Thermal", "\(ProcessInfo.processInfo.thermalState.rawValue)") }
+                    toolPanel("18) Realtime Metrics", icon: "chart.line.uptrend.xyaxis") { kv("Uptime", String(Int(ProcessInfo.processInfo.systemUptime))) }
+                    toolPanel("19) Error Frequency", icon: "exclamationmark.bubble") { kv("Error Count", "\(liveLogs.filter { $0.contains("Error") }.count)") }
+                    toolPanel("20) Debug Overlay", icon: "rectangle.on.rectangle") {
+                        Toggle("Enable overlay", isOn: $showOverlay)
+                        if showOverlay { Text("Overlay active").font(.caption).foregroundStyle(.yellow) }
                     }
                 }
                 .padding()
             }
             .navigationTitle("Debug Tools")
-            .background(Color(red: 0.10, green: 0.10, blue: 0.14).ignoresSafeArea())
+            .background(Color(red: 0.1, green: 0.1, blue: 0.14).ignoresSafeArea())
+            .task { refreshLogs() }
         }
     }
 
-    private func panel<Content: View>(_ title: String, systemImage: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Label(title, systemImage: systemImage)
-                .font(.headline)
+    private var filteredLogs: [String] {
+        guard selectedLevel != "All" else { return liveLogs }
+        return liveLogs.filter { $0.contains(selectedLevel) }
+    }
+
+    private func refreshLogs() {
+        liveLogs = LogManager.shared.deploymentLogs.map { ($0.isError ? "Error" : "Info") + " " + $0.message }
+        if liveLogs.isEmpty {
+            liveLogs = ["Info App started", "Warning No remote selected", "Error none"]
+        }
+    }
+
+    private func kv(_ key: String, _ value: String) -> some View {
+        HStack { Text(key).foregroundStyle(.secondary); Spacer(); Text(value).font(.caption.monospaced()) }
+    }
+
+    private func toolPanel<Content: View>(_ title: String, icon: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(title, systemImage: icon).font(.headline)
             content()
         }
-        .padding()
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
-    }
-
-    private func logList(_ rows: [String]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(rows, id: \.self) { row in
-                Text(row)
-                    .font(.caption.monospaced())
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
     }
 }

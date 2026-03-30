@@ -41,18 +41,12 @@ struct GitHubIntegrationView: View {
     @State private var showCommitHistory = false
     @State private var showPullRequest = false
 
-    var ownerFromRepo: String {
-        let parts = repoURL
-            .replacingOccurrences(of: "https://github.com/", with: "")
-            .split(separator: "/")
-        return String(parts.first ?? "")
-    }
+    var ownerFromRepo: String { parsedRepo?.owner ?? "" }
 
-    var repoNameFromURL: String {
-        let parts = repoURL
-            .replacingOccurrences(of: "https://github.com/", with: "")
-            .split(separator: "/")
-        return String(parts.last?.replacingOccurrences(of: ".git", with: "") ?? "")
+    var repoNameFromURL: String { parsedRepo?.repo ?? "" }
+
+    private var parsedRepo: (owner: String, repo: String)? {
+        Self.parseRepositoryURL(repoURL)
     }
 
     var body: some View {
@@ -303,7 +297,7 @@ struct GitHubIntegrationView: View {
                         .textInputAutocapitalization(.never)
                         .keyboardType(.URL)
                         .onChange(of: repoURL) {
-                            saveRepoURL()
+                            if let normalized = normalizedRepositoryURL() { repoURL = normalized; saveRepoURL() }
                             repoDetail = nil
                             repoValidationError = nil
                             if !ownerFromRepo.isEmpty && !repoNameFromURL.isEmpty {
@@ -334,7 +328,7 @@ struct GitHubIntegrationView: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .disabled(ownerFromRepo.isEmpty || repoNameFromURL.isEmpty || isValidatingRepo)
+                    .disabled(parsedRepo == nil || isValidatingRepo)
                 }
 
                 // Validation status
@@ -735,7 +729,7 @@ struct GitHubIntegrationView: View {
                             repoSearchQuery = ""
                             repoDetail = nil
                             repoValidationError = nil
-                            saveRepoURL()
+                            if let normalized = normalizedRepositoryURL() { repoURL = normalized; saveRepoURL() }
                             if !ownerFromRepo.isEmpty && !repoNameFromURL.isEmpty {
                                 loadBranches()
                             }
@@ -787,6 +781,21 @@ struct GitHubIntegrationView: View {
         }
     }
 
+    private static func parseRepositoryURL(_ raw: String) -> (owner: String, repo: String)? {
+        let normalized = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalized.hasPrefix("https://github.com/") else { return nil }
+        guard let comps = URL(string: normalized)?.pathComponents.filter({ $0 != "/" }), comps.count >= 2 else { return nil }
+        let owner = comps[0]
+        let repo = comps[1].replacingOccurrences(of: ".git", with: "")
+        guard !owner.isEmpty, !repo.isEmpty else { return nil }
+        return (owner, repo)
+    }
+
+    private func normalizedRepositoryURL() -> String? {
+        guard let parsed = Self.parseRepositoryURL(repoURL) else { return nil }
+        return "https://github.com/\(parsed.owner)/\(parsed.repo)"
+    }
+
     // MARK: - Helper Views
 
     private func sectionHeader(_ title: String, icon: String, color: Color) -> some View {
@@ -807,14 +816,20 @@ struct GitHubIntegrationView: View {
             verifyToken()
         }
         if let savedRepo = project.githubRepo {
-            repoURL = "https://github.com/\(savedRepo)"
+            if savedRepo.hasPrefix("http") {
+                repoURL = savedRepo
+            } else {
+                repoURL = "https://github.com/\(savedRepo)"
+            }
         }
     }
 
     private func saveRepoURL() {
-        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty,
-              let idx = projectManager.projects.firstIndex(where: { $0.id == project.id }) else { return }
-        projectManager.projects[idx].githubRepo = "\(ownerFromRepo)/\(repoNameFromURL)"
+        guard let normalized = normalizedRepositoryURL(), let idx = projectManager.projects.firstIndex(where: { $0.id == project.id }) else {
+            repoValidationError = "Repository URL must be a full GitHub URL (https://github.com/owner/repo)."
+            return
+        }
+        projectManager.projects[idx].githubRepo = normalized
     }
 
     private func connectToGitHub() {
@@ -844,7 +859,7 @@ struct GitHubIntegrationView: View {
     }
 
     private func loadBranches() {
-        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty else { return }
+        guard parsedRepo != nil else { repoValidationError = "Enter a full GitHub repository URL."; return }
         Task {
             if let fetched = try? await GitHubService.shared.listBranches(
                 owner: ownerFromRepo,
@@ -856,7 +871,7 @@ struct GitHubIntegrationView: View {
     }
 
     private func pushProject() {
-        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty else { return }
+        guard parsedRepo != nil else { repoValidationError = "Enter a full GitHub repository URL."; return }
         isLoading = true
         Task {
             do {
@@ -935,7 +950,7 @@ struct GitHubIntegrationView: View {
     }
 
     private func saveRepoToDevice() {
-        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty else { return }
+        guard parsedRepo != nil else { repoValidationError = "Enter a full GitHub repository URL."; return }
         isDownloadingRepo = true
         Task {
             do {
@@ -964,7 +979,7 @@ struct GitHubIntegrationView: View {
     }
 
     private func loadWorkflowRuns() {
-        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty else { return }
+        guard parsedRepo != nil else { repoValidationError = "Enter a full GitHub repository URL."; return }
         Task {
             if let runs = try? await GitHubService.shared.listWorkflowRuns(
                 owner: ownerFromRepo,
@@ -976,7 +991,7 @@ struct GitHubIntegrationView: View {
     }
 
     private func validateRepoURL() {
-        guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty else { return }
+        guard parsedRepo != nil else { repoValidationError = "Enter a full GitHub repository URL."; return }
         isValidatingRepo = true
         repoValidationError = nil
         repoDetail = nil
