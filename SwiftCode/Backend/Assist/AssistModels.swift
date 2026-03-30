@@ -60,17 +60,17 @@ public struct AssistAIResponse {
 
 public struct AssistLLMService {
     @MainActor
-    public static func generateResponse(prompt: String, provider: AssistModelProvider, apiKey: String?) async -> AssistAIResponse {
+    public static func generateResponse(prompt: String, provider: AssistModelProvider, apiKey: String?, modelOverride: String? = nil) async -> AssistAIResponse {
         do {
             // Standardize on the central LLMService which handles all model routing and logic.
             // We pass the prompt and let LLMService handle the details.
-            let modelOverride = AppSettings.shared.selectedAssistModelID
+            let activeModelID = modelOverride ?? AppSettings.shared.selectedAssistModelID
             let providerOverride = provider.llmProvider
 
             let content = try await LLMService.shared.generateResponse(
                 prompt: prompt,
                 useContext: true,
-                modelOverride: modelOverride,
+                modelOverride: activeModelID,
                 providerOverride: providerOverride
             )
             return AssistAIResponse(content: content, success: true)

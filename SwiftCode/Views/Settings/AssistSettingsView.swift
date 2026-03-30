@@ -9,6 +9,7 @@ public struct AssistSettingsView: View {
     @AppStorage("assist.selectedProvider") private var selectedProvider = AssistModelProvider.openAI.rawValue
 
     @StateObject private var manager = AssistManager.shared
+    @StateObject private var modelManager = AssistModelManager.shared
     @State private var apiKey: String = ""
     @State private var testResult: String?
     @State private var isTesting = false
@@ -69,6 +70,17 @@ public struct AssistSettingsView: View {
                             Text("Default").tag("default")
                         }
                     }
+                }
+                .disabled(!modelManager.customModelID.isEmpty)
+
+                VStack(alignment: .leading) {
+                    Text("Custom Model ID")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("e.g. anthropic/claude-3.5-sonnet:beta", text: $modelManager.customModelID)
+                        .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
                 }
 
                 SecureField("API Key", text: $apiKey)

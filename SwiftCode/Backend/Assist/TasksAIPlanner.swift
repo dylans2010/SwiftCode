@@ -66,8 +66,18 @@ public final class TasksAIPlanner: ObservableObject {
         - Never return an empty steps array.
         - Use real file paths and FULL, production-ready implementations.
         - No mock data.
+
+        # FINAL REPORT FORMAT
+        All plans must lead to a final report following the markdown structure:
+        ## Plan
+        ## Execution Progress
+        ## Files Modified
+        ## Iteration Notes
+        ## Result
+        ## Next Actions
         """
 
+        let modelID = AssistModelManager.shared.selectedModelID
         let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
         let provider = AssistModelProvider(rawValue: providerRawValue) ?? .openAI
         let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
@@ -75,7 +85,8 @@ public final class TasksAIPlanner: ObservableObject {
         let response = await AssistLLMService.generateResponse(
             prompt: prompt,
             provider: provider,
-            apiKey: apiKey
+            apiKey: apiKey,
+            modelOverride: modelID
         )
 
         guard response.success else {
