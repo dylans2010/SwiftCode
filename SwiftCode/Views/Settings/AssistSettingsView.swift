@@ -1,6 +1,7 @@
 import SwiftUI
 
 public struct AssistSettingsView: View {
+    @EnvironmentObject private var appSettings: AppSettings
     @AppStorage("assist.safetyLevel") private var safetyLevel = AssistSafetyLevel.balanced.rawValue
     @AppStorage("assist.isAutonomous") private var isAutonomous = true
     @AppStorage("assist.takeoverEnabled") private var takeoverEnabled = false
@@ -49,7 +50,7 @@ public struct AssistSettingsView: View {
                     loadApiKey()
                 }
 
-                Picker("Model", selection: $AppSettings.shared.selectedAssistModelID) {
+                Picker("Model", selection: $appSettings.selectedAssistModelID) {
                     if let provider = AssistModelProvider(rawValue: selectedProvider) {
                         switch provider {
                         case .openAI:
