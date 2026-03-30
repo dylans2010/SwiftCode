@@ -422,8 +422,6 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		8B8D3211B0EA4EEF97DEFABB /* AssistGitDiffTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD80E05520F422B89FE55A4 /* AssistGitDiffTool.swift */; };
 		9C445FBC66EA43278F93E038 /* AssistGitStashTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0563C9759A104AF8842A6522 /* AssistGitStashTool.swift */; };
 		87A0B4AD7C2849CE90EBDB73 /* AssistGitPRTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41ABAAA3ACD42CFB6BE19A6 /* AssistGitPRTool.swift */; };
-		7CD3BFE0FC1F43998A36995C /* AssistRunCommandTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E07B69499774564A92E4A08 /* AssistRunCommandTool.swift */; };
-		F9A7F5DE13A243F6A7992DC3 /* AssistRunScriptTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 612E6ADD13894C6B95854222 /* AssistRunScriptTool.swift */; };
 		20E890F433A5474DAD83E43C /* AssistBuildProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 737630DE6AD84830B99AAF38 /* AssistBuildProjectTool.swift */; };
 		57A1FCF2735D47FCBE6CE7BE /* AssistTestRunnerTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C841D4AC23D4BFD88947294 /* AssistTestRunnerTool.swift */; };
 		1150CACABB9E480BAACEB19F /* AssistLogCaptureTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 308E8BFCDC49414799E43CA2 /* AssistLogCaptureTool.swift */; };
@@ -487,8 +485,6 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		49BF1F3FF5B7478C876163D6 /* AssistGitDiffTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB7E65869F44F32B219D22E /* AssistGitDiffTool.swift */; };
 		202C6829A7E7467EA3085B29 /* AssistGitStashTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6FD346A9504AC297734B09 /* AssistGitStashTool.swift */; };
 		D146641E46D7435E8A27997E /* AssistGitPRTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 247F50A1513F4577BEE9DD38 /* AssistGitPRTool.swift */; };
-		AD533EC8EEE6479CA9736181 /* AssistRunCommandTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2ED6D61904F4F64832965C0 /* AssistRunCommandTool.swift */; };
-		BFBDA39ADB354840A40EA528 /* AssistRunScriptTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CBFBBDFFE140F5977C54E3 /* AssistRunScriptTool.swift */; };
 		5303DE98F7F74516B2D4D893 /* AssistBuildProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DE2A4343F4B4346932B84A7 /* AssistBuildProjectTool.swift */; };
 		048CFBF1AE12455CB848CE58 /* AssistTestRunnerTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E3FC50CA22424DB6A5296E /* AssistTestRunnerTool.swift */; };
 		EFD0DB9B32EE4361A3D70DAC /* AssistLogCaptureTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFA06445FBCA40468B7FE2C4 /* AssistLogCaptureTool.swift */; };
@@ -958,8 +954,6 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		0CD80E05520F422B89FE55A4 /* AssistGitDiffTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistGitDiffTool.swift; sourceTree = SOURCE_ROOT; };
 		0563C9759A104AF8842A6522 /* AssistGitStashTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistGitStashTool.swift; sourceTree = SOURCE_ROOT; };
 		F41ABAAA3ACD42CFB6BE19A6 /* AssistGitPRTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistGitPRTool.swift; sourceTree = SOURCE_ROOT; };
-		9E07B69499774564A92E4A08 /* AssistRunCommandTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistRunCommandTool.swift; sourceTree = SOURCE_ROOT; };
-		612E6ADD13894C6B95854222 /* AssistRunScriptTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistRunScriptTool.swift; sourceTree = SOURCE_ROOT; };
 		737630DE6AD84830B99AAF38 /* AssistBuildProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistBuildProjectTool.swift; sourceTree = SOURCE_ROOT; };
 		2C841D4AC23D4BFD88947294 /* AssistTestRunnerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistTestRunnerTool.swift; sourceTree = SOURCE_ROOT; };
 		308E8BFCDC49414799E43CA2 /* AssistLogCaptureTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistLogCaptureTool.swift; sourceTree = SOURCE_ROOT; };
@@ -1023,8 +1017,6 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		7EB7E65869F44F32B219D22E /* AssistGitDiffTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistGitDiffTool.swift; sourceTree = SOURCE_ROOT; };
 		7D6FD346A9504AC297734B09 /* AssistGitStashTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistGitStashTool.swift; sourceTree = SOURCE_ROOT; };
 		247F50A1513F4577BEE9DD38 /* AssistGitPRTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistGitPRTool.swift; sourceTree = SOURCE_ROOT; };
-		F2ED6D61904F4F64832965C0 /* AssistRunCommandTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistRunCommandTool.swift; sourceTree = SOURCE_ROOT; };
-		98CBFBBDFFE140F5977C54E3 /* AssistRunScriptTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistRunScriptTool.swift; sourceTree = SOURCE_ROOT; };
 		5DE2A4343F4B4346932B84A7 /* AssistBuildProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistBuildProjectTool.swift; sourceTree = SOURCE_ROOT; };
 		E4E3FC50CA22424DB6A5296E /* AssistTestRunnerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistTestRunnerTool.swift; sourceTree = SOURCE_ROOT; };
 		BFA06445FBCA40468B7FE2C4 /* AssistLogCaptureTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistLogCaptureTool.swift; sourceTree = SOURCE_ROOT; };
@@ -2568,8 +2560,6 @@ files = (
 				EFD0DB9B32EE4361A3D70DAC /* AssistLogCaptureTool.swift in Sources */,
 				048CFBF1AE12455CB848CE58 /* AssistTestRunnerTool.swift in Sources */,
 				5303DE98F7F74516B2D4D893 /* AssistBuildProjectTool.swift in Sources */,
-				BFBDA39ADB354840A40EA528 /* AssistRunScriptTool.swift in Sources */,
-				AD533EC8EEE6479CA9736181 /* AssistRunCommandTool.swift in Sources */,
 				D146641E46D7435E8A27997E /* AssistGitPRTool.swift in Sources */,
 				202C6829A7E7467EA3085B29 /* AssistGitStashTool.swift in Sources */,
 				49BF1F3FF5B7478C876163D6 /* AssistGitDiffTool.swift in Sources */,
@@ -2633,8 +2623,6 @@ files = (
 				1150CACABB9E480BAACEB19F /* AssistLogCaptureTool.swift in Sources */,
 				57A1FCF2735D47FCBE6CE7BE /* AssistTestRunnerTool.swift in Sources */,
 				20E890F433A5474DAD83E43C /* AssistBuildProjectTool.swift in Sources */,
-				F9A7F5DE13A243F6A7992DC3 /* AssistRunScriptTool.swift in Sources */,
-				7CD3BFE0FC1F43998A36995C /* AssistRunCommandTool.swift in Sources */,
 				87A0B4AD7C2849CE90EBDB73 /* AssistGitPRTool.swift in Sources */,
 				9C445FBC66EA43278F93E038 /* AssistGitStashTool.swift in Sources */,
 				8B8D3211B0EA4EEF97DEFABB /* AssistGitDiffTool.swift in Sources */,
