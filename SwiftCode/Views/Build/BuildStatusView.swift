@@ -5,6 +5,7 @@ struct BuildStatusView: View {
     let owner: String
     let repo: String
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("github_repo_url") private var savedRepoURL: String = ""
 
     @State private var workflowRuns: [WorkflowRun] = []
     @State private var releases: [GitHubRelease] = []
@@ -18,6 +19,9 @@ struct BuildStatusView: View {
     @State private var showCIBuild = false
     @State private var showPrepareCompile = false
     @State private var showBuildGuide = false
+    @State private var showStartCompileConfirmation = false
+    @State private var lastBuildTriggerAt: Date?
+    private let deduplicationWindow: TimeInterval = 8
 
     // Compile action state
     @State private var isCompiling = false
@@ -34,6 +38,29 @@ struct BuildStatusView: View {
         !(KeychainService.shared.get(forKey: KeychainService.githubToken) ?? "").isEmpty
     }
 
+    private var activeRepoURL: URL? {
+        if let directURL = URL(string: savedRepoURL), !savedRepoURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return directURL
+        }
+        if !owner.isEmpty, !repo.isEmpty {
+            return URL(string: "https://github.com/\(owner)/\(repo)")
+        }
+        return nil
+    }
+
+    private var activeOwnerRepo: (owner: String, repo: String)? {
+        guard let url = activeRepoURL else { return nil }
+        if let host = url.host, !host.lowercased().contains("github.com") {
+            return nil
+        }
+        let pathComponents = url.pathComponents.filter { $0 != "/" }
+        guard pathComponents.count >= 2 else { return nil }
+        let resolvedOwner = pathComponents[0]
+        let resolvedRepo = pathComponents[1].replacingOccurrences(of: ".git", with: "")
+        guard !resolvedOwner.isEmpty, !resolvedRepo.isEmpty else { return nil }
+        return (resolvedOwner, resolvedRepo)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -48,7 +75,7 @@ struct BuildStatusView: View {
                 )
                 .ignoresSafeArea()
 
-                if owner.isEmpty || repo.isEmpty {
+                if activeOwnerRepo == nil {
                     noRepoView
                 } else {
                     ScrollView {
@@ -111,6 +138,7 @@ struct BuildStatusView: View {
                             // Step 4: Monitoring & Results
                             VStack(alignment: .leading, spacing: 12) {
                                 stepHeader(number: 4, title: "Monitoring & Results", icon: "gauge.with.needle")
+                                liveStatusFeed
                                 workflowRunsSection
                                 releasesSection
                             }
@@ -136,12 +164,18 @@ struct BuildStatusView: View {
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
-                    .disabled(isLoading || owner.isEmpty || repo.isEmpty)
+                    .disabled(isLoading || activeOwnerRepo == nil)
                 }
             }
             .alert("Error", isPresented: $showError, presenting: errorMessage) { _ in
                 Button("OK") {}
             } message: { msg in Text(msg) }
+            .alert("Start Compiling?", isPresented: $showStartCompileConfirmation) {
+                Button("Start") { triggerCompile() }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("This will trigger a CI build.")
+            }
             .sheet(isPresented: $showLogs) {
                 logsSheet
             }
@@ -185,7 +219,7 @@ struct BuildStatusView: View {
                     .foregroundStyle(.green)
             }
             VStack(alignment: .leading, spacing: 4) {
-                Text("\(owner)/\(repo)")
+                Text(activeOwnerRepo.map { "\($0.owner)/\($0.repo)" } ?? "Repository Not Available")
                     .font(.headline)
                     .foregroundStyle(.white)
                 Text("Connected Repository")
@@ -194,7 +228,7 @@ struct BuildStatusView: View {
             }
             Spacer()
 
-            if let actionsURL = URL(string: "https://github.com/\(owner)/\(repo)/actions") {
+            if let actionsURL = activeRepoURL?.appending(path: "actions") {
                 Link(destination: actionsURL) {
                     HStack(spacing: 4) {
                         Image(systemName: "arrow.up.right.square")
@@ -278,7 +312,7 @@ struct BuildStatusView: View {
             }
 
             Button {
-                triggerCompile()
+                showStartCompileConfirmation = true
             } label: {
                 HStack {
                     if isCompiling {
@@ -313,8 +347,8 @@ struct BuildStatusView: View {
     private var compileStatusColor: Color {
         switch compileResult {
         case .idle: return .secondary
-        case .queued: return .orange
-        case .running: return .yellow
+        case .queued: return .blue
+        case .running: return .blue
         case .success: return .green
         case .failed: return .red
         }
@@ -344,6 +378,35 @@ struct BuildStatusView: View {
                 .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
+        }
+        .buildStatusCard()
+    }
+
+    private var liveStatusFeed: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Live Status Feed", systemImage: "waveform.path.ecg")
+                .font(.headline)
+                .foregroundStyle(.white)
+
+            HStack {
+                Text("Current:")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(compileStatusLabel)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(compileStatusColor)
+                Spacer()
+                if let lastRun = workflowRuns.first {
+                    Text(lastRun.createdAt, style: .time)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Text(logsText.map { String($0.prefix(140)) } ?? "No logs loaded yet. Open a run to preview logs.")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(3)
         }
         .buildStatusCard()
     }
@@ -582,13 +645,13 @@ struct BuildStatusView: View {
     // MARK: - Actions
 
     private func loadData() {
-        guard !owner.isEmpty, !repo.isEmpty else { return }
+        guard let repository = activeOwnerRepo else { return }
         isLoading = true
         errorMessage = nil
         Task {
             do {
-                async let runsResult = GitHubService.shared.listWorkflowRuns(owner: owner, repo: repo)
-                async let relsResult = GitHubService.shared.listReleases(owner: owner, repo: repo)
+                async let runsResult = GitHubService.shared.listWorkflowRuns(owner: repository.owner, repo: repository.repo)
+                async let relsResult = GitHubService.shared.listReleases(owner: repository.owner, repo: repository.repo)
 
                 let fetchedRuns: [WorkflowRun]
                 let fetchedReleases: [GitHubRelease]
@@ -627,11 +690,12 @@ struct BuildStatusView: View {
     private func loadLogs(for run: WorkflowRun) {
         logsText = nil
         showLogs = true
+        guard let repository = activeOwnerRepo else { return }
         Task {
             do {
                 let logsURL = try await GitHubService.shared.getWorkflowRunLogsURL(
-                    owner: owner,
-                    repo: repo,
+                    owner: repository.owner,
+                    repo: repository.repo,
                     runID: run.id
                 )
                 let (data, _) = try await URLSession.shared.data(from: logsURL)
@@ -648,8 +712,16 @@ struct BuildStatusView: View {
     // MARK: - Compile
 
     private func triggerCompile() {
-        guard !owner.isEmpty, !repo.isEmpty else { return }
+        guard let repository = activeOwnerRepo else { return }
+        if isCompiling { return }
+        if let lastBuildTriggerAt, Date().timeIntervalSince(lastBuildTriggerAt) < deduplicationWindow {
+            errorMessage = "Duplicate trigger ignored. Please wait a few seconds before starting another build."
+            showError = true
+            return
+        }
+
         isCompiling = true
+        lastBuildTriggerAt = Date()
         compileBuildStarted = Date()
         compileResult = .queued
         compileWorkflowStage = "Triggering Workflow..."
@@ -672,7 +744,7 @@ struct BuildStatusView: View {
 
                 // Poll for the latest workflow run
                 try await Task.sleep(nanoseconds: 5_000_000_000)
-                try await pollBuildStatus()
+                try await pollBuildStatus(owner: repository.owner, repo: repository.repo)
             } catch {
                 await MainActor.run {
                     compileResult = .failed
@@ -683,7 +755,7 @@ struct BuildStatusView: View {
         }
     }
 
-    private func pollBuildStatus() async throws {
+    private func pollBuildStatus(owner: String, repo: String) async throws {
         var attempts = 0
         let maxAttempts = 60 // Poll for up to ~5 minutes
 
@@ -733,7 +805,7 @@ struct BuildRunCard: View {
         case "success": return .green
         case "failure": return .red
         case "cancelled": return .gray
-        case "in_progress": return .yellow
+        case "in_progress", "queued": return .blue
         default: return .secondary
         }
     }
@@ -891,7 +963,8 @@ private extension View {
     func buildStatusCard() -> some View {
         self
             .padding()
-            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Color.white.opacity(0.06), lineWidth: 1))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Color.white.opacity(0.08), lineWidth: 1))
+            .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
     }
 }

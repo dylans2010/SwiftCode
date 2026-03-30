@@ -4,6 +4,7 @@ struct GitHubIntegrationView: View {
     let project: Project
     @EnvironmentObject private var projectManager: ProjectManager
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("github_repo_url") private var sharedRepoURL: String = ""
 
     @State private var token: String = ""
     @State private var repoURL: String = ""
@@ -813,6 +814,8 @@ struct GitHubIntegrationView: View {
             } else {
                 repoURL = "https://github.com/\(savedRepo)"
             }
+        } else if !sharedRepoURL.isEmpty {
+            repoURL = sharedRepoURL
         }
     }
 
@@ -820,6 +823,7 @@ struct GitHubIntegrationView: View {
         guard !ownerFromRepo.isEmpty, !repoNameFromURL.isEmpty,
               let idx = projectManager.projects.firstIndex(where: { $0.id == project.id }) else { return }
         projectManager.projects[idx].githubRepo = "\(ownerFromRepo)/\(repoNameFromURL)"
+        sharedRepoURL = "https://github.com/\(ownerFromRepo)/\(repoNameFromURL)"
     }
 
     private func connectToGitHub() {

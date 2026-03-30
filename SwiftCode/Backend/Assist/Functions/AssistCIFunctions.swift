@@ -1,6 +1,61 @@
 import Foundation
 
 public struct AssistCIFunctions {
+    public struct BuildYMLConfig: Codable, Equatable {
+        public enum BuildConfiguration: String, Codable, CaseIterable {
+            case debug = "Debug"
+            case release = "Release"
+        }
+
+        public enum DestinationType: String, Codable, CaseIterable {
+            case simulator
+            case device
+
+            var destination: String {
+                switch self {
+                case .simulator: return "generic/platform=iOS Simulator"
+                case .device: return "generic/platform=iOS"
+                }
+            }
+
+            var sdk: String {
+                switch self {
+                case .simulator: return "iphonesimulator"
+                case .device: return "iphoneos"
+                }
+            }
+        }
+
+        public var projectName: String
+        public var scheme: String
+        public var xcodeVersion: String
+        public var buildConfiguration: BuildConfiguration
+        public var destinationType: DestinationType
+        public var outputDirectory: String
+        public var outputName: String
+        public var triggerBranch: String
+
+        public init(
+            projectName: String,
+            scheme: String,
+            xcodeVersion: String,
+            buildConfiguration: BuildConfiguration,
+            destinationType: DestinationType,
+            outputDirectory: String = "upload",
+            outputName: String,
+            triggerBranch: String
+        ) {
+            self.projectName = projectName
+            self.scheme = scheme
+            self.xcodeVersion = xcodeVersion
+            self.buildConfiguration = buildConfiguration
+            self.destinationType = destinationType
+            self.outputDirectory = outputDirectory
+            self.outputName = outputName
+            self.triggerBranch = triggerBranch
+        }
+    }
+
     public struct PipelineValidationResult {
         public let pipelinesFound: Int
         public let valid: Int
@@ -13,6 +68,75 @@ public struct AssistCIFunctions {
         let name: String?
         let stepCount: Int
         let scriptCount: Int
+    }
+
+    @discardableResult
+    public static func generateBuildYML(config: BuildYMLConfig, workspaceRoot: URL) throws -> URL {
+        let ciDirectory = resolveCIDirectory(workspaceRoot: workspaceRoot)
+        try FileManager.default.createDirectory(at: ciDirectory, withIntermediateDirectories: true)
+        let fileURL = ciDirectory.appendingPathComponent("build.yml")
+        let yaml = generateBuildYML(config: config)
+        try yaml.write(to: fileURL, atomically: true, encoding: .utf8)
+        return fileURL
+    }
+
+    public static func generateBuildYML(config: BuildYMLConfig) -> String {
+        let safeProject = sanitizeYAMLValue(config.projectName)
+        let safeScheme = sanitizeYAMLValue(config.scheme)
+        let safeBranch = sanitizeYAMLValue(config.triggerBranch)
+        let safeOutputDirectory = sanitizePathComponent(config.outputDirectory)
+        let safeOutputName = sanitizePathComponent(config.outputName)
+
+        return """
+name: Build \(safeProject)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - \(safeBranch)
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '\(sanitizeYAMLValue(config.xcodeVersion))'
+
+      - name: Build
+        run: |
+          mkdir -p \(safeOutputDirectory)
+          xcodebuild -project \(safeProject).xcodeproj \\
+            -scheme \(safeScheme) \\
+            -configuration \(config.buildConfiguration.rawValue) \\
+            -destination "\(config.destinationType.destination)" \\
+            -sdk \(config.destinationType.sdk) \\
+            -archivePath \(safeOutputDirectory)/\(safeOutputName).xcarchive \\
+            archive \\
+            CODE_SIGNING_ALLOWED=NO \\
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Create IPA
+        run: |
+          mkdir -p \(safeOutputDirectory)/Payload
+          cp -R \(safeOutputDirectory)/\(safeOutputName).xcarchive/Products/Applications/*.app \(safeOutputDirectory)/Payload/
+          cd \(safeOutputDirectory)
+          zip -r \(safeOutputName).ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: \(safeOutputName)-ipa
+          path: \(safeOutputDirectory)/\(safeOutputName).ipa
+"""
     }
 
     public static func validateCIPipelines(workspaceRoot: URL) throws -> PipelineValidationResult {
@@ -72,6 +196,20 @@ public struct AssistCIFunctions {
         }
 
         return candidates[0]
+    }
+
+    private static func sanitizeYAMLValue(_ value: String) -> String {
+        value
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\n", with: " ")
+            .replacingOccurrences(of: ":", with: "-")
+    }
+
+    private static func sanitizePathComponent(_ value: String) -> String {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        let allowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-_./"))
+        let scalars = trimmed.unicodeScalars.map { allowed.contains($0) ? Character($0) : "-" }
+        return String(scalars)
     }
 
     private static func parsePipeline(content: String) throws -> ParsedPipeline {
