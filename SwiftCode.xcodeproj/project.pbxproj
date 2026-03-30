@@ -366,6 +366,136 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		CLV000000000000000000022A /* CollaborationFilePresenceOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000022 /* CollaborationFilePresenceOverlay.swift */; };
 		CLV00000000000000000015A /* CollaborationFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000015B /* CollaborationFeedbackView.swift */; };
 		CLV00000000000000000016A /* PRCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000016B /* PRCreateView.swift */; };
+		D8623D956F93479B9F523B7D /* AssistLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7567F230BF6844B48370F0E3 /* AssistLogger.swift */; };
+		8E8039183DDE4C0BB71AEE51 /* AssistPermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56FD5E0186794174B5A688B6 /* AssistPermissionsManager.swift */; };
+		6927537304A143B19169347A /* AssistSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6805C983FE6446B8B012DA4B /* AssistSession.swift */; };
+		E055A947A436453DA50EFC2C /* AssistContextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B76AA591E1844303B3E6BC9A /* AssistContextBuilder.swift */; };
+		FF1942772CC142AAAF16ADCB /* AssistFileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB9A8452F09146A3971C4889 /* AssistFileSystem.swift */; };
+		B435FA542F4D48F99AE10A0B /* AssistGitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD6457BFE1494A79B9DB6B07 /* AssistGitManager.swift */; };
+		8D2E89999F864581B718DE80 /* AssistMemoryGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = 498A098F443A419793292550 /* AssistMemoryGraph.swift */; };
+		A33862EC715144DD94EF0AC5 /* AssistPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = D877769D4106438290B51EE0 /* AssistPlanner.swift */; };
+		41F6E6291DE646EA82B43A47 /* AssistExecutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AF0FB762D3C4A7D960E591F /* AssistExecutionEngine.swift */; };
+		B4C8487A886B4862A89564A0 /* AssistToolRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D199315A65A54630BBE3697C /* AssistToolRegistry.swift */; };
+		2FD92D374DB84E0BB6D9C75C /* AssistAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F59954CB847B446C9067F453 /* AssistAgent.swift */; };
+		B5668198AEA646DD826FBAC7 /* AssistReadFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19830F4F97984FDEB4E5A115 /* AssistReadFileTool.swift */; };
+		A3C43CCF824C48CC8935A06D /* AssistWriteFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3D8A92CEEA8497984326BE7 /* AssistWriteFileTool.swift */; };
+		367E43D089B54E05935406CE /* AssistAppendFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7BD7324673F4D3297370D56 /* AssistAppendFileTool.swift */; };
+		CBE4D0AF96A44B2AAFC6AA3E /* AssistDeleteFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3A59F2EC2D64C948148C074 /* AssistDeleteFileTool.swift */; };
+		8B92023D86B74EED9826C1C1 /* AssistMoveFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9703E55ADF694504A60E1AD2 /* AssistMoveFileTool.swift */; };
+		D69661386DB04F49A1D958B5 /* AssistCopyFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9AC9AA435632427484F422A3 /* AssistCopyFileTool.swift */; };
+		03F3447046B04CB5931A2D38 /* AssistRenameFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008C34E721DC4A2BB7CA70D4 /* AssistRenameFileTool.swift */; };
+		E326C0CD7C8045D8BD40601C /* AssistCreateDirectoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15BAA7A69353475998B720A2 /* AssistCreateDirectoryTool.swift */; };
+		724DBE1FEEA74439844D67B2 /* AssistDeleteDirectoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00272840872415AAFF135A6 /* AssistDeleteDirectoryTool.swift */; };
+		7D629D5FDE3B465C8E0AFAA7 /* AssistReadDirectoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ACC026A90FB4595B4D7B790 /* AssistReadDirectoryTool.swift */; };
+		C4C692B0E9994F1A9FDA17EF /* AssistTreeViewTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C3BEC51A54951B79E4CE8 /* AssistTreeViewTool.swift */; };
+		A990E2AC9FC74097806243E0 /* AssistSearchTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BFC567735DE4618BA646D99 /* AssistSearchTool.swift */; };
+		680B7BBA4A4C421893C0330E /* AssistRegexSearchTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19223417E86B414592BB7116 /* AssistRegexSearchTool.swift */; };
+		EE495460710C48A1BFA11C04 /* AssistSymbolSearchTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7947DF2184C64188BAB1BFF5 /* AssistSymbolSearchTool.swift */; };
+		05EC01093E44431C9DC60A68 /* AssistDependencyGraphTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC35D9820E22408A95FB923A /* AssistDependencyGraphTool.swift */; };
+		35ECA2F469F247D6803755C0 /* AssistCodeSummaryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 775D9A452C47445DB6CB66F1 /* AssistCodeSummaryTool.swift */; };
+		BB24AEB500C34B84BB230D95 /* AssistLintTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4CCBA3B4BD94D9CA31FA25B /* AssistLintTool.swift */; };
+		367BC2FA11A24D6099A46AB1 /* AssistComplexityAnalysisTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315E7C4B0F24497DA71A6A24 /* AssistComplexityAnalysisTool.swift */; };
+		B26071957D1641529F90EAEA /* AssistReplaceInFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E66EBD298031492C9E7A8FC5 /* AssistReplaceInFileTool.swift */; };
+		564E1D727DF14F3683AF59F1 /* AssistMultiFileEditTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E357B6DBCEF24912A70FE47C /* AssistMultiFileEditTool.swift */; };
+		030293D213E14DD28FDF374D /* AssistRefactorTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A5AF0A371C427AB3DD248B /* AssistRefactorTool.swift */; };
+		CCB9A65436654D778F02FAC5 /* AssistFormatCodeTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F0BD0A843C24BFB8E5098D9 /* AssistFormatCodeTool.swift */; };
+		3BC430031A7D4A0B8B9376F2 /* AssistGenerateFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB56A38B6960460C9922E291 /* AssistGenerateFileTool.swift */; };
+		0CC8D4FC55214FB18672B5C1 /* AssistInsertCodeBlockTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70D2D15830D24ED29EAE393F /* AssistInsertCodeBlockTool.swift */; };
+		647B50F7867F4F30969AE6B6 /* AssistGitInitTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 943B6EDF24F1450BBCBCC154 /* AssistGitInitTool.swift */; };
+		5757CC8D42E84A03B486182D /* AssistGitStatusTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36F0BC05219A4AECB25D1C2A /* AssistGitStatusTool.swift */; };
+		411DB8B43C2445D58AC77F0B /* AssistGitAddTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD5AFF426474E259278CAF3 /* AssistGitAddTool.swift */; };
+		DDB5D5806A7E4AFB8206DC41 /* AssistGitCommitTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = DACF8F17267F4C66A27B37D3 /* AssistGitCommitTool.swift */; };
+		C0DB815D9C6A4F3CA1DF6AF3 /* AssistGitBranchTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4DFE10ADC04416BA438E34B /* AssistGitBranchTool.swift */; };
+		01821724A0244361B2614094 /* AssistGitCheckoutTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E227BA74E40040DAAED09085 /* AssistGitCheckoutTool.swift */; };
+		ED31F7D55D4F4B02BBA3AF7E /* AssistGitMergeTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C3916DABF5419482E0E6FC /* AssistGitMergeTool.swift */; };
+		8B8D3211B0EA4EEF97DEFABB /* AssistGitDiffTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CD80E05520F422B89FE55A4 /* AssistGitDiffTool.swift */; };
+		9C445FBC66EA43278F93E038 /* AssistGitStashTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0563C9759A104AF8842A6522 /* AssistGitStashTool.swift */; };
+		87A0B4AD7C2849CE90EBDB73 /* AssistGitPRTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41ABAAA3ACD42CFB6BE19A6 /* AssistGitPRTool.swift */; };
+		7CD3BFE0FC1F43998A36995C /* AssistRunCommandTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E07B69499774564A92E4A08 /* AssistRunCommandTool.swift */; };
+		F9A7F5DE13A243F6A7992DC3 /* AssistRunScriptTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 612E6ADD13894C6B95854222 /* AssistRunScriptTool.swift */; };
+		20E890F433A5474DAD83E43C /* AssistBuildProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 737630DE6AD84830B99AAF38 /* AssistBuildProjectTool.swift */; };
+		57A1FCF2735D47FCBE6CE7BE /* AssistTestRunnerTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C841D4AC23D4BFD88947294 /* AssistTestRunnerTool.swift */; };
+		1150CACABB9E480BAACEB19F /* AssistLogCaptureTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 308E8BFCDC49414799E43CA2 /* AssistLogCaptureTool.swift */; };
+		D4647165333D485790D7DF30 /* AssistEnvironmentInfoTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F2324DAA3D472F9E7ACB57 /* AssistEnvironmentInfoTool.swift */; };
+		E1538B724D14446AA79048A1 /* AssistPlanTaskTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A84FCCFE4B8445BA5FFCE2F /* AssistPlanTaskTool.swift */; };
+		A22341479D4D43D9B1C516B7 /* AssistBreakdownTaskTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED571AAC05B7455FA32BA528 /* AssistBreakdownTaskTool.swift */; };
+		00BA1C44BA58452494157FC5 /* AssistAutoFixErrorsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EF60EE6B8184514AF5C8595 /* AssistAutoFixErrorsTool.swift */; };
+		44F6E2D443C1425C8AEB814F /* AssistGenerateTestsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AF3C7E246774A66A092A159 /* AssistGenerateTestsTool.swift */; };
+		2D99C1CF15714D33A7906053 /* AssistExplainCodeTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0071F4764DFA4B4BB21FBA5D /* AssistExplainCodeTool.swift */; };
+		B58490AF2B79407F8B7768DC /* AssistStoreMemoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E438FDED5AD451A914FFE30 /* AssistStoreMemoryTool.swift */; };
+		6CF62BBD6FD9474293C6C194 /* AssistRetrieveMemoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F95018C7A2B4195B8335343 /* AssistRetrieveMemoryTool.swift */; };
+		EAB99C551799475DBA8E3A21 /* AssistClearMemoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AB4DCB0FA5B402890367BCA /* AssistClearMemoryTool.swift */; };
+		B6DB72DBC4EF4F3D8B27A492 /* AssistContextSnapshotTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C683EC656084472AE7877DB /* AssistContextSnapshotTool.swift */; };
+		09F01031CA0B49218370AAB2 /* AssistSnapshotProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA84D1A58A14258A58D4657 /* AssistSnapshotProjectTool.swift */; };
+		FB89F0A067934C9F8EFCE501 /* AssistRestoreSnapshotTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D80AADDE4F54B4D98E5DFD8 /* AssistRestoreSnapshotTool.swift */; };
+		B17FAC09531F409184C261E5 /* AssistUndoTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D2B4CDE3BF44CF9D558A0F /* AssistUndoTool.swift */; };
+		834618C852B74748A29697C6 /* AssistValidateChangesTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9263F6F8B4F422694880F7C /* AssistValidateChangesTool.swift */; };
+		CEC8CB64043D4224862A9A3A /* AssistSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5ABF56A97784924AD3036CB /* AssistSettingsView.swift */; };
+		E0ECF2A5668D482995E0E60E /* AssistLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92CDC2D82E8A405E97F8E84F /* AssistLogger.swift */; };
+		1B75B723DFC741B384459600 /* AssistPermissionsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB783FE3BD8540B4BE3DCD62 /* AssistPermissionsManager.swift */; };
+		90646652C7774FC9B097191D /* AssistSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F3B9BE98DB4FA197AC63E1 /* AssistSession.swift */; };
+		368E87C9A7644D83914B8435 /* AssistContextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E14A92A2944B3A949D8F2E /* AssistContextBuilder.swift */; };
+		367075B2E4BA4455887873BF /* AssistFileSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1B5DFE48CE64036920C6FE8 /* AssistFileSystem.swift */; };
+		482BFF4C06914CF1A7EEC9D3 /* AssistGitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8DF4E15DAD640BC85C7896C /* AssistGitManager.swift */; };
+		D6982A0CE8BF4E40A95F9B8C /* AssistMemoryGraph.swift in Sources */ = {isa = PBXBuildFile; fileRef = 097EA6E26FEC4B21B392AC59 /* AssistMemoryGraph.swift */; };
+		AD0EDCD6A9434F93BFE81CDA /* AssistPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E81B9A6702D41E282DD8A81 /* AssistPlanner.swift */; };
+		1DC8FE4D08904931A60145CB /* AssistExecutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF8A997284694A50A7DB781A /* AssistExecutionEngine.swift */; };
+		7833D18C47384720A5A2A253 /* AssistToolRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53E4D3A12194CB0ADE0E756 /* AssistToolRegistry.swift */; };
+		F97F63163D07407CB2DCAA3B /* AssistAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF18552F63940CEAA60F518 /* AssistAgent.swift */; };
+		5DDE335BB8EF45009F67B2D5 /* AssistReadFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C6E19FC123C46FC9EE58AE3 /* AssistReadFileTool.swift */; };
+		A103128DD93D4B61863BEA26 /* AssistWriteFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC847CB9836E4671B93B9582 /* AssistWriteFileTool.swift */; };
+		BCBD4F08002E4F0DB7E4FBA8 /* AssistAppendFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C94EB7F934F4710A18BB411 /* AssistAppendFileTool.swift */; };
+		9E51F891D4E24BE8A3352928 /* AssistDeleteFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CF482DEBC9944F285CF2CFA /* AssistDeleteFileTool.swift */; };
+		A44B789DF0A34711BA727BD6 /* AssistMoveFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47450190F5E411C863CC04C /* AssistMoveFileTool.swift */; };
+		0C312C1D3CC542CB9D50FDB5 /* AssistCopyFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF2D25E43D1434AA7E3D186 /* AssistCopyFileTool.swift */; };
+		ABDE92AE2DFE42C7BF5704C1 /* AssistRenameFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F80133BF5B4DB2B4303743 /* AssistRenameFileTool.swift */; };
+		E0154A12915A4E93AE9926C0 /* AssistCreateDirectoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BACA2844B846439A40B209 /* AssistCreateDirectoryTool.swift */; };
+		ADD15701DF5C450D88F75979 /* AssistDeleteDirectoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53A9F14A75D046A5A2DCB4C3 /* AssistDeleteDirectoryTool.swift */; };
+		73AA9091229F4903831271DC /* AssistReadDirectoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A4E9F5841B461682FA550A /* AssistReadDirectoryTool.swift */; };
+		E318F079AD1B46D3AC0A212A /* AssistTreeViewTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3DB47E1234643CC82178C42 /* AssistTreeViewTool.swift */; };
+		FD553E76BC1A4298B76E2BC7 /* AssistSearchTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 444EA3FE80AE49488527A960 /* AssistSearchTool.swift */; };
+		62C8C7F8DA194AB8AE518B0A /* AssistRegexSearchTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A58692D0F14832B1509FA6 /* AssistRegexSearchTool.swift */; };
+		5BFE71F89C694A678EA57392 /* AssistSymbolSearchTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB907F415C4B40269DCEAB30 /* AssistSymbolSearchTool.swift */; };
+		2B184117ED654C1786665EC5 /* AssistDependencyGraphTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD3E034F5ABE46E986E919A8 /* AssistDependencyGraphTool.swift */; };
+		AA4B0550177048348C8359A5 /* AssistCodeSummaryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9EFD0DF05694AA2AC6AEBAF /* AssistCodeSummaryTool.swift */; };
+		97748AFF20CA45A7824CCEA0 /* AssistLintTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C7CA4FE1B65464D9EF688AE /* AssistLintTool.swift */; };
+		E2624D0E0B4948158D00F6D6 /* AssistComplexityAnalysisTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F437583FE9E3414884F509A5 /* AssistComplexityAnalysisTool.swift */; };
+		6BC2E798EA1B4E0D9AB13883 /* AssistReplaceInFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03A50F5E51324F559BD414A7 /* AssistReplaceInFileTool.swift */; };
+		522A02B83E6349C6AD7EDE7D /* AssistMultiFileEditTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 080708C30E074B72BB329042 /* AssistMultiFileEditTool.swift */; };
+		77AB18FCE46C4DE38B95A2EA /* AssistRefactorTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A7B3701CBC34B4983D46B95 /* AssistRefactorTool.swift */; };
+		508CD46204C7451ABCE519B4 /* AssistFormatCodeTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B599ED8BE9B4C83A0698615 /* AssistFormatCodeTool.swift */; };
+		DB41AD96F0FB462DB52DE6A2 /* AssistGenerateFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 564B58CF524145AB8870D4D8 /* AssistGenerateFileTool.swift */; };
+		4C5243F45B044E8EBDAED185 /* AssistInsertCodeBlockTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F548A53AC0CC43B789DCDB55 /* AssistInsertCodeBlockTool.swift */; };
+		D6B1EF81C50749DEB9206384 /* AssistGitInitTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635F663298464EC384D0EEAD /* AssistGitInitTool.swift */; };
+		BD3474A6F4CD4937930D59CA /* AssistGitStatusTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4E7B94A0AAD42AD9440DFC8 /* AssistGitStatusTool.swift */; };
+		0164A16EE4AF4C739C05351C /* AssistGitAddTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B5D8B5840D04543B3571705 /* AssistGitAddTool.swift */; };
+		C69733F30A2D4CC2A51562CC /* AssistGitCommitTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EF727A9380443239AF2A7F5 /* AssistGitCommitTool.swift */; };
+		EEF044AC9356410CA18A898B /* AssistGitBranchTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A15F0E23B654688B6730A4A /* AssistGitBranchTool.swift */; };
+		9B681786D16348478105E9A4 /* AssistGitCheckoutTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 603A0C886D964047AB37A529 /* AssistGitCheckoutTool.swift */; };
+		A0F97C7A4252472AAF97FB91 /* AssistGitMergeTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = C432EE29F89F4D5E84CDBC7D /* AssistGitMergeTool.swift */; };
+		49BF1F3FF5B7478C876163D6 /* AssistGitDiffTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EB7E65869F44F32B219D22E /* AssistGitDiffTool.swift */; };
+		202C6829A7E7467EA3085B29 /* AssistGitStashTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D6FD346A9504AC297734B09 /* AssistGitStashTool.swift */; };
+		D146641E46D7435E8A27997E /* AssistGitPRTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 247F50A1513F4577BEE9DD38 /* AssistGitPRTool.swift */; };
+		AD533EC8EEE6479CA9736181 /* AssistRunCommandTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2ED6D61904F4F64832965C0 /* AssistRunCommandTool.swift */; };
+		BFBDA39ADB354840A40EA528 /* AssistRunScriptTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98CBFBBDFFE140F5977C54E3 /* AssistRunScriptTool.swift */; };
+		5303DE98F7F74516B2D4D893 /* AssistBuildProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DE2A4343F4B4346932B84A7 /* AssistBuildProjectTool.swift */; };
+		048CFBF1AE12455CB848CE58 /* AssistTestRunnerTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E3FC50CA22424DB6A5296E /* AssistTestRunnerTool.swift */; };
+		EFD0DB9B32EE4361A3D70DAC /* AssistLogCaptureTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFA06445FBCA40468B7FE2C4 /* AssistLogCaptureTool.swift */; };
+		618B07C790074444AF707A03 /* AssistEnvironmentInfoTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAED081463114B7C9F311441 /* AssistEnvironmentInfoTool.swift */; };
+		847574A43FC04035A9408119 /* AssistPlanTaskTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24F848C0461D486DA3C60B24 /* AssistPlanTaskTool.swift */; };
+		0891A7B500474F7E8D708C14 /* AssistBreakdownTaskTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B33635154DC942F589385794 /* AssistBreakdownTaskTool.swift */; };
+		C32F6B9DB807465DA94DB539 /* AssistAutoFixErrorsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6FDF4F3CFAD4AE29BDEAA90 /* AssistAutoFixErrorsTool.swift */; };
+		3E350E4BB907475C9685E624 /* AssistGenerateTestsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EFAB4EA4B774434AB7163EA /* AssistGenerateTestsTool.swift */; };
+		4F967281A66447F985DADF97 /* AssistExplainCodeTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B812AD1F8985484E8DF58DE5 /* AssistExplainCodeTool.swift */; };
+		A98C18078AB3470E9A9561D8 /* AssistStoreMemoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CB1D622A0D14CC982D83B67 /* AssistStoreMemoryTool.swift */; };
+		0E9DEC32054D4D4899090218 /* AssistRetrieveMemoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 594AFD751A1F4937AF39527F /* AssistRetrieveMemoryTool.swift */; };
+		94427E0C918E42D996E0376C /* AssistClearMemoryTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CEAE286CF66498EA362285E /* AssistClearMemoryTool.swift */; };
+		61B171581D6942D0B99BFA00 /* AssistContextSnapshotTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27282F9DEF9416CAEEC1172 /* AssistContextSnapshotTool.swift */; };
+		A2D13352E1FD4D8E8FCA1E06 /* AssistSnapshotProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63E72CD131C4518AEFD68CA /* AssistSnapshotProjectTool.swift */; };
+		05566412DF0C494281600098 /* AssistRestoreSnapshotTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BC9B7DB1CA421EB73BFF7D /* AssistRestoreSnapshotTool.swift */; };
+		47839397FCBD4DBFAE478946 /* AssistUndoTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346A365871EF4A1F82C18FF7 /* AssistUndoTool.swift */; };
+		193E8E00276A4E0DB5E10C00 /* AssistValidateChangesTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16E783E443C4E4F9EEAB08B /* AssistValidateChangesTool.swift */; };
+		1183E990121D4FB49DDE1896 /* AssistSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A9A85E8474C1DA7571594 /* AssistSettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -761,6 +891,136 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		CLV000000000000000000022 /* CollaborationFilePresenceOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationFilePresenceOverlay.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000015B /* CollaborationFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationFeedbackView.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000016B /* PRCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/PRCreateView.swift; sourceTree = SOURCE_ROOT; };
+		7567F230BF6844B48370F0E3 /* AssistLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistLogger.swift; sourceTree = "<group>"; };
+		56FD5E0186794174B5A688B6 /* AssistPermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistPermissionsManager.swift; sourceTree = "<group>"; };
+		6805C983FE6446B8B012DA4B /* AssistSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSession.swift; sourceTree = "<group>"; };
+		B76AA591E1844303B3E6BC9A /* AssistContextBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistContextBuilder.swift; sourceTree = "<group>"; };
+		AB9A8452F09146A3971C4889 /* AssistFileSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistFileSystem.swift; sourceTree = "<group>"; };
+		AD6457BFE1494A79B9DB6B07 /* AssistGitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitManager.swift; sourceTree = "<group>"; };
+		498A098F443A419793292550 /* AssistMemoryGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistMemoryGraph.swift; sourceTree = "<group>"; };
+		D877769D4106438290B51EE0 /* AssistPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistPlanner.swift; sourceTree = "<group>"; };
+		2AF0FB762D3C4A7D960E591F /* AssistExecutionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistExecutionEngine.swift; sourceTree = "<group>"; };
+		D199315A65A54630BBE3697C /* AssistToolRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistToolRegistry.swift; sourceTree = "<group>"; };
+		F59954CB847B446C9067F453 /* AssistAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistAgent.swift; sourceTree = "<group>"; };
+		19830F4F97984FDEB4E5A115 /* AssistReadFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistReadFileTool.swift; sourceTree = "<group>"; };
+		E3D8A92CEEA8497984326BE7 /* AssistWriteFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistWriteFileTool.swift; sourceTree = "<group>"; };
+		A7BD7324673F4D3297370D56 /* AssistAppendFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistAppendFileTool.swift; sourceTree = "<group>"; };
+		B3A59F2EC2D64C948148C074 /* AssistDeleteFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistDeleteFileTool.swift; sourceTree = "<group>"; };
+		9703E55ADF694504A60E1AD2 /* AssistMoveFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistMoveFileTool.swift; sourceTree = "<group>"; };
+		9AC9AA435632427484F422A3 /* AssistCopyFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistCopyFileTool.swift; sourceTree = "<group>"; };
+		008C34E721DC4A2BB7CA70D4 /* AssistRenameFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRenameFileTool.swift; sourceTree = "<group>"; };
+		15BAA7A69353475998B720A2 /* AssistCreateDirectoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistCreateDirectoryTool.swift; sourceTree = "<group>"; };
+		B00272840872415AAFF135A6 /* AssistDeleteDirectoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistDeleteDirectoryTool.swift; sourceTree = "<group>"; };
+		6ACC026A90FB4595B4D7B790 /* AssistReadDirectoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistReadDirectoryTool.swift; sourceTree = "<group>"; };
+		9E4C3BEC51A54951B79E4CE8 /* AssistTreeViewTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistTreeViewTool.swift; sourceTree = "<group>"; };
+		4BFC567735DE4618BA646D99 /* AssistSearchTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSearchTool.swift; sourceTree = "<group>"; };
+		19223417E86B414592BB7116 /* AssistRegexSearchTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRegexSearchTool.swift; sourceTree = "<group>"; };
+		7947DF2184C64188BAB1BFF5 /* AssistSymbolSearchTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSymbolSearchTool.swift; sourceTree = "<group>"; };
+		FC35D9820E22408A95FB923A /* AssistDependencyGraphTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistDependencyGraphTool.swift; sourceTree = "<group>"; };
+		775D9A452C47445DB6CB66F1 /* AssistCodeSummaryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistCodeSummaryTool.swift; sourceTree = "<group>"; };
+		B4CCBA3B4BD94D9CA31FA25B /* AssistLintTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistLintTool.swift; sourceTree = "<group>"; };
+		315E7C4B0F24497DA71A6A24 /* AssistComplexityAnalysisTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistComplexityAnalysisTool.swift; sourceTree = "<group>"; };
+		E66EBD298031492C9E7A8FC5 /* AssistReplaceInFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistReplaceInFileTool.swift; sourceTree = "<group>"; };
+		E357B6DBCEF24912A70FE47C /* AssistMultiFileEditTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistMultiFileEditTool.swift; sourceTree = "<group>"; };
+		E9A5AF0A371C427AB3DD248B /* AssistRefactorTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRefactorTool.swift; sourceTree = "<group>"; };
+		8F0BD0A843C24BFB8E5098D9 /* AssistFormatCodeTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistFormatCodeTool.swift; sourceTree = "<group>"; };
+		FB56A38B6960460C9922E291 /* AssistGenerateFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGenerateFileTool.swift; sourceTree = "<group>"; };
+		70D2D15830D24ED29EAE393F /* AssistInsertCodeBlockTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistInsertCodeBlockTool.swift; sourceTree = "<group>"; };
+		943B6EDF24F1450BBCBCC154 /* AssistGitInitTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitInitTool.swift; sourceTree = "<group>"; };
+		36F0BC05219A4AECB25D1C2A /* AssistGitStatusTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitStatusTool.swift; sourceTree = "<group>"; };
+		7DD5AFF426474E259278CAF3 /* AssistGitAddTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitAddTool.swift; sourceTree = "<group>"; };
+		DACF8F17267F4C66A27B37D3 /* AssistGitCommitTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitCommitTool.swift; sourceTree = "<group>"; };
+		E4DFE10ADC04416BA438E34B /* AssistGitBranchTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitBranchTool.swift; sourceTree = "<group>"; };
+		E227BA74E40040DAAED09085 /* AssistGitCheckoutTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitCheckoutTool.swift; sourceTree = "<group>"; };
+		E5C3916DABF5419482E0E6FC /* AssistGitMergeTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitMergeTool.swift; sourceTree = "<group>"; };
+		0CD80E05520F422B89FE55A4 /* AssistGitDiffTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitDiffTool.swift; sourceTree = "<group>"; };
+		0563C9759A104AF8842A6522 /* AssistGitStashTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitStashTool.swift; sourceTree = "<group>"; };
+		F41ABAAA3ACD42CFB6BE19A6 /* AssistGitPRTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitPRTool.swift; sourceTree = "<group>"; };
+		9E07B69499774564A92E4A08 /* AssistRunCommandTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRunCommandTool.swift; sourceTree = "<group>"; };
+		612E6ADD13894C6B95854222 /* AssistRunScriptTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRunScriptTool.swift; sourceTree = "<group>"; };
+		737630DE6AD84830B99AAF38 /* AssistBuildProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistBuildProjectTool.swift; sourceTree = "<group>"; };
+		2C841D4AC23D4BFD88947294 /* AssistTestRunnerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistTestRunnerTool.swift; sourceTree = "<group>"; };
+		308E8BFCDC49414799E43CA2 /* AssistLogCaptureTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistLogCaptureTool.swift; sourceTree = "<group>"; };
+		A5F2324DAA3D472F9E7ACB57 /* AssistEnvironmentInfoTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistEnvironmentInfoTool.swift; sourceTree = "<group>"; };
+		5A84FCCFE4B8445BA5FFCE2F /* AssistPlanTaskTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistPlanTaskTool.swift; sourceTree = "<group>"; };
+		ED571AAC05B7455FA32BA528 /* AssistBreakdownTaskTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistBreakdownTaskTool.swift; sourceTree = "<group>"; };
+		9EF60EE6B8184514AF5C8595 /* AssistAutoFixErrorsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistAutoFixErrorsTool.swift; sourceTree = "<group>"; };
+		5AF3C7E246774A66A092A159 /* AssistGenerateTestsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGenerateTestsTool.swift; sourceTree = "<group>"; };
+		0071F4764DFA4B4BB21FBA5D /* AssistExplainCodeTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistExplainCodeTool.swift; sourceTree = "<group>"; };
+		3E438FDED5AD451A914FFE30 /* AssistStoreMemoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistStoreMemoryTool.swift; sourceTree = "<group>"; };
+		3F95018C7A2B4195B8335343 /* AssistRetrieveMemoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRetrieveMemoryTool.swift; sourceTree = "<group>"; };
+		2AB4DCB0FA5B402890367BCA /* AssistClearMemoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistClearMemoryTool.swift; sourceTree = "<group>"; };
+		3C683EC656084472AE7877DB /* AssistContextSnapshotTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistContextSnapshotTool.swift; sourceTree = "<group>"; };
+		9BA84D1A58A14258A58D4657 /* AssistSnapshotProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSnapshotProjectTool.swift; sourceTree = "<group>"; };
+		7D80AADDE4F54B4D98E5DFD8 /* AssistRestoreSnapshotTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRestoreSnapshotTool.swift; sourceTree = "<group>"; };
+		D5D2B4CDE3BF44CF9D558A0F /* AssistUndoTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistUndoTool.swift; sourceTree = "<group>"; };
+		F9263F6F8B4F422694880F7C /* AssistValidateChangesTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistValidateChangesTool.swift; sourceTree = "<group>"; };
+		B5ABF56A97784924AD3036CB /* AssistSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSettingsView.swift; sourceTree = "<group>"; };
+		92CDC2D82E8A405E97F8E84F /* AssistLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistLogger.swift; sourceTree = "<group>"; };
+		AB783FE3BD8540B4BE3DCD62 /* AssistPermissionsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistPermissionsManager.swift; sourceTree = "<group>"; };
+		00F3B9BE98DB4FA197AC63E1 /* AssistSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSession.swift; sourceTree = "<group>"; };
+		D2E14A92A2944B3A949D8F2E /* AssistContextBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistContextBuilder.swift; sourceTree = "<group>"; };
+		B1B5DFE48CE64036920C6FE8 /* AssistFileSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistFileSystem.swift; sourceTree = "<group>"; };
+		A8DF4E15DAD640BC85C7896C /* AssistGitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitManager.swift; sourceTree = "<group>"; };
+		097EA6E26FEC4B21B392AC59 /* AssistMemoryGraph.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistMemoryGraph.swift; sourceTree = "<group>"; };
+		5E81B9A6702D41E282DD8A81 /* AssistPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistPlanner.swift; sourceTree = "<group>"; };
+		DF8A997284694A50A7DB781A /* AssistExecutionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistExecutionEngine.swift; sourceTree = "<group>"; };
+		C53E4D3A12194CB0ADE0E756 /* AssistToolRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistToolRegistry.swift; sourceTree = "<group>"; };
+		8EF18552F63940CEAA60F518 /* AssistAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistAgent.swift; sourceTree = "<group>"; };
+		0C6E19FC123C46FC9EE58AE3 /* AssistReadFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistReadFileTool.swift; sourceTree = "<group>"; };
+		AC847CB9836E4671B93B9582 /* AssistWriteFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistWriteFileTool.swift; sourceTree = "<group>"; };
+		3C94EB7F934F4710A18BB411 /* AssistAppendFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistAppendFileTool.swift; sourceTree = "<group>"; };
+		3CF482DEBC9944F285CF2CFA /* AssistDeleteFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistDeleteFileTool.swift; sourceTree = "<group>"; };
+		B47450190F5E411C863CC04C /* AssistMoveFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistMoveFileTool.swift; sourceTree = "<group>"; };
+		FFF2D25E43D1434AA7E3D186 /* AssistCopyFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistCopyFileTool.swift; sourceTree = "<group>"; };
+		E8F80133BF5B4DB2B4303743 /* AssistRenameFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRenameFileTool.swift; sourceTree = "<group>"; };
+		D1BACA2844B846439A40B209 /* AssistCreateDirectoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistCreateDirectoryTool.swift; sourceTree = "<group>"; };
+		53A9F14A75D046A5A2DCB4C3 /* AssistDeleteDirectoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistDeleteDirectoryTool.swift; sourceTree = "<group>"; };
+		82A4E9F5841B461682FA550A /* AssistReadDirectoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistReadDirectoryTool.swift; sourceTree = "<group>"; };
+		C3DB47E1234643CC82178C42 /* AssistTreeViewTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistTreeViewTool.swift; sourceTree = "<group>"; };
+		444EA3FE80AE49488527A960 /* AssistSearchTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSearchTool.swift; sourceTree = "<group>"; };
+		D4A58692D0F14832B1509FA6 /* AssistRegexSearchTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRegexSearchTool.swift; sourceTree = "<group>"; };
+		EB907F415C4B40269DCEAB30 /* AssistSymbolSearchTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSymbolSearchTool.swift; sourceTree = "<group>"; };
+		AD3E034F5ABE46E986E919A8 /* AssistDependencyGraphTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistDependencyGraphTool.swift; sourceTree = "<group>"; };
+		D9EFD0DF05694AA2AC6AEBAF /* AssistCodeSummaryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistCodeSummaryTool.swift; sourceTree = "<group>"; };
+		7C7CA4FE1B65464D9EF688AE /* AssistLintTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistLintTool.swift; sourceTree = "<group>"; };
+		F437583FE9E3414884F509A5 /* AssistComplexityAnalysisTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistComplexityAnalysisTool.swift; sourceTree = "<group>"; };
+		03A50F5E51324F559BD414A7 /* AssistReplaceInFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistReplaceInFileTool.swift; sourceTree = "<group>"; };
+		080708C30E074B72BB329042 /* AssistMultiFileEditTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistMultiFileEditTool.swift; sourceTree = "<group>"; };
+		4A7B3701CBC34B4983D46B95 /* AssistRefactorTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRefactorTool.swift; sourceTree = "<group>"; };
+		0B599ED8BE9B4C83A0698615 /* AssistFormatCodeTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistFormatCodeTool.swift; sourceTree = "<group>"; };
+		564B58CF524145AB8870D4D8 /* AssistGenerateFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGenerateFileTool.swift; sourceTree = "<group>"; };
+		F548A53AC0CC43B789DCDB55 /* AssistInsertCodeBlockTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistInsertCodeBlockTool.swift; sourceTree = "<group>"; };
+		635F663298464EC384D0EEAD /* AssistGitInitTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitInitTool.swift; sourceTree = "<group>"; };
+		C4E7B94A0AAD42AD9440DFC8 /* AssistGitStatusTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitStatusTool.swift; sourceTree = "<group>"; };
+		7B5D8B5840D04543B3571705 /* AssistGitAddTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitAddTool.swift; sourceTree = "<group>"; };
+		8EF727A9380443239AF2A7F5 /* AssistGitCommitTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitCommitTool.swift; sourceTree = "<group>"; };
+		1A15F0E23B654688B6730A4A /* AssistGitBranchTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitBranchTool.swift; sourceTree = "<group>"; };
+		603A0C886D964047AB37A529 /* AssistGitCheckoutTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitCheckoutTool.swift; sourceTree = "<group>"; };
+		C432EE29F89F4D5E84CDBC7D /* AssistGitMergeTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitMergeTool.swift; sourceTree = "<group>"; };
+		7EB7E65869F44F32B219D22E /* AssistGitDiffTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitDiffTool.swift; sourceTree = "<group>"; };
+		7D6FD346A9504AC297734B09 /* AssistGitStashTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitStashTool.swift; sourceTree = "<group>"; };
+		247F50A1513F4577BEE9DD38 /* AssistGitPRTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitPRTool.swift; sourceTree = "<group>"; };
+		F2ED6D61904F4F64832965C0 /* AssistRunCommandTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRunCommandTool.swift; sourceTree = "<group>"; };
+		98CBFBBDFFE140F5977C54E3 /* AssistRunScriptTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRunScriptTool.swift; sourceTree = "<group>"; };
+		5DE2A4343F4B4346932B84A7 /* AssistBuildProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistBuildProjectTool.swift; sourceTree = "<group>"; };
+		E4E3FC50CA22424DB6A5296E /* AssistTestRunnerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistTestRunnerTool.swift; sourceTree = "<group>"; };
+		BFA06445FBCA40468B7FE2C4 /* AssistLogCaptureTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistLogCaptureTool.swift; sourceTree = "<group>"; };
+		FAED081463114B7C9F311441 /* AssistEnvironmentInfoTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistEnvironmentInfoTool.swift; sourceTree = "<group>"; };
+		24F848C0461D486DA3C60B24 /* AssistPlanTaskTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistPlanTaskTool.swift; sourceTree = "<group>"; };
+		B33635154DC942F589385794 /* AssistBreakdownTaskTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistBreakdownTaskTool.swift; sourceTree = "<group>"; };
+		E6FDF4F3CFAD4AE29BDEAA90 /* AssistAutoFixErrorsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistAutoFixErrorsTool.swift; sourceTree = "<group>"; };
+		6EFAB4EA4B774434AB7163EA /* AssistGenerateTestsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGenerateTestsTool.swift; sourceTree = "<group>"; };
+		B812AD1F8985484E8DF58DE5 /* AssistExplainCodeTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistExplainCodeTool.swift; sourceTree = "<group>"; };
+		1CB1D622A0D14CC982D83B67 /* AssistStoreMemoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistStoreMemoryTool.swift; sourceTree = "<group>"; };
+		594AFD751A1F4937AF39527F /* AssistRetrieveMemoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRetrieveMemoryTool.swift; sourceTree = "<group>"; };
+		7CEAE286CF66498EA362285E /* AssistClearMemoryTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistClearMemoryTool.swift; sourceTree = "<group>"; };
+		E27282F9DEF9416CAEEC1172 /* AssistContextSnapshotTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistContextSnapshotTool.swift; sourceTree = "<group>"; };
+		A63E72CD131C4518AEFD68CA /* AssistSnapshotProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSnapshotProjectTool.swift; sourceTree = "<group>"; };
+		44BC9B7DB1CA421EB73BFF7D /* AssistRestoreSnapshotTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistRestoreSnapshotTool.swift; sourceTree = "<group>"; };
+		346A365871EF4A1F82C18FF7 /* AssistUndoTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistUndoTool.swift; sourceTree = "<group>"; };
+		D16E783E443C4E4F9EEAB08B /* AssistValidateChangesTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistValidateChangesTool.swift; sourceTree = "<group>"; };
+		3F7A9A85E8474C1DA7571594 /* AssistSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -1159,6 +1419,8 @@ sourceTree = "<group>";
 AA000010000000000000048F /* Settings */ = {
 isa = PBXGroup;
 children = (
+				3F7A9A85E8474C1DA7571594 /* AssistSettingsView.swift */,
+				B5ABF56A97784924AD3036CB /* AssistSettingsView.swift */,
 				67EAFEC592A74ED1856B4635 /* OfflineModelsView.swift */,
 				BEC4574ACAD94E99A5E4DDC2 /* ModelDownloadProgressView.swift */,
 				IOM000000000000000000002 /* InstalledOfflineModelsView.swift */,
@@ -1458,6 +1720,30 @@ sourceTree = "<group>";
 		ASBG0000000000000000001 /* Assist */ = {
 			isa = PBXGroup;
 			children = (
+				ASBTG0000000000000000001 /* Tools */,
+				8EF18552F63940CEAA60F518 /* AssistAgent.swift */,
+				C53E4D3A12194CB0ADE0E756 /* AssistToolRegistry.swift */,
+				DF8A997284694A50A7DB781A /* AssistExecutionEngine.swift */,
+				5E81B9A6702D41E282DD8A81 /* AssistPlanner.swift */,
+				097EA6E26FEC4B21B392AC59 /* AssistMemoryGraph.swift */,
+				A8DF4E15DAD640BC85C7896C /* AssistGitManager.swift */,
+				B1B5DFE48CE64036920C6FE8 /* AssistFileSystem.swift */,
+				D2E14A92A2944B3A949D8F2E /* AssistContextBuilder.swift */,
+				00F3B9BE98DB4FA197AC63E1 /* AssistSession.swift */,
+				AB783FE3BD8540B4BE3DCD62 /* AssistPermissionsManager.swift */,
+				92CDC2D82E8A405E97F8E84F /* AssistLogger.swift */,
+				ASBTG0000000000000000001 /* Tools */,
+				F59954CB847B446C9067F453 /* AssistAgent.swift */,
+				D199315A65A54630BBE3697C /* AssistToolRegistry.swift */,
+				2AF0FB762D3C4A7D960E591F /* AssistExecutionEngine.swift */,
+				D877769D4106438290B51EE0 /* AssistPlanner.swift */,
+				498A098F443A419793292550 /* AssistMemoryGraph.swift */,
+				AD6457BFE1494A79B9DB6B07 /* AssistGitManager.swift */,
+				AB9A8452F09146A3971C4889 /* AssistFileSystem.swift */,
+				B76AA591E1844303B3E6BC9A /* AssistContextBuilder.swift */,
+				6805C983FE6446B8B012DA4B /* AssistSession.swift */,
+				56FD5E0186794174B5A688B6 /* AssistPermissionsManager.swift */,
+				7567F230BF6844B48370F0E3 /* AssistLogger.swift */,
 				ASB000000000000000000001 /* AssistModels.swift */,
 				ASB000000000000000000002 /* AssistManager.swift */,
 				ASB000000000000000000003 /* AssistLoop.swift */,
@@ -2054,6 +2340,73 @@ children = (
 path = Collaboration;
 sourceTree = "<group>";
 };
+		ASBTG0000000000000000001 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				D16E783E443C4E4F9EEAB08B /* AssistValidateChangesTool.swift */,
+				346A365871EF4A1F82C18FF7 /* AssistUndoTool.swift */,
+				44BC9B7DB1CA421EB73BFF7D /* AssistRestoreSnapshotTool.swift */,
+				A63E72CD131C4518AEFD68CA /* AssistSnapshotProjectTool.swift */,
+				E27282F9DEF9416CAEEC1172 /* AssistContextSnapshotTool.swift */,
+				7CEAE286CF66498EA362285E /* AssistClearMemoryTool.swift */,
+				594AFD751A1F4937AF39527F /* AssistRetrieveMemoryTool.swift */,
+				1CB1D622A0D14CC982D83B67 /* AssistStoreMemoryTool.swift */,
+				B812AD1F8985484E8DF58DE5 /* AssistExplainCodeTool.swift */,
+				6EFAB4EA4B774434AB7163EA /* AssistGenerateTestsTool.swift */,
+				E6FDF4F3CFAD4AE29BDEAA90 /* AssistAutoFixErrorsTool.swift */,
+				B33635154DC942F589385794 /* AssistBreakdownTaskTool.swift */,
+				24F848C0461D486DA3C60B24 /* AssistPlanTaskTool.swift */,
+				FAED081463114B7C9F311441 /* AssistEnvironmentInfoTool.swift */,
+				BFA06445FBCA40468B7FE2C4 /* AssistLogCaptureTool.swift */,
+				E4E3FC50CA22424DB6A5296E /* AssistTestRunnerTool.swift */,
+				5DE2A4343F4B4346932B84A7 /* AssistBuildProjectTool.swift */,
+				98CBFBBDFFE140F5977C54E3 /* AssistRunScriptTool.swift */,
+				F2ED6D61904F4F64832965C0 /* AssistRunCommandTool.swift */,
+				247F50A1513F4577BEE9DD38 /* AssistGitPRTool.swift */,
+				7D6FD346A9504AC297734B09 /* AssistGitStashTool.swift */,
+				7EB7E65869F44F32B219D22E /* AssistGitDiffTool.swift */,
+				C432EE29F89F4D5E84CDBC7D /* AssistGitMergeTool.swift */,
+				603A0C886D964047AB37A529 /* AssistGitCheckoutTool.swift */,
+				1A15F0E23B654688B6730A4A /* AssistGitBranchTool.swift */,
+				8EF727A9380443239AF2A7F5 /* AssistGitCommitTool.swift */,
+				7B5D8B5840D04543B3571705 /* AssistGitAddTool.swift */,
+				C4E7B94A0AAD42AD9440DFC8 /* AssistGitStatusTool.swift */,
+				635F663298464EC384D0EEAD /* AssistGitInitTool.swift */,
+				F548A53AC0CC43B789DCDB55 /* AssistInsertCodeBlockTool.swift */,
+				564B58CF524145AB8870D4D8 /* AssistGenerateFileTool.swift */,
+				0B599ED8BE9B4C83A0698615 /* AssistFormatCodeTool.swift */,
+				4A7B3701CBC34B4983D46B95 /* AssistRefactorTool.swift */,
+				080708C30E074B72BB329042 /* AssistMultiFileEditTool.swift */,
+				03A50F5E51324F559BD414A7 /* AssistReplaceInFileTool.swift */,
+				F437583FE9E3414884F509A5 /* AssistComplexityAnalysisTool.swift */,
+				7C7CA4FE1B65464D9EF688AE /* AssistLintTool.swift */,
+				D9EFD0DF05694AA2AC6AEBAF /* AssistCodeSummaryTool.swift */,
+				AD3E034F5ABE46E986E919A8 /* AssistDependencyGraphTool.swift */,
+				EB907F415C4B40269DCEAB30 /* AssistSymbolSearchTool.swift */,
+				D4A58692D0F14832B1509FA6 /* AssistRegexSearchTool.swift */,
+				444EA3FE80AE49488527A960 /* AssistSearchTool.swift */,
+				C3DB47E1234643CC82178C42 /* AssistTreeViewTool.swift */,
+				82A4E9F5841B461682FA550A /* AssistReadDirectoryTool.swift */,
+				53A9F14A75D046A5A2DCB4C3 /* AssistDeleteDirectoryTool.swift */,
+				D1BACA2844B846439A40B209 /* AssistCreateDirectoryTool.swift */,
+				E8F80133BF5B4DB2B4303743 /* AssistRenameFileTool.swift */,
+				FFF2D25E43D1434AA7E3D186 /* AssistCopyFileTool.swift */,
+				B47450190F5E411C863CC04C /* AssistMoveFileTool.swift */,
+				3CF482DEBC9944F285CF2CFA /* AssistDeleteFileTool.swift */,
+				3C94EB7F934F4710A18BB411 /* AssistAppendFileTool.swift */,
+				AC847CB9836E4671B93B9582 /* AssistWriteFileTool.swift */,
+				0C6E19FC123C46FC9EE58AE3 /* AssistReadFileTool.swift */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		ASBTG0000000000000000001 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -2151,6 +2504,136 @@ AA000001000000000000000B_SRC /* Sources */ = {
 isa = PBXSourcesBuildPhase;
 buildActionMask = 2147483647;
 files = (
+				1183E990121D4FB49DDE1896 /* AssistSettingsView.swift in Sources */,
+				193E8E00276A4E0DB5E10C00 /* AssistValidateChangesTool.swift in Sources */,
+				47839397FCBD4DBFAE478946 /* AssistUndoTool.swift in Sources */,
+				05566412DF0C494281600098 /* AssistRestoreSnapshotTool.swift in Sources */,
+				A2D13352E1FD4D8E8FCA1E06 /* AssistSnapshotProjectTool.swift in Sources */,
+				61B171581D6942D0B99BFA00 /* AssistContextSnapshotTool.swift in Sources */,
+				94427E0C918E42D996E0376C /* AssistClearMemoryTool.swift in Sources */,
+				0E9DEC32054D4D4899090218 /* AssistRetrieveMemoryTool.swift in Sources */,
+				A98C18078AB3470E9A9561D8 /* AssistStoreMemoryTool.swift in Sources */,
+				4F967281A66447F985DADF97 /* AssistExplainCodeTool.swift in Sources */,
+				3E350E4BB907475C9685E624 /* AssistGenerateTestsTool.swift in Sources */,
+				C32F6B9DB807465DA94DB539 /* AssistAutoFixErrorsTool.swift in Sources */,
+				0891A7B500474F7E8D708C14 /* AssistBreakdownTaskTool.swift in Sources */,
+				847574A43FC04035A9408119 /* AssistPlanTaskTool.swift in Sources */,
+				618B07C790074444AF707A03 /* AssistEnvironmentInfoTool.swift in Sources */,
+				EFD0DB9B32EE4361A3D70DAC /* AssistLogCaptureTool.swift in Sources */,
+				048CFBF1AE12455CB848CE58 /* AssistTestRunnerTool.swift in Sources */,
+				5303DE98F7F74516B2D4D893 /* AssistBuildProjectTool.swift in Sources */,
+				BFBDA39ADB354840A40EA528 /* AssistRunScriptTool.swift in Sources */,
+				AD533EC8EEE6479CA9736181 /* AssistRunCommandTool.swift in Sources */,
+				D146641E46D7435E8A27997E /* AssistGitPRTool.swift in Sources */,
+				202C6829A7E7467EA3085B29 /* AssistGitStashTool.swift in Sources */,
+				49BF1F3FF5B7478C876163D6 /* AssistGitDiffTool.swift in Sources */,
+				A0F97C7A4252472AAF97FB91 /* AssistGitMergeTool.swift in Sources */,
+				9B681786D16348478105E9A4 /* AssistGitCheckoutTool.swift in Sources */,
+				EEF044AC9356410CA18A898B /* AssistGitBranchTool.swift in Sources */,
+				C69733F30A2D4CC2A51562CC /* AssistGitCommitTool.swift in Sources */,
+				0164A16EE4AF4C739C05351C /* AssistGitAddTool.swift in Sources */,
+				BD3474A6F4CD4937930D59CA /* AssistGitStatusTool.swift in Sources */,
+				D6B1EF81C50749DEB9206384 /* AssistGitInitTool.swift in Sources */,
+				4C5243F45B044E8EBDAED185 /* AssistInsertCodeBlockTool.swift in Sources */,
+				DB41AD96F0FB462DB52DE6A2 /* AssistGenerateFileTool.swift in Sources */,
+				508CD46204C7451ABCE519B4 /* AssistFormatCodeTool.swift in Sources */,
+				77AB18FCE46C4DE38B95A2EA /* AssistRefactorTool.swift in Sources */,
+				522A02B83E6349C6AD7EDE7D /* AssistMultiFileEditTool.swift in Sources */,
+				6BC2E798EA1B4E0D9AB13883 /* AssistReplaceInFileTool.swift in Sources */,
+				E2624D0E0B4948158D00F6D6 /* AssistComplexityAnalysisTool.swift in Sources */,
+				97748AFF20CA45A7824CCEA0 /* AssistLintTool.swift in Sources */,
+				AA4B0550177048348C8359A5 /* AssistCodeSummaryTool.swift in Sources */,
+				2B184117ED654C1786665EC5 /* AssistDependencyGraphTool.swift in Sources */,
+				5BFE71F89C694A678EA57392 /* AssistSymbolSearchTool.swift in Sources */,
+				62C8C7F8DA194AB8AE518B0A /* AssistRegexSearchTool.swift in Sources */,
+				FD553E76BC1A4298B76E2BC7 /* AssistSearchTool.swift in Sources */,
+				E318F079AD1B46D3AC0A212A /* AssistTreeViewTool.swift in Sources */,
+				73AA9091229F4903831271DC /* AssistReadDirectoryTool.swift in Sources */,
+				ADD15701DF5C450D88F75979 /* AssistDeleteDirectoryTool.swift in Sources */,
+				E0154A12915A4E93AE9926C0 /* AssistCreateDirectoryTool.swift in Sources */,
+				ABDE92AE2DFE42C7BF5704C1 /* AssistRenameFileTool.swift in Sources */,
+				0C312C1D3CC542CB9D50FDB5 /* AssistCopyFileTool.swift in Sources */,
+				A44B789DF0A34711BA727BD6 /* AssistMoveFileTool.swift in Sources */,
+				9E51F891D4E24BE8A3352928 /* AssistDeleteFileTool.swift in Sources */,
+				BCBD4F08002E4F0DB7E4FBA8 /* AssistAppendFileTool.swift in Sources */,
+				A103128DD93D4B61863BEA26 /* AssistWriteFileTool.swift in Sources */,
+				5DDE335BB8EF45009F67B2D5 /* AssistReadFileTool.swift in Sources */,
+				F97F63163D07407CB2DCAA3B /* AssistAgent.swift in Sources */,
+				7833D18C47384720A5A2A253 /* AssistToolRegistry.swift in Sources */,
+				1DC8FE4D08904931A60145CB /* AssistExecutionEngine.swift in Sources */,
+				AD0EDCD6A9434F93BFE81CDA /* AssistPlanner.swift in Sources */,
+				D6982A0CE8BF4E40A95F9B8C /* AssistMemoryGraph.swift in Sources */,
+				482BFF4C06914CF1A7EEC9D3 /* AssistGitManager.swift in Sources */,
+				367075B2E4BA4455887873BF /* AssistFileSystem.swift in Sources */,
+				368E87C9A7644D83914B8435 /* AssistContextBuilder.swift in Sources */,
+				90646652C7774FC9B097191D /* AssistSession.swift in Sources */,
+				1B75B723DFC741B384459600 /* AssistPermissionsManager.swift in Sources */,
+				E0ECF2A5668D482995E0E60E /* AssistLogger.swift in Sources */,
+				CEC8CB64043D4224862A9A3A /* AssistSettingsView.swift in Sources */,
+				834618C852B74748A29697C6 /* AssistValidateChangesTool.swift in Sources */,
+				B17FAC09531F409184C261E5 /* AssistUndoTool.swift in Sources */,
+				FB89F0A067934C9F8EFCE501 /* AssistRestoreSnapshotTool.swift in Sources */,
+				09F01031CA0B49218370AAB2 /* AssistSnapshotProjectTool.swift in Sources */,
+				B6DB72DBC4EF4F3D8B27A492 /* AssistContextSnapshotTool.swift in Sources */,
+				EAB99C551799475DBA8E3A21 /* AssistClearMemoryTool.swift in Sources */,
+				6CF62BBD6FD9474293C6C194 /* AssistRetrieveMemoryTool.swift in Sources */,
+				B58490AF2B79407F8B7768DC /* AssistStoreMemoryTool.swift in Sources */,
+				2D99C1CF15714D33A7906053 /* AssistExplainCodeTool.swift in Sources */,
+				44F6E2D443C1425C8AEB814F /* AssistGenerateTestsTool.swift in Sources */,
+				00BA1C44BA58452494157FC5 /* AssistAutoFixErrorsTool.swift in Sources */,
+				A22341479D4D43D9B1C516B7 /* AssistBreakdownTaskTool.swift in Sources */,
+				E1538B724D14446AA79048A1 /* AssistPlanTaskTool.swift in Sources */,
+				D4647165333D485790D7DF30 /* AssistEnvironmentInfoTool.swift in Sources */,
+				1150CACABB9E480BAACEB19F /* AssistLogCaptureTool.swift in Sources */,
+				57A1FCF2735D47FCBE6CE7BE /* AssistTestRunnerTool.swift in Sources */,
+				20E890F433A5474DAD83E43C /* AssistBuildProjectTool.swift in Sources */,
+				F9A7F5DE13A243F6A7992DC3 /* AssistRunScriptTool.swift in Sources */,
+				7CD3BFE0FC1F43998A36995C /* AssistRunCommandTool.swift in Sources */,
+				87A0B4AD7C2849CE90EBDB73 /* AssistGitPRTool.swift in Sources */,
+				9C445FBC66EA43278F93E038 /* AssistGitStashTool.swift in Sources */,
+				8B8D3211B0EA4EEF97DEFABB /* AssistGitDiffTool.swift in Sources */,
+				ED31F7D55D4F4B02BBA3AF7E /* AssistGitMergeTool.swift in Sources */,
+				01821724A0244361B2614094 /* AssistGitCheckoutTool.swift in Sources */,
+				C0DB815D9C6A4F3CA1DF6AF3 /* AssistGitBranchTool.swift in Sources */,
+				DDB5D5806A7E4AFB8206DC41 /* AssistGitCommitTool.swift in Sources */,
+				411DB8B43C2445D58AC77F0B /* AssistGitAddTool.swift in Sources */,
+				5757CC8D42E84A03B486182D /* AssistGitStatusTool.swift in Sources */,
+				647B50F7867F4F30969AE6B6 /* AssistGitInitTool.swift in Sources */,
+				0CC8D4FC55214FB18672B5C1 /* AssistInsertCodeBlockTool.swift in Sources */,
+				3BC430031A7D4A0B8B9376F2 /* AssistGenerateFileTool.swift in Sources */,
+				CCB9A65436654D778F02FAC5 /* AssistFormatCodeTool.swift in Sources */,
+				030293D213E14DD28FDF374D /* AssistRefactorTool.swift in Sources */,
+				564E1D727DF14F3683AF59F1 /* AssistMultiFileEditTool.swift in Sources */,
+				B26071957D1641529F90EAEA /* AssistReplaceInFileTool.swift in Sources */,
+				367BC2FA11A24D6099A46AB1 /* AssistComplexityAnalysisTool.swift in Sources */,
+				BB24AEB500C34B84BB230D95 /* AssistLintTool.swift in Sources */,
+				35ECA2F469F247D6803755C0 /* AssistCodeSummaryTool.swift in Sources */,
+				05EC01093E44431C9DC60A68 /* AssistDependencyGraphTool.swift in Sources */,
+				EE495460710C48A1BFA11C04 /* AssistSymbolSearchTool.swift in Sources */,
+				680B7BBA4A4C421893C0330E /* AssistRegexSearchTool.swift in Sources */,
+				A990E2AC9FC74097806243E0 /* AssistSearchTool.swift in Sources */,
+				C4C692B0E9994F1A9FDA17EF /* AssistTreeViewTool.swift in Sources */,
+				7D629D5FDE3B465C8E0AFAA7 /* AssistReadDirectoryTool.swift in Sources */,
+				724DBE1FEEA74439844D67B2 /* AssistDeleteDirectoryTool.swift in Sources */,
+				E326C0CD7C8045D8BD40601C /* AssistCreateDirectoryTool.swift in Sources */,
+				03F3447046B04CB5931A2D38 /* AssistRenameFileTool.swift in Sources */,
+				D69661386DB04F49A1D958B5 /* AssistCopyFileTool.swift in Sources */,
+				8B92023D86B74EED9826C1C1 /* AssistMoveFileTool.swift in Sources */,
+				CBE4D0AF96A44B2AAFC6AA3E /* AssistDeleteFileTool.swift in Sources */,
+				367E43D089B54E05935406CE /* AssistAppendFileTool.swift in Sources */,
+				A3C43CCF824C48CC8935A06D /* AssistWriteFileTool.swift in Sources */,
+				B5668198AEA646DD826FBAC7 /* AssistReadFileTool.swift in Sources */,
+				2FD92D374DB84E0BB6D9C75C /* AssistAgent.swift in Sources */,
+				B4C8487A886B4862A89564A0 /* AssistToolRegistry.swift in Sources */,
+				41F6E6291DE646EA82B43A47 /* AssistExecutionEngine.swift in Sources */,
+				A33862EC715144DD94EF0AC5 /* AssistPlanner.swift in Sources */,
+				8D2E89999F864581B718DE80 /* AssistMemoryGraph.swift in Sources */,
+				B435FA542F4D48F99AE10A0B /* AssistGitManager.swift in Sources */,
+				FF1942772CC142AAAF16ADCB /* AssistFileSystem.swift in Sources */,
+				E055A947A436453DA50EFC2C /* AssistContextBuilder.swift in Sources */,
+				6927537304A143B19169347A /* AssistSession.swift in Sources */,
+				8E8039183DDE4C0BB71AEE51 /* AssistPermissionsManager.swift in Sources */,
+				D8623D956F93479B9F523B7D /* AssistLogger.swift in Sources */,
 				80879779E84E3A42F4EF445A /* GistModels.swift in Sources */,
 				7AFCE8F97D96F6DAEB5BC4E7 /* GitHubGistService.swift in Sources */,
 				9950CEDDDB36FC9D36B5287C /* GistsView.swift in Sources */,
