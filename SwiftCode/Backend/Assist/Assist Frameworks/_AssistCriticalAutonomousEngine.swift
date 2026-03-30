@@ -7,6 +7,7 @@ public final class _AssistCriticalAutonomousEngine {
     private let context: AssistContext
     private let orchestrator: _AssistCriticalTaskOrchestrator
     private let validator: _AssistCriticalValidationEngine
+    private let analyzer: _AssistCriticalCodebaseAnalyzer
 
     private var isRunning = false
     private var iterationCount = 0
@@ -16,6 +17,7 @@ public final class _AssistCriticalAutonomousEngine {
         self.context = context
         self.orchestrator = _AssistCriticalTaskOrchestrator(context: context)
         self.validator = _AssistCriticalValidationEngine(context: context)
+        self.analyzer = _AssistCriticalCodebaseAnalyzer(context: context)
     }
 
     /// Starts the autonomous execution loop for a given user intent.
@@ -25,6 +27,10 @@ public final class _AssistCriticalAutonomousEngine {
         defer { isRunning = false }
 
         context.logger.info("Starting autonomous engine for: \(intent)", toolId: "AutonomousEngine")
+
+        // 0. Initial Analysis
+        let summary = try analyzer.analyze()
+        context.logger.info("Initial codebase analysis complete. Found \(summary.swiftFileCount) Swift files.", toolId: "AutonomousEngine")
 
         iterationCount = 0
         var currentIntent = intent
@@ -55,7 +61,7 @@ public final class _AssistCriticalAutonomousEngine {
         if !isSatisfied {
             context.logger.error("Reached maximum iterations (\(maxIterations)) without full satisfaction.", toolId: "AutonomousEngine")
             await MainActor.run {
-                AssistManager.shared.takeoverReason = "Reached maximum iterations (\(maxIterations)) without satisfying the goal. Please review the codebase and provide manual guidance."
+                AssistManager.shared.takeoverReason = "Reached maximum iterations (\(maxIterations)) without satisfying the goal. Feedback: \(currentIntent)"
             }
             throw AutonomousError.maxIterationsReached
         }

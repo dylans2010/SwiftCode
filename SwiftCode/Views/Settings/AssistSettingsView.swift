@@ -49,6 +49,27 @@ public struct AssistSettingsView: View {
                     loadApiKey()
                 }
 
+                Picker("Model", selection: $AppSettings.shared.selectedAssistModelID) {
+                    if let provider = AssistModelProvider(rawValue: selectedProvider) {
+                        switch provider {
+                        case .openAI:
+                            Text("GPT-4o").tag("openai/gpt-4o")
+                            Text("GPT-4o mini").tag("openai/gpt-4o-mini")
+                        case .anthropic:
+                            Text("Claude 3.5 Sonnet").tag("anthropic/claude-3.5-sonnet")
+                            Text("Claude 3 Opus").tag("anthropic/claude-3-opus")
+                        case .gemini:
+                            Text("Gemini Pro 1.5").tag("google/gemini-pro-1.5")
+                        case .openRouter:
+                            Text("Claude 3.5 Sonnet (OR)").tag("anthropic/claude-3.5-sonnet")
+                            Text("GPT-4o (OR)").tag("openai/gpt-4o")
+                            Text("Llama 3.1 405B").tag("meta-llama/llama-3.1-405b")
+                        default:
+                            Text("Default").tag("default")
+                        }
+                    }
+                }
+
                 SecureField("API Key", text: $apiKey)
                     .textContentType(.password)
                     .autocorrectionDisabled()

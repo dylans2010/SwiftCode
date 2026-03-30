@@ -23,6 +23,16 @@ public enum AssistModelProvider: String, Codable, CaseIterable {
         }
     }
 
+    var llmProvider: LLMProvider {
+        switch self {
+        case .openAI: return .openai
+        case .anthropic: return .anthropic
+        case .gemini: return .google
+        case .mistral: return .mistral
+        case .meta, .kimi, .openRouter: return .openRouter
+        }
+    }
+
     public var endpoint: URL? {
         switch self {
         case .openAI: return URL(string: "https://api.openai.com/v1/chat/completions")
@@ -49,143 +59,24 @@ public struct AssistAIResponse {
 }
 
 public struct AssistLLMService {
+    @MainActor
     public static func generateResponse(prompt: String, provider: AssistModelProvider, apiKey: String?) async -> AssistAIResponse {
-        guard let url = provider.endpoint else {
-            return AssistAIResponse(content: "", success: false, error: "Invalid endpoint for \(provider.rawValue)")
-        }
-
-        guard let apiKey, !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return AssistAIResponse(content: "", success: false, error: "Missing API key for \(provider.rawValue).")
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.timeoutInterval = 30
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        switch provider {
-        case .openAI, .mistral, .kimi, .openRouter, .meta:
-            request.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        case .anthropic:
-            request.addValue(apiKey, forHTTPHeaderField: "x-api-key")
-            request.addValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        case .gemini:
-            var components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-            components?.queryItems = [URLQueryItem(name: "key", value: apiKey)]
-            if let finalURL = components?.url {
-                request.url = finalURL
-            }
-        }
-
-        let body = prepareBody(prompt: prompt, provider: provider)
-        guard let bodyData = try? JSONSerialization.data(withJSONObject: body) else {
-            return AssistAIResponse(content: "", success: false, error: "Failed to encode API request payload.")
-        }
-
-        request.httpBody = bodyData
-
-        let configuration = URLSessionConfiguration.ephemeral
-        configuration.timeoutIntervalForRequest = 30
-        configuration.timeoutIntervalForResource = 60
-        let session = URLSession(configuration: configuration)
-
         do {
-            let (data, response) = try await session.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse else {
-                return AssistAIResponse(content: "", success: false, error: "Invalid response from API provider.")
-            }
+            // Standardize on the central LLMService which handles all model routing and logic.
+            // We pass the prompt and let LLMService handle the details.
+            let modelOverride = AppSettings.shared.selectedAssistModelID
+            let providerOverride = provider.llmProvider
 
-            guard (200...299).contains(httpResponse.statusCode) else {
-                let errorPayload = parseAPIError(data: data)
-                return AssistAIResponse(content: "", success: false, error: "API request failed (\(httpResponse.statusCode)): \(errorPayload)")
-            }
-
-            guard !data.isEmpty else {
-                return AssistAIResponse(content: "", success: false, error: "API returned an empty response.")
-            }
-
-            guard let parsedContent = parseResponse(data: data, provider: provider) else {
-                return AssistAIResponse(content: "", success: false, error: "API returned an unexpected response format.")
-            }
-
-            return AssistAIResponse(content: parsedContent, success: true)
+            let content = try await LLMService.shared.generateResponse(
+                prompt: prompt,
+                useContext: true,
+                modelOverride: modelOverride,
+                providerOverride: providerOverride
+            )
+            return AssistAIResponse(content: content, success: true)
         } catch {
-            return AssistAIResponse(content: "", success: false, error: "Network request failed: \(error.localizedDescription)")
+            return AssistAIResponse(content: "", success: false, error: "AI request failed: \(error.localizedDescription)")
         }
-    }
-
-    private static func prepareBody(prompt: String, provider: AssistModelProvider) -> [String: Any] {
-        switch provider {
-        case .anthropic:
-            return [
-                "model": "claude-3-sonnet-20240229",
-                "max_tokens": 4096,
-                "messages": [["role": "user", "content": prompt]]
-            ]
-        case .gemini:
-            return [
-                "contents": [["parts": [["text": prompt]]]]
-            ]
-        default:
-            let model: String
-            switch provider {
-            case .openAI: model = "gpt-4o-mini"
-            case .mistral: model = "mistral-large-latest"
-            case .kimi: model = "moonshot-v1-8k"
-            case .openRouter: model = "openai/gpt-4o-mini"
-            case .meta: model = "meta-llama/llama-3.1-8b-instruct"
-            default: model = "gpt-4o-mini"
-            }
-            return [
-                "model": model,
-                "messages": [["role": "user", "content": prompt]]
-            ]
-        }
-    }
-
-    private static func parseResponse(data: Data, provider: AssistModelProvider) -> String? {
-        guard let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
-            return nil
-        }
-
-        switch provider {
-        case .anthropic:
-            if let content = json["content"] as? [[String: Any]],
-               let text = content.first?["text"] as? String,
-               !text.isEmpty {
-                return text
-            }
-        case .gemini:
-            if let candidates = json["candidates"] as? [[String: Any]],
-               let content = candidates.first?["content"] as? [String: Any],
-               let parts = content["parts"] as? [[String: Any]],
-               let text = parts.first?["text"] as? String,
-               !text.isEmpty {
-                return text
-            }
-        default:
-            if let choices = json["choices"] as? [[String: Any]],
-               let message = choices.first?["message"] as? [String: Any],
-               let content = message["content"] as? String,
-               !content.isEmpty {
-                return content
-            }
-        }
-
-        return nil
-    }
-
-    private static func parseAPIError(data: Data) -> String {
-        if let json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] {
-            if let error = json["error"] as? [String: Any], let message = error["message"] as? String {
-                return message
-            }
-            if let message = json["message"] as? String {
-                return message
-            }
-        }
-
-        return String(data: data, encoding: .utf8) ?? "Unknown API error"
     }
 }
 

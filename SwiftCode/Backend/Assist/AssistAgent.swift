@@ -41,7 +41,7 @@ public final class AssistAgent: ObservableObject {
                 try await engine.execute(plan: &plan)
 
                 if plan.status == .completed {
-                    return await generateFinalReport(for: intent)
+                    return await generateFinalReport(for: intent, plan: plan)
                 }
 
                 context.logger.error("Agent finished with incomplete status: \(plan.status.rawValue)")
@@ -53,15 +53,24 @@ public final class AssistAgent: ObservableObject {
         }
     }
 
-    private func generateFinalReport(for intent: String) async -> AssistAIResponse {
+    private func generateFinalReport(for intent: String, plan: AssistExecutionPlan? = nil) async -> AssistAIResponse {
         context.logger.info("Generating final report for: \(intent)")
 
         let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
         let provider = AssistModelProvider(rawValue: providerRawValue) ?? .openAI
         let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
 
+        var prompt = "\(AssistAgenticPrompt.systemPrompt)\n\n# TASK COMPLETED\nTask: \(intent)\nStatus: Completed.\n"
+
+        if let plan = plan {
+            prompt += "\n## EXECUTION DATA\n"
+            prompt += plan.steps.map { "- \($0.description) (\($0.status.rawValue))" }.joined(separator: "\n")
+        }
+
+        prompt += "\n\nProvide the final report in the strict markdown format specified in the system prompt."
+
         let finalResponse = await AssistLLMService.generateResponse(
-            prompt: "\(AssistAgenticPrompt.systemPrompt)\n\nTask: \(intent)\nStatus: Completed.\nProvide the final report in the strict markdown format.",
+            prompt: prompt,
             provider: provider,
             apiKey: apiKey
         )
