@@ -53,6 +53,7 @@ struct ProjectWorkspaceView: View {
     @State private var showPaywall = false
     @State private var showCollaboration = false
     @State private var showGistManager = false
+    @State private var showAssistView = false
 
     var body: some View {
         ZStack {
@@ -266,12 +267,18 @@ struct ProjectWorkspaceView: View {
             PaywallView()
         }
         .sheet(isPresented: $showCollaboration) {
-            if let activeProject = projectManager.activeProject ?? Optional(project) {
-                CollaborationMainView(manager: CollaborationSessionStore.shared.manager(for: activeProject, creatorID: UIDevice.current.name))
-            }
+            CollaborationMainView(
+                manager: CollaborationSessionStore.shared.manager(
+                    for: projectManager.activeProject ?? project,
+                    creatorID: UIDevice.current.name
+                )
+            )
         }
         .sheet(isPresented: $showGistManager) {
             GistsView()
+        }
+        .sheet(isPresented: $showAssistView) {
+            AssistMainView()
         }
         .onReceive(NotificationCenter.default.publisher(for: .toolbarToolActivated)) { notification in
             guard
@@ -384,6 +391,7 @@ struct ProjectWorkspaceView: View {
         case .testTools: self.showTestTools = true
         case .collaboration: self.showCollaboration = true
         case .gistManager: self.showGistManager = true
+        case .assistView: self.showAssistView = true
         }
     }
 

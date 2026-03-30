@@ -51,6 +51,7 @@ final class ToolbarActionManager {
         case deployments
         case testTools
         case collaboration
+        case assistView
 
         var isPro: Bool {
             switch self {
@@ -155,6 +156,8 @@ final class ToolbarActionManager {
             return .testTools
         case "collaboration":
             return .collaboration
+        case "assist_view":
+            return .assistView
 
         default:
             return nil

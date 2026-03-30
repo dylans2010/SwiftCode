@@ -41,6 +41,18 @@ struct ToolbarCustomizationView: View {
                 Section("Display") {
                     Toggle("Show Tool Name", isOn: $toolbarSettings.showToolNames)
                         .tint(.orange)
+                    Toggle(
+                        "Show Assist View",
+                        isOn: Binding(
+                            get: {
+                                toolbarManager.tools.first(where: { $0.id == "assist_view" })?.isEnabled ?? false
+                            },
+                            set: { _ in
+                                toolbarManager.toggleTool(id: "assist_view")
+                            }
+                        )
+                    )
+                    .tint(.orange)
                 }
 
                 Section("Enabled Tools") {
