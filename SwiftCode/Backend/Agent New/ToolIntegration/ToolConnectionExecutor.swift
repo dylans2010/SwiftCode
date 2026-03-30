@@ -6,7 +6,7 @@ final class ToolConnectionExecutor {
 
     func execute(_ connection: CustomAgentConnection, parameters: [String: Any]) async throws -> String {
         AssistCapabilityExecutor.executeIfNeeded(
-            kind: .connection,
+            kind: AssistCapabilityKind.connection,
             name: connection.name,
             identifiers: connection.identificationTags,
             payload: parameters.reduce(into: [String: String]()) { partialResult, entry in
