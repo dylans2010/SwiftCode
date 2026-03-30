@@ -7,6 +7,7 @@ public final class _AssistCriticalTaskOrchestrator {
     private let planner: TasksAIPlanner
     private let executionEngine: _AssistCriticalExecutionEngine
 
+    @MainActor
     public init(context: AssistContext) {
         self.context = context
         self.planner = TasksAIPlanner.shared

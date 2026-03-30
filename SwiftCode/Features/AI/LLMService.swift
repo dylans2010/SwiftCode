@@ -263,7 +263,12 @@ final class LLMService {
     }
 
     func sendChatRequest(model: String, messages: [AIMessage], key: String? = nil, providerOverride: LLMProvider? = nil) async throws -> LLMResponse {
-        let provider = try await providerOverride ?? resolvedRoutingProvider()
+        let provider: LLMProvider
+        if let providerOverride {
+            provider = providerOverride
+        } else {
+            provider = try await resolvedRoutingProvider()
+        }
 
         if provider == .offline {
             return try await runOfflineResponse(messages: messages)
