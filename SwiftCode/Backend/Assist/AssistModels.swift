@@ -256,21 +256,35 @@ public struct AssistToolResult: Codable {
     public let output: String
     public let data: [String: String]?
     public let error: String?
+    public let errorCode: Int?
 
-    public init(success: Bool, output: String, data: [String: String]? = nil, error: String? = nil) {
+    public init(success: Bool, output: String, data: [String: String]? = nil, error: String? = nil, errorCode: Int? = nil) {
         self.success = success
         self.output = output
         self.data = data
         self.error = error
+        self.errorCode = errorCode
     }
 
     public static func success(_ output: String, data: [String: String]? = nil) -> AssistToolResult {
         AssistToolResult(success: true, output: output, data: data)
     }
 
-    public static func failure(_ error: String) -> AssistToolResult {
-        AssistToolResult(success: false, output: "Error: \(error)", error: error)
+    public static func failure(_ error: String, code: Int? = nil) -> AssistToolResult {
+        AssistToolResult(success: false, output: "Error: \(error)", error: error, errorCode: code)
     }
+}
+
+// Standard data payload keys
+public enum AssistToolDataKey {
+    public static let content = "content"
+    public static let explanation = "explanation"
+    public static let diff = "diff"
+    public static let testResults = "test_results"
+    public static let buildStatus = "build_status"
+    public static let searchResults = "results"
+    public static let planId = "planId"
+    public static let breakdown = "breakdown"
 }
 
 // MARK: - Planning & Execution Models

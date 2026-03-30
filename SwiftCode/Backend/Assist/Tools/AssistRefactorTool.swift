@@ -11,29 +11,38 @@ public struct AssistRefactorTool: AssistTool {
         guard let path = input["path"] as? String else {
             return .failure("Missing required parameter: path")
         }
-        guard let action = input["action"] as? String else {
+        guard let actionDescription = input["action"] as? String else {
             return .failure("Missing required parameter: action")
         }
 
         do {
             let content = try context.fileSystem.readFile(at: path)
-            let updated: String
 
-            switch action {
-            case "rename_symbol":
-                guard let oldName = input["oldName"] as? String, let newName = input["newName"] as? String else {
-                    return .failure("rename_symbol requires oldName and newName")
-                }
-                updated = content.replacingOccurrences(of: oldName, with: newName)
-            case "extract_region_to_mark":
-                let markName = (input["markName"] as? String) ?? "Refactored"
-                updated = "// MARK: - \(markName)\n" + content
-            default:
-                return .failure("Unsupported refactor action: \(action)")
+            let provider = AssistModelProvider.openAI // Default for now
+            let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
+
+            let prompt = """
+            You are a refactoring engine. Apply the following refactoring action to the code.
+            Return ONLY the modified code, no preamble.
+
+            Action: \(actionDescription)
+            File: \(path)
+            ---
+            \(content)
+            """
+
+            let response = await AssistLLMService.generateResponse(prompt: prompt, provider: provider, apiKey: apiKey)
+
+            if response.success {
+                let updatedCode = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .replacingOccurrences(of: "```swift", with: "")
+                    .replacingOccurrences(of: "```", with: "")
+
+                try context.fileSystem.writeFile(at: path, content: updatedCode)
+                return .success("Refactoring '\(actionDescription)' applied to \(path)")
+            } else {
+                return .failure("Refactor LLM failed: \(response.error ?? "unknown")")
             }
-
-            try context.fileSystem.writeFile(at: path, content: updated)
-            return .success("Refactoring '\(action)' applied to \(path)")
         } catch {
             return .failure("Refactor failed at \(path): \(error.localizedDescription)")
         }

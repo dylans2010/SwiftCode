@@ -53,40 +53,51 @@ public final class AssistManager: ObservableObject {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
-        messages.append(AssistMessage(role: .user, content: trimmed))
-        saveHistory()
-
-        isProcessing = true
-        lastError = nil
-
-        guard APIKeyManager.shared.retrieveKey(service: selectedProvider.apiKeyProvider)?.isEmpty == false else {
-            let error = "Missing API key for \(selectedProvider.rawValue). Add a key in Assist Settings."
-            lastError = error
-            messages.append(AssistMessage(role: .system, content: error))
-            isProcessing = false
+        await MainActor.run {
+            messages.append(AssistMessage(role: .user, content: trimmed))
+            isProcessing = true
+            lastError = nil
             saveHistory()
+        }
+
+        let provider = selectedProvider
+        let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
+
+        if apiKey == nil || apiKey?.isEmpty == true {
+            let error = "Missing API key for \(provider.rawValue). Add a key in Assist Settings."
+            await MainActor.run {
+                lastError = error
+                messages.append(AssistMessage(role: .system, content: error))
+                isProcessing = false
+                saveHistory()
+            }
             return
         }
 
-        guard let agent else {
+        guard let agent = self.agent else {
             let error = "Assist agent is unavailable."
-            lastError = error
-            messages.append(AssistMessage(role: .system, content: error))
-            isProcessing = false
-            saveHistory()
+            await MainActor.run {
+                lastError = error
+                messages.append(AssistMessage(role: .system, content: error))
+                isProcessing = false
+                saveHistory()
+            }
             return
         }
 
         let response = await agent.processIntent(trimmed)
-        if response.success {
-            messages.append(AssistMessage(role: .assistant, content: response.content))
-        } else {
-            lastError = response.error ?? "Unknown assist error"
-            messages.append(AssistMessage(role: .system, content: response.error ?? "Unable to complete request."))
-        }
 
-        isProcessing = false
-        saveHistory()
+        await MainActor.run {
+            if response.success {
+                messages.append(AssistMessage(role: .assistant, content: response.content))
+            } else {
+                lastError = response.error ?? "Unknown assist error"
+                messages.append(AssistMessage(role: .system, content: response.error ?? "Unable to complete request."))
+            }
+
+            isProcessing = false
+            saveHistory()
+        }
     }
 
     public func clearChat() {
