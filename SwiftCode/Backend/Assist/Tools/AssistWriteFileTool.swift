@@ -13,8 +13,22 @@ public struct AssistWriteFileTool: AssistTool {
         }
 
         do {
-            try AssistFileFunctions.writeFile(at: context.workspaceRoot.appendingPathComponent(path), content: content)
-            return .success("Successfully wrote file: \(path)")
+            let fileURL = context.workspaceRoot.appendingPathComponent(path)
+            let isNewFile = !FileManager.default.fileExists(atPath: fileURL.path)
+
+            try AssistFileFunctions.writeFile(at: fileURL, content: content)
+
+            // If it's a new file, we need to ensure the project manager refreshes the file tree.
+            // Since AssistContext might not have direct access to MainActor ProjectManager for tree refreshes,
+            // we rely on the fact that file writes are real.
+
+            await MainActor.run {
+                if let project = ProjectManager.shared.activeProject {
+                    ProjectManager.shared.refreshFileTree(for: project)
+                }
+            }
+
+            return .success("Successfully \(isNewFile ? "created" : "updated") file: \(path)")
         } catch {
             return .failure("Failed to write file at \(path): \(error.localizedDescription)")
         }

@@ -8,6 +8,7 @@ public final class AssistManager: ObservableObject {
     @Published public var messages: [AssistMessage] = []
     @Published public var isProcessing = false
     @Published public var lastError: String?
+    @Published public var takeoverReason: String?
 
     public let logger = AssistLogger()
     public let session = AssistSession()

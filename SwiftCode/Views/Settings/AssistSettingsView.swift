@@ -3,6 +3,7 @@ import SwiftUI
 public struct AssistSettingsView: View {
     @AppStorage("assist.safetyLevel") private var safetyLevel = AssistSafetyLevel.balanced.rawValue
     @AppStorage("assist.isAutonomous") private var isAutonomous = true
+    @AppStorage("assist.takeoverEnabled") private var takeoverEnabled = false
     @AppStorage("assist.debugMode") private var debugMode = false
     @AppStorage("assist.selectedProvider") private var selectedProvider = AssistModelProvider.openAI.rawValue
 
@@ -15,6 +16,11 @@ public struct AssistSettingsView: View {
         Form {
             Section {
                 Toggle("Autonomous Execution", isOn: $isAutonomous)
+
+                if isAutonomous {
+                    Toggle("Assist Takeovers", isOn: $takeoverEnabled)
+                }
+
                 Picker("Safety Level", selection: $safetyLevel) {
                     ForEach(AssistSafetyLevel.allCases, id: \.rawValue) { level in
                         Text(level.rawValue).tag(level.rawValue)
@@ -23,7 +29,14 @@ public struct AssistSettingsView: View {
             } header: {
                 Text("Execution Mode")
             } footer: {
-                Text("In autonomous mode, the agent will execute plans without requesting confirmation for each step.")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("In autonomous mode, the agent will execute plans without requesting confirmation for each step.")
+                    if takeoverEnabled {
+                        Text("This feature is highly experimental and may be unstable on large codebases. Assist will operate without human input and make autonomous changes.")
+                            .foregroundStyle(.orange)
+                            .font(.caption)
+                    }
+                }
             }
 
             Section("AI Model & Provider") {

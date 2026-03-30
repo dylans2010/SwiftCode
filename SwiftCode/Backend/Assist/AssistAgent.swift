@@ -19,19 +19,53 @@ public final class AssistAgent: ObservableObject {
         defer { isRunning = false }
 
         do {
-            var plan = try await planner.plan(for: intent)
-            try await engine.execute(plan: &plan)
+            // Check if Takeover Mode is enabled via settings
+            let takeoverEnabled = UserDefaults.standard.bool(forKey: "assist.takeoverEnabled")
 
-            if plan.status == .completed {
-                context.logger.info("Agent successfully completed task: \(intent)")
-                return AssistAIResponse(content: "Task completed successfully.", success: true)
+            if takeoverEnabled {
+                // Use the Critical Autonomous Engine for deep execution loops
+                let autonomousEngine = _AssistCriticalAutonomousEngine(context: context)
+                try await autonomousEngine.run(intent: intent)
+
+                // If it returns without error, it's satisfied.
+                // We fetch the final report.
+                return await generateFinalReport(for: intent)
+            } else {
+                // Standard semi-autonomous execution with Planner and Engine
+                var plan = try await TasksAIPlanner.shared.generatePlan(intent: intent, context: context)
+
+                guard !plan.steps.isEmpty else {
+                    return AssistAIResponse(content: "", success: false, error: "No executable steps generated for this task.")
+                }
+
+                try await engine.execute(plan: &plan)
+
+                if plan.status == .completed {
+                    return await generateFinalReport(for: intent)
+                }
+
+                context.logger.error("Agent finished with incomplete status: \(plan.status.rawValue)")
+                return AssistAIResponse(content: "Task ended with status: \(plan.status.rawValue)", success: false, error: "Execution did not complete.")
             }
-
-            context.logger.error("Agent finished with incomplete status: \(plan.status.rawValue)")
-            return AssistAIResponse(content: "Task ended with status: \(plan.status.rawValue)", success: false, error: "Execution did not complete.")
         } catch {
             context.logger.error("Agent execution failed: \(error.localizedDescription)")
             return AssistAIResponse(content: "I couldn't complete that request safely.", success: false, error: "Assist execution failed.")
         }
+    }
+
+    private func generateFinalReport(for intent: String) async -> AssistAIResponse {
+        context.logger.info("Generating final report for: \(intent)")
+
+        let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
+        let provider = AssistModelProvider(rawValue: providerRawValue) ?? .openAI
+        let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
+
+        let finalResponse = await AssistLLMService.generateResponse(
+            prompt: "\(AssistAgenticPrompt.systemPrompt)\n\nTask: \(intent)\nStatus: Completed.\nProvide the final report in the strict markdown format.",
+            provider: provider,
+            apiKey: apiKey
+        )
+
+        return finalResponse
     }
 }
