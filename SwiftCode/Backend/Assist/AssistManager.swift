@@ -9,7 +9,6 @@ public final class AssistManager: ObservableObject {
     @Published public var isProcessing = false
     @Published public var lastError: String?
 
-    // Core Components
     public let logger = AssistLogger()
     public let session = AssistSession()
     public let registry = AssistToolRegistry()
@@ -20,7 +19,12 @@ public final class AssistManager: ObservableObject {
 
     public var selectedModel: AssistModelOption {
         let modelID = AppSettings.shared.selectedAssistModelID
-        return AssistModelOption.all.first(where: { $0.id == modelID }) ?? .swiftCodeBalanced
+        return AssistModelOption.all.first(where: { $0.id == modelID }) ?? .gpt4oMini
+    }
+
+    private var selectedProvider: AssistModelProvider {
+        let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
+        return AssistModelProvider(rawValue: providerRawValue) ?? .openAI
     }
 
     private init() {
@@ -46,26 +50,39 @@ public final class AssistManager: ObservableObject {
     }
 
     public func sendMessage(_ content: String) async {
-        let userMessage = AssistMessage(role: .user, content: content)
-        messages.append(userMessage)
+        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+
+        messages.append(AssistMessage(role: .user, content: trimmed))
         saveHistory()
 
         isProcessing = true
         lastError = nil
 
-        do {
-            if let agent = agent {
-                try await agent.processIntent(content)
-                // In a real implementation, we'd add the agent's summary response here
-                let assistantMessage = AssistMessage(role: .assistant, content: "Task completed successfully.")
-                messages.append(assistantMessage)
-            } else {
-                throw NSError(domain: "Assist", code: 1, userInfo: [NSLocalizedDescriptionKey: "Agent not initialized"])
-            }
-        } catch {
-            lastError = error.localizedDescription
-            let errorMessage = AssistMessage(role: .system, content: "Error: \(error.localizedDescription)")
-            messages.append(errorMessage)
+        guard APIKeyManager.shared.retrieveKey(service: selectedProvider.apiKeyProvider)?.isEmpty == false else {
+            let error = "Missing API key for \(selectedProvider.rawValue). Add a key in Assist Settings."
+            lastError = error
+            messages.append(AssistMessage(role: .system, content: error))
+            isProcessing = false
+            saveHistory()
+            return
+        }
+
+        guard let agent else {
+            let error = "Assist agent is unavailable."
+            lastError = error
+            messages.append(AssistMessage(role: .system, content: error))
+            isProcessing = false
+            saveHistory()
+            return
+        }
+
+        let response = await agent.processIntent(trimmed)
+        if response.success {
+            messages.append(AssistMessage(role: .assistant, content: response.content))
+        } else {
+            lastError = response.error ?? "Unknown assist error"
+            messages.append(AssistMessage(role: .system, content: response.error ?? "Unable to complete request."))
         }
 
         isProcessing = false
@@ -103,8 +120,6 @@ public final class AssistManager: ObservableObject {
         }
         registerCapabilityExecution("Plan applied successfully.")
     }
-
-    // MARK: - Persistence
 
     private func loadHistory() {
         if let data = UserDefaults.standard.data(forKey: "com.swiftcode.assist.history"),

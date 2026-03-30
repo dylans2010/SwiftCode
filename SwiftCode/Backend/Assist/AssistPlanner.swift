@@ -10,9 +10,6 @@ public final class AssistPlanner {
     public func plan(for intent: String) async throws -> AssistExecutionPlan {
         context.logger.info("Planning for intent: \(intent)")
 
-        // In a real system, this would call an LLM to generate a structured plan.
-        // For now, we'll implement a basic heuristic-based planner or a simple LLM call.
-
         let systemPrompt = """
         You are the Assist Planner for SwiftCode.
         Your job is to break down a user's intent into a series of tool calls.
@@ -20,15 +17,25 @@ public final class AssistPlanner {
         Output a JSON object: {"goal": "...", "steps": [{"toolId": "...", "input": {"key": "value"}, "description": "..."}]}
         """
 
-        do {
-            let provider = AssistModelProvider(rawValue: UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? "") ?? .openAI
-            let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider) ?? ""
+        let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
+        let provider = AssistModelProvider(rawValue: providerRawValue) ?? .openAI
+        let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
 
-            let response = try await AssistLLMService.generateResponse(prompt: "\(systemPrompt)\n\nIntent: \(intent)", provider: provider, apiKey: apiKey)
-            return try parsePlan(from: response)
+        let response = await AssistLLMService.generateResponse(
+            prompt: "\(systemPrompt)\n\nIntent: \(intent)",
+            provider: provider,
+            apiKey: apiKey
+        )
+
+        guard response.success else {
+            context.logger.error("Planner request failed: \(response.error ?? "Unknown planner error")")
+            return AssistExecutionPlan(goal: intent, steps: [])
+        }
+
+        do {
+            return try parsePlan(from: response.content)
         } catch {
-            context.logger.error("Failed to generate plan: \(error.localizedDescription)")
-            // Fallback: simple one-step plan if LLM fails
+            context.logger.error("Planner response parse failed: \(error.localizedDescription)")
             return AssistExecutionPlan(goal: intent, steps: [])
         }
     }

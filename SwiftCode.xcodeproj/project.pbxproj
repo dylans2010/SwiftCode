@@ -12,6 +12,7 @@ objects = {
 		ASBF0003BF /* AssistCodeFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0003 /* AssistCodeFunctions.swift */; };
 		ASBF0004BF /* AssistExecutionFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0004 /* AssistExecutionFunctions.swift */; };
 		ASBF0005BF /* AssistSnapshotFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0005 /* AssistSnapshotFunctions.swift */; };
+		ASBF0006BF /* AssistCIFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0006 /* AssistCIFunctions.swift */; };
 		ASBT0001BF /* AssistSnapshotProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBT0001 /* AssistSnapshotProjectTool.swift */; };
 		ASBT0002BF /* AssistRestoreSnapshotTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBT0002 /* AssistRestoreSnapshotTool.swift */; };
 		ASBT0003BF /* AssistDiffTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBT0003 /* AssistDiffTool.swift */; };
@@ -768,6 +769,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		ASBF0003 /* AssistCodeFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Functions/AssistCodeFunctions.swift; sourceTree = SOURCE_ROOT; };
 		ASBF0004 /* AssistExecutionFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Functions/AssistExecutionFunctions.swift; sourceTree = SOURCE_ROOT; };
 		ASBF0005 /* AssistSnapshotFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Functions/AssistSnapshotFunctions.swift; sourceTree = SOURCE_ROOT; };
+		ASBF0006 /* AssistCIFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Functions/AssistCIFunctions.swift; sourceTree = SOURCE_ROOT; };
 		ASBT0001 /* AssistSnapshotProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistSnapshotProjectTool.swift; sourceTree = SOURCE_ROOT; };
 		ASBT0002 /* AssistRestoreSnapshotTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistRestoreSnapshotTool.swift; sourceTree = SOURCE_ROOT; };
 		ASBT0003 /* AssistDiffTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistDiffTool.swift; sourceTree = SOURCE_ROOT; };
@@ -1699,6 +1701,7 @@ sourceTree = "<group>";
 				ASBF0003 /* AssistCodeFunctions.swift */,
 				ASBF0004 /* AssistExecutionFunctions.swift */,
 				ASBF0005 /* AssistSnapshotFunctions.swift */,
+				ASBF0006 /* AssistCIFunctions.swift */,
 			);
 			path = Functions;
 			sourceTree = "<group>";
@@ -2496,6 +2499,7 @@ files = (
 				ASBF0003BF /* AssistCodeFunctions.swift in Sources */,
 				ASBF0004BF /* AssistExecutionFunctions.swift in Sources */,
 				ASBF0005BF /* AssistSnapshotFunctions.swift in Sources */,
+				ASBF0006BF /* AssistCIFunctions.swift in Sources */,
 				ASBT0001BF /* AssistSnapshotProjectTool.swift in Sources */,
 				ASBT0002BF /* AssistRestoreSnapshotTool.swift in Sources */,
 				ASBT0003BF /* AssistDiffTool.swift in Sources */,
