@@ -34,7 +34,7 @@ public final class AssistManager: ObservableObject {
             logger: logger,
             permissions: permissions,
             memory: memory,
-            fileSystem: AssistFileSystem(workspaceRoot: ProjectManager.shared.currentProject?.rootURL ?? URL(fileURLWithPath: "/")),
+            fileSystem: AssistFileSystem(workspaceRoot: ProjectManager.shared.currentProject?.directoryURL ?? URL(fileURLWithPath: "/")),
             git: AssistGitManager(project: ProjectManager.shared.currentProject)
         )
         let context = builder.buildContext(sessionId: session.id)

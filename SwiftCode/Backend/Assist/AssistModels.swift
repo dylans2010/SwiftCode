@@ -12,6 +12,17 @@ public enum AssistModelProvider: String, Codable, CaseIterable {
     case kimi = "Kimi"
     case openRouter = "OpenRouter"
 
+    var apiKeyProvider: APIKeyProvider {
+        switch self {
+        case .openAI: return .openai
+        case .anthropic: return .anthropic
+        case .gemini: return .google
+        case .mistral: return .mistral
+        case .meta, .kimi: return .openRouter
+        case .openRouter: return .openRouter
+        }
+    }
+
     public var endpoint: URL? {
         switch self {
         case .openAI: return URL(string: "https://api.openai.com/v1/chat/completions")
@@ -336,4 +347,37 @@ public protocol AssistGitManagerProtocol {
 public protocol AssistPermissionsManagerProtocol {
     func isPathAllowed(_ path: String) -> Bool
     func authorizeOperation(_ operation: String) -> Bool
+}
+
+
+// MARK: - Legacy Typealiases
+
+public typealias AssistPlan = AssistExecutionPlan
+public typealias AssistStep = AssistExecutionStep
+
+public enum AssistAction: Codable, Hashable {
+    case createFile(String, String)
+    case modifyFile(String, String)
+    case deleteFile(String)
+    case renameFile(String, String)
+    case runTest(String)
+
+    public var path: String {
+        switch self {
+        case .createFile(let path, _), .modifyFile(let path, _), .deleteFile(let path):
+            return path
+        case .renameFile(let oldPath, _):
+            return oldPath
+        case .runTest(let target):
+            return target
+        }
+    }
+}
+
+public extension AssistExecutionPlan {
+    var title: String { goal }
+}
+
+public extension AssistExecutionStep {
+    var actions: [AssistAction] { [] }
 }

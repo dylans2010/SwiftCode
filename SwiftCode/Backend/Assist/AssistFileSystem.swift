@@ -52,6 +52,20 @@ public final class AssistFileSystem: AssistFileSystemProtocol {
         return fileManager.fileExists(atPath: url.path)
     }
 
+    public func appendFile(at path: String, content: String) throws {
+        let url = resolve(path)
+        let existing = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
+        try writeFile(at: path, content: existing + content)
+    }
+
+    public func createDirectory(at path: String) throws {
+        let url = resolve(path)
+        if !fileManager.fileExists(atPath: url.path) {
+            try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
+        }
+    }
+
+
     private func resolve(_ path: String) -> URL {
         let normalizedPath = path.hasPrefix("/") ? String(path.dropFirst()) : path
         let resolvedURL = workspaceRoot.appendingPathComponent(normalizedPath).standardized
