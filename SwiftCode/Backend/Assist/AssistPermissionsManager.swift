@@ -29,8 +29,3 @@ public final class AssistPermissionsManager: AssistPermissionsManagerProtocol {
         allowedPaths.insert(path)
     }
 }
-
-public protocol AssistPermissionsManagerProtocol {
-    func isPathAllowed(_ path: String) -> Bool
-    func authorizeOperation(_ operation: String) -> Bool
-}
