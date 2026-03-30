@@ -9,29 +9,38 @@ public struct AssistDependencyGraphTool: AssistTool {
 
     public func execute(input: [String: Any], context: AssistContext) async throws -> AssistToolResult {
         let root = AssistToolingSupport.resolvePath(input["path"] as? String, workspaceRoot: context.workspaceRoot)
-        let files = AssistToolingSupport.enumeratedFiles(at: root, allowedExtensions: ["swift"], maxFileSize: 200_000)
+        // Scan common source directories if root is base
+        let files = AssistToolingSupport.enumeratedFiles(at: root, allowedExtensions: ["swift"], maxFileSize: 300_000)
 
         var nodes = Set<String>()
         var edges: [String] = []
 
+        // Extract imports using regex
         let importRegex = try? NSRegularExpression(pattern: "^\\s*import\\s+([A-Za-z0-9_\\.]+)", options: [.anchorsMatchLines])
+
         for file in files {
             guard let content = AssistToolingSupport.readText(file), let importRegex else { continue }
             let source = AssistToolingSupport.relativePath(for: file, workspaceRoot: context.workspaceRoot)
             nodes.insert(source)
+
             let nsRange = NSRange(location: 0, length: content.utf16.count)
-            for match in importRegex.matches(in: content, options: [], range: nsRange) {
+            let matches = importRegex.matches(in: content, options: [], range: nsRange)
+
+            for match in matches {
                 guard match.numberOfRanges > 1, let r = Range(match.range(at: 1), in: content) else { continue }
                 let module = String(content[r])
                 nodes.insert(module)
-                edges.append("\(source)->\(module)")
+                edges.append("\(source) -> \(module)")
             }
         }
 
-        let graph = [
-            "nodes": nodes.sorted().joined(separator: ","),
+        let resultData = [
+            "node_count": "\(nodes.count)",
+            "edge_count": "\(edges.count)",
+            "nodes": nodes.sorted().joined(separator: ", "),
             "edges": edges.sorted().joined(separator: "\n")
         ]
-        return .success("Dependency graph generated", data: graph)
+
+        return .success("Dependency graph generated for \(files.count) files.", data: resultData)
     }
 }

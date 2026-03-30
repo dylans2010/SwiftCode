@@ -41,31 +41,44 @@ public final class AssistPlanner {
     }
 
     private func parsePlan(from response: String) throws -> AssistExecutionPlan {
-        guard let range = response.range(of: "{"),
-              let endRange = response.range(of: "}", options: .backwards) else {
+        let pattern = "\\{(?:[^{}]|\\{(?:[^{}]|\\{[^{}]*\\})*\\})*\\}"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]),
+              let match = regex.firstMatch(in: response, options: [], range: NSRange(response.startIndex..., in: response)),
+              let range = Range(match.range, in: response) else {
+            context.logger.error("No JSON found in planner response.")
             throw AssistPlannerError.invalidResponse
         }
 
-        let jsonStr = response[range.lowerBound...endRange.upperBound]
+        let jsonStr = String(response[range])
         guard let data = jsonStr.data(using: .utf8) else {
             throw AssistPlannerError.invalidResponse
         }
 
         struct RawPlan: Decodable {
-            let goal: String
-            let steps: [RawStep]
+            let goal: String?
+            let steps: [RawStep]?
         }
         struct RawStep: Decodable {
-            let toolId: String
-            let input: [String: String]
-            let description: String
+            let toolId: String?
+            let input: [String: String]?
+            let description: String?
         }
 
         let raw = try JSONDecoder().decode(RawPlan.self, from: data)
-        var plan = AssistExecutionPlan(goal: raw.goal)
-        plan.steps = raw.steps.map {
-            AssistExecutionStep(toolId: $0.toolId, input: $0.input, description: $0.description)
+        var plan = AssistExecutionPlan(goal: raw.goal ?? "Untitled Task")
+        plan.steps = (raw.steps ?? []).compactMap { step in
+            guard let toolId = step.toolId else { return nil }
+            return AssistExecutionStep(
+                toolId: toolId,
+                input: step.input ?? [:],
+                description: step.description ?? "Executing \(toolId)"
+            )
         }
+
+        if plan.steps.isEmpty {
+            context.logger.warning("Planner returned 0 steps for intent.")
+        }
+
         return plan
     }
 }

@@ -14,26 +14,30 @@ public struct AssistExplainCodeTool: AssistTool {
 
         do {
             let content = try context.fileSystem.readFile(at: path)
-            let lines = content.components(separatedBy: .newlines)
-            let functionCount = lines.filter { $0.trimmingCharacters(in: .whitespaces).hasPrefix("func ") }.count
-            let typeCount = lines.filter {
-                let t = $0.trimmingCharacters(in: .whitespaces)
-                return t.hasPrefix("struct ") || t.hasPrefix("class ") || t.hasPrefix("enum ") || t.hasPrefix("protocol ")
-            }.count
-            let importCount = lines.filter { $0.trimmingCharacters(in: .whitespaces).hasPrefix("import ") }.count
-            let controlFlowCount = AssistToolingSupport.keywordOccurrences(in: content, keywords: ["if ", "guard ", "switch ", "for ", "while "])
 
-            let explanation = """
+            // LLM-powered explanation
+            let provider = AssistModelProvider.openAI // Default for now
+            let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
+
+            let prompt = """
+            You are a Swift expert. Explain the following code file in detail.
+            Keep it professional and concise.
+
             File: \(path)
-            Lines: \(lines.count)
-            Imports: \(importCount)
-            Type declarations: \(typeCount)
-            Functions: \(functionCount)
-            Control-flow constructs: \(controlFlowCount)
-            Notes: This explanation is static analysis derived from source content in the sandbox.
+            ---
+            \(content)
             """
 
-            return .success("Explanation generated for \(path)", data: ["explanation": explanation])
+            let response = await AssistLLMService.generateResponse(prompt: prompt, provider: provider, apiKey: apiKey)
+
+            if response.success {
+                return .success("Explanation for \(path)", data: ["explanation": response.content])
+            } else {
+                // Fallback to static analysis if LLM fails
+                let lines = content.components(separatedBy: .newlines)
+                let summary = "File: \(path), Lines: \(lines.count). (LLM explanation failed: \(response.error ?? "unknown"))"
+                return .success("Static analysis for \(path)", data: ["explanation": summary])
+            }
         } catch {
             return .failure("Failed to explain \(path): \(error.localizedDescription)")
         }

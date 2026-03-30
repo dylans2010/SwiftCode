@@ -11,28 +11,43 @@ public struct AssistAutoFixErrorsTool: AssistTool {
         let path = input["path"] as? String ?? "."
         let targetURL = AssistToolingSupport.resolvePath(path, workspaceRoot: context.workspaceRoot)
 
-        var files = [URL]()
-        var isDir: ObjCBool = false
-        if FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDir), isDir.boolValue {
-            files = AssistToolingSupport.enumeratedFiles(at: targetURL, allowedExtensions: ["swift", "m", "h", "js", "ts", "py"])
-        } else {
-            files = [targetURL]
-        }
+        do {
+            let lintOutput = try await AssistExecutionFunctions.executeTask(id: "lint_project", context: context)
 
-        var fixedCount = 0
-        for file in files {
-            guard let original = AssistToolingSupport.readText(file) else { continue }
-            var updated = original
-            updated = updated.replacingOccurrences(of: "\r\n", with: "\n")
-            updated = updated.replacingOccurrences(of: "\t", with: "    ")
-            updated = updated.replacingOccurrences(of: "TODO:", with: "NOTE:")
-            if updated != original {
-                let rel = AssistToolingSupport.relativePath(for: file, workspaceRoot: context.workspaceRoot)
-                try context.fileSystem.writeFile(at: rel, content: updated)
-                fixedCount += 1
+            if !lintOutput.contains("issue(s)") {
+                return .success("No lint issues to fix in \(path)")
             }
-        }
 
-        return .success("Auto-fix completed", data: ["fixedCount": "\(fixedCount)"])
+            // LLM-powered fix
+            let original = try context.fileSystem.readFile(at: path)
+            let provider = AssistModelProvider.openAI
+            let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
+
+            let prompt = """
+            Fix the linting issues in this Swift file.
+            Issues: \(lintOutput)
+
+            Return ONLY the fixed code.
+
+            File: \(path)
+            ---
+            \(original)
+            """
+
+            let response = await AssistLLMService.generateResponse(prompt: prompt, provider: provider, apiKey: apiKey)
+
+            if response.success {
+                let fixedCode = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+                    .replacingOccurrences(of: "```swift", with: "")
+                    .replacingOccurrences(of: "```", with: "")
+
+                try context.fileSystem.writeFile(at: path, content: fixedCode)
+                return .success("Auto-fix applied successfully to \(path)", data: ["fixedCount": "1"])
+            } else {
+                return .failure("LLM failed to fix errors: \(response.error ?? "unknown")")
+            }
+        } catch {
+            return .failure("Auto-fix failed: \(error.localizedDescription)")
+        }
     }
 }

@@ -15,9 +15,13 @@ public final class AssistExecutionEngine {
 
         for i in 0..<plan.steps.count {
             var step = plan.steps[i]
-            context.logger.info("Step \(i+1): \(step.description)", toolId: step.toolId)
-            step.status = .running
-            plan.steps[i] = step
+            let stepTitle = "Step \(i+1)/\(plan.steps.count)"
+            context.logger.info("\(stepTitle): \(step.description)", toolId: step.toolId)
+
+            await MainActor.run {
+                step.status = .running
+                plan.steps[i] = step
+            }
 
             do {
                 guard let tool = registry.getTool(step.toolId) else {
@@ -25,29 +29,32 @@ public final class AssistExecutionEngine {
                 }
 
                 let result = try await tool.execute(input: step.input, context: context)
-                step.result = result
-                step.status = result.success ? .completed : .failed
+
+                await MainActor.run {
+                    step.result = result
+                    step.status = result.success ? .completed : .failed
+                    plan.steps[i] = step
+                }
 
                 if !result.success {
                     context.logger.error("Step failed: \(result.error ?? "Unknown error")", toolId: step.toolId)
                     if context.safetyLevel == .conservative {
-                        plan.status = .failed
-                        plan.steps[i] = step
+                        await MainActor.run { plan.status = .failed }
                         return
                     }
                 }
             } catch {
                 context.logger.error("Step execution error: \(error.localizedDescription)", toolId: step.toolId)
-                step.status = .failed
-                plan.status = .failed
-                plan.steps[i] = step
+                await MainActor.run {
+                    step.status = .failed
+                    plan.status = .failed
+                    plan.steps[i] = step
+                }
                 throw error
             }
-
-            plan.steps[i] = step
         }
 
-        plan.status = .completed
+        await MainActor.run { plan.status = .completed }
         context.logger.info("Plan execution completed: \(plan.goal)")
     }
 }

@@ -34,22 +34,16 @@ public struct AssistMainView: View {
                                 if let plan = manager.session.currentPlan {
                                     AssistExecutionTimelineView(plan: plan)
 
-                                    // If any step has a diff or modified content, show it
+                                    // Display tool outputs safely
                                     ForEach(plan.steps) { step in
-                                        if let result = step.result, let content = result.data?["content"], step.toolId == "file_read" {
-                                            VStack(alignment: .leading) {
-                                                Text("File Preview: \(step.input["path"] ?? "")")
-                                                    .font(.caption.bold())
-                                                    .foregroundStyle(.secondary)
-                                                Text(content)
-                                                    .font(.system(.caption2, design: .monospaced))
-                                                    .padding(8)
-                                                    .background(Color.black.opacity(0.3))
-                                                    .cornerRadius(8)
-                                            }
-                                            .padding(.horizontal)
+                                        if let result = step.result, result.success, let data = result.data {
+                                            ToolResultPreview(step: step, data: data)
                                         }
                                     }
+                                }
+
+                                if let error = manager.lastError {
+                                    AssistErrorBubble(error: error)
                                 }
 
                                 if manager.isProcessing || isLoading {
@@ -59,7 +53,7 @@ public struct AssistMainView: View {
                             .padding()
                             .id("Bottom")
                         }
-                        .onChange(of: manager.messages.count) {
+                        .onChange(of: manager.messages.count, initial: false) { _, _ in
                             withAnimation { proxy.scrollTo("Bottom", anchor: .bottom) }
                         }
                     }
@@ -120,15 +114,28 @@ public struct AssistMainView: View {
     }
 
     private var thinkingIndicator: some View {
-        HStack {
+        HStack(spacing: 12) {
             ProgressView()
                 .scaleEffect(0.8)
                 .tint(.orange)
-            Text("Planning next steps…")
-                .font(.caption)
-                .foregroundStyle(.orange)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(manager.isProcessing ? "Agent executing tools..." : "Planning next steps...")
+                    .font(.caption.bold())
+                    .foregroundStyle(.orange)
+
+                if let lastLog = manager.logger.logs.last {
+                    Text(lastLog.message)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
             Spacer()
         }
+        .padding(12)
+        .background(Color.orange.opacity(0.1))
+        .cornerRadius(10)
         .padding(.horizontal)
     }
 
@@ -247,6 +254,83 @@ private struct AssistChatBubble: View {
                 .background(bubbleColor, in: RoundedRectangle(cornerRadius: 14))
         }
         .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
+    }
+}
+
+struct ToolResultPreview: View {
+    let step: AssistExecutionStep
+    let data: [String: String]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "terminal.fill")
+                    .font(.caption)
+                Text(step.toolId)
+                    .font(.caption.bold().monospaced())
+                Spacer()
+                Text(step.description)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+
+            if let content = data[AssistToolDataKey.content] {
+                CodePreview(title: "File: \(step.input["path"] ?? "content")", content: content)
+            } else if let explanation = data[AssistToolDataKey.explanation] {
+                Text(explanation)
+                    .font(.subheadline)
+                    .padding(10)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(8)
+            } else if let results = data[AssistToolDataKey.searchResults] {
+                CodePreview(title: "Search Results", content: results)
+            }
+        }
+        .padding()
+        .background(Color.secondary.opacity(0.05))
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+}
+
+struct CodePreview: View {
+    let title: String
+    let content: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption2.bold())
+                .foregroundStyle(.secondary)
+            ScrollView(.horizontal) {
+                Text(content)
+                    .font(.system(size: 10, design: .monospaced))
+                    .padding(8)
+                    .background(Color.black.opacity(0.4))
+                    .cornerRadius(6)
+            }
+        }
+    }
+}
+
+struct AssistErrorBubble: View {
+    let error: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Execution Error")
+                    .font(.caption.bold())
+                Text(error)
+                    .font(.subheadline)
+            }
+        }
+        .padding()
+        .background(Color.red.opacity(0.1))
+        .cornerRadius(12)
+        .padding(.horizontal)
     }
 }
 

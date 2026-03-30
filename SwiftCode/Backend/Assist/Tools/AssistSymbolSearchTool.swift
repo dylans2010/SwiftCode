@@ -13,15 +13,24 @@ public struct AssistSymbolSearchTool: AssistTool {
         }
 
         let escaped = NSRegularExpression.escapedPattern(for: symbol)
-        let patterns = ["\\b(class|struct|enum|protocol|actor)\\s+\(escaped)\\b", "\\bfunc\\s+\(escaped)\\b", "\\b(var|let)\\s+\(escaped)\\b"]
+        // Improved Swift declaration regex patterns
+        let patterns = [
+            "\\b(class|struct|enum|protocol|actor|typealias|extension)\\s+\(escaped)\\b",
+            "\\bfunc\\s+\(escaped)\\s*[\\(<]",
+            "\\b(var|let)\\s+\(escaped)\\s*[:=]",
+            "\\bcase\\s+\(escaped)\\b"
+        ]
 
         var allMatches: [String] = []
         for pattern in patterns {
-            if let found = try? AssistSearchFunctions.searchText(in: context.workspaceRoot, pattern: pattern, isRegex: true) {
+            do {
+                let found = try AssistSearchFunctions.searchText(in: context.workspaceRoot, pattern: pattern, isRegex: true)
                 for (url, matches) in found {
                     let rel = AssistToolingSupport.relativePath(for: url, workspaceRoot: context.workspaceRoot)
                     allMatches.append(contentsOf: matches.map { "\(rel):\($0)" })
                 }
+            } catch {
+                context.logger.error("Regex search failed for pattern \(pattern): \(error.localizedDescription)")
             }
         }
 
