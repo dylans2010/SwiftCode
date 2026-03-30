@@ -7,6 +7,15 @@ objectVersion = 56;
 objects = {
 
 /* Begin PBXBuildFile section */
+		00000000000000000000B001 /* AssistAPIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F001 /* AssistAPIRequest.swift */; };
+		00000000000000000000B002 /* AssistAPIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F002 /* AssistAPIResponse.swift */; };
+		00000000000000000000B003 /* AssistAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F003 /* AssistAPIError.swift */; };
+		00000000000000000000B004 /* AssistAPIRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F004 /* AssistAPIRouter.swift */; };
+		00000000000000000000B005 /* AssistAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F005 /* AssistAPI.swift */; };
+		00000000000000000000B006 /* AssistModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F006 /* AssistModelManager.swift */; };
+		00000000000000000000B007 /* PromptEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F007 /* PromptEnhancer.swift */; };
+		BUILD_MOD_MAN_001 /* AssistModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FILE_MOD_MAN_001 /* AssistModelManager.swift */; };
+		BUILD_PRO_ENH_001 /* PromptEnhancer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FILE_PRO_ENH_001 /* PromptEnhancer.swift */; };
 		ASBF0001BF /* AssistFileFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0001 /* AssistFileFunctions.swift */; };
 		ASBF0002BF /* AssistSearchFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0002 /* AssistSearchFunctions.swift */; };
 		ASBF0003BF /* AssistCodeFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASBF0003 /* AssistCodeFunctions.swift */; };
@@ -497,6 +506,15 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		00000000000000000000F001 /* AssistAPIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIRequest.swift"; sourceTree = "<group>"; };
+		00000000000000000000F002 /* AssistAPIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIResponse.swift"; sourceTree = "<group>"; };
+		00000000000000000000F003 /* AssistAPIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIError.swift"; sourceTree = "<group>"; };
+		00000000000000000000F004 /* AssistAPIRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIRouter.swift"; sourceTree = "<group>"; };
+		00000000000000000000F005 /* AssistAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPI.swift"; sourceTree = "<group>"; };
+		00000000000000000000F006 /* AssistModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistModelManager.swift; sourceTree = "<group>"; };
+		00000000000000000000F007 /* PromptEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptEnhancer.swift; sourceTree = "<group>"; };
+		FILE_MOD_MAN_001 /* AssistModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistModelManager.swift; sourceTree = "<group>"; };
+		FILE_PRO_ENH_001 /* PromptEnhancer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptEnhancer.swift; sourceTree = "<group>"; };
 		7FD609693E33B866DCE781BA /* GistModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistModels.swift; sourceTree = "<group>"; };
 		089EB41151E05C028BAA1AD3 /* GitHubGistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubGistService.swift; sourceTree = "<group>"; };
 		0949CB12552DEAB7E3F7C702 /* GistsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GistsView.swift; sourceTree = "<group>"; };
@@ -1751,6 +1769,15 @@ sourceTree = "<group>";
 		ASBG0000000000000000001 /* Assist */ = {
 			isa = PBXGroup;
 			children = (
+				00000000000000000000F001 /* AssistAPIRequest.swift */,
+				00000000000000000000F002 /* AssistAPIResponse.swift */,
+				00000000000000000000F003 /* AssistAPIError.swift */,
+				00000000000000000000F004 /* AssistAPIRouter.swift */,
+				00000000000000000000F005 /* AssistAPI.swift */,
+				00000000000000000000F006 /* AssistModelManager.swift */,
+				00000000000000000000F007 /* PromptEnhancer.swift */,
+				FILE_MOD_MAN_001 /* AssistModelManager.swift */,
+				FILE_PRO_ENH_001 /* PromptEnhancer.swift */,
 				ASFRG0000000000000000001 /* Assist Frameworks */,
 				ASBFG0000000000000000001 /* Functions */,
 				ASBTG0000000000000000001 /* Tools */,
@@ -2531,6 +2558,15 @@ AA000001000000000000000B_SRC /* Sources */ = {
 isa = PBXSourcesBuildPhase;
 buildActionMask = 2147483647;
 files = (
+				00000000000000000000B001 /* AssistAPIRequest.swift in Sources */,
+				00000000000000000000B002 /* AssistAPIResponse.swift in Sources */,
+				00000000000000000000B003 /* AssistAPIError.swift in Sources */,
+				00000000000000000000B004 /* AssistAPIRouter.swift in Sources */,
+				00000000000000000000B005 /* AssistAPI.swift in Sources */,
+				00000000000000000000B006 /* AssistModelManager.swift in Sources */,
+				00000000000000000000B007 /* PromptEnhancer.swift in Sources */,
+				BUILD_MOD_MAN_001 /* AssistModelManager.swift in Sources */,
+				BUILD_PRO_ENH_001 /* PromptEnhancer.swift in Sources */,
 				ASBF0001BF /* AssistFileFunctions.swift in Sources */,
 				ASBF0002BF /* AssistSearchFunctions.swift in Sources */,
 				ASBF0003BF /* AssistCodeFunctions.swift in Sources */,

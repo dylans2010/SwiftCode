@@ -17,9 +17,10 @@ public final class AssistManager: ObservableObject {
     private let memory = AssistMemoryGraph()
 
     private var agent: AssistAgent?
+    private let api = AssistAPI.shared
 
     public var selectedModel: AssistModelOption {
-        let modelID = AppSettings.shared.selectedAssistModelID
+        let modelID = AssistModelManager.shared.selectedModelID
         return AssistModelOption.all.first(where: { $0.id == modelID }) ?? .gpt4oMini
     }
 
@@ -36,6 +37,7 @@ public final class AssistManager: ObservableObject {
 
     private func setupAgent() {
         let context = buildContext()
+        self.api.configure(context: context)
         self.agent = AssistAgent(context: context, registry: registry)
     }
 
@@ -86,6 +88,7 @@ public final class AssistManager: ObservableObject {
             return
         }
 
+        // Processing through the agent (which now uses the AssistAPI internally)
         let response = await agent.processIntent(trimmed)
 
         await MainActor.run {
@@ -122,15 +125,21 @@ public final class AssistManager: ObservableObject {
         guard var executingPlan = session.currentPlan ?? session.history.first(where: { $0.id == plan.id }) ?? Optional(plan) else {
             return
         }
-        let engine = AssistExecutionEngine(context: buildContext(), registry: registry)
-        try await engine.execute(plan: &executingPlan)
-        session.currentPlan = executingPlan
-        if let index = session.history.firstIndex(where: { $0.id == executingPlan.id }) {
-            session.history[index] = executingPlan
+
+        let response = await api.execute(plan: executingPlan)
+
+        if response.success {
+            executingPlan.status = .completed
+            session.currentPlan = executingPlan
+            if let index = session.history.firstIndex(where: { $0.id == executingPlan.id }) {
+                session.history[index] = executingPlan
+            } else {
+                session.history.append(executingPlan)
+            }
+            registerCapabilityExecution("Plan applied successfully.")
         } else {
-            session.history.append(executingPlan)
+            registerCapabilityExecution("Failed to apply plan: \(response.error ?? "Unknown error")")
         }
-        registerCapabilityExecution("Plan applied successfully.")
     }
 
     private func loadHistory() {
