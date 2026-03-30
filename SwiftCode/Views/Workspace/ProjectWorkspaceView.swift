@@ -86,12 +86,11 @@ struct ProjectWorkspaceView: View {
                     .background(Color(red: 0.12, green: 0.12, blue: 0.16))
                     .navigationTitle("Files")
                     .navigationBarTitleDisplayMode(.inline)
-                    .toolbar(content: {
+                    .toolbar {
                         ToolbarItem(placement: .confirmationAction) {
                             Button("Done") { showNavigatorSheet = false }
                         }
                     }
-                    })
             }
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
