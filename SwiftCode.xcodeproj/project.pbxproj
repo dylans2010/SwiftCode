@@ -173,7 +173,6 @@ CM0000000000000000000001A /* CodeEditorManagementView.swift in Sources */ = {isa
 		MMV000000000000000000001A /* MemberManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = MMV000000000000000000001B /* MemberManagementView.swift */; };
 		ASB000000000000000000001A /* AssistModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASB000000000000000000001 /* AssistModels.swift */; };
 		ASB000000000000000000002A /* AssistManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASB000000000000000000002 /* AssistManager.swift */; };
-		ASB000000000000000000003A /* AssistLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASB000000000000000000003 /* AssistLoop.swift */; };
 		ASV000000000000000000001A /* AssistMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASV000000000000000000001 /* AssistMainView.swift */; };
 		ASV000000000000000000002A /* AssistPlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASV000000000000000000002 /* AssistPlanView.swift */; };
 		ASV000000000000000000003A /* AssistDiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASV000000000000000000003 /* AssistDiffView.swift */; };
@@ -787,7 +786,6 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		ASBT0004 /* AssistChangeLogTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistChangeLogTool.swift; sourceTree = SOURCE_ROOT; };
 		ASBT0005 /* AssistTaskRunnerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistTaskRunnerTool.swift; sourceTree = SOURCE_ROOT; };
 		ASBM0001 /* AssistSnapshotModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Models/AssistSnapshotModels.swift; sourceTree = SOURCE_ROOT; };
-		ASB000000000000000000003 /* AssistLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/AssistLoop.swift; sourceTree = SOURCE_ROOT; };
 		ASA000000000000000000001B /* AssistCapability.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/API/AssistCapability.swift; sourceTree = SOURCE_ROOT; };
 		ASA000000000000000000002B /* AssistCapabilityExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/API/AssistCapabilityExecutor.swift; sourceTree = SOURCE_ROOT; };
 		ASV000000000000000000001 /* AssistMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Assist/AssistMainView.swift; sourceTree = SOURCE_ROOT; };
@@ -1784,7 +1782,6 @@ sourceTree = "<group>";
 				7567F230BF6844B48370F0E3 /* AssistLogger.swift */,
 				ASB000000000000000000001 /* AssistModels.swift */,
 				ASB000000000000000000002 /* AssistManager.swift */,
-				ASB000000000000000000003 /* AssistLoop.swift */,
 				ASA000000000000000000001B /* AssistCapability.swift */,
 				ASA000000000000000000002B /* AssistCapabilityExecutor.swift */,
 			);
@@ -2931,7 +2928,6 @@ files = (
 				AD89989EF990494380185AD5 /* AgentExecutionState.swift in Sources */,
 				ASB000000000000000000001A /* AssistModels.swift in Sources */,
 				ASB000000000000000000002A /* AssistManager.swift in Sources */,
-				ASB000000000000000000003A /* AssistLoop.swift in Sources */,
 				ASA000000000000000000001A /* AssistCapability.swift in Sources */,
 				ASA000000000000000000002A /* AssistCapabilityExecutor.swift in Sources */,
 				ASV000000000000000000001A /* AssistMainView.swift in Sources */,
