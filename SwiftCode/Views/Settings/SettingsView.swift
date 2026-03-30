@@ -56,6 +56,9 @@ class AppSettings: ObservableObject {
     @Published var customModel: String {
         didSet { debouncedSave("customModel", customModel) }
     }
+    @Published var selectedAssistModelID: String {
+        didSet { debouncedSave("selectedAssistModelID", selectedAssistModelID) }
+    }
     @Published var autoSave: Bool {
         didSet { debouncedSave("autoSave", autoSave) }
     }
@@ -220,6 +223,7 @@ class AppSettings: ObservableObject {
     private init() {
         selectedModel = UserDefaults.standard.string(forKey: "selectedModel") ?? OpenRouterModel.defaults.first?.id ?? ""
         customModel   = UserDefaults.standard.string(forKey: "customModel") ?? ""
+        selectedAssistModelID = UserDefaults.standard.string(forKey: "selectedAssistModelID") ?? AssistModelOption.swiftCodeBalanced.id
         autoSave = UserDefaults.standard.object(forKey: "autoSave") as? Bool ?? true
         editorFontSize = UserDefaults.standard.object(forKey: "editorFontSize") as? Double ?? 14
         useDarkTheme = UserDefaults.standard.object(forKey: "useDarkTheme") as? Bool ?? true

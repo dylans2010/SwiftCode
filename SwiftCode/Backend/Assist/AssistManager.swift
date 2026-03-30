@@ -9,6 +9,12 @@ public final class AssistManager: ObservableObject {
     @Published public var currentPlan: AssistPlan?
     @Published public var isProcessing = false
     @Published public var lastError: String?
+    @Published public var availableTools: [AssistTool] = AssistTool.allCases
+
+    public var selectedModel: AssistModelOption {
+        let modelID = AppSettings.shared.selectedAssistModelID
+        return AssistModelOption.all.first(where: { $0.id == modelID }) ?? .swiftCodeBalanced
+    }
 
     private var sessionHistory: [AssistMessage] = []
 
@@ -34,7 +40,11 @@ public final class AssistManager: ObservableObject {
             Plan format: {"title": "...", "steps": [{"description": "...", "actions": [{"type": "createFile|modifyFile|deleteFile|renameFile", "path": "...", "content": "..."}]}]}
             """
 
-            let responseText = try await LLMService.shared.generateResponse(prompt: content, useContext: true)
+            let modelPrompt = """
+            Selected Assist Model: \(selectedModel.displayName) (\(selectedModel.provider))
+            Available Tools: \(availableTools.map(\.rawValue).joined(separator: ", "))
+            """
+            let responseText = try await LLMService.shared.generateResponse(prompt: "\(modelPrompt)\n\n\(content)", useContext: true)
 
             // Try to parse plan from response
             if let plan = extractPlan(from: responseText) {
@@ -137,6 +147,13 @@ public final class AssistManager: ObservableObject {
         messages.removeAll()
         sessionHistory.removeAll()
         UserDefaults.standard.removeObject(forKey: "com.swiftcode.assist.history")
+    }
+
+    public func registerCapabilityExecution(_ text: String) {
+        let systemMessage = AssistMessage(role: .system, content: text)
+        messages.append(systemMessage)
+        sessionHistory.append(systemMessage)
+        saveHistory()
     }
 
     // MARK: - Persistence

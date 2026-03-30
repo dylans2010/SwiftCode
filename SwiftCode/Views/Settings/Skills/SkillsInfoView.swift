@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SkillsInfoView: View {
     let skill: AgentSkillBundle
+    @StateObject private var manager = AgentSkillManager.shared
 
     private var formattedMarkdown: AttributedString {
         (try? AttributedString(markdown: skill.markdown)) ?? AttributedString(skill.markdown)
@@ -48,6 +49,25 @@ struct SkillsInfoView: View {
                                     .foregroundStyle(.blue)
                             }
                         }
+                    }
+                }
+
+                if skill.source == .uploaded {
+                    GroupBox {
+                        Toggle(
+                            "SwiftCode Assist Capable",
+                            isOn: Binding(
+                                get: { manager.uploadedSkills.first(where: { $0.id == skill.id })?.swiftCodeAssistCapable ?? false },
+                                set: { manager.updateAssistCapability(for: skill.id, enabled: $0) }
+                            )
+                        )
+                        .tint(.orange)
+
+                        Text("When enabled, this skill is tagged with \(AssistCapability.toolIdentifier) and always routes through Assist.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } label: {
+                        Label("Assist API", systemImage: "sparkles")
                     }
                 }
 

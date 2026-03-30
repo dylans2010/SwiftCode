@@ -21,6 +21,7 @@ struct CreateExtensionView: View {
     @State private var showAddFileSheet = false
     @State private var newFileName = ""
     @State private var editingFileIndex: Int?
+    @State private var swiftCodeAssistCapable = false
 
     // Status
     @State private var installImmediately = true
@@ -40,6 +41,7 @@ struct CreateExtensionView: View {
                 basicInfoSection
                 categorySection
                 capabilitiesSection
+                assistSection
                 swiftFilesSection
                 installationSection
             }
@@ -188,6 +190,18 @@ struct CreateExtensionView: View {
         }
     }
 
+    private var assistSection: some View {
+        Section("Assist API") {
+            Toggle("SwiftCode Assist Capable", isOn: $swiftCodeAssistCapable)
+                .tint(.orange)
+            if swiftCodeAssistCapable {
+                Text("Identifier added: \(AssistCapability.toolIdentifier)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private var installationSection: some View {
         Section("Installation") {
             Toggle("Install Immediately", isOn: $installImmediately)
@@ -290,7 +304,9 @@ struct CreateExtensionView: View {
             assetPaths: [],
             isInstalled: installImmediately,
             isEnabled: installImmediately,
-            isUserCreated: true
+            isUserCreated: true,
+            swiftCodeAssistCapable: swiftCodeAssistCapable,
+            identificationTags: AssistCapability.identifiers(enabled: swiftCodeAssistCapable)
         )
 
         let files = swiftFiles.map { (name: $0.name, content: $0.content) }

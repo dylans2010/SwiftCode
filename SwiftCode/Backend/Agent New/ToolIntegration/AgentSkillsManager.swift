@@ -19,6 +19,14 @@ final class AgentSkillsManager {
             )
 
             ToolRegistry.shared.register(tool, source: .skill) { params in
+                AssistCapabilityExecutor.executeIfNeeded(
+                    kind: .skill,
+                    name: skill.scheme.name,
+                    identifiers: skill.identificationTags,
+                    payload: params.reduce(into: [String: String]()) { partialResult, entry in
+                        partialResult[entry.key] = "\(entry.value)"
+                    }
+                )
                 // Logic to execute skill
                 return "Skill '\(skill.scheme.name)' executed with input: \(params["input"] ?? "none")"
             }

@@ -341,16 +341,37 @@ struct CustomAgentConnection: Identifiable, Codable {
     var apiEndpoint: String
     var parameters: [CustomToolParameter]
     var expectedOutput: String
+    var swiftCodeAssistCapable: Bool
+    var identificationTags: [String]
 
     init(id: UUID = UUID(), name: String = "", toolDescription: String = "",
          apiEndpoint: String = "", parameters: [CustomToolParameter] = [],
-         expectedOutput: String = "") {
+         expectedOutput: String = "", swiftCodeAssistCapable: Bool = false,
+         identificationTags: [String] = []) {
         self.id = id
         self.name = name
         self.toolDescription = toolDescription
         self.apiEndpoint = apiEndpoint
         self.parameters = parameters
         self.expectedOutput = expectedOutput
+        self.swiftCodeAssistCapable = swiftCodeAssistCapable
+        self.identificationTags = identificationTags
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, toolDescription, apiEndpoint, parameters, expectedOutput, swiftCodeAssistCapable, identificationTags
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        toolDescription = try container.decode(String.self, forKey: .toolDescription)
+        apiEndpoint = try container.decode(String.self, forKey: .apiEndpoint)
+        parameters = try container.decode([CustomToolParameter].self, forKey: .parameters)
+        expectedOutput = try container.decode(String.self, forKey: .expectedOutput)
+        swiftCodeAssistCapable = try container.decodeIfPresent(Bool.self, forKey: .swiftCodeAssistCapable) ?? false
+        identificationTags = try container.decodeIfPresent([String].self, forKey: .identificationTags) ?? []
     }
 
     var agentToolID: String { "custom_\(id.uuidString.prefix(8))" }
@@ -644,6 +665,16 @@ struct GeneralSettingsView: View {
             Picker("Dynamic AI", selection: $aiRoutingModeRawValue) {
                 ForEach(AIRoutingMode.allCases, id: \.self) { mode in
                     Text(mode.rawValue).tag(mode.rawValue)
+                }
+            }
+
+            Picker("Assist Model", selection: Binding(
+                get: { settings.selectedAssistModelID },
+                set: { settings.selectedAssistModelID = $0 }
+            )) {
+                ForEach(AssistModelOption.all) { model in
+                    Text("\(model.displayName) (\(model.provider))")
+                        .tag(model.id)
                 }
             }
 
@@ -2048,6 +2079,11 @@ struct AgentConnectionsView: View {
                                     .font(.caption2)
                                     .foregroundStyle(.tertiary)
                             }
+                            if connection.swiftCodeAssistCapable {
+                                Text("SwiftCode Assist Capable")
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(.orange)
+                            }
                         }
                         .padding(.vertical, 2)
                         .contentShape(Rectangle())
@@ -2098,6 +2134,7 @@ struct CustomToolEditorView: View {
     @State private var apiEndpoint: String
     @State private var expectedOutput: String
     @State private var parameters: [CustomToolParameter]
+    @State private var swiftCodeAssistCapable: Bool
     @State private var showAddParameter = false
     @State private var showAdvancedBuilder = false
 
@@ -2114,6 +2151,7 @@ struct CustomToolEditorView: View {
         _apiEndpoint = State(initialValue: connection?.apiEndpoint ?? "")
         _expectedOutput = State(initialValue: connection?.expectedOutput ?? "")
         _parameters = State(initialValue: connection?.parameters ?? [])
+        _swiftCodeAssistCapable = State(initialValue: connection?.swiftCodeAssistCapable ?? false)
     }
 
     var body: some View {
@@ -2179,6 +2217,15 @@ struct CustomToolEditorView: View {
                     }
                 }
 
+                Section("Assist API") {
+                    Toggle("SwiftCode Assist Capable", isOn: $swiftCodeAssistCapable)
+                    if swiftCodeAssistCapable {
+                        Text("Identifier added: \(AssistCapability.toolIdentifier)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 if !isEditing {
                     Section {
                         Button {
@@ -2221,6 +2268,8 @@ struct CustomToolEditorView: View {
             updated.apiEndpoint = apiEndpoint
             updated.expectedOutput = expectedOutput
             updated.parameters = parameters
+            updated.swiftCodeAssistCapable = swiftCodeAssistCapable
+            updated.identificationTags = AssistCapability.identifiers(enabled: swiftCodeAssistCapable)
             if let idx = registry.connections.firstIndex(where: { $0.id == existing.id }) {
                 registry.connections[idx] = updated
             }
@@ -2230,7 +2279,9 @@ struct CustomToolEditorView: View {
                 toolDescription: trimmedDesc,
                 apiEndpoint: apiEndpoint,
                 parameters: parameters,
-                expectedOutput: expectedOutput
+                expectedOutput: expectedOutput,
+                swiftCodeAssistCapable: swiftCodeAssistCapable,
+                identificationTags: AssistCapability.identifiers(enabled: swiftCodeAssistCapable)
             )
             registry.connections.append(newConn)
         }

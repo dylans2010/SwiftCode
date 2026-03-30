@@ -1,5 +1,33 @@
 import Foundation
 
+public struct AssistModelOption: Identifiable, Codable, Hashable {
+    public let id: String
+    public let displayName: String
+    public let provider: String
+
+    public static let swiftCodeBalanced = AssistModelOption(id: "swiftcode.assist.balanced", displayName: "SwiftCode Balanced", provider: "SwiftCode")
+    public static let swiftCodeReasoning = AssistModelOption(id: "swiftcode.assist.reasoning", displayName: "SwiftCode Reasoning", provider: "SwiftCode")
+    public static let gpt4oMini = AssistModelOption(id: "openai.gpt-4o-mini", displayName: "GPT-4o mini", provider: "OpenAI")
+    public static let claudeSonnet = AssistModelOption(id: "anthropic.claude-sonnet", displayName: "Claude Sonnet", provider: "Anthropic")
+
+    public static let all: [AssistModelOption] = [.swiftCodeBalanced, .swiftCodeReasoning, .gpt4oMini, .claudeSonnet]
+}
+
+public enum AssistTool: String, CaseIterable, Codable, Identifiable {
+    case editFiles = "Edit Files"
+    case generatePlan = "Generate Plan"
+    case runTests = "Run Tests"
+    case summarizeDiff = "Summarize Diff"
+    case createPatch = "Create Patch"
+    case refactor = "Refactor"
+    case explainCode = "Explain Code"
+    case extensionBridge = "Extension Bridge"
+    case skillBridge = "Skill Bridge"
+    case connectionBridge = "Connection Bridge"
+
+    public var id: String { rawValue }
+}
+
 public struct AssistPlan: Codable, Identifiable {
     public let id: UUID
     public let title: String
@@ -71,4 +99,10 @@ public enum AssistRole: String, Codable {
     case user
     case assistant
     case system
+}
+
+public enum AssistCapabilityKind: String, Codable {
+    case extension
+    case skill
+    case connection
 }
