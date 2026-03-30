@@ -36,6 +36,12 @@ final class PeerSessionManager: NSObject, ObservableObject {
         guard !peers.isEmpty else { return }
         try session.send(data, toPeers: peers, with: .reliable)
     }
+
+    func sendDataToAll(_ data: Data) {
+        let peers = session.connectedPeers
+        guard !peers.isEmpty else { return }
+        try? send(data, to: peers)
+    }
 }
 
 extension PeerSessionManager: MCNearbyServiceAdvertiserDelegate, MCNearbyServiceBrowserDelegate, MCSessionDelegate {

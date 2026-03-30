@@ -60,7 +60,7 @@ public final class CollaborationConflictResolutionEngine: ObservableObject {
     }
 }
 
-public enum ConflictResolutionChoice: String, Codable {
+public enum ConflictResolutionChoice: String, Codable, CaseIterable {
     case useCurrent
     case useIncoming
     case manual
