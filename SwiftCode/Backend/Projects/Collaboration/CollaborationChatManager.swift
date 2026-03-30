@@ -1,7 +1,7 @@
 import Foundation
 import Combine
 
-public struct ChatMessage: Identifiable, Codable, Equatable {
+public struct CollaborationChatMessage: Identifiable, Codable, Equatable {
     public let id: UUID
     public let channelID: String
     public let authorID: String
@@ -26,12 +26,12 @@ public enum ChatAttachment: Codable, Equatable {
 
 @MainActor
 public final class CollaborationChatManager: ObservableObject {
-    @Published public private(set) var messagesByChannel: [String: [ChatMessage]] = [:]
+    @Published public private(set) var messagesByChannel: [String: [CollaborationChatMessage]] = [:]
     @Published public private(set) var activeChannelID: String = "general"
 
     public func sendMessage(text: String, authorID: String, channelID: String? = nil, attachment: ChatAttachment? = nil) {
         let cid = channelID ?? activeChannelID
-        let message = ChatMessage(channelID: cid, authorID: authorID, text: text, attachment: attachment)
+        let message = CollaborationChatMessage(channelID: cid, authorID: authorID, text: text, attachment: attachment)
         messagesByChannel[cid, default: []].append(message)
 
         // Broadcast via PeerSessionManager if in a live session
@@ -40,7 +40,7 @@ public final class CollaborationChatManager: ObservableObject {
         }
     }
 
-    public func receiveMessage(_ message: ChatMessage) {
+    public func receiveMessage(_ message: CollaborationChatMessage) {
         messagesByChannel[message.channelID, default: []].append(message)
     }
 
@@ -48,7 +48,7 @@ public final class CollaborationChatManager: ObservableObject {
         activeChannelID = channelID
     }
 
-    public func messages(for channelID: String) -> [ChatMessage] {
+    public func messages(for channelID: String) -> [CollaborationChatMessage] {
         messagesByChannel[channelID] ?? []
     }
 }

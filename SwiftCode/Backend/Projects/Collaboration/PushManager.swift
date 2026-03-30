@@ -7,20 +7,6 @@ public struct PushEvent: Equatable {
     public let notifies: Bool
 }
 
-public enum ConflictResolutionChoice: String, Codable, CaseIterable {
-    case local
-    case remote
-    case manual
-
-    public var displayName: String {
-        switch self {
-        case .local: return "Keep Local"
-        case .remote: return "Use Remote"
-        case .manual: return "Manual Merge"
-        }
-    }
-}
-
 public struct BranchConflict: Identifiable, Codable, Equatable {
     public let id: UUID
     public let branchName: String
