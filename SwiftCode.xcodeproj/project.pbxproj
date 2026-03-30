@@ -429,6 +429,7 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		09F01031CA0B49218370AAB2 /* AssistSnapshotProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BA84D1A58A14258A58D4657 /* AssistSnapshotProjectTool.swift */; };
 		FB89F0A067934C9F8EFCE501 /* AssistRestoreSnapshotTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D80AADDE4F54B4D98E5DFD8 /* AssistRestoreSnapshotTool.swift */; };
 		B17FAC09531F409184C261E5 /* AssistUndoTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5D2B4CDE3BF44CF9D558A0F /* AssistUndoTool.swift */; };
+		A67D0B5A0E8C4A90B22AC291 /* AssistToolingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A67D0B5A0E8C4A90B22AC290 /* AssistToolingSupport.swift */; };
 		834618C852B74748A29697C6 /* AssistValidateChangesTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9263F6F8B4F422694880F7C /* AssistValidateChangesTool.swift */; };
 		CEC8CB64043D4224862A9A3A /* AssistSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5ABF56A97784924AD3036CB /* AssistSettingsView.swift */; };
 		E0ECF2A5668D482995E0E60E /* AssistLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92CDC2D82E8A405E97F8E84F /* AssistLogger.swift */; };
@@ -482,6 +483,7 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		A2D13352E1FD4D8E8FCA1E06 /* AssistSnapshotProjectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A63E72CD131C4518AEFD68CA /* AssistSnapshotProjectTool.swift */; };
 		05566412DF0C494281600098 /* AssistRestoreSnapshotTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44BC9B7DB1CA421EB73BFF7D /* AssistRestoreSnapshotTool.swift */; };
 		47839397FCBD4DBFAE478946 /* AssistUndoTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 346A365871EF4A1F82C18FF7 /* AssistUndoTool.swift */; };
+		B78E1C6B1F9D5BA1C33BD3A2 /* AssistToolingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B78E1C6B1F9D5BA1C33BD3A1 /* AssistToolingSupport.swift */; };
 		193E8E00276A4E0DB5E10C00 /* AssistValidateChangesTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16E783E443C4E4F9EEAB08B /* AssistValidateChangesTool.swift */; };
 		1183E990121D4FB49DDE1896 /* AssistSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7A9A85E8474C1DA7571594 /* AssistSettingsView.swift */; };
 /* End PBXBuildFile section */
@@ -942,6 +944,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		9BA84D1A58A14258A58D4657 /* AssistSnapshotProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistSnapshotProjectTool.swift; sourceTree = SOURCE_ROOT; };
 		7D80AADDE4F54B4D98E5DFD8 /* AssistRestoreSnapshotTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistRestoreSnapshotTool.swift; sourceTree = SOURCE_ROOT; };
 		D5D2B4CDE3BF44CF9D558A0F /* AssistUndoTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistUndoTool.swift; sourceTree = SOURCE_ROOT; };
+		A67D0B5A0E8C4A90B22AC290 /* AssistToolingSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistToolingSupport.swift; sourceTree = SOURCE_ROOT; };
 		F9263F6F8B4F422694880F7C /* AssistValidateChangesTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistValidateChangesTool.swift; sourceTree = SOURCE_ROOT; };
 		B5ABF56A97784924AD3036CB /* AssistSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSettingsView.swift; sourceTree = "<group>"; };
 		92CDC2D82E8A405E97F8E84F /* AssistLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistLogger.swift; sourceTree = "<group>"; };
@@ -995,6 +998,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		A63E72CD131C4518AEFD68CA /* AssistSnapshotProjectTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistSnapshotProjectTool.swift; sourceTree = SOURCE_ROOT; };
 		44BC9B7DB1CA421EB73BFF7D /* AssistRestoreSnapshotTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistRestoreSnapshotTool.swift; sourceTree = SOURCE_ROOT; };
 		346A365871EF4A1F82C18FF7 /* AssistUndoTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistUndoTool.swift; sourceTree = SOURCE_ROOT; };
+		B78E1C6B1F9D5BA1C33BD3A1 /* AssistToolingSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistToolingSupport.swift; sourceTree = SOURCE_ROOT; };
 		D16E783E443C4E4F9EEAB08B /* AssistValidateChangesTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistValidateChangesTool.swift; sourceTree = SOURCE_ROOT; };
 		3F7A9A85E8474C1DA7571594 /* AssistSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -2349,6 +2353,7 @@ sourceTree = "<group>";
 				ASBT0005 /* AssistTaskRunnerTool.swift */,
 				D16E783E443C4E4F9EEAB08B /* AssistValidateChangesTool.swift */,
 				346A365871EF4A1F82C18FF7 /* AssistUndoTool.swift */,
+				B78E1C6B1F9D5BA1C33BD3A1 /* AssistToolingSupport.swift */,
 				E27282F9DEF9416CAEEC1172 /* AssistContextSnapshotTool.swift */,
 				7CEAE286CF66498EA362285E /* AssistClearMemoryTool.swift */,
 				594AFD751A1F4937AF39527F /* AssistRetrieveMemoryTool.swift */,
@@ -2509,6 +2514,7 @@ files = (
 				1183E990121D4FB49DDE1896 /* AssistSettingsView.swift in Sources */,
 				193E8E00276A4E0DB5E10C00 /* AssistValidateChangesTool.swift in Sources */,
 				47839397FCBD4DBFAE478946 /* AssistUndoTool.swift in Sources */,
+				B78E1C6B1F9D5BA1C33BD3A2 /* AssistToolingSupport.swift in Sources */,
 				05566412DF0C494281600098 /* AssistRestoreSnapshotTool.swift in Sources */,
 				A2D13352E1FD4D8E8FCA1E06 /* AssistSnapshotProjectTool.swift in Sources */,
 				61B171581D6942D0B99BFA00 /* AssistContextSnapshotTool.swift in Sources */,
@@ -2562,6 +2568,7 @@ files = (
 				CEC8CB64043D4224862A9A3A /* AssistSettingsView.swift in Sources */,
 				834618C852B74748A29697C6 /* AssistValidateChangesTool.swift in Sources */,
 				B17FAC09531F409184C261E5 /* AssistUndoTool.swift in Sources */,
+				A67D0B5A0E8C4A90B22AC291 /* AssistToolingSupport.swift in Sources */,
 				FB89F0A067934C9F8EFCE501 /* AssistRestoreSnapshotTool.swift in Sources */,
 				09F01031CA0B49218370AAB2 /* AssistSnapshotProjectTool.swift in Sources */,
 				B6DB72DBC4EF4F3D8B27A492 /* AssistContextSnapshotTool.swift in Sources */,
