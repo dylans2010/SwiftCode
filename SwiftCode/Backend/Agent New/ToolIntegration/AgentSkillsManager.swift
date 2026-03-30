@@ -18,9 +18,9 @@ final class AgentSkillsManager {
                 category: .utilities
             )
 
-            ToolRegistry.shared.register(tool, source: .skill) { params in
+            ToolRegistry.shared.register(tool, source: ToolSource.skill) { params in
                 AssistCapabilityExecutor.executeIfNeeded(
-                    kind: .skill,
+                    kind: AssistCapabilityKind.skill,
                     name: skill.scheme.name,
                     identifiers: skill.identificationTags,
                     payload: params.reduce(into: [String: String]()) { partialResult, entry in

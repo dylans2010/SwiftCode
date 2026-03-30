@@ -453,7 +453,7 @@ final class ExtensionManager: ObservableObject {
         // IDEExtensionLoader.shared.reload(extensions[idx])
 
         AssistCapabilityExecutor.executeIfNeeded(
-            kind: .`extension`,
+            kind: AssistCapabilityKind.`extension`,
             name: extensions[idx].name,
             identifiers: extensions[idx].identificationTags,
             payload: [
@@ -523,7 +523,7 @@ final class ExtensionManager: ObservableObject {
 
         Task { await scanExtensions() }
         AssistCapabilityExecutor.executeIfNeeded(
-            kind: .`extension`,
+            kind: AssistCapabilityKind.`extension`,
             name: manifest.name,
             identifiers: manifest.identificationTags,
             payload: ["extensionID": manifest.id, "event": "create"]
@@ -543,7 +543,7 @@ final class ExtensionManager: ObservableObject {
         let manifestData = try encoder.encode(manifest)
         try manifestData.write(to: folderURL.appendingPathComponent("extension.json"))
         AssistCapabilityExecutor.executeIfNeeded(
-            kind: .`extension`,
+            kind: AssistCapabilityKind.`extension`,
             name: manifest.name,
             identifiers: manifest.identificationTags,
             payload: ["extensionID": manifest.id, "event": "update"]
