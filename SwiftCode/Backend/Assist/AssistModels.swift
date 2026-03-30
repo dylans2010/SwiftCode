@@ -102,7 +102,7 @@ public enum AssistRole: String, Codable {
 }
 
 public enum AssistCapabilityKind: String, Codable {
-    case extension
+    case `extension`
     case skill
     case connection
 }
