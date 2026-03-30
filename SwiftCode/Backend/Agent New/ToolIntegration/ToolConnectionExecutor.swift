@@ -5,6 +5,15 @@ final class ToolConnectionExecutor {
     private init() {}
 
     func execute(_ connection: CustomAgentConnection, parameters: [String: Any]) async throws -> String {
+        AssistCapabilityExecutor.executeIfNeeded(
+            kind: .connection,
+            name: connection.name,
+            identifiers: connection.identificationTags,
+            payload: parameters.reduce(into: [String: String]()) { partialResult, entry in
+                partialResult[entry.key] = "\(entry.value)"
+            }
+        )
+
         guard !connection.apiEndpoint.isEmpty,
               let url = URL(string: connection.apiEndpoint) else {
             throw NSError(domain: "ToolConnectionExecutor", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid API endpoint"])

@@ -3,6 +3,7 @@ import SwiftUI
 public struct AssistMainView: View {
     @StateObject private var assistManager = AssistManager.shared
     @State private var inputText: String = ""
+    @State private var showTools = false
     @Environment(\.dismiss) private var dismiss
 
     public init() {}
@@ -14,6 +15,14 @@ public struct AssistMainView: View {
                 Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
 
                 VStack(spacing: 0) {
+                    AssistHeaderCard(
+                        modelName: assistManager.selectedModel.displayName,
+                        provider: assistManager.selectedModel.provider,
+                        tools: assistManager.availableTools,
+                        showTools: $showTools
+                    )
+                    .padding([.horizontal, .top])
+
                     ScrollViewReader { proxy in
                         ScrollView {
                             LazyVStack(spacing: 16) {
@@ -78,6 +87,10 @@ public struct AssistMainView: View {
                         assistManager.clearChat()
                     }
                 }
+                ToolbarItem(placement: .principal) {
+                    Text("Assist")
+                        .font(.headline)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
                         dismiss()
@@ -85,6 +98,52 @@ public struct AssistMainView: View {
                 }
             }
         }
+    }
+}
+
+private struct AssistHeaderCard: View {
+    let modelName: String
+    let provider: String
+    let tools: [AssistTool]
+    @Binding var showTools: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(modelName)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                    Text(provider)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(showTools ? "Hide Tools" : "Show Tools") {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        showTools.toggle()
+                    }
+                }
+                .font(.caption.weight(.semibold))
+            }
+
+            if showTools {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(tools) { tool in
+                            Text(tool.rawValue)
+                                .font(.caption2.weight(.medium))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.orange.opacity(0.18), in: Capsule())
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
     }
 }
 

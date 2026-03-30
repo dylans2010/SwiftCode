@@ -5,6 +5,7 @@ public struct CollaborationMainView: View {
     @ObservedObject var manager: CollaborationManager
     @State private var selectedTab: CollaborationTab = .overview
     private var currentUserID: String { UIDevice.current.name }
+    private let allTabs = CollaborationTab.allCases
 
     public init(manager: CollaborationManager) {
         self.manager = manager
@@ -17,14 +18,11 @@ public struct CollaborationMainView: View {
                 LinearGradient(colors: [Color(red: 0.05, green: 0.05, blue: 0.1), Color(red: 0.1, green: 0.1, blue: 0.2)], startPoint: .topLeading, endPoint: .bottomTrailing)
                     .ignoresSafeArea()
 
-                HStack(spacing: 0) {
-                    CollaborationSidebarView(selectedTab: $selectedTab, manager: manager)
-
-                    VStack(spacing: 0) {
-                        contentHeader
-                        selectedContent
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    }
+                VStack(spacing: 0) {
+                    contentHeader
+                    tabSwitcher
+                    selectedContent
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             }
             .collaborationFeedback(message: manager.workspaces.lastSuccessMessage, icon: "checkmark.circle.fill", color: Color.green)
@@ -32,6 +30,56 @@ public struct CollaborationMainView: View {
             .navigationTitle("")
             .navigationBarHidden(true)
         }
+    }
+
+    @ViewBuilder
+    private var tabSwitcher: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Text("Workspace")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Menu {
+                    Picker("Select Tab", selection: $selectedTab) {
+                        ForEach(allTabs, id: \.self) { tab in
+                            Label(tab.title, systemImage: tab.icon).tag(tab)
+                        }
+                    }
+                } label: {
+                    Label(selectedTab.title, systemImage: selectedTab.icon)
+                        .font(.caption.weight(.semibold))
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(allTabs, id: \.self) { tab in
+                        Button {
+                            selectedTab = tab
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: tab.icon)
+                                Text(tab.title)
+                            }
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(selectedTab == tab ? .white : .secondary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(
+                                Capsule()
+                                    .fill(selectedTab == tab ? Color.orange.opacity(0.85) : Color.white.opacity(0.08))
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
+        .background(.ultraThinMaterial)
     }
 
     @ViewBuilder

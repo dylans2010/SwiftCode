@@ -18,6 +18,7 @@ struct EditExtensionView: View {
     @State private var selectedCategory: ExtensionManifest.ExtensionCategory
     @State private var selectedCapabilities: Set<ExtensionManifest.ExtensionCapability>
     @State private var isEnabled: Bool
+    @State private var swiftCodeAssistCapable: Bool
 
     // Swift file editing (loads existing files from disk)
     @State private var swiftFiles: [EditableSwiftFile] = []
@@ -40,6 +41,7 @@ struct EditExtensionView: View {
         _selectedCategory = State(initialValue: ext.category)
         _selectedCapabilities = State(initialValue: Set(ext.capabilities))
         _isEnabled = State(initialValue: ext.isEnabled)
+        _swiftCodeAssistCapable = State(initialValue: ext.swiftCodeAssistCapable)
     }
 
     var hasChanges: Bool {
@@ -49,7 +51,8 @@ struct EditExtensionView: View {
         description != `extension`.description ||
         selectedCategory != `extension`.category ||
         Set(selectedCapabilities) != Set(`extension`.capabilities) ||
-        isEnabled != `extension`.isEnabled
+        isEnabled != `extension`.isEnabled ||
+        swiftCodeAssistCapable != `extension`.swiftCodeAssistCapable
     }
 
     var body: some View {
@@ -58,6 +61,7 @@ struct EditExtensionView: View {
                 basicInfoSection
                 categorySection
                 capabilitiesSection
+                assistSection
                 swiftFilesSection
                 installationSection
                 deleteSection
@@ -215,6 +219,18 @@ struct EditExtensionView: View {
         }
     }
 
+    private var assistSection: some View {
+        Section("Assist API") {
+            Toggle("SwiftCode Assist Capable", isOn: $swiftCodeAssistCapable)
+                .tint(.orange)
+            if swiftCodeAssistCapable {
+                Text("Identifier added: \(AssistCapability.toolIdentifier)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
     private var installationSection: some View {
         Section("Status") {
             Toggle("Enabled", isOn: $isEnabled)
@@ -331,6 +347,8 @@ struct EditExtensionView: View {
         updated.category = selectedCategory
         updated.capabilities = Array(selectedCapabilities)
         updated.isEnabled = isEnabled
+        updated.swiftCodeAssistCapable = swiftCodeAssistCapable
+        updated.identificationTags = AssistCapability.identifiers(enabled: swiftCodeAssistCapable)
 
         do {
             try manager.updateExtension(manifest: updated)

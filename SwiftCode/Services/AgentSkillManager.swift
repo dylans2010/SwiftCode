@@ -21,6 +21,31 @@ struct AgentSkillBundle: Identifiable, Codable {
     var source: AgentSkillSource
     var markdown: String
     var scheme: AgentSkillScheme
+    var swiftCodeAssistCapable: Bool = false
+    var identificationTags: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case id, source, markdown, scheme, swiftCodeAssistCapable, identificationTags
+    }
+
+    init(id: UUID, source: AgentSkillSource, markdown: String, scheme: AgentSkillScheme, swiftCodeAssistCapable: Bool = false, identificationTags: [String] = []) {
+        self.id = id
+        self.source = source
+        self.markdown = markdown
+        self.scheme = scheme
+        self.swiftCodeAssistCapable = swiftCodeAssistCapable
+        self.identificationTags = identificationTags
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        source = try container.decode(AgentSkillSource.self, forKey: .source)
+        markdown = try container.decode(String.self, forKey: .markdown)
+        scheme = try container.decode(AgentSkillScheme.self, forKey: .scheme)
+        swiftCodeAssistCapable = try container.decodeIfPresent(Bool.self, forKey: .swiftCodeAssistCapable) ?? false
+        identificationTags = try container.decodeIfPresent([String].self, forKey: .identificationTags) ?? []
+    }
 }
 
 @MainActor
@@ -88,6 +113,13 @@ final class AgentSkillManager: ObservableObject {
     func resetUploadedSkills() {
         uploadedSkills = []
         try? fm.removeItem(at: indexURL)
+    }
+
+    func updateAssistCapability(for skillID: UUID, enabled: Bool) {
+        guard let index = uploadedSkills.firstIndex(where: { $0.id == skillID }) else { return }
+        uploadedSkills[index].swiftCodeAssistCapable = enabled
+        uploadedSkills[index].identificationTags = AssistCapability.identifiers(enabled: enabled)
+        saveUploadedSkills()
     }
 
     private func loadUploadedSkills() {

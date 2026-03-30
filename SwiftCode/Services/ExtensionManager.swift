@@ -18,6 +18,68 @@ struct ExtensionManifest: Identifiable, Codable, Equatable {
     var isUserCreated: Bool
     var isDownloaded: Bool = true
     var use_test_tools: Bool = false
+    var swiftCodeAssistCapable: Bool = false
+    var identificationTags: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, version, description, author, category, capabilities, entryPoint, assetPaths, isInstalled, isEnabled, isUserCreated, isDownloaded, use_test_tools, swiftCodeAssistCapable, identificationTags
+    }
+
+    init(
+        id: String,
+        name: String,
+        version: String,
+        description: String,
+        author: String,
+        category: ExtensionCategory,
+        capabilities: [ExtensionCapability],
+        entryPoint: String,
+        assetPaths: [String],
+        isInstalled: Bool,
+        isEnabled: Bool,
+        isUserCreated: Bool,
+        isDownloaded: Bool = true,
+        use_test_tools: Bool = false,
+        swiftCodeAssistCapable: Bool = false,
+        identificationTags: [String] = []
+    ) {
+        self.id = id
+        self.name = name
+        self.version = version
+        self.description = description
+        self.author = author
+        self.category = category
+        self.capabilities = capabilities
+        self.entryPoint = entryPoint
+        self.assetPaths = assetPaths
+        self.isInstalled = isInstalled
+        self.isEnabled = isEnabled
+        self.isUserCreated = isUserCreated
+        self.isDownloaded = isDownloaded
+        self.use_test_tools = use_test_tools
+        self.swiftCodeAssistCapable = swiftCodeAssistCapable
+        self.identificationTags = identificationTags
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        version = try container.decode(String.self, forKey: .version)
+        description = try container.decode(String.self, forKey: .description)
+        author = try container.decode(String.self, forKey: .author)
+        category = try container.decode(ExtensionCategory.self, forKey: .category)
+        capabilities = try container.decode([ExtensionCapability].self, forKey: .capabilities)
+        entryPoint = try container.decode(String.self, forKey: .entryPoint)
+        assetPaths = try container.decode([String].self, forKey: .assetPaths)
+        isInstalled = try container.decode(Bool.self, forKey: .isInstalled)
+        isEnabled = try container.decode(Bool.self, forKey: .isEnabled)
+        isUserCreated = try container.decode(Bool.self, forKey: .isUserCreated)
+        isDownloaded = try container.decodeIfPresent(Bool.self, forKey: .isDownloaded) ?? true
+        use_test_tools = try container.decodeIfPresent(Bool.self, forKey: .use_test_tools) ?? false
+        swiftCodeAssistCapable = try container.decodeIfPresent(Bool.self, forKey: .swiftCodeAssistCapable) ?? false
+        identificationTags = try container.decodeIfPresent([String].self, forKey: .identificationTags) ?? []
+    }
 
     enum ExtensionCategory: String, Codable, CaseIterable, Identifiable {
         case editor        = "Editor"
@@ -389,6 +451,16 @@ final class ExtensionManager: ObservableObject {
 
         // PLACEHOLDER: Notify the IDE to load or unload this extension's entry point.
         // IDEExtensionLoader.shared.reload(extensions[idx])
+
+        AssistCapabilityExecutor.executeIfNeeded(
+            kind: .extension,
+            name: extensions[idx].name,
+            identifiers: extensions[idx].identificationTags,
+            payload: [
+                "extensionID": extensions[idx].id,
+                "enabled": "\(extensions[idx].isEnabled)"
+            ]
+        )
     }
 
     // MARK: - Install
@@ -450,6 +522,12 @@ final class ExtensionManager: ObservableObject {
         }
 
         Task { await scanExtensions() }
+        AssistCapabilityExecutor.executeIfNeeded(
+            kind: .extension,
+            name: manifest.name,
+            identifiers: manifest.identificationTags,
+            payload: ["extensionID": manifest.id, "event": "create"]
+        )
         return folderURL
     }
 
@@ -464,6 +542,12 @@ final class ExtensionManager: ObservableObject {
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let manifestData = try encoder.encode(manifest)
         try manifestData.write(to: folderURL.appendingPathComponent("extension.json"))
+        AssistCapabilityExecutor.executeIfNeeded(
+            kind: .extension,
+            name: manifest.name,
+            identifiers: manifest.identificationTags,
+            payload: ["extensionID": manifest.id, "event": "update"]
+        )
     }
 
     // MARK: - Filter Helpers
