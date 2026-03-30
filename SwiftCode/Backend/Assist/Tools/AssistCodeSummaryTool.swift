@@ -29,9 +29,9 @@ public struct AssistCodeSummaryTool: AssistTool {
             return .failure("File at \(path) is not readable as UTF-8 text")
         }
 
-        let lines = content.components(separatedBy: .newlines)
-        let nonEmpty = lines.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count
-        let commentLines = lines.filter { $0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.count
+        let lines = content.components(separatedBy: CharacterSet.newlines)
+        let nonEmpty = lines.filter { !$0.trimmingCharacters(in: CharacterSet.whitespaces).isEmpty }.count
+        let commentLines = lines.filter { $0.trimmingCharacters(in: CharacterSet.whitespaces).hasPrefix("//") }.count
         let summary = "File \(path): \(lines.count) lines (\(nonEmpty) non-empty), \(commentLines) comment lines"
         return .success("Summary for \(path)", data: ["summary": summary])
     }
