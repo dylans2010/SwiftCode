@@ -4,8 +4,12 @@ public struct AssistSettingsView: View {
     @AppStorage("assist.safetyLevel") private var safetyLevel = AssistSafetyLevel.balanced.rawValue
     @AppStorage("assist.isAutonomous") private var isAutonomous = true
     @AppStorage("assist.debugMode") private var debugMode = false
+    @AppStorage("assist.selectedProvider") private var selectedProvider = AssistModelProvider.openAI.rawValue
 
     @StateObject private var manager = AssistManager.shared
+    @State private var apiKey: String = ""
+    @State private var testResult: String?
+    @State private var isTesting = false
 
     public var body: some View {
         Form {
@@ -20,6 +24,43 @@ public struct AssistSettingsView: View {
                 Text("Execution Mode")
             } footer: {
                 Text("In autonomous mode, the agent will execute plans without requesting confirmation for each step.")
+            }
+
+            Section("AI Model & Provider") {
+                Picker("Provider", selection: $selectedProvider) {
+                    ForEach(AssistModelProvider.allCases, id: \.rawValue) { provider in
+                        Text(provider.rawValue).tag(provider.rawValue)
+                    }
+                }
+                .onChange(of: selectedProvider) { _ in
+                    loadApiKey()
+                }
+
+                SecureField("API Key", text: $apiKey)
+                    .textContentType(.password)
+                    .autocorrectionDisabled()
+                    .onAppear { loadApiKey() }
+
+                Button(action: saveApiKey) {
+                    Text("Save API Key")
+                }
+
+                Button(action: testApiKey) {
+                    HStack {
+                        Text("Test API Connection")
+                        if isTesting {
+                            Spacer()
+                            ProgressView()
+                        }
+                    }
+                }
+                .disabled(apiKey.isEmpty || isTesting)
+
+                if let result = testResult {
+                    Text(result)
+                        .font(.caption)
+                        .foregroundColor(result.contains("Success") ? .green : .red)
+                }
             }
 
             Section {
@@ -43,6 +84,39 @@ public struct AssistSettingsView: View {
             }
         }
         .navigationTitle("Assist Settings")
+    }
+
+    private func loadApiKey() {
+        if let provider = AssistModelProvider(rawValue: selectedProvider) {
+            apiKey = APIKeyManager.shared.retrieveKey(for: provider.rawValue) ?? ""
+        }
+    }
+
+    private func saveApiKey() {
+        if let provider = AssistModelProvider(rawValue: selectedProvider) {
+            APIKeyManager.shared.storeKey(apiKey, for: provider.rawValue)
+        }
+    }
+
+    private func testApiKey() {
+        guard let provider = AssistModelProvider(rawValue: selectedProvider) else { return }
+        isTesting = true
+        testResult = nil
+
+        Task {
+            do {
+                let _ = try await AssistLLMService.generateResponse(prompt: "Hello, this is a test.", provider: provider, apiKey: apiKey)
+                await MainActor.run {
+                    testResult = "Success: API connection verified!"
+                    isTesting = false
+                }
+            } catch {
+                await MainActor.run {
+                    testResult = "Error: \(error.localizedDescription)"
+                    isTesting = false
+                }
+            }
+        }
     }
 }
 

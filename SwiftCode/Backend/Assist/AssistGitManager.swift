@@ -9,21 +9,20 @@ public final class AssistGitManager: AssistGitManagerProtocol {
 
     public func status() throws -> String {
         guard let project = project else { return "No project active" }
-        // For now, we'll return a basic status, as full Git CLI integration might be limited in this environment
-        return "Project: \(project.name), Remote: \(project.githubRepo ?? "None")"
+        return "Project: \(project.name) (iOS Sandbox Mode)"
     }
 
     public func commit(message: String) throws {
-        // Implementation using GitCommands or Process if available
+        // Internal project snapshotting replaces git commits in iOS sandbox
+        try AssistSnapshotFunctions.createSnapshot(project: project?.rootURL ?? URL(fileURLWithPath: "/"))
     }
 
     public func push() async throws {
-        guard let project = project else { return }
-        try await GitCommands.shared.push(project: project, commitMessage: "Assist Auto-commit")
+        // iOS sandbox: Simulation or remote sync via GitHub API (not shell)
+        // For now, it's replaced by snapshot system, but we'll leave as NO-OP for actual Git operations
     }
 
-    // Internal helper for staging
     public func add(path: String) throws {
-        // Implementation
+        // NO-OP in iOS sandbox
     }
 }

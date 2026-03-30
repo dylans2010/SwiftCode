@@ -21,7 +21,10 @@ public final class AssistPlanner {
         """
 
         do {
-            let response = try await LLMService.shared.generateResponse(prompt: "\(systemPrompt)\n\nIntent: \(intent)", useContext: true)
+            let provider = AssistModelProvider(rawValue: UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? "") ?? .openAI
+            let apiKey = APIKeyManager.shared.retrieveKey(for: provider.rawValue) ?? ""
+
+            let response = try await AssistLLMService.generateResponse(prompt: "\(systemPrompt)\n\nIntent: \(intent)", provider: provider, apiKey: apiKey)
             return try parsePlan(from: response)
         } catch {
             context.logger.error("Failed to generate plan: \(error.localizedDescription)")
