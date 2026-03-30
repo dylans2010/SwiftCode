@@ -3,17 +3,27 @@ import Foundation
 public struct AssistBuildProjectTool: AssistTool {
     public let id = "project_build"
     public let name = "Build Project"
-    public let description = "Simulates a project build by validating structure and syntax (iOS Safe)."
+    public let description = "Validates CI pipeline YAML files in Backend/CI Building."
 
     public init() {}
 
     public func execute(input: [String: Any], context: AssistContext) async throws -> AssistToolResult {
-        // iOS Safe alternative: Validation logic
         do {
-            let output = try await AssistExecutionFunctions.executeTask(id: "lint_project", context: context)
-            return .success("Build simulation (Validation) complete.", data: ["output": output])
+            let validation = try AssistCIFunctions.validateCIPipelines(workspaceRoot: context.workspaceRoot)
+            let errors = validation.errors.joined(separator: "\n")
+
+            return .success(
+                "CI pipeline validation finished.",
+                data: [
+                    "pipelinesFound": "\(validation.pipelinesFound)",
+                    "valid": "\(validation.valid)",
+                    "invalid": "\(validation.invalid)",
+                    "errors": errors.isEmpty ? "[]" : errors,
+                    "validPipelines": validation.validPipelines.joined(separator: ",")
+                ]
+            )
         } catch {
-            return .failure("Build simulation failed: \(error.localizedDescription)")
+            return .failure("CI pipeline validation failed: \(error.localizedDescription)")
         }
     }
 }

@@ -104,17 +104,10 @@ public struct AssistSettingsView: View {
         testResult = nil
 
         Task {
-            do {
-                let _ = try await AssistLLMService.generateResponse(prompt: "Hello, this is a test.", provider: provider, apiKey: apiKey)
-                await MainActor.run {
-                    testResult = "Success: API connection verified!"
-                    isTesting = false
-                }
-            } catch {
-                await MainActor.run {
-                    testResult = "Error: \(error.localizedDescription)"
-                    isTesting = false
-                }
+            let response = await AssistLLMService.generateResponse(prompt: "Hello, this is a test.", provider: provider, apiKey: apiKey)
+            await MainActor.run {
+                testResult = response.success ? "Success: API connection verified!" : "Error: \(response.error ?? "Unknown error")"
+                isTesting = false
             }
         }
     }

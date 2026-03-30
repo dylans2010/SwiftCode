@@ -4,6 +4,7 @@ public struct AssistMainView: View {
     @StateObject private var manager = AssistManager.shared
     @State private var inputText: String = ""
     @State private var showSettings = false
+    @State private var isLoading = false
     @Environment(\.dismiss) private var dismiss
 
     public init() {}
@@ -11,8 +12,13 @@ public struct AssistMainView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                // Modern Dark Background
-                Color(red: 0.05, green: 0.05, blue: 0.07).ignoresSafeArea()
+                LinearGradient(
+                    colors: [.blue.opacity(0.35), .purple.opacity(0.30), .pink.opacity(0.20)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+                .overlay(Color(uiColor: .systemBackground).opacity(0.78))
 
                 VStack(spacing: 0) {
                     // Header with execution status
@@ -46,7 +52,7 @@ public struct AssistMainView: View {
                                     }
                                 }
 
-                                if manager.isProcessing {
+                                if manager.isProcessing || isLoading {
                                     thinkingIndicator
                                 }
                             }
@@ -105,12 +111,12 @@ public struct AssistMainView: View {
                     .font(.caption2)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(Color.white.opacity(0.1))
+                    .background(.regularMaterial)
                     .clipShape(Capsule())
             }
         }
         .padding()
-        .background(Color.white.opacity(0.03))
+        .background(.ultraThinMaterial)
     }
 
     private var thinkingIndicator: some View {
@@ -130,20 +136,32 @@ public struct AssistMainView: View {
         HStack(spacing: 12) {
             TextField("What should I build next?", text: $inputText, axis: .vertical)
                 .padding(12)
-                .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 16))
-                .lineLimit(1...6)
-                .foregroundStyle(.white)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+                 .lineLimit(1...6)
+                .disabled(manager.isProcessing || isLoading)
+                
 
             Button {
                 let text = inputText
                 inputText = ""
-                Task { await manager.sendMessage(text) }
+                Task {
+                    await MainActor.run { isLoading = true }
+                    await manager.sendMessage(text)
+                    await MainActor.run { isLoading = false }
+                }
             } label: {
-                Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 32))
-                    .foregroundStyle(inputText.isEmpty ? Color.secondary : Color.orange)
+                Group {
+                    if isLoading || manager.isProcessing {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                    } else {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 32))
+                    }
+                }
+                .foregroundStyle(inputText.isEmpty ? Color.secondary : Color.primary)
             }
-            .disabled(inputText.isEmpty || manager.isProcessing)
+            .disabled(inputText.isEmpty || manager.isProcessing || isLoading)
         }
     }
 }
@@ -177,7 +195,7 @@ struct AssistExecutionTimelineView: View {
             }
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
@@ -211,9 +229,9 @@ private struct AssistChatBubble: View {
 
     private var bubbleColor: Color {
         switch message.role {
-        case .user: return Color.orange.opacity(0.85)
-        case .assistant: return Color.white.opacity(0.12)
-        case .system: return Color.blue.opacity(0.2)
+        case .user: return Color.primary.opacity(0.12)
+        case .assistant: return Color.secondary.opacity(0.12)
+        case .system: return Color.blue.opacity(0.16)
         }
     }
 
@@ -224,7 +242,7 @@ private struct AssistChatBubble: View {
                 .foregroundStyle(.secondary)
             Text(message.content)
                 .font(.body)
-                .foregroundStyle(.white)
+                
                 .padding(12)
                 .background(bubbleColor, in: RoundedRectangle(cornerRadius: 14))
         }
@@ -252,7 +270,7 @@ struct MiniLogFeed: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
-        .background(Color.black.opacity(0.2))
+        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 }
