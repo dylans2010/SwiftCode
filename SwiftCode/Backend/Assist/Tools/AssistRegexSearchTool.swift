@@ -12,6 +12,15 @@ public struct AssistRegexSearchTool: AssistTool {
             return .failure("Missing required parameter: pattern")
         }
 
-        return .success("Regex search completed for '\(pattern)' (Simulated)", data: ["results": "[]"])
+        do {
+            let results = try AssistSearchFunctions.searchText(in: context.workspaceRoot, pattern: pattern, isRegex: true)
+            let lines = results.sorted(by: { $0.key.path < $1.key.path }).flatMap { url, matches in
+                let rel = AssistToolingSupport.relativePath(for: url, workspaceRoot: context.workspaceRoot)
+                return matches.map { "\(rel):\($0)" }
+            }
+            return .success("Regex search completed for '\(pattern)'", data: ["results": lines.joined(separator: "\n")])
+        } catch {
+            return .failure("Regex search failed: \(error.localizedDescription)")
+        }
     }
 }

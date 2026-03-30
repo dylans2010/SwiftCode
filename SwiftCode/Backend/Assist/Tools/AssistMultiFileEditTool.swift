@@ -12,6 +12,25 @@ public struct AssistMultiFileEditTool: AssistTool {
             return .failure("Missing required parameter: edits")
         }
 
-        return .success("Multi-file edit completed for \(edits.count) files (Simulated)")
+        var updatedPaths: [String] = []
+        for edit in edits {
+            guard let path = edit["path"] else { continue }
+            do {
+                if let content = edit["content"] {
+                    try context.fileSystem.writeFile(at: path, content: content)
+                } else {
+                    let original = try context.fileSystem.readFile(at: path)
+                    let search = edit["search"] ?? ""
+                    let replace = edit["replace"] ?? ""
+                    let updated = AssistCodeFunctions.replaceBlock(in: original, search: search, replace: replace)
+                    try context.fileSystem.writeFile(at: path, content: updated)
+                }
+                updatedPaths.append(path)
+            } catch {
+                return .failure("Failed to apply edit to \(path): \(error.localizedDescription)")
+            }
+        }
+
+        return .success("Multi-file edit completed for \(updatedPaths.count) files", data: ["files": updatedPaths.joined(separator: ",")])
     }
 }

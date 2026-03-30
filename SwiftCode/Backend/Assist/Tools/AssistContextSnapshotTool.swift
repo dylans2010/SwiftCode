@@ -8,6 +8,15 @@ public struct AssistContextSnapshotTool: AssistTool {
     public init() {}
 
     public func execute(input: [String: Any], context: AssistContext) async throws -> AssistToolResult {
-        return .success("Context snapshot captured (Simulated)")
+        do {
+            let snapshots = try AssistSnapshotFunctions.listSnapshots()
+            let latestSnapshot = snapshots.first?.id ?? "none"
+            let memoryMarker = UUID().uuidString
+            let payload = "session=\(context.sessionId.uuidString)\nworkspace=\(context.workspaceRoot.path)\nlatest_snapshot=\(latestSnapshot)"
+            context.memory.store(key: "context_snapshot:\(memoryMarker)", value: payload)
+            return .success("Context snapshot captured", data: ["snapshot_key": "context_snapshot:\(memoryMarker)", "latest_snapshot": latestSnapshot])
+        } catch {
+            return .failure("Failed capturing context snapshot: \(error.localizedDescription)")
+        }
     }
 }

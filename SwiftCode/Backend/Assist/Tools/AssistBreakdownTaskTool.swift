@@ -12,6 +12,18 @@ public struct AssistBreakdownTaskTool: AssistTool {
             return .failure("Missing required parameter: planId")
         }
 
-        return .success("Task breakdown completed for plan \(planId) (Simulated)")
+        guard let plan = context.memory.retrieve(key: "plan:\(planId)") else {
+            return .failure("No stored plan found for planId: \(planId)")
+        }
+
+        let granular = plan
+            .components(separatedBy: .newlines)
+            .flatMap { line -> [String] in
+                ["\(line)", "- Define acceptance criteria for: \(line)", "- Implement and self-review: \(line)"]
+            }
+            .joined(separator: "\n")
+
+        context.memory.store(key: "plan_breakdown:\(planId)", value: granular)
+        return .success("Task breakdown completed for plan \(planId)", data: ["breakdown": granular])
     }
 }

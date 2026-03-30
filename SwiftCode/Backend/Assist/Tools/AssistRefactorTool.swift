@@ -15,6 +15,27 @@ public struct AssistRefactorTool: AssistTool {
             return .failure("Missing required parameter: action")
         }
 
-        return .success("Refactoring '\(action)' applied to \(path) (Simulated)")
+        do {
+            let content = try context.fileSystem.readFile(at: path)
+            let updated: String
+
+            switch action {
+            case "rename_symbol":
+                guard let oldName = input["oldName"] as? String, let newName = input["newName"] as? String else {
+                    return .failure("rename_symbol requires oldName and newName")
+                }
+                updated = content.replacingOccurrences(of: oldName, with: newName)
+            case "extract_region_to_mark":
+                let markName = (input["markName"] as? String) ?? "Refactored"
+                updated = "// MARK: - \(markName)\n" + content
+            default:
+                return .failure("Unsupported refactor action: \(action)")
+            }
+
+            try context.fileSystem.writeFile(at: path, content: updated)
+            return .success("Refactoring '\(action)' applied to \(path)")
+        } catch {
+            return .failure("Refactor failed at \(path): \(error.localizedDescription)")
+        }
     }
 }

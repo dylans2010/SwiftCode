@@ -12,6 +12,27 @@ public struct AssistCodeSummaryTool: AssistTool {
             return .failure("Missing required parameter: path")
         }
 
-        return .success("Summary for \(path) (Simulated)", data: ["summary": "This is a placeholder summary."])
+        let targetURL = AssistToolingSupport.resolvePath(path, workspaceRoot: context.workspaceRoot)
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: targetURL.path, isDirectory: &isDirectory) else {
+            return .failure("Path does not exist: \(path)")
+        }
+
+        if isDirectory.boolValue {
+            let files = AssistToolingSupport.enumeratedFiles(at: targetURL)
+            let codeFiles = files.filter(AssistToolingSupport.isCodeFile)
+            let summary = "Directory \(path): \(files.count) files, \(codeFiles.count) code files"
+            return .success("Summary for \(path)", data: ["summary": summary])
+        }
+
+        guard let content = AssistToolingSupport.readText(targetURL) else {
+            return .failure("File at \(path) is not readable as UTF-8 text")
+        }
+
+        let lines = content.components(separatedBy: .newlines)
+        let nonEmpty = lines.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count
+        let commentLines = lines.filter { $0.trimmingCharacters(in: .whitespaces).hasPrefix("//") }.count
+        let summary = "File \(path): \(lines.count) lines (\(nonEmpty) non-empty), \(commentLines) comment lines"
+        return .success("Summary for \(path)", data: ["summary": summary])
     }
 }

@@ -12,6 +12,20 @@ public struct AssistPlanTaskTool: AssistTool {
             return .failure("Missing required parameter: task")
         }
 
-        return .success("Plan generated for task: \(task) (Simulated)")
+        let planId = UUID().uuidString
+        let verbs = task
+            .components(separatedBy: CharacterSet(charactersIn: ",.;\n"))
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        let steps: [String]
+        if verbs.isEmpty {
+            steps = ["Analyze requirements", "Implement changes", "Validate with tests", "Summarize outputs"]
+        } else {
+            steps = verbs.enumerated().map { "\($0.offset + 1). \($0.element)" }
+        }
+
+        context.memory.store(key: "plan:\(planId)", value: steps.joined(separator: "\n"))
+        return .success("Plan generated for task: \(task)", data: ["planId": planId, "steps": steps.joined(separator: "\n")])
     }
 }
