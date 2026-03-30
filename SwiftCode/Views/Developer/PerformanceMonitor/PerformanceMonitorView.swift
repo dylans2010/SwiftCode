@@ -38,7 +38,7 @@ struct PerformanceMonitorView: View {
 
     private func updateMetrics() {
         // Use real system info where possible in Swift (simplified for this environment)
-        let mem = Double(ProcessInfo.processInfo.physicalMemory) / 1024 / 1024 / 1024 // GB
+        let _ = Double(ProcessInfo.processInfo.physicalMemory) / 1024 / 1024 / 1024 // GB
         // In actual iOS, we'd use task_info, but ProcessInfo provides some basics
 
         // Mocking the trend but based on actual ProcessInfo constants

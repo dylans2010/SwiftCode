@@ -65,7 +65,7 @@ public final class TestToolsManager: ObservableObject {
         }
 
         // Run custom modules
-        for (name, handler) in customTestModules {
+        for (_, handler) in customTestModules {
             results.append(handler(project.name))
         }
 

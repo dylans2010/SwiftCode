@@ -30,6 +30,11 @@ public final class AssistManager: ObservableObject {
     }
 
     private func setupAgent() {
+        let context = buildContext()
+        self.agent = AssistAgent(context: context, registry: registry)
+    }
+
+    private func buildContext() -> AssistContext {
         let builder = AssistContextBuilder(
             logger: logger,
             permissions: permissions,
@@ -37,8 +42,7 @@ public final class AssistManager: ObservableObject {
             fileSystem: AssistFileSystem(workspaceRoot: ProjectManager.shared.currentProject?.directoryURL ?? URL(fileURLWithPath: "/")),
             git: AssistGitManager(project: ProjectManager.shared.currentProject)
         )
-        let context = builder.buildContext(sessionId: session.id)
-        self.agent = AssistAgent(context: context, registry: registry)
+        return builder.buildContext(sessionId: session.id)
     }
 
     public func sendMessage(_ content: String) async {
@@ -78,6 +82,26 @@ public final class AssistManager: ObservableObject {
         let systemMessage = AssistMessage(role: .system, content: text)
         messages.append(systemMessage)
         saveHistory()
+    }
+
+    public func rejectPlan() {
+        session.currentPlan = nil
+        registerCapabilityExecution("Plan rejected.")
+    }
+
+    public func applyPlan(_ plan: AssistExecutionPlan) async throws {
+        guard var executingPlan = session.currentPlan ?? session.history.first(where: { $0.id == plan.id }) ?? Optional(plan) else {
+            return
+        }
+        let engine = AssistExecutionEngine(context: buildContext(), registry: registry)
+        try await engine.execute(plan: &executingPlan)
+        session.currentPlan = executingPlan
+        if let index = session.history.firstIndex(where: { $0.id == executingPlan.id }) {
+            session.history[index] = executingPlan
+        } else {
+            session.history.append(executingPlan)
+        }
+        registerCapabilityExecution("Plan applied successfully.")
     }
 
     // MARK: - Persistence
