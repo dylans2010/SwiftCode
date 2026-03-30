@@ -13,6 +13,7 @@ struct BranchWorkspaceView: View {
     @State private var showingCommitManager = false
     @State private var showingCreatePRSheet = false
     @State private var preparedPullRequest: PullRequestDraftPayload?
+    @State private var localErrorMessage: String?
 
     private var workspace: BranchWorkspace? { manager.workspaces.currentWorkspace }
 
@@ -52,9 +53,18 @@ struct BranchWorkspaceView: View {
         }
         .sheet(isPresented: $showingCreatePRSheet) {
             if let currentBranch = workspace?.branchID {
-                CreatePullRequestView(manager: manager, actorID: actorID, preferredSourceBranchID: currentBranch, preferredTargetBranchID: pullRequestTargetID, preparedPayload: preparedPullRequest)
+                PRCreateView(manager: manager, actorID: actorID, preferredSourceBranchID: currentBranch, preferredTargetBranchID: pullRequestTargetID, preparedPayload: preparedPullRequest)
             }
         }
+        .alert(
+            "Branch Error",
+            isPresented: Binding(
+                get: { localErrorMessage != nil },
+                set: { if !$0 { localErrorMessage = nil } }
+            ),
+            actions: { Button("OK") { localErrorMessage = nil } },
+            message: { Text(localErrorMessage ?? "Unknown error") }
+        )
         .onAppear {
             if workspace == nil {
                 _ = manager.workspaces.loadWorkspace(for: manager.branches.currentBranch.id, actorID: actorID)
@@ -101,7 +111,13 @@ struct BranchWorkspaceView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 12))
 
                         Button {
-                            let branch = manager.branches.createBranch(name: newBranchName, from: manager.branches.currentBranch.id, actorID: actorID)
+                            let sanitizedName = newBranchName.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard sanitizedName.isEmpty == false else { return }
+                            guard manager.branches.branches.contains(where: { $0.name.caseInsensitiveCompare(sanitizedName) == .orderedSame }) == false else {
+                                localErrorMessage = "A branch named '\(sanitizedName)' already exists."
+                                return
+                            }
+                            let branch = manager.branches.createBranch(name: sanitizedName, from: manager.branches.currentBranch.id, actorID: actorID)
                             _ = manager.workspaces.createWorkspace(for: branch, from: manager.branches.currentBranch.id, actorID: actorID)
                             newBranchName = ""
                             selectCurrentFileIfNeeded()
@@ -289,6 +305,7 @@ struct BranchWorkspaceView: View {
             Picker("PR Target", selection: Binding(get: {
                 pullRequestTargetID ?? manager.branches.branches.first(where: { $0.id != manager.branches.currentBranch.id })?.id
             }, set: { pullRequestTargetID = $0 })) {
+                Text("Select target branch").tag(UUID?.none)
                 ForEach(manager.branches.branches.filter { $0.id != manager.branches.currentBranch.id }) { branch in
                     Text(branch.name).tag(Optional(branch.id))
                 }

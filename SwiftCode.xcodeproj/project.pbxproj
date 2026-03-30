@@ -365,6 +365,7 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		CLV000000000000000000021A /* CollaborationNotificationCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000021 /* CollaborationNotificationCenterView.swift */; };
 		CLV000000000000000000022A /* CollaborationFilePresenceOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV000000000000000000022 /* CollaborationFilePresenceOverlay.swift */; };
 		CLV00000000000000000015A /* CollaborationFeedbackView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000015B /* CollaborationFeedbackView.swift */; };
+		CLV00000000000000000016A /* PRCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CLV00000000000000000016B /* PRCreateView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -759,6 +760,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		CLV000000000000000000021 /* CollaborationNotificationCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationNotificationCenterView.swift; sourceTree = SOURCE_ROOT; };
 		CLV000000000000000000022 /* CollaborationFilePresenceOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationFilePresenceOverlay.swift; sourceTree = SOURCE_ROOT; };
 		CLV00000000000000000015B /* CollaborationFeedbackView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/CollaborationFeedbackView.swift; sourceTree = SOURCE_ROOT; };
+		CLV00000000000000000016B /* PRCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Views/Collaboration/PRCreateView.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -2016,6 +2018,7 @@ children = (
 				DVV000000000000000000001B /* CollaborationDiffViewerView.swift */,
 				CLV00000000000000000014B /* BranchWorkspaceView.swift */,
 				CLV00000000000000000015B /* CollaborationFeedbackView.swift */,
+				CLV00000000000000000016B /* PRCreateView.swift */,
 				CLV00000000000000000007B /* CollaborationMainView.swift */,
 				PRV000000000000000000001B /* PullRequestView.swift */,
 				CLV00000000000000000008B /* CommitManagerView.swift */,
@@ -2298,6 +2301,7 @@ files = (
 				CLV00000000000000000013A /* PushPullView.swift in Sources */,
 				CLV00000000000000000014A /* BranchWorkspaceView.swift in Sources */,
 				CLV00000000000000000015A /* CollaborationFeedbackView.swift in Sources */,
+				CLV00000000000000000016A /* PRCreateView.swift in Sources */,
 				RV0000000000000000000001A /* CodeReviewView.swift in Sources */,
 				GH0000000000000000000001A /* GitHistoryView.swift in Sources */,
 				PT0000000000000000000001A /* ProjectTemplateManager.swift in Sources */,

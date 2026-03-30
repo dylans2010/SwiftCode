@@ -168,6 +168,7 @@ struct MainToolbarView: View {
         case "deployments": return .orange
         case "run_tests": return .green
         case "gist_manager": return .purple
+        case "assist_view": return .mint
         default: return .secondary
         }
     }

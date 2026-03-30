@@ -34,7 +34,7 @@ struct CollaborationPullRequestView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button { showingCreatePR = true } label: {
-                    Image(systemName: "plus.circle.fill")
+                    Image(systemName: "plus")
                         .font(.title3)
                 }
             }
@@ -48,7 +48,7 @@ struct CollaborationPullRequestView: View {
             }
         }
         .sheet(isPresented: $showingCreatePR) {
-            CreatePullRequestView(manager: manager, actorID: actorID)
+            PRCreateView(manager: manager, actorID: actorID)
         }
         .onAppear {
             if selectedPRID == nil {
@@ -484,102 +484,6 @@ struct CollaborationPullRequestView: View {
 
     private func branchName(_ id: UUID) -> String {
         manager.branches.branches.first(where: { $0.id == id })?.name ?? "Unknown"
-    }
-}
-
-struct CreatePullRequestView: View {
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject var manager: CollaborationManager
-    let actorID: String
-
-    @State private var title = ""
-    @State private var description = ""
-    @State private var sourceBranchID: UUID
-    @State private var targetBranchID: UUID
-    @State private var isDraft = false
-    @State private var includeEmpty = false
-    @State private var selectedCommitIDs = Set<UUID>()
-    @State private var isCreating = false
-    @State private var errorMessage: String?
-
-    init(manager: CollaborationManager, actorID: String, preferredSourceBranchID: UUID? = nil, preferredTargetBranchID: UUID? = nil, preparedPayload: PullRequestDraftPayload? = nil) {
-        self.manager = manager
-        self.actorID = actorID
-        let fallback = manager.branches.currentBranch.id
-        _title = State(initialValue: preparedPayload?.title ?? "")
-        _description = State(initialValue: preparedPayload?.description ?? "")
-        _sourceBranchID = State(initialValue: preparedPayload?.sourceBranchID ?? preferredSourceBranchID ?? manager.branches.branches.dropFirst().first?.id ?? fallback)
-        _targetBranchID = State(initialValue: preparedPayload?.targetBranchID ?? preferredTargetBranchID ?? manager.branches.branches.first(where: { $0.id != (preferredSourceBranchID ?? fallback) })?.id ?? fallback)
-        _selectedCommitIDs = State(initialValue: Set(preparedPayload?.linkedCommitIDs ?? []))
-    }
-
-    var body: some View {
-        NavigationStack {
-            Form {
-                Section("Information") {
-                    TextField("Title", text: $title)
-                    TextField("Description", text: $description, axis: .vertical)
-                        .lineLimit(3...8)
-                    Toggle("Create As Draft", isOn: $isDraft)
-                    Toggle("Empty Pull Request", isOn: $includeEmpty)
-                }
-
-                Section("Branches") {
-                    Picker("Source", selection: $sourceBranchID) {
-                        ForEach(manager.branches.branches) { branch in
-                            Text(branch.name).tag(branch.id)
-                        }
-                    }
-                    Picker("Target", selection: $targetBranchID) {
-                        ForEach(manager.branches.branches) { branch in
-                            Text(branch.name).tag(branch.id)
-                        }
-                    }
-                }
-
-                Section("Commits Included") {
-                    let commits = manager.commits.commits(for: sourceBranchID)
-                    if commits.isEmpty {
-                        Text("No commits on source branch.")
-                            .foregroundStyle(.secondary)
-                    }
-                    ForEach(commits) { commit in
-                        MultipleSelectionRow(title: commit.message, subtitle: "\(commit.authorID)", isSelected: selectedCommitIDs.contains(commit.id)) {
-                            if selectedCommitIDs.contains(commit.id) {
-                                selectedCommitIDs.remove(commit.id)
-                            } else {
-                                selectedCommitIDs.insert(commit.id)
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle("New Pull Request")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button(isCreating ? "Creating..." : "Create") {
-                        createPR()
-                    }
-                    .disabled(isCreating)
-                }
-            }
-        }
-    }
-
-    private func createPR() {
-        isCreating = true
-        let commits = manager.commits.commits(for: sourceBranchID).filter { selectedCommitIDs.contains($0.id) }
-        if commits.isEmpty == false || includeEmpty {
-            manager.createPullRequest(sourceID: sourceBranchID, targetID: targetBranchID, title: title, description: description, actorID: actorID, status: isDraft ? .draft : .open, linkedCommitIDs: commits.map { $0.id })
-            dismiss()
-        } else {
-            errorMessage = "Select at least one commit."
-        }
-        isCreating = false
     }
 }
 
