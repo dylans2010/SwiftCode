@@ -63,7 +63,7 @@ public struct AssistPlannerView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(step.description)
                             .font(.system(.footnote, design: .monospaced))
-                            .foregroundStyle(step.status == .pending ? .secondary : .white)
+                            .foregroundStyle(step.status == .pending ? Color.secondary : Color.white)
                         if let error = step.result?.error {
                             Text(error)
                                 .font(.caption2)
