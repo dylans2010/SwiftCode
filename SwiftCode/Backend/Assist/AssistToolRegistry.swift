@@ -66,6 +66,21 @@ public final class AssistToolRegistry {
         register(AssistRetrieveMemoryTool())
         register(AssistClearMemoryTool())
         register(AssistContextSnapshotTool())
+
+        // Advanced Engineering Infrastructure
+        register(AssistSourceGraphBuilder())
+        register(AssistSemanticQueryEngine())
+        register(AssistCodeMutationEngine())
+        register(AssistPatchApplicationEngine())
+        register(AssistProjectMutationController())
+        register(AssistCompilerDiagnosticsEngine())
+        register(AssistAutomatedRepairEngine())
+        register(AssistVersionControlOperator())
+        register(AssistContextPersistenceStore())
+        register(AssistRuntimeDiagnosticsEngine())
+        register(AssistExternalResourceGateway())
+        register(AssistDependencyResolutionEngine())
+        register(AssistAutonomousReviewEngine())
     }
 
     public func register(_ tool: AssistTool) {

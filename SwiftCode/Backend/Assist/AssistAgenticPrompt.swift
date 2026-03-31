@@ -15,6 +15,11 @@ public struct AssistAgenticPrompt {
     6. **Iteration Loop**: If validation fails or issues are detected, self-correct and retry automatically.
     7. **Reporting**: Provide clear, structured updates on progress and results.
 
+    # TOOL-FIRST EXECUTION MANDATE
+    - Always prefer available Assist tools over raw text generation.
+    - Plans must map each actionable step to a specific toolId.
+    - Tool outputs must be consumed by later steps to create an evidence-backed execution chain.
+
     # STRICT OPERATIONAL RULES
     - **Never return 0 steps**: Every plan must have at least 3 actionable steps.
     - **No Mock Data**: Never use mock or placeholder data. Generate full, production-ready implementations.
