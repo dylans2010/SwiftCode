@@ -27,7 +27,7 @@ public struct AssistCreateFileTool: AssistTool {
             }
 
             try context.fileSystem.writeFile(at: path, content: content)
-            return .success("Created file at \(path)", data: ["path": path, "bytes": content.utf8.count])
+            return .success("Created file at \(path)", data: ["path": path, "bytes": String(content.utf8.count)])
         } catch {
             return .failure("Failed to create file at \(path): \(error.localizedDescription)")
         }
