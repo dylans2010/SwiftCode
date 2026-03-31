@@ -32,7 +32,14 @@ public final class AssistExecutionEngine {
                 context.logger.info("Executing tool: \(tool.name)", toolId: step.toolId)
 
                 // Map the input to [String: Any] as required by AssistTool protocol
-                let toolInput = step.input as [String: Any]
+                var toolInput = step.input as [String: Any]
+                if let path = toolInput["path"] as? String,
+                   ["code_refactor", "file_read", "file_append"].contains(step.toolId),
+                   !context.fileSystem.exists(at: path),
+                   let createFileTool = registry.getTool("file_create") {
+                    _ = try await createFileTool.execute(input: ["path": path, "content": "", "overwrite": false], context: context)
+                    context.logger.info("Auto-created missing file at \(path) before executing \(step.toolId)", toolId: "file_create")
+                }
 
                 let result = try await tool.execute(input: toolInput, context: context)
 
@@ -49,7 +56,7 @@ public final class AssistExecutionEngine {
                     }
                 } else {
                     // Force project refresh on successful file writes or modifications
-                    if step.toolId == "file_write" || step.toolId == "code_refactor" || step.toolId == "file_create" {
+                    if ["file_write", "code_refactor", "file_create", "file_append"].contains(step.toolId) {
                         if let project = ProjectManager.shared.activeProject {
                             ProjectManager.shared.refreshFileTree(for: project)
                         }

@@ -13,19 +13,23 @@ public final class PromptEnhancer {
         - Output must be directly executable
         """
 
-        let apiKey = APIKeyManager.shared.retrieveKey(service: .openRouter)
+        let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
+        let provider = AssistModelProvider(rawValue: providerRawValue) ?? .openAI
+        let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
+        let selectedModelID = AssistModelManager.shared.selectedModelID
 
         let response = await AssistLLMService.generateResponse(
-            prompt: "\(systemPrompt)\n\nUser Input: \(userInput)",
-            provider: .openRouter,
+            prompt: "\(systemPrompt)
+
+User Input: \(userInput)",
+            provider: provider,
             apiKey: apiKey,
-            modelOverride: "openai/gpt-oss-120b:free"
+            modelOverride: selectedModelID
         )
 
         if response.success {
             return response.content
         } else {
-            // Fallback to original input if enhancement fails
             return userInput
         }
     }
