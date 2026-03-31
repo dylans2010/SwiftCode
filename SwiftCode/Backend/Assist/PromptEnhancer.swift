@@ -19,9 +19,7 @@ public final class PromptEnhancer {
         let selectedModelID = AssistModelManager.shared.selectedModelID
 
         let response = await AssistLLMService.generateResponse(
-            prompt: "\(systemPrompt)
-
-User Input: \(userInput)",
+            prompt: "\(systemPrompt)\n\nUser Input: \(userInput)",
             provider: provider,
             apiKey: apiKey,
             modelOverride: selectedModelID
