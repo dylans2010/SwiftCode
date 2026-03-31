@@ -17,7 +17,7 @@ public final class AssistToolRegistry {
         register(AssistCopyFileTool())
         register(AssistRenameFileTool())
         register(AssistCreateDirectoryTool())
-        register(AssistCreateFileTool())
+        register(AssistGenerateFileTool())
         register(AssistDeleteDirectoryTool())
         register(AssistReadDirectoryTool())
         register(AssistTreeViewTool())

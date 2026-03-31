@@ -56,7 +56,7 @@ public final class AssistAPIRouter {
     private func handleAnalyze(_ request: AssistAPIRequest) async -> AssistAPIResponse {
         do {
             let analyzer = _AssistCriticalCodebaseAnalyzer(context: context)
-            let summary = try analyzer.analyze()
+            let summary = try await analyzer.analyze()
             return .successful(data: [
                 "totalFiles": "\(summary.totalFiles)",
                 "swiftFiles": "\(summary.swiftFileCount)",
