@@ -14,14 +14,14 @@ public final class _AssistCriticalExecutionEngine {
     /// Executes a plan and ensures all new files are visible to the project.
     @MainActor
     public func execute(plan: inout AssistExecutionPlan) async throws {
-        context.logger.info("Executing via Critical Execution Engine", toolId: "CriticalExecution")
+        await context.logger.info("Executing via Critical Execution Engine", toolId: "CriticalExecution")
 
         for i in 0..<plan.steps.count {
             let step = plan.steps[i]
             if step.toolId == "file_write" || step.toolId == "createFile" {
                 if let path = step.input["path"] {
                     if !context.fileSystem.exists(at: path) {
-                        try createMissingFile(path: path)
+                        try await createMissingFile(path: path)
                     }
                 }
             }
@@ -35,8 +35,8 @@ public final class _AssistCriticalExecutionEngine {
         }
     }
 
-    public func createMissingFile(path: String) throws {
-        context.logger.info("Automatically creating missing file: \(path)", toolId: "CriticalExecution")
+    public func createMissingFile(path: String) async throws {
+        await context.logger.info("Automatically creating missing file: \(path)", toolId: "CriticalExecution")
 
         let fileExtension = (path as NSString).pathExtension.lowercased()
         let content: String
@@ -99,15 +99,15 @@ struct \( (path as NSString).lastPathComponent.replacingOccurrences(of: ".swift"
             try process.run()
             process.waitUntilExit()
             if process.terminationStatus == 0 {
-                context.logger.info("Registered \(fileName) in Xcode project with ID \(fileId)", toolId: "CriticalExecution")
+                await context.logger.info("Registered \(fileName) in Xcode project with ID \(fileId)", toolId: "CriticalExecution")
             } else {
-                context.logger.error("Failed to register \(fileName) in Xcode project (exit code: \(process.terminationStatus))", toolId: "CriticalExecution")
+                await context.logger.error("Failed to register \(fileName) in Xcode project (exit code: \(process.terminationStatus))", toolId: "CriticalExecution")
             }
         } catch {
-            context.logger.error("Failed to execute Xcode registration for \(fileName): \(error.localizedDescription)", toolId: "CriticalExecution")
+            await context.logger.error("Failed to execute Xcode registration for \(fileName): \(error.localizedDescription)", toolId: "CriticalExecution")
         }
         #else
-        context.logger.warning("Skipping Xcode registration for \(fileName): Process is only supported on macOS.", toolId: "CriticalExecution")
+        await context.logger.warning("Skipping Xcode registration for \(fileName): Process is only supported on macOS.", toolId: "CriticalExecution")
         #endif
     }
 

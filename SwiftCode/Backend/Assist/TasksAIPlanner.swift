@@ -16,7 +16,7 @@ public final class TasksAIPlanner: ObservableObject {
         isPlanning = true
         defer { isPlanning = false }
 
-        context.logger.info("Generating autonomous plan for intent: \(intent)", toolId: "TasksAIPlanner")
+        await context.logger.info("Generating autonomous plan for intent: \(intent)", toolId: "TasksAIPlanner")
 
         let prompt = """
         \(AssistAgenticPrompt.systemPrompt)
@@ -108,7 +108,7 @@ public final class TasksAIPlanner: ObservableObject {
         )
 
         guard response.success else {
-            context.logger.error("Planner failed to get AI response: \(response.error ?? "Unknown error")", toolId: "TasksAIPlanner")
+            await context.logger.error("Planner failed to get AI response: \(response.error ?? "Unknown error")", toolId: "TasksAIPlanner")
             return fallbackPlan(intent: intent)
         }
 
@@ -117,7 +117,7 @@ public final class TasksAIPlanner: ObservableObject {
             self.currentPlan = plan
             return plan
         } catch {
-            context.logger.error("Failed to parse plan JSON: \(error.localizedDescription)", toolId: "TasksAIPlanner")
+            await context.logger.error("Failed to parse plan JSON: \(error.localizedDescription)", toolId: "TasksAIPlanner")
             return fallbackPlan(intent: intent)
         }
     }

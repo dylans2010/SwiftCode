@@ -6,19 +6,19 @@ public final class AssistLogger: ObservableObject, AssistLoggerProtocol {
 
     public init() {}
 
-    public func info(_ message: String, toolId: String? = nil) {
+    public func info(_ message: String, toolId: String? = nil) async {
         log(message, level: .info, toolId: toolId)
     }
 
-    public func warning(_ message: String, toolId: String? = nil) {
+    public func warning(_ message: String, toolId: String? = nil) async {
         log(message, level: .warning, toolId: toolId)
     }
 
-    public func error(_ message: String, toolId: String? = nil) {
+    public func error(_ message: String, toolId: String? = nil) async {
         log(message, level: .error, toolId: toolId)
     }
 
-    public func debug(_ message: String, toolId: String? = nil) {
+    public func debug(_ message: String, toolId: String? = nil) async {
         log(message, level: .debug, toolId: toolId)
     }
 
@@ -34,10 +34,10 @@ public final class AssistLogger: ObservableObject, AssistLoggerProtocol {
 }
 
 extension AssistLoggerProtocol {
-    public func info(_ message: String) { info(message, toolId: nil) }
-    public func warning(_ message: String) { warning(message, toolId: nil) }
-    public func error(_ message: String) { error(message, toolId: nil) }
-    public func debug(_ message: String) { debug(message, toolId: nil) }
+    public func info(_ message: String) async { await info(message, toolId: nil) }
+    public func warning(_ message: String) async { await warning(message, toolId: nil) }
+    public func error(_ message: String) async { await error(message, toolId: nil) }
+    public func debug(_ message: String) async { await debug(message, toolId: nil) }
 }
 
 public struct AssistLogEntry: Identifiable, Codable {

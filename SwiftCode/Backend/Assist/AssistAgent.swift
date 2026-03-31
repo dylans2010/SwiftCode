@@ -25,7 +25,7 @@ public final class AssistAgent: ObservableObject {
 
             // 2. Analyze
             let analyzeResponse = await api.analyze()
-            context.logger.info("Codebase analysis complete: \(analyzeResponse.markdown ?? "")")
+            await context.logger.info("Codebase analysis complete: \(analyzeResponse.markdown ?? "")")
 
             // 3. Plan
             let planResponse = await api.plan(intent: finalIntent)
@@ -51,15 +51,15 @@ public final class AssistAgent: ObservableObject {
                 }
             }
         } catch {
-            context.logger.error("Agent execution failed: \(error.localizedDescription)")
+            await context.logger.error("Agent execution failed: \(error.localizedDescription)")
             return AssistAIResponse(content: "I couldn't complete that request safely.", success: false, error: "Assist execution failed: \(error.localizedDescription)")
         }
     }
 
     private func generateFinalReport(for intent: String, plan: AssistExecutionPlan? = nil) async -> AssistAIResponse {
-        context.logger.info("Generating final report for: \(intent)")
+        await context.logger.info("Generating final report for: \(intent)")
 
-        let modelID = AssistModelManager.shared.selectedModelID
+        let modelID = await AssistModelManager.shared.selectedModelID
         let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
         let provider = AssistModelProvider(rawValue: providerRawValue) ?? .openAI
         let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)

@@ -30,7 +30,7 @@ public struct AssistSymbolSearchTool: AssistTool {
                     allMatches.append(contentsOf: matches.map { "\(rel):\($0)" })
                 }
             } catch {
-                context.logger.error("Regex search failed for pattern \(pattern): \(error.localizedDescription)")
+                await context.logger.error("Regex search failed for pattern \(pattern): \(error.localizedDescription)")
             }
         }
 

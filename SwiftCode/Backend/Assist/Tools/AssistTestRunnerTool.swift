@@ -8,10 +8,10 @@ public struct AssistTestRunnerTool: AssistTool {
     public init() {}
 
     public func execute(input: [String: Any], context: AssistContext) async throws -> AssistToolResult {
-        let testPath = input["path"] as? String ?? ""
+        _ = input["path"] as? String ?? ""
         let scheme = input["scheme"] as? String ?? context.project?.name ?? "SwiftCode"
         
-        context.logger.info("Running tests for scheme: \(scheme)", toolId: id)
+        await context.logger.info("Running tests for scheme: \(scheme)", toolId: id)
 
         #if os(macOS)
         do {
@@ -26,7 +26,7 @@ public struct AssistTestRunnerTool: AssistTool {
                 "test"
             ]
             
-            context.logger.info("Executing: xcodebuild \(arguments.joined(separator: " "))", toolId: id)
+            await context.logger.info("Executing: xcodebuild \(arguments.joined(separator: " "))", toolId: id)
             
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/xcodebuild")

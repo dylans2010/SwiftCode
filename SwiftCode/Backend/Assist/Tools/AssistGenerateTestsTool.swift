@@ -101,7 +101,7 @@ final class \(sourceName)Tests: XCTestCase {
             try context.fileSystem.writeFile(at: testPath, content: body)
             
             let testCount = max(1, functionNames.count + types.count)
-            context.logger.info("Generated \(testCount) test stubs for \(types.count) types and \(functionNames.count) functions", toolId: id)
+            await context.logger.info("Generated \(testCount) test stubs for \(types.count) types and \(functionNames.count) functions", toolId: id)
             
             return .success(
                 "Tests generated for \(path) with \(testCount) test methods",

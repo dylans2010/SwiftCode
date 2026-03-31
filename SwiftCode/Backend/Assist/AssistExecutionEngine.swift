@@ -11,13 +11,13 @@ public final class AssistExecutionEngine {
 
     @MainActor
     public func execute(plan: inout AssistExecutionPlan) async throws {
-        context.logger.info("Executing plan: \(plan.goal)")
+        await context.logger.info("Executing plan: \(plan.goal)")
         plan.status = .running
 
         for i in 0..<plan.steps.count {
             var step = plan.steps[i]
             let stepTitle = "Step \(i+1)/\(plan.steps.count)"
-            context.logger.info("\(stepTitle): \(step.description)", toolId: step.toolId)
+            await context.logger.info("\(stepTitle): \(step.description)", toolId: step.toolId)
 
             step.status = .running
             plan.steps[i] = step
@@ -29,7 +29,7 @@ public final class AssistExecutionEngine {
                     throw AssistExecutionError.toolNotFound(step.toolId)
                 }
 
-                context.logger.info("Executing tool: \(tool.name)", toolId: step.toolId)
+                await context.logger.info("Executing tool: \(tool.name)", toolId: step.toolId)
 
                 // Map the input to [String: Any] as required by AssistTool protocol
                 var toolInput = step.input as [String: Any]
@@ -46,7 +46,7 @@ public final class AssistExecutionEngine {
                    !context.fileSystem.exists(at: path),
                    let createFileTool = registry.getTool("file_create") {
                     _ = try await createFileTool.execute(input: ["path": path, "content": "", "overwrite": false], context: context)
-                    context.logger.info("Auto-created missing file at \(path) before executing \(step.toolId)", toolId: "file_create")
+                    await context.logger.info("Auto-created missing file at \(path) before executing \(step.toolId)", toolId: "file_create")
                 }
 
                 let result = try await tool.execute(input: toolInput, context: context)
@@ -57,7 +57,7 @@ public final class AssistExecutionEngine {
                 TasksAIPlanner.shared.updateStep(id: step.id, status: step.status, result: result)
 
                 if !result.success {
-                    context.logger.error("Step failed: \(result.error ?? "Unknown error")", toolId: step.toolId)
+                    await context.logger.error("Step failed: \(result.error ?? "Unknown error")", toolId: step.toolId)
                     if context.safetyLevel == .conservative {
                         plan.status = .failed
                         return
@@ -71,7 +71,7 @@ public final class AssistExecutionEngine {
                     }
                 }
             } catch {
-                context.logger.error("Step execution error: \(error.localizedDescription)", toolId: step.toolId)
+                await context.logger.error("Step execution error: \(error.localizedDescription)", toolId: step.toolId)
                 step.status = .failed
                 plan.status = .failed
                 plan.steps[i] = step
@@ -83,7 +83,7 @@ public final class AssistExecutionEngine {
         if TasksAIPlanner.shared.currentPlan?.id == plan.id {
             TasksAIPlanner.shared.currentPlan?.status = .completed
         }
-        context.logger.info("Plan execution completed: \(plan.goal)")
+        await context.logger.info("Plan execution completed: \(plan.goal)")
     }
 }
 
