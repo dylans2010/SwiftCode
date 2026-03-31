@@ -291,13 +291,10 @@ struct CIBuildView: View {
         Task {
             do {
                 let workflowDir = project.directoryURL.appendingPathComponent(".github/workflows", isDirectory: true)
-                let visibleCIDir = project.directoryURL.appendingPathComponent("CI", isDirectory: true)
                 try FileManager.default.createDirectory(at: workflowDir, withIntermediateDirectories: true)
-                try FileManager.default.createDirectory(at: visibleCIDir, withIntermediateDirectories: true)
 
                 let yamlText = AssistCIFunctions.generateBuildYML(config: buildConfig)
                 try yamlText.write(to: workflowDir.appendingPathComponent("build.yml"), atomically: true, encoding: .utf8)
-                try yamlText.write(to: visibleCIDir.appendingPathComponent("build.yml"), atomically: true, encoding: .utf8)
 
                 let ciConfig = CIBuildConfiguration(
                     platform: .iOSAndIPadOS,
@@ -311,7 +308,7 @@ struct CIBuildView: View {
                     projectManager.updateCIBuildConfiguration(ciConfig, for: project)
                     projectManager.refreshFileTree(for: project)
                     isSuccess = true
-                    statusMessage = "Generated .github/workflows/build.yml and CI/build.yml in your project."
+                    statusMessage = "Generated .github/workflows/build.yml in your project."
                     isBuilding = false
                     showStatusAlert = true
                 }

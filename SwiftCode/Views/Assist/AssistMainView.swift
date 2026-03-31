@@ -197,26 +197,10 @@ public struct AssistMainView: View {
         let currentPrompt = inputText
         Task {
             await MainActor.run { isLoading = true }
-
-            let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
-            let provider = AssistModelProvider(rawValue: providerRawValue) ?? .openAI
-            let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
-
-            let prompt = """
-            You are an Apple Intelligence prompt expander.
-            Take the following vague engineering instruction and expand it into a detailed, executable, and technically precise prompt for an autonomous software agent.
-
-            Original Prompt: "\(currentPrompt)"
-
-            Expanded Prompt:
-            """
-
-            let response = await AssistLLMService.generateResponse(prompt: prompt, provider: provider, apiKey: apiKey)
+            let enhancedPrompt = await PromptEnhancer.enhancePrompt(userInput: currentPrompt)
 
             await MainActor.run {
-                if response.success {
-                    inputText = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-                }
+                inputText = enhancedPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
                 isLoading = false
             }
         }

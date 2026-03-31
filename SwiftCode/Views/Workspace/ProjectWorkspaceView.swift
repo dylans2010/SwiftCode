@@ -286,7 +286,9 @@ struct ProjectWorkspaceView: View {
                 let destination = ToolbarActionManager.shared.destination(for: toolId)
             else { return }
 
-            openSheet(for: destination)
+            Task { @MainActor in
+                openSheet(for: destination)
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .showProjectTemplatesOnOpen)) { _ in
             showProjectTemplates = true

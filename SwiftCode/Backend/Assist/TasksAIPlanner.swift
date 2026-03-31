@@ -43,6 +43,7 @@ public final class TasksAIPlanner: ObservableObject {
         # AVAILABLE TOOLS
         - file_read (input: { "path": "..." })
         - file_write (input: { "path": "...", "content": "..." })
+        - file_create (input: { "path": "...", "content": "...", "overwrite": "false" })
         - search_text (input: { "pattern": "..." })
         - code_refactor (input: { "path": "...", "action": "..." })
         - project_build (input: { "project": "..." })
@@ -110,7 +111,7 @@ public final class TasksAIPlanner: ObservableObject {
         plan.steps = [
             AssistExecutionStep(toolId: "search_text", input: ["pattern": intent], description: "Search codebase for context related to intent."),
             AssistExecutionStep(toolId: "tree_view", input: ["path": "."], description: "Explore project structure."),
-            AssistExecutionStep(toolId: "code_refactor", input: ["path": "README.md", "action": "Analyze: \(intent)"], description: "Perform initial analysis.")
+            AssistExecutionStep(toolId: "file_create", input: ["path": "AssistNotes.md", "content": "# Assist Plan\n\nIntent: \(intent)"], description: "Create a working notes file so execution can continue even when referenced files are missing.")
         ]
         self.currentPlan = plan
         return plan
