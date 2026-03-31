@@ -15,6 +15,9 @@ struct CIBuildView: View {
     @State private var triggerBranch: String = "main"
     @State private var triggerMode: AssistCIFunctions.BuildYMLConfig.TriggerMode = .pushAndManual
     @State private var exportFormat: AssistCIFunctions.BuildYMLConfig.ExportFormat = .ipa
+    @State private var runnerImage: AssistCIFunctions.BuildYMLConfig.RunnerImage = .macOS14
+    @State private var timeoutMinutes: Double = 30
+    @State private var includeConcurrencyControl = true
 
     @State private var includeTests = false
     @State private var includeLint = false
@@ -23,12 +26,19 @@ struct CIBuildView: View {
     @State private var includeCaching = true
     @State private var uploadLogsArtifact = true
 
+    @State private var appName: String = ""
+    @State private var bundleIdentifier: String = "com.example.app"
+    @State private var marketingVersion: String = "1.0"
+    @State private var buildVersion: String = "1"
+    @State private var supportedDevices: String = "iPhone + iPad"
+
     @State private var generatedYAMLText: String = ""
     @State private var showYAMLPreview = false
-    @State private var showStartBuildConfirmation = false
     @State private var showStatusAlert = false
     @State private var statusMessage = ""
     @State private var isSuccess = false
+    @State private var showAppDetailsSheet = false
+    @State private var showPrepareCompile = false
 
     @State private var isBuilding = false
     @State private var lastBuildTriggerAt: Date?
@@ -51,7 +61,15 @@ struct CIBuildView: View {
             failFast: failFast,
             includeCaching: includeCaching,
             uploadLogsArtifact: uploadLogsArtifact,
-            exportFormat: exportFormat
+            exportFormat: exportFormat,
+            runnerImage: runnerImage,
+            timeoutMinutes: Int(timeoutMinutes),
+            includeConcurrencyControl: includeConcurrencyControl,
+            appName: appName.trimmingCharacters(in: .whitespacesAndNewlines),
+            bundleIdentifier: bundleIdentifier.trimmingCharacters(in: .whitespacesAndNewlines),
+            marketingVersion: marketingVersion.trimmingCharacters(in: .whitespacesAndNewlines),
+            buildVersion: buildVersion.trimmingCharacters(in: .whitespacesAndNewlines),
+            supportedDevices: supportedDevices
         )
     }
 
@@ -75,12 +93,33 @@ struct CIBuildView: View {
             .navigationTitle("CI Builder")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
             .sheet(isPresented: $showYAMLPreview) { yamlPreviewSheet }
-            .alert("Start Compiling?", isPresented: $showStartBuildConfirmation) {
-                Button("Start") { startBuild() }
-                Button("Cancel", role: .cancel) {}
-            } message: { Text("This will generate and save .github/workflows/build.yml in the project.") }
+            .sheet(isPresented: $showAppDetailsSheet) {
+                AppDetailsInfo(
+                    appName: $appName,
+                    bundleIdentifier: $bundleIdentifier,
+                    marketingVersion: $marketingVersion,
+                    buildVersion: $buildVersion,
+                    supportedDevices: $supportedDevices,
+                    onSkip: { showAppDetailsSheet = false; showPrepareCompile = true },
+                    onContinue: {
+                        showAppDetailsSheet = false
+                        startBuild()
+                    }
+                )
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showPrepareCompile) {
+                PrepareCompileWaitingView(project: project)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
             .alert(isSuccess ? "Success" : "Error", isPresented: $showStatusAlert) {
-                Button("OK") {}
+                Button("OK") {
+                    if isSuccess {
+                        showPrepareCompile = true
+                    }
+                }
             } message: {
                 Text(statusMessage)
             }
@@ -89,6 +128,8 @@ struct CIBuildView: View {
                 let ciConfig = project.ciBuildConfiguration
                 schemeName = ciConfig?.schemeName.isEmpty == false ? ciConfig?.schemeName ?? project.name : project.name
                 outputName = project.name
+                appName = project.name
+                bundleIdentifier = ciConfig?.bundleIdentifier ?? "com.example.\(project.name.lowercased())"
             }
         }
     }
@@ -98,7 +139,7 @@ struct CIBuildView: View {
             Text("Advanced CI Configuration")
                 .font(.title3.bold())
                 .foregroundStyle(.white)
-            Text("Customize triggers, caching, tests, linting, artifacts, and build behavior.")
+            Text("Customize workflow triggers, runner image, artifacts, app metadata, and compile behavior.")
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.75))
         }
@@ -115,6 +156,16 @@ struct CIBuildView: View {
 
             Picker("Trigger", selection: $triggerMode) {
                 ForEach(AssistCIFunctions.BuildYMLConfig.TriggerMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+
+            Picker("Runner", selection: $runnerImage) {
+                ForEach(AssistCIFunctions.BuildYMLConfig.RunnerImage.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            }
+            .pickerStyle(.segmented)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Timeout: \(Int(timeoutMinutes)) min").font(.caption).foregroundStyle(.white.opacity(0.8))
+                Slider(value: $timeoutMinutes, in: 5...180, step: 5)
             }
 
             Picker("Xcode", selection: $xcodeVersion) {
@@ -162,6 +213,7 @@ struct CIBuildView: View {
             Toggle("Fail fast (set -e)", isOn: $failFast)
             Toggle("Cache DerivedData", isOn: $includeCaching)
             Toggle("Upload build logs artifact", isOn: $uploadLogsArtifact)
+            Toggle("Cancel old runs on same branch", isOn: $includeConcurrencyControl)
         }
         .padding()
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -178,10 +230,10 @@ struct CIBuildView: View {
             }
             .buttonStyle(.bordered)
 
-            Button { showStartBuildConfirmation = true } label: {
+            Button { showAppDetailsSheet = true } label: {
                 HStack {
                     if isBuilding { ProgressView().tint(.white) }
-                    Text(isBuilding ? "Building..." : "Start Build")
+                    Text(isBuilding ? "Building..." : "Continue to App Details")
                 }
                 .frame(maxWidth: .infinity)
             }
@@ -226,11 +278,9 @@ struct CIBuildView: View {
             return
         }
 
-        let trimmedProject = buildConfig.projectName
-        let trimmedScheme = buildConfig.scheme
-        guard !trimmedProject.isEmpty, !trimmedScheme.isEmpty else {
+        guard !buildConfig.projectName.isEmpty, !buildConfig.scheme.isEmpty, !buildConfig.bundleIdentifier.isEmpty else {
             isSuccess = false
-            statusMessage = "Project name and scheme are required."
+            statusMessage = "Project name, scheme, and bundle identifier are required."
             showStatusAlert = true
             return
         }
@@ -240,15 +290,28 @@ struct CIBuildView: View {
 
         Task {
             do {
-                let projectWorkflowDir = project.directoryURL.appendingPathComponent(".github/workflows", isDirectory: true)
-                try FileManager.default.createDirectory(at: projectWorkflowDir, withIntermediateDirectories: true)
+                let workflowDir = project.directoryURL.appendingPathComponent(".github/workflows", isDirectory: true)
+                let visibleCIDir = project.directoryURL.appendingPathComponent("CI", isDirectory: true)
+                try FileManager.default.createDirectory(at: workflowDir, withIntermediateDirectories: true)
+                try FileManager.default.createDirectory(at: visibleCIDir, withIntermediateDirectories: true)
+
                 let yamlText = AssistCIFunctions.generateBuildYML(config: buildConfig)
-                try yamlText.write(to: projectWorkflowDir.appendingPathComponent("build.yml"), atomically: true, encoding: .utf8)
+                try yamlText.write(to: workflowDir.appendingPathComponent("build.yml"), atomically: true, encoding: .utf8)
+                try yamlText.write(to: visibleCIDir.appendingPathComponent("build.yml"), atomically: true, encoding: .utf8)
+
+                let ciConfig = CIBuildConfiguration(
+                    platform: .iOSAndIPadOS,
+                    deploymentTarget: "16.0",
+                    targetDeviceFamily: supportedDevices == "iPhone" ? .iPhone : (supportedDevices == "iPad" ? .iPad : .iPhoneAndIPad),
+                    schemeName: buildConfig.scheme,
+                    bundleIdentifier: buildConfig.bundleIdentifier
+                )
 
                 await MainActor.run {
+                    projectManager.updateCIBuildConfiguration(ciConfig, for: project)
                     projectManager.refreshFileTree(for: project)
                     isSuccess = true
-                    statusMessage = "Generated build.yml in project workflows folder."
+                    statusMessage = "Generated .github/workflows/build.yml and CI/build.yml in your project."
                     isBuilding = false
                     showStatusAlert = true
                 }

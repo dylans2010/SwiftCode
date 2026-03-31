@@ -39,6 +39,11 @@ public struct AssistCIFunctions {
             case both = "Both"
         }
 
+        public enum RunnerImage: String, Codable, CaseIterable {
+            case macOS14 = "macos-14"
+            case macOS15 = "macos-15"
+        }
+
         public var projectName: String
         public var scheme: String
         public var xcodeVersion: String
@@ -55,6 +60,14 @@ public struct AssistCIFunctions {
         public var includeCaching: Bool
         public var uploadLogsArtifact: Bool
         public var exportFormat: ExportFormat
+        public var runnerImage: RunnerImage
+        public var timeoutMinutes: Int
+        public var includeConcurrencyControl: Bool
+        public var appName: String
+        public var bundleIdentifier: String
+        public var marketingVersion: String
+        public var buildVersion: String
+        public var supportedDevices: String
 
         public init(
             projectName: String,
@@ -72,7 +85,15 @@ public struct AssistCIFunctions {
             failFast: Bool = true,
             includeCaching: Bool = true,
             uploadLogsArtifact: Bool = true,
-            exportFormat: ExportFormat = .ipa
+            exportFormat: ExportFormat = .ipa,
+            runnerImage: RunnerImage = .macOS14,
+            timeoutMinutes: Int = 30,
+            includeConcurrencyControl: Bool = true,
+            appName: String = "",
+            bundleIdentifier: String = "",
+            marketingVersion: String = "1.0",
+            buildVersion: String = "1",
+            supportedDevices: String = "iPhone + iPad"
         ) {
             self.projectName = projectName
             self.scheme = scheme
@@ -90,6 +111,14 @@ public struct AssistCIFunctions {
             self.includeCaching = includeCaching
             self.uploadLogsArtifact = uploadLogsArtifact
             self.exportFormat = exportFormat
+            self.runnerImage = runnerImage
+            self.timeoutMinutes = min(max(timeoutMinutes, 5), 180)
+            self.includeConcurrencyControl = includeConcurrencyControl
+            self.appName = appName
+            self.bundleIdentifier = bundleIdentifier
+            self.marketingVersion = marketingVersion
+            self.buildVersion = buildVersion
+            self.supportedDevices = supportedDevices
         }
     }
 
@@ -124,6 +153,12 @@ public struct AssistCIFunctions {
         let safeOutputDirectory = sanitizePathComponent(config.outputDirectory)
         let safeOutputName = sanitizePathComponent(config.outputName)
         let archivePath = "\(safeOutputDirectory)/\(safeOutputName).xcarchive"
+        let safeAppName = sanitizeYAMLValue(config.appName.isEmpty ? config.projectName : config.appName)
+        let safeBundleID = sanitizeYAMLValue(config.bundleIdentifier)
+        let safeMarketingVersion = sanitizeYAMLValue(config.marketingVersion)
+        let safeBuildVersion = sanitizeYAMLValue(config.buildVersion)
+        let safeSupportedDevices = sanitizeYAMLValue(config.supportedDevices)
+        let timeoutMinutes = min(max(config.timeoutMinutes, 5), 180)
 
         let onSection = makeTriggers(trigger: config.triggerMode, branch: safeBranch)
         let cacheSection = config.includeCaching ? """
@@ -156,6 +191,14 @@ public struct AssistCIFunctions {
             -destination \"platform=iOS Simulator,name=iPhone 15\" \\
             -sdk iphonesimulator
 """ : ""
+
+        let deviceFamilyValue: String = {
+            switch config.supportedDevices.lowercased() {
+            case "iphone": return "1"
+            case "ipad": return "2"
+            default: return "1,2"
+            }
+        }()
 
         let cleanCommand = config.cleanBuild ? "clean \\\n            " : ""
         let failFastHeader = config.failFast ? "set -e\n          " : ""
@@ -192,16 +235,30 @@ public struct AssistCIFunctions {
           path: ~/Library/Logs
 """ : ""
 
+        let concurrencySection = config.includeConcurrencyControl ? """
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+""" : ""
+
         return """
 name: Build \(safeProject)
 
 \(onSection)
-permissions:
+\(concurrencySection)permissions:
   contents: read
+
+env:
+  APP_NAME: \(safeAppName)
+  BUNDLE_IDENTIFIER: \(safeBundleID)
+  MARKETING_VERSION: \(safeMarketingVersion)
+  BUILD_VERSION: \(safeBuildVersion)
+  SUPPORTED_DEVICES: \(safeSupportedDevices)
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: \(config.runnerImage.rawValue)
+    timeout-minutes: \(timeoutMinutes)
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -221,6 +278,11 @@ jobs:
             -sdk \(config.destinationType.sdk) \\
             -archivePath \(archivePath) \\
             \(cleanCommand)archive \\
+            PRODUCT_BUNDLE_IDENTIFIER=\"$BUNDLE_IDENTIFIER\" \\
+            MARKETING_VERSION=\"$MARKETING_VERSION\" \\
+            CURRENT_PROJECT_VERSION=\"$BUILD_VERSION\" \\
+            PRODUCT_NAME=\"$APP_NAME\" \\
+            TARGETED_DEVICE_FAMILY=\"\(deviceFamilyValue)\" \\
             CODE_SIGNING_ALLOWED=NO \\
             CODE_SIGNING_REQUIRED=NO
 \(testSection)
