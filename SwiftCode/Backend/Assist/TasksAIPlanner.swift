@@ -148,8 +148,9 @@ public final class TasksAIPlanner: ObservableObject {
 
     private func parsePlan(from response: String) throws -> AssistExecutionPlan {
         // Find JSON block (handles ```json ... ``` or just { ... })
+        // Use non-greedy regex to avoid capturing multiple JSON blocks
         var jsonStr = response
-        if let range = response.range(of: "\\{.*\\}", options: .regularExpression, range: nil, locale: nil) {
+        if let range = response.range(of: "\\{[^}]*\\}", options: .regularExpression, range: nil, locale: nil) {
             jsonStr = String(response[range])
         }
 

@@ -22,7 +22,8 @@ public struct AssistTreeViewTool: AssistTool {
         let indent = String(repeating: "  ", count: depth)
         result += "\(indent)📂 \(url.lastPathComponent)\n"
 
-        if let contents = try? FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) {
+        do {
+            let contents = try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil)
             for item in contents {
                 var isDir: ObjCBool = false
                 if FileManager.default.fileExists(atPath: item.path, isDirectory: &isDir), isDir.boolValue {
@@ -31,6 +32,8 @@ public struct AssistTreeViewTool: AssistTool {
                     result += "\(indent)  📄 \(item.lastPathComponent)\n"
                 }
             }
+        } catch {
+            result += "\(indent)  ⚠️ Error reading directory: \(error.localizedDescription)\n"
         }
         return result
     }

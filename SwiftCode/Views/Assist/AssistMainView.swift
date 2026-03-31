@@ -4,7 +4,6 @@ public struct AssistMainView: View {
     @StateObject private var manager = AssistManager.shared
     @State private var inputText: String = ""
     @State private var showSettings = false
-    @State private var isLoading = false
     @Environment(\.dismiss) private var dismiss
 
     public init() {}
@@ -37,7 +36,7 @@ public struct AssistMainView: View {
                                     AssistErrorBubble(error: error)
                                 }
 
-                                if manager.isProcessing || isLoading {
+                                if manager.isProcessing {
                                     thinkingIndicator
                                 }
                             }
@@ -160,26 +159,24 @@ public struct AssistMainView: View {
                         in: Circle()
                     )
             }
-            .disabled(inputText.isEmpty || manager.isProcessing || isLoading)
+            .disabled(inputText.isEmpty || manager.isProcessing)
 
             TextField("What should I build next?", text: $inputText, axis: .vertical)
                 .padding(12)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
                  .lineLimit(1...6)
-                .disabled(manager.isProcessing || isLoading)
+                .disabled(manager.isProcessing)
                 
 
             Button {
                 let text = inputText
                 inputText = ""
                 Task {
-                    await MainActor.run { isLoading = true }
                     await manager.sendMessage(text)
-                    await MainActor.run { isLoading = false }
                 }
             } label: {
                 Group {
-                    if isLoading || manager.isProcessing {
+                    if manager.isProcessing {
                         ProgressView()
                             .progressViewStyle(.circular)
                     } else {
@@ -189,19 +186,16 @@ public struct AssistMainView: View {
                 }
                 .foregroundStyle(inputText.isEmpty ? Color.secondary : Color.primary)
             }
-            .disabled(inputText.isEmpty || manager.isProcessing || isLoading)
+            .disabled(inputText.isEmpty || manager.isProcessing)
         }
     }
 
     private func expandPrompt() {
         let currentPrompt = inputText
         Task {
-            await MainActor.run { isLoading = true }
             let enhancedPrompt = await PromptEnhancer.enhancePrompt(userInput: currentPrompt)
-
             await MainActor.run {
                 inputText = enhancedPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
-                isLoading = false
             }
         }
     }

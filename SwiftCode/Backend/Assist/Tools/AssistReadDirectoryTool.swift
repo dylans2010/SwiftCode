@@ -13,7 +13,7 @@ public struct AssistReadDirectoryTool: AssistTool {
         }
 
         do {
-            let contents = try (context.fileSystem as? AssistFileSystem)?.listDirectory(at: path) ?? []
+            let contents = try context.fileSystem.listDirectory(at: path)
             return .success("Successfully read directory: \(path)", data: ["contents": contents.joined(separator: "\n")])
         } catch {
             return .failure("Failed to read directory at \(path): \(error.localizedDescription)")

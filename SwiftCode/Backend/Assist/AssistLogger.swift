@@ -1,5 +1,6 @@
 import Foundation
 
+@MainActor
 public final class AssistLogger: ObservableObject, AssistLoggerProtocol {
     @Published public var logs: [AssistLogEntry] = []
 
@@ -23,16 +24,12 @@ public final class AssistLogger: ObservableObject, AssistLoggerProtocol {
 
     private func log(_ message: String, level: AssistLogLevel, toolId: String?) {
         let entry = AssistLogEntry(message: message, level: level, toolId: toolId)
-        DispatchQueue.main.async {
-            self.logs.append(entry)
-            print("[Assist][\(level.rawValue)]\(toolId.map { " [\($0)]" } ?? "") \(message)")
-        }
+        logs.append(entry)
+        print("[Assist][\(level.rawValue)]\(toolId.map { " [\($0)]" } ?? "") \(message)")
     }
 
     public func clear() {
-        DispatchQueue.main.async {
-            self.logs.removeAll()
-        }
+        logs.removeAll()
     }
 }
 

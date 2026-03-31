@@ -95,16 +95,24 @@ struct \( (path as NSString).lastPathComponent.replacingOccurrences(of: ".swift"
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/bash")
         process.arguments = ["-c", fullCmd]
-        try? process.run()
-        process.waitUntilExit()
-        context.logger.info("Registered \(fileName) in Xcode project with ID \(fileId)", toolId: "CriticalExecution")
+        do {
+            try process.run()
+            process.waitUntilExit()
+            if process.terminationStatus == 0 {
+                context.logger.info("Registered \(fileName) in Xcode project with ID \(fileId)", toolId: "CriticalExecution")
+            } else {
+                context.logger.error("Failed to register \(fileName) in Xcode project (exit code: \(process.terminationStatus))", toolId: "CriticalExecution")
+            }
+        } catch {
+            context.logger.error("Failed to execute Xcode registration for \(fileName): \(error.localizedDescription)", toolId: "CriticalExecution")
+        }
         #else
         context.logger.warning("Skipping Xcode registration for \(fileName): Process is only supported on macOS.", toolId: "CriticalExecution")
         #endif
     }
 
     private func generateRandomHexID() -> String {
-        let chars = "0123456789ABCDEF"
-        return String((0..<24).map { _ in chars.randomElement()! })
+        let chars = Array("0123456789ABCDEF")
+        return String((0..<24).compactMap { _ in chars.randomElement() })
     }
 }
