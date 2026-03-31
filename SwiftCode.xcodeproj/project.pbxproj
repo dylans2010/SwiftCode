@@ -170,6 +170,7 @@ LS000000000000000000013A /* LocalSimulationView.swift in Sources */ = {isa = PBX
 LS000000000000000000014A /* SimulationSandbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = LS000000000000000000014B /* SimulationSandbox.swift */; };
 TV0000000000000000000001A /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = TV0000000000000000000001B /* TerminalView.swift */; };
 PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PC0000000000000000000001B /* PrepareCompileWaitingView.swift */; };
+ADI000000000000000000001A /* AppDetailsInfo.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADI000000000000000000001B /* AppDetailsInfo.swift */; };
 AS0000000000000000000001A /* AISuggestionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AS0000000000000000000001B /* AISuggestionEngine.swift */; };
 SH0000000000000000000001A /* SyntaxHighlightingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */; };
 CA0000000000000000000001A /* CodeStructureAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA0000000000000000000001B /* CodeStructureAnalyzer.swift */; };
@@ -651,6 +652,7 @@ LS000000000000000000013B /* LocalSimulationView.swift */ = {isa = PBXFileReferen
 LS000000000000000000014B /* SimulationSandbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulationSandbox.swift; sourceTree = "<group>"; };
 TV0000000000000000000001B /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalView.swift; sourceTree = "<group>"; };
 PC0000000000000000000001B /* PrepareCompileWaitingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrepareCompileWaitingView.swift; sourceTree = "<group>"; };
+ADI000000000000000000001B /* AppDetailsInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDetailsInfo.swift; sourceTree = "<group>"; };
 AS0000000000000000000001B /* AISuggestionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISuggestionEngine.swift; sourceTree = "<group>"; };
 SH0000000000000000000001B /* SyntaxHighlightingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyntaxHighlightingEngine.swift; sourceTree = "<group>"; };
 CA0000000000000000000001B /* CodeStructureAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeStructureAnalyzer.swift; sourceTree = "<group>"; };
@@ -1432,10 +1434,11 @@ children = (
 				030CC42C1F184196A05B7808 /* LocalBuildView.swift */,
 				AA000010000000000000012B /* BuildStatusView.swift */,
 				AA000010000000000000017B /* CIBuildView.swift */,
-				AA00001000000000000002EB /* BuildLogsView.swift */,
-				TV0000000000000000000001B /* TerminalView.swift */,
-				PC0000000000000000000001B /* PrepareCompileWaitingView.swift */,
-			);
+					AA00001000000000000002EB /* BuildLogsView.swift */,
+					TV0000000000000000000001B /* TerminalView.swift */,
+					PC0000000000000000000001B /* PrepareCompileWaitingView.swift */,
+					ADI000000000000000000001B /* AppDetailsInfo.swift */,
+				);
 path = Build;
 sourceTree = "<group>";
 };
@@ -2894,9 +2897,10 @@ files = (
 				FOV00000000000000000001A /* FoldersView.swift in Sources */,
 				CEV000000000000000000001A /* CreateExtensionView.swift in Sources */,
 				EEV000000000000000000001A /* EditExtensionView.swift in Sources */,
-				RPM000000000000000000001A /* RepoPermManager.swift in Sources */,
-				PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */,
-				PBM000000000000000000001A /* ProjectBuilderManager.swift in Sources */,
+					RPM000000000000000000001A /* RepoPermManager.swift in Sources */,
+					PC0000000000000000000001A /* PrepareCompileWaitingView.swift in Sources */,
+					ADI000000000000000000001A /* AppDetailsInfo.swift in Sources */,
+					PBM000000000000000000001A /* ProjectBuilderManager.swift in Sources */,
 				GRS000000000000000000001A /* GitHubRemoteSetupView.swift in Sources */,
 				AA0000100000000000000PFB /* ProjectFilesExtracter.swift in Sources */,
 				AA0000100000000000000F8A /* ModernGroupBoxStyle.swift in Sources */,
