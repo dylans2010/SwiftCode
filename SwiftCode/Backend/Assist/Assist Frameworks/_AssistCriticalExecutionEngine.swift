@@ -63,10 +63,10 @@ struct \( (path as NSString).lastPathComponent.replacingOccurrences(of: ".swift"
         try context.fileSystem.writeFile(at: path, content: content)
 
         // Register in Xcode project
-        registerInXcode(path: path)
+        await registerInXcode(path: path)
     }
 
-    private func registerInXcode(path: String) {
+    private func registerInXcode(path: String) async {
         // IDs for registration must be 24-character hex strings
         let fileId = generateRandomHexID()
         let buildFileId = generateRandomHexID()
