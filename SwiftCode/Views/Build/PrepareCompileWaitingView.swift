@@ -132,7 +132,7 @@ struct PrepareCompileWaitingView: View {
             try await ProjectBuilderManager.shared.triggerRemoteGeneration(for: project)
 
             // 3. Extract artifacts and monitor progress
-            try await ProjectFilesExtracter.shared.extractArtifacts(
+            try await BuildingSystemAPI.shared.fetchAndIntegrateGeneratedFiles(
                 for: project,
                 owner: owner,
                 repo: repo,

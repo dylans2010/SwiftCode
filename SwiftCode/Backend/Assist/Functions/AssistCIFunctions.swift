@@ -26,6 +26,19 @@ public struct AssistCIFunctions {
             }
         }
 
+        public enum TriggerMode: String, Codable, CaseIterable {
+            case manualOnly = "Manual only"
+            case pushAndManual = "Push + Manual"
+            case pullRequestAndManual = "Pull Request + Manual"
+            case all = "Push + PR + Manual"
+        }
+
+        public enum ExportFormat: String, Codable, CaseIterable {
+            case ipa = "IPA"
+            case xcarchive = "XCArchive"
+            case both = "Both"
+        }
+
         public var projectName: String
         public var scheme: String
         public var xcodeVersion: String
@@ -34,6 +47,14 @@ public struct AssistCIFunctions {
         public var outputDirectory: String
         public var outputName: String
         public var triggerBranch: String
+        public var triggerMode: TriggerMode
+        public var includeTests: Bool
+        public var includeLint: Bool
+        public var cleanBuild: Bool
+        public var failFast: Bool
+        public var includeCaching: Bool
+        public var uploadLogsArtifact: Bool
+        public var exportFormat: ExportFormat
 
         public init(
             projectName: String,
@@ -43,7 +64,15 @@ public struct AssistCIFunctions {
             destinationType: DestinationType,
             outputDirectory: String = "upload",
             outputName: String,
-            triggerBranch: String
+            triggerBranch: String,
+            triggerMode: TriggerMode = .pushAndManual,
+            includeTests: Bool = false,
+            includeLint: Bool = false,
+            cleanBuild: Bool = true,
+            failFast: Bool = true,
+            includeCaching: Bool = true,
+            uploadLogsArtifact: Bool = true,
+            exportFormat: ExportFormat = .ipa
         ) {
             self.projectName = projectName
             self.scheme = scheme
@@ -53,6 +82,14 @@ public struct AssistCIFunctions {
             self.outputDirectory = outputDirectory
             self.outputName = outputName
             self.triggerBranch = triggerBranch
+            self.triggerMode = triggerMode
+            self.includeTests = includeTests
+            self.includeLint = includeLint
+            self.cleanBuild = cleanBuild
+            self.failFast = failFast
+            self.includeCaching = includeCaching
+            self.uploadLogsArtifact = uploadLogsArtifact
+            self.exportFormat = exportFormat
         }
     }
 
@@ -86,16 +123,79 @@ public struct AssistCIFunctions {
         let safeBranch = sanitizeYAMLValue(config.triggerBranch)
         let safeOutputDirectory = sanitizePathComponent(config.outputDirectory)
         let safeOutputName = sanitizePathComponent(config.outputName)
+        let archivePath = "\(safeOutputDirectory)/\(safeOutputName).xcarchive"
+
+        let onSection = makeTriggers(trigger: config.triggerMode, branch: safeBranch)
+        let cacheSection = config.includeCaching ? """
+      - name: Cache DerivedData
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: ${{ runner.os }}-xcode-${{ hashFiles('**/*.xcodeproj/project.pbxproj') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-
+""" : ""
+
+        let lintSection = config.includeLint ? """
+      - name: Swift Lint (basic)
+        run: |
+          if command -v swiftlint >/dev/null 2>&1; then
+            swiftlint --strict
+          else
+            echo \"swiftlint not installed on runner; skipping\"
+          fi
+""" : ""
+
+        let testSection = config.includeTests ? """
+      - name: Run Unit Tests
+        run: |
+          xcodebuild test \\
+            -project \(safeProject).xcodeproj \\
+            -scheme \(safeScheme) \\
+            -configuration \(config.buildConfiguration.rawValue) \\
+            -destination \"platform=iOS Simulator,name=iPhone 15\" \\
+            -sdk iphonesimulator
+""" : ""
+
+        let cleanCommand = config.cleanBuild ? "clean \\\n            " : ""
+        let failFastHeader = config.failFast ? "set -e\n          " : ""
+
+        let archiveUploadSection = (config.exportFormat == .xcarchive || config.exportFormat == .both) ? """
+      - name: Upload XCArchive Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: \(safeOutputName)-xcarchive
+          path: \(archivePath)
+""" : ""
+
+        let ipaCreateSection = (config.exportFormat == .ipa || config.exportFormat == .both) ? """
+      - name: Create IPA
+        run: |
+          mkdir -p \(safeOutputDirectory)/Payload
+          cp -R \(archivePath)/Products/Applications/*.app \(safeOutputDirectory)/Payload/
+          cd \(safeOutputDirectory)
+          zip -r \(safeOutputName).ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: \(safeOutputName)-ipa
+          path: \(safeOutputDirectory)/\(safeOutputName).ipa
+""" : ""
+
+        let logsSection = config.uploadLogsArtifact ? """
+      - name: Upload Build Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: \(safeOutputName)-build-logs
+          path: ~/Library/Logs
+""" : ""
 
         return """
 name: Build \(safeProject)
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - \(safeBranch)
-
+\(onSection)
 permissions:
   contents: read
 
@@ -105,38 +205,66 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
+\(cacheSection)
       - name: Set up Xcode
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '\(sanitizeYAMLValue(config.xcodeVersion))'
-
+\(lintSection)
       - name: Build
         run: |
-          mkdir -p \(safeOutputDirectory)
+          \(failFastHeader)mkdir -p \(safeOutputDirectory)
           xcodebuild -project \(safeProject).xcodeproj \\
             -scheme \(safeScheme) \\
             -configuration \(config.buildConfiguration.rawValue) \\
-            -destination "\(config.destinationType.destination)" \\
+            -destination \"\(config.destinationType.destination)\" \\
             -sdk \(config.destinationType.sdk) \\
-            -archivePath \(safeOutputDirectory)/\(safeOutputName).xcarchive \\
-            archive \\
+            -archivePath \(archivePath) \\
+            \(cleanCommand)archive \\
             CODE_SIGNING_ALLOWED=NO \\
             CODE_SIGNING_REQUIRED=NO
-
-      - name: Create IPA
-        run: |
-          mkdir -p \(safeOutputDirectory)/Payload
-          cp -R \(safeOutputDirectory)/\(safeOutputName).xcarchive/Products/Applications/*.app \(safeOutputDirectory)/Payload/
-          cd \(safeOutputDirectory)
-          zip -r \(safeOutputName).ipa Payload
-
-      - name: Upload IPA Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: \(safeOutputName)-ipa
-          path: \(safeOutputDirectory)/\(safeOutputName).ipa
+\(testSection)
+\(archiveUploadSection)
+\(ipaCreateSection)
+\(logsSection)
 """
+    }
+
+    private static func makeTriggers(trigger: BuildYMLConfig.TriggerMode, branch: String) -> String {
+        switch trigger {
+        case .manualOnly:
+            return """
+on:
+  workflow_dispatch:
+"""
+        case .pushAndManual:
+            return """
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - \(branch)
+"""
+        case .pullRequestAndManual:
+            return """
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - \(branch)
+"""
+        case .all:
+            return """
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - \(branch)
+  pull_request:
+    branches:
+      - \(branch)
+"""
+        }
     }
 
     public static func validateCIPipelines(workspaceRoot: URL) throws -> PipelineValidationResult {

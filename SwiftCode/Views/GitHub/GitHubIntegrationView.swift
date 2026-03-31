@@ -41,6 +41,7 @@ struct GitHubIntegrationView: View {
     @State private var showBranchManagement = false
     @State private var showCommitHistory = false
     @State private var showPullRequest = false
+    @State private var showLicenses = false
 
     var ownerFromRepo: String {
         let parts = repoURL
@@ -143,6 +144,9 @@ struct GitHubIntegrationView: View {
                     repo: repoNameFromURL,
                     currentBranch: currentBranch
                 )
+            }
+            .sheet(isPresented: $showLicenses) {
+                LicencesAddView(project: project)
             }
             .onAppear { loadSavedCredentials() }
         }
@@ -252,6 +256,17 @@ struct GitHubIntegrationView: View {
                     color: .purple
                 ) {
                     showPullRequest = true
+                }
+
+                Divider().opacity(0.15).padding(.leading, 52)
+
+                moduleRow(
+                    title: "Licenses",
+                    subtitle: "Browse, filter, and add OSS licenses",
+                    icon: "doc.text.magnifyingglass",
+                    color: .cyan
+                ) {
+                    showLicenses = true
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 10))
