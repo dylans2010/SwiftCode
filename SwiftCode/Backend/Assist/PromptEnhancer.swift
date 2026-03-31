@@ -16,7 +16,7 @@ public final class PromptEnhancer {
         let providerRawValue = UserDefaults.standard.string(forKey: "assist.selectedProvider") ?? AssistModelProvider.openAI.rawValue
         let provider = AssistModelProvider(rawValue: providerRawValue) ?? .openAI
         let apiKey = APIKeyManager.shared.retrieveKey(service: provider.apiKeyProvider)
-        let selectedModelID = AssistModelManager.shared.selectedModelID
+        let selectedModelID = await AssistModelManager.shared.selectedModelID
 
         let response = await AssistLLMService.generateResponse(
             prompt: "\(systemPrompt)\n\nUser Input: \(userInput)",

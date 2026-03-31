@@ -12,7 +12,7 @@ public struct AssistBuildProjectTool: AssistTool {
         let scheme = input["scheme"] as? String ?? context.project?.name ?? "SwiftCode"
         let configuration = input["configuration"] as? String ?? "Debug"
         
-        context.logger.info("Building project: \(projectPath), scheme: \(scheme)", toolId: id)
+        await context.logger.info("Building project: \(projectPath), scheme: \(scheme)", toolId: id)
 
         #if os(macOS)
         do {
@@ -27,7 +27,7 @@ public struct AssistBuildProjectTool: AssistTool {
                 "clean", "build"
             ]
             
-            context.logger.info("Executing: xcodebuild \(arguments.joined(separator: " "))", toolId: id)
+            await context.logger.info("Executing: xcodebuild \(arguments.joined(separator: " "))", toolId: id)
             
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/xcodebuild")

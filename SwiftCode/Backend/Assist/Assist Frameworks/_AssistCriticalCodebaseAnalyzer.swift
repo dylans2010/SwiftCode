@@ -10,9 +10,9 @@ public final class _AssistCriticalCodebaseAnalyzer {
     }
 
     /// Performs a full scan of the project and returns a summary of the architecture.
-    public func analyze() throws -> CodebaseSummary {
+    public func analyze() async throws -> CodebaseSummary {
         let root = context.workspaceRoot
-        context.logger.info("Analyzing codebase at \(root.path)", toolId: "CodebaseAnalyzer")
+        await context.logger.info("Analyzing codebase at \(root.path)", toolId: "CodebaseAnalyzer")
 
         let allFiles = try scanDirectory(at: root)
         let swiftFiles = allFiles.filter { $0.hasSuffix(".swift") }

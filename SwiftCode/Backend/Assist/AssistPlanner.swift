@@ -11,12 +11,12 @@ public final class AssistPlanner {
         return try await TasksAIPlanner.shared.generatePlan(intent: intent, context: context)
     }
 
-    private func parsePlan(from response: String) throws -> AssistExecutionPlan {
+    private func parsePlan(from response: String) async throws -> AssistExecutionPlan {
         let pattern = "\\{(?:[^{}]|\\{(?:[^{}]|\\{[^{}]*\\})*\\})*\\}"
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators]),
               let match = regex.firstMatch(in: response, options: [], range: NSRange(response.startIndex..., in: response)),
               let range = Range(match.range, in: response) else {
-            context.logger.error("No JSON found in planner response.")
+            await context.logger.error("No JSON found in planner response.")
             throw AssistPlannerError.invalidResponse
         }
 
@@ -47,7 +47,7 @@ public final class AssistPlanner {
         }
 
         if plan.steps.isEmpty {
-            context.logger.warning("Planner returned 0 steps for intent.")
+            await context.logger.warning("Planner returned 0 steps for intent.")
         }
 
         return plan

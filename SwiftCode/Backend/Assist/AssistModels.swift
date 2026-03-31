@@ -281,10 +281,10 @@ public protocol AssistMemoryGraphProtocol {
 }
 
 public protocol AssistLoggerProtocol {
-    func info(_ message: String, toolId: String?)
-    func warning(_ message: String, toolId: String?)
-    func error(_ message: String, toolId: String?)
-    func debug(_ message: String, toolId: String?)
+    func info(_ message: String, toolId: String?) async
+    func warning(_ message: String, toolId: String?) async
+    func error(_ message: String, toolId: String?) async
+    func debug(_ message: String, toolId: String?) async
 }
 
 public protocol AssistFileSystemProtocol {

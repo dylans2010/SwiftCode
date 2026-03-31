@@ -26,11 +26,11 @@ public final class _AssistCriticalAutonomousEngine {
         isRunning = true
         defer { isRunning = false }
 
-        context.logger.info("Starting autonomous engine for: \(intent)", toolId: "AutonomousEngine")
+        await context.logger.info("Starting autonomous engine for: \(intent)", toolId: "AutonomousEngine")
 
         // 0. Initial Analysis
-        let summary = try analyzer.analyze()
-        context.logger.info("Initial codebase analysis complete. Found \(summary.swiftFileCount) Swift files.", toolId: "AutonomousEngine")
+        let summary = try await analyzer.analyze()
+        await context.logger.info("Initial codebase analysis complete. Found \(summary.swiftFileCount) Swift files.", toolId: "AutonomousEngine")
 
         iterationCount = 0
         var currentIntent = intent
@@ -41,7 +41,7 @@ public final class _AssistCriticalAutonomousEngine {
 
         while !isSatisfied && iterationCount < maxIterations {
             iterationCount += 1
-            context.logger.info("Starting iteration \(iterationCount)", toolId: "AutonomousEngine")
+            await context.logger.info("Starting iteration \(iterationCount)", toolId: "AutonomousEngine")
 
             // 1. Plan & Orchestrate
             var plan = try await orchestrator.createPlan(for: currentIntent)
@@ -54,7 +54,7 @@ public final class _AssistCriticalAutonomousEngine {
 
             if validationResult.isSuccess {
                 isSatisfied = true
-                context.logger.info("Task satisfied after \(iterationCount) iterations.", toolId: "AutonomousEngine")
+                await context.logger.info("Task satisfied after \(iterationCount) iterations.", toolId: "AutonomousEngine")
             } else {
                 // Safety Detection
                 if detectInfiniteLoop(feedback: validationResult.feedback) {
@@ -62,7 +62,7 @@ public final class _AssistCriticalAutonomousEngine {
                     throw AutonomousError.infiniteLoopDetected
                 }
 
-                context.logger.warning("Validation failed: \(validationResult.feedback). Retrying...", toolId: "AutonomousEngine")
+                await context.logger.warning("Validation failed: \(validationResult.feedback). Retrying...", toolId: "AutonomousEngine")
                 previousValidationFeedbacks.append(validationResult.feedback)
                 currentIntent = "The previous attempt failed. Feedback: \(validationResult.feedback). Original goal: \(intent)"
             }
@@ -75,7 +75,7 @@ public final class _AssistCriticalAutonomousEngine {
         }
 
         if !isSatisfied {
-            context.logger.error("Reached maximum iterations (\(maxIterations)) without full satisfaction.", toolId: "AutonomousEngine")
+            await context.logger.error("Reached maximum iterations (\(maxIterations)) without full satisfaction.", toolId: "AutonomousEngine")
             await triggerTakeover(reason: "Reached maximum iterations (\(maxIterations)) without satisfying the goal.")
             throw AutonomousError.maxIterationsReached
         }

@@ -11,7 +11,7 @@ public final class _AssistCriticalValidationEngine {
 
     /// Validates the outcome of a completed plan.
     public func validate(plan: AssistExecutionPlan) async throws -> ValidationResult {
-        context.logger.info("Validating plan results for: \(plan.goal)", toolId: "ValidationEngine")
+        await context.logger.info("Validating plan results for: \(plan.goal)", toolId: "ValidationEngine")
 
         // 1. Check for step failures
         let failedSteps = plan.steps.filter { $0.status == .failed }
