@@ -507,6 +507,19 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		ASFR0003BF /* _AssistCriticalCodebaseAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0003 /* _AssistCriticalCodebaseAnalyzer.swift */; };
 		ASFR0004BF /* _AssistCriticalExecutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0004 /* _AssistCriticalExecutionEngine.swift */; };
 		ASFR0005BF /* _AssistCriticalValidationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0005 /* _AssistCriticalValidationEngine.swift */; };
+		A50200000000000000000001 /* AssistSourceGraphBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50100000000000000000001 /* AssistSourceGraphBuilder.swift */; };
+		A50200000000000000000002 /* AssistSemanticQueryEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50100000000000000000002 /* AssistSemanticQueryEngine.swift */; };
+		A50200000000000000000003 /* AssistCodeMutationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50100000000000000000003 /* AssistCodeMutationEngine.swift */; };
+		A50200000000000000000004 /* AssistPatchApplicationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50100000000000000000004 /* AssistPatchApplicationEngine.swift */; };
+		A50200000000000000000005 /* AssistProjectMutationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50100000000000000000005 /* AssistProjectMutationController.swift */; };
+		A50200000000000000000006 /* AssistCompilerDiagnosticsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50100000000000000000006 /* AssistCompilerDiagnosticsEngine.swift */; };
+		A50200000000000000000007 /* AssistAutomatedRepairEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50100000000000000000007 /* AssistAutomatedRepairEngine.swift */; };
+		A50200000000000000000008 /* AssistVersionControlOperator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50100000000000000000008 /* AssistVersionControlOperator.swift */; };
+		A50200000000000000000009 /* AssistContextPersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50100000000000000000009 /* AssistContextPersistenceStore.swift */; };
+		A5020000000000000000000A /* AssistRuntimeDiagnosticsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5010000000000000000000A /* AssistRuntimeDiagnosticsEngine.swift */; };
+		A5020000000000000000000B /* AssistExternalResourceGateway.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5010000000000000000000B /* AssistExternalResourceGateway.swift */; };
+		A5020000000000000000000C /* AssistDependencyResolutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5010000000000000000000C /* AssistDependencyResolutionEngine.swift */; };
+		A5020000000000000000000D /* AssistAutonomousReviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5010000000000000000000D /* AssistAutonomousReviewEngine.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -1043,6 +1056,21 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		ASFR0003 /* _AssistCriticalCodebaseAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalCodebaseAnalyzer.swift"; sourceTree = SOURCE_ROOT; };
 		ASFR0004 /* _AssistCriticalExecutionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalExecutionEngine.swift"; sourceTree = SOURCE_ROOT; };
 		ASFR0005 /* _AssistCriticalValidationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalValidationEngine.swift"; sourceTree = SOURCE_ROOT; };
+
+		A50100000000000000000001 /* AssistSourceGraphBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistSourceGraphBuilder.swift; sourceTree = SOURCE_ROOT; };
+		A50100000000000000000002 /* AssistSemanticQueryEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistSemanticQueryEngine.swift; sourceTree = SOURCE_ROOT; };
+		A50100000000000000000003 /* AssistCodeMutationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistCodeMutationEngine.swift; sourceTree = SOURCE_ROOT; };
+		A50100000000000000000004 /* AssistPatchApplicationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistPatchApplicationEngine.swift; sourceTree = SOURCE_ROOT; };
+		A50100000000000000000005 /* AssistProjectMutationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistProjectMutationController.swift; sourceTree = SOURCE_ROOT; };
+		A50100000000000000000006 /* AssistCompilerDiagnosticsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistCompilerDiagnosticsEngine.swift; sourceTree = SOURCE_ROOT; };
+		A50100000000000000000007 /* AssistAutomatedRepairEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistAutomatedRepairEngine.swift; sourceTree = SOURCE_ROOT; };
+		A50100000000000000000008 /* AssistVersionControlOperator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistVersionControlOperator.swift; sourceTree = SOURCE_ROOT; };
+		A50100000000000000000009 /* AssistContextPersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistContextPersistenceStore.swift; sourceTree = SOURCE_ROOT; };
+		A5010000000000000000000A /* AssistRuntimeDiagnosticsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistRuntimeDiagnosticsEngine.swift; sourceTree = SOURCE_ROOT; };
+		A5010000000000000000000B /* AssistExternalResourceGateway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistExternalResourceGateway.swift; sourceTree = SOURCE_ROOT; };
+		A5010000000000000000000C /* AssistDependencyResolutionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistDependencyResolutionEngine.swift; sourceTree = SOURCE_ROOT; };
+		A5010000000000000000000D /* AssistAutonomousReviewEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistAutonomousReviewEngine.swift; sourceTree = SOURCE_ROOT; };
+
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -2471,6 +2499,19 @@ sourceTree = "<group>";
 				3C94EB7F934F4710A18BB411 /* AssistAppendFileTool.swift */,
 				AC847CB9836E4671B93B9582 /* AssistWriteFileTool.swift */,
 				0C6E19FC123C46FC9EE58AE3 /* AssistReadFileTool.swift */,
+				A50100000000000000000001 /* AssistSourceGraphBuilder.swift */,
+				A50100000000000000000002 /* AssistSemanticQueryEngine.swift */,
+				A50100000000000000000003 /* AssistCodeMutationEngine.swift */,
+				A50100000000000000000004 /* AssistPatchApplicationEngine.swift */,
+				A50100000000000000000005 /* AssistProjectMutationController.swift */,
+				A50100000000000000000006 /* AssistCompilerDiagnosticsEngine.swift */,
+				A50100000000000000000007 /* AssistAutomatedRepairEngine.swift */,
+				A50100000000000000000008 /* AssistVersionControlOperator.swift */,
+				A50100000000000000000009 /* AssistContextPersistenceStore.swift */,
+				A5010000000000000000000A /* AssistRuntimeDiagnosticsEngine.swift */,
+				A5010000000000000000000B /* AssistExternalResourceGateway.swift */,
+				A5010000000000000000000C /* AssistDependencyResolutionEngine.swift */,
+				A5010000000000000000000D /* AssistAutonomousReviewEngine.swift */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -2652,6 +2693,19 @@ files = (
 				BCBD4F08002E4F0DB7E4FBA8 /* AssistAppendFileTool.swift in Sources */,
 				A103128DD93D4B61863BEA26 /* AssistWriteFileTool.swift in Sources */,
 				5DDE335BB8EF45009F67B2D5 /* AssistReadFileTool.swift in Sources */,
+				A50200000000000000000001 /* AssistSourceGraphBuilder.swift in Sources */,
+				A50200000000000000000002 /* AssistSemanticQueryEngine.swift in Sources */,
+				A50200000000000000000003 /* AssistCodeMutationEngine.swift in Sources */,
+				A50200000000000000000004 /* AssistPatchApplicationEngine.swift in Sources */,
+				A50200000000000000000005 /* AssistProjectMutationController.swift in Sources */,
+				A50200000000000000000006 /* AssistCompilerDiagnosticsEngine.swift in Sources */,
+				A50200000000000000000007 /* AssistAutomatedRepairEngine.swift in Sources */,
+				A50200000000000000000008 /* AssistVersionControlOperator.swift in Sources */,
+				A50200000000000000000009 /* AssistContextPersistenceStore.swift in Sources */,
+				A5020000000000000000000A /* AssistRuntimeDiagnosticsEngine.swift in Sources */,
+				A5020000000000000000000B /* AssistExternalResourceGateway.swift in Sources */,
+				A5020000000000000000000C /* AssistDependencyResolutionEngine.swift in Sources */,
+				A5020000000000000000000D /* AssistAutonomousReviewEngine.swift in Sources */,
 				F97F63163D07407CB2DCAA3B /* AssistAgent.swift in Sources */,
 				7833D18C47384720A5A2A253 /* AssistToolRegistry.swift in Sources */,
 				1DC8FE4D08904931A60145CB /* AssistExecutionEngine.swift in Sources */,

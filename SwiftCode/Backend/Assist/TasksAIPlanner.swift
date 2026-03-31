@@ -62,11 +62,28 @@ public final class TasksAIPlanner: ObservableObject {
           ]
         }
 
+        # ADVANCED TOOL PREFERENCE
+        Prefer explicit tool-driven execution over direct generation. Use these when relevant:
+        - source_graph_builder
+        - semantic_query_engine
+        - code_mutation_engine
+        - patch_application_engine
+        - project_mutation_controller
+        - compiler_diagnostics_engine
+        - automated_repair_engine
+        - version_control_operator
+        - context_persistence_store
+        - runtime_diagnostics_engine
+        - external_resource_gateway
+        - dependency_resolution_engine
+        - autonomous_review_engine
+
         # CONSTRAINTS
         - Minimum 3 steps.
         - Never return an empty steps array.
         - Use real file paths and FULL, production-ready implementations.
         - No mock data.
+        - Every step must have a real toolId from available tools.
 
         # FINAL REPORT FORMAT
         All plans must lead to a final report following the markdown structure:

@@ -33,6 +33,14 @@ public final class AssistExecutionEngine {
 
                 // Map the input to [String: Any] as required by AssistTool protocol
                 var toolInput = step.input as [String: Any]
+                if i > 0, let previous = plan.steps[i - 1].result {
+                    toolInput["previous_output"] = previous.output
+                    if let previousData = previous.data {
+                        for (k, v) in previousData {
+                            if toolInput[k] == nil { toolInput[k] = v }
+                        }
+                    }
+                }
                 if let path = toolInput["path"] as? String,
                    ["code_refactor", "file_read", "file_append"].contains(step.toolId),
                    !context.fileSystem.exists(at: path),
