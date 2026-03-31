@@ -520,6 +520,7 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		A5020000000000000000000B /* AssistExternalResourceGateway.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5010000000000000000000B /* AssistExternalResourceGateway.swift */; };
 		A5020000000000000000000C /* AssistDependencyResolutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5010000000000000000000C /* AssistDependencyResolutionEngine.swift */; };
 		A5020000000000000000000D /* AssistAutonomousReviewEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5010000000000000000000D /* AssistAutonomousReviewEngine.swift */; };
+		A5020000000000000000000E /* AssistCreateFileTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5010000000000000000000E /* AssistCreateFileTool.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -1070,6 +1071,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		A5010000000000000000000B /* AssistExternalResourceGateway.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistExternalResourceGateway.swift; sourceTree = SOURCE_ROOT; };
 		A5010000000000000000000C /* AssistDependencyResolutionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistDependencyResolutionEngine.swift; sourceTree = SOURCE_ROOT; };
 		A5010000000000000000000D /* AssistAutonomousReviewEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistAutonomousReviewEngine.swift; sourceTree = SOURCE_ROOT; };
+		A5010000000000000000000E /* AssistCreateFileTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistCreateFileTool.swift; sourceTree = SOURCE_ROOT; };
 
 /* End PBXFileReference section */
 
@@ -2512,6 +2514,7 @@ sourceTree = "<group>";
 				A5010000000000000000000B /* AssistExternalResourceGateway.swift */,
 				A5010000000000000000000C /* AssistDependencyResolutionEngine.swift */,
 				A5010000000000000000000D /* AssistAutonomousReviewEngine.swift */,
+				A5010000000000000000000E /* AssistCreateFileTool.swift */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -2706,6 +2709,7 @@ files = (
 				A5020000000000000000000B /* AssistExternalResourceGateway.swift in Sources */,
 				A5020000000000000000000C /* AssistDependencyResolutionEngine.swift in Sources */,
 				A5020000000000000000000D /* AssistAutonomousReviewEngine.swift in Sources */,
+				A5020000000000000000000E /* AssistCreateFileTool.swift in Sources */,
 				F97F63163D07407CB2DCAA3B /* AssistAgent.swift in Sources */,
 				7833D18C47384720A5A2A253 /* AssistToolRegistry.swift in Sources */,
 				1DC8FE4D08904931A60145CB /* AssistExecutionEngine.swift in Sources */,
