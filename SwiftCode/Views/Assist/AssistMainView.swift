@@ -3,6 +3,7 @@ import SwiftUI
 public struct AssistMainView: View {
     @StateObject private var manager = AssistManager.shared
     @State private var inputText: String = ""
+    @State private var isEnhancingPrompt = false
     @State private var showSettings = false
     @Environment(\.dismiss) private var dismiss
 
@@ -161,11 +162,38 @@ public struct AssistMainView: View {
             }
             .disabled(inputText.isEmpty || manager.isProcessing)
 
-            TextField("What should I build next?", text: $inputText, axis: .vertical)
-                .padding(12)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
-                 .lineLimit(1...6)
-                .disabled(manager.isProcessing)
+            ZStack {
+                TextField("What should I build next?", text: $inputText, axis: .vertical)
+                    .padding(12)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+                    .lineLimit(1...6)
+                    .disabled(manager.isProcessing || isEnhancingPrompt)
+
+                if isEnhancingPrompt {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                    .tint(.purple)
+                                Text("Enhancing prompt with Apple Intelligence...")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                            }
+                            .padding(.horizontal, 16)
+                        )
+                        .overlay(
+                            LinearGradient(
+                                colors: [.blue.opacity(0.35), .purple.opacity(0.35), .pink.opacity(0.25)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                            .blendMode(.plusLighter)
+                        )
+                        .transition(.scale(scale: 0.95).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(response: 0.36, dampingFraction: 0.86), value: isEnhancingPrompt)
                 
 
             Button {
@@ -192,10 +220,17 @@ public struct AssistMainView: View {
 
     private func expandPrompt() {
         let currentPrompt = inputText
+        guard !currentPrompt.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        withAnimation(.spring(response: 0.36, dampingFraction: 0.86)) {
+            isEnhancingPrompt = true
+        }
         Task {
             let enhancedPrompt = await PromptEnhancer.enhancePrompt(userInput: currentPrompt)
             await MainActor.run {
                 inputText = enhancedPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+                withAnimation(.spring(response: 0.36, dampingFraction: 0.86)) {
+                    isEnhancingPrompt = false
+                }
             }
         }
     }
