@@ -203,6 +203,7 @@ GI0000000000000000000001A /* GitHubIssuesView.swift in Sources */ = {isa = PBXBu
 CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CX0000000000000000000001B /* ComplexityAnalyzerView.swift */; };
 BM0000000000000000000001A /* BranchManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BM0000000000000000000001B /* BranchManagementView.swift */; };
 CH0000000000000000000001A /* CommitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CH0000000000000000000001B /* CommitHistoryView.swift */; };
+GP0000000000000000000001A /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PR0000000000000000000001B /* PullRequestView.swift */; };
 EX0000000000000000000001A /* ExtensionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EX0000000000000000000001B /* ExtensionsView.swift */; };
 EM0000000000000000000001A /* ExtensionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EM0000000000000000000001B /* ExtensionManager.swift */; };
 CEV000000000000000000001A /* CreateExtensionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEV000000000000000000001B /* CreateExtensionView.swift */; };
@@ -2943,6 +2944,7 @@ files = (
 				CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */,
 				BM0000000000000000000001A /* BranchManagementView.swift in Sources */,
 				CH0000000000000000000001A /* CommitHistoryView.swift in Sources */,
+				GP0000000000000000000001A /* PullRequestView.swift in Sources */,
 				EX0000000000000000000001A /* ExtensionsView.swift in Sources */,
 				EM0000000000000000000001A /* ExtensionManager.swift in Sources */,
 				AA00001000000000000003DC /* ToolbarSettings.swift in Sources */,
