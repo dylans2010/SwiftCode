@@ -2696,6 +2696,7 @@ files = (
 				ASFR0012BF /* AssistLoopStabilityRegulator.swift in Sources */,
 				ASFR0011BF /* AssistMemoryConsistencyValidator.swift in Sources */,
 				ASFR0010BF /* AssistContextDriftDetector.swift in Sources */,
+				ASFR000FBF /* AssistContextPersistenceStore.swift in Sources */,
 				A50200000000000000000009 /* AssistContextPersistenceStore.swift in Sources */,
 				ASFR000EBF /* AssistCodeIntegrityScanner.swift in Sources */,
 				ASFR000DBF /* AssistOutputVerificationEngine.swift in Sources */,
