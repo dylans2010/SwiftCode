@@ -203,7 +203,6 @@ GI0000000000000000000001A /* GitHubIssuesView.swift in Sources */ = {isa = PBXBu
 CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CX0000000000000000000001B /* ComplexityAnalyzerView.swift */; };
 BM0000000000000000000001A /* BranchManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BM0000000000000000000001B /* BranchManagementView.swift */; };
 CH0000000000000000000001A /* CommitHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CH0000000000000000000001B /* CommitHistoryView.swift */; };
-PR0000000000000000000001A /* PullRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = PR0000000000000000000001B /* PullRequestView.swift */; };
 EX0000000000000000000001A /* ExtensionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EX0000000000000000000001B /* ExtensionsView.swift */; };
 EM0000000000000000000001A /* ExtensionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EM0000000000000000000001B /* ExtensionManager.swift */; };
 CEV000000000000000000001A /* CreateExtensionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEV000000000000000000001B /* CreateExtensionView.swift */; };
@@ -505,7 +504,7 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		ASFR0012BF /* AssistLoopStabilityRegulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0012 /* AssistLoopStabilityRegulator.swift */; };
 		ASFR0011BF /* AssistMemoryConsistencyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0011 /* AssistMemoryConsistencyValidator.swift */; };
 		ASFR0010BF /* AssistContextDriftDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0010 /* AssistContextDriftDetector.swift */; };
-		ASFR000FBF /* AssistContextPersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000F /* AssistContextPersistenceStore.swift */; };
+		ASFR000FBF /* AssistExecutionContextPersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000F /* AssistExecutionContextPersistenceStore.swift */; };
 		ASFR000EBF /* AssistCodeIntegrityScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000E /* AssistCodeIntegrityScanner.swift */; };
 		ASFR000DBF /* AssistOutputVerificationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000D /* AssistOutputVerificationEngine.swift */; };
 		ASFR000CBF /* AssistRecoveryStrategyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000C /* AssistRecoveryStrategyGenerator.swift */; };
@@ -1071,7 +1070,7 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		ASFR0012 /* AssistLoopStabilityRegulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistLoopStabilityRegulator.swift"; sourceTree = SOURCE_ROOT; };
 		ASFR0011 /* AssistMemoryConsistencyValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistMemoryConsistencyValidator.swift"; sourceTree = SOURCE_ROOT; };
 		ASFR0010 /* AssistContextDriftDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistContextDriftDetector.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR000F /* AssistContextPersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistContextPersistenceStore.swift"; sourceTree = SOURCE_ROOT; };
+		ASFR000F /* AssistExecutionContextPersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistExecutionContextPersistenceStore.swift"; sourceTree = SOURCE_ROOT; };
 		ASFR000E /* AssistCodeIntegrityScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistCodeIntegrityScanner.swift"; sourceTree = SOURCE_ROOT; };
 		ASFR000D /* AssistOutputVerificationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistOutputVerificationEngine.swift"; sourceTree = SOURCE_ROOT; };
 		ASFR000C /* AssistRecoveryStrategyGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistRecoveryStrategyGenerator.swift"; sourceTree = SOURCE_ROOT; };
@@ -1830,7 +1829,7 @@ sourceTree = "<group>";
 				ASFR0012 /* AssistLoopStabilityRegulator.swift */,
 				ASFR0011 /* AssistMemoryConsistencyValidator.swift */,
 				ASFR0010 /* AssistContextDriftDetector.swift */,
-				ASFR000F /* AssistContextPersistenceStore.swift */,
+				ASFR000F /* AssistExecutionContextPersistenceStore.swift */,
 				ASFR000E /* AssistCodeIntegrityScanner.swift */,
 				ASFR000D /* AssistOutputVerificationEngine.swift */,
 				ASFR000C /* AssistRecoveryStrategyGenerator.swift */,
@@ -2696,7 +2695,7 @@ files = (
 				ASFR0012BF /* AssistLoopStabilityRegulator.swift in Sources */,
 				ASFR0011BF /* AssistMemoryConsistencyValidator.swift in Sources */,
 				ASFR0010BF /* AssistContextDriftDetector.swift in Sources */,
-				ASFR000FBF /* AssistContextPersistenceStore.swift in Sources */,
+				ASFR000FBF /* AssistExecutionContextPersistenceStore.swift in Sources */,
 				A50200000000000000000009 /* AssistContextPersistenceStore.swift in Sources */,
 				ASFR000EBF /* AssistCodeIntegrityScanner.swift in Sources */,
 				ASFR000DBF /* AssistOutputVerificationEngine.swift in Sources */,
@@ -2944,7 +2943,6 @@ files = (
 				CX0000000000000000000001A /* ComplexityAnalyzerView.swift in Sources */,
 				BM0000000000000000000001A /* BranchManagementView.swift in Sources */,
 				CH0000000000000000000001A /* CommitHistoryView.swift in Sources */,
-				PR0000000000000000000001A /* PullRequestView.swift in Sources */,
 				EX0000000000000000000001A /* ExtensionsView.swift in Sources */,
 				EM0000000000000000000001A /* ExtensionManager.swift in Sources */,
 				AA00001000000000000003DC /* ToolbarSettings.swift in Sources */,
