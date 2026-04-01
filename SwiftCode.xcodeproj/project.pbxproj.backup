@@ -503,24 +503,6 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		ASVV0001BF /* AssistPlannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASVV0001 /* AssistPlannerView.swift */; };
 		ASVV0002BF /* AssistUserTakeover.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASVV0002 /* AssistUserTakeover.swift */; };
 		ASFR0001BF /* _AssistCriticalAutonomousEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0001 /* _AssistCriticalAutonomousEngine.swift */; };
-		ASFR0017BF /* AssistOptimizationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0017 /* AssistOptimizationEngine.swift */; };
-		ASFR0016BF /* AssistResourceUsageMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0016 /* AssistResourceUsageMonitor.swift */; };
-		ASFR0015BF /* AssistPerformanceProfilingEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0015 /* AssistPerformanceProfilingEngine.swift */; };
-		ASFR0014BF /* AssistExecutionTraceEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0014 /* AssistExecutionTraceEngine.swift */; };
-		ASFR0013BF /* AssistRuntimeBehaviorMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0013 /* AssistRuntimeBehaviorMonitor.swift */; };
-		ASFR0012BF /* AssistLoopStabilityRegulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0012 /* AssistLoopStabilityRegulator.swift */; };
-		ASFR0011BF /* AssistMemoryConsistencyValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0011 /* AssistMemoryConsistencyValidator.swift */; };
-		ASFR0010BF /* AssistContextDriftDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0010 /* AssistContextDriftDetector.swift */; };
-		ASFR000FBF /* AssistContextPersistenceStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000F /* AssistContextPersistenceStore.swift */; };
-		ASFR000EBF /* AssistCodeIntegrityScanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000E /* AssistCodeIntegrityScanner.swift */; };
-		ASFR000DBF /* AssistOutputVerificationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000D /* AssistOutputVerificationEngine.swift */; };
-		ASFR000CBF /* AssistRecoveryStrategyGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000C /* AssistRecoveryStrategyGenerator.swift */; };
-		ASFR000BBF /* AssistFailureRootCauseAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000B /* AssistFailureRootCauseAnalyzer.swift */; };
-		ASFR000ABF /* AssistRiskAssessmentEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR000A /* AssistRiskAssessmentEngine.swift */; };
-		ASFR0009BF /* AssistProgressEvaluator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0009 /* AssistProgressEvaluator.swift */; };
-		ASFR0008BF /* AssistAutonomousDecisionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0008 /* AssistAutonomousDecisionEngine.swift */; };
-		ASFR0007BF /* AssistTaskContinuationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0007 /* AssistTaskContinuationEngine.swift */; };
-		ASFR0006BF /* AssistGoalExpansionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0006 /* AssistGoalExpansionEngine.swift */; };
 		ASFR0002BF /* _AssistCriticalTaskOrchestrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0002 /* _AssistCriticalTaskOrchestrator.swift */; };
 		ASFR0003BF /* _AssistCriticalCodebaseAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0003 /* _AssistCriticalCodebaseAnalyzer.swift */; };
 		ASFR0004BF /* _AssistCriticalExecutionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = ASFR0004 /* _AssistCriticalExecutionEngine.swift */; };
@@ -1075,24 +1057,6 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 		ASFR0003 /* _AssistCriticalCodebaseAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalCodebaseAnalyzer.swift"; sourceTree = SOURCE_ROOT; };
 		ASFR0004 /* _AssistCriticalExecutionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalExecutionEngine.swift"; sourceTree = SOURCE_ROOT; };
 		ASFR0005 /* _AssistCriticalValidationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/_AssistCriticalValidationEngine.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0017 /* AssistOptimizationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistOptimizationEngine.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0016 /* AssistResourceUsageMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistResourceUsageMonitor.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0015 /* AssistPerformanceProfilingEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistPerformanceProfilingEngine.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0014 /* AssistExecutionTraceEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistExecutionTraceEngine.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0013 /* AssistRuntimeBehaviorMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistRuntimeBehaviorMonitor.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0012 /* AssistLoopStabilityRegulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistLoopStabilityRegulator.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0011 /* AssistMemoryConsistencyValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistMemoryConsistencyValidator.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0010 /* AssistContextDriftDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistContextDriftDetector.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR000F /* AssistContextPersistenceStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistContextPersistenceStore.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR000E /* AssistCodeIntegrityScanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistCodeIntegrityScanner.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR000D /* AssistOutputVerificationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistOutputVerificationEngine.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR000C /* AssistRecoveryStrategyGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistRecoveryStrategyGenerator.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR000B /* AssistFailureRootCauseAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistFailureRootCauseAnalyzer.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR000A /* AssistRiskAssessmentEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistRiskAssessmentEngine.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0009 /* AssistProgressEvaluator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistProgressEvaluator.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0008 /* AssistAutonomousDecisionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistAutonomousDecisionEngine.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0007 /* AssistTaskContinuationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistTaskContinuationEngine.swift"; sourceTree = SOURCE_ROOT; };
-		ASFR0006 /* AssistGoalExpansionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/Assist/Assist Frameworks/AssistGoalExpansionEngine.swift"; sourceTree = SOURCE_ROOT; };
 
 		A50100000000000000000001 /* AssistSourceGraphBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistSourceGraphBuilder.swift; sourceTree = SOURCE_ROOT; };
 		A50100000000000000000002 /* AssistSemanticQueryEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCode/Backend/Assist/Tools/AssistSemanticQueryEngine.swift; sourceTree = SOURCE_ROOT; };
@@ -1834,24 +1798,6 @@ sourceTree = "<group>";
 			isa = PBXGroup;
 			children = (
 				ASFR0001 /* _AssistCriticalAutonomousEngine.swift */,
-				ASFR0017 /* AssistOptimizationEngine.swift */,
-				ASFR0016 /* AssistResourceUsageMonitor.swift */,
-				ASFR0015 /* AssistPerformanceProfilingEngine.swift */,
-				ASFR0014 /* AssistExecutionTraceEngine.swift */,
-				ASFR0013 /* AssistRuntimeBehaviorMonitor.swift */,
-				ASFR0012 /* AssistLoopStabilityRegulator.swift */,
-				ASFR0011 /* AssistMemoryConsistencyValidator.swift */,
-				ASFR0010 /* AssistContextDriftDetector.swift */,
-				ASFR000F /* AssistContextPersistenceStore.swift */,
-				ASFR000E /* AssistCodeIntegrityScanner.swift */,
-				ASFR000D /* AssistOutputVerificationEngine.swift */,
-				ASFR000C /* AssistRecoveryStrategyGenerator.swift */,
-				ASFR000B /* AssistFailureRootCauseAnalyzer.swift */,
-				ASFR000A /* AssistRiskAssessmentEngine.swift */,
-				ASFR0009 /* AssistProgressEvaluator.swift */,
-				ASFR0008 /* AssistAutonomousDecisionEngine.swift */,
-				ASFR0007 /* AssistTaskContinuationEngine.swift */,
-				ASFR0006 /* AssistGoalExpansionEngine.swift */,
 				ASFR0002 /* _AssistCriticalTaskOrchestrator.swift */,
 				ASFR0003 /* _AssistCriticalCodebaseAnalyzer.swift */,
 				ASFR0004 /* _AssistCriticalExecutionEngine.swift */,
@@ -2704,24 +2650,6 @@ files = (
 				ASVV0001BF /* AssistPlannerView.swift in Sources */,
 				ASVV0002BF /* AssistUserTakeover.swift in Sources */,
 				ASFR0001BF /* _AssistCriticalAutonomousEngine.swift in Sources */,
-				ASFR0017BF /* AssistOptimizationEngine.swift in Sources */,
-				ASFR0016BF /* AssistResourceUsageMonitor.swift in Sources */,
-				ASFR0015BF /* AssistPerformanceProfilingEngine.swift in Sources */,
-				ASFR0014BF /* AssistExecutionTraceEngine.swift in Sources */,
-				ASFR0013BF /* AssistRuntimeBehaviorMonitor.swift in Sources */,
-				ASFR0012BF /* AssistLoopStabilityRegulator.swift in Sources */,
-				ASFR0011BF /* AssistMemoryConsistencyValidator.swift in Sources */,
-				ASFR0010BF /* AssistContextDriftDetector.swift in Sources */,
-				ASFR000FBF /* AssistContextPersistenceStore.swift in Sources */,
-				ASFR000EBF /* AssistCodeIntegrityScanner.swift in Sources */,
-				ASFR000DBF /* AssistOutputVerificationEngine.swift in Sources */,
-				ASFR000CBF /* AssistRecoveryStrategyGenerator.swift in Sources */,
-				ASFR000BBF /* AssistFailureRootCauseAnalyzer.swift in Sources */,
-				ASFR000ABF /* AssistRiskAssessmentEngine.swift in Sources */,
-				ASFR0009BF /* AssistProgressEvaluator.swift in Sources */,
-				ASFR0008BF /* AssistAutonomousDecisionEngine.swift in Sources */,
-				ASFR0007BF /* AssistTaskContinuationEngine.swift in Sources */,
-				ASFR0006BF /* AssistGoalExpansionEngine.swift in Sources */,
 				ASFR0002BF /* _AssistCriticalTaskOrchestrator.swift in Sources */,
 				ASFR0003BF /* _AssistCriticalCodebaseAnalyzer.swift in Sources */,
 				ASFR0004BF /* _AssistCriticalExecutionEngine.swift in Sources */,
