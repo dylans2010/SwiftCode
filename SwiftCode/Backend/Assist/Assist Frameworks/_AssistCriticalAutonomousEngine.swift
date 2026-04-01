@@ -22,7 +22,7 @@ public final class _AssistCriticalAutonomousEngine {
     private let recoveryGenerator: AssistRecoveryStrategyGenerator
     private let outputVerifier: AssistOutputVerificationEngine
     private let integrityScanner: AssistCodeIntegrityScanner
-    private let contextPersistence: AssistContextPersistenceStore
+    private let contextPersistence: AssistExecutionContextPersistenceStore
     private let driftDetector: AssistContextDriftDetector
     private let memoryValidator: AssistMemoryConsistencyValidator
     private let stabilityRegulator: AssistLoopStabilityRegulator
@@ -57,7 +57,7 @@ public final class _AssistCriticalAutonomousEngine {
         self.recoveryGenerator = AssistRecoveryStrategyGenerator(context: context)
         self.outputVerifier = AssistOutputVerificationEngine(context: context)
         self.integrityScanner = AssistCodeIntegrityScanner(context: context)
-        self.contextPersistence = AssistContextPersistenceStore(context: context)
+        self.contextPersistence = AssistExecutionContextPersistenceStore(context: context)
         self.driftDetector = AssistContextDriftDetector(context: context)
         self.memoryValidator = AssistMemoryConsistencyValidator(context: context)
         self.stabilityRegulator = AssistLoopStabilityRegulator(context: context)
