@@ -4,7 +4,7 @@
 SwiftCode is a mobile-first IDE for iOS development on iPhone and iPad. It enables writing, managing, building, and installing Swift apps directly on the device.
 
 ## Tech Stack
-- **Language**: Swift (100% native)
+- **Language**: Swift (100% Native)
 - **UI Framework**: SwiftUI
 - **Architecture**: MVVM with ObservableObject/EnvironmentObject
 
