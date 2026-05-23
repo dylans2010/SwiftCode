@@ -15,11 +15,10 @@ struct DeploymentDebugView: View {
             }
 
             Section("Deployment History") {
-                let logs = logger.logs.filter { $0.category == .deployments }
-                if logs.isEmpty {
+                if deploymentLogs.isEmpty {
                     Text("No deployment logs").foregroundColor(.secondary)
                 } else {
-                    ForEach(logs) { log in
+                    ForEach(deploymentLogs) { log in
                         VStack(alignment: .leading) {
                             Text(log.message)
                                 .font(.caption)
@@ -32,5 +31,9 @@ struct DeploymentDebugView: View {
             }
         }
         .navigationTitle("Deployment Debug")
+    }
+
+    private var deploymentLogs: [LogEntry] {
+        logger.logs.filter { $0.category == .deployments }
     }
 }
