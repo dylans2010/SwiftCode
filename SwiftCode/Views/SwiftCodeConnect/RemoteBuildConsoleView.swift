@@ -183,7 +183,7 @@ struct RemoteBuildConsoleView: View {
                                         .fill(severityColor(diagnostic.severity))
                                         .frame(width: 8, height: 8)
 
-                                    Text(diagnostic.severity.rawValue.uppercaseString)
+                                    Text(diagnostic.severity.rawValue.uppercased())
                                         .font(.caption2.weight(.bold))
                                         .foregroundStyle(severityColor(diagnostic.severity))
 

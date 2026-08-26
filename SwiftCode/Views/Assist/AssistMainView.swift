@@ -188,7 +188,7 @@ public struct AssistMainView: View {
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
-                            .blendMode(.plusLighter)
+                            .blendMode(SwiftUI.BlendMode.plusLighter)
                         )
                         .transition(.scale(scale: 0.95).combined(with: .opacity))
                 }

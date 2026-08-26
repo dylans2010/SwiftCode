@@ -35,7 +35,12 @@ public final class WebSocketTransport: NSObject {
     }
 
     public func connect() {
-        guard state == .disconnected || case .failed = state else { return }
+        switch state {
+        case .disconnected, .failed:
+            break
+        case .connecting, .authenticating, .connected:
+            return
+        }
         state = .connecting
 
         let configuration = URLSessionConfiguration.default

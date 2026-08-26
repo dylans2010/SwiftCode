@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UIKit
 
 public enum PairingState: Equatable {
     case idle
