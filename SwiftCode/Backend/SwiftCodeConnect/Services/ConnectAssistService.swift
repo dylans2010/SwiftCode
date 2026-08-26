@@ -6,13 +6,14 @@ public final class ConnectAssistService: ObservableObject {
     public static let shared = ConnectAssistService()
 
     @Published public private(set) var lastAssistContext: AssistContextResponsePayload?
+    @Published public private(set) var lastAssistAnswer: String?
     @Published public private(set) var isFetchingContext = false
 
     private var cancellables = Set<AnyCancellable>()
 
     private init() {
         NotificationCenter.default.publisher(for: .connectEnvelopeReceived)
-            .compactMap { $0.object as? ConnectMessageEnvelope }
+            .compactMap { $0.object as? MessageEnvelope }
             .sink { [weak self] envelope in
                 Task { @MainActor [weak self] in
                     self?.handleEnvelope(envelope)
@@ -25,26 +26,32 @@ public final class ConnectAssistService: ObservableObject {
         isFetchingContext = true
         defer { isFetchingContext = false }
 
-        let payload = AssistContextRequestPayload(
-            userQuery: userQuery,
-            projectPath: projectPath,
-            includeDiagnostics: true,
-            includeRecentLogs: true
+        let payload = ConnectAssistQueryRequestPayload(
+            prompt: userQuery,
+            contextFiles: projectPath != nil ? [projectPath!] : nil
         )
-        let envelope = try ConnectMessageEnvelope.makeEnvelope(type: .assistContextRequest, payload: payload)
+        let envelope = try MessageEnvelope.encode(payload: payload, type: .assistQueryRequest)
         try await ConnectConnectionManager.shared.sendEnvelope(envelope)
 
-        // Return current cached or awaited response payload
         return lastAssistContext
     }
 
-    private func handleEnvelope(_ envelope: ConnectMessageEnvelope) {
-        guard envelope.type == .assistContextResponse else { return }
-        do {
-            let context = try envelope.decodePayload(AssistContextResponsePayload.self)
-            self.lastAssistContext = context
-        } catch {
-            print("[ConnectAssistService] Failed to decode Assist context: \(error)")
+    private func handleEnvelope(_ envelope: MessageEnvelope) {
+        switch envelope.type {
+        case .assistResponse:
+            if let response = try? envelope.decodePayload(ConnectAssistResponsePayload.self) {
+                self.lastAssistAnswer = response.answer
+                self.lastAssistContext = AssistContextResponsePayload(
+                    projectSummary: response.answer,
+                    activeBranch: "main",
+                    contextSnippet: response.suggestedActions?.joined(separator: ", ")
+                )
+            } else if let directContext = try? envelope.decodePayload(AssistContextResponsePayload.self) {
+                self.lastAssistContext = directContext
+            }
+
+        default:
+            break
         }
     }
 }

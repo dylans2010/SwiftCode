@@ -1,53 +1,5 @@
 import Foundation
 
-public enum ConnectPermission: String, Codable, CaseIterable, Identifiable {
-    case projectInfo = "project_info"
-    case build = "build"
-    case tests = "tests"
-    case logs = "logs"
-    case assist = "assist"
-    case deviceInfo = "device_info"
-    case terminal = "terminal"
-    case fileModification = "file_modification"
-
-    public var id: String { rawValue }
-
-    public var displayName: String {
-        switch self {
-        case .projectInfo: return "Project Information"
-        case .build: return "Build Control"
-        case .tests: return "Test Execution"
-        case .logs: return "Streaming Logs"
-        case .assist: return "Assist Context"
-        case .deviceInfo: return "Device Metrics"
-        case .terminal: return "Terminal Execution"
-        case .fileModification: return "File Modifications"
-        }
-    }
-
-    public var iconName: String {
-        switch self {
-        case .projectInfo: return "folder.fill"
-        case .build: return "hammer.fill"
-        case .tests: return "checkmark.seal.fill"
-        case .logs: return "terminal.fill"
-        case .assist: return "sparkles"
-        case .deviceInfo: return "desktopcomputer"
-        case .terminal: return "command"
-        case .fileModification: return "square.and.pencil"
-        }
-    }
-
-    public var isSensitive: Bool {
-        switch self {
-        case .terminal, .fileModification:
-            return true
-        default:
-            return false
-        }
-    }
-}
-
 public final class ConnectPermissionManager: ObservableObject {
     public static let shared = ConnectPermissionManager()
 

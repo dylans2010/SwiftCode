@@ -6,172 +6,128 @@ This document defines the authoritative inter-application protocol contract betw
 
 ## 1. Overview & Architecture
 
-SwiftCode Connect enables the SwiftCode iOS application to discover, pair with, and securely communicate with SwiftCode macOS over local networks.
+SwiftCode Connect enables the SwiftCode iOS application and SwiftCode macOS to discover each other bidirectionally, pair securely, and synchronize project/build/log/assist state over local networks.
 
 ```
-┌─────────────────┐       Bonjour Discovery        ┌──────────────────┐
-│  SwiftCode iOS  │ ----------------------------> │ SwiftCode macOS  │
-│  (Companion)    │  ws://<mac-host>:9480/connect │    (Host IDE)    │
-└─────────────────┘ <===========================> └──────────────────┘
-                    Authenticated WebSocket (TLS)
+┌──────────────────────────────────────────────────────────┐
+│                   Bonjour Discovery                      │
+│             _swiftcodeconnect._tcp (local.)              │
+└──────────────────────────────────────────────────────────┘
+             ▲                                ▲
+             │ (Advertises & Browses)         │ (Advertises & Browses)
+┌──────────────────────────┐     Framed TCP     ┌──────────────────────────┐
+│      SwiftCode iOS       │ <================> │     SwiftCode macOS      │
+│  • Configurable Port     │   4-Byte Length    │  • Configurable Port     │
+│  • Local NWListener      │   Prefix Framing   │  • Primary NWListener    │
+│  • Bidirectional Bonjour │                    │  • Bidirectional Bonjour │
+└──────────────────────────┘                    └──────────────────────────┘
 ```
 
 ---
 
 ## 2. Network Discovery (Bonjour)
 
-The SwiftCode macOS application MUST advertise a Bonjour TCP service with the following configuration:
+Both applications advertise and browse Bonjour TCP services:
 
 * **Service Type:** `_swiftcodeconnect._tcp`
 * **Domain:** `local.`
-* **Default Port:** `9480`
-* **TXT Records (Optional):**
-  * `version`: `"1.0.0"`
-  * `deviceName`: `"User's Mac Studio"`
+* **Default Port:** `8088` (User-configurable: `1024` – `65535`)
+* **Authoritative TXT Records:**
+  * `txtvers`: `"1"`
+  * `proto`: `"1"`
+  * `macName` (or `deviceName`): `"Dylan's MacBook Pro"` / `"Dylan's iPhone"`
+  * `deviceType`: `"mac"` or `"ios"`
+  * `appVers`: `"1.0"`
+  * `caps`: `"project,build,logs,assist"`
 
 ---
 
-## 3. Protocol Envelope
+## 3. Transport & Framing
 
-All frame transmissions over the WebSocket connection MUST be formatted as JSON-encoded `ConnectMessageEnvelope` instances.
+Communication uses raw TCP managed via Apple's `Network.framework` (`NWConnection` and `NWListener`).
 
-### Envelope Schema (`ConnectMessageEnvelope`)
+### Framing Model: 4-Byte Big-Endian Length Prefix
+Every packet transmitted over the socket begins with a 4-byte `UInt32` big-endian integer indicating the byte length of the subsequent JSON-encoded `MessageEnvelope`.
+
+```
+┌───────────────────────────┬───────────────────────────────────────────┐
+│ Length: UInt32 (4 bytes)  │ Payload: JSON MessageEnvelope (N bytes)   │
+│ Big-Endian Byte Order     │ ISO-8601 Timestamps, UTF-8 Encoded        │
+└───────────────────────────┴───────────────────────────────────────────┘
+```
+
+---
+
+## 4. Message Envelope (`MessageEnvelope`)
+
 ```json
 {
-  "id": "UUID-STRING",
-  "protocolVersion": "1.0.0",
-  "type": "MESSAGE_TYPE_STRING",
+  "protocolVersion": 1,
+  "messageID": "3FA85F64-5717-4562-B3FC-2C963F66AFA6",
   "correlationID": "OPTIONAL-UUID-STRING",
-  "timestamp": "ISO8601-TIMESTAMP",
-  "payloadData": "BASE64-OR-JSON-PAYLOAD-DATA"
+  "type": "pairing_request",
+  "timestamp": "2026-08-26T22:00:00Z",
+  "payload": { ... }
 }
 ```
 
 ---
 
-## 4. Message Types (`ConnectMessageType`)
+## 5. Message Types & Directionality
 
 | Type String | Direction | Description |
 |---|---|---|
-| `pair_request` | iOS → Mac | Pairing request containing 6-digit verification code. |
-| `pair_response` | Mac → iOS | Pairing outcome and generated bearer authentication token. |
-| `auth_request` | iOS → Mac | Socket authentication request presenting stored auth token. |
-| `auth_response` | Mac → iOS | Authentication confirmation. |
-| `ping` / `pong` | Both | Socket heartbeat keeping connection alive. |
-| `get_project_state` | iOS → Mac | Request active project, target, scheme, and Git state. |
-| `project_state_update` | Mac → iOS | Authoritative active project state snapshot. |
-| `build_start` | iOS → Mac | Trigger remote build execution for specified scheme. |
-| `build_cancel` | iOS → Mac | Cancel running remote build. |
-| `build_progress` | Mac → iOS | Real-time build progress event stream. |
-| `build_completed` | Mac → iOS | Final build completion status event. |
-| `build_diagnostic` | Mac → iOS | Compiler error/warning/note diagnostic item. |
-| `log_stream_subscribe` | iOS → Mac | Subscribe to live system/console log stream. |
-| `log_entry` | Mac → iOS | Live log line entry. |
-| `assist_context_request` | iOS → Mac | Assist querying Mac for active project context. |
-| `assist_context_response` | Mac → iOS | Mac returning project context snippet & errors. |
-| `get_device_info` | iOS → Mac | Query Mac hardware performance metrics. |
-| `device_info_response` | Mac → iOS | CPU, memory, OS, and disk status from Mac. |
-| `permission_request` | Mac → iOS | Explicit permission request prompt. |
+| `pairing_request` | iOS → Mac | 6-digit verification code & device identity |
+| `pairing_response` | Mac → iOS | Pairing approval & session bearer token |
+| `auth_request` | iOS → Mac | Session authentication presenting bearer token |
+| `auth_response` | Mac → iOS | Authentication confirmation & permissions |
+| `ping` / `pong` | Both | Socket heartbeat keeping connection alive |
+| `project_request` | iOS → Mac | Query active project details & schemes |
+| `project_response` | Mac → iOS | Active project information & target snapshot |
+| `git_status_request` | iOS → Mac | Request branch, clean status, ahead/behind |
+| `git_status_response` | Mac → iOS | Authoritative Git repository status |
+| `build_request` | iOS → Mac | Trigger remote build for scheme/config |
+| `cancel_build_request` | iOS → Mac | Cancel running remote build |
+| `build_started` | Mac → iOS | Notification that compiler process started |
+| `build_progress` | Mac → iOS | Build task progression (steps, fraction, message) |
+| `build_diagnostic` | Mac → iOS | Compiler errors, warnings, and notes |
+| `build_completed` | Mac → iOS | Final build status (duration, exit outcome) |
+| `logs_subscribe_request` | iOS → Mac | Subscribe to live system/console log stream |
+| `logs_unsubscribe_request` | iOS → Mac | Stop live log stream |
+| `log_event` | Mac → iOS | Live log line entry |
+| `assist_query_request` | iOS → Mac | AI Assist query with project context |
+| `assist_response` | Mac → iOS | AI Assist answer & suggested actions |
+| `device_list_request` | iOS → Mac | Request Mac device metrics |
+| `device_list_response` | Mac → iOS | Hardware CPU, memory, OS, and disk status |
+| `error_response` | Both | Structured protocol error |
 
 ---
 
-## 5. Pairing & Authentication Flow
+## 6. Pairing & Authentication Workflow
 
-1. **Discovery:** iOS discovers macOS via Bonjour `_swiftcodeconnect._tcp`.
-2. **Pairing Handshake:**
-   - iOS displays 6-digit code to user and sends `pair_request`:
-     ```json
-     {
-       "deviceID": "IPHONE-UUID",
-       "deviceName": "Alice's iPhone",
-       "pairingCode": "849201"
-     }
-     ```
-   - User approves prompt on macOS.
-   - macOS responds with `pair_response`:
-     ```json
-     {
-       "isSuccess": true,
-       "macID": "MAC-UUID",
-       "macName": "MacBook Pro",
-       "authToken": "BEARER-SECRET-TOKEN-KEY"
-     }
-     ```
-3. **Keychain Trust Store:** iOS securely persists `authToken` in Keychain under `com.swiftcode.connect.token.<macID>`.
-4. **Connection Header:** WebSocket requests pass `Authorization: Bearer <authToken>`.
-
----
-
-## 6. Remote Build Request & Event Model
-
-### RemoteBuildRequestPayload
-```json
-{
-  "projectPath": "/Users/dev/Projects/MyApp",
-  "scheme": "MyAppScheme",
-  "configuration": "Debug",
-  "cleanBuild": false
-}
 ```
-
-### RemoteBuildProgressPayload
-```json
-{
-  "buildID": "UUID-STRING",
-  "state": "building", // preparing, building, succeeded, failed, cancelled
-  "progressFraction": 0.45,
-  "currentTaskName": "Compiling SwiftSources (14/32)...",
-  "elapsedTimeSeconds": 4.2,
-  "errorCount": 0,
-  "warningCount": 1
-}
-```
-
-### RemoteBuildDiagnosticPayload
-```json
-{
-  "id": "UUID-STRING",
-  "severity": "error", // error, warning, note
-  "message": "Cannot find 'UserSessionManager' in scope",
-  "filePath": "Sources/Views/ContentView.swift",
-  "line": 42,
-  "column": 12,
-  "source": "swiftc",
-  "code": "UserSessionManager.shared.reload()"
-}
+1. iOS & Mac Start Listeners & Advertise via Bonjour
+2. iOS Resolves Mac's Real Advertised Port & IP
+3. User Initiates Pairing in iOS UI
+4. iOS Opens Framed TCP Connection to Mac Port
+5. iOS Displays 6-digit Code & Sends `pairing_request`
+6. Mac Displays Prompt & User Confirms
+7. Mac Generates `sessionToken` & Sends `pairing_response`
+8. iOS Stores `sessionToken` in Keychain
+9. On Subsequent Connections, iOS Sends `auth_request`
+10. Mac Verifies Token & Sends `auth_response`
+11. iOS Performs Automatic Workspace Synchronization
 ```
 
 ---
 
-## 7. Permission Architecture
+## 7. Port Synchronization Architecture
 
-The protocol enforces granular capabilities. macOS must verify that requested capabilities are granted:
-
-- `project_info`: View active workspace & Git branch
-- `build`: Trigger and cancel builds
-- `tests`: Execute test suites
-- `logs`: Stream diagnostic & app logs
-- `assist`: Access codebase context for AI Assist queries
-- `device_info`: Read Mac hardware metrics
-- `terminal`: Sensitive command execution
-- `file_modification`: Sensitive source editing
+- **Single Source of Truth**: Port configuration is stored in `SwiftCodeConnectConfiguration`.
+- **Independent Local & Remote Ports**: Local listening port and remote target port are tracked separately.
+- **Port Re-binding**: Changing the port rebinds the `NWListener`, updates Bonjour TXT records, and notifies active sessions.
+- **Manual Endpoint Fallback**: When Bonjour discovery is filtered across subnets, users can manually configure the remote Mac's IP and port.
 
 ---
 
-## 8. Error Codes (`ConnectProtocolError`)
-
-| Error Code | Meaning |
-|---|---|
-| `missing_payload` | Expected payload missing from envelope |
-| `invalid_payload` | Payload JSON decoding failed |
-| `authentication_failed` | Invalid bearer authentication token |
-| `pairing_rejected` | User rejected pairing prompt on Mac |
-| `protocol_mismatch` | Incompatible protocol version |
-| `permission_denied` | Operation not granted by permission settings |
-| `device_unavailable` | Mac host disconnected or unreachable |
-| `build_failed` | Xcode build returned non-zero exit code |
-
----
-
-*Specification Version: 1.0.0*
-*SwiftCode Connect Subsystem — SwiftCode iOS*
+*Specification Version: 1.0.0 (Framed TCP Protocol)*

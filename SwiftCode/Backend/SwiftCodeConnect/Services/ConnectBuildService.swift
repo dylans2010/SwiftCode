@@ -12,7 +12,7 @@ public final class ConnectBuildService: ObservableObject {
 
     private init() {
         NotificationCenter.default.publisher(for: .connectEnvelopeReceived)
-            .compactMap { $0.object as? ConnectMessageEnvelope }
+            .compactMap { $0.object as? MessageEnvelope }
             .sink { [weak self] envelope in
                 Task { @MainActor [weak self] in
                     self?.handleEnvelope(envelope)
@@ -23,13 +23,11 @@ public final class ConnectBuildService: ObservableObject {
 
     public func requestBuild(projectPath: String, scheme: String, configuration: String = "Debug", clean: Bool = false) async throws {
         diagnostics.removeAll()
-        let payload = RemoteBuildRequestPayload(
-            projectPath: projectPath,
+        let payload = ConnectBuildRequestPayload(
             scheme: scheme,
-            configuration: configuration,
-            cleanBuild: clean
+            configuration: configuration
         )
-        let envelope = try ConnectMessageEnvelope.makeEnvelope(type: .buildStart, payload: payload)
+        let envelope = try MessageEnvelope.encode(payload: payload, type: .buildRequest)
         try await ConnectConnectionManager.shared.sendEnvelope(envelope)
 
         activeBuild = RemoteBuildProgressPayload(
@@ -44,30 +42,79 @@ public final class ConnectBuildService: ObservableObject {
     }
 
     public func cancelBuild() async throws {
-        guard let build = activeBuild else { return }
-        let envelope = try ConnectMessageEnvelope.makeEnvelope(type: .buildCancel, payload: ["buildID": build.buildID.uuidString])
+        let envelope = try MessageEnvelope.encode(payload: ["action": "cancel"], type: .cancelBuildRequest)
         try await ConnectConnectionManager.shared.sendEnvelope(envelope)
-        activeBuild = RemoteBuildProgressPayload(
-            buildID: build.buildID,
-            state: .cancelled,
-            progressFraction: build.progressFraction,
-            currentTaskName: "Build cancelled by user.",
-            elapsedTimeSeconds: build.elapsedTimeSeconds,
-            errorCount: build.errorCount,
-            warningCount: build.warningCount
-        )
+        if let current = activeBuild {
+            activeBuild = RemoteBuildProgressPayload(
+                buildID: current.buildID,
+                state: .cancelled,
+                progressFraction: current.progressFraction,
+                currentTaskName: "Build cancelled by user.",
+                elapsedTimeSeconds: current.elapsedTimeSeconds,
+                errorCount: current.errorCount,
+                warningCount: current.warningCount
+            )
+        }
     }
 
-    private func handleEnvelope(_ envelope: ConnectMessageEnvelope) {
+    private func handleEnvelope(_ envelope: MessageEnvelope) {
         switch envelope.type {
-        case .buildProgress, .buildCompleted:
-            if let progress = try? envelope.decodePayload(RemoteBuildProgressPayload.self) {
-                self.activeBuild = progress
+        case .buildStarted:
+            self.diagnostics.removeAll()
+            self.activeBuild = RemoteBuildProgressPayload(
+                buildID: UUID(),
+                state: .building,
+                progressFraction: 0.1,
+                currentTaskName: "Compilation initiated...",
+                elapsedTimeSeconds: 0,
+                errorCount: 0,
+                warningCount: 0
+            )
+
+        case .buildProgress:
+            if let progress = try? envelope.decodePayload(ConnectBuildProgressPayload.self) {
+                let fraction = progress.totalSteps > 0 ? Double(progress.completedSteps) / Double(progress.totalSteps) : 0.5
+                self.activeBuild = RemoteBuildProgressPayload(
+                    buildID: self.activeBuild?.buildID ?? UUID(),
+                    state: .building,
+                    progressFraction: fraction,
+                    currentTaskName: progress.message,
+                    elapsedTimeSeconds: (self.activeBuild?.elapsedTimeSeconds ?? 0) + 1.0,
+                    errorCount: self.activeBuild?.errorCount ?? 0,
+                    warningCount: self.activeBuild?.warningCount ?? 0
+                )
+            } else if let remoteProgress = try? envelope.decodePayload(RemoteBuildProgressPayload.self) {
+                self.activeBuild = remoteProgress
             }
+
         case .buildDiagnostic:
-            if let diagnostic = try? envelope.decodePayload(RemoteBuildDiagnosticPayload.self) {
-                self.diagnostics.append(diagnostic)
+            if let diag = try? envelope.decodePayload(ConnectBuildDiagnosticPayload.self) {
+                let severity: DiagnosticSeverity = diag.severity == "error" ? .error : (diag.severity == "warning" ? .warning : .note)
+                let item = RemoteBuildDiagnosticPayload(
+                    severity: severity,
+                    message: diag.message,
+                    filePath: diag.file,
+                    line: diag.line,
+                    column: diag.column
+                )
+                self.diagnostics.append(item)
+            } else if let remoteDiag = try? envelope.decodePayload(RemoteBuildDiagnosticPayload.self) {
+                self.diagnostics.append(remoteDiag)
             }
+
+        case .buildCompleted:
+            if let completed = try? envelope.decodePayload(ConnectBuildCompletedPayload.self) {
+                self.activeBuild = RemoteBuildProgressPayload(
+                    buildID: self.activeBuild?.buildID ?? UUID(),
+                    state: completed.success ? .succeeded : .failed,
+                    progressFraction: 1.0,
+                    currentTaskName: completed.success ? "Build succeeded." : "Build failed.",
+                    elapsedTimeSeconds: completed.duration,
+                    errorCount: completed.errorCount,
+                    warningCount: completed.warningCount
+                )
+            }
+
         default:
             break
         }

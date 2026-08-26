@@ -25,6 +25,9 @@ objects = {
 		SCCB0000000000000000000F /* RemoteLogStreamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF0000000000000000000F /* RemoteLogStreamView.swift */; };
 		SCCB00000000000000000010 /* MacPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000010 /* MacPermissionsView.swift */; };
 		SCCB00000000000000000011 /* ConnectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000011 /* ConnectTests.swift */; };
+		SCCB00000000000000000012 /* SwiftCodeConnectConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000012 /* SwiftCodeConnectConfiguration.swift */; };
+		SCCB00000000000000000013 /* ConnectLocalListener.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000013 /* ConnectLocalListener.swift */; };
+		SCCB00000000000000000014 /* FramedTCPTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000014 /* FramedTCPTransport.swift */; };
 		00000000000000000000B001 /* AssistAPIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F001 /* AssistAPIRequest.swift */; };
 		00000000000000000000B002 /* AssistAPIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F002 /* AssistAPIResponse.swift */; };
 		00000000000000000000B003 /* AssistAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F003 /* AssistAPIError.swift */; };
@@ -572,6 +575,9 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 		SCCF0000000000000000000F /* RemoteLogStreamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/SwiftCodeConnect/RemoteLogStreamView.swift"; sourceTree = "<group>"; };
 		SCCF00000000000000000010 /* MacPermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/SwiftCodeConnect/MacPermissionsView.swift"; sourceTree = "<group>"; };
 		SCCF00000000000000000011 /* ConnectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/ConnectTests.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000012 /* SwiftCodeConnectConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/SwiftCodeConnectConfiguration.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000013 /* ConnectLocalListener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/ConnectLocalListener.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000014 /* FramedTCPTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/FramedTCPTransport.swift"; sourceTree = "<group>"; };
 		00000000000000000000F001 /* AssistAPIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIRequest.swift"; sourceTree = "<group>"; };
 		00000000000000000000F002 /* AssistAPIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIResponse.swift"; sourceTree = "<group>"; };
 		00000000000000000000F003 /* AssistAPIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIError.swift"; sourceTree = "<group>"; };
@@ -1157,6 +1163,9 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 				SCCF0000000000000000000F /* RemoteLogStreamView.swift */,
 				SCCF00000000000000000010 /* MacPermissionsView.swift */,
 				SCCF00000000000000000011 /* ConnectTests.swift */,
+				SCCF00000000000000000012 /* SwiftCodeConnectConfiguration.swift */,
+				SCCF00000000000000000013 /* ConnectLocalListener.swift */,
+				SCCF00000000000000000014 /* FramedTCPTransport.swift */,
 			);
 			name = SwiftCodeConnect;
 			sourceTree = "<group>";
@@ -2741,6 +2750,10 @@ files = (
 				SCCB0000000000000000000E /* RemoteBuildConsoleView.swift in Sources */,
 				SCCB0000000000000000000F /* RemoteLogStreamView.swift in Sources */,
 				SCCB00000000000000000010 /* MacPermissionsView.swift in Sources */,
+				SCCB00000000000000000011 /* ConnectTests.swift in Sources */,
+				SCCB00000000000000000012 /* SwiftCodeConnectConfiguration.swift in Sources */,
+				SCCB00000000000000000013 /* ConnectLocalListener.swift in Sources */,
+				SCCB00000000000000000014 /* FramedTCPTransport.swift in Sources */,
 				00000000000000000000B001 /* AssistAPIRequest.swift in Sources */,
 				00000000000000000000B002 /* AssistAPIResponse.swift in Sources */,
 				00000000000000000000B003 /* AssistAPIError.swift in Sources */,
