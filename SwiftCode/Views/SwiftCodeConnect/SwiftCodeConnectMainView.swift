@@ -12,83 +12,81 @@ struct SwiftCodeConnectMainView: View {
     @State private var showPermissionsForMac: PairedMacDevice?
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.07, green: 0.07, blue: 0.12),
-                        Color(red: 0.10, green: 0.10, blue: 0.18)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(red: 0.07, green: 0.07, blue: 0.12),
+                    Color(red: 0.10, green: 0.10, blue: 0.18)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 20) {
-                        connectionStatusHeaderCard
+            ScrollView {
+                VStack(spacing: 20) {
+                    connectionStatusHeaderCard
 
-                        if case .connected = connectionManager.connectionState {
-                            NavigationLink {
-                                ConnectedMacDashboardView()
-                            } label: {
-                                HStack {
-                                    Image(systemName: "gauge.with.dots.needle.bottom.50percent")
-                                        .font(.title2)
-                                        .foregroundStyle(.cyan)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Open Connected Mac Dashboard")
-                                            .font(.headline)
-                                            .foregroundStyle(.white)
-                                        Text("Monitor project, trigger builds, and view live logs")
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .foregroundStyle(.tertiary)
+                    if case .connected = connectionManager.connectionState {
+                        NavigationLink {
+                            ConnectedMacDashboardView()
+                        } label: {
+                            HStack {
+                                Image(systemName: "gauge.with.dots.needle.bottom.50percent")
+                                    .font(.title2)
+                                    .foregroundStyle(.cyan)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Open Connected Mac Dashboard")
+                                        .font(.headline)
+                                        .foregroundStyle(.white)
+                                    Text("Monitor project, trigger builds, and view live logs")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
                                 }
-                                .padding(16)
-                                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
-                                )
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundStyle(.tertiary)
                             }
-                            .buttonStyle(.plain)
+                            .padding(16)
+                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.cyan.opacity(0.3), lineWidth: 1)
+                            )
                         }
-
-                        nearbyMacsSection
-
-                        pairedMacsSection
+                        .buttonStyle(.plain)
                     }
-                    .padding()
+
+                    nearbyMacsSection
+
+                    pairedMacsSection
+                }
+                .padding()
+            }
+        }
+        .navigationTitle("SwiftCode Connect")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    if discovery.isSearching {
+                        discovery.stopDiscovery()
+                    } else {
+                        discovery.startDiscovery()
+                    }
+                } label: {
+                    Label(discovery.isSearching ? "Stop Scan" : "Scan", systemImage: discovery.isSearching ? "stop.circle" : "arrow.triangle.2.circlepath")
                 }
             }
-            .navigationTitle("SwiftCode Connect")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        if discovery.isSearching {
-                            discovery.stopDiscovery()
-                        } else {
-                            discovery.startDiscovery()
-                        }
-                    } label: {
-                        Label(discovery.isSearching ? "Stop Scan" : "Scan", systemImage: discovery.isSearching ? "stop.circle" : "arrow.triangle.2.circlepath")
-                    }
-                }
-            }
-            .onAppear {
-                discovery.startDiscovery()
-            }
-            .sheet(item: $selectedMacForPairing) { mac in
-                pairingSheet(for: mac)
-            }
-            .sheet(item: $showPermissionsForMac) { mac in
-                MacPermissionsView(mac: mac)
-            }
+        }
+        .onAppear {
+            discovery.startDiscovery()
+        }
+        .sheet(item: $selectedMacForPairing) { mac in
+            pairingSheet(for: mac)
+        }
+        .sheet(item: $showPermissionsForMac) { mac in
+            MacPermissionsView(mac: mac)
         }
     }
 
