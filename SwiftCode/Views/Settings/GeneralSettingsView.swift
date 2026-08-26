@@ -487,6 +487,16 @@ struct GeneralSettingsView: View {
                 dashboardSection
                 fileNavigatorCustomizationSection
                 themesSection
+                Section {
+                    NavigationLink {
+                        SwiftCodeConnectMainView()
+                    } label: {
+                        Label("SwiftCode Connect", systemImage: "desktopcomputer")
+                            .foregroundStyle(.cyan)
+                    }
+                } header: {
+                    Label("Mac Companion", systemImage: "link")
+                }
                 agentConnectionsSection
                 skillsSection
                 if devModeManager.isDeveloperModeEnabled {

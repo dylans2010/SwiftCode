@@ -209,6 +209,12 @@ struct ProjectsDashboardView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .topBarTrailing) {
+            NavigationLink {
+                SwiftCodeConnectMainView()
+            } label: {
+                Label("SwiftCode Connect", systemImage: "desktopcomputer")
+            }
+
             Button {
                 showFolderCreateView = true
             } label: {

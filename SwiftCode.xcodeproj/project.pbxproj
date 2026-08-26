@@ -7,6 +7,24 @@ objectVersion = 56;
 objects = {
 
 /* Begin PBXBuildFile section */
+		SCCB00000000000000000000 /* ConnectProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000000 /* ConnectProtocol.swift */; };
+		SCCB00000000000000000001 /* ConnectTrustStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000001 /* ConnectTrustStore.swift */; };
+		SCCB00000000000000000002 /* ConnectPermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000002 /* ConnectPermissionManager.swift */; };
+		SCCB00000000000000000003 /* BonjourDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000003 /* BonjourDiscovery.swift */; };
+		SCCB00000000000000000004 /* WebSocketTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000004 /* WebSocketTransport.swift */; };
+		SCCB00000000000000000005 /* PairingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000005 /* PairingSession.swift */; };
+		SCCB00000000000000000006 /* ConnectConnectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000006 /* ConnectConnectionManager.swift */; };
+		SCCB00000000000000000007 /* ConnectProjectService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000007 /* ConnectProjectService.swift */; };
+		SCCB00000000000000000008 /* ConnectBuildService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000008 /* ConnectBuildService.swift */; };
+		SCCB00000000000000000009 /* ConnectLogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000009 /* ConnectLogService.swift */; };
+		SCCB0000000000000000000A /* ConnectAssistService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF0000000000000000000A /* ConnectAssistService.swift */; };
+		SCCB0000000000000000000B /* ConnectDeviceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF0000000000000000000B /* ConnectDeviceService.swift */; };
+		SCCB0000000000000000000C /* SwiftCodeConnectMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF0000000000000000000C /* SwiftCodeConnectMainView.swift */; };
+		SCCB0000000000000000000D /* ConnectedMacDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF0000000000000000000D /* ConnectedMacDashboardView.swift */; };
+		SCCB0000000000000000000E /* RemoteBuildConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF0000000000000000000E /* RemoteBuildConsoleView.swift */; };
+		SCCB0000000000000000000F /* RemoteLogStreamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF0000000000000000000F /* RemoteLogStreamView.swift */; };
+		SCCB00000000000000000010 /* MacPermissionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000010 /* MacPermissionsView.swift */; };
+		SCCB00000000000000000011 /* ConnectTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCCF00000000000000000011 /* ConnectTests.swift */; };
 		00000000000000000000B001 /* AssistAPIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F001 /* AssistAPIRequest.swift */; };
 		00000000000000000000B002 /* AssistAPIResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F002 /* AssistAPIResponse.swift */; };
 		00000000000000000000B003 /* AssistAPIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00000000000000000000F003 /* AssistAPIError.swift */; };
@@ -536,6 +554,24 @@ AT000000000000000000012A /* AdvancedToolsSharedDesignSystem.swift in Sources */ 
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		SCCF00000000000000000000 /* ConnectProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/ConnectProtocol.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000001 /* ConnectTrustStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/ConnectTrustStore.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000002 /* ConnectPermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/ConnectPermissionManager.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000003 /* BonjourDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/BonjourDiscovery.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000004 /* WebSocketTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/WebSocketTransport.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000005 /* PairingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/PairingSession.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000006 /* ConnectConnectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/ConnectConnectionManager.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000007 /* ConnectProjectService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/Services/ConnectProjectService.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000008 /* ConnectBuildService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/Services/ConnectBuildService.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000009 /* ConnectLogService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/Services/ConnectLogService.swift"; sourceTree = "<group>"; };
+		SCCF0000000000000000000A /* ConnectAssistService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/Services/ConnectAssistService.swift"; sourceTree = "<group>"; };
+		SCCF0000000000000000000B /* ConnectDeviceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/Services/ConnectDeviceService.swift"; sourceTree = "<group>"; };
+		SCCF0000000000000000000C /* SwiftCodeConnectMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/SwiftCodeConnect/SwiftCodeConnectMainView.swift"; sourceTree = "<group>"; };
+		SCCF0000000000000000000D /* ConnectedMacDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/SwiftCodeConnect/ConnectedMacDashboardView.swift"; sourceTree = "<group>"; };
+		SCCF0000000000000000000E /* RemoteBuildConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/SwiftCodeConnect/RemoteBuildConsoleView.swift"; sourceTree = "<group>"; };
+		SCCF0000000000000000000F /* RemoteLogStreamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/SwiftCodeConnect/RemoteLogStreamView.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000010 /* MacPermissionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Views/SwiftCodeConnect/MacPermissionsView.swift"; sourceTree = "<group>"; };
+		SCCF00000000000000000011 /* ConnectTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCode/Backend/SwiftCodeConnect/ConnectTests.swift"; sourceTree = "<group>"; };
 		00000000000000000000F001 /* AssistAPIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIRequest.swift"; sourceTree = "<group>"; };
 		00000000000000000000F002 /* AssistAPIResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIResponse.swift"; sourceTree = "<group>"; };
 		00000000000000000000F003 /* AssistAPIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API/Internal API/AssistAPIError.swift"; sourceTree = "<group>"; };
@@ -1100,6 +1136,31 @@ SA000000000000000000001B /* SkillsAddView.swift */ = {isa = PBXFileReference; la
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		SCCG00000000000000000001 /* SwiftCodeConnect */ = {
+			isa = PBXGroup;
+			children = (
+				SCCF00000000000000000000 /* ConnectProtocol.swift */,
+				SCCF00000000000000000001 /* ConnectTrustStore.swift */,
+				SCCF00000000000000000002 /* ConnectPermissionManager.swift */,
+				SCCF00000000000000000003 /* BonjourDiscovery.swift */,
+				SCCF00000000000000000004 /* WebSocketTransport.swift */,
+				SCCF00000000000000000005 /* PairingSession.swift */,
+				SCCF00000000000000000006 /* ConnectConnectionManager.swift */,
+				SCCF00000000000000000007 /* ConnectProjectService.swift */,
+				SCCF00000000000000000008 /* ConnectBuildService.swift */,
+				SCCF00000000000000000009 /* ConnectLogService.swift */,
+				SCCF0000000000000000000A /* ConnectAssistService.swift */,
+				SCCF0000000000000000000B /* ConnectDeviceService.swift */,
+				SCCF0000000000000000000C /* SwiftCodeConnectMainView.swift */,
+				SCCF0000000000000000000D /* ConnectedMacDashboardView.swift */,
+				SCCF0000000000000000000E /* RemoteBuildConsoleView.swift */,
+				SCCF0000000000000000000F /* RemoteLogStreamView.swift */,
+				SCCF00000000000000000010 /* MacPermissionsView.swift */,
+				SCCF00000000000000000011 /* ConnectTests.swift */,
+			);
+			name = SwiftCodeConnect;
+			sourceTree = "<group>";
+		};
 		9E02FBCC861648AE49DA4D15 /* Components */ = {
 			isa = PBXGroup;
 			children = (
@@ -2635,6 +2696,24 @@ AA000001000000000000000B_RES /* Resources */ = {
 isa = PBXResourcesBuildPhase;
 buildActionMask = 2147483647;
 files = (
+				SCCB00000000000000000000 /* ConnectProtocol.swift in Sources */,
+				SCCB00000000000000000001 /* ConnectTrustStore.swift in Sources */,
+				SCCB00000000000000000002 /* ConnectPermissionManager.swift in Sources */,
+				SCCB00000000000000000003 /* BonjourDiscovery.swift in Sources */,
+				SCCB00000000000000000004 /* WebSocketTransport.swift in Sources */,
+				SCCB00000000000000000005 /* PairingSession.swift in Sources */,
+				SCCB00000000000000000006 /* ConnectConnectionManager.swift in Sources */,
+				SCCB00000000000000000007 /* ConnectProjectService.swift in Sources */,
+				SCCB00000000000000000008 /* ConnectBuildService.swift in Sources */,
+				SCCB00000000000000000009 /* ConnectLogService.swift in Sources */,
+				SCCB0000000000000000000A /* ConnectAssistService.swift in Sources */,
+				SCCB0000000000000000000B /* ConnectDeviceService.swift in Sources */,
+				SCCB0000000000000000000C /* SwiftCodeConnectMainView.swift in Sources */,
+				SCCB0000000000000000000D /* ConnectedMacDashboardView.swift in Sources */,
+				SCCB0000000000000000000E /* RemoteBuildConsoleView.swift in Sources */,
+				SCCB0000000000000000000F /* RemoteLogStreamView.swift in Sources */,
+				SCCB00000000000000000010 /* MacPermissionsView.swift in Sources */,
+				SCCB00000000000000000011 /* ConnectTests.swift in Sources */,
 				AA000010000000000000014A /* Assets.xcassets in Resources */,
 				CB000000000000000000001A /* build-project.yml in Resources */,
 				CB000000000000000000002A /* build.yml in Resources */,
