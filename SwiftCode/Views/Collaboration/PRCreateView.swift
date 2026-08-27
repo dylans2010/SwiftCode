@@ -57,12 +57,11 @@ struct PRCreateView: View {
                 }
 
                 Section("Commits Included") {
-                    let commits = manager.commits.commits(for: sourceBranchID)
-                    if commits.isEmpty {
+                    if sourceBranchCommits.isEmpty {
                         Text("No commits on source branch.")
                             .foregroundStyle(.secondary)
                     }
-                    ForEach(commits) { commit in
+                    ForEach(sourceBranchCommits) { commit in
                         PRCommitSelectionRow(title: commit.message, subtitle: "\(commit.authorID)", isSelected: selectedCommitIDs.contains(commit.id)) {
                             if selectedCommitIDs.contains(commit.id) {
                                 selectedCommitIDs.remove(commit.id)
@@ -134,6 +133,10 @@ struct PRCreateView: View {
         } else {
             errorMessage = "Select at least one commit or enable Empty Pull Request."
         }
+    }
+
+    private var sourceBranchCommits: [CollaborationCommit] {
+        manager.commits.commits(for: sourceBranchID)
     }
 }
 

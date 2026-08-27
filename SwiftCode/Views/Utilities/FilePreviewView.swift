@@ -163,10 +163,11 @@ struct FilePreviewView: View {
                 }
             }
             Section("Content") {
-                let size = rawText.count
-                infoRow(label: "Characters", value: "\(size)")
-                infoRow(label: "Lines",      value: "\(rawText.components(separatedBy: "\n").count)")
-                infoRow(label: "Words",      value: "\(rawText.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.count)")
+                Group {
+                    infoRow(label: "Characters", value: "\(rawText.count)")
+                    infoRow(label: "Lines",      value: "\(rawText.components(separatedBy: "\n").count)")
+                    infoRow(label: "Words",      value: "\(rawText.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }.count)")
+                }
             }
         }
         .listStyle(.insetGrouped)
