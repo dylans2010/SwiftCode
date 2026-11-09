@@ -1,0 +1,325 @@
+# Spec: stage 4a contract (threads, workqueues, kevent, in-process Mach IPC)
+
+Status: **done (2026-10-12)**. The §1 exit criterion is met on the Thor. Stage 4 runs `launchd_sim` (see
+`docs/SIMULATOR-LINUX.md`). It is split into three parts:
+
+| Part | Scope |
+|---|---|
+| **4a** (this document) | One Darwin process with real threads, libdispatch, and Mach IPC inside the process |
+| 4b | Multiple processes: `posix_spawn`, task ports, Mach IPC between processes, the host bootstrap port |
+| 4c | `launchd_sim` boots with a minimal job set |
+
+Normative inputs:
+
+- `specs/simulator/threads-and-events.md`: thread start state, workqueue,
+  kevent, ulock, signals.
+- `specs/simulator/mach-ipc.md`: ports, messages, notifications, MIG.
+- `specs/simulator/vm-shim-protocol.md`, `stage3-contract.md`, and
+  `host-libraries.md`: the current machine.
+
+## 1. Exit criterion (4a)
+
+The following programs are in `research/experiments/simulator/stage4-probes/`.
+They are built for the iOS simulator by the guest-tests build. On the Thor,
+with no debug flags, each one prints its `ok` line and exits 0:
+
+| Probe | Prints |
+|---|---|
+| `p_threads` | `threads ok counter=…` |
+| `p_machmsg` | `machmsg ok …` |
+| `p_dispatch` | `dispatch ok sum=…` |
+| `p_dispatch_main` | `dispatch_main ok ticks=3` |
+
+In addition:
+
+- `hello` still passes.
+- The stage-2 self-test still passes.
+- Every test suite passes on macOS, x86-64 Linux, and the Thor.
+- `p_bootstrap` belongs to 4b.
+
+## 2. Execution model (orchestrator decision)
+
+- **One Darwin process = one KVM VM. One Darwin thread = one vCPU.** Each
+  vCPU is driven by its **own host thread**, which runs that vCPU's
+  `KVM_RUN` loop. Guest threads therefore run in parallel on host cores,
+  and a blocking Darwin call blocks only its own host thread.
+- **vCPU pool.** KVM cannot destroy a single vCPU.
+  - A finished thread's vCPU and host thread are **parked** and reused for
+    the next new thread.
+  - The VMM checks `KVM_CAP_MAX_VCPUS` at startup and reports it.
+  - The pool is capped at **min(max_vcpus, 64)** per process. Exhaustion is
+    reported as `EAGAIN` from `bsdthread_create` and as a refused workqueue
+    request.
+  - A start that finds no parked vCPU **reserves** the next vCPU index
+    under the pool lock and returns it at once. The vCPU and its host thread
+    (`KVM_CREATE_VCPU`, `KVM_ARM_VCPU_INIT`, the `kvm_run` mapping,
+    `pthread_create`) are created afterwards by a VMM creator thread,
+    without the kernel lock; the new guest thread runs as soon as they
+    exist. A reservation counts as a live host thread, so the pool cannot
+    finish (and the VM cannot be destroyed) while a creation is in flight.
+    A creation that fails ends the process like any other vCPU failure
+    (status 1); a process that ends meanwhile drops the reservation.
+    `SWIFTCODE_VCPU_CREATORS=0` restores inline creation (diagnostics).
+- **The kernel's shared state** (port spaces, the thread table, ulock
+  queues, workqueues, kevent queues, the VFS, the address space) lives in
+  one Swift object per VM.
+  - It is protected by **one kernel lock** that is held while a trap is
+    handled.
+  - A blocking operation waits on a **host condition variable** associated
+    with that lock, releasing the lock while it waits.
+  - Correctness first: no fine-grained locking in 4a.
+- **The address space is shared by every vCPU of the VM.**
+  - Page-table changes are made under the kernel lock.
+  - The trap that changed them resumes with the TLB-flush flag. The shim's
+    flush becomes **`tlbi vmalle1is; dsb ish; isb`** (the inner-shareable
+    broadcast). Every vCPU of the VM shares one VMID, so the hardware
+    invalidates all of them.
+  - Other vCPUs that are running are not stopped. A guest that unmaps
+    memory another thread is using is a guest bug, as on Darwin.
+- **No interrupts in 4a.** No GIC, no timer interrupts, and no preemption.
+  Each vCPU has its own host thread, so a spinning guest thread delays
+  nothing else.
+- **FP/SIMD state** stays in each vCPU's own registers. KVM preserves it
+  across exits, so the shim never saves it.
+
+## 3. Shim changes (`swiftcode/SimShim/shim.S`)
+
+- **Per-vCPU boot info.** Each vCPU starts at the shim entry with `x0` = the
+  address of its **own** boot-info block (the stage-2 §4 layout). The block
+  holds TTBR0/TCR/MAIR/SCTLR (the same for every vCPU of a VM), its own
+  EL0 entry PC, SP, `TPIDRRO_EL0`/`TPIDR_EL0`, x0–x7, **its own trap-frame
+  address, and its own EL1 stack top**.
+  - The shim already keeps the boot-info pointer in `TPIDR_EL1`, so the
+    vectors find the right frame for each vCPU.
+  - The **secondary-vCPU path is the same code**.
+  - The MMU may already be on for the address space when a secondary starts.
+    Re-running the enable sequence with identical values is fine.
+- **TLB flush:** the inner-shareable broadcast, as in §2.
+- Everything else is unchanged.
+
+## 4. Guest physical layout for per-vCPU structures
+
+| Region | Size | Contents |
+|---|---|---|
+| GPA `0x4100_0000` (inside RAM) | 4 MiB | **vCPU slots** 0–63, 64 × 64 KiB. Slot *i* at `0x4100_0000 + i·0x1_0000` |
+| GPA `0x4600_0000` (inside RAM, after the 64 MiB table arena at `0x4200_0000`) | 28 MiB | **vCPU slots** 64–511, 448 × 64 KiB. Slot *i* at `0x4600_0000 + (i − 64)·0x1_0000` (added 2026-10-29, agent ICON-FREEZE) |
+
+A process has up to 512 vCPUs (and threads), at most `KVM_CAP_MAX_VCPUS`:
+as many as Darwin's workqueue threads (`threads-and-events.md` §2.5). The
+first 64 slots keep their addresses; the stage-2 `--vcpus` self-test maps
+only those. Slots cost nothing until a vCPU uses them (guest RAM is
+allocated on touch). Before 2026-10-29 the pool had 64 slots, and a
+process that needed more threads stopped (`app-launch.md` §3.9).
+
+Each 64 KiB slot holds:
+
+| Offset | Size | Contents |
+|---|---|---|
+| +0x0000 | 16 KiB | Boot info |
+| +0x4000 | 16 KiB | Trap frame |
+| +0x8000 | 32 KiB | EL1 stack. Top = slot + 0x1_0000 |
+
+- The region is identity-mapped EL1 RW, UXN, PXN, like the stage-2 EL1
+  regions.
+- vCPU 0 (the main thread) **moves to slot 0**. The stage-2 single-frame
+  addresses remain only for the stage-2 self-test mode.
+
+## 5. Threads (`SwiftCodeDarwinKernel` + hypervisor)
+
+Following `threads-and-events.md` §1–§2:
+
+- **`bsdthread_register` (366)** now answers the feature mask
+  **`0x4000_00DF`**, which includes KEVENT (0x40) and WORKLOOP (0x80).
+  Keep everything else stage 3 recorded.
+- **`bsdthread_create` (360):**
+  - Requires `PTHREAD_START_CUSTOM`.
+  - Takes a pooled vCPU and assigns a thread port name. Names have
+    `name & 3 == 3`, allocated from the port space (§7).
+  - Stores the name in TSD slot 3 of the new pthread.
+  - Starts the vCPU with the exact register state of the spec: pc =
+    `thread_start`, x0 = pthread, x1 = port, x2 = func, x3 = arg, x4 =
+    stack, x5 = flags, sp = stack, `TPIDRRO_EL0` = pthread + 224, all other
+    GPRs zero.
+  - Returns the pthread address. Its host thread enters the run loop.
+- **`bsdthread_terminate` (361):**
+  - Releases the stack (`munmap`) if asked.
+  - Performs the **join-gate protocol** exactly as specified: store
+    `port & ~3`, then wake through `UL_UNFAIR_LOCK | WAKE_ALL |
+    ALLOW_NON_OWNER`.
+  - Frees the port, then parks the vCPU (no return to EL0).
+- **`thread_selfid` (372):** a unique 64-bit id per thread (main = 1).
+  `__pthread_kill`: self-signal as in stage 3 (no cross-thread delivery in
+  4a; log it).
+- **ulock (515/516/544)** gets full multi-thread semantics: wait queues
+  keyed by guest address, the timeout units of the spec, and a wait that
+  returns the count of remaining waiters.
+  - Wake modes are wake-one, wake-all, and wake-thread.
+  - An unfair-lock wake from a thread that is not the owner is a no-op.
+  - Prefer waking extra threads to waking too few.
+  - The single-thread `DEADLOCK` heuristic from stage 3 is removed: a wait
+    now really blocks.
+- **Mach semaphores (−33…−39):** multi-thread semantics, as in the spec.
+- **Workqueue (`workq_kernreturn` 368).** Implements NEWSPISUPP,
+  REQTHREADS, THREAD_RETURN, KEVENT_RETURN, WORKLOOP_RETURN,
+  SET_EVENT_MANAGER_PRIORITY, SHOULD_NARROW (always "no"), and
+  SETUP_DISPATCH. REQTHREADS2 returns ENOTSUP.
+  - Worker threads use the spec's memory layout: 560 KiB per thread with
+    16 KiB pages, self at base + 540 KiB, the event list at self − 1152.
+  - Workers enter `start_wqthread` with the spec's registers: x0 = self,
+    x1 = port, x2 = stack bottom, x3 = event list or 0, x4 = upcall flags
+    (QoS number in the low 12 bits), x5 = event count or −1.
+  - **Admission rule.** A worker that blocks in the kernel (ulock, kevent,
+    `mach_msg` receive, semaphore) frees its slot, so another worker may
+    start. The parallelism limit is N per QoS bucket, N being the guest CPU
+    count (`darwin-process-start.md`; 1 by default).
+  - Idle workers are parked after 5 s with no work. Parked workers are
+    reused before new ones are created.
+- **kevent** (`kevent_qos` 374, `kevent_id` 375; `kevent` 363 and
+  `kevent64` 369 too). Supported filters in 4a:
+  - **EVFILT_USER**, including `NOTE_TRIGGER` (the manager wakeup).
+  - **EVFILT_TIMER** (one-shot and repeating; mach-time, continuous, and
+    wall-clock nanoseconds; leeway accepted and ignored).
+  - **EVFILT_WORKLOOP** at the level `threads-and-events.md` §3 lists for
+    libdispatch: thread request, value check (ESTALE), owner, and sync
+    wait/wake.
+  - **EVFILT_PROC / EVFILT_SIGNAL / EVFILT_READ / EVFILT_WRITE /
+    EVFILT_VNODE**: accepted and registered, never fire. Each logs once.
+  - **EVFILT_MACHPORT**: accepted and registered. It fires when a message
+    is queued on the port. Delivering the message into the event (`ext[]`)
+    is required in 4a only if `p_dispatch*` needs it; otherwise 4b.
+  - **EVFILT_MEMORYSTATUS**: return an error. The spec says libdispatch
+    tolerates that; confirm with the probes.
+  - Struct layouts are as in the spec (`kevent_qos_s` is 72 bytes).
+  - Events are delivered to workqueue threads through per-QoS buckets plus
+    the manager bucket, following the spec. A delivered event is suppressed
+    until the worker returns it.
+
+## 6. Mach IPC inside one process (`SwiftCodeDarwinKernel`)
+
+Following `mach-ipc.md` §1–§5:
+
+- **Port space.** Names are `(index << 8) | generation`, with the low 2
+  bits = 3, allocated sequentially with last-freed-first reuse. The
+  well-known names (task `0x103`, thread `0x203`, host `0x303`, bootstrap
+  `0x0503`) keep their values: they are entries of the same space. Rights
+  have user-reference counts with exactly the spec's rules. Port sets are
+  supported.
+- **Traps and routines:**
+  - every `_kernelrpc_mach_port_*` trap in the trap table;
+  - `mach_reply_port` (−26);
+  - `thread_get_special_reply_port` (−50);
+  - **`mach_msg_trap` (−31) and `mach_msg2_trap` (−47)**, with the exact
+    header, descriptor (port, OOL memory, OOL ports, guarded port), and
+    trailer layouts, every disposition, send then receive, timeouts,
+    `MACH_RCV_LARGE`, pseudo-receive on send failure, the queue limit
+    (default 5), and all the return codes of the spec;
+  - notifications: dead-name, no-senders, send-once, and port-destroyed.
+- **OOL memory within one task:** copy the pages into a fresh anonymous
+  mapping in the receiver, which is the same address space in 4a. Honor
+  `deallocate`.
+- **Voucher stub:** `host_create_mach_voucher` and related routines succeed
+  with voucher name 0.
+- **The stage-3 `MachPortTable` is replaced** by this space. The stage-3
+  §10 private traps keep working and allocate their names in it.
+
+## 7. Library changes
+
+- **libsystem_pthread (`SimHostLibs/pthread/`).** Real
+  `pthread_create`, `_from_mach_thread`, `_suspended_np`, and the
+  workgroup variant, plus `_pthread_start`/`thread_start`,
+  `start_wqthread`/`_pthread_wqthread`, `pthread_join`/`detach` over the
+  join gate, `pthread_exit`, `_pthread_workqueue_addthreads`,
+  `_pthread_workloop_create`/`destroy`, and the workqueue setup with the
+  real kernel. Remove the single-thread crash heuristics: waits now block
+  in the kernel.
+- **libsystem_kernel (`SimHostLibs/kernel/`).** Real wrappers for any
+  stage-4a trap that is still a stub. `host_create_mach_voucher` and any
+  voucher MIG routine libdispatch calls become private trap `0x7963_2007`
+  (`host_create_mach_voucher(host, recipes, size, *voucher)` → success,
+  `*voucher = 0`).
+
+## 8. Ownership (stage 4a)
+
+| Agent | Files |
+|---|---|
+| **S2** (shim) | `swiftcode/SimShim/shim.S`, `SimShim/README.md` (§3) |
+| **V** (hypervisor) | `swiftcode/Sources/CKVM/`, `swiftcode/Sources/SwiftCodeHypervisor/`, `swiftcode/Sources/swiftcode-simd/main.swift`, and new `swiftcode/SimShim/guest-tests/` build entries for the stage-4 probes (copy the probe sources into `guest-tests/stage4/`; the originals stay in research). Covers §2, §4, and the vCPU pool and run loops, integration, and the probe runs |
+| **T2** (threads and events) | In `SwiftCodeDarwinKernel`: new `Threads.swift`, `Workqueue.swift`, `KEvent.swift`, `ULock.swift`, `Semaphores.swift`, plus `DarwinKernel.swift` dispatch and `ExtendedBSD.swift` (§5). Tests in `Tests/SwiftCodeDarwinKernelTests/` (new files) |
+| **I** (Mach IPC) | In `SwiftCodeDarwinKernel`: new `MachIPC*.swift`, replacing `MachPortTable.swift` (§6). Tests in new test files |
+| **Q2** (pthread) | `swiftcode/SimHostLibs/pthread/` (§7) |
+| **K2** (kernel library) | `swiftcode/SimHostLibs/kernel/` (§7) |
+
+**The kernel lock and the blocking primitive are defined by T2** in a new
+`KernelSync.swift`:
+
+```
+final class KernelLock { func withLock<T>(_ body: () throws -> T) rethrows -> T }
+struct WaitQueue { func wait(on lock: KernelLock, deadline: UInt64?) -> WaitResult; func wake(count: Int) -> Int }
+```
+
+T2 publishes these first, as early as possible; I and V use them.
+
+**Routing between T2 and I.**
+
+- I owns a type `MachIPC` (one per VM), with this entry point:
+
+  ```
+  func handleTrap(x16: Int64, frame: inout TrapFrame, context: ThreadContext, memory: any GuestVirtualMemory) -> TrapOutcome?
+  ```
+
+  It returns nil for traps it does not own.
+- **I owns all negative (Mach) traps**, except −3/−4 (clock), −10/−12/−14
+  (VM), −33…−39 (semaphores, owned by T2), and −61 (`thread_switch`,
+  owned by T2). **I also owns the stage-3 private range
+  `0x7963_2000`–`0x7963_20FF`**: the §10 routines and the new voucher
+  trap. They move out of `DarwinKernel.swift` into I's files.
+- T2's `DarwinKernel` dispatch calls `machIPC.handleTrap` first for those
+  ranges.
+- I exposes what T2 needs:
+  - `allocateThreadPort() -> UInt32`;
+  - `deallocate(name:)`;
+  - `messageQueued(on port) -> Bool`;
+  - a hook that tells kevent's EVFILT_MACHPORT a message arrived. `DarwinKernel.handle` is
+called from many host threads with a per-thread context: `ThreadContext`,
+which holds the thread id, port name, and vCPU index.
+
+The orchestrator owns `Package.swift`, the specs, and the commits.
+
+## Evidence
+
+- `threads-and-events.md` and `mach-ipc.md` (level 1, xnu-12377.121.6).
+- `launchd-sim.md` (levels 3–4).
+- The execution model is SwiftCode design, using the KVM facts in
+  `threads-and-events.md` §6.
+
+
+## 9. Resolutions during integration (normative, 2026-10-12)
+
+- **Page-table arena moved.** The stage-3 arena (`0x4020_0000` + 64 MiB)
+  overlapped the 4a vCPU-slot region at `0x4100_0000`. In `--exec` mode
+  the arena is now **GPA `0x4200_0000`, 64 MiB**. The stage-2 self-test
+  mode keeps its own layout. `stage3-contract.md` §3 is superseded on
+  this point.
+- **Cache coherency for fresh vCPUs.**
+  - The Thor's KVM uses FEAT_S2FWB ("Stage-2 Force Write-Back"), so guest
+    accesses with the MMU off are cacheable.
+  - The VMM still cleans to the point of coherency (`dc civac`, then
+    `dsb`) before a fresh vCPU's first run: its boot info, its frame, the
+    shim image, and the page tables. This covers hosts without FWB.
+- **Thread-start SPSR.** A thread started on a reused vCPU gets SPSR
+  `0x3C0` (DAIF masked), like the boot path. With no interrupts in 4a,
+  this is equivalent to the 0 that the threads spec gives.
+- **vCPU limits.** The Thor's KVM reports max 512 and recommended 14. The
+  pool caps at 64.
+- **`--max-exits`** applies per vCPU.
+- **Results** (clean tree, no debug flags, on the Thor):
+  - the stage-2 self-test, `hello`, `p_threads` (`counter=200000`), and
+    `p_machmsg` (port descriptor and 40,000-byte OOL) all pass;
+  - `p_dispatch` and `p_dispatch_main` were blocked by two gaps, which
+    are now fixed: `mach_get_times` in libsystem_kernel, and `sigsuspend`
+    (BSD 111/410) in the VMM.
+- **Final verification** (orchestrator, clean checkout, three rounds): the
+  self-test, `hello`, `p_threads`, `p_machmsg`, `p_dispatch`
+  (`dispatch ok sum=55`), and `p_dispatch_main` (`dispatch_main ok
+  ticks=3`) all exit 0 in every round (18 of 18). The tests pass on macOS,
+  x86-64 Linux, and the Thor.

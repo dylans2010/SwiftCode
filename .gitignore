@@ -1,0 +1,51 @@
+.DS_Store
+# Third-party tooling, Apple's binaries, agent worktrees and local settings
+# under .claude/ are never committed.
+.claude/
+# Dirty-room scratch (decompiler output, disassembly) stays local only.
+research/dirty/
+swiftcode/.build/
+swiftcode/.swiftpm/
+*.gpr
+*.rep/
+.env
+# Firmware and extracted firmware are inputs, never committed.
+*.ipsw
+*.im4p
+*.img4
+# Per-agent SwiftPM scratch paths
+swiftcode/.build*/
+swiftcode/SimShim/out/
+swiftcode/SimHostLibs/out/
+swiftcode/SimGuestAgents/out/
+swiftcode/SimGuestFrameworks/out/
+swiftcode/Native/out/
+swiftcode/MacUserland/out/
+# Helper packages build in place
+swiftcode/Tools/*/.build/
+# Sample packages, when SwiftPM is run in them directly
+swiftcode/Samples/**/.build/
+swiftcode/Samples/**/.swiftpm/
+# SwiftCode's own build folder when the IDE builds a sample project (swift-build engine)
+swiftcode/Samples/**/.swiftcode-build/
+swiftcode/Samples/**/xcuserdata/
+# SwiftPM scratch at the repository root
+/.build/
+*.profraw
+
+# Flatpak build folders
+packaging/flatpak/.work/
+packaging/flatpak/out/
+# Logs from .github/scripts/run-tests.py
+ci-logs/
+.build-ci-logs/
+# A marker the working drive keeps next to a checkout
+.drive-origin
+# Capture tools build in place; captures stay in research/dirty/ (above)
+tools/capture/wincap/.build/
+research/tools/capture/axdrive/.build/
+tools/capture/__pycache__/
+research/tools/capture/__pycache__/
+
+
+__pycache__/

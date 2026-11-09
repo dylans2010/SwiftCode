@@ -1,0 +1,148 @@
+#!/bin/bash
+set -u
+conf=${SWIFTCODE_SIM_CONFIG:-$HOME/.config/swiftcode/sim-serve.env}
+if [ -f "$conf" ]; then
+    saved=$(env | grep '^SWIFTCODE_SIM_' || true)
+    . "$conf"
+    while IFS= read -r line; do [ -n "$line" ] && export "${line?}"; done <<< "$saved"
+fi
+say() { echo "swiftcode-sim-serve: $*"; }
+die() { echo "swiftcode-sim-serve: error: $*" >&2; exit 2; }
+[ -n "${SWIFTCODE_SIM_HOME:-}" ] || die "SWIFTCODE_SIM_HOME is not set (see the configuration in $0)"
+H=$SWIFTCODE_SIM_HOME
+RUN=$H/run
+SOCK=$RUN/display.sock
+PIDFILE=$RUN/swiftcode-simd.pid
+LOG=$RUN/swiftcode-simd.log
+mkdir -p "$RUN" || die "cannot create $RUN"
+running_pid() {
+    [ -f "$PIDFILE" ] || return 1
+    local pid
+    pid=$(cat "$PIDFILE" 2>/dev/null) || return 1
+    [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null && grep -q swiftcode-sim "/proc/$pid/cmdline" 2>/dev/null && echo "$pid"
+}
+stop_device() {
+    local pid
+    pid=$(running_pid) || { say "no device running"; return 0; }
+    say "stopping the device (pid $pid): saving it for the next start"
+    kill -TERM "$pid" 2>/dev/null
+    for _ in $(seq 1 150); do
+        kill -0 "$pid" 2>/dev/null || { say "stopped"; return 0; }
+        sleep 1
+    done
+    say "still running after 150 s; killing it"
+    kill -KILL -- "-$pid" 2>/dev/null || kill -KILL "$pid" 2>/dev/null
+}
+case "${1:-}" in
+stop) stop_device; exit 0 ;;
+status)
+    if pid=$(running_pid); then say "running (pid $pid), socket $SOCK, log $LOG"; else say "not running"; fi
+    exit 0 ;;
+start) shift ;;
+build)
+    [ -n "${SWIFTCODE_SIM_TREE:-}" ] && [ -d "$SWIFTCODE_SIM_TREE" ] || die "SWIFTCODE_SIM_TREE is not a directory"
+    cd "$SWIFTCODE_SIM_TREE" || exit 2
+    mkdir -p Translator/build
+    [ -n "${SWIFTCODE_SIM_TRANSLATOR:-}" ] && cp "$SWIFTCODE_SIM_TRANSLATOR" Translator/build/swiftcode-airc
+    [ -x Translator/build/swiftcode-airc ] || die "no Translator/build/swiftcode-airc: set SWIFTCODE_SIM_TRANSLATOR"
+    if [ -n "${SWIFTCODE_SIM_LOCKS:-}" ]; then
+        while :; do
+            got=
+            for i in 1 2; do exec 7>>"$SWIFTCODE_SIM_LOCKS/build.$i"; if flock -n 7; then got=$i; break; fi; exec 7>&-; done
+            [ -n "$got" ] && break
+            say "waiting for a build slot…"; sleep 10
+        done
+        echo "$(date +%T) slot build.$got: swiftcode-sim-serve build $(id -un) $SWIFTCODE_SIM_TREE" >> "$SWIFTCODE_SIM_LOCKS/history.txt"
+    fi
+    . ~/.local/share/swiftly/env.sh
+    say "building the package (release), SimShim, SimHostLibs, SimGuestFrameworks in $SWIFTCODE_SIM_TREE…"
+    nice -n 5 swift build -c release -j 6 2>&1 | grep -E "error:|Build complete" || exit 1
+    sh SimShim/build.sh 2>&1 | tail -1 && SWIFTCODE=$PWD/.build/release/swiftcode sh SimHostLibs/build.sh 2>&1 | tail -1 \
+        && sh SimGuestFrameworks/build.sh 2>&1 | tail -2 || die "a guest-side build failed"
+    exit 0 ;;
+*) sed -n '2,11p' "$0"; exit 64 ;;
+esac
+fresh=0; erase=0; cold=0; dtype=iphone-duo
+while [ $# -gt 0 ]; do
+    case "$1" in
+    --fresh) fresh=1 ;;
+    --erase) erase=1 ;;
+    --cold) cold=1 ;;
+    --device-type) dtype=${2:-}; shift ;;
+    *) die "unknown option $1" ;;
+    esac
+    shift
+done
+for v in SWIFTCODE_SIM_TREE SWIFTCODE_SIM_RUNTIME; do
+    [ -n "${!v:-}" ] || die "$v is not set (see the configuration in $0)"
+done
+Y=$SWIFTCODE_SIM_TREE
+SIMD=$Y/.build/release/swiftcode-simd
+[ -x "$SIMD" ] || die "missing $SIMD"
+known=$("$SIMD" --list-device-types) && [ -n "$known" ] || die "$SIMD --list-device-types failed (a build older than the option?)"
+grep -qxF -- "$dtype" <<< "$known" || die "unknown --device-type '$dtype' (this build knows: $(paste -sd " " - <<< "$known"))"
+if [ "$dtype" = iphone-duo ]; then NAME=default; PRISTINE_VAR=SWIFTCODE_SIM_PRISTINE; RUNTIME_VAR=SWIFTCODE_SIM_RUNTIME
+else
+    NAME=$dtype; suffix=$(echo "$dtype" | tr 'a-z-' 'A-Z_')
+    PRISTINE_VAR=SWIFTCODE_SIM_PRISTINE_$suffix; RUNTIME_VAR=SWIFTCODE_SIM_RUNTIME_$suffix
+fi
+[ "$dtype" = iphone-duo ] && { [ -n "${SWIFTCODE_SIM_PRISTINE:-}" ] || die "SWIFTCODE_SIM_PRISTINE is not set (see the configuration in $0)"; }
+PRISTINE=${!PRISTINE_VAR:-}
+RUNTIME=${!RUNTIME_VAR:-$SWIFTCODE_SIM_RUNTIME}
+LAUNCHER=$(dirname "$0")/swiftcode-sim
+for f in "$Y/SimShim/out/shim.bin" "$Y/SimShim/out/host_stubs.bin" "$Y/SimGuestFrameworks/out/SimHID.framework/SimHID" \
+         "$Y/Translator/build/swiftcode-airc" "$RUNTIME/sbin/launchd_sim" "$LAUNCHER"; do
+    [ -e "$f" ] || die "missing $f"
+done
+exec 7>>"$RUN/serve.lock"
+flock -n 7 || die "another swiftcode-sim-serve is running for $H (swiftcode-sim-serve stop)"
+if pid=$(running_pid); then die "the device is already running (pid $pid)"; fi
+export SWIFTCODE_SIM_TREE="$Y" SWIFTCODE_SIM_DATA="$H" SWIFTCODE_SIM_SLOTS="${SWIFTCODE_SIM_SLOTS:-4}"
+export SWIFTCODE_SIM_LOCKS="${SWIFTCODE_SIM_LOCKS:-$H/locks}" SWIFTCODE_SIM_GPU_CACHE="${SWIFTCODE_SIM_GPU_CACHE:-$H/gpu-cache}"
+export SWIFTCODE_SIM_TIMEOUT_MS=$(( ${SWIFTCODE_SIM_HOURS:-4} * 3600 * 1000 ))
+[ -n "${SWIFTCODE_SIM_GUEST_TOOLS:-}" ] && export SWIFTCODE_SIM_GUEST_TOOLS
+mkdir -p "$SWIFTCODE_SIM_GPU_CACHE" "$SWIFTCODE_SIM_LOCKS"
+DEV=$H/devices/$NAME
+if [ -d "$H/device" ] && [ ! -e "$DEV" ]; then
+    mkdir -p "$H/devices" && mv "$H/device" "$DEV" && say "moved $H/device to $DEV"
+fi
+if [ "$erase" = 1 ]; then
+    say "erasing the device (its data and its saved state)"
+    "$LAUNCHER" --erase --device "$DEV" 2>&1 | sed 's/^/  /'
+elif [ "$fresh" = 1 ] && [ -d "$DEV" ]; then
+    old="$DEV.old.$(date +%s)"
+    mv "$DEV" "$old" && say "moved the old device to $old (delete it when no longer needed)"
+fi
+if [ ! -d "$DEV" ] && [ -z "$PRISTINE" ]; then
+    say "no $PRISTINE_VAR: $DEV starts empty (its first boot runs the data migration and takes minutes)"
+    mkdir -p "$DEV" || die "cannot create $DEV"
+elif [ ! -d "$DEV" ]; then
+    say "copying the pristine device to $DEV"
+    mkdir -p "$H/devices"
+    cp -a "$PRISTINE" "$DEV.partial" && mv "$DEV.partial" "$DEV" || die "cannot copy $PRISTINE"
+fi
+[ -f "$LOG" ] && mv "$LOG" "$LOG.1"
+args=(--device "$DEV" --runtime-root "$RUNTIME" --display-server "unix:$SOCK")
+[ "$dtype" != iphone-duo ] && args+=(--device-type "$dtype")
+envs=(SWIFTCODE_WARM_BOOT=1)
+[ "$cold" = 1 ] && envs+=(SWIFTCODE_WARM_FORCE_COLD=1)
+setsid env "${envs[@]}" "$LAUNCHER" "${args[@]}" > "$LOG" 2>&1 7>&- &
+pid=$!
+echo "$pid" > "$PIDFILE"
+say "started (pid $pid); display socket $SOCK; log $LOG"
+stopping=0
+on_signal() {
+    [ $stopping = 1 ] && return
+    stopping=1
+    say "stopping the device"
+    kill -TERM "$pid" 2>/dev/null
+    ( sleep 150; kill -KILL -- "-$pid" 2>/dev/null ) &
+}
+trap on_signal HUP INT TERM
+( tail -n +1 -F --pid="$pid" "$LOG" 2>/dev/null | grep --line-buffered -E "^swiftcode-sim: |^swiftcode-simd: (display server: (listening|viewer)|HID:|hid: |signal|cannot|warning|error|device run ended|snapshot: (stop: |restored |exiting))|^Fatal|Crash" \
+    | sed -u 's/^/  /' ) &
+status=0
+while kill -0 "$pid" 2>/dev/null; do wait "$pid"; status=$?; done
+rm -f "$PIDFILE"
+say "the device stopped ($status)"
+exit 0

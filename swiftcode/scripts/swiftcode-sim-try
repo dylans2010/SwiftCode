@@ -1,0 +1,72 @@
+#!/bin/bash
+set -u
+here=$(cd "$(dirname "$0")" && pwd)
+pkg=$(cd "$here/.." && pwd)
+conf=${SWIFTCODE_SIM_TRY_CONFIG:-$HOME/.config/swiftcode/sim-try.env}
+if [ -f "$conf" ]; then
+    saved=$(env | grep '^SWIFTCODE_SIM_' || true)
+    . "$conf"
+    while IFS= read -r line; do [ -n "$line" ] && export "${line?}"; done <<< "$saved"
+fi
+say() { echo "swiftcode-sim-try: $*"; }
+die() { echo "swiftcode-sim-try: error: $*" >&2; exit 2; }
+fresh=; sync=0; build=1; viewer_args=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+    --fresh|--cold|--erase) fresh="$fresh $1" ;;
+    --device-type) fresh="$fresh --device-type ${2:-}"; shift ;;
+    --sync-build) sync=1 ;;
+    --no-build) build=0 ;;
+    -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
+    *) viewer_args+=("$1") ;;
+    esac
+    shift
+done
+[ -n "${SWIFTCODE_SIM_HOST:-}" ] || die "set SWIFTCODE_SIM_HOST (user@host) in $conf or the environment; see --help"
+[ -n "${SWIFTCODE_SIM_HOME:-}" ] || die "set SWIFTCODE_SIM_HOME (your area on the host) in $conf or the environment; see --help"
+HOST=$SWIFTCODE_SIM_HOST
+H=$SWIFTCODE_SIM_HOME
+PORT=${SWIFTCODE_SIM_PORT:-47100}
+SSH=(ssh -o BatchMode=yes -o ServerAliveInterval=15 ${SWIFTCODE_SIM_SSH_OPTS:-})
+SERVE=$H/bin/swiftcode-sim-serve
+REMOTE_ENV="SWIFTCODE_SIM_CONFIG=$H/sim-serve.env SWIFTCODE_SIM_HOME=$H"
+if [ $build = 1 ]; then
+    say "building the viewer…"
+    (cd "$pkg" && swift build --product swiftcode-sim-viewer 2>&1 | grep -E "error|warning: unre|Compiling swiftcode-sim|Build complete" | grep -v "^\s*$") \
+        || die "the viewer did not build"
+fi
+VIEWER=$(cd "$pkg" && swift build --product swiftcode-sim-viewer --show-bin-path)/swiftcode-sim-viewer
+[ -x "$VIEWER" ] || die "no viewer at $VIEWER"
+"${SSH[@]}" "$HOST" "mkdir -p '$H/bin'" </dev/null || die "cannot reach $HOST over ssh (key login)"
+scp -q -o BatchMode=yes "$here/swiftcode-sim-serve" "$HOST:$SERVE" || die "cannot copy swiftcode-sim-serve"
+scp -q -o BatchMode=yes "$here/swiftcode-sim.sh" "$HOST:$H/bin/swiftcode-sim" || die "cannot copy swiftcode-sim.sh"
+"${SSH[@]}" "$HOST" "chmod +x '$SERVE' '$H/bin/swiftcode-sim'" </dev/null
+if [ $sync = 1 ]; then
+    say "copying swiftcode/ to $HOST:$H/swiftcode and building there (release; several minutes)…"
+    rsync -az --delete --exclude .build --exclude '.build-*' --exclude Translator/build --exclude '*.profraw' \
+        --exclude SimShim/out --exclude SimHostLibs/out --exclude SimGuestFrameworks/out \
+        -e "${SSH[*]}" "$pkg/" "$HOST:$H/swiftcode/" || die "rsync failed"
+    "${SSH[@]}" "$HOST" "mkdir -p '$H/specs/simulator'" </dev/null
+    rsync -az --delete -e "${SSH[*]}" "$pkg/../specs/simulator/data/" "$HOST:$H/specs/simulator/data/" || die "rsync of the spec data failed"
+    "${SSH[@]}" "$HOST" "$REMOTE_ENV SWIFTCODE_SIM_TREE='$H/swiftcode' '$SERVE' build" </dev/null || die "the host build failed"
+fi
+LOG=$(mktemp -t swiftcode-sim-try)
+cleanup() {
+    trap - EXIT INT TERM
+    say "stopping the device (it is saved for the next session)…"
+    "${SSH[@]}" "$HOST" "$REMOTE_ENV '$SERVE' stop" </dev/null 2>&1 | sed 's/^/  /'
+    [ -n "${sshpid:-}" ] && kill "$sshpid" 2>/dev/null
+    wait 2>/dev/null
+    say "done (host log: $HOST:$H/run/swiftcode-simd.log)"
+}
+trap cleanup EXIT INT TERM
+say "starting the device on $HOST (a saved device is back in about 10–20 s, a cold boot takes about 80 s; the viewer shows progress)…"
+"${SSH[@]}" -q -tt -o ExitOnForwardFailure=yes -L "127.0.0.1:$PORT:$H/run/display.sock" "$HOST" \
+    "$REMOTE_ENV '$SERVE' start $fresh" </dev/null > >(tee "$LOG" | LC_ALL=C sed -l -e 's/\r$//' -e 's/^/  host: /') 2>&1 &
+sshpid=$!
+sleep 2
+kill -0 "$sshpid" 2>/dev/null || die "the ssh session ended at once (port $PORT busy? see above)"
+"$VIEWER" --connect "127.0.0.1:$PORT" ${viewer_args[@]+"${viewer_args[@]}"}
+status=$?
+say "viewer closed ($status)"
+exit $status

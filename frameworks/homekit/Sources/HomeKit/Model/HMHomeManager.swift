@@ -1,0 +1,115 @@
+import Foundation
+
+public protocol HMHomeManagerDelegate: AnyObject {
+    func homeManager(_ manager: HMHomeManager, didUpdate status: HMHomeManagerAuthorizationStatus)
+    func homeManagerDidUpdateHomes(_ manager: HMHomeManager)
+    func homeManagerDidUpdatePrimaryHome(_ manager: HMHomeManager)
+    func homeManager(_ manager: HMHomeManager, didAdd home: HMHome)
+    func homeManager(_ manager: HMHomeManager, didRemove home: HMHome)
+}
+
+public extension HMHomeManagerDelegate {
+    func homeManager(_ manager: HMHomeManager, didUpdate status: HMHomeManagerAuthorizationStatus) {}
+    func homeManagerDidUpdateHomes(_ manager: HMHomeManager) {}
+    func homeManagerDidUpdatePrimaryHome(_ manager: HMHomeManager) {}
+    func homeManager(_ manager: HMHomeManager, didAdd home: HMHome) {}
+    func homeManager(_ manager: HMHomeManager, didRemove home: HMHome) {}
+}
+
+open class HMHomeManager: NSObject, @unchecked Sendable {
+    public weak var delegate: HMHomeManagerDelegate?
+    public private(set) var authorizationStatus: HMHomeManagerAuthorizationStatus = []
+    public private(set) var homes: [HMHome] = []
+
+    let connection: SwiftCodeConnection
+    public let swiftcodeClient: SwiftCodeHomeClient
+
+    public override convenience init() {
+        self.init(swiftcodeStore: SwiftCodeLocalHomeStore.shared, client: .processDefault)
+    }
+
+    public init(swiftcodeStore store: SwiftCodeHomeStore, client: SwiftCodeHomeClient) {
+        if client.enforcesRequirements && client.usageDescription == nil {
+            fatalError("HomeKit: this app must have an NSHomeKitUsageDescription key in its Info.plist "
+                + "explaining how it uses home data. The app was stopped before it could access home data.")
+        }
+        connection = SwiftCodeConnection(store: store)
+        swiftcodeClient = client
+        super.init()
+        connection.manager = self
+        let session = store.connect(client: client) { [weak self] event in
+            onMain { self?.handle(event) }
+        }
+        connection.sessionID = session.id
+        authorizationStatus = HMHomeManagerAuthorizationStatus(rawValue: session.authorizationStatus)
+    }
+
+    deinit {
+        connection.store.disconnect(connection.sessionID)
+    }
+
+    @available(iOS, deprecated: 16.1, message: "No longer supported.")
+    public var primaryHome: HMHome? { nil }
+
+    public func addHome(withName name: String, completionHandler completion: @escaping (HMHome?, Error?) -> Void) {
+        connection.request(.addHome(name: name)) { [weak self] result in
+            switch result {
+            case .success(.home(let record)): completion(self?.home(record.id), nil)
+            case .success: completion(nil, HMError(.unexpectedError))
+            case .failure(let e): completion(nil, e)
+            }
+        }
+    }
+
+    public func removeHome(_ home: HMHome, completionHandler completion: @escaping (Error?) -> Void) {
+        connection.simple(.removeHome(home.uniqueIdentifier), completion)
+    }
+
+    @available(iOS, deprecated: 16.1, message: "No longer supported.")
+    public func updatePrimaryHome(_ home: HMHome, completionHandler completion: @escaping (Error?) -> Void) {
+        connection.simple(.updatePrimaryHome(home.uniqueIdentifier), completion)
+    }
+
+    public func addHome(named name: String) async throws -> HMHome {
+        try await asyncCall { addHome(withName: name, completionHandler: $0) }
+    }
+
+    public func removeHome(_ home: HMHome) async throws {
+        try await asyncCall { removeHome(home, completionHandler: $0) }
+    }
+
+    func home(_ id: UUID) -> HMHome? { homes.first { $0.uniqueIdentifier == id } }
+
+    func handle(_ event: SwiftCodeHomeEvent) {
+        let me = connection.sessionID
+        switch event {
+        case .authorizationStatus(let raw):
+            authorizationStatus = HMHomeManagerAuthorizationStatus(rawValue: raw)
+            delegate?.homeManager(self, didUpdate: authorizationStatus)
+        case .homesLoaded(let records):
+            homes = records.map { r in
+                let h = home(r.id) ?? HMHome(id: r.id, connection: connection)
+                h.apply(r)
+                return h
+            }
+            delegate?.homeManagerDidUpdateHomes(self)
+        case .homeAdded(let record, let origin):
+            let h = home(record.id) ?? HMHome(id: record.id, connection: connection)
+            h.apply(record)
+            if !homes.contains(h) { homes.append(h) }
+            if origin != me { delegate?.homeManager(self, didAdd: h) }
+        case .homeRemoved(let id, let origin):
+            guard let h = home(id) else { return }
+            homes.removeAll { $0 === h }
+            if let first = homes.first, !homes.contains(where: \.isPrimary) { first.isPrimary = true }
+            if origin != me { delegate?.homeManager(self, didRemove: h) }
+        case .homeUpdated(let record, let change, let origin):
+            guard let h = home(record.id) else { return }
+            h.update(record, change: change, notify: origin != me)
+        case .characteristicValue(let homeID, _, _, let cid, let value):
+            home(homeID)?.receiveValue(characteristic: cid, value: value)
+        case .accessoryDiscovered, .accessoryDiscoveryRemoved, .disconnected:
+            break
+        }
+    }
+}

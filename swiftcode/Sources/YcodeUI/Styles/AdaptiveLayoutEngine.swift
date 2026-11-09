@@ -1,0 +1,33 @@
+import SwiftUI
+import Observation
+
+@Observable
+@MainActor
+public final class AdaptiveLayoutEngine {
+    public static let shared = AdaptiveLayoutEngine()
+
+    public var metrics = AdaptiveWindowMetrics()
+
+    private init() {}
+
+    public func updateMetrics(width: CGFloat, height: CGFloat, scale: CGFloat, isFullscreen: Bool, appearance: AdaptiveWindowMetrics.Appearance = .light) {
+        var newMetrics = AdaptiveWindowMetrics()
+        newMetrics.windowWidth = width
+        newMetrics.windowHeight = height
+        newMetrics.contentWidth = width
+        newMetrics.contentHeight = height
+        newMetrics.displayScale = scale
+        newMetrics.isFullscreen = isFullscreen
+        newMetrics.currentBreakpoint = AdaptiveBreakpoint.breakpoint(for: width)
+        newMetrics.appearance = appearance
+
+        let widthChanged = abs(metrics.windowWidth - width) > 1.0
+        let heightChanged = abs(metrics.windowHeight - height) > 1.0
+        let fullscreenChanged = metrics.isFullscreen != isFullscreen
+        let appearanceChanged = metrics.appearance != appearance
+
+        if widthChanged || heightChanged || fullscreenChanged || appearanceChanged {
+            metrics = newMetrics
+        }
+    }
+}

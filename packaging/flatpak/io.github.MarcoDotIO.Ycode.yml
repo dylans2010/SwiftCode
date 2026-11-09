@@ -1,0 +1,131 @@
+id: io.github.MarcoDotIO.Ycode
+runtime: org.freedesktop.Platform
+runtime-version: '26.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.llvm22
+command: swiftcode-ide
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --device=dri
+  - --socket=pulseaudio
+  - --share=network
+  - --socket=ssh-auth
+  - --filesystem=home
+  - --filesystem=/tmp
+  - --talk-name=org.freedesktop.Flatpak
+  - --env=PATH=/app/libexec/swiftcode-host:/app/bin:/usr/bin
+build-options:
+  no-debuginfo: true
+cleanup:
+  - /swift
+  - /include
+  - /bin/spirv-*
+  - /lib/cmake
+  - /lib/pkgconfig
+  - /share/cmake
+  - '*.a'
+  - '*.la'
+modules:
+  - name: swift-toolchain
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/swift
+      - cp -a usr /app/swift/
+    sources:
+      - type: archive
+        only-arches: [x86_64]
+        url: https://download.swift.org/swift-6.4.2-release/ubuntu2404/swift-6.4.2-RELEASE/swift-6.4.2-RELEASE-ubuntu24.04.tar.gz
+        sha256: 2e9ebec040ad459dd89a6d093a02d8314939135104850fae4d5c0f174fb3ba8c
+      - type: archive
+        only-arches: [aarch64]
+        url: https://download.swift.org/swift-6.4.2-release/ubuntu2404-aarch64/swift-6.4.2-RELEASE/swift-6.4.2-RELEASE-ubuntu24.04-aarch64.tar.gz
+        sha256: 307772afcc0b9501faa4797eb4197076facf5768593a0d8d2b83615c95b0040e
+  - name: libxml2-for-toolchain
+    buildsystem: autotools
+    config-opts:
+      - --prefix=/app/swift/usr
+      - --without-python
+      - --without-icu
+      - --without-lzma
+      - --without-zlib
+      - --disable-static
+    post-install:
+      - cp -a /app/swift/usr/lib/libxml2.so* /app/swift/usr/lib/swift/linux/
+    sources:
+      - type: archive
+        url: https://download.gnome.org/sources/libxml2/2.13/libxml2-2.13.9.tar.xz
+        sha256: a2c9ae7b770da34860050c309f903221c67830c86e4a7e760692b803df95143a
+  - name: curl
+    buildsystem: autotools
+    config-opts:
+      - --with-openssl
+      - --enable-versioned-symbols
+      - --disable-static
+      - --disable-manual
+      - --disable-docs
+      - --disable-ldap
+      - --without-libpsl
+    cleanup:
+      - /bin/curl
+      - /bin/curl-config
+      - /bin/wcurl
+      - /share/aclocal
+      - /share/man
+    sources:
+      - type: archive
+        url: https://github.com/curl/curl/releases/download/curl-8_23_0/curl-8.23.0.tar.xz
+        sha256: 8dadd7d2536a314f982ad05a651b713f426bf7d02cc2c76cffb9796f2218e6c5
+  - name: sdl3
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_LIBDIR=lib
+      - -DSDL_STATIC=OFF
+      - -DSDL_TESTS=OFF
+      - -DSDL_INSTALL_TESTS=OFF
+      - -DSDL_EXAMPLES=OFF
+    sources:
+      - type: archive
+        url: https://github.com/libsdl-org/SDL/releases/download/release-3.4.20/SDL3-3.4.20.tar.gz
+        sha256: f3bb06f55bed9557227a700af2ea62e49497ebdf58037732a731a5fb3ef8581f
+  - name: spirv-tools
+    only-arches: [aarch64]
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DCMAKE_INSTALL_LIBDIR=lib
+      - -DSPIRV_SKIP_TESTS=ON
+      - -DSPIRV_WERROR=OFF
+    sources:
+      - type: archive
+        url: https://github.com/KhronosGroup/SPIRV-Tools/archive/refs/tags/vulkan-sdk-1.4.363.0.tar.gz
+        sha256: e6c83a215538fbfd265ccf398d3877985055df1273dbed73912bd05307664688
+      - type: archive
+        url: https://github.com/KhronosGroup/SPIRV-Headers/archive/refs/tags/vulkan-sdk-1.4.363.0.tar.gz
+        sha256: 5b3a0d099f5c7649e29c0938476c462e71d66ad89a0bde42fa1ba3eb476956c9
+        dest: external/spirv-headers
+  - name: 7zip
+    buildsystem: simple
+    build-commands:
+      - make -C CPP/7zip/Bundles/Alone2 -f makefile.gcc -j"$FLATPAK_BUILDER_N_JOBS" DISABLE_RAR=1 CFLAGS_WARN_WALL="-Wall -Wextra"
+      - install -Dm755 CPP/7zip/Bundles/Alone2/_o/7zz /app/bin/7zz
+    sources:
+      - type: archive
+        url: https://github.com/ip7z/7zip/releases/download/26.05/7z2605-src.tar.xz
+        sha256: 0b6080b8c3e7a579161d2d495224c0e51c467576cb4c7048b0ab485ef44cc22e
+        strip-components: 0
+  - name: swiftcode
+    buildsystem: simple
+    build-options:
+      strip: true
+      append-path: /app/swift/usr/bin
+    build-commands:
+      - sh packaging/flatpak/build-swiftcode.sh
+    sources:
+      - type: archive
+        path: source/swiftcode-source.tar
+        strip-components: 0
+      - swift-dependencies.json

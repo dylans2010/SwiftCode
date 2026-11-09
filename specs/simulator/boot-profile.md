@@ -1,0 +1,1653 @@
+# Spec: boot profile, and host memory work off the kernel lock
+
+Status: **implemented 2026-10-17 (agent PROF)**. §1 is a diagnostic
+(off by default). §3 lists four changes; each has a switch, and §4 says
+which are on by default and why. Measurements are in §2 and §4. §6
+(agent PROF3, 2026-10-19) compares the Mac and SwiftCode process by process
+and adds C21. §9 (agent SPAWN, 2026-10-23) measures process creation and
+adds SP1–SP4.
+
+This is SwiftCode's own design. It names no Apple internals. The Linux facts
+(KVM memslots, `mremap`, transparent huge pages, `/proc` accounting) come
+from the Linux KVM API documentation and the Linux man pages (level 1);
+the Arm facts from the Arm Architecture Reference Manual. Lock rules are
+those of `stage6-contract.md` §5 and the performance contract (C1–C14 in
+`performance-contract.md` §6; this spec adds C15–C18).
+
+## 1. The boot profile (`SWIFTCODE_BOOT_PROFILE=<path>`)
+
+A diagnostic that answers "where does the wall time of a boot go". It
+changes no guest-visible behaviour. With the variable unset nothing below
+runs and no counter is taken.
+
+### 1.1 Per-image table (written to `<path>` when the run ends by itself)
+
+One row per process image (an exec makes a new image under the same pid):
+
+| Column | Meaning |
+|---|---|
+| `launch_s` | when the VMM started building the image (seconds since the run began) |
+| `build_ms`, `first_run_ms` | image build time; time to the first guest instruction |
+| `milestone_ms` | time to the libSystem milestone (`host-libraries.md` §8.1): the end of the loader's work (`dyld_sim`) in this process |
+| `m_*` | at the milestone: traps made, kernel-lock wait and hold of the image, the main thread's CPU (total, guest mode, host kernel), its wall time inside `KVM_RUN` and inside trap handlers, and the six most frequent trap numbers before the milestone (`m_top_traps`, faults as −1000) |
+| `end_s`, `life_s`, `teardown_ms` | end of the image, its life, the time to tear it down |
+| `cpu_s`, `user_s`, `sys_s`, `guest_s`, `runqueue_s` | summed over the image's vCPU host threads (read from `/proc/self/task/<tid>/{stat,schedstat}` when each thread returns): CPU time; user time (guest mode included); host-kernel time (KVM exits KVM handles itself, such as stage-2 faults, and the VMM's system calls); guest-mode time; time runnable but waiting for a CPU |
+| `kvm_run_s`, `handler_s` | wall time inside `KVM_RUN` and inside the trap handler (lock waits and blocking waits included) |
+| `user_exits`, `kvm_exits`, `wfx_exits` | exits to the VMM; all exits as KVM counts them (`KVM_GET_STATS_FD`, statistic `exits`; the difference is exits KVM handled in the kernel); WFI/WFE exits |
+| `lock_held_ms`, `lock_wait_ms`, `lock_acq` | kernel-lock hold and wait time on behalf of the image's threads |
+| `starts`, `start_wait_ms` | guest thread starts, and the time from the start request to the thread's first instruction (vCPU creation or wakeup) |
+
+A second table sums the rows by program name. The header lines give the
+host-memory calls made inside traps (§3: memslot additions, file-window
+maps, file copies, discards, zero fills; count, time, bytes), the file
+arena's huge-page copies (§3.4), and the process's `Rss` and
+`AnonHugePages`.
+
+### 1.2 Samples (`<path>.samples`)
+
+Every `SWIFTCODE_BOOT_PROFILE_INTERVAL_MS` (default 500) one line: the whole
+process's CPU in the interval split into guest mode, host kernel and VMM
+user code (in cores); host threads runnable (R) and in uninterruptible
+sleep (D); guest threads in guest code, in a trap handler, and blocked in a
+kernel wait; the kernel-lock busy share; live images; the eight images that
+used the most CPU in the interval; and any vCPU busy in one trap handler
+for 200 ms or more (program, pid, trap number, age).
+
+### 1.3 Guest PC samples (`SWIFTCODE_BOOT_PROFILE_PC_HZ=<n>`, `<path>.pcs`)
+
+`n` times a second every vCPU that runs guest code is kicked out of
+`KVM_RUN` (the existing diagnostic kick) and its PC is recorded, then
+attributed to the main executable, `dyld_sim`, or a shared-cache image by
+the cache's image list (others: "other"). The report lists the share of
+samples by image, by program and image, and the hottest 4 KiB buckets.
+Only offsets and image names are reported; nothing is symbolized.
+
+## 2. Where the time goes (main line 64ced04, Thor, 2026-10-17)
+
+Five profiled full boots (harness, device in RAM, 450 s, two boots at a
+time; `SX/PROF/runs/p1–p3`, `SX/PROF/c1/runs/q1`, `SX/PROF/c4/runs/t2`).
+"Home" is the harness's criterion: the first frame with the wallpaper.
+
+1. **The boot is a chain of process starts, not a CPU-bound load.** The
+   whole host process used 2–3 cores on average (guest mode about 1.5,
+   VMM code 0.5, host kernel 0.35) of 14; 3–15 host threads were runnable.
+   One or two programs start at a time: launchd_sim alone for the first
+   4–5 s, SpringBoard's start, then late in the boot PosterBoard starts
+   about 20 poster extensions one after another (each about 5–6 s), and
+   the wallpaper follows.
+2. **A process start is the loader's phase** (`milestone_ms`): an app
+   extension took 5.2–5.9 s from launch to its libSystem initializer,
+   SpringBoard 16–21 s, backboardd 3.6–4.6 s, xpcproxy_sim 25–400 ms.
+   For an app extension: about 3,850 traps, of them about 1,240 each of
+   `stat64` (338), `vm_allocate` (−10) and `vm_deallocate` (−12); the main
+   thread's CPU 3.0 s, 2.9 s of it in guest mode; **kernel-lock wait about
+   2.0 s** (about 0.5 ms per trap).
+3. **Guest CPU: 68 % of all guest-mode samples are in `dyld_sim`**
+   (`SWIFTCODE_BOOT_PROFILE_PC_HZ=50`, 43,783 samples), in a 20 KiB range of its
+   text; then libswiftCore 4.9 %, libobjc 4.4 %, libsystem_malloc 2.8 %,
+   CoreFoundation 2.3 %.
+4. **Kernel lock**: held 207–229 s of 470 s (44–48 % busy); summed waits
+   3,900–4,200 thread-seconds; contended acquisitions 33 %, mean wait
+   300–550 µs for every trap kind. Holder samples: running 68 %, blocked
+   in the host kernel 32 % (`__synchronize_srcu` 6.8 %: memslot changes;
+   `mmap_region`, `vm_mmap_pgoff`, `lock_mm_and_find_vma` 12.7 %: the host
+   process's mmap lock; `do_madvise` 5.2 %; page-cache waits 4.1 %).
+   Host-memory calls inside traps per boot: about 4,000 file memslots
+   (8–10 s), 4,800–5,500 shared-object memslots (9–11 s), 30,000 discards
+   (8.6–9.9 s).
+5. **The first 4 s of every boot**: launchd_sim's first `fsgetpath` (427)
+   walked the runtime volume with a Foundation enumerator and `lstat` of
+   every entry, 4.1 s, on the critical path (everything waits for
+   launchd_sim). The full shared-cache image index takes 38–650 ms and was
+   not the cause.
+6. **Not on the critical path**: image builds 1–3 ms (prebuilt VMs); first
+   guest instruction about 1 ms after launch; VM teardown off the lock;
+   GPU (Metal compiler service late, a few CPU seconds). Thread starts
+   waited 105–136 s summed over all threads (vCPU creation, 11 ms on
+   average), spread over many processes. In-kernel KVM exits (stage-2
+   faults, interrupts) 12.6–16 M per boot, host-kernel CPU 135–155 s.
+
+## 3. Changes
+
+### 3.1 C15: the milestone does not wait for the full cache index
+
+The VMM checks every trap before the libSystem milestone against the
+images it is waiting for (the cache's `libsystem_*` images and
+`libSystem.B`, and SwiftCode's host libraries). It now reads a small list of
+just those images (a few dozen Mach-O headers) instead of the full list
+of every cached image. The full list (used by fault reports and traces) is
+built on a background thread at start (`SWIFTCODE_CACHE_INDEX_PREWARM=0`: on
+first use). The index has three locks (load, small lists, full list), so
+the full parse never blocks a milestone check. Behaviour is unchanged: the
+milestone is reached at the same trap.
+
+### 3.2 C16: the private file window (`SWIFTCODE_PRIVATE_FILE_WINDOW`)
+
+Before: a writable private file mapping larger than 1 MiB (the shared
+cache's writable mappings in every process, regions made writable by
+`mprotect`) got a host `mmap` of its own and a KVM memslot of its own.
+Adding a memslot waits for an SRCU grace period of the VM; under load that
+is milliseconds, under the kernel lock.
+
+Now each VM gets one more memslot when its backing is made (off the
+kernel lock, in the prebuilt VM; `stage6-contract.md` §5.3): a 64 GiB
+inaccessible host reservation at GPA `0x20_0000_0000` (the start of the
+file range; per-mapping slots follow it). A mapping is placed in it with
+`mmap(MAP_FIXED | MAP_PRIVATE)` of the file (and anonymous zero pages for
+the tail), bump-allocated, never reused while the VM lives (as per-mapping
+memslots were). Guest-visible behaviour is identical: the same bytes,
+private copy-on-write, zeros past the end of the file. KVM follows the
+host mapping through its MMU notifier, so no memslot change is needed.
+When the window is full a mapping falls back to its own memslot.
+
+Two rules keep the window correct when a mapping reaches the end of its
+file (FIXINST, 2026-10-19):
+
+- The file part of a window mapping covers whole **host** pages: the
+  bytes of the file's last host page past the end of the file read as
+  zeros (host `mmap` semantics), and the anonymous zero tail starts at the
+  next host page boundary. A tail placed right after the last file byte
+  is not host-page aligned, and `mmap(MAP_FIXED)` refuses it with EINVAL.
+  The guest saw that as ENOMEM from `mmap` (dyld: "Library not loaded …
+  mmap(size=…) failed with errno=12").
+- This path is taken by every read-only file mapping the shared read-only
+  arena cannot serve. The arena holds at most `maximumFiles` distinct
+  files (by device, inode, size and mtime; spans are never reused). A
+  cold boot that installs an app passed the earlier limit of 4096 files
+  (the install makes LaunchServices and its clients load many plug-ins and
+  rewrite data files, each new version a new span), so from about 120 s
+  on every image larger than 1 MiB that ends inside a host page failed
+  to load: 70–250 daemons per boot aborted in dyld, SpringBoard and the
+  render server's clients crashed in turn, and the home screen was never
+  reached. The limit is now 32768 (`SWIFTCODE_ARENA_MAX_FILES` overrides it
+  for diagnostics); the arena logs once when it first refuses a file, and
+  a full arena only costs speed.
+- Verified on the Thor (cold boots, `--install-app`/`--launch` of the
+  probe app): full boot home 255/255/215 s, launched 255/255/215 s; lean
+  boot (`SWIFTCODE_LEAN_BOOT=daemons`) home 170/175/200 s, launched
+  140/145/200 s; 0 mapping failures; no install: home 145/125/165 s. With
+  only the tail fix and the old 4096 limit (arena full at boot) the
+  same boot reached home at 220 s and launched the app.
+- Diagnostics: the first 40 guest mappings that fail for a host-side
+  reason (backing or page tables) are logged with the underlying error
+  (`guest mapping failed: …`).
+
+### 3.3 C17: pool memory is dropped after the trap (`SWIFTCODE_DEFERRED_DISCARD`)
+
+Before: releasing anonymous pool memory larger than 256 KiB (and flushing
+the 4 MiB stale list) called `madvise(MADV_DONTNEED)` under the kernel
+lock. That takes the host process's mmap lock and KVM's MMU notifier
+(stage-2 unmap and TLB invalidation) and averaged 0.33 ms, with long tails.
+
+Now, when the releasing thread is a vCPU thread of the same VM, the run
+stays **allocated** in the pool, and the thread drops it after its trap
+handler returned (no kernel lock held), then puts it on a ready list
+(a leaf lock). The next allocation in that pool (under the kernel lock)
+first frees the ready runs. Invariants:
+
+- A run is never handed out before its pages are dropped (it is allocated
+  until then).
+- The VM is open while the work runs: only a vCPU thread of the same VM
+  queues it, it runs on that thread before it re-enters its run loop, and
+  a VM is closed only after all its vCPU threads were joined.
+- Releases from any other thread (another process's trap, a service
+  thread) drop at once, as before.
+- Lock order: kernel lock → ready-list lock (leaf). The work itself holds
+  only the leaf lock, briefly.
+
+### 3.4 C18: huge-page copy of the shared cache in the file arena (`SWIFTCODE_ARENA_HUGE`)
+
+The file arena (`SharedFileArena`, stage 6) maps each read-only file once
+into a reservation that every VM registers as one read-only memslot. Its
+pages are page-cache pages, so KVM maps them with 4 KiB stage-2 pages: a
+new process takes one stage-2 fault per 4 KiB of the cache it touches, and
+a guest TLB entry covers at most 4 KiB of a 16 KiB guest page.
+
+With the switch, a file of at least 256 MiB (the shared cache files) gets
+a 2 MiB-aligned span (the arena base is 2 MiB-aligned), and a background
+thread:
+
+1. allocates anonymous memory, 2 MiB-aligned, with `MADV_HUGEPAGE`;
+2. fills it with the file's bytes (`pread`, four threads) and zeros past
+   the end of the file;
+3. makes it read-only;
+4. moves it over the span with one `mremap(MREMAP_MAYMOVE |
+   MREMAP_FIXED)`.
+
+The move replaces the file mapping atomically for every reader (the VMM
+and, through the MMU notifier, every VM); both hold the same bytes. Later
+stage-2 faults map 2 MiB blocks (KVM maps a block when the host mapping is
+a PMD-sized huge page and the memslot offsets agree modulo 2 MiB). The
+copy costs the cache's size in host memory (3.3 GiB) once per host
+process. A failure at any step leaves the file mapping as it was.
+
+### 3.5 C19: one memslot for every shared memory object (`SWIFTCODE_SHARED_WINDOW`)
+
+Shared memory objects (Mach memory entries, POSIX shared memory, shared
+file views, IOSurface backing; `SharedMemory.swift`) are host memory that
+several VMs map. Before, each VM that mapped an object added a memslot for
+it (one SRCU wait under the kernel lock, about 1.6 ms each; 4,700–5,500 per
+boot).
+
+With the switch, objects take their host memory from one 128 GiB host
+reservation (`SharedObjectArena`, 2 MiB-aligned): a first-fit run, mapped
+private anonymous (or, for a file view, `MAP_SHARED` of the file, with
+zero pages past its end) with `MAP_FIXED`. Every VM registers the whole
+reservation once, when its backing is made, as one memslot at GPA
+`0xC0_0000_0000` (above the read-only file window; the per-mapping file
+slots stay below that window). Mapping an object into a VM is then
+`0xC0_0000_0000 + offset`: no memslot change. The host memory is the same
+kind as before (private anonymous), so the GPU's host-pointer imports see
+the same memory. Invariants:
+
+- A run is freed only when the object is destroyed, and an object lives
+  while any VM that mapped it lives (the backing keeps it), so no VM can
+  see a reused run through an old mapping.
+- Freeing makes the run inaccessible again (`MAP_FIXED` reservation),
+  which drops its pages; KVM's MMU notifier removes every VM's stage-2
+  entries for it.
+- A VM never maps a part of the arena its address space did not map
+  (stage-1 tables only point at objects the process maps), as before.
+- When the arena is full or not registered, an object gets its own host
+  mapping and memslots as before.
+
+### 3.6 C20: task-local traps without the kernel lock (`SWIFTCODE_TASK_LOCAL_TRAPS`)
+
+A process start makes about 3,800 traps before its libSystem initializer
+runs; almost all are `stat64` (the loader probes each library path on
+disk), `vm_allocate` and `vm_deallocate` (a scratch buffer per library),
+about 1,240 of each for an app extension. Each waited about 0.5 ms for the
+global kernel lock (§2), about 2 s per process start.
+
+With the switch, these traps run on the trapping thread's host thread
+without the kernel lock:
+
+| Trap | Done without the kernel lock |
+|---|---|
+| BSD 338 `stat64`, 340 `lstat64` | read the path (guest memory), resolve and `stat` it (`DarwinFileSystem`, already safe without the lock, stage 6 §5.1), write the 144-byte result |
+| Mach −10 `vm_allocate` with `VM_FLAGS_ANYWHERE` | read the address word, map anonymous memory anywhere (one address-space change), write the address word |
+| Mach −12 `vm_deallocate` | unmap the range (one change) |
+| Mach −14 `vm_protect` of the current protection | change the protection (one change; a shared read-only file view made writable moves to a private view, as before) |
+
+The answers (results, errors, `kern_return_t` values) are the locked
+path's, byte for byte. Rules:
+
+1. A task-local trap touches only its own process's address space (through
+   its mutex L1, which every change of the space takes) and the host file
+   system through path resolution. It reads or writes no state the kernel
+   lock guards and never blocks.
+2. Every kernel path that reads the address space and then changes it on
+   what it read (`vm_allocate` and `mach_vm_map` at a fixed address
+   without `VM_FLAGS_OVERWRITE`: check, then map) holds L1 across both
+   steps, so a concurrent task-local allocation cannot slip in between.
+3. Fixed-address `vm_allocate`, `vm_protect` with `set_maximum`, traced
+   images, an image that is ending, and a thread not bound to the image
+   take the locked path.
+4. Before the image's libSystem milestone, a trap whose return address is
+   in a libSystem image takes the locked path (the milestone is recorded
+   there).
+5. Lock order is unchanged (L0 → L1 → leaves); task-local traps take no L0.
+   No wakeup can be lost: they wake no one and wait for nothing.
+6. A changed address space sets the frame's TLB-flush bit as before; the
+   shim's flush is inner-shareable, so every vCPU of the VM sees it.
+
+## 4. Measurements (Thor, 2026-10-17/18)
+
+Harness full boots, device in RAM, two at a time; home_s at 5 s
+resolution. Machine load from other agents varied (load average 10–23).
+
+### 4.1 Per change (profiled boots)
+
+| Change | Measured effect |
+|---|---|
+| Object-id walk (readdir + `d_ino`) | launchd_sim's first `fsgetpath` 4.1 s → 0.9 s (warm directory cache) to 3 s (cold, I/O-bound) |
+| C15 cache index | full index 38–650 ms on a background thread; milestone checks never wait for it |
+| C16 private file window | about 4,000 file memslot additions (8–10 s under the lock) → window maps, 1–2 s; home_s unchanged in one paired run (q1 280, q2 280) |
+| C17 deferred discards | 15,500–18,000 of 28,000–31,000 discards (8–12 s) leave the lock |
+| C18 huge-page arena | in-kernel exits −33 %, but the copy took 74–82 s (direct compaction of 1,700 huge pages) and slowed host `mmap` calls meanwhile; guest time per process start unchanged. **Stays off** |
+| C19 shared object arena | 4,800–5,500 shared-object memslots (9–11 s) → 0 |
+| C16+C17+C19 (r2) | lock held 207 → 172 s, summed lock wait 4,100 → 2,860 s; home 265 |
+| + C20 task-local traps (t1 against t2, the same build, at the same time) | app-extension start (launch to libSystem initializer, mean of 53–59) 5.86 → 3.30 s, its lock wait 2,159 → 29 ms; SpringBoard 20.7 → 14.7 s; backboardd 4.55 → 1.65 s; PosterBoard 5.1 → 3.7 s; lock held 213 → 174 s; summed lock wait 3,903 → 2,396 s; **home 280 → 235** |
+
+### 4.2 Main line against the new defaults (C15–C17, C19, C20 on; C18 off)
+
+Three paired rounds, main line (`SX/PROF/base`, 64ced04) and the new
+build (`SX/PROF/c5`) started together each round:
+
+| Round | Main line | New defaults |
+|---|---|---|
+| 1 | 265 | 170 |
+| 2 | 265 | 210 |
+| 3 | 280 | 220 |
+| mean | 270 | 200 (−26 %) |
+
+Ablation, the new build with `SWIFTCODE_TASK_LOCAL_TRAPS=0` against its
+defaults, two paired rounds: 295/250 (mean 272) against 175/215 (mean
+195). Most of the gain is C20; C16, C17 and C19 alone are within noise of
+the main line (they remove 25–30 s of lock hold, §4.1).
+
+Every boot reached the home screen; no host crash; `guest_fatal` 29–31
+(main line) and 17–27 (new defaults). Unit tests: kernel, ABI and simd
+suites on the Thor and the full suite on the x86-64 workstation pass.
+
+### 4.3 What remains
+
+The loader's own work is now the largest piece of a process start: 2.9 s
+of guest CPU per app extension, 68 % of all guest CPU in `dyld_sim`
+(§2 item 3). SwiftCode cannot change that code; why it costs this much here
+(compared with the Mac, where a whole boot uses about 500 CPU seconds for
+about 280 programs) needs a separate study of what the loader does per
+library (§2 item 2: three traps per library). Next, by size: the
+kernel-lock holds of Mach IPC (`mach_msg2`, `workq_kernreturn`,
+`kevent_id`: about 55 s), the cold-cache object-id walk at boot (up to 3 s;
+a background walk at start would hide it), and thread-start latency
+(vCPU creation).
+
+## 5. Where the loader's guest CPU goes (2026-10-18)
+
+### 5.1 Method
+
+- Guest PC samples (§1.3) now also record the return-address chain:
+  when the sampled vCPU stops for the kick, its own host thread reads up to
+  eight frame-pointer records (16 bytes of guest stack each) through the
+  address space; the report `<path>.loader` lists "PC LR RA1 … RA8"
+  offsets inside `dyld_sim` with their counts.
+- The offsets are named from `dyld_sim`'s own symbol table (`llvm-nm`,
+  binary metadata, level 4). No instruction was disassembled or
+  decompiled. The meaning of the named functions comes from Apple's open
+  source dyld (apple-oss-distributions/dyld, level 1).
+- A probe (`SimShim/guest-tests/stageperf/p_cpu.c`, original SwiftCode code)
+  measures guest code speed against the same source built for the host.
+
+### 5.2 Results
+
+One boot at 100 samples per second (`SX/PROF/c8/runs/d2`), 72 % of all
+guest samples in `dyld_sim`. Inclusive shares of the `dyld_sim` samples:
+
+| Function (from the symbol table) | Inclusive |
+|---|---|
+| `dyld4::JustInTimeLoader::loadDependents` (its per-dependent block) | 73 % |
+| `dyld4::JustInTimeLoader::matchesPath` | 82 % |
+| `mach_o::Image::makeFromDyldMapped` | 59 % |
+| `mach_o::Header::forEachSegment` | 50 % |
+| `mach_o::Header::installName` / `dylibInfo` | 17 % |
+| `mach_o::Header::forEachLoadCommand` | 88 % (31 % self) |
+| `dyld4::Loader::getLoader` (path variants) | 27–36 % |
+
+What the open source says these do: for every dependent with an absolute
+path, `loadDependents` scans the list of loaded images and calls
+`matchesPath` on each until one matches. `matchesPath` compares the path
+string and, when the loader's path differs from its image's install name
+(`altInstallName`), compares the install name read from the mapped
+header; in this build that builds an image object from the header, which
+walks its load commands and segments. A shared-cache library's loader
+path in a simulator process is the sim root (`DYLD_ROOT_PATH`) plus the
+load path, so every cache library has `altInstallName` set, and every
+mismatch costs a header walk: O(dependencies × loaded images × load
+commands) per process start, about 2.4 s of guest CPU for an app
+extension that loads about 1,240 libraries.
+
+### 5.3 What is not the cause
+
+| Hypothesis | Finding |
+|---|---|
+| Guest code runs slowly | `p_cpu`: integer loop 1.540 ns per iteration in the guest and 1.541–1.574 on the host; pointer chase 10.0 against 7.7–9.3 ns; 1,280-line chase 6.0 against 4.3–4.5 ns (nested translation costs about 1.4× on misses, nothing more); walking one cached header's load commands to `LC_ID_DYLIB` 55 ns |
+| Page faults counted as guest time | Stage-2 faults are host-kernel time (`sys_s`); the samples are in load-command loops, not in fault paths |
+| A spin on a field SwiftCode never sets | No: the samples are the header walks above |
+| Missing prebuilt loaders | `dyld_sim`'s symbol table has no prebuilt-loader code (only `RuntimeState::inPrebuiltLoader`), so it always uses just-in-time loaders, on the Mac too |
+| A failing cache check | The simulator branch of `getLoader` takes the cached copy (one `stat` of the sim-root candidate per library, then the cache), as the open source describes for every simulator process |
+| The sim root itself (AMFI bit 1) | With `amfi_check_dyld_policy_self` answering 0xFD (no path variables) `dyld_sim` faults in `strlen` (NULL) right after mapping the cache: it needs the sim root. Not an option; SwiftCode keeps 0xFF, as the Mac's policy must be (the host dyld refuses a simulator program without a root path) |
+
+The loop is the loader's own algorithm and SwiftCode runs it at native speed.
+The Mac runs the same code (a Mac boot uses about 500 CPU seconds in its
+first 120 s for about 280 programs, `parity-ladder.md` §3.1, which fits a
+loader cost of this size per start). SwiftCode-side levers are therefore fewer process starts (the
+restart loops of `parity-ladder.md` §3.3), more process starts at once
+(§5.4), and not re-running the boot (`snapshot.md`).
+
+### 5.4 Guest CPU count
+
+With the lock waits gone, an app extension's start is CPU-bound on one
+thread, and the poster extensions start about two at a time. Telling the
+guest it has 8 CPUs (`SWIFTCODE_GUEST_CPUS=8`) instead of 1 did not change
+home_s: two paired rounds, 190/255 (1 CPU) against 230/225 (8 CPUs),
+`guest_fatal` 24–28 in both. The default stays 1.
+
+## 6. Why the Mac does not pay the loader cost on the critical path (2026-10-19)
+
+§5 left a contradiction: an app extension's start costs about 2.4 s of
+`dyld_sim` CPU, PosterBoard starts about 20 poster extensions before the
+wallpaper appears, and yet the Mac reaches the home screen in about 21 s
+(subsequent boot). This section compares the same processes on both
+platforms (agent PROF3).
+
+### 6.1 Setup
+
+- Mac: macOS 27.2 (26B5112a), Xcode 27.1 (27A9269), iOS 27.1 simulator
+  runtime 24A94401, device type iPhone Duo, throwaway devices
+  `swiftcode-test-prof3-*` (deleted afterwards). The host was shared and heavily
+  loaded throughout (load average 200–950, three to four other simulator
+  devices booted by other sessions), so Mac wall times are upper bounds and
+  CPU times are the comparable figure.
+- SwiftCode: the Thor, branch `prof2` (main line 65ef9fe plus §6.4), harness
+  boots of the golden device (subsequent boots, device in RAM).
+- The Mac runs the runtime's own prebuilt cache
+  (`RR/System/Library/Caches/com.apple.dyld/dyld_sim_shared_cache_arm64`;
+  the host keeps locally built caches only for the 26.x runtimes), the same
+  file SwiftCode maps. Its header: `simulator` set, `dylibsExpectedOnDisk`
+  clear, `locallyBuiltCache` clear (level 2).
+- Probes (original SwiftCode code, `SimShim/guest-tests/stageperf/`):
+  `p_load` (images and time at `main`; `deps <macho>` dlopens a program's
+  direct dependencies) and `libp_loadtap.dylib`, inserted with
+  `DYLD_INSERT_LIBRARIES` (Mac: `SIMCTL_CHILD_DYLD_INSERT_LIBRARIES` with
+  `simctl spawn`; SwiftCode: `--exec <program> --env ...`). The tap's
+  initializer runs once the loader has loaded the whole closure, prints the
+  image count, the time since the kernel's process start time and the
+  process CPU, and ends the process, so the program's own code never runs.
+- Timelines: `tools/mac-sim-ext-timeline.py` (Mac process first/last seen,
+  CPU, home_s); `launchd.log` "Successfully spawned" lines on both; guest
+  `log show` (Mac) and `log stream` one-shots (SwiftCode) for PosterBoard
+  (`category == "DataStore"`) and runningboardd (`category == "job"`).
+
+### 6.2 The same process on both platforms
+
+| Program | Images (Mac / SwiftCode) | Mac: loader CPU | SwiftCode: launch to tap (= CPU; guest part) |
+|---|---|---|---|
+| `p_load` (probe) | 46 / 46 | 0.02 s | — |
+| backboardd | 449 / 449 | 0.42–0.45 s | 1.42 s (0.38 s) |
+| poster extensions (Gradient, Collections, Calendar, Emoji, Photos, Mercury, GradientBackground) | 868–974 / identical per program | 1.9–2.4 s (light load), 2.7–3.9 s (heavy load) | 3.7–4.1 s (Mercury: 2.7 s) |
+| PosterBoard | 1,277 / 1,277 | 1.9–3.1 s | 4.3 s (3.1 s) |
+| SpringBoard | 1,474 / 1,474 | 4.9–6.2 s | 8.3 s (7.0 s) |
+
+The image lists are the same, so the loader does the same work: the same
+cache, the same simulator branch of the lookup (`dyld-sim-handoff.md` §4.2;
+every cache library's loader path is the sim root plus its install name),
+and the same O(dependencies × loaded images) path comparisons. The Mac's
+loader CPU per extension is about 2 s, not a fraction of SwiftCode's: guest
+code runs at the Mac's speed (§5.3), and SwiftCode adds about 1 s per process
+start on the host side (host kernel 0.6–0.7 s, VMM 0.3–0.5 s). `p_load deps`
+of a poster extension (872 images, dlopen, initializers included) takes
+4.8–5.6 s of CPU on the Mac. **There is no Mac shortcut in the loader.**
+SwiftCode also loads no extra images.
+
+### 6.3 What differs: when, in what order and how many at a time
+
+Subsequent boots, seconds from SpringBoard's spawn:
+
+| Step | Mac (3 boots) | SwiftCode (k1–k3) |
+|---|---|---|
+| PosterBoard spawned (SpringBoard asks for it) | 5.5–7.5 | 65–113 |
+| SpringBoard starts *its own* Mercury poster instance (the wallpaper renderer) | 9–11, before PosterBoard has opened its data store | 20–28 s after PosterBoard's batch ends (158–233) |
+| home_s (from boot start) | 15–20 | 165–245 |
+| PosterBoard publishes the active poster (Mercury) | +8 s after its spawn (0.5 s after opening its store) | +26 s (12.7 s between "init the datastore" and the extension scan) |
+| PosterBoard's batch: one launch per poster extension (20) | right after the publish, 20 launches in 3.8 s, mostly after home_s | 33–58 s, one launch every 1.5–3 s, before SpringBoard's Mercury |
+
+- On the Mac only one extension (SpringBoard's Mercury instance) is on the
+  home screen's path. PosterBoard's batch (a descriptor check per
+  extension, `reloadDescriptors`) starts after the home screen (both boots
+  with home_s and a process timeline), and its 20 starts overlap: up to 26 extension processes use
+  CPU in the same `ps` polling interval, 45–50 CPU seconds of extensions
+  in the first 75 s, spread over 14 cores. A first
+  boot runs the batch before the home screen (21 starts within 8 s), still
+  in parallel.
+- The batch is a loop in PosterBoard that asks runningboardd to launch one
+  extension at a time. runningboardd's "Creating and launching job" to
+  "reported to RB as running" takes 15–70 ms on the Mac (300 ms under heavy
+  load) and the next request follows 5–30 ms later. On SwiftCode the same
+  launch takes 0.6–2 s (launchd_sim's own spawn takes 0.15 s of it), and
+  PosterBoard's next request follows 1–2.5 s later (its assertion request
+  to runningboardd alone takes 0.9 s). So the loop runs about 100 times
+  slower, and with each loaded extension needing one core for 3–4 s, only
+  about two load at a time.
+- Each step of that loop, and SpringBoard's own start-up up to its
+  PosterBoard request, is a chain of Mach IPC round trips between daemons.
+  Each round trip is many traps, and on SwiftCode nearly every trap waits for
+  the kernel lock: in a boot the lock is 43–45 % busy, 37–40 % of lock calls
+  are contended, and the mean wait is 150–330 µs for every trap kind
+  (trap profile, 5.5 M traps, 1,640 s of summed waits).
+
+So the Mac starts the same extensions at the same loader cost, but almost
+never on the critical path and never one after another. On SwiftCode the
+order is the guest's own (PosterBoard's batch and SpringBoard's Mercury
+request are both late because every IPC round trip is slow), and the
+serial batch is paced by trap latency, not by the loader.
+
+### 6.4 C21: `madvise` without the kernel lock (`SWIFTCODE_TASK_LOCAL_MADVISE`)
+
+The largest sources of kernel-lock waits in a boot (all programs, one
+profiled boot):
+
+| Trap | Count | Summed wait | Mean hold |
+|---|---|---|---|
+| BSD 375 `kevent_id` | 924,033 | 303 s | 12.9 µs |
+| BSD 75 `madvise` | 994,580 | 288 s | 1.5 µs |
+| BSD 368 `workq_kernreturn` | 525,389 | 174 s | 27.3 µs |
+| Mach −47 `mach_msg2_trap` | 509,433 | 172 s | 31.3 µs |
+| BSD 5 `open` | 272,793 | 107 s | 1.8 µs |
+| BSD 202 `sysctl` | 316,601 | 58 s | 4.0 µs |
+
+`madvise` waits longest for the least work: SwiftCode keeps no state for its
+hints (advice 0–10 answer 0 and change nothing; `MADV_ZERO`, 11, writes
+zeros over the range; other values are EINVAL). With the switch (on by
+default; `=0` turns it off) BSD 75 is a task-local trap (§3.6): the same
+answers, byte for byte (`x0`, `x1`, carry), computed on the trapping
+thread without the kernel lock. It reads only its arguments; `MADV_ZERO`
+writes guest memory in single L1 sections, like `stat64`'s result. It
+takes no L0, blocks on nothing and wakes no one. Rules 3 and 4 of §3.6
+apply (tracing, an ending image, and a libSystem return address before the
+milestone take the locked path).
+
+Diagnostic: `SWIFTCODE_TRAP_PROFILE_PROGRAM=<name>[,…]` limits the trap profile
+(`TrapProfile.swift`) to images whose executable has one of these names;
+everything else goes to one "(other processes)" row.
+
+Measurements: §6.5.
+
+### 6.5 Results
+
+Same build (`prof2`, 4b1f546), C21 on (default) against
+`SWIFTCODE_TASK_LOCAL_MADVISE=0`, started together each round (harness, device
+in RAM, Thor load average 10–20):
+
+| Round | C21 on | C21 off |
+|---|---|---|
+| 1 | 195 | 205 |
+| 2 | 220 | 220 |
+| 3 | 190 | 195 |
+| mean | 202 | 207 |
+
+One more paired round with the trap profile (230 s, not to home):
+`madvise` leaves the lock (931,059 calls served task-local), summed lock
+waits 1,739 → 1,380 s (−21 %), lock busy unchanged (45 → 47 %; its holds
+were 1.9 µs). The mean wait of the remaining traps barely moves
+(`kevent_id` 384 → 370 µs, `mach_msg2_trap` 411 → 400 µs,
+`workq_kernreturn` 385 → 362 µs): the lock's busy time comes from the long
+IPC holds, not from `madvise`. home_s improves by about 5 s (2 %), within
+the 5 s resolution and the round-to-round spread. C21 stays on: it is
+exact (unit test `madviseMatchesTheLockedPath`; kernel host tests pass) and
+removes a fifth of all lock waiting. Every boot reached the home screen;
+no host crash; `guest_fatal` 23–27 in both arms.
+
+**What remains.** The serial orchestration loops of §6.3 (PosterBoard →
+runningboardd → launchd_sim per extension, SpringBoard's start-up chain)
+are paced by the latency of IPC traps (`kevent_id`, `workq_kernreturn`,
+`mach_msg2_trap`: 1.8 M traps, 670 s of summed waits, 370–400 µs each, and
+12–35 µs holds that keep the lock 45 % busy). The lever is a finer lock
+for Mach IPC and kqueue workloops, not the loader.
+
+### 6.6 Notes
+
+- `getrusage(RUSAGE_SELF)` answers zero CPU in a SwiftCode guest, and
+  `clock_gettime(CLOCK_THREAD_CPUTIME_ID)` answers about 6.1 × 10⁹ s (an
+  uninitialized value), so guest programs cannot measure their own CPU on
+  SwiftCode (fixed in §7.5). The probes report wall time on SwiftCode for that reason; the boot
+  profile's per-image CPU is the SwiftCode figure in §6.2.
+- Other sessions deleted `swiftcode-test-*` devices on the Mac while this study
+  ran (two devices vanished within a minute of their creation); the Mac
+  steps were therefore run as one script per device (create, boot, measure,
+  copy the logs, delete).
+
+## 7. SwiftCode's own share of a process start (2026-10-19, agent SP-SPAWN)
+
+§6 shows that the order and pacing of starts are the guest's (PosterBoard's
+loop, one runningboardd request at a time; on the Mac up to 26 extensions
+start at once). This section measures what SwiftCode adds to each start and
+where SwiftCode itself serializes starts.
+
+### 7.1 Instruments
+
+- `SWIFTCODE_BOOT_PROFILE_TRAPS=1` (with `SWIFTCODE_BOOT_PROFILE`): a table in the
+  profile's header, per trap number and phase (before / after the image's
+  libSystem milestone): count, wall time in the VMM's trap handler (lock
+  waits included), the handling host thread's user and system CPU
+  (`getrusage(RUSAGE_THREAD)`) and minor faults. Task-local traps are
+  included. Pseudo-trap 100000 is the VM prebuild a spawn or exec trap
+  runs on its own thread before it takes the kernel lock (§7.3).
+- `SWIFTCODE_DEBUG_OBJECT_WALKS=1`: one line per volume walk of `fsgetpath`
+  (volume, object, time, path found).
+- Starts in progress: images between launch and libSystem milestone, from
+  the per-image table (`launch_s`, `milestone_ms`).
+
+### 7.2 Concurrency of starts
+
+Main line before the start hold (`SX/PROF2/runs/k4`, home 165 s): on average
+2.2 images were in their start phase before home (0: 18 % of the time),
+up to 27 at once in the first 10 s (launchd_sim's demand-launched burst);
+the poster extensions start one every 1.5–2.5 s and each needs 2.6–3 s
+of one core, so about two load at a time. With the start hold on
+(`scheduling-policy.md`, main line 34e5bb1) the start phase includes held
+time and this count is not comparable. Per start (poster extension,
+launch to milestone 2.9 s), SwiftCode's part is small: lock wait 20–60 ms,
+time in trap handlers about 110 ms, host-kernel CPU 0.06 s; 2.55 s is guest
+code (§5). SwiftCode serializes no start against another: image builds run
+1–3 ms under the kernel lock, the first guest instruction follows within
+about 2 ms, and no single host thread builds address spaces or loads
+images for every process. Two SwiftCode costs sit on the start path instead:
+
+### 7.3 Finding 1: every spawn and exec builds a VM inline (about 47 ms)
+
+A daemon start is two traps of the same kind: launchd_sim's
+`posix_spawn` (an `xpcproxy_sim` image) and `xpcproxy_sim`'s
+`posix_spawn` with SETEXEC (the daemon image). With trap costs on
+(`SX/SPSPAWN/runs/p3`, 453 spawn traps in 190 s) each took **62.5 ms**:
+
+| Part | Per trap |
+|---|---|
+| Prebuild on the trapping thread (`PrebuiltVMs.prepare`: KVM_CREATE_VM, memslots, EL1 tables; off the kernel lock) | 47.1 ms (CPU 1.3 user, 7.4 system; the rest waits on the host process's mmap lock and KVM) |
+| Kernel-lock wait and the rest | about 7 ms |
+| Image build under the lock (load 4.4, vCPU 0 3.2, setup 0.4, VM 0.4 ms) | 8.5 ms |
+
+The prebuild keeps one VM "ahead", but it is built by the thread that is
+about to spawn, so the requester pays it every time: launchd_sim's spawns
+and `xpcproxy_sim`'s exec run one after another on each spawning thread,
+and every runningboardd launch request waits about 2 × 60 ms in these two
+traps (PROF3 measured launchd_sim's spawn at about 0.15 s of the 0.6–2 s
+request).
+
+**C22 (`SWIFTCODE_VM_PREBUILD_ASYNC`, default on, `=0` off)**: one background thread keeps
+`SWIFTCODE_VM_PREBUILD_READY` (default 4) VMs ready; a spawn or exec trap takes
+one. A trap that finds none ready builds its own as before. Lock rules:
+the ready list's lock is a leaf (L2), never held across KVM calls; the
+builder takes no other lock. Measured (p4): spawn traps **18.1 ms**
+(−71 %), no inline build in 485 spawn traps.
+
+### 7.4 Finding 2: a volume walk for the shared cache's object id
+
+Every process's loader asks `fsgetpath` (BSD 427) for the path of the
+shared-cache file by its object id, twice. SwiftCode answers from its object
+index; the first miss walks the volume (`ObjectPaths.swift`). In a lone
+start (`--exec`) that walk is the whole of SwiftCode's overhead:
+
+| Lone start (`--exec`, Thor) | launch → milestone | 427 handler | host-kernel CPU |
+|---|---|---|---|
+| backboardd, walk | 1.39–1.42 s | 0.97–0.99 s | 0.62–0.65 s |
+| backboardd, seeded | 0.43–0.44 s | 0 | 0.02–0.03 s |
+| MercuryPosterExtension, walk | 3.76–3.84 s | 1.07–1.11 s | 0.63–0.67 s |
+| MercuryPosterExtension, seeded | 2.74–2.81 s | 0 | 0.07–0.08 s |
+
+This is the "about 1 s per start" of §6.2: in a boot only the first
+process pays it (launchd_sim, 0.5–1 s warm, up to 4 s cold, while
+nothing else can start) and later misses walk again at most once per
+30 s (two walks in a 240 s boot).
+
+**C23 (`SWIFTCODE_OBJECT_INDEX_PREWARM`, default on, `=0` off)**: at start the
+VMM notes in the index the files of the runtime's
+`System/Library/Caches/com.apple.dyld` and `usr/lib/dyld_sim` under each
+served prefix (first prefix wins, as in the walk): a few `stat` calls.
+A full background walk was tried first and rejected: it took 2–4 s, longer
+than the walk it replaces. The answers are unchanged (the index is checked
+with `stat` before use; unit test `seededCacheFileResolvesWithoutAWalk`).
+In a boot, launchd_sim's first 427 no longer walks; about 50 images run at
+0.75 s instead of 1–2.
+
+### 7.5 Per-process CPU accounting
+
+`getrusage(RUSAGE_SELF)` answered zero and `thread_selfusage` (BSD 482,
+which `clock_gettime(CLOCK_THREAD_CPUTIME_ID)` uses; Libc converts its
+result with the mach timebase) was not implemented. Now: getrusage reports
+the image's host threads' CPU (guest code and the VMM's work for it),
+split into user and system by their tick counts; RUSAGE_CHILDREN reports
+zero; other `who` values EINVAL. `thread_selfusage` reports the calling
+thread's host-thread CPU since the guest thread started there, in guest
+counter ticks.
+
+### 7.6 Results
+
+Six paired rounds on the same build (34e5bb1 + this section), one boot
+slot, the two arms back to back with the order alternating, harness boots
+with the device in RAM, Thor load average 12–22. Base: main-line behaviour
+(`SWIFTCODE_OBJECT_INDEX_PREWARM=0`, inline prebuild); new: C22 + C23.
+
+| Round | Base home_s | New home_s |
+|---|---|---|
+| 1 | 225 | 210 |
+| 2 | 200 | 225 |
+| 3 | 240 | 165 |
+| 4 | 200 | 170 |
+| 5 | 170 | 160 |
+| 6 | 175 | 200 |
+| mean | 202 | 188 (−7 %) |
+
+Four of six rounds favour the new arm; the paired difference (−13 s,
+spread ±37 s) is inside the harness noise, as expected for a change worth
+about 2 × 45 ms per daemon start plus 0.5–1 s once at boot start. The
+mechanism is measured directly: spawn and exec traps 62.5 → 18.1 ms, no
+volume walk at the start of the boot, lone starts 1.0 s shorter. Every
+boot reached the home screen; no host crash; `guest_fatal` 9–13 (base) and
+8–13 (new). C22 and C23 are on by default (`=0` turns each off). Unit
+tests: kernel and ABI suites on the Thor, the full suite on the x86-64
+workstation, the new tests on the Mac.
+
+### 7.7 What remains in SwiftCode's share of a start
+
+- About 8.5 ms per spawn or exec still runs under the kernel lock (loading
+  the executable and `dyld_sim` 4.4 ms, creating vCPU 0 3.2 ms). A
+  prebuilt VM could also carry its vCPU 0 (agent SP-THREADS owns vCPU
+  creation), and the load could move before the lock (C7). The whole image build has since moved
+  off the lock (`bsd-locking.md` §7).
+- Two VMs per daemon start (`xpcproxy_sim`, then the daemon) remain; C8
+  (exec reuses the VM) would halve VM creations.
+- The pacing of PosterBoard's batch and SpringBoard's start-up chain is
+  IPC latency (§6.5, agent SP-IPC), not process starts.
+
+## 8. The critical path of a cold boot and of a first app launch (2026-10-23, agent BOOT-CP)
+
+The case: a device that was booted before **at its own path** (no
+LaunchServices rebuild, `app-launch.md` §4) boots cold. Reference: the Mac
+boots a device again to its home screen in about 21 s; SwiftCode took 45 s
+before this section (frame-profile.md §8.6).
+
+### 8.1 Instrument
+
+The frame profile (frame-profile.md §1–§2) gained a boot window and the
+events a critical path across process starts needs (frame-profile.md §9 has
+the formats):
+
+- `SWIFTCODE_FRAME_PROFILE_BOOT=<max s>` opens window 1 before the root
+  process is spawned (0.3 s after swiftcode-simd started, the device's
+  preparation before) and closes it `SWIFTCODE_FRAME_PROFILE_BOOT_TAIL` s
+  (default 3) after the **home screen** is first seen. Home: two checks of
+  the presented surface in a row in which fewer than 90 % of 70 × 102
+  samples are darker than 24 (the IDE launcher's test, `swiftcode-sim.sh`);
+  a present is checked at most every 50 ms, so the time is exact to about
+  50 ms instead of the harness's 5 s.
+- New events: thread start requests (who asked: a guest thread in a trap,
+  or a host thread), image launches (spawn, exec, launched suspended),
+  contended kernel-lock acquisitions (L0, event lock, port lock: the waiter
+  and the wait), surface checks, the scheduler counters of every vCPU host
+  thread every 200 ms (`SWIFTCODE_FRAME_PROFILE_SCHED_MS`: CPU and run-queue
+  time) and the host thread a guest thread runs on. A thread's trace id
+  carries its image's tag, so a main thread after an exec (same pid, same
+  thread id) is a thread of its own.
+- `SWIFTCODE_HOME_WATCH=1`: only the home-screen check, logged as `home watch:
+  home screen seen N s after swiftcode-simd started`; the timing instrument
+  for A/B boots (no trace).
+- `scripts/swiftcode-frame-profile <window> --boot` walks back from the
+  frame-record write of the first home-screen frame to the window's start;
+  `--launch <program>` from a launch to the frame in which the app shows
+  (the first lasting change of the screen's mean brightness by more than
+  30 after the launch) and to the settled frame. The walk (frame-profile.md
+  §2 item 7) also crosses thread and process starts (a start continues on
+  the thread that asked for it at that moment; a main thread started by a
+  host thread after a start hold is charged "start hold" back to the
+  image's launch), splits trap time into lock waits and service, and splits
+  guest-code and wakeup time into running and waiting for a host CPU (the
+  sampled run-queue share of the host thread). `--backbone P:main` keeps
+  the path on one thread and replaces each of its waits by the waker's
+  critical path back to the wait's start; `--thread`, `--long-ms`,
+  `--anchor`, `--edges` show one thread's time, its long waits, walks from
+  an image launch and the path's hand-offs.
+
+**Why the backbone.** The plain walk from the home frame follows the last
+wakeup of every thread. During a boot most threads that the path reaches
+(SpringBoard's main run loop, runningboardd, backboardd) are woken many
+times by unrelated messages (notifyd notifications, log messages), so the
+walk drifts into whichever busy daemon sent the last one (siriinferenced,
+intelligencetasksd, mobileassetd in three boots). The order of the
+milestones, by contrast, is the same in every boot and matches the Mac's
+(§6.3): SpringBoard asks for PosterBoard, then starts its own Mercury
+poster instance, whose first frame is the lit home screen. SpringBoard's
+main thread is therefore the boot's backbone up to Mercury's launch, and
+the plain walk is used for the last step (Mercury's launch to the frame).
+
+### 8.2 Method
+
+Device `ide-remote/bootcp/dev` (a copy of the pristine device, booted once
+at its path to rebuild its LaunchServices store), cold boots at that path
+on the data volume, profiled (`--profile` of the area's driver: the boot
+window, trace in a memory directory) and unprofiled (home watch only), each
+started with `SX/bin/timed.sh` (no other swiftcode-simd, load under 4, the
+other boot and build slots held). Build: main line f97a84f plus this
+section.
+
+| Boot | Profiled | home_s | swiftcode-simd CPU at home |
+|---|---|---|---|
+| r1 (machine shared, load 4→17) | yes | 42.3 | — |
+| r2q | yes | 32.7 | — |
+| r3q | yes | 33.1 | 305 s (9.2 of 14 cores on average) |
+
+Milestones of r3q (s after swiftcode-simd started; the Mac's from §6.3, counted
+from SpringBoard's spawn):
+
+| Milestone | SwiftCode | Mac |
+|---|---|---|
+| launchd_sim spawns SpringBoard and backboardd | 0.58 | — |
+| SpringBoard asks for PosterBoard (its launch) | 25.75 | SpringBoard + 5.5–7.5 |
+| SpringBoard's Mercury poster instance launched | 31.36 | SpringBoard + 9–11 |
+| first home-screen frame | 33.07 | 15–20 after boot start |
+
+### 8.3 Ranked: the boot critical path (r3q, 33.07 s)
+
+Path: 0.58 s to SpringBoard's launch; SpringBoard's main thread as the
+backbone to Mercury's launch (30.78 s); the walk from Mercury's launch to
+the home frame (1.71 s). Owners: KLOCK (kernel locks), SPAWN (process and VM
+creation), GPU-2 (GPU, shaders, Metal host), CPUFEAT (CPU features: guest
+code on generic paths), BOOT-CP (this agent).
+
+| # | Item | s on the path | Owner |
+|---|---|---|---|
+| 1 | SpringBoard's main thread running guest code (its own start-up: loader and initialization; the Mac's loader alone is 4.9–6.2 s CPU, §6.2) | 14.10 | CPUFEAT (guest code on generic paths) / inherent |
+| 2 | Host CPU oversubscribed: SpringBoard's own threads runnable but waiting for a host CPU | 3.86 | BOOT-CP (start order and host priority) |
+| 3 | Host CPU oversubscribed: diagnosticd's threads runnable after their wakeups, while SpringBoard waited for runningboardd and cfprefsd, which waited for diagnosticd (item 4) | 3.82 | BOOT-CP |
+| 4 | **Log backpressure**: runningboardd, cfprefsd and SpringBoard block in `mach_msg2` sends of log messages (id 0x10000000, send only) on diagnosticd's full queue; diagnosticd's workloop threads hand each message on with wakeups (`launchd-sim.md` §8.1). Its wakeup latency (futex wake, re-taking the event lock) | 1.68 | KLOCK |
+| 5 | the same: diagnosticd's event-lock waits in `kevent_id` | 1.24 | KLOCK |
+| 6 | L0 waits in SpringBoard's own traps (`mach_port_deallocate` 0.20, `fcntl` 0.20, `munmap` 0.16, `thread_get_state` 0.14, `proc_info` 0.12, …) | 1.52 | KLOCK |
+| 7 | Mercury's launch to the home frame (walk: guest code of SpringBoard, iconservicesagent and others 0.81, kernel 0.33, the render server's pacing timer 0.11, GPU completion 0.04) | 1.71 | mixed (GPU-2 0.04) |
+| 8 | Mach IPC trap service (diagnosticd `kevent_id` 0.43, SpringBoard `mach_msg2` 0.18) | 0.67 | KLOCK |
+| 9 | SpringBoard's file traps (`open`, `openat`, `getdirentries64`, `stat64`, `getattrlist`) | 0.55 | BOOT-CP (data volume, runtime volume) |
+| 10 | SpringBoard's memory traps (`mmap` 0.31, `vm_allocate` 0.11, …) | 0.47 | SPAWN (file window, arena) |
+| 11 | Port-lock and other event-lock waits | 0.38 | KLOCK |
+| 12 | swiftcode-simd before the root spawn (device preparation) | 0.31 | BOOT-CP / SPAWN |
+| 13 | launchd_sim's start to SpringBoard's spawn (launchd_sim's worker threads) | 0.27 | SPAWN / inherent |
+| 14 | `posix_spawn` in launchd_sim inside the waits | 0.21 | SPAWN |
+| 15 | SpringBoard's own wakeup latency (its threads handing work to each other) | 0.20 | KLOCK |
+
+Items 2–5, 8 and 11 have one cause on the boot's path: **the boot is
+CPU-bound on the host.** About 190 daemons start in the first 30 s, each
+spending 2–4 s of guest CPU in the loader and its initialization (§5, §6),
+so the host runs 9.2 cores of swiftcode-simd on average to the home screen,
+with 6.9 threads runnable and waiting for a CPU on average (sum of the
+live images' run-queue time over the window). Every guest thread gets an
+equal share of the host: SpringBoard's main thread runs at about 60 % of a
+core, and diagnosticd, which every process's log messages pass through,
+falls behind until its senders block. On the Mac the scheduler runs
+SpringBoard (UI QoS) and boosted daemons ahead of the darwin-bg ones
+(scheduling-policy.md §2–§3).
+
+### 8.4 Ranked: the first launch of Settings and Safari
+
+`--launch com.apple.Preferences` and `--launch com.apple.mobilesafari`
+(ylaunch `open`, `app-launch.md` §9) 20 s after the home screen of a cold
+boot (runs `l1-settings`, `l1-safari`, each started with `timed.sh`; home
+36.2 and 36.9 s); a 30 s frame-profile window opened at the trigger. "App
+visible": the first frame whose mean brightness differs from the previous
+check by more than 30 and stays (Settings: the light list, 123.8 → 253.0;
+Safari: its dark launch frame, 128.5 → 0.1).
+
+| | Settings | Safari |
+|---|---|---|
+| ylaunch's open request (spawn to "launched … pid") | 1.92 s | 1.07 s |
+| trigger → app visible | about 3.0 s (2.60 s from the app's `xpcproxy_sim`; the Settings run's window opened 0.4 s after ylaunch started) | 1.89 s (from ylaunch's start) |
+
+The plain walk (§8.1) is used: a launch is short and has no single
+backbone thread. Its drift into busy daemons is smaller here (healthappd,
+healthd and fitnessintelligenced, 0.2–0.6 s, are runs of the last-wakeup
+rule through daemons that happen to message SpringBoard and backboardd at
+that moment and are not counted as items). Items, in seconds on the path:
+
+| # | Item | Settings | Safari | Owner |
+|---|---|---|---|---|
+| 1 | A **new `MTLCompilerService` instance** started for the launch, then backboardd's shader compiles through it (its loader and start-up are guest code; the compiles are requests from backboardd) | 0.76 | 0.13 (+ the spawn below) | GPU-2 (shaders) / SPAWN (the start) |
+| 2 | **splashboardd** started on demand for the launch image, its loader and work | 0.25 | 0.52 | SPAWN (start) / guest |
+| 3 | The app's own `xpcproxy_sim` → exec → first frame (process start, loader) | 0.05 (+ in item 6) | 0.09 | SPAWN |
+| 4 | Thread starts (vCPU creation) of the new processes' workqueue threads | 0.04 | 0.14 | SPAWN |
+| 5 | Host CPU run queue (the boot's daemons still busy 20 s after home) | 0.19 | 0.07 | BOOT-CP |
+| 6 | Kernel-lock waits and IPC trap service (L0 `fcntl`, event locks) | 0.51 | 0.23 | KLOCK |
+| 7 | File traps (`pwrite`, `open`, `stat64`, `rename`) of the services on the path | 0.28 | 0.21 | BOOT-CP |
+| 8 | GPU completion (host `DispatchWorker` waking backboardd) | 0.06 | 0.02 | GPU-2 |
+
+A first launch is dominated by **processes started on demand for it**
+(the app, splashboardd, a Metal compiler service instance) and their loader
+cost, i.e. by process start (SPAWN) and the shader compiles of the first
+frames (GPU-2); SwiftCode's own scheduling and I/O are under 0.5 s of either
+launch.
+
+
+### 8.5 The log backpressure in numbers (r3q, the 36 s window)
+
+- 129,380 log messages (`mach_msg2`, id 0x10000000, send only) from 127
+  programs, about 3,600 a second; their senders spent **295 thread-seconds
+  blocked** in those sends because diagnosticd's queue was full
+  (runningboardd 27.8 s of the 36 s, cloudd 24.3, healthd 23.2, assistantd
+  21.3, tccd 12.5, mobileassetd 11.5, cfprefsd 4.4). runningboardd and
+  cfprefsd answer SpringBoard during its start-up, which is how the stream
+  reaches the backbone (§8.3 items 3–5).
+- 37,186 of 281,407 wakeups of guest threads woke a thread that went back
+  to sleep in the same trap without returning; nearly all in `mach_msg2`
+  of the blocked log senders (healthd 5,260, cloudd 4,773, runningboardd
+  4,381, …): every receive from a full queue woke every blocked sender, and
+  all but one of them slept again (`mach-ipc.md` §2.9 asks for one).
+- diagnosticd itself did little guest work: during SpringBoard's waits its
+  path was 3.8 s waiting for a host CPU after wakeups, 1.7 s other wakeup
+  latency, 1.2 s event-lock waits and 0.16 s guest code. Its throughput is
+  set by the hand-offs between its workloop threads (`launchd-sim.md` §8.1:
+  every message ends a `dispatch_sync` wait) on a host whose CPUs are all
+  busy.
+
+`scripts/swiftcode-frame-profile <window> --wake-stats --blocked-sends
+0x10000000` counts both from a frame-profile trace.
+
+### 8.6 Changes (BOOT-CP's items)
+
+Each behind a switch; timed boots in `scheduling-policy.md` §7.4.
+
+| Change | Switch | Mechanism, measured | Boot (timed, n = 3) |
+|---|---|---|---|
+| A receive from a full queue wakes only the oldest blocked sender and gives it the slot (`mach-ipc.md` §2.9; was: every blocked sender woke and all but one slept again) | `SWIFTCODE_PORT_SLOT_HANDOFF` (default on, `=0` off) | spurious wakeups in a boot 37,186 → 1,400 (profiled r3q → r4q-hand); thread-seconds blocked in log sends 295 → 257 | 35.4 → 36.4 s: no effect on home_s beyond the spread (diagnosticd's throughput, not the wakeups, limits the senders) |
+| Device runs with thread QoS and the cgroup host backend: the UI path gets the host CPUs first (items 2–3 of §8.3) | `SWIFTCODE_BOOT_PRIORITY=1` (default off; or `SWIFTCODE_SCHED_QOS=1 SWIFTCODE_HOST_SCHED=cgroup`) | backbone run queue: SpringBoard 3.9 → 1.4 s, diagnosticd after wakeups 3.8 → 1.9 s; blocked log sends 196 thread-s | series C 35.4 → 32.5 s (−8 %); series D 34.5 → 31.7, 31.7 and one 64.9 s boot (kernel lock held 41 s: an idle-class holder, `scheduling-policy.md` §7.4), so not on by default then. **On by default for device runs since 2026-10-27** (PRIO-3: lock holders raised to their waiters' class, class 0 weighted, the quiet test's CPU condition; `scheduling-policy.md` §7.5) |
+
+With the final defaults (slot hand-off on, boot priority off) a warm-boot
+cycle through the IDE launcher (`swiftcode-sim.sh`: cold boot, stop with save,
+restore, stop with save) worked: home 40.4 s cold (a copied device), 6.6 s
+restored, both saves written.
+
+Backbone of the QoS boot (`C-prof-qos`, home 32.9 s, SpringBoard's launch
+0.75 s to its Mercury request 31.30 s): SpringBoard guest code 14.3 s,
+host run queue 4.1 s in all (was 8.3–9.7), kernel locks 9.4 s (L0 waits
+in SpringBoard's own `fcntl` 1.0, `mach_msg2` 0.5, `ulock_wake` 0.5,
+`kevent_id` 0.3; diagnosticd's event lock 0.7), diagnosticd's wakeup
+latency 0.9 s.
+
+**Open, by owner.**
+
+- KLOCK: diagnosticd's hand-offs (event-lock waits, wakeup latency of its
+  workloop threads, §8.5) set the log throughput that 120–160 programs
+  wait for; L0 waits in SpringBoard's traps (`fcntl`, `mach_port_deallocate`,
+  `munmap`, `thread_get_state`, `proc_info`); with QoS on, class
+  recomputation deferred to L0 from the IPC fast paths.
+  `getdirentries64` stats every entry by full guest-path resolution (one
+  host `lstat` per path component and entry: 1–2 ms per listing for
+  SpringBoard, locationd, routined); a stat relative to the open
+  directory's host path would cut it (KLOCK has reworked that file).
+- CPUFEAT: SpringBoard's main thread runs 14 s of guest code before it asks
+  for Mercury (the Mac's whole SpringBoard loader is 5–6 s of CPU, §6.2).
+- SPAWN: processes started on demand for a launch (splashboardd, a new
+  `MTLCompilerService` instance, the app) are the largest part of a first
+  launch (§8.4); `posix_spawn` and memory traps on the backbone 0.2–0.5 s.
+- GPU-2: the first frames of a launched app wait for shader compiles in a
+  freshly started `MTLCompilerService` (Settings 0.76 s on the path).
+- BOOT-CP (next): done by PRIO-3 (2026-10-27, `scheduling-policy.md`
+  §4.2, §4.4, §4.6, §4.7, §7.5): kernel-lock holders are raised to their
+  waiters' class, class 0 has a small weight, the quiet test needs an idle
+  host CPU, senders blocked on a full queue push onto the receiving image
+  (send push), classes are recomputed off L0, and `SWIFTCODE_BOOT_PRIORITY`
+  is the default for device runs.
+
+**Questions for the reference** (black-box, for the dirty room; answered
+in §13):
+
+1. The queue limit of `com.apple.diagnosticd`'s service port in a booted
+   simulator device, and whether log senders ever block on it during a boot
+   (SwiftCode: limit as launchd_sim sets it; senders block for 196–295
+   thread-seconds in a 33 s boot).
+2. Messages per second from processes to diagnosticd during the first 30 s
+   of a subsequent boot (SwiftCode: about 3,600).
+
+## 9. Process creation and the host address-space lock (2026-10-23, agent SPAWN)
+
+Main line f97a84f on the Thor. The question: what does creating a guest
+process cost, from the parent's spawn trap to the child's libSystem
+milestone, and which part of it is SwiftCode's.
+
+### 9.1 Instruments
+
+- Per-image table (§1.1), new columns: `req_to_launch_ms` (the parent's
+  spawn or exec trap to the start of the image build), `vm_ms` (the
+  executable check and taking the VM), `load_ms` (the shim, the executable
+  and `dyld_sim`), `vcpu0_ms` (stack, argument block, host page, commpage,
+  thread block, vCPU pool and vCPU 0), `activate_ms` (build start to the
+  image's registration under the kernel lock), `prebuilt` (0 built by the
+  trap, 1 a prebuilt new VM, 2 a reused VM, §9.4), and at the milestone the
+  main vCPU's exits as KVM counts them (`m_kvm_exits`: the difference to
+  `m_user_exits` is exits KVM handled itself, stage-2 faults and
+  interrupts), its WFx exits and the host thread's minor faults.
+- Header: the prebuilt-VM counters (taken, ready at take, built inline,
+  built by the background builder, reused, refused), the time of
+  `ProcessBuilder`, of the spare vCPUs, of `KVM_CREATE_VM` and of VM
+  closes, and the host process's mapping count (`/proc/self/maps` lines;
+  also every tenth line of `<path>.samples`).
+- Outside the repository (agent area on the host): an `LD_PRELOAD` counter
+  of the host process's `mmap`, `munmap`, `mprotect`, `mremap` and
+  `madvise` calls (count and wall time by size class), and a boot harness
+  that boots a RAM copy of the pristine device whose `swiftcode-device-path`
+  names the copy (no LaunchServices rebuild, `app-launch.md` §3.3),
+  screenshots every second, and opens Settings as a one-shot 100 s after the
+  bind (`ylaunch open com.apple.Preferences`).
+
+### 9.2 The per-process timeline
+
+Three profiled boots of the main line (home at 62–70 s); the 516–531 images
+launched before the home screen (means; p50 in brackets):
+
+| Step | Time |
+|---|---|
+| parent's spawn or exec trap → image build starts | 1.5–2.5 ms (0.4) |
+| executable check, VM taken (prebuilt: 99 % ready at take) | 3.3–4.2 ms (0.4–0.7) |
+| load: shim, executable, `dyld_sim` | 22.3–23.5 ms (14.4–15.7; p90 53–57) |
+| stack, host page, commpage, vCPU pool, vCPU 0 | 3.9 ms (1.0–1.2) |
+| whole build (to registration) | 29.5–30.9 ms (17.8–20.1; p90 70–76) |
+| registration → first guest instruction (starts not held) | p50 0.5–0.6 ms, p90 4.5–5.9 ms |
+| first instruction → libSystem milestone | p50 480–500 ms, mean 3.5–4.2 s; guest CPU 0.52 s mean |
+| trap handlers before the milestone | 77–86 ms (39–52), of it kernel-lock wait 23–26 ms |
+| host-kernel CPU before the milestone | 10 ms |
+
+The same program started alone (`--exec backboardd --repeat 6`, the last
+start, warm host): build 2.2 ms, milestone 393–395 ms, handlers 25 ms,
+host-kernel CPU 10–30 ms. So the build is 10× slower inside a boot than
+alone, and so are the trap handlers per trap (14 µs alone, 60–70 µs in the
+boot). Settings opened after the boot: `xpcproxy_sim` built in 16–18 ms,
+Settings in 22 ms, then 3.4 s of guest CPU to its libSystem milestone.
+
+### 9.3 Stage-2 faults are not the cost
+
+- Lone starts with the shared cache in 2 MiB host pages (§9.5, SP4; every
+  hot chunk promoted before the measured start): in-kernel exits before
+  the milestone 3,386 → 2,614 (−770, about half of all in-kernel exits),
+  milestone 393–395 ms → 393–404 ms, guest CPU unchanged. A stage-2 fault on
+  a page the host has mapped costs microseconds, and the guest TLB reach
+  (4 KiB host pages under 16 KiB guest pages) does not show in the
+  loader's guest time.
+- In a boot (`p-hot-1` against `p-base-1/2/3`): in-kernel exits −15 %, home
+  69 s (base 62–70), image builds and file copies slower (the promoter's
+  1,805 `mremap`s run during the boot, §9.4). SP4 stays off.
+- `KVM_PRE_FAULT_MEMORY` (`KVM_CAP_PRE_FAULT_MEMORY`) is not offered by the
+  Thor's kernel (6.8.12-tegra: the capability check answers 0), and the
+  kernel has no read-only file huge pages (`CONFIG_READ_ONLY_THP_FOR_FS` is
+  off) and `shmem_enabled = never`, so the only way to block-map the cache
+  is the anonymous copy of SP4.
+
+### 9.4 Finding: every host mapping change waits 1.5–2.5 ms
+
+All VMs live in one host process, so they share one address space and
+its lock (`mmap_lock`). On arm64 Linux 6.8 every stage-2 fault looks up
+the faulting address's mapping with that lock held for reading, and every
+`mmap`, `munmap`, `mprotect`, `mremap` takes it for writing; `madvise
+(MADV_DONTNEED)` for reading. A waiting writer holds new readers back.
+In the first 60 s of a boot the VMM made about 19,600 writing calls
+(`mmap` and `munmap` of every size class), each waiting 1.2–2.5 ms on
+average (maximum 0.54 s), and 13,400 `MADV_DONTNEED` calls waited 0.45–0.86
+ms. The boot samples show 11–17 host threads in uninterruptible sleep on
+average before the home screen and up to 79 in the launchd burst: vCPU
+threads in `KVM_RUN` waiting for the lock in their stage-2 faults.
+
+The heaviest single writer is VM creation: `KVM_CREATE_VM` registers the
+VM's MMU notifier on the host address space, which in Linux takes the
+address-space lock for writing and then the lock of every mapping of the
+process (`mm_take_all_locks`); with 9,000–20,000 mappings in the host
+process it took 10.7 ms per VM (730 VMs per boot), during which no fault
+of any VM proceeds. A VM's close (its memslots' host memory, the vCPU run
+areas, the MMU notifier's removal) took 45 ms on the supervisor thread.
+Per image build the VMM also mapped and unmapped the executable twice and
+`dyld_sim` once (whole-file `Data(contentsOf:, .alwaysMapped)`), mapped a
+zero tail after each new file in the arena, and created 4+ vCPUs (one
+run-area mapping each).
+
+### 9.5 Changes
+
+**SP1: VM reuse (`SWIFTCODE_VM_REUSE`, default on; `=0` off).**
+When an image ends, its VM is reset and kept for a later spawn or exec
+instead of being destroyed. Under the kernel lock (`GuestImageInstance
+.destroy`) the image's address space is discarded as before and its
+physical backing is *retired*: from then on every operation of the old
+backing refuses (allocations and mappings throw, releases do nothing,
+physical reads and writes throw), so a late call through the old image's
+objects never reaches memory that a later image owns. A VM qualifies
+when its backing registered no memslot after its start (no per-mapping
+file slot, no per-object shared slot) and no restore overlay is mapped,
+and the image was not traced. The background builder (§7.3) then, with no
+lock held:
+
+1. returns the pool's host memory (`MADV_DONTNEED`: zeros again) and the
+   used part of the private file window (below);
+2. resets every vCPU with `KVM_ARM_VCPU_INIT` (KVM allows it after a vCPU
+   ran; the vCPU returns to its reset state, its exit counters restart)
+   and makes it a spare under its id; returns guest RAM (zeros);
+3. builds a new backing over the same memslots (fresh allocators) and new
+   EL1 tables, and puts the VM in the ready list.
+
+The memslots, the VM-wide counter offset and the HVC doorbell filter stay
+(KVM refuses to change the latter two after a vCPU ran; setting the same
+offset again is skipped). Stage-2 entries of the shared arenas that the
+old image used may stay: they map the same host pages at the same GPAs in
+every VM, and the new image reaches them only through stage-1 tables the
+VMM builds for it. Translations the old image's vCPUs left in the TLBs
+of other physical CPUs (same VMID) are dropped twice: KVM invalidates the
+VM's TLB entries when its MMU notifier unmaps the returned RAM and pool
+pages, and a vCPU's boot now invalidates on every PE (`tlbi vmalle1is`,
+`ic ialluis`; `vm-shim-protocol.md` §4 step 6; before, `tlbi vmalle1` on
+the booting PE only).
+At most `SWIFTCODE_VM_REUSE_KEEP` (default 64) VMs wait, ready or being reset;
+more are destroyed as before. A reused VM brings its vCPUs: a new image
+gets as many spares as the old one had, so its thread starts create no
+vCPU until it outgrows them.
+
+*Private window inheritance* (`SWIFTCODE_VM_REUSE_WINDOW`, default on with
+SP1): the window's mappings (writable file mappings over 1 MiB: mostly the
+shared cache's data mappings, 84 MiB on average) are not removed; step 1
+returns them with `MADV_DONTNEED`, which on a private file mapping drops
+the copy-on-write pages and shows the file's bytes again. The next image's
+mapping of the same file range (device, inode, size, modification time,
+offset, length) gets the same window range back with no host call.
+
+**SP2: executable headers without a mapping (default on;
+`SWIFTCODE_EXEC_HEADER_MAP=1` maps whole files as before).** The executable
+check, the executable's load and `dyld_sim`'s load read the fat header,
+the slice's Mach-O header and its load commands with `pread` (all they
+use), cached by device, inode, size and modification time. The answers
+(ENOENT, EACCES, ENOEXEC, EBADARCH, the segments, the entry point) are
+unchanged.
+
+**SP3: a readable arena reservation (default on;
+`SWIFTCODE_ARENA_ZERO_TAILS=0` off).** The shared file arena's reservation is
+readable anonymous memory, so the rest of a file's last 16 KiB granule
+reads as zeros without a zero mapping of its own (one `mmap` less per new
+file). A guest access to an unused arena range now reads zeros instead of
+failing; the VMM maps only file views there.
+
+**SP4: hot-chunk huge pages for the shared cache (`SWIFTCODE_ARENA_HUGE=hot`,
+off).** A background thread promotes each 2 MiB chunk of a huge arena
+span that has a page in the host page cache (`mincore`) into its own
+anonymous 2 MiB-aligned memory (a transparent huge page when one is free:
+the Thor's THP mode is `always`, so no `MADV_HUGEPAGE` and no direct
+compaction, `SWIFTCODE_ARENA_HUGE_MADVISE`) and moves it over the arena chunk
+with `mremap`. It copies only the hot set from the page cache (1,734 chunks,
+3.4 GiB, in 2.2–2.7 s with a warm page cache). §3.4's whole-file copy also
+no longer asks for `MADV_HUGEPAGE` under THP `always` and fills with
+`SWIFTCODE_ARENA_HUGE_THREADS` (default 8) threads. With a cold page cache it
+still reads the part of the cache no process touched from the data drive
+(in a lone start it had not finished after 40 s), which SP4 avoids.
+
+### 9.6 Results
+
+Profiled boots (§9.1 harness, one at a time under `timed.sh`), images
+launched before the home screen:
+
+| | main line (3 boots) | SP1 alone (old binary) | SP1+SP2+SP3 |
+|---|---|---|---|
+| images before home | 516–531 | 526 | 561 |
+| build, mean (p50; p90) | 29.5–30.9 ms (17.8–20.1; 70–76) | 26.7 ms (11.8; 77) | 13.8 ms (6.8; 37) |
+| of it load | 22.3–23.5 ms (14.4–15.7) | 20.7 ms (9.2) | 10.7 ms (4.0) |
+| registration → first instruction, p50 (p90) | 0.5–0.6 ms (4.5–5.9) | 0.7 ms (5.2) | 0.8 ms (6.2) |
+| first instruction p50 (from build start) | 23–26 ms | 18 ms | 13 ms |
+| libSystem milestone p50 (from build start) | 505–526 ms | 413 ms | 397 ms |
+| host threads in D before 60 s, mean | 13.9–15.6 | 11.1 | 9.7 |
+| `KVM_CREATE_VM` / VM closes per boot | 730 / 726 | 299 / 291 | 297 / 265 (437 reused) |
+| writing address-space calls in the first 60–65 s | 19,649 | 16,617 | 11,000 |
+| `munmap` calls | 3,450 | 1,570 | 2 |
+
+Time to the home screen and the Settings launch (the main line merged with
+3aeaa9c; harness boots, device in RAM at its guest path, 1 s frames; four
+pairs under one `timed.sh` each or back to back, the order alternating;
+base = `SWIFTCODE_VM_REUSE=0 SWIFTCODE_EXEC_HEADER_MAP=1 SWIFTCODE_ARENA_ZERO_TAILS=0`,
+new = SP1+SP2+SP3):
+
+| Round | base home_s | new home_s | base Settings frame / open request (s) | new |
+|---|---|---|---|---|
+| 1 | 62 | 61 | 1.3 / 1.0 | 2.5 / 1.2 |
+| 2 | 61 | 59 | 2.4 / 1.2 | 1.3 / 1.0 |
+| 3 | 66 | 59 | 2.4 / 1.2 | 1.3 / 1.0 |
+| 4 | 65 | 62 | 1.6 / 1.2 | 2.3 / 1.0 |
+| mean | 63.5 | 60.3 (−3.3 s, −5 %; every pair −1…−7 s) | 1.9 / 1.15 | 1.85 / 1.05 |
+
+The Settings columns: the first frame of the Settings list after the
+one-shot `ylaunch open` was spawned (1 s frames, so ±1 s), and the open
+request (ylaunch's spawn to its exit after FrontBoard reports the launch).
+The app launch is not measurably shorter at this resolution: its cost is
+the app's own loader work (§9.2, 3.4 s of guest CPU to Settings' libSystem
+milestone; the list is drawn before it finishes loading everything). Every
+boot reached the home screen; no host crash; `guest_fatal` 6–15 (base) and
+5–10 (new). SP1, SP2 and SP3 are on by default.
+
+
+### 9.7 Open items
+
+- About 11,000 writing address-space calls remain in the first minute,
+  each still waiting about 1.2–1.7 ms: shared memory objects made and freed
+  in the shared object arena (`SharedMemory.swift`: one `MAP_FIXED` each
+  way; 5,800 per minute; its run pool recycles only some), new vCPUs' run
+  areas (2,500: thread starts beyond a VM's spares), the private window's
+  first mappings in new VMs, and new VMs (about 270 per boot even with
+  SP1: the keep limit is reached in bursts of exits). Each is a candidate
+  for the same treatment (reuse instead of map and unmap). Owners: the
+  shared object arena (C19, `SharedMemory.swift`) is outside this agent's
+  area.
+- One host process for all VMs is the root cause: every VM's stage-2 faults
+  share one address-space lock with every VMM mapping change. Several host
+  processes (VM groups) would split the lock but not the kernel lock or the
+  shared arenas; not attempted.
+- The loader's guest CPU is unchanged (§5): it is most of a start (p50 about
+  400 ms of 400–520 ms) and of an app launch (Settings: 3.4 s of guest CPU
+  to its libSystem milestone).
+- Stop snapshots at `--timeout-ms` in the first minutes after a cold boot
+  did not settle (2–10 images "ending" for 5–15 s) on the main line
+  (`SX/IDE` tree) and on this branch with SP1 on or off alike; snapshots
+  were checked with `SWIFTCODE_SNAPSHOT_AT_MS` instead: with SP1 on, a
+  snapshot 90 s into a cold boot (265 images, quiesced in 396 ms, 3.1 GiB)
+  restored lazily to the home screen in 10 s; the only guest faults after
+  the restore were the known `fileindexerd` and `intelligencetasksd`
+  crashes (`app-launch.md` §7), as in the cold boot.
+
+## 10. Cold boot on the 2026-11-05 main line: measurements and candidates (agent B3-GPU)
+
+Issue #44 asks for the cold boot within an agreed factor of the reference
+(median 30.1 s against 21.4 s, `lean-boot.md` §9), measured as
+`parity-ladder.md` sets: full boot, every service, a device booted before
+at its own path, home from the home watch.
+
+### 10.1 Conditions
+
+Thor, release builds of the main line at `2d8f51ac` (*base*) and of this
+branch (*tree*: the GPU isolation of `metal-sim-protocol.md` §8.8), one
+copy of the golden device in the agent's own folder, booted three times at
+that path before the series, default switches (start hold, boot
+priority), `SWIFTCODE_HOME_WATCH`, 5 s held after home, no save. Each boot
+started only when no other `swiftcode-simd` ran and the 1-minute load was under
+6, up to 10 minutes of waiting; arms rotated each round. The Thor was
+shared with other agents' builds and Flatpak work all afternoon: the
+1-minute load at each boot's start was 4.2–6.0 (2.2 once) and 10–20 at the
+home screen, so the timed condition of `lean-boot.md` §9 (load under 4) was
+never met, and these medians are not comparable with its 30.1 s; compare
+arms within a series.
+
+### 10.2 Series
+
+| Series, arm | n | median home_s | mean ± sd | range | kernel lock held at home, median |
+|---|---|---|---|---|---|
+| S1 base | 5 | 48.51 | 46.19 ± 4.28 | 40.34–50.43 | 9.6 s |
+| S1 tree | 5 | 40.02 | 40.79 ± 4.46 | 35.66–47.93 | 8.1 s |
+| S1 tree, `SWIFTCODE_HOST_SCHED_BG_CPUS=4` | 5 | 41.12 | 43.13 ± 4.91 | 40.15–51.77 | 8.8 s |
+| S1 tree, `SWIFTCODE_HOST_SCHED_BG_WEIGHT=idle` | 5 | 42.32 | 43.68 ± 2.98 | 40.71–48.02 | 13.0 s |
+| S1 tree, `SWIFTCODE_LOCK_ADMISSION=1` | 5 | 40.30 | 40.86 ± 2.72 | 37.50–44.96 | 7.5 s |
+| S2 base, the tree's pipeline cache copied in | 5 | 40.34 | 40.77 ± 1.30 | 39.40–42.86 | 8.1 s |
+| S2 tree | 5 | 41.25 | 41.27 ± 1.65 | 38.82–43.46 | 8.1 s |
+| S2 tree, empty GPU cache every boot | 5 | 41.78 | 41.47 ± 1.17 | 39.88–42.91 | 8.7 s |
+
+- **The branch does not change the boot**: S2 base 40.34 against tree 41.25
+  (inside one standard deviation). S1's base arm was the series' first
+  boots after the base's caches were made; its pipeline cache still grew
+  by 25 KB a boot, the tree's not; with the tree's cache (S2) the base is as
+  fast as the tree.
+- **The GPU is not on the path, cold or warm** (as `stage8-contract.md`
+  §13.1 found at 240 s boots): with an empty GPU cache at every boot the
+  first frames translated 112 functions (1.8 s) and compiled 110 pipelines
+  (0.25 s, the driver's own cache warm), and home came at 41.78 s against
+  41.25 s. In the profiled boot below the GPU's share of the critical path
+  was 9 ms.
+- **None of the three scheduling candidates helps.** Background threads on
+  4 CPUs and class 0 as `cpu.idle` are slower (the latter holds the
+  kernel lock 13 s by home: idle-class holders); lock admission holds the
+  lock 7.5 s instead of 8.1 s and has the narrowest range, but its median is
+  the tree's. None is made a default.
+
+### 10.3 Where the time goes now (profiled boot `prof1`, home 40.71 s)
+
+`SWIFTCODE_FRAME_PROFILE_BOOT=120`, then `scripts/swiftcode-frame-profile p1.1
+--boot --backbone SpringBoard:main` (§8.1). Load 13–16 during the boot. By
+category on the critical path:
+
+| # | Item | s | §8.3 (r3q, 33.1 s) |
+|---|---|---|---|
+| 1 | SpringBoard's own guest code | 17.6 | 14.1 |
+| 2 | diagnosticd (the log path): waiting for a host CPU after wakeups 6.2, wakeup latency 3.3, event-lock waits in `kevent_id` 2.7, its `kevent_id` service 0.9, its run queue 0.5, other 0.8 | 14.4 | 6.7 |
+| 3 | SpringBoard waiting for a host CPU | 3.8 (+0.3 after wakeups) | 3.9 |
+| 4 | SpringBoard's port-lock waits and `mach_msg2` service | 1.5 | 0.7 |
+| 5 | Workqueue thread starts in SpringBoard | 0.5 | — |
+| 6 | SpringBoard's file and memory traps | 0.7 | 1.0 |
+| 7 | GPU | 0.01 | 0.04 |
+
+The path's shape is §8.3's. What grew is the log path: item 2 doubled, and
+items 2 and 3 are host CPU contention, which the shared host made worse.
+
+### 10.4 The hardware
+
+`scripts/host-probes/cpubench.c` (our C, one thread, `-O2`, best of three):
+the Mac of the reference measurements (Apple M3 Max) against one Thor core
+(pinned, load 13–20 from other work):
+
+| Part | Mac | Thor | Thor ÷ Mac |
+|---|---|---|---|
+| sort 200,000 path strings with `strcmp`, 5 times | 331 ms | 309 ms | 0.93 |
+| hash inserts, 20 M | 273 ms | 357 ms | 1.31 |
+| pointer chase in 1 MiB, 100 M hops | 743 ms | 1,353 ms | 1.82 |
+| unpredictable branches, 400 M | 1,007 ms | 924 ms | 0.92 |
+| all | 2,354 ms | 2,943 ms | 1.25 |
+
+Guest code runs at the Thor's native speed (`guest-cpu.md` §2), so
+SpringBoard's 17.6 s of guest code costs the Mac less in proportion to how
+much of it waits on memory: between 0.92 and 1.82 times less. The Mac runs
+its boot on more and faster cores as well (CPU-bound boots, §8.3).
+
+### 10.5 Agreed factor (proposal) and the next candidates
+
+The boot is CPU-bound on the host; SwiftCode's own overheads that BOOT-CP,
+SPAWN, KLOCK, PRIO-3 and GUEST-CPU measured have been cut, and the GPU is
+off the path. A factor that leaves SwiftCode's remaining overhead visible but
+does not ask the Thor to be a faster computer: **home_s ≤ 1.5 × the Mac's
+21.4 s = 32 s**, measured on a quiet Thor (load under 4 at the start, no
+other boot, `lean-boot.md` §9's method, n ≥ 5). The main line met it on
+2026-10-27 (30.1 s, 1.41 ×). The orchestrator or the owner decides.
+
+Candidates by size on today's path, for the owners named in §8.3:
+
+1. **The log path (KLOCK, scheduling): 6.7–14.4 s.** Every log message is a
+   Mach send to diagnosticd (`launchd-sim.md` §8.1), about 3,600 a second
+   in a boot, and runningboardd and cfprefsd, which SpringBoard waits for,
+   block on its full queue. diagnosticd is an Interactive daemon (its
+   plist's `POSIXSpawnType`), so its threads are not darwin-bg; they wait
+   for host CPUs and for each other. Measuring the reference's queue
+   limit and message rate (§8.6 questions 1–2) decides whether SwiftCode's
+   backpressure is the reference's.
+2. **Host CPU for SpringBoard (scheduling): 4 s.** Boot priority already
+   applies; the three switches of §10.2 did not shorten it.
+3. **SpringBoard's own guest code: 14–18 s.** Native speed; the loader's
+   algorithm (§5). Not SwiftCode's to shorten.
+
+## 11. Plan: a cold boot as fast as the reference (1.0 ×) (agent B3-GPU, 2026-11-05)
+
+The owner set the target: **home_s ≤ 21.4 s** on a quiet Thor under
+`parity-ladder.md`'s conditions (full boot, device booted before at its
+path, load under 4 at the start, no other boot, n ≥ 5, median). The last
+quiet measurement is 30.1 s (`lean-boot.md` §9), so **8.7 s (29 %)** must go.
+This section is a plan only; nothing in it is implemented.
+
+### 11.1 The budget
+
+The critical path measured twice, with the same tool (`--backbone
+SpringBoard:main`, §8.1): BOOT-CP's `r3q` on a quiet host (33.1 s, §8.3) and
+`prof1` on today's shared host (40.7 s, §10.3).
+
+| Item | quiet (r3q) | shared (prof1) |
+|---|---|---|
+| SpringBoard's own guest code | 14.1 s | 17.6 s |
+| The log path through diagnosticd (CPU waits after wakeups, wakeup latency, event-lock waits, `kevent_id`) | 6.7 s | 14.4 s |
+| SpringBoard waiting for a host CPU | 3.9 s | 3.8 s |
+| Kernel-lock and port-lock waits, IPC service in SpringBoard | 2.4 s | 1.5 s |
+| Everything else (spawns, file and memory traps, thread starts, GPU) | 6.0 s | 3.1 s |
+
+The quiet column is the one the target is measured against; the shared
+column shows which items grow under contention (the log path doubles).
+
+### 11.2 Candidates
+
+Savings are estimates for a quiet-host boot, from the profile; each needs
+an A/B series (n ≥ 5 per arm, arms alternated, quiet Thor) before it
+counts.
+
+| Rank | Candidate | Expected saving | Risk | What to measure |
+|---|---|---|---|---|
+| 1 | **The log path.** Every `os_log` message is a send-only Mach message to diagnosticd (about 3,600 a second in a boot); runningboardd and cfprefsd, which SpringBoard waits for, block on its full queue (§8.5). Options, cheapest first: (a) a send-only message to a port whose receiver waits in a workloop hands off without the event lock and without a full wakeup round trip (the KLOCK items of §8.6); (b) diagnosticd's receive threads get a host CPU first while senders are blocked on its queue (send push exists; extend it to the host class of the receiving workloop thread); (c) if the reference's queue limit is larger than the one launchd_sim sets in SwiftCode (§8.6 question 1), match it | 3–6 s (most of 6.7 s; the queue limit alone is unknown) | Medium: IPC ordering and wakeups (lost wakeup, message order per port), lock order | `--blocked-sends 0x10000000` thread-seconds (196–295 s today), the log path's share of the backbone, home_s; message rate and queue limit on the reference (dirty room, §8.6 questions 1–2) |
+| 2 | **SpringBoard's CPU wait.** Its threads wait 3.9 s for a host CPU while about 190 daemons start. Reserve host CPUs for the UI class while the boot runs (a cpuset for the UI path, the rest for the others), or hold more of the non-UI starts until home. `SWIFTCODE_HOST_SCHED_BG_CPUS=4` and `cpu.idle` for class 0 did not help (§10.2), so the next try is the reverse: give SpringBoard, backboardd and their direct servers dedicated CPUs | 1–3 s | Low–medium: starving the daemons SpringBoard waits for (runningboardd, cfprefsd, diagnosticd) moves the time instead of removing it | the backbone's run-queue items, home_s, the hold's release reasons |
+| 3 | **Native mode** (`native-mode.md`): guest processes as Linux processes, system calls as function calls, no global lock for process-local work. **Stage 1 measured (§11.5, `native-mode.md` §10)**: a process-local call 30 × cheaper, but on the path it removes only trap service, process-local lock waits, spawns and wakeups | 1.4–7.1 s (central about 4), of which 2.2–3.6 s no other rank reaches; only once stages 2–5 exist | High: months of work, foreign code in the runtime's process, signal emulation, cross-process Mach semantics, a second code path | done: stage 1's per-call costs against the micro-VM (§11.5) |
+| 4 | **SpringBoard's guest code** (14.1 s): dyld_sim's loader and SpringBoard's own start-up at native speed (§5, `guest-cpu.md` §2). SwiftCode's share is memory translation: file-backed memory is 4 KiB at stage 2; a hugetlbfs pool or `shmem_enabled = advise` (root on the Thor) would let the shared cache be block-mapped (`guest-cpu.md` §8) | 0.5–1.5 s | Low (needs the owner for root) | DTLB walks and cycles of SpringBoard to its Mercury request (`pmustat -g`), home_s |
+| 5 | **The Thor's core gap** (§10.4): one Thor core is 1.25 × slower than the Mac's on loader-like work overall (0.92 × on branches and string sorting, 1.82 × on memory latency). Not closable in software; it sets a floor | — | — | the same `cpubench` on any new host |
+
+### 11.3 What 1.0 × requires
+
+Ranks 1, 2 and 4 together give about 4.5–10.5 s; the middle of that range
+reaches 21.4 s only if the log path gives most of its 6.7 s. The core gap
+weighs on the 14 s of guest code: at the Mac's speed for memory-bound work
+it would be about 10 s, so with the same work as the Mac and today's
+overheads the Thor cannot reach 1.0 ×; SwiftCode has to remove overheads the
+Mac also has a little of (the log back-pressure, CPU contention) to make up
+for it. Native mode (rank 3) is the only candidate whose saving grows with
+the number of traps and processes, so it is the long-term route if ranks
+1, 2 and 4 stop short.
+
+### 11.4 The next wave
+
+1. **The log path, measured and cut** (rank 1): a frame-profile series on a
+   quiet Thor with `--blocked-sends` and the backbone, then option (a) behind
+   a switch, A/B n ≥ 5; in parallel the dirty room answers §8.6's two
+   questions about the reference (queue limit, message rate), which decide
+   option (c).
+2. **Native mode stage 1** (rank 3): the single-threaded native runner of
+   `native-mode.md` §9, with its per-call numbers against the micro-VM, so
+   that the size of the long-term route is measured before anyone commits to
+   stages 2–5. *Done (B3-NATIVE, §11.5): not continued toward 21.4 s.*
+
+Both need a reserved Thor for their timed series (no other agents' boots
+or builds): today's shared host adds 10 s to a boot (§10.1) and makes a
+2 s gain invisible.
+
+### 11.5 Native mode, measured (agent B3-NATIVE, 2026-11-05)
+
+The stage-1 implementation is on the long-lived `native-mode` branch, not
+on the main line (owner's decision, 2026-11-05: iterate on it across
+betas). The measurements below were made from that branch.
+
+Stage 1 of `native-mode.md` §9 exists (`native-mode.md` §10): `ycnative`
+runs SwiftCode's macOS userland programs as plain Linux processes, behind
+`SWIFTCODE_NATIVE=1` for `swiftcode-simd --macos` (off by default; the micro-VM
+path is unchanged). The guest's `svc` sites in SwiftCode's images become
+function calls, the program's own go through seccomp, and the TLS reads are
+rewritten at load time (`TPIDRRO_EL0` → `TPIDR_EL0`, one word each, no run
+time cost, no kernel patch). All six Milestone A samples and `nt_probe`
+pass in both modes.
+
+Medians of 7 runs, the same binaries in both modes, the same four Thor
+cores, under the boot-timing lock (`native-mode.md` §10.5–§10.6):
+
+| | micro-VM | native | ratio |
+|---|---|---|---|
+| `getppid` (a BSD call that does some work) | 4.31 µs | 136 ns | 31.7 |
+| a Mach trap with no work | 4.25 µs | 15 ns | 289 |
+| file call (`open`/`fstat`/`pread`/`close`) | 6.88 µs | 553 ns | 12.5 |
+| stray `svc` (seccomp) | 4.28 µs | 957 ns | 4.5 |
+| first write to a fresh 16 KiB page | 319 ns | 274 ns | 1.2 |
+| thread hand-off | 10.4 µs | 4.6 µs | 2.3 |
+| `hello` start to exit | 77 ms | 4.9 ms | 15.7 |
+
+A Swift personality would add 16–19 ns per call (the heavy entry: the TLS
+switch and the FP registers).
+
+Applied item by item to the quiet critical path of §8.3, stages 2–5 would
+save **1.4–7.1 s (central about 4 s)**; 2.2–3.6 s of it is what no other
+rank reaches (trap service and the global lock of process-local calls,
+spawns, wakeups), the rest overlaps ranks 1 and 2 (`native-mode.md`
+§10.7). That does not make 8.7 s on its own, and it costs months of
+high-risk work (§10.8–§10.9: stage 2 alone about 2–3 agent-weeks).
+**Recommendation: do not continue native mode toward 21.4 s.** Ranks 1, 2
+and 4, and the micro-VM's own lock work on the process-local traps of
+§8.3 item 6, are cheaper ways to the same items. Stage 1 stays behind its
+switch as the measured base.
+
+## 13. Reference logging path (agent B3-SIMOBS, 2026-11-05)
+
+Black-box answers to the questions of §8.6 and §11.2 item 1 about the
+reference: how fast the guest's processes log during a boot, where the
+messages queue in diagnosticd, what happens when the queues fill, and how
+long the boot takes on this Mac.
+
+### 13.1 Conditions
+
+| Item | Value |
+|---|---|
+| Host | arm64 Mac, 14 cores, 36 GB, macOS 27.2 (26B5112a), Xcode 27.1 (27A9269) |
+| Runtime and device | iOS 27.1 (24A94401), iPhone Duo: the runtime and device type of SwiftCode's golden device and of `parity-ladder.md` §2 |
+| Devices | a new device per run (`swiftcode-test-simobs-boot-1` … `-5`), first boot to the home screen, `simctl shutdown`, 3 s, then the measured **second (subsequent) boot**, all headless (`simctl bootstatus -b`); a sixth, untimed probe boot (§13.4) on another throwaway device |
+| End point | `home_s` of `parity-ladder.md` §1 (first primary-display screenshot with mean brightness > 60, polled about once a second). In 4 of 5 boots the Settings icon and the wallpaper appeared in the same screenshot; in run 3 the icons came 3.9 s earlier (23.9 s) |
+| Counters | diagnosticd's own Mach receive counter (`top -stats msgrecv`, every 1–3 s; the host was too loaded for 1 s), its port space (`lsmp`, about 8 samples a second: `qlimit` and `msgcount` of every receive right), its thread priorities (`ps -M`, every 0.5 s); the device's log store read afterwards with `simctl spawn … log show --info --debug` (every event with its process and timestamp) |
+| Host load | **Very high**: 1-minute load average 463–690 at the boot starts (other agents' builds, an Android emulator, VMs); no other simulator device booted. The times are therefore slower than `parity-ladder.md` §3.1's (load 4–10); the rates per second are counts and less sensitive |
+
+### 13.2 Time to the home screen
+
+| Run | home_s | bootstatus_s | diagnosticd running at | load (1 min) at start |
+|---|---|---|---|---|
+| 1 | 25.7 | 14.2 | 1.8 s | 576 |
+| 2 | 29.0 | 13.8 | 1.7 s | 547 |
+| 3 | 27.8 | 12.8 | 1.2 s | 690 |
+| 4 | 30.0 | 10.9 | 2.3 s | 573 |
+| 5 | 24.7 | 8.4 | 1.7 s | 463 |
+| **median** | **27.8** (mean 27.4 ± 2.2) | 12.8 | 1.7 s | — |
+
+`parity-ladder.md` §3.1 measured 21.4 ± 2.3 s for the same boot on a much
+less loaded host; both are reference figures, and 21.4 s stays the one to
+compare SwiftCode's 30 s with (`lean-boot.md` §9), because the host load here
+was 50–100 times higher.
+
+### 13.3 Message rate
+
+diagnosticd receives **one Mach message per log event**: its receive
+counter tracks the number of events the log store holds for the same
+interval (activity-creation events included) to within 0.2–2 k messages
+(1–7 %), a constant offset made by the events logged before diagnosticd
+was running. So the reference's processes forward every message to
+diagnosticd during the boot, as in SwiftCode (`launchd-sim.md` §8.1). The
+log filter it writes is the same as in SwiftCode:
+`DEV/data/Library/Preferences/Logging/com.apple.diagnosticd.filter.plist`,
+`global` = 0x9_0007_0000 (38 655 164 416), and its own log records the
+same system-mode client of itself (mode 0x9, empty filter).
+
+| Measure (second boot) | Runs 1–5 | Median |
+|---|---|---|
+| Events in the first 30 s | 77 510, 80 872, 90 602, 87 128, 99 396 | 87 128 |
+| **Mean rate, first 30 s (messages/s)** | 2 584, 2 696, 3 020, 2 904, 3 313 | **2 904** |
+| Median of the 1-s counts, boot start to home | 2 720, 2 768, 2 961, 2 769, 3 348 | 2 769 |
+| **Peak 1-s count** (in the first 10–15 s) | 6 041, 6 152, 7 705, 5 459, 9 492 | **6 152** |
+| diagnosticd's receive counter at home | 83 224 … 89 861 | about 89 000 |
+| Programs that logged before home | 129, 150, 162, 161, 160 | 160 |
+| After home (30–60 s) | 50–400 a second, falling | — |
+
+SwiftCode's 3 600 a second (§8.5) is within the reference's range; the
+message volume is not the difference.
+
+By process (boot start to home; medians over the 5 runs):
+
+| Process | Messages | Share | Mean/s | Peak 1-s | Median 1-s |
+|---|---|---|---|---|---|
+| runningboardd | 12 404 | 14.0 % | 418 | 1 513 | 299 |
+| SpringBoard | 11 525 | 13.4 % | 400 | 2 391 | 109 |
+| PosterBoard | 4 110 | 4.6 % | 147 | 1 183 | 0 |
+| launchd_sim | 4 107 | 4.6 % | 138 | 575 | 95 |
+| locationd | 3 379 | 3.9 % | 122 | 1 130 | 25 |
+| cfprefsd | 2 962 | 3.5 % | 103 | 274 | 100 |
+| sharingd | 2 368 | 2.7 % | 85 | 1 263 | 0 |
+| apsd | 1 843 | 2.3 % | 71 | 540 | 18 |
+| chronod | 1 784 | 2.3 % | 72 | 601 | 3 |
+| mobileassetd | 1 804 | 2.2 % | 62 | 773 | 0 |
+| callservicesd | 1 703 | 2.0 % | 61 | 880 | 0 |
+| UserEventAgent | 1 580 | 1.9 % | 60 | 356 | 2 |
+
+Most senders log in short bursts (median 1-s count 0); runningboardd,
+SpringBoard, cfprefsd and launchd_sim log steadily through the boot.
+
+### 13.4 Where the messages queue, and the queue limit
+
+diagnosticd's port space during a boot (`lsmp`, all 5 runs and the probe
+boot):
+
+| Receive right | Count | `qlimit` | Held as a send right by |
+|---|---|---|---|
+| The service port (`com.apple.diagnosticd`; flags guarded, strict, importance) | 1 | **16** | 156 of the device's 177 processes |
+| **One receive right per client connection** (importance flag) | 134–166 (one per connected process; grows with the boot) | **6** | exactly one process each |
+| Others (notifyd's, diagnosticd's own, 4 unused) | 6 | 5 or 16 | 0–1 |
+
+- The log messages queue on the **per-connection** receive rights, not on
+  the service port: every receive right seen full had exactly one sender
+  process holding a send right to it (28 of 28 in the probe boot), and the
+  service port's queue held at most one message in any sample.
+- **The per-connection queues fill.** In 23–29 % of the samples from boot
+  start to home at least one connection queue held 6 of 6 messages
+  (msgcount = qlimit); per run 56–83 full-queue observations. The messages
+  queued in all of diagnosticd's ports together: median 1–2, maximum
+  23–51. The connections seen full in the probe boot belonged to
+  runningboardd (9 observations), SpringBoard (7), chronod (4), locationd,
+  sharingd (3 each), and 23 other processes (1–2 each); cfprefsd's was full
+  once.
+- **Senders block; nothing is dropped.** No message is lost: the receive
+  counter equals the store's event count (§13.3), the store shows no loss
+  events, and neither diagnosticd's nor logd's own log
+  (`DEV/data/var/db/diagnostics/{diagnosticd,logd}.0.log`) reports a drop,
+  quarantine or throttle. Call-stack samples (`sample`, 1 ms, 2 s) of
+  senders during the boot show the send in the kernel's message send
+  under the log-streaming path (`_os_log_impl_stream` →
+  `_xpc_send_serializer` → `mach_msg2_trap`), i.e. a blocking send:
+  runningboardd at 4 s: 15 of about 1 500 samples of its busiest thread
+  (1 %); at 19 s: 67 (about 4 %); cfprefsd at 9 s: 1 of 1 758. So the
+  reference's senders do wait on diagnosticd, but briefly: a few percent of
+  a thread's time, against runningboardd's 27.8 s of 36 s in SwiftCode (§8.5).
+- SpringBoard at 14 s spent 402 of its home-screen queue's 1 045 samples in
+  the log-streaming path, only 17 of them in the send: the stream costs the
+  sender CPU (formatting and encoding each message), not waiting.
+- **The limit itself is the guest's**: per-connection queues of 6 and a
+  service port of 16 on the reference. SwiftCode's guest software is the same,
+  so a per-connection queue limit in SwiftCode that differs from 6 would be
+  SwiftCode's port code, not launchd_sim's setting; compare with the
+  `MACH_PORT_LIMITS_INFO` of the same rights in a SwiftCode boot.
+
+### 13.5 diagnosticd's threads and the host end
+
+- **No elevated priority.** `ps -M` over the boot (about 45 samples per
+  run, up to 34 threads): 31 in 87–96 % of thread samples, 28–30 otherwise
+  (timeshare decay), and 36, 37, 46 or 47 in 1–5 thread samples per run
+  (short overrides while a higher-priority sender waits). 31 is the
+  default QoS priority; no thread runs at user-interactive (47) or
+  user-initiated (37) priority for more than a sample.
+- The receiving threads are dispatch workloop threads, as in SwiftCode
+  (`launchd-sim.md` §8.1): idle samples of diagnosticd show its message
+  handler waiting in `dispatch_sync` for its own queue (`kevent_id`).
+- **The host end exists on the Mac.** `/private/var/run/.sim_diagnosticd_socket`
+  (owner root:daemon) is a socket of the host's `com.apple.diagnosticd`
+  launchd job (`launchctl print system/com.apple.diagnosticd`: `sockets`,
+  path as above). The host's diagnosticd (root) starts on demand about 1 s
+  after the simulator's diagnosticd starts and connects; during the first
+  boot of the exploratory device it used 38 s of CPU in 2.5 min, the
+  simulator's diagnosticd 50 s. So on the Mac the simulator's whole log
+  stream is forwarded and consumed on the host during the boot (SwiftCode
+  leaves its host end off by default, `launchd-sim.md` §8.1).
+- The device also runs its own `logd` (store in
+  `DEV/data/var/db/diagnostics/`, with `logdata.statistics.0.jsonl`, logd's
+  byte counts per process at each file rotation).
+
+### 13.6 Consequences for SwiftCode
+
+1. The message rate is the same (2 900/s reference, 3 600/s SwiftCode); SwiftCode
+   must not reduce it, it must carry it.
+2. The reference's senders block on full 6-message per-connection queues
+   too, but for 1–4 % of a sender thread's time; in SwiftCode runningboardd
+   blocked 77 % of the boot (§8.5). The difference is diagnosticd's
+   drain rate per connection, i.e. the cost of one receive and wake-up in
+   SwiftCode (§11.2 item 1, options a and b), not the queue limit.
+3. Option (c) of §11.2 item 1 (match the queue limit) has nothing to match
+   if SwiftCode's per-connection rights also have `qlimit` 6; check that first.
+4. Priority: the reference gives diagnosticd's threads no standing boost;
+   (b) of §11.2 item 1 is a SwiftCode-specific remedy, not parity.
+
+## Evidence
+
+| Claim | Level | Source |
+|---|---|---|
+| Per-thread CPU, guest time, run-queue wait in `/proc/<pid>/task/<tid>/{stat,schedstat}` | 1 | proc(5), Linux scheduler statistics documentation |
+| KVM binary statistics (`KVM_GET_STATS_FD`, `exits`, `wfi_exit_stat`, `wfe_exit_stat`) | 1 | Linux KVM API documentation §4.133 |
+| Memslot changes wait for an SRCU grace period; KVM follows host mappings through MMU notifiers | 1, 3 | Linux KVM API documentation (KVM_SET_USER_MEMORY_REGION); holder samples `D __synchronize_srcu` in our trap profile |
+| `mremap` with `MREMAP_FIXED` replaces the target range | 1 | mremap(2) |
+| Stage-2 block mappings for THP-backed memory | 1 | Linux KVM arm64 documentation; Arm ARM (stage-2 block descriptors) |
+| What `loadDependents`, `matchesPath`, `getLoader` and the mach_o image and header classes do (§5.2) | 1 | apple-oss-distributions/dyld (`dyld/JustInTimeLoader.cpp`, `dyld/Loader.cpp`, `mach_o/Image.cpp`) |
+| Function names at the sampled `dyld_sim` offsets (§5.2) | 4 | `dyld_sim`'s symbol table (`llvm-nm`); no disassembly |
+| Guest speed, AMFI 0xFD experiment (§5.3) | 3 | `p_cpu` in the guest and on the host; one `--exec` run with an experimental host-stub build |
+| Timings and counts in §2 and §4 | 3 | Boot profiles of harness boots on the Thor (`SX/PROF/runs`, `SX/PROF/c*/runs`) |
+| Mac image counts, loader CPU, process timelines, PosterBoard and runningboardd log lines (§6.2, §6.3) | 3 | `p_load`/`libp_loadtap.dylib` with `simctl spawn`; `ps` polling; `launchd.log`; `simctl spawn … log show` on throwaway devices |
+| The Mac's simulator cache is the runtime's own prebuilt file; its header flags (§6.1) | 2 | Directory listing of the runtime and `/Library/Developer/CoreSimulator/Caches/dyld`; header field at 0xDC (`macho-and-dyld-cache.md`) |
+| SwiftCode timelines and trap profiles (§6.3–§6.5) | 3 | Harness boots `SX/PROF2/runs/k1–k9`, `m1–m3`, `o1–o3`; guest `log stream` one-shots |
+| Same lookup branch on both platforms (§6.2) | 1 | apple-oss-distributions/dyld `dyld-1378`: `Loader::getLoader` (simulator branch), `JustInTimeLoader::makeJustInTimeLoaderDyldCache`, `JustInTimeLoader::matchesPath` |
+| Spawn-trap costs, starts in progress, lone-start splits, object walks (§7) | 3 | Boot profiles with `SWIFTCODE_BOOT_PROFILE_TRAPS` (`SX/SPSPAWN/runs/p1–p4`, `SX/PROF2/runs/k4`), `--exec` runs (`SX/SPSPAWN/probes`) |
+| Boot critical path, milestones, backbone attribution, CPU and run-queue totals (§8) | 3 | profiled cold boots `ide-remote/bootcp/runs/r1`, `r2q`, `r3q` of SwiftCode's simulator on the Thor (frame-profile windows, black-box observation of the guest's traps and wakeups) |
+| Changes and their timed boots (§8.6) | 3 | `ide-remote/bootcp` series C and D (`timed.sh`), profiled `r4q-hand`, `C-prof-qos` (SwiftCode's simulator on the Thor) |
+| xnu hands a freed queue slot to one woken sender; send turnstiles push blocked senders' priority onto the receiver (§8.6) | 1 | xnu `osfmk/ipc/ipc_mqueue.c`, `ipc_port.c` (open source) |
+| The log messages' Mach id 0x10000000 and the blocked sends to diagnosticd (§8.3 item 4) | 3 | the same traces (`mach_msg2` arguments: id, send-only options); `launchd-sim.md` §8.1 |
+| Per-image creation timeline, address-space call counts, VM counts and reuse (§9) | 3 | Profiled boots `SX/SPAWN/runs/p-base-1…3`, `p-hot-1`, `p-reuse-1`, `p-new-1` with the `LD_PRELOAD` counter; lone starts `SX/SPAWN/probes` |
+| arm64 KVM looks up the faulting address's mapping under the address-space lock (read) in a stage-2 fault; `KVM_CREATE_VM` registers an MMU notifier, whose registration takes the address-space lock for writing and every mapping's lock (`mm_take_all_locks`) | 1 | Linux 6.8 sources (`arch/arm64/kvm/mmu.c` `user_mem_abort`, `mm/mmu_notifier.c`), Linux KVM API documentation |
+| `KVM_ARM_VCPU_INIT` may be called again after a vCPU ran and resets it; `KVM_ARM_SET_COUNTER_OFFSET` and the SMCCC filter cannot change once a vCPU ran | 1 | Linux KVM API documentation (4.82, 4.141, `KVM_ARM_VM_SMCCC_FILTER`) |
+| `MADV_DONTNEED` on a private file mapping drops the copy-on-write pages and shows the file's bytes again; on anonymous memory, zeros | 1 | madvise(2) |
+| `tlbi vmalle1is` invalidates the stage-1 entries of the current VMID on every PE of the inner shareable domain | 1 | Arm Architecture Reference Manual (TLBI VMALLE1IS) |
+| No `KVM_CAP_PRE_FAULT_MEMORY` on the Thor; THP `always`, `shmem_enabled = never`, no `CONFIG_READ_ONLY_THP_FOR_FS` | 3 | `KVM_CHECK_EXTENSION` on `/dev/kvm`, `/sys/kernel/mm/transparent_hugepage/*`, `/proc/config.gz` |
+| `thread_selfusage` returns mach absolute time; `CLOCK_THREAD_CPUTIME_ID` and `CLOCK_PROCESS_CPUTIME_ID` use it and `getrusage` (§7.5) | 1 | apple-oss-distributions/Libc `gen/clock_gettime.c`; xnu `bsd/kern/kern_resource.c` (getrusage fills `ru_utime`/`ru_stime`) |
+| Series S1, S2, profiled boot `prof1`, pipeline-cache growth (§10.1–§10.3) | 3 | B3-GPU's Thor runs (`ab-S1`, `ab-S2`, `prof1`: home-watch lines, exit summaries, `SWIFTCODE_METAL_STATS` lines, `scripts/swiftcode-frame-profile`) |
+| diagnosticd's `POSIXSpawnType` is Interactive (§10.5) | 2 | its launchd plist in the runtime, read as a property list |
+| Single-thread speed of the Mac and the Thor (§10.4) | 3 | `scripts/host-probes/cpubench.c` on both machines |
+| Reference home_s, bootstatus_s, load (§13.2) | 3 | `research/dirty/simobs` boot runs: `simctl bootstatus -b`, `simctl io … screenshot --display=primary` brightness, host load average |
+| Message rate, per process, one message per event (§13.3) | 3 | diagnosticd's `msgrecv` (`top`), `simctl spawn … log show --info --debug --style ndjson` event timestamps; the filter plist read as a property list (2) |
+| Receive rights, `qlimit` 16 and 6, full queues, owners (§13.4) | 3 | `lsmp` of diagnosticd and of every device process (send rights matched by object id) |
+| Blocking sends on the log-streaming path (§13.4) | 4 | `sample` call stacks of runningboardd, cfprefsd and SpringBoard (public function names only) |
+| No loss, no quarantine (§13.4) | 3 | counter against store; event types in the store; `diagnosticd.0.log`, `logd.0.log` |
+| Thread priorities (§13.5) | 3 | `ps -M` |
+| Host end of `.sim_diagnosticd_socket` (§13.5) | 3 | `launchctl print system/com.apple.diagnosticd`, `ps`, `ls -l` |
+| Native mode stage 1, per-call costs and whole-program times in both modes (§11.5) | 3 | B3-NATIVE's series `s2` on the Thor (`ycnative`, `nt_bench`, `nt_probe`, Milestone A samples; `native-mode.md` §10) |
+
+Level 5 was not used. `.claude/Xcode.app`, `research/dirty/` and Ghidra
+were not opened.
+§13 is a dirty-room observation (agent B3-SIMOBS): Apple's simulator ran
+only as a black box through `simctl`, `top`, `lsmp`, `ps`, `log` and
+`sample` on devices named `swiftcode-test-simobs-*`, which were deleted
+afterwards; no binary was disassembled or decompiled. Its raw data stays in
+the git-ignored `research/dirty/simobs/`.

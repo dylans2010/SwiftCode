@@ -1,0 +1,213 @@
+# Spec: `project.pbxproj`
+
+Status: **implemented** in `swiftcode/Sources/SwiftCodeProject`. 22 of 22 Xcode-written
+corpus files round-trip byte for byte (objectVersion 46, 70, 77, 90, 110).
+
+## Container
+
+`Name.xcodeproj/` is a directory. It contains `project.pbxproj` and the
+optional `project.xcworkspace/`, `xcshareddata/` (shared schemes) and
+`xcuserdata/` (per-user state). This spec covers only `project.pbxproj`.
+
+## Syntax
+
+The file is an OpenStep plist (see `openstep-plist.md`). Its first line is
+`// !$*UTF8*$!`, which marks the encoding.
+
+The top-level dictionary has these keys, written in sorted order:
+
+| Key | Meaning |
+|---|---|
+| `archiveVersion` | Always `1` |
+| `classes` | Always empty |
+| `objectVersion` | Format version (46 = Xcode 3.2 compatible, 77 = Xcode 16, 90 = Xcode 26/27 default for new projects, 110 seen with `preferredProjectObjectVersion = 77`) |
+| `objects` | Map from object ID to object dictionary |
+| `rootObject` | ID of the `PBXProject` |
+
+An object ID is a string of 24 uppercase hex digits. Each object has an `isa`
+key that holds the class name.
+
+## Canonical layout (what Xcode writes)
+
+1. Line 1: `// !$*UTF8*$!`. Line 2: `{`. Each top-level key is written as
+   `\tkey = value;`.
+2. `objects` is written as `\tobjects = {` and then one section for each
+   distinct `isa`. Sections are sorted by class name in literal code-unit
+   order. Each section is:
+
+       <empty line>
+       /* Begin ISA section */
+       \t\tID /* comment */ = {...};
+       /* End ISA section */
+
+   Objects in a section are sorted by ID. After the last section comes
+   `\t};`. There is no empty line before it.
+3. Object bodies are written on multiple lines. `isa` is first, and the other
+   keys follow in sorted order. Each nesting level adds one tab. Arrays are
+   written as `(` + `item,` lines + `)`. Dictionaries are written as `{` +
+   `key = value;` lines + `}`. Empty containers are `(\n<tabs>)` and
+   `{\n<tabs>}`.
+4. **Single-line classes:** `PBXBuildFile` and `PBXFileReference`. Older
+   writers (the Xcode 16 era, objectVersion 70) also write
+   `PBXFileSystemSynchronizedRootGroup` on one line. The inline forms are
+   `{k = v; k2 = v2; }`, `(a, b, )`, and the empty forms `{}` and `()`.
+5. Nested dictionaries also have sorted keys. Arrays keep their order.
+6. The file ends with `\trootObject = ID /* Project object */;\n}\n`.
+
+## String quoting
+
+A string is written without quotes only if all of these are true:
+
+- It is not empty.
+- Every character is in `[A-Za-z0-9_$/:.]`.
+- It does not contain `//`.
+- It does not contain `___`.
+
+Otherwise the string is written in double quotes with these escapes:
+`\\`, `\"`, `\n`, `\t`, `\r`, `\a`, `\b`, `\f`, `\v`. Other control characters
+are written as `\UXXXX`. Non-ASCII characters are written as raw UTF-8.
+
+`-` and `+` always cause quoting, so the bundle identifier
+`org.example.Hello-World` is written in quotes.
+
+## Reference comments
+
+When a string value (or an array element) is the ID of an object in the
+table, it is written as `ID /* comment */`. Exception: the values of
+`remoteGlobalIDString` and `TestTargetID` never get a comment. If the comment
+for an object is *none*, the bare ID is written. Example: the main group,
+which has no name or path.
+
+| isa | Comment |
+|---|---|
+| `PBXProject` | `Project object` |
+| `PBXBuildFile` | `<comment of fileRef, or of productRef> in <comment of the build phase that lists it>` |
+| `PBXFileReference`, `PBXGroup`, `PBXVariantGroup`, `XCVersionGroup`, `PBXReferenceProxy`, `PBXFileSystemSynchronizedRootGroup`, targets | `name`, otherwise `path`, otherwise none |
+| Build phases | `name`, otherwise the default: Sources, Frameworks, Resources, Headers, CopyFiles, ShellScript, Rez, AppleScript |
+| `XCConfigurationList` | `Build configuration list for <owner isa> "<owner name>"`. When the owner is the `PBXProject`, the name is the `.xcodeproj` file name without the extension. The project's name is not stored anywhere in the file. |
+| `XCBuildConfiguration` | *Newer writers:* `<name> configuration for <owner isa> "<owner name>"`. *Older writers:* `<name>` |
+| `PBXContainerItemProxy`, `PBXTargetDependency` | the class name |
+| `XCSwiftPackageProductDependency` | `productName` |
+| `XCRemoteSwiftPackageReference` | `XCRemoteSwiftPackageReference "<last URL path component without .git>"` |
+| `XCLocalSwiftPackageReference` | `XCLocalSwiftPackageReference "<relativePath>"` |
+| `PBXFileSystemSynchronizedBuildFileExceptionSet` | *Newer:* `Exceptions for "<owning group comment>" folder in "<target comment>" target`. *Older:* the class name |
+
+### Writer generations
+
+The comment style depends on the Xcode release that last saved the file.
+Neither `objectVersion` nor `compatibilityVersion` records it. SwiftCode detects
+the style when it loads a file (`PBXProj.FormatStyle.detect`) and uses that
+style when it saves, so that untouched projects produce no diff. New projects
+use the current style.
+
+## Project format (Compatibility)
+
+The Project Document inspector's Compatibility pop-up sets the file's
+top-level `objectVersion` and one attribute of the `PBXProject` object.
+Choices, newest first:
+
+| Compatibility choice | `objectVersion` | Attribute written on `PBXProject` |
+|---|---|---|
+| Xcode 16.0 | 77 | `preferredProjectObjectVersion = 77` (`compatibilityVersion` removed) |
+| Xcode 15.3 | 63 | `compatibilityVersion = "Xcode 15.3"` |
+| Xcode 15.0 | 60 | `compatibilityVersion = "Xcode 15.0"` |
+| Xcode 14.0 | 56 | `compatibilityVersion = "Xcode 14.0"` |
+| Xcode 13.0 | 55 | `compatibilityVersion = "Xcode 13.0"` |
+| Xcode 12.0 | 54 | `compatibilityVersion = "Xcode 12.0"` |
+| Xcode 11.4 | 53 | `compatibilityVersion = "Xcode 11.4"` |
+| Xcode 11.0 | 52 | `compatibilityVersion = "Xcode 11.0"` |
+| Xcode 10.0 | 51 | `compatibilityVersion = "Xcode 10.0"` |
+| Xcode 9.3 | 50 | `compatibilityVersion = "Xcode 9.3"` |
+| Xcode 8.0 | 48 | `compatibilityVersion = "Xcode 8.0"` |
+| Xcode 6.3 | 47 | `compatibilityVersion = "Xcode 6.3"` |
+| Xcode 3.2 | 46 | `compatibilityVersion = "Xcode 3.2"` |
+| Xcode 3.1 | 45 | `compatibilityVersion = "Xcode 3.1"` |
+
+Rules:
+
+- For the choices that write `compatibilityVersion`,
+  `preferredProjectObjectVersion` is removed. The two attributes are never
+  both present.
+- Reading: if `compatibilityVersion` names a known choice, that choice is
+  shown, even when `objectVersion` is higher (the corpus has
+  `objectVersion = 54` with `"Xcode 10.0"`). Otherwise
+  `preferredProjectObjectVersion`, then `objectVersion`, is mapped to the
+  newest choice whose objectVersion is not greater than it.
+- `objectVersion` values above 77 (for example 100 or 110) can occur with
+  `preferredProjectObjectVersion = 77`; they map to "Xcode 16.0".
+- Other keys are not changed.
+
+## Files edited by other tools
+
+Generators and hand edits can produce files that are not in canonical order:
+unsorted sections, unsorted IDs, or unsorted `buildSettings` keys. SwiftCode loads
+these files without losing data and writes them in canonical order, as Xcode
+does on its next save.
+
+## Synchronized folders
+
+Xcode 16 (objectVersion 77) adds folders whose contents are read from disk
+instead of being listed as references.
+
+| Object | Keys | Meaning |
+|---|---|---|
+| `PBXFileSystemSynchronizedRootGroup` | `path`, `sourceTree`, `name` (optional), `exceptions`, `explicitFileTypes`, `explicitFolders` | A child of a group; every file and folder under `path` is an item of the project. `explicitFileTypes`: relative path → file type, for items whose type is not the one their extension gives. `explicitFolders`: relative paths of folders that are one item (copied whole) instead of being entered. `exceptions`: the exception sets below. |
+| `PBXNativeTarget` (and other targets) | `fileSystemSynchronizedGroups` | The root groups whose items the target takes by default. |
+| `PBXFileSystemSynchronizedBuildFileExceptionSet` | `target`, `membershipExceptions`, `publicHeaders`, `privateHeaders`, `additionalCompilerFlagsByRelativePath`, `attributesByRelativePath`, `platformFiltersByRelativePath` | One per folder and target. `membershipExceptions` lists items (or folders: everything under them) whose membership is the opposite of the default: for a target that lists the folder in `fileSystemSynchronizedGroups` they are left out; for any other target they are its only items from the folder. The header lists change a header's visibility (project by default); the dictionaries map a relative path to compiler flags, build-file attributes (`Weak`, `CodeSignOnCopy`, `RemoveHeadersOnCopy`) and platform filters (`ios`, `macos`, `maccatalyst`, …). |
+| `PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet` | `buildPhase`, `membershipExceptions`, `attributesByRelativePath`, `platformFiltersByRelativePath` | The items it lists belong to that build phase of the phase's target (typically a Copy Files phase), with those attributes. |
+
+Paths in exception sets are relative to the root group's folder. A
+localized item (the files of one name in the folder's `<region>.lproj`
+sub-folders) has one key for all regions: `/Localized: <path without the
+.lproj component>`, for example `Resources/de.lproj/Localizable.strings` →
+`/Localized: Resources/Localizable.strings`.
+
+How SwiftCode builds from these: `specs/ide/build-pif.md` §Synchronized
+folders.
+
+## Open questions
+
+- The exact comment format of
+  `PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet`. The current
+  implementation is a guess. A corpus sample is needed.
+- The comment for a `PBXBuildFile` whose phase cannot be found. The current
+  implementation writes `(null)`.
+- The meaning of `objectVersion = 110`.
+- Synchronized folders: the reference tool's default build phase for each
+  file type in a synchronized folder (SwiftCode's table is in `build-pif.md`),
+  whether a file a build-phase exception set names also stays in its
+  default phase, and the sort order of the folder's items in the reference
+  navigator. Samples from a corpus project that use
+  `explicitFolders`, `platformFiltersByRelativePath` and the build-phase
+  exception set are needed.
+
+## Evidence
+
+- Syntax, layout, quoting, and comments: level 2 (study of the file format
+  across a 27-file corpus, plus round-trip diffs).
+- The writer-generation split: level 2 (files with the same objectVersion
+  but different comment styles).
+- No binary analysis was used.
+- Synchronized folders (§Synchronized folders): key names from the corpus
+  (level 2) and from the open-source project-file libraries (level 1):
+  XcodeProj (MIT; `PBXFileSystemSynchronizedRootGroup.swift`,
+  `PBXFileSystemSynchronizedBuildFileExceptionSet.swift`,
+  `PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet.swift`
+  and their doc comments), CocoaPods Xcodeproj (MIT;
+  `file_system_synchronized_exception_set.rb`). The inversion of
+  `membershipExceptions` for targets that do not list the folder: Tuist's
+  generator documentation (MIT). The `/Localized:` key: XcodeGen (MIT),
+  its pull request 1616 on localized files in synchronized folders.
+- Compatibility table: level 1 and level 2.
+  - Public open source: CocoaPods Xcodeproj (MIT),
+    `lib/xcodeproj/constants.rb`, `COMPATIBILITY_VERSION_BY_OBJECT_VERSION`
+    gives the same objectVersion for every choice in the table (it also lists
+    70, 71 and 100 for newer releases, which are not pop-up choices here).
+  - Corpus (level 2, 40 real projects on the local disk, outside temp and
+    build directories), counts of `objectVersion` / `compatibilityVersion` /
+    `preferredProjectObjectVersion`: 77 / none / 77: 21; 110 / none / 77: 1;
+    56 / "Xcode 14.0": 1; 55 / "Xcode 13.0": 1; 54 / "Xcode 10.0": 2;
+    46 / "Xcode 3.2": 8; 45 / "Xcode 3.1": 6. A wider scan that included
+    temporary test outputs also had 63 / "Xcode 15.3": 2, 60 / "Xcode 15.0": 3,
+    50 / "Xcode 9.3": 3. No file at objectVersion 77 or higher had a
+    `compatibilityVersion` written by Xcode, and no file had both attributes.

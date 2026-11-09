@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=SwiftCode
+GenericName=Integrated Development Environment
+Comment=Open, edit and build Swift packages and Xcode-format projects
+Exec=swiftcode-ide %f
+Icon=io.github.MarcoDotIO.Ycode
+Terminal=false
+Categories=Development;IDE;
+Keywords=swift;ide;xcodeproj;editor;
+StartupNotify=true
+StartupWMClass=swiftcode-ide

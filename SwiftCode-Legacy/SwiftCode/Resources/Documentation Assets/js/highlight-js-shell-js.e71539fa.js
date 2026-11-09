@@ -1,0 +1,1 @@
+(self["webpackChunkswift_docc_render"]=self["webpackChunkswift_docc_render"]||[]).push([[638],{8813:function(s){function e(s){return{name:"Shell Session",aliases:["console","shellsession"],contains:[{className:"meta.prompt",begin:/^\s{0,3}[/~\w\d[\]()@-]*[>%$#][ ]?/,starts:{end:/[^\\](?=\s*$)/,subLanguage:"bash"}}]}}s.exports=e}}]);

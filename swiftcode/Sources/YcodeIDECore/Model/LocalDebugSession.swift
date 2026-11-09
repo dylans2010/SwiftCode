@@ -1,0 +1,98 @@
+import Foundation
+import Observation
+
+public struct LocalDebugVariable: Identifiable, Sendable {
+    public let id = UUID()
+    public let name: String
+    public let value: String
+    public let type: String
+
+    public init(name: String, value: String, type: String) {
+        self.name = name
+        self.value = value
+        self.type = type
+    }
+}
+
+public struct LocalProcessDebugSession: Sendable {
+    public enum State: Sendable {
+        case running
+        case terminated(Int32)
+    }
+
+    public let pid: Int32
+    public let executableURL: URL
+    public var state: State
+    public var callStack: [String]
+    public var variables: [LocalDebugVariable]
+
+    public init(pid: Int32, executableURL: URL, state: State = .running, callStack: [String] = [], variables: [LocalDebugVariable] = []) {
+        self.pid = pid
+        self.executableURL = executableURL
+        self.state = state
+        self.callStack = callStack
+        self.variables = variables
+    }
+}
+
+@Observable
+@MainActor
+public final class DebugSessionViewModel {
+    public var activeSession: LocalProcessDebugSession?
+    public var consoleOutput = ""
+    public var launchError: String?
+    private var process: Process?
+
+    public init() {}
+
+    public func startDebugging(executableURL: URL) {
+        launchError = nil
+        let process = Process()
+        process.executableURL = executableURL
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = pipe
+        let outputHandle = pipe.fileHandleForReading
+        outputHandle.readabilityHandler = { [weak self] handle in
+            let data = handle.availableData
+            guard !data.isEmpty, let text = String(data: data, encoding: .utf8) else { return }
+            Task { @MainActor in
+                self?.consoleOutput += text
+            }
+        }
+        do {
+            try process.run()
+        } catch {
+            launchError = "Failed to launch debugger: \(error.localizedDescription)"
+            outputHandle.readabilityHandler = nil
+            return
+        }
+        self.process = process
+        var session = LocalProcessDebugSession(pid: process.processIdentifier, executableURL: executableURL)
+        session.state = .running
+        session.callStack = ["_start"]
+        var variables: [LocalDebugVariable] = [
+            LocalDebugVariable(name: "PID", value: "\(process.processIdentifier)", type: "Int32"),
+            LocalDebugVariable(name: "Executable", value: executableURL.lastPathComponent, type: "String"),
+            LocalDebugVariable(name: "Path", value: executableURL.path, type: "URL"),
+        ]
+        for (key, value) in (process.environment ?? [:]).prefix(10) {
+            variables.append(LocalDebugVariable(name: key, value: value, type: "String"))
+        }
+        session.variables = variables
+        activeSession = session
+        process.terminationHandler = { [weak self] process in
+            Task { @MainActor in
+                self?.activeSession?.state = .terminated(process.terminationStatus)
+                self?.process = nil
+                outputHandle.readabilityHandler = nil
+            }
+        }
+    }
+
+    public func stop() {
+        process?.terminate()
+        process = nil
+        activeSession = nil
+    }
+}

@@ -1,0 +1,604 @@
+# Spec: the apps on a fresh device's home screen
+
+Status: **reference** (HOME-APPS-SPEC, 2026-10-19). It records which apps
+the reference simulator shows on a freshly created device, where they come
+from in the runtime, how the home screen learns about them, and what this
+means for SwiftCode. It answers the report "SwiftCode's simulator is missing
+default apps (Notes, Maps, Clock, …)".
+
+Facts come from three throwaway devices on this Mac (level 3: `simctl
+create`, `boot`, `listapps`, `launch`, `io screenshot`), from plists in the
+runtime and in the device directory read with `plutil` as file formats
+(level 2), and from bundle structure and Info.plist keys (level 4). No
+disassembly or decompilation was used. Screenshots stayed in the scratch
+area; none are in the repository.
+
+Terms: **RR** (RuntimeRoot), **DEV** (the device directory), as in
+`launchd-sim.md`. "Visible" means listed by `simctl listapps`: it omits
+apps whose Info.plist `SBAppTags` contains `hidden` and apps with
+`LSApplicationLaunchProhibited` = true.
+
+## 1. Summary
+
+1. **The reference shows two apps.** A fresh iOS 27.1 (24A94401) device of
+   type iPhone Duo (model `iPhone19,4`, the device SwiftCode uses) shows
+   **Settings** on page 1 and **Safari** in the dock. Nothing else: no
+   other page, no folder, no widget on the home screen. This is the
+   runtime's content, not a fault of the reference. SwiftCode already shows
+   the same two icons (`home-screen.md` §1), so for this runtime SwiftCode's
+   app set is correct.
+2. **Notes, Clock, Maps and the other apps of a real iPhone are not in the
+   runtime.** Notes, Clock, Calculator, Camera, Mail and about 100 other
+   bundles in `RR/Applications` are empty directories ("husks"): they hold
+   only `.lproj` folders and empty `PlugIns`/`Extensions` folders, with no
+   `Info.plist` and no executable. Maps, Calendar, Photos, Messages and 13
+   other apps that the iOS 27.0 runtime ships are not in the 27.1 runtime
+   at all (§4). SwiftCode must not show these apps. SwiftCode must match the
+   simulator, not a device.
+3. **The iOS 27.1 runtime supports one device type only.** Its
+   `supportedDeviceTypes` list is "iPhone Duo". `simctl create` with any
+   iPad device type and this runtime fails with "Incompatible device"
+   (CoreSimulator error 403). For iPad, the iPad data in §5 comes from the
+   iOS 27.0 runtime (24A434), the newest one that supports iPads.
+
+## 2. The reference home screen (iOS 27.1, iPhone Duo)
+
+### 2.1 Layout
+
+From `DEV/data/Library/SpringBoard/IconState.plist`, after the first boot,
+and from the screenshot of the cover display:
+
+| Place | Content |
+|---|---|
+| Page 1 (`iconLists[0]`) | `com.apple.Preferences` (Settings), one icon |
+| Other pages | none |
+| Dock (`buttonBar`) | `com.apple.mobilesafari` (Safari), one icon |
+| Folders | none |
+| Widgets on pages | none |
+| Today view (`today`) | two widgets: Batteries (`com.apple.Batteries.BatteriesAvocadoWidgetExtension`, kind `BatteriesAvocadoWidget`, `small`) and Screen Time (`com.apple.ScreenTimeWidgetApplication.ScreenTimeWidgetExtension`, `large`) |
+| `ignored` | key not present |
+| App Library | not observed (see §8); expected to hold the same two apps |
+
+What the cover display shows (screenshot `--display=LCD`, 1398 × 2034):
+the default wallpaper; Settings with its label at the top left; the
+camera cut-out, the time and the Wi-Fi indicator in a column at the top
+right; Safari, without a label, on a glass dock tile at the right edge,
+about two thirds down; the search button at the bottom right. The home
+screen is drawn sideways compared with a usual iPhone (dock on the right,
+status at the top right).
+
+### 2.2 Two displays
+
+The iPhone Duo device has two built-in displays (`simctl io enumerate`,
+class 0):
+
+| Screen name | Size | State on a fresh device |
+|---|---|---|
+| `LCD` | 1398 × 2034 | the cover display; shows the home screen |
+| `LCD-1` | 2007 × 2853 | the inner display; black (the device is folded) |
+
+`simctl io <dev> screenshot` without `--display` takes `LCD-1` and gives a
+black image. Comparisons with SwiftCode must use `--display=LCD`. SwiftCode's
+single display (1398 × 2034, `device-capabilities.md` §3) is the cover
+display.
+
+### 2.3 App table
+
+All bundles are under RR. "Launches" is the result of `simctl launch` on
+the booted reference device. The table has every app that `listapps`
+reports (22), plus the apps of a real iPhone that are asked about.
+
+**On the home screen**
+
+| Display name | Bundle identifier | Path | Place | Launches | First screen / notes |
+|---|---|---|---|---|---|
+| Settings | `com.apple.Preferences` | `Applications/Preferences.app` | page 1, first slot | yes (pid returned) | large title "Settings"; an Apple Account sign-in row, an "Optimizing Search and Siri" row, then General, Accessibility, Appearance, Home Screen & App Library, Search, Siri, StandBy, … |
+| Safari | `com.apple.mobilesafari` | `Applications/MobileSafari.app` | dock, only icon | yes (pid returned) | the app comes to the front; in 15 s on a heavily loaded host it showed a white page with the home indicator (start page not yet drawn) |
+
+**Registered and visible, but not on the home screen**
+
+| Display name | Bundle identifier | Path | Launches | Notes |
+|---|---|---|---|---|
+| Web | `com.apple.webapp` | `Applications/Web.app` | yes (pid) | web-clip host |
+| Xcode Previews | `com.apple.PreviewShell` | `Applications/PreviewShell.app` | yes (pid) | Info.plist `SBIconVisibilityDefaultVisible` = false |
+| Color | `com.apple.GradientPoster` | `Applications/GradientPoster.app` | no | poster app; FrontBoard: "Application … is unknown to FrontBoard" (`FBSOpenApplicationServiceErrorDomain` 1, reason NotFound) |
+| Emoji | `com.apple.EmojiPoster` | `Applications/EmojiPoster.app` | no | as Color |
+| Image Playground | `com.apple.Posters.ImagePlaygroundPosterApp` | `Applications/ImagePlaygroundPosterApp.app` | no | as Color |
+| Kaleidoscope | `com.apple.Posters.KaleidoscopePosterApp` | `Applications/KaleidoscopePosterApp.app` | no | as Color |
+| Pride | `com.apple.PridePoster` | `Applications/PridePosterApp.app` | not determined | poster app |
+| Unity | `com.apple.Posters.UnityPosterApp` | `Applications/UnityPosterApp.app` | not determined | poster app |
+| Weather Wallpaper | `com.apple.Posters.WeatherPosterApp` | `Applications/WeatherPosterApp.app` | not determined | poster app (not the Weather app) |
+| VoiceOver | `com.apple.VoiceOverTouch` | `System/Library/CoreServices/VoiceOverTouch.app` | yes (pid) | accessibility service app |
+| AssistiveTouch | `com.apple.assistivetouchd` | `System/Library/CoreServices/AssistiveTouch.app` | not determined | |
+| Astronomy | `com.apple.NanoUniverse.AegirProxyApp` | `System/Library/CoreServices/AegirProxyApp.app` | not determined | |
+| CarPlay | `com.apple.CarPlayApp` | `System/Library/CoreServices/CarPlay.app` | not determined | |
+| EscrowSecurityAlert | `com.apple.EscrowSecurityAlert` | `System/Library/CoreServices/EscrowSecurityAlert.app` | not determined | |
+| FullKeyboardAccess | `com.apple.fullkeyboardaccess` | `System/Library/CoreServices/FullKeyboardAccess.app` | not determined | |
+| Live Captions | `com.apple.livetranscriptionui` | `System/Library/CoreServices/LiveTranscriptionUI.app` | not determined | |
+| ShortcutsActions | `com.apple.ShortcutsActions` | `System/Library/CoreServices/ShortcutsActions.app` | not determined | |
+| SystemIntents | `com.apple.SystemIntents` | `System/Library/CoreServices/SystemIntents.app` | not determined | |
+| Voice Control | `com.apple.commandandcontrol` | `System/Library/CoreServices/CommandAndControl.app` | not determined | |
+| SpringBoard | `com.apple.springboard` | `System/Library/CoreServices/SpringBoard.app` | — | the home screen itself |
+
+"Not determined": the launch request did not finish within 300 s. The host
+was heavily loaded at that time (load average above 800, other agents'
+simulators running). The poster failures took several minutes each. None
+of these apps is on the home screen, so this does not change the layout.
+
+**Not in this runtime (must not appear in SwiftCode)**
+
+| App | Bundle identifier (from the default layout) | State in the 27.1 runtime | In the 27.0 runtime |
+|---|---|---|---|
+| Notes | `com.apple.mobilenotes` | husk `Applications/MobileNotes.app` | husk |
+| Clock | `com.apple.mobiletimer` | husk `Applications/MobileTimer.app` | husk |
+| Calculator | `com.apple.calculator` | husk `Applications/Calculator.app` | husk |
+| Camera | `com.apple.camera` | husk `Applications/Camera.app` | husk |
+| Mail | `com.apple.mobilemail` | husk `Applications/MobileMail.app` | husk |
+| FaceTime, Music, App Store, TV, Books, Podcasts, Freeform, Journal, Measure, Magnifier, Image Playground (app), Games, Translate | various | husks (`FaceTime.app`, `Music.app`, `AppStore.app`, `AppleTV.app`, `Books.app`, `Podcasts.app`, `Freeform.app`, `Journal.app`, `Measure.app`, `Magnifier.app`, `Image Playground.app`, `Games.app`, `SequoiaTranslator.app`) | husks |
+| Maps | `com.apple.Maps` | **absent** | app (`Applications/Maps.app`) |
+| Calendar | `com.apple.mobilecal` | absent | app (`MobileCal.app`) |
+| Photos | `com.apple.mobileslideshow` | absent | app (`Photos.app`) |
+| Messages | `com.apple.MobileSMS` | absent | app (`MobileSMS.app`) |
+| Contacts | `com.apple.MobileAddressBook` | absent | app (`Contacts.app`) |
+| Files | `com.apple.DocumentsApp` | absent | app (`Files.app`) |
+| Reminders | `com.apple.reminders` | absent | app (`Reminders.app`) |
+| News | `com.apple.news` | absent | app (`News.app`) |
+| Health | `com.apple.Health` | absent | app (`Health.app`) |
+| Fitness | `com.apple.Fitness` | absent | app (`Fitness.app`) |
+| Wallet | `com.apple.Passbook` | absent | app (`Passbook.app`) |
+| Passwords | `com.apple.Passwords` | absent | app (`Passwords.app`) |
+| Preview | `com.apple.Preview` | absent | app (`Preview.app`) |
+| Shortcuts | `com.apple.shortcuts` | absent | app (`Shortcuts.app`) |
+| Siri | `com.apple.SiriApp` | absent | app (`SiriApp.app`) |
+| Watch | `com.apple.Bridge` | absent | app (`Bridge.app`) |
+| Remote | `com.apple.TVRemoteApp` | absent | app (`TVRemote.app`) |
+| Phone, Weather, Stocks, Find My, Home, Voice Memos, Compass, Tips, Sports, Apple Store, GarageBand, iMovie, Keynote, Numbers, Pages | various | no bundle | no bundle |
+
+A launch request for Notes, Clock, Maps or Calculator on the reference did
+not start anything (no pid within 300 s). There is no app record for them,
+so nothing can be launched.
+
+## 3. Where the apps come from
+
+### 3.1 Bundles in the runtime
+
+| Directory | Bundles | With Info.plist | Notes |
+|---|---|---|---|
+| `RR/Applications` | 243 (27.1), 259 (27.0) | 152 (27.1) | the rest are husks (no Info.plist) |
+| `RR/System/Library/CoreServices` | 11 `.app` with Info.plist in 27.1 | 11 | SpringBoard and service apps |
+
+In 27.1, 163 bundles in these two directories have an Info.plist. One of
+them, `AccessibilityReader_iOS.app`, has no executable. That leaves 162,
+the number of apps that lsd registers on the first boot
+(`first-boot.md` §1 item 5). Of the 162, 134 have `hidden` in `SBAppTags`;
+6 have `LSApplicationLaunchProhibited` = true (Messages extension
+wrappers: `com.apple.ActivityMessagesApp`, `com.apple.Animoji.StickersApp`,
+`com.apple.icloud.apps.messages.business`,
+`com.apple.siri.parsec.HashtagImagesApp`, `com.apple.Jellyfish`,
+`com.apple.Stickers.UserGenerated`); 22 are visible (§2.3).
+
+A **husk** is a directory named like an app bundle, with localization
+folders and empty `PlugIns` or `Extensions` subfolders, without
+`Info.plist` and without executable. The scanner that seeds the
+LaunchServices database does not register it (no Info.plist), so for the
+system it does not exist. A host that copies the runtime must copy the
+husks as they are, but nothing depends on them.
+
+### 3.2 Registration at first boot
+
+1. lsd seeds its database on its first start (`first-boot.md` §1 item 5):
+   MobileInstallation's scanner reads every bundle in the directories of
+   §3.1 and LaunchServices registers each one as an app record
+   (`home-screen.md` §3.3). Only bundles with Info.plist and executable
+   become records.
+2. If the host makes LaunchServices register apps as *placeholders*
+   (`home-screen.md` §3.2–§3.3), SpringBoard shows the icons as grey
+   placeholders and the apps do not launch.
+3. `simctl listapps` lists the records that are not tagged `hidden`.
+
+### 3.3 The default layout: SpringBoard's own plists
+
+SpringBoard carries its default layouts in its bundle,
+`RR/System/Library/CoreServices/SpringBoard.app/`, as XML property lists:
+
+| File | Used for |
+|---|---|
+| `DefaultIconState-466w-678h~iphone.plist` | phones with a 466 × 678 point screen: the iPhone Duo cover display (1398 × 2034 at scale 3) |
+| `DefaultIconState-375w-667h~iphone.plist`, `-414w-736h~iphone`, `-568h~iphone`, `-568h~ipod` | other phone sizes |
+| `DefaultIconState~iphone.plist` | phones without a size-specific file |
+| `DefaultIconState~ipad.plist` | iPads |
+| `DefaultIconState.plist` | the fallback |
+| `../PrivateFrameworks/DashBoard.framework/DefaultIconState_CarDisplay.plist` | CarPlay |
+
+The file is chosen by idiom and by screen size in points. The
+`DesiredIconState.plist` that the iPhone Duo device writes is the 466w-678h
+file (its Today list matches that file, not the generic `~iphone` one,
+which differs in two Today widgets). The 27.0 and 27.1 runtimes have the
+same `~iphone` and `~ipad` files; 27.0 has no 466w-678h file.
+
+**Format.** A dictionary:
+
+| Key | Type | Meaning |
+|---|---|---|
+| `buttonBar` | array of bundle identifiers | the dock, in order |
+| `iconLists` | array of pages; each page an array of elements | home-screen pages |
+| `today` | array of widget dictionaries | the Today view |
+| `ignored` | array of bundle identifiers | apps not placed on pages (`com.apple.TVRemoteApp`) |
+| `dockUtilities` | array | iPad only, empty |
+| `listUniqueIdentifiers` | array of UUID strings | page identifiers (some files) |
+
+A page element is a bundle-identifier string (an app), a folder dictionary
+(`defaultDisplayName`, `iconLists` = one array of identifiers), a widget
+dictionary (`elementType` `widget`, `bundleIdentifier` of the widget
+extension, `containerBundleIdentifier` of the app, `widgetIdentifier`,
+`gridSize` `small`/`medium`/`large`/…, `iconType` `custom`,
+`allowsSuggestions`, `allowsExternalSuggestions`) or a stack dictionary
+(the same keys with `elements`, an array of widget dictionaries or
+`{elementType: files}`). Default files mark suggested widgets with
+`widgetSuggestionSource` `onboarding`.
+
+**The default phone layout (the 466w-678h file)** — the full layout of a
+real iPhone:
+
+- dock: Phone, Safari, Messages, Music;
+- page 1: two small widget stacks (Weather/Maps/Notes, Calendar/News/Photos),
+  FaceTime, Calendar, Photos, Camera, Mail, Notes, Clock, Maps, TV, News,
+  App Store, Games, Health, Wallet, Siri, Settings;
+- page 2: Weather, Stocks, Find My, Home, Podcasts, Books, Fitness, Watch,
+  Reminders, Files, Preview, folder "Utilities" (Voice Memos, Compass,
+  Measure, Magnifier, Calculator, Shortcuts, Passwords), Contacts, iTunes
+  Store, Translate, Freeform, Journal, Image Playground, Tips, Apple Store,
+  folder "Creativity" (GarageBand, iMovie, Keynote, Numbers, Pages),
+  Sports;
+- `ignored`: Remote.
+
+### 3.4 From the default layout to `IconState.plist`
+
+On the first boot SpringBoard writes two files in `DEV/data/Library/SpringBoard/`:
+
+- `DesiredIconState.plist`: the chosen default file as it is, plus
+  `metadata.creationDate`, plus `dockUtilities` (empty array) when the
+  default file has none: the iPhone Duo's file has it although the
+  466w-678h default file does not (27.1, 2026-10-20 observation,
+  `app-launch.md` §8 Q3);
+- `IconState.plist`: what the home screen shows. It is the default layout
+  **filtered by the app records**:
+
+| Rule (observed on three devices) | Example |
+|---|---|
+| An identifier with no visible app record is removed from pages, folders and the dock. The dock is not refilled. | 27.1 iPhone: dock Phone, Safari, Messages, Music → Safari |
+| A widget whose container app has no record is removed; a stack keeps its remaining widgets; a stack with one widget left becomes a plain widget | 27.0 iPhone: stack Weather/Maps/Notes → a Maps widget |
+| A folder keeps its remaining apps; an empty folder is removed | 27.0 iPhone: "Utilities" with Shortcuts and Passwords; "Creativity" removed |
+| Remaining items close up; empty pages are removed | 27.1 iPhone: one page with Settings |
+| A visible app with a record that the layout does not name is added at the end of the last page | 27.0 iPad: Wallet after Fitness |
+| An app whose `SBAppTags` names a device capability that is false is not shown | 27.0 iPad: Watch (`SBAppTags` `watch-companion`; capability `watch-companion` false on iPad) |
+| Apps in `ignored` are not placed | Remote |
+| Registered apps that SpringBoard never places | posters, Web, Xcode Previews, the `CoreServices` apps (see §8) |
+| Today widgets of absent apps are removed | 27.1 iPhone: only Batteries and Screen Time remain |
+
+The plist that the device type carries (`capabilities.plist`, key
+`iconState`) is not used (`device-capabilities.md` §1).
+
+Consequence for a host: the home screen is decided by SpringBoard from
+three inputs that the host supplies — the runtime's bundles (§3.1), correct
+LaunchServices records (§3.2) and the device answers (`idiom`, screen size
+and the capabilities named in `SBAppTags`; `device-capabilities.md`). If
+an app that the reference shows is missing in SwiftCode, check these in that
+order.
+
+## 4. The 27.1 runtime is reduced
+
+Compared with the iOS 27.0 runtime (24A434) that ships with the same
+Xcode, `RR/Applications` of 27.1 lacks these 17 bundles: `Bridge.app`,
+`Contacts.app`, `Files.app`, `Fitness.app`, `Health.app`, `Maps.app`,
+`MobileCal.app`, `MobileSMS.app`, `News.app`, `Passbook.app`,
+`Passwords.app`, `Photos.app`, `Preview.app`, `Reminders.app`,
+`Shortcuts.app`, `SiriApp.app`, `TVRemote.app`; it adds the husk
+`Rushmore.app`. Everything else in the two directory listings is the same
+by name. The 27.1 runtime supports only the iPhone Duo device type.
+
+For comparison, a fresh iOS 27.0 iPhone 18 Pro (level 3) shows: dock
+Safari, Messages; page 1 a small Maps widget, a small stack
+Calendar/News/Photos, Calendar, Photos, Maps, News, Health, Wallet, Siri,
+Settings; page 2 Fitness, Watch, Reminders, Files, Preview, folder
+"Utilities" (Shortcuts, Passwords), Contacts. Notes, Clock, Camera, Mail
+and Calculator are husks there too; no Xcode simulator runtime examined
+ships them. §4.1 has the full layout and launch results.
+
+### 4.1 Reference home screen: iOS 27.0, iPhone 18 Pro
+
+The device type that SwiftCode adds for 27.0 (`iphone-types.md`). Two fresh
+devices (OBS-IPHONE18, 2026-10-27) gave the same layout apart from the
+generated UUIDs. Device-type values: `iphone-types.md` §3–§4.
+
+**Default file.** `DesiredIconState.plist` is the runtime's
+`SpringBoard.app/DefaultIconState~iphone.plist` (27.0 has no file for this
+phone's 402 × 874 points; 27.0 and 27.1 carry the same generic file) plus
+`metadata.creationDate` and an empty `dockUtilities`. Its contents: dock
+Phone, Safari, Messages, Music; page 1 two small stacks
+(Weather/Maps/Notes, Calendar/News/Photos) and 16 apps; page 2 22 items
+with the folders "Utilities" and "Creativity"; `ignored` Remote; eight
+Today widgets (Calendar, Weather, News, Maps, Tips, Batteries, Stocks,
+Screen Time).
+
+**`IconState.plist` after the first boot** (the default file filtered as
+§3.4):
+
+| Place | Content, in order |
+|---|---|
+| Dock (`buttonBar`) | `com.apple.mobilesafari` (Safari), `com.apple.MobileSMS` (Messages) |
+| Page 1 (`iconLists[0]`) | widget: Maps (`containerBundleIdentifier` `com.apple.Maps`, `bundleIdentifier` `com.apple.Maps.GeneralMapsWidget`, `widgetIdentifier` `com.apple.Maps`, `gridSize` `small`) — the stack Weather/Maps/Notes reduced to one widget; stack (`gridSize` `small`) of Calendar (`com.apple.mobilecal.CalendarWidgetExtension`, kind `com.apple.CalendarWidget.CalendarUpNextWidget`), News (`com.apple.news.widget`, kind `today`), Photos (`com.apple.mobileslideshow.PhotosReliveWidget`, kind `com.apple.mobileslideshow.PhotosReliveWidget`); then the apps `com.apple.mobilecal`, `com.apple.mobileslideshow`, `com.apple.Maps`, `com.apple.news`, `com.apple.Health`, `com.apple.Passbook`, `com.apple.SiriApp`, `com.apple.Preferences` |
+| Page 2 (`iconLists[1]`) | `com.apple.Fitness`, `com.apple.Bridge` (Watch), `com.apple.reminders`, `com.apple.DocumentsApp` (Files), `com.apple.Preview`, folder "Utilities" (`com.apple.shortcuts`, `com.apple.Passwords`), `com.apple.MobileAddressBook` (Contacts) |
+| Folders | "Utilities" only ("Creativity" removed: no apps) |
+| `ignored` | `com.apple.TVRemoteApp` (Remote) |
+| `today` | Calendar Up Next (`small`), Batteries (`BatteriesAvocadoWidget`, `small`), News (kind `today`, **`extraLargePortrait`**; the default file says `newsLargeTall`), Maps (`medium`), Screen Time (`large`); Weather, Tips and Stocks removed (no apps). All with `allowsSuggestions` true, `allowsExternalSuggestions` false |
+| `listUniqueIdentifiers` | the default file's two page UUIDs, kept |
+
+Keys SpringBoard adds when it writes `IconState.plist` (not in the default
+file): at the top level `defaultDisplayName` and `displayName` "Folder" and
+a `uniqueIdentifier` (the root list is stored like a folder); in each
+widget and stack `displayIdentifier` and `uniqueIdentifier` (UUID strings;
+stack members get `uniqueIdentifier` only); every widget loses the default
+file's `widgetSuggestionSource`; in the folder `displayName`, `listType`
+"folder", `listUniqueIdentifiers` and `uniqueIdentifier`. No
+`dockUtilities` and no `listMetadata` in `IconState.plist` (iPhone).
+
+**What the screen shows** (`simctl io screenshot`, 1206 × 2622, portrait,
+the default display): the default wallpaper; status bar with the time at
+the top left and, right of the gap for the island, four grey cellular dots,
+Wi-Fi and battery; page 1 as two rows of widgets and icons — the Maps
+widget (a map of North America) and the Calendar stack (showing
+"TUESDAY 27", "No Events Today") each a 2 × 2 tile with a label below;
+then Calendar, Photos, Maps, News; then Health, Wallet, Siri, Settings,
+all with labels; empty space below; a "Search" pill above the dock; the
+dock a glass tile with Safari and Messages centred, no labels. In the
+first frame drawn on a first boot the two widgets are blank white tiles;
+they fill in seconds later.
+
+**Visible apps** (`listapps`, 39): the 22 of §2.3 plus Calendar, Contacts,
+Files, Fitness, Health, Maps, Messages, News, Passwords, Photos, Preview,
+Reminders, Remote, Shortcuts, Siri, Wallet, Watch — the same set as the
+27.0 iPad (§5). This equals the runtime's 179 registrable bundles minus 134
+`hidden` and 6 launch-prohibited ones.
+
+**Launches** (`simctl launch`, each app terminated before the next;
+screenshot 12 s after the launch):
+
+| App | Bundle identifier | pid returned | Running after 12 s | First screen |
+|---|---|---|---|---|
+| Maps | `com.apple.Maps` | yes, 0.7 s | yes | an onboarding sheet with a lock-screen picture and "Enable Notifications" / "Not Now"; on top the system alert asking to allow Maps to use the location (Allow Once / Allow While Using App / Don't Allow) |
+| Calendar | `com.apple.mobilecal` | yes, 0.2 s | yes | a "What's New in Calendar" sheet with a Continue button |
+| Photos | `com.apple.mobileslideshow` | yes, 0.2 s | yes | a "What's New in Photos" sheet with a Continue button |
+| Messages | `com.apple.MobileSMS` | yes, 0.2 s | yes | the conversation list "Messages" with two sample conversations dated 12/31/00 and a search field at the bottom |
+| News | `com.apple.news` | yes, 0.2 s | yes | "Welcome to Apple News" with a Continue button |
+| Health | `com.apple.Health` | yes, 0.3 s | yes | "Summary": Pinned ("No pinned topics"), "Show All Health Data"; tab bar Summary / Sharing / Browse; on top the alert asking to allow Health to send notifications |
+| Wallet | `com.apple.Passbook` | yes, 0.2 s | yes | "Wallet" with add and more buttons, a "What's New in Wallet" card, a picture of passes |
+| Contacts | `com.apple.MobileAddressBook` | yes, 0.5 s | yes | the contact list with the sample contacts (John Appleseed, Kate Bell, David Taylor, Hank M. Zakroff, …) and an A–Z index |
+| Files | `com.apple.DocumentsApp` | yes, 0.3 s | yes | "Recents", empty, with a search field; tab bar Recents / Shared / Browse |
+| Reminders | `com.apple.reminders` | yes, 0.4 s | yes | a "Welcome to Reminders" sheet with a Continue button |
+| Settings | `com.apple.Preferences` | yes, 1.0 s | yes | as on 27.1 (§2.3) |
+| Safari | `com.apple.mobilesafari` | yes, 0.4 s | yes | the Start Page with a customization card, an iCloud prompt (Not Now / Turn On) and the Privacy Report |
+
+Two behaviors to keep in mind when comparing screenshots with SwiftCode:
+
+- **A permission alert stays up.** The first permission alert of a fresh
+  device (Maps' location request; after a reboot, Health's notification
+  request) stays on the screen after the app that caused it is
+  terminated. It covered the home screen and every app launched after it
+  until the device was rebooted. The alerts were not answered. A fair
+  comparison launches the apps in the same order on both sides, or one
+  app per fresh boot.
+- **Background relaunch.** Calendar and Photos were running again a few
+  seconds after `simctl terminate` (new instances in `launchctl list`),
+  together with the Spotlight, family and widget-renderer UI services.
+
+Messages and Contacts show sample data: the device directory that
+`simctl create` makes already holds the address-book databases and six
+sample photos (`first-boot.md`), and the 27.0 apps display them.
+
+## 5. iPad (iOS 27.0 runtime, iPad Pro 11-inch (M5))
+
+The 27.1 runtime cannot create an iPad (§1 item 3). On iOS 27.0 (24A434), a
+fresh iPad Pro 11-inch (M5) shows, from `IconState.plist` and a screenshot:
+
+| Place | Content |
+|---|---|
+| Dock | Messages, Safari, Calendar, Photos, Siri; then, at the right end, the App Library button (a tile of small icons) |
+| Page 1 | a large stack News/Maps/Photos, a large stack Reminders/Files, a medium Calendar "Up Next" widget, then Files, Reminders, Maps, News, Settings |
+| Page 2 | Contacts, Shortcuts, Passwords, Preview, Health, Fitness, Wallet |
+| `ignored` | Remote |
+| Not shown | Watch (capability `watch-companion` false) |
+
+Visible apps (`listapps`, 39 records with the system ones): the 22 of the
+27.1 iPhone plus Calendar, Contacts, Files, Fitness, Health, Maps,
+Messages, News, Passwords, Photos, Preview, Reminders, Remote, Shortcuts,
+Siri, Wallet, Watch (same bundle identifiers and paths as in §2.3's last
+table, column 27.0).
+
+Differences from the phone:
+
+- default file `DefaultIconState~ipad.plist`: dock of eight (Messages,
+  Safari, Music, Mail, Calendar, Photos, Notes, Siri), larger widgets
+  (`large` stacks, a files element), a different page order;
+- `IconState.plist` on iPad carries `listMetadata` per page:
+  `rotatedOrder` (the order in the other orientation), `fixedLocations`,
+  `fixedLocationsGridColumns` 4, `fixedLocationsGridRows` 6,
+  `rotatedFixedLocations` (Settings at 18);
+- the iPad device type answers `ipad` true, `hide-non-default-apps` true,
+  `telephony`, `sms` and `watch-companion` false; the iPhone Duo answers
+  the opposite;
+- the dock ends with the App Library button.
+
+Launches on the iPad were not determined (the host was overloaded; §8).
+
+## 6. Deltas for SwiftCode (to be verified by the implementer)
+
+| # | Item | Reference | SwiftCode (from its specs) | Action |
+|---|---|---|---|---|
+| 1 | App set on the home screen | Settings (page 1), Safari (dock) | the same (`home-screen.md` §1, §2.3) | none; Notes, Clock, Maps etc. must **not** be added — the runtime does not have them |
+| 2 | Today view | Batteries, Screen Time widgets | not specified | check `IconState.plist` `today` after a fresh SwiftCode boot |
+| 3 | `DesiredIconState.plist` | written on first boot (466w-678h file), with `metadata.creationDate` and an empty `dockUtilities` array added on the iPhone Duo too; `listUniqueIdentifiers` kept as in the default file (`app-launch.md` §8 Q3) | written by the guest's SpringBoard: the 466w-678h file plus `metadata` and `dockUtilities`, list identifiers kept (`app-launch.md` §6 check 3, 13 devices, 2026-10-20) | none (matches) |
+| 4 | Visible app records | 22 (§2.3) | 162 registered, placeholders fixed (`home-screen.md` §3.3) | compare `listapps`-equivalent output (bundle ids, `SBAppTags`) |
+| 5 | Settings launches, first screen | yes; Settings list | stage-7 path launches a probe app (`home-screen.md` §6) | launch `com.apple.Preferences` and `com.apple.mobilesafari` with `ylaunch` and compare first screens |
+| 6 | Poster apps | not launchable: `FBSOpenApplicationServiceErrorDomain` 1, reason NotFound ("unknown to FrontBoard"), answered after about 12 s (`app-launch.md` §8 Q5, §8.2) | answered: NotFound after `ylaunch`'s 10 s window, no process; domain code 4, not 1 (`app-launch.md` §2.1, Q7) | not a SwiftCode fault if they fail the same way; a request that is never answered is a difference |
+| 7 | Displays | cover `LCD` 1398 × 2034 shows the home screen; inner `LCD-1` 2007 × 2853 black | one display, 1398 × 2034 | compare against `--display=LCD` screenshots only |
+| 8 | Home-screen orientation on the cover display | sideways: dock at the right edge, status at the top right | check SwiftCode screenshots | report if SwiftCode draws a portrait layout |
+| 9 | iPad | needs a runtime that supports iPads (27.0, 24A434) | SwiftCode boots 27.0 as a second runtime (§9) | done: iPad and iPhone 18 Pro on 27.0 match §4.1 and §5 |
+| 10 | Husks | copied as plain directories | SwiftCode uses the same runtime image | nothing; they must not be registered |
+
+If the user wants Maps, Calendar, Photos, Messages and the others, the
+answer is a different runtime (27.0 ships them), not a change in SwiftCode.
+Notes, Clock, Camera, Mail and Calculator are not in either runtime.
+
+## 7. How to reproduce on the Mac
+
+1. `xcrun simctl create swiftcode-test-<name> com.apple.CoreSimulator.SimDeviceType.iPhone-Duo com.apple.CoreSimulator.SimRuntime.iOS-27-1`, `boot`, `bootstatus -b`.
+2. `xcrun simctl listapps <udid>` (an XML plist).
+3. `plutil -p ~/Library/Developer/CoreSimulator/Devices/<udid>/data/Library/SpringBoard/IconState.plist`.
+4. `xcrun simctl io <udid> screenshot --display=LCD <file>`.
+5. `xcrun simctl launch <udid> <bundle id>`; wait at least 10 s before the screenshot (at 4 s Settings still showed a black frame).
+6. Shut down and delete the device.
+
+## 8. Open questions
+
+- **App Library** contents were not observed (no headless way to swipe;
+  the GUI was not driven). Expected: Settings and Safari only.
+- **Why SpringBoard never places** the poster apps, Web and the
+  `CoreServices` apps although they are visible records without the
+  `hidden` tag. Info.plist shows no common key (only Xcode Previews has
+  `SBIconVisibilityDefaultVisible` = false). This is SpringBoard's own
+  behavior and needs no host support, so it was not pursued.
+- **Launch results** marked "not determined" in §2.3 and all iPad launches:
+  repeat on an idle host.
+- **Safari's first screen** under normal load (a white page after 15 s
+  under heavy load).
+
+## 9. SwiftCode on the iOS 27.0 runtime (agent IOS27, 2026-10-27)
+
+Clean-room results: SwiftCode's own simulator on the Thor with a copy of the
+27.0 RuntimeRoot (24A434), the guest's files read after the boot
+(`IconState.plist` with `plistlib`), SwiftCode screenshots (scratch only),
+`ylaunch` one-shots (`open`, `wait`, `kill`). No Apple simulator, Xcode or
+reference tool was run. The host was shared (load average 5–200), so the
+times outside §9.3 are upper bounds. What SwiftCode changed for this:
+`ipad.md` §9.2, `iphone-types.md` §9; the IDE's runtime choice:
+`specs/ide/run.md` §Runtimes and device types.
+
+### 9.1 Home screens
+
+| Device (SwiftCode type) | `IconState.plist` against the reference | Screen |
+|---|---|---|
+| iPhone 18 Pro (`iphone-18-pro`, the default on 27.0) | equal to §4.1 in every list: dock Safari, Messages; page 1 the small Maps widget, the small stack Calendar Up Next/News/Photos, Calendar, Photos, Maps, News, Health, Wallet, Siri, Settings; page 2 Fitness, Watch, Reminders, Files, Preview, folder "Utilities" (Shortcuts, Passwords), Contacts; `ignored` Remote; `today` Calendar (small), Batteries (small), News (`extraLargePortrait`), Maps (medium), Screen Time (large) | 1206 × 2622 portrait: wallpaper; status bar with the time at the left and the cellular dots, Wi-Fi and battery right of the island; the two widget tiles with labels, the eight labelled icons in two rows; the "Search" pill; the dock with Safari and Messages. Icons are drawn grey (placeholders) first and filled about 4 minutes later under load |
+| iPad Pro 13-inch (M5) (`ipad-pro-13-m5`) | equal to §5 in every list (`ipad.md` §9.2) | 2064 × 2752 portrait: wallpaper, the News stack ("Apple News Is Offline"), the Reminders widget ("No Reminders"), the Calendar widget, Files, Reminders, Maps, News, Settings, two page dots, the dock with Messages, Safari, Calendar (the date), Photos, Siri and the App Library tile |
+
+Differences seen on the screens (not in the layout files):
+
+- **Calendar widget.** In SwiftCode the Calendar "Up Next" widget stays in its
+  redacted placeholder form (grey and pink bars), on the iPhone stack and
+  the iPad medium widget, for the whole run (8 minutes); the reference
+  shows "TUESDAY 27" and "No Events Today". Not investigated (the
+  widget's timeline is rendered by the guest's widget renderer; whether a
+  host service it needs is missing is open, §9.4).
+- **Maps widget.** SwiftCode draws the map grid without map tiles; the
+  reference shows a map of North America. The Thor has no network for the
+  guest, and whether the reference's tiles come from the network or from
+  data in the runtime is open (§9.4).
+
+### 9.2 App launches
+
+Each app was opened with `ylaunch open` on a booted device; on the iPhone
+each app was killed 25 s later before the next one, as the reference did
+with `simctl terminate`.
+
+| App | Bundle identifier | iPhone 18 Pro: pid; open request | First screen (iPhone, SwiftCode) | iPad Pro 13 (M5): pid |
+|---|---|---|---|---|
+| Maps | `com.apple.Maps` | yes; 43 s (the first open of the boot, still while the home screen was being built) | the location alert "Allow "Maps" to use your location?" (Allow Once / Allow While Using App / Don't Allow) over a blank map | yes |
+| Calendar | `com.apple.mobilecal` | yes; 2.0 s | "What's New in Calendar" with Continue | yes |
+| Photos | `com.apple.mobileslideshow` | yes; 0.2 s | "What's New in Photos" | yes |
+| Messages | `com.apple.MobileSMS` | yes; 0.2 s | "Messages" with the sample conversation +1 (888) 555-1212 | yes |
+| Contacts | `com.apple.MobileAddressBook` | yes; 0.2 s | "Contacts" with **"No Contacts"** (the reference shows the sample contacts, see below) | yes |
+| Files | `com.apple.DocumentsApp` | yes; 0.2 s | "Recents" with a search field, tab bar | yes |
+| Reminders | `com.apple.reminders` | yes; 0.2 s | "Welcome to Reminders" | yes |
+| News | `com.apple.news` | yes; 0.3 s | "Welcome to Apple News", "Apple News isn't connected to the internet" | yes |
+| Wallet | `com.apple.Passbook` | yes; 1.9 s | "Wallet" with "What's New in Wallet" and the passes picture | yes ("What's New in Wallet", Passes and Tickets) |
+| Health | `com.apple.Health` | yes; 0.2 s | "Summary", Pinned "No pinned topics", tab bar; the alert ""Health" Would Like to Send You Notifications" | not tried |
+| Settings | `com.apple.Preferences` | yes; 0.3 s | the Settings list | not tried |
+| Safari | `com.apple.mobilesafari` | yes; 0.2 s | the Start Page with the customization card, Favorites (Apple, Bing, Google, Yahoo) and the Privacy Report | not tried |
+
+As on the reference: the Maps location alert stays on the screen after
+Maps is killed and covers every later app until the Health alert replaces
+it; Maps, Calendar, Photos, Messages and News were running again in the
+background after a kill (`ylaunch kill` found and killed two or three
+instances of each). Guest crashes in these boots: `fileindexerd` (as on
+every SwiftCode boot) and `AppIntentsLiveEntityService` (twice per boot; the
+reference reports the same process, `iphone-types.md` §6); no host crash.
+
+**Sample contacts.** The reference's Contacts shows John Appleseed and the
+other sample contacts because `simctl create` writes the address-book
+databases into a new device (`first-boot.md` §2). SwiftCode's new device has
+none, so Contacts is empty. These databases are CoreSimulator's content,
+not the runtime's; SwiftCode does not copy them (§9.4).
+
+### 9.3 Boot times on 27.0
+
+Measured with the harness's `timed.sh` (the Thor to itself: no other
+`swiftcode-simd`, 1-minute load 1.4 and 0.6 at the start), full boot (no lean
+boot), release build of the IOS27 branch, iPhone 18 Pro, frames every 5 s.
+"Home" is `swiftcode-simd`'s home watch (`SWIFTCODE_HOME_WATCH`) and the first lit
+frame (the launcher's criterion, `specs/ide/run.md` §Warm boot).
+
+| Boot | Home watch | First lit frame | What the frames show | Run length |
+|---|---|---|---|---|
+| Cold first boot of a new device (data migration: 35 of 35 migrators) | 77.5 s | 80 s | 80 s: dock, labels and some icons on black; 85 s: wallpaper; 100 s: every icon drawn, the widgets as in §9.1 | 420 s, ended cleanly |
+| Repeat cold boot of the same device | 38.1 s | 40 s | 40 s: wallpaper with grey placeholder icons; 55 s: every icon drawn | 300 s, ended cleanly |
+
+For comparison: the reference iPhone 18 Pro on 27.0 drew its home screen
+45–49 s into a first boot and 18.1 s into a second boot on a busy Mac
+(`iphone-types.md` §6); SwiftCode's 27.1 iPhone Duo reaches its home screen in
+about 30 s on a repeat boot (main line, `scheduling-policy.md`). The 27.0
+boot has more to draw (17 more apps, 39 visible records, two page-1
+widgets). Under the shared host's load (5–200) the same boots took 90–380 s
+(first) and 250–290 s (repeat).
+
+27.1 regression (same build, a fresh copy of the harness's first-booted
+iPhone Duo device, not timed): the home screen as before (Settings, Safari
+in the dock, sideways cover layout), Settings opened on its list and Safari
+on its Start Page with `ylaunch`; no host crash. The guest crashes were the
+known ones of the main line (`fileindexerd`, `intelligencetasksd`).
+
+### 9.4 Open questions
+
+1. (Dirty side) Where the sample address-book databases and the sample
+   photos of a new device come from (CoreSimulator's bundle or the
+   runtime), and whether a host can create equivalent sample data as its
+   own content; what the reference's Calendar Up Next widget needs to leave
+   its placeholder state; whether the Maps widget's map is drawn from data
+   in the runtime without a network.
+
+## Evidence
+
+| Claim | Level | Source |
+|---|---|---|
+| SwiftCode on 27.0: layouts, screens, launches, times (§9) | 3 | SwiftCode boots on the Thor with the 27.0 RuntimeRoot copy, `IconState.plist` read with `plistlib`, SwiftCode screenshots, `ylaunch` outputs; `timed.sh` runs |
+| Home screen of a fresh 27.1 iPhone Duo (§2.1) | 2, 3 | `IconState.plist` via `plutil`; `simctl io screenshot --display=LCD` |
+| Two displays, default screenshot display (§2.2) | 3 | `simctl io enumerate`; screenshots of both displays |
+| Visible app records, display names, paths (§2.3) | 3 | `simctl listapps` on the 27.1 iPhone, 27.0 iPhone and 27.0 iPad |
+| Launch results (§2.3) | 3 | `simctl launch` return value and error text; screenshots after the launch |
+| Husks, absent bundles, bundle counts (§2.3, §3.1, §4) | 4 | directory listings of both runtimes; presence of `Info.plist` and the `CFBundleExecutable` file |
+| `SBAppTags`, `LSApplicationLaunchProhibited`, `UIDeviceFamily`, `SBIconVisibilityDefaultVisible` | 4 | Info.plist of each bundle via `plistlib` |
+| 162 registered apps | 3 | `first-boot.md` §1 item 5, consistent with the count above |
+| 27.1 supports only iPhone Duo; iPad create fails (§1 item 3) | 3 | `simctl list runtimes -j` (`supportedDeviceTypes`); `simctl create` error 403 |
+| Default layout files and format (§3.3) | 2 | SpringBoard.app's `DefaultIconState*.plist` via `plutil`/`plistlib` |
+| Desired = 466w-678h file | 2 | comparison of `DesiredIconState.plist` with the default files |
+| `dockUtilities` added to the iPhone's Desired file; list identifiers kept; poster apps answered after ≈12 s | 2, 3 | new 27.1 iPhone Duo device, 2026-10-20 (`app-launch.md` §8) |
+| SwiftCode's Desired file matches (§6 item 3) | 2 | 13 SwiftCode device directories on the Thor, `DesiredIconState.plist` compared key by key with the runtime's default file (`plistlib`), 2026-10-20 |
+| Filtering rules (§3.4) | 2, 3 | `DesiredIconState.plist` against `IconState.plist` on three fresh devices |
+| Device capabilities (§5) | 2 | the device types' `capabilities.plist` |
+| 27.0 iPhone and iPad layouts (§4, §5) | 2, 3 | `IconState.plist`, screenshots |
+| 27.0 iPhone 18 Pro layout, keys added by SpringBoard, visible apps, launches and first screens, persistent alert, background relaunch (§4.1) | 2, 3 | two fresh iOS 27.0 iPhone 18 Pro devices, 2026-10-27: `DesiredIconState.plist`/`IconState.plist` against the default file (`plistlib`), `simctl listapps`, `simctl launch`/`terminate`, `launchctl list` via `simctl spawn`, screenshots (scratch only); registrable-bundle count from Info.plist keys (level 4) |
+| SwiftCode's side (§6) | — | `home-screen.md`, `first-boot.md`, `device-capabilities.md` |
+
+Level 5 was not used. The reference tools folder, `research/dirty/` and
+Ghidra were not opened. No Apple images, strings files or plists were
+copied into the repository; bundle identifiers, file names and plist keys
+are recorded as interoperability facts.

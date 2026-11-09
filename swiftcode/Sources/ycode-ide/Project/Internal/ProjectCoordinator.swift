@@ -1,0 +1,100 @@
+import Foundation
+import YcodeIDECore
+
+
+public final class ProjectCoordinator: Sendable {
+    public static let shared = ProjectCoordinator()
+    private init() {}
+
+    public func exportProject(_ project: Project, to destinationURL: URL) async throws {
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        let packageTempDir = tempDir.appendingPathComponent(project.name + ".scproj_payload")
+        try fm.createDirectory(at: packageTempDir, withIntermediateDirectories: true)
+
+        try await ProjectSerializer.shared.serialize(project: project, to: packageTempDir)
+
+        try? fm.removeItem(at: destinationURL)
+
+        try SCProjectArchive.zipItem(at: packageTempDir, to: destinationURL)
+
+        try? fm.removeItem(at: tempDir)
+    }
+
+    public func importProject(from packageURL: URL) async throws -> Project {
+        let fm = FileManager.default
+        var isDir: ObjCBool = false
+        let fileExists = fm.fileExists(atPath: packageURL.path, isDirectory: &isDir)
+
+        var workingDir = packageURL
+        var isTempDir = false
+        let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+
+        if fileExists && !isDir.boolValue {
+            try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            try SCProjectArchive.unzipItem(at: packageURL, to: tempDir)
+            workingDir = tempDir
+            isTempDir = true
+        }
+
+        defer {
+            if isTempDir {
+                try? fm.removeItem(at: tempDir)
+            }
+        }
+
+        var project = try ProjectDeserializer.shared.deserialize(from: workingDir)
+
+        let projectsRoot = await MainActor.run { CodingManager.shared.projectsRoot }
+        let sanitizedName = project.name
+        var finalName = sanitizedName
+        var destDir = projectsRoot.appendingPathComponent(finalName)
+        var counter = 2
+        while fm.fileExists(atPath: destDir.path) {
+            finalName = "\(sanitizedName) \(counter)"
+            destDir = projectsRoot.appendingPathComponent(finalName)
+            counter += 1
+        }
+
+        try fm.createDirectory(at: destDir, withIntermediateDirectories: true)
+        let contents = try fm.contentsOfDirectory(at: workingDir, includingPropertiesForKeys: nil)
+        for item in contents {
+            let destItem = destDir.appendingPathComponent(item.lastPathComponent)
+            try fm.copyItem(at: item, to: destItem)
+        }
+
+        project.name = finalName
+        project.customDirectoryPath = nil
+
+        let projectData = try ProjectJSONManager.shared.encode(project)
+        try ProjectFileManager.shared.writeFile(data: projectData, to: destDir.appendingPathComponent("project.json"))
+
+        return project
+    }
+
+    public func validateProject(at packageURL: URL) throws {
+        try ProjectValidator.shared.validate(packageURL: packageURL)
+    }
+
+    public func getManifest(for packageURL: URL) throws -> ProjectManifest {
+        let fm = FileManager.default
+        var isDir: ObjCBool = false
+
+        if fm.fileExists(atPath: packageURL.path, isDirectory: &isDir) && !isDir.boolValue {
+            let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            defer { try? fm.removeItem(at: tempDir) }
+
+            try SCProjectArchive.unzipItem(at: packageURL, to: tempDir)
+            let manifestURL = tempDir.appendingPathComponent("manifest.json")
+            let data = try ProjectFileManager.shared.readFile(at: manifestURL)
+            return try ProjectJSONManager.shared.decode(ProjectManifest.self, from: data)
+        }
+
+        let manifestURL = packageURL.appendingPathComponent("manifest.json")
+        let data = try ProjectFileManager.shared.readFile(at: manifestURL)
+        return try ProjectJSONManager.shared.decode(ProjectManifest.self, from: data)
+    }
+}

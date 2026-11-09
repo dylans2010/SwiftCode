@@ -1,0 +1,4 @@
+#ifndef SWIFTCODE_HEALTHKIT_CSQLITE_SHIM_H
+#define SWIFTCODE_HEALTHKIT_CSQLITE_SHIM_H
+#include <sqlite3.h>
+#endif

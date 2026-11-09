@@ -1,0 +1,80 @@
+import SwiftUI
+import SwiftCodeSDK
+
+@MainActor
+public struct GitBranchesView: View {
+    public let branches: [GitBranch]
+
+    public init(branches: [GitBranch]) {
+        self.branches = branches
+    }
+
+    public var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Label("Git Branches Directory", systemImage: "arrow.triangle.branch")
+                    .font(.headline)
+                    .foregroundColor(.blue)
+                Spacer()
+                Button(action: {}) {
+                    Label("New Branch", systemImage: "plus")
+                }
+                .buttonStyle(.bordered)
+            }
+            .padding(.bottom, 16)
+
+            ScrollView {
+                VStack(spacing: 20) {
+                    GroupBox {
+                        VStack(alignment: .leading, spacing: 14) {
+                            if branches.isEmpty {
+                                ContentUnavailableView(
+                                    "No Branches Found",
+                                    systemImage: "arrow.triangle.branch",
+                                    description: Text("No local branches tracked.")
+                                )
+                                .frame(height: 150)
+                            } else {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    ForEach(branches, id: \.name) { branch in
+                                        HStack {
+                                            Image(systemName: "arrow.triangle.branch")
+                                                .foregroundStyle(branch.isCurrent ? .green : .secondary)
+                                            Text(branch.name)
+                                                .fontWeight(branch.isCurrent ? .bold : .regular)
+                                            if branch.isCurrent {
+                                                Image(systemName: "checkmark.circle.fill")
+                                                    .foregroundStyle(.green)
+                                            }
+                                            Spacer()
+                                            if branch.isRemote {
+                                                Text("remote")
+                                                    .font(.caption2.bold())
+                                                    .padding(.horizontal, 6)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.secondary.opacity(0.15))
+                                                    .cornerRadius(4)
+                                            }
+                                        }
+                                        .padding(8)
+                                        .background(branch.isCurrent ? Color.green.opacity(0.05) : Color.secondary.opacity(0.04))
+                                        .cornerRadius(6)
+                                        .contextMenu {
+                                            Button("Checkout") {  }
+                                            Button("Merge into current") {  }
+                                            Divider()
+                                            Button("Delete", role: .destructive) {  }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        .padding()
+                    }
+                    .groupBoxStyle(ModernGroupBoxStyle())
+                }
+            }
+        }
+        .sourceControlEmbedded()
+    }
+}

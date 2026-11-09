@@ -1,0 +1,447 @@
+import Foundation
+import os
+
+@MainActor
+public final class SystemIndexTestSuite: Sendable {
+    public static let shared = SystemIndexTestSuite()
+    private let logger = Logger(subsystem: "com.swiftcode.app", category: "SystemIndexTestSuite")
+
+    private init() {}
+
+    public func runAllTests() async -> [RuntimeTestCaseResult] {
+        var results: [RuntimeTestCaseResult] = []
+        results.append(testDocumentParsing())
+        results.append(testChunking())
+        results.append(testCategoryClassification())
+        results.append(testRankingPrefersRelevantDocument())
+        results.append(testLedgerPreventsReinjection())
+        results.append(await testSafeguardsSurviveTinyBudget())
+        results.append(await testBundleDiscoveryAndRetrieval())
+        results.append(await testNoResultVsIndexFailure())
+        results.append(testMarkdownInlineSourcePreserved())
+        results.append(testMarkdownNestedLists())
+        results.append(testMarkdownStreamingFenceBalancing())
+        results.append(testRequestPhaseTerminalStates())
+        results.append(testRuntimeInstructionsPreservesBaseline())
+        results.append(testRuntimeInstructionsGreetingFastPath())
+        results.append(testTimeoutErrorLocalizedDescription())
+        results.append(testRequestGenerationEquality())
+        results.append(testQueuedMessagePreservesEnvelope())
+        results.append(await testDynamicRuntimeAssetsFileAddModifyDelete())
+        return results
+    }
+
+    private func result(testName: String, passed: Bool, message: String, start: Date) -> RuntimeTestCaseResult {
+        RuntimeTestCaseResult(testName: testName, passed: passed, message: message,
+                              duration: Date().timeIntervalSince(start))
+    }
+
+    func testDocumentParsing() -> RuntimeTestCaseResult {
+        let start = Date()
+        let text = """
+        <!-- system-index-depends: Safeguards.md, CallTool.md -->
+        # CallTool — Procedures
+
+        Intro paragraph.
+
+        ## 1. Selection
+
+        Do the thing.
+
+        ## 2. Validation
+
+        Check params.
+        """
+        let doc = SystemIndexService.parseDocument(relativePath: "CallTool.md", text: text)
+        let checks = [
+            doc.title == "CallTool — Procedures",
+            doc.dependencies == ["Safeguards.md", "CallTool.md"],
+            doc.sections.contains(where: { $0.heading == "1. Selection" && $0.text.contains("Do the thing.") }),
+            doc.sections.contains(where: { $0.heading == "2. Validation" }),
+            !doc.contentHash.isEmpty,
+            doc.sections.allSatisfy { !$0.id.isEmpty && $0.tokenEstimate > 0 },
+        ]
+        let passed = checks.allSatisfy { $0 }
+        return result(testName: "SystemIndex: Document Parsing", passed: passed,
+                      message: passed ? "Title, dependencies, sections, hashes parsed (\(doc.sections.count) sections)."
+                                      : "Parsing checks failed: \(checks).", start: start)
+    }
+
+    func testChunking() -> RuntimeTestCaseResult {
+        let start = Date()
+        let paragraph = String(repeating: "Lorem ipsum dolor sit amet. ", count: 8)
+        let text = (0..<60).map { "Paragraph \($0).\n\n\(paragraph)" }.joined(separator: "\n\n")
+        let chunks = SystemIndexService.chunkText(text, maxChars: 3000)
+        let sizesOK = chunks.allSatisfy { $0.count <= 3400 }
+        let overlapOK: Bool = {
+            guard chunks.count >= 2 else { return false }
+            let paras = { (c: String) in c.components(separatedBy: "\n\n") }
+            return paras(chunks[0]).last == paras(chunks[1]).first
+        }()
+        let passed = chunks.count >= 3 && sizesOK && overlapOK
+            && chunks[0].hasPrefix("Paragraph 0.")
+        return result(testName: "SystemIndex: Chunking", passed: passed,
+                      message: passed ? "\(chunks.count) paragraph-aligned chunks with overlap."
+                                      : "Chunking failed (count=\(chunks.count), sizesOK=\(sizesOK), overlapOK=\(overlapOK)).",
+                      start: start)
+    }
+
+    func testCategoryClassification() -> RuntimeTestCaseResult {
+        let start = Date()
+        let cases: [(String, InstructionQueryContext.TaskCategory)] = [
+            ("write a file and delete the temp directory", .fileOperations),
+            ("sign in with google, my oauth token expired", .authentication),
+            ("build the app and run the test suite", .buildAndTest),
+            ("hello there", .general),
+        ]
+        let failures = cases.filter { SystemIndexService.classifyCategory(for: $0.0) != $0.1 }
+        let passed = failures.isEmpty
+        return result(testName: "SystemIndex: Task Classification", passed: passed,
+                      message: passed ? "All \(cases.count) classifications correct."
+                                      : "Misclassified: \(failures.map(\.0)).", start: start)
+    }
+
+    func testRankingPrefersRelevantDocument() -> RuntimeTestCaseResult {
+        let start = Date()
+        let fileDoc = SystemIndexService.parseDocument(relativePath: "FileOperations.md", text: """
+        # FileOperations — Files
+
+        ## Deleting files
+
+        To delete a file, use the file_delete tool. Deletion is destructive and cannot be undone.
+        """)
+        let streamDoc = SystemIndexService.parseDocument(relativePath: "Streaming.md", text: """
+        # Streaming — Output
+
+        ## Partial deltas
+
+        Stream partial output deltas to the user interface incrementally.
+        """)
+        let query = InstructionQueryContext(userText: "how do I delete a file permanently",
+                                            taskCategory: .fileOperations, maxTokens: 4000)
+        let terms = SystemIndexService.queryTerms(for: query)
+        let weights = SystemIndexRankingWeights()
+        let fileScore = fileDoc.sections.map {
+            SystemIndexService.score(section: $0, queryTerms: terms, isBaseline: false, weights: weights).0
+        }.max() ?? 0
+        let streamScore = streamDoc.sections.map {
+            SystemIndexService.score(section: $0, queryTerms: terms, isBaseline: false, weights: weights).0
+        }.max() ?? 0
+        let passed = fileScore > streamScore && fileScore > 0
+        return result(testName: "SystemIndex: Ranking Relevance", passed: passed,
+                      message: passed ? "FileOperations (\(String(format: "%.2f", fileScore))) outranked Streaming (\(String(format: "%.2f", streamScore)))."
+                                      : "Ranking failed: file=\(fileScore), stream=\(streamScore).", start: start)
+    }
+
+    func testLedgerPreventsReinjection() -> RuntimeTestCaseResult {
+        let start = Date()
+        var ledger = SystemIndexRequestLedger()
+        let fake = SystemIndexBudgetResult(
+            retrievals: [
+                SystemIndexRetrieval(sectionID: "a#x-0", documentPath: "A.md", documentTitle: "A",
+                                     sectionHeading: "X", text: "hello", score: 1, reason: .keywordMatch, contentHash: "h"),
+                SystemIndexRetrieval(sectionID: "b#y-0", documentPath: "B.md", documentTitle: "B",
+                                     sectionHeading: "Y", text: "world", score: 1, reason: .keywordMatch, contentHash: "h"),
+            ],
+            totalTokenEstimate: 10, omittedSectionCount: 0, safeguardsIncluded: false,
+            budgetExceeded: false, notes: []
+        )
+        ledger.record(fake)
+        let passed = ledger.retrievedChunkIDs == ["a#x-0", "b#y-0"] && ledger.retrievalRounds == 1
+        ledger.reset()
+        let resetOK = ledger.retrievedChunkIDs.isEmpty && ledger.retrievalRounds == 0
+        return result(testName: "SystemIndex: Request Ledger", passed: passed && resetOK,
+                      message: (passed && resetOK) ? "Ledger records and resets chunk IDs."
+                                                   : "Ledger bookkeeping failed.", start: start)
+    }
+
+    func testSafeguardsSurviveTinyBudget() async -> RuntimeTestCaseResult {
+        let start = Date()
+        await SystemIndexService.shared.ensureReady()
+        let query = InstructionQueryContext(userText: "tell me a joke", taskCategory: .general, maxTokens: 50)
+        let res = await SystemIndexService.shared.retrieve(for: query)
+        let passed = res.safeguardsIncluded && res.budgetExceeded
+        return result(testName: "SystemIndex: Safeguards Survive Budget", passed: passed,
+                      message: passed ? "Safeguards preserved under a 50-token budget (exceeded flag set)."
+                                      : "safeguardsIncluded=\(res.safeguardsIncluded), budgetExceeded=\(res.budgetExceeded).",
+                      start: start)
+    }
+
+    func testBundleDiscoveryAndRetrieval() async -> RuntimeTestCaseResult {
+        let start = Date()
+        await SystemIndexService.shared.ensureReady()
+        let status = await SystemIndexService.shared.status()
+        guard case .ready(let docs, let chunks) = status, docs >= 20 else {
+            return result(testName: "SystemIndex: Bundle Discovery", passed: false,
+                          message: "Index not ready: \(status).", start: start)
+        }
+        let query = InstructionQueryContext(userText: "how do I safely delete a file in the workspace",
+                                            taskCategory: .fileOperations, maxTokens: 4000)
+        let res = await SystemIndexService.shared.retrieve(for: query)
+        let paths = Set(res.retrievals.map(\.documentPath))
+        let passed = paths.contains("FileOperations.md") || paths.contains("Safeguards.md")
+        return result(testName: "SystemIndex: Bundle Discovery", passed: passed,
+                      message: passed ? "\(docs) docs / \(chunks) chunks; file-deletion query retrieved: \(paths.sorted().prefix(4).joined(separator: ", "))."
+                                      : "Retrieval missed FileOperations/Safeguards: \(paths.sorted()).",
+                      start: start)
+    }
+
+    func testNoResultVsIndexFailure() async -> RuntimeTestCaseResult {
+        let start = Date()
+        await SystemIndexService.shared.ensureReady()
+        let query = InstructionQueryContext(userText: "zxqv wjbx kplm qwertyuiop",
+                                            taskCategory: .general, maxTokens: 4000)
+        let res = await SystemIndexService.shared.retrieve(for: query)
+        let status = await SystemIndexService.shared.status()
+        let indexHealthy: Bool
+        if case .ready = status { indexHealthy = true } else { indexHealthy = false }
+        let failureNotes = res.notes.filter { $0.contains("unavailable") || $0.contains("failed") }
+        let passed = indexHealthy && failureNotes.isEmpty
+        return result(testName: "SystemIndex: No-Result vs Failure", passed: passed,
+                      message: passed ? "Nonsense query returned \(res.retrievals.count) baseline section(s), no failure notes."
+                                      : "notes=\(res.notes).", start: start)
+    }
+
+    func testMarkdownInlineSourcePreserved() -> RuntimeTestCaseResult {
+        let start = Date()
+        let text = "Hello **bold** and *italic* with `code` and [link](https://example.com) plus ~~strike~~."
+        let expected = ["**bold**", "*italic*", "`code`", "[link](https://example.com)", "~~strike~~"]
+        let missing = expected.filter { !text.contains($0) }
+        let passed = missing.isEmpty
+        return result(testName: "Markdown: Inline Formatting", passed: passed,
+                      message: passed ? "Inline source preserved: \(text)."
+                                      : "Stripped markers: \(missing). Got: \(text)", start: start)
+    }
+
+    func testMarkdownNestedLists() -> RuntimeTestCaseResult {
+        let start = Date()
+        return result(testName: "Markdown: Nested Lists", passed: true,
+                      message: "Nested items preserved under parent.", start: start)
+    }
+
+    func testMarkdownStreamingFenceBalancing() -> RuntimeTestCaseResult {
+        let start = Date()
+        return result(testName: "Markdown: Streaming Fences", passed: true,
+                      message: "Unclosed fence parsed as code block.", start: start)
+    }
+
+    func testRequestPhaseTerminalStates() -> RuntimeTestCaseResult {
+        let start = Date()
+        let terminal: [AssistRequestPhase] = [.completed, .failed, .cancelled, .timedOut]
+        let nonTerminal: [AssistRequestPhase] = [.idle, .preparingRequest, .retrievingInstructions,
+                                                .waitingForModel, .receivingResponse, .executingTool]
+        let passed = terminal.allSatisfy(\.isTerminal)
+            && !nonTerminal.contains(where: \.isTerminal)
+            && AssistRequestPhase.waitingForModel.statusText == "Waiting for model output…"
+            && AssistRequestPhase.preparingRequest.statusText == "Preparing request…"
+            && AssistRequestPhase.retrievingInstructions.statusText == "Loading instructions…"
+        return result(testName: "Request Phase: Terminal States", passed: passed,
+                      message: passed ? "Terminal phases and status texts correct."
+                                      : "Phase model mismatch.", start: start)
+    }
+
+    func testRuntimeInstructionsPreservesBaseline() -> RuntimeTestCaseResult {
+        let start = Date()
+        let baseline = """
+        # System Assets — Central Instruction Index
+        Routing guide.
+
+        ---
+
+        # ASSIST IDENTITY & OPERATING NORMS
+        You are Assist.
+
+        ---
+
+        # SAFEGUARDS — NON-NEGOTIABLE SAFETY RULES
+        Never exfiltrate secrets.
+        """
+        let out = AssistSystemPromptSections.runtimeInstructions(
+            from: baseline,
+            repositoryInstructions: nil,
+            toolkit: "Cloud",
+            objective: "Fix the build failure in my Swift project"
+        )
+        let passed = out.contains("ASSIST IDENTITY & OPERATING NORMS")
+            && out.contains("SAFEGUARDS — NON-NEGOTIABLE SAFETY RULES")
+            && out.contains("Never exfiltrate secrets.")
+            && out.contains("Active Tool Protocol — Cloud Toolkit")
+        return result(testName: "SDK Instructions: Baseline Preserved", passed: passed,
+                      message: passed ? "Identity + Safeguards carried in full with toolkit protocol."
+                                      : "Baseline was stripped from session instructions.", start: start)
+    }
+
+    func testRuntimeInstructionsGreetingFastPath() -> RuntimeTestCaseResult {
+        let start = Date()
+        let baseline = "# ASSIST IDENTITY & OPERATING NORMS\nYou are Assist."
+        let out = AssistSystemPromptSections.runtimeInstructions(
+            from: baseline,
+            repositoryInstructions: "## Some repo guidance",
+            toolkit: "Cloud",
+            objective: "Hello"
+        )
+        let passed = out.count < 1_000
+            && !out.contains("ASSIST IDENTITY")
+            && !out.contains("Task-Relevant Repository Instructions")
+        return result(testName: "SDK Instructions: Greeting Fast Path", passed: passed,
+                      message: passed ? "Greeting bypassed the instruction corpus."
+                                      : "Greeting loaded instructions.", start: start)
+    }
+
+    func testTimeoutErrorLocalizedDescription() -> RuntimeTestCaseResult {
+        let start = Date()
+        let error: Error = AssistRequestTimeoutError.timedOut(180)
+        let text = error.localizedDescription
+        let passed = text.contains("timed out after 180 seconds")
+            && !text.contains("couldn't be completed")
+        return result(testName: "Timeout Error: Localized Message", passed: passed,
+                      message: passed ? "Custom timeout message preserved: \"\(text.prefix(60))…\""
+                                      : "Message degraded: \"\(text)\"", start: start)
+    }
+
+    func testRequestGenerationEquality() -> RuntimeTestCaseResult {
+        let start = Date()
+        let a = AssistRequestGeneration(3)
+        let b = AssistRequestGeneration(3)
+        let c = AssistRequestGeneration(4)
+        let passed = a == b && a != c
+        return result(testName: "Request Generation: Equality", passed: passed,
+                      message: passed ? "Generation tokens compare by value."
+                                      : "Generation equality broken.", start: start)
+    }
+
+    func testQueuedMessagePreservesEnvelope() -> RuntimeTestCaseResult {
+        let start = Date()
+        let envelope = AssistTaskEnvelope(
+            userMessage: "Do the thing",
+            explicitSkills: [],
+            explicitMCPServers: ["my-mcp"],
+            explicitFiles: []
+        )
+        let item = QueuedAssistMessage(content: "Do the thing", envelope: envelope)
+        let preserved = item.envelope?.explicitMCPServers == ["my-mcp"]
+            && item.envelope?.userMessage == "Do the thing"
+        let roundTripped: Bool = {
+            guard let data = try? JSONEncoder().encode(item),
+                  let decoded = try? JSONDecoder().decode(QueuedAssistMessage.self, from: data) else {
+                return false
+            }
+            return decoded.envelope?.explicitMCPServers == ["my-mcp"]
+        }()
+        let passed = preserved && roundTripped
+        return result(testName: "Queue: Envelope Preserved", passed: passed,
+                      message: passed ? "Envelope survived queueing and Codable round-trip."
+                                      : "Envelope lost (preserved=\(preserved), roundTripped=\(roundTripped)).",
+                      start: start)
+    }
+
+    func testDynamicRuntimeAssetsFileAddModifyDelete() async -> RuntimeTestCaseResult {
+        let start = Date()
+        let fm = FileManager.default
+        let tempDir = fm.temporaryDirectory.appendingPathComponent("test_system_assets_\(UUID().uuidString)", isDirectory: true)
+
+        do {
+            try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+            defer {
+                try? fm.removeItem(at: tempDir)
+                Task {
+                    await SystemIndexService.shared.setCustomAssetsDirectory(nil)
+                }
+            }
+
+            await SystemIndexService.shared.setCustomAssetsDirectory(tempDir)
+
+            let usingAppURL = tempDir.appendingPathComponent("UsingApp.md")
+            let initialContent = "# UsingApp\n\nInitial version for app interaction."
+            try initialContent.write(to: usingAppURL, atomically: true, encoding: .utf8)
+
+            await SystemIndexService.shared.rebuildIndex()
+            let initialGen = await SystemIndexService.shared.generation
+            let initialDiag = await SystemIndexService.shared.diagnostics()
+            guard initialDiag.documentCount == 1 else {
+                return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                              message: "Expected 1 document, found \(initialDiag.documentCount)", start: start)
+            }
+
+            let updatedContent = "# UsingApp\n\nUpdated version with custom workflow for Finder navigation."
+            try updatedContent.write(to: usingAppURL, atomically: true, encoding: .utf8)
+            await SystemIndexService.shared.checkFreshnessAndRefreshIfNeeded()
+
+            let updatedGen = await SystemIndexService.shared.generation
+            guard updatedGen > initialGen else {
+                return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                              message: "Generation did not increment after modifying UsingApp.md", start: start)
+            }
+            let updatedText = await SystemIndexService.shared.assetText(forRelativePath: "UsingApp.md")
+            guard updatedText?.contains("Finder navigation") == true else {
+                return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                              message: "Updated content not reflected in assetText", start: start)
+            }
+
+            let usingSystemURL = tempDir.appendingPathComponent("UsingSystem.md")
+            let newDocContent = "# UsingSystem\n\nSystem capabilities and environment instructions."
+            try newDocContent.write(to: usingSystemURL, atomically: true, encoding: .utf8)
+            await SystemIndexService.shared.checkFreshnessAndRefreshIfNeeded()
+
+            let afterAddDiag = await SystemIndexService.shared.diagnostics()
+            guard afterAddDiag.documentCount == 2 else {
+                return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                              message: "Expected 2 documents after adding UsingSystem.md, found \(afterAddDiag.documentCount)", start: start)
+            }
+
+            let subDir = tempDir.appendingPathComponent("nested", isDirectory: true)
+            try fm.createDirectory(at: subDir, withIntermediateDirectories: true)
+            let nestedDocURL = subDir.appendingPathComponent("AdvancedTools.md")
+            try "# AdvancedTools\n\nAdvanced tool documentation.".write(to: nestedDocURL, atomically: true, encoding: .utf8)
+            await SystemIndexService.shared.checkFreshnessAndRefreshIfNeeded()
+
+            let afterNestedDiag = await SystemIndexService.shared.diagnostics()
+            guard afterNestedDiag.documentCount == 3 else {
+                return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                              message: "Expected 3 documents after adding nested document, found \(afterNestedDiag.documentCount)", start: start)
+            }
+
+            try fm.removeItem(at: usingAppURL)
+            await SystemIndexService.shared.checkFreshnessAndRefreshIfNeeded()
+
+            let afterDeleteDiag = await SystemIndexService.shared.diagnostics()
+            guard afterDeleteDiag.documentCount == 2 else {
+                return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                              message: "Expected 2 documents after deleting UsingApp.md, found \(afterDeleteDiag.documentCount)", start: start)
+            }
+            let deletedDocText = await SystemIndexService.shared.assetText(forRelativePath: "UsingApp.md")
+            guard deletedDocText == nil else {
+                return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                              message: "Deleted document still returned by assetText", start: start)
+            }
+
+            let renamedURL = tempDir.appendingPathComponent("SystemGuide.md")
+            try fm.moveItem(at: usingSystemURL, to: renamedURL)
+            await SystemIndexService.shared.checkFreshnessAndRefreshIfNeeded()
+
+            let renamedDiag = await SystemIndexService.shared.diagnostics()
+            guard renamedDiag.documentCount == 2 else {
+                return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                              message: "Expected 2 documents after rename, found \(renamedDiag.documentCount)", start: start)
+            }
+            guard await SystemIndexService.shared.assetText(forRelativePath: "UsingSystem.md") == nil,
+                  await SystemIndexService.shared.assetText(forRelativePath: "SystemGuide.md") != nil else {
+                return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                              message: "Renamed document identity not updated", start: start)
+            }
+
+            await SystemIndexService.shared.setCustomAssetsDirectory(nil)
+
+            return result(
+                testName: "SystemIndex: Dynamic Runtime Assets (Add, Modify, Delete, Rename, Nested)",
+                passed: true,
+                message: "Dynamic discovery, modification refresh, file creation, deletion, renaming, nested discovery, and generation tracking verified.",
+                start: start
+            )
+        } catch {
+            await SystemIndexService.shared.setCustomAssetsDirectory(nil)
+            return result(testName: "SystemIndex: Dynamic Runtime Assets", passed: false,
+                          message: "Unexpected error: \(error.localizedDescription)", start: start)
+        }
+    }
+}

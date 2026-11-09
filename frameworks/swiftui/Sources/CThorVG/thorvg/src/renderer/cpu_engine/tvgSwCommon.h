@@ -1,0 +1,554 @@
+#ifndef _TVG_SW_COMMON_H_
+#define _TVG_SW_COMMON_H_
+
+#include <algorithm>
+#include "tvgCommon.h"
+#include "tvgMath.h"
+#include "tvgColor.h"
+#include "tvgRender.h"
+
+#ifdef THORVG_OPENMP_SUPPORT
+    #include <omp.h>
+#endif
+
+#define SW_COLOR_TABLE 1024
+
+struct SwCompositor;
+struct SwSurface;
+
+struct SwPoint
+{
+    int32_t x, y;
+
+    SwPoint& operator-=(const SwPoint& rhs)
+    {
+        x -= rhs.x;
+        y -= rhs.y;
+        return *this;
+    }
+
+    SwPoint& operator+=(const SwPoint& rhs)
+    {
+        x += rhs.x;
+        y += rhs.y;
+        return *this;
+    }
+
+    SwPoint operator+(const SwPoint& rhs) const
+    {
+        return {x + rhs.x, y + rhs.y};
+    }
+
+    SwPoint operator-(const SwPoint& rhs) const
+    {
+        return {x - rhs.x, y - rhs.y};
+    }
+
+    bool operator==(const SwPoint& rhs) const
+    {
+        return (x == rhs.x && y == rhs.y);
+    }
+
+    bool operator!=(const SwPoint& rhs) const
+    {
+        return (x != rhs.x || y != rhs.y);
+    }
+
+    bool zero() const
+    {
+        if (x == 0 && y == 0) return true;
+        else return false;
+    }
+
+    bool tiny() const
+    {
+        if (abs(x) < 2 && abs(y) < 2) return true;
+        else return false;
+    }
+
+    Point toPoint() const
+    {
+        return {static_cast<float>(x) / 64.0f, static_cast<float>(y) / 64.0f};
+    }
+};
+
+struct SwSize
+{
+    int32_t w, h;
+};
+
+struct SwOutline
+{
+    const RenderPath* path;
+
+    Array<SwPoint> out;
+
+    FillRule fillRule;
+};
+
+struct SwSpan
+{
+    int32_t x, y;
+    int32_t len;
+    uint8_t coverage;
+
+    bool fetch(const RenderRegion& bbox, int32_t& x, int32_t& len) const
+    {
+        x = std::max((int32_t)this->x, bbox.xMin);
+        len = std::min((int32_t)(this->x + this->len), bbox.xMax) - x;
+        return (len > 0) ? true : false;
+    }
+};
+
+struct SwRle
+{
+    Array<SwSpan> spans;
+
+    const SwSpan* fetch(const RenderRegion& bbox, const SwSpan** end) const
+    {
+        return fetch(bbox.yMin, bbox.yMax - 1, end);
+    }
+
+    const SwSpan* fetch(int32_t min, int32_t max, const SwSpan** end) const
+    {
+        const SwSpan* begin;
+
+        if (min <= spans.first().y) {
+            begin = spans.begin();
+        } else {
+            auto comp = [](const SwSpan& span, int y) { return span.y < y; };
+            begin = lower_bound(spans.begin(), spans.end(), min, comp);
+        }
+        if (end) {
+            if (max >= spans.last().y) {
+                *end = spans.end();
+            } else {
+                auto comp = [](int y, const SwSpan& span) { return y < span.y; };
+                *end = upper_bound(spans.begin(), spans.end(), max, comp);
+            }
+        }
+        return begin;
+    }
+
+    bool invalid() const { return spans.empty(); }
+    bool valid() const { return !invalid(); }
+    uint32_t size() const { return spans.count; }
+    SwSpan* data() const { return spans.data; }
+};
+
+struct SwCell
+{
+    int32_t x;
+    int32_t cover;
+    long area;
+    SwCell *next;
+};
+
+struct SwFill
+{
+    struct SwLinear {
+        float dx, dy;
+        float offset;
+    };
+
+    struct SwRadial {
+        float a11, a12, a13;
+        float a21, a22, a23;
+        float fx, fy, fr;
+        float dx, dy, dr;
+        float invA, a;
+    };
+
+    struct SwConic {
+        float a11, a12, a13;
+        float a21, a22, a23;
+        float cx, cy;
+        float offset;
+        Point normal;
+        float invFwidth;
+        float distanceDx, seamProjectionDx;
+    };
+
+    union {
+        SwLinear linear;
+        SwRadial radial;
+        SwConic conic;
+    };
+
+    uint32_t ctable[SW_COLOR_TABLE];
+    float extent;
+    FillSpread spread;
+    Type type;
+
+    bool solid = false;
+    bool translucent;
+};
+
+struct SwStrokeBorder
+{
+    Array<Point> pts;
+    uint8_t* tags = nullptr;
+    int32_t start = 0;
+    bool movable = false;
+
+    ~SwStrokeBorder()
+    {
+        tvg::free(tags);
+    }
+};
+
+struct SwStroke
+{
+    float angleIn, angleOut;
+    Point center;
+    float length;
+    float subPathAngle;
+    Point subPathStart;
+    float subPathLength;
+    float width;
+    float miterlimit;
+    SwFill* fill;
+    SwStrokeBorder* borders[2];
+    StrokeCap cap;
+    StrokeJoin join;
+    bool firstPt;
+    bool closedSubPath;
+    bool handleWideStrokes;
+};
+
+struct SwDashStroke
+{
+    RenderPath* path = nullptr;
+    float curLen = 0;
+    int32_t curIdx = 0;
+    Point ptStart = {0, 0};
+    Point ptCur = {0, 0};
+    float* pattern = nullptr;
+    uint32_t cnt = 0;
+    bool curOpGap = false;
+    bool move = true;
+};
+
+struct SwShape
+{
+    SwOutline* outline = nullptr;
+    SwStroke* stroke = nullptr;
+    SwFill* fill = nullptr;
+    SwRle* rle = nullptr;
+    SwRle* strokeRle = nullptr;
+    RenderRegion bbox;
+    bool fastTrack = false;
+};
+
+struct SwImage
+{
+    SwOutline*   outline = nullptr;
+    SwRle*   rle = nullptr;
+    union {
+        pixel_t*  data;
+        uint32_t* buf32;
+        uint8_t*  buf8;
+    };
+    uint32_t     w, h, stride;
+    int32_t      ox = 0;
+    int32_t      oy = 0;
+    float        scale;
+
+    uint8_t      channelSize;
+    FilterMethod filter;
+    bool direct = false;
+    bool scaled = false;
+    bool alphaIgnored = false;
+};
+
+typedef uint8_t (*SwMask)(uint8_t s, uint8_t d, uint8_t a);
+typedef uint32_t (*SwBlender)(const SwSurface* surface, uint32_t s, uint32_t d);
+typedef uint32_t (*SwBlenderA)(uint32_t s, uint32_t d, uint8_t a);
+typedef uint32_t (*SwJoin)(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+typedef uint8_t (*SwAlpha)(uint8_t*);
+
+struct SwSurface : RenderSurface
+{
+    SwJoin  join;
+    SwAlpha alphas[4];
+    SwBlender blender = nullptr;
+    SwCompositor* compositor = nullptr;
+    BlendMethod blendMethod = BlendMethod::Normal;
+
+    SwAlpha alpha(MaskMethod method)
+    {
+        auto idx = (int)(method) - 1;
+        return alphas[idx > 3 ? 0 : idx];
+    }
+
+    uint8_t luma(const uint32_t& c) const
+    {
+        return alphas[2]((uint8_t*)&c);
+    }
+
+    SwSurface() = default;
+
+    SwSurface(const SwSurface* rhs) : RenderSurface(rhs)
+    {
+        join = rhs->join;
+        memcpy(alphas, rhs->alphas, sizeof(alphas));
+        blender = rhs->blender;
+        compositor = rhs->compositor;
+        blendMethod = rhs->blendMethod;
+    }
+};
+
+struct SwCompositor : RenderCompositor
+{
+    SwSurface* recoverSfc;
+    SwCompositor* recoverCmp;
+    SwImage image;
+    RenderRegion bbox;
+    bool valid;
+};
+
+struct SwCellPool
+{
+    #define DEFAULT_POOL_SIZE 16368
+
+    uint32_t size;
+    SwCell* buffer;
+
+    SwCellPool() : size(DEFAULT_POOL_SIZE), buffer(tvg::malloc<SwCell>(DEFAULT_POOL_SIZE)) {}
+    ~SwCellPool() { tvg::free(buffer); }
+};
+
+struct SwMpool
+{
+    SwOutline* outlines;
+    RenderPath* paths;
+    SwStrokeBorder* lBorders;
+    SwStrokeBorder* rBorders;
+    SwCellPool* cellPools;
+
+    SwMpool(uint32_t threads)
+    {
+        auto allocSize = threads + 1;
+        outlines = new SwOutline[allocSize];
+        paths = new RenderPath[allocSize];
+        lBorders = new SwStrokeBorder[allocSize];
+        rBorders = new SwStrokeBorder[allocSize];
+        cellPools = new SwCellPool[allocSize];
+    }
+
+    ~SwMpool()
+    {
+        delete[] (outlines);
+        delete[] (paths);
+        delete[] (lBorders);
+        delete[] (rBorders);
+        delete[] (cellPools);
+    }
+
+    SwCellPool* cell(unsigned idx)
+    {
+        return &cellPools[idx];
+    }
+
+    SwOutline* outline(unsigned idx)
+    {
+        paths[idx].clear();
+        outlines[idx].path = &paths[idx];
+        outlines[idx].out.clear();
+
+        return &outlines[idx];
+    }
+
+    SwStrokeBorder* strokeLBorder(unsigned idx)
+    {
+        lBorders[idx].pts.clear();
+        lBorders[idx].start = -1;
+        return &lBorders[idx];
+    }
+
+    SwStrokeBorder* strokeRBorder(unsigned idx)
+    {
+        rBorders[idx].pts.clear();
+        rBorders[idx].start = -1;
+        return &rBorders[idx];
+    }
+};
+
+static inline uint32_t JOIN(uint8_t c0, uint8_t c1, uint8_t c2, uint8_t c3)
+{
+    return (c0 << 24 | c1 << 16 | c2 << 8 | c3);
+}
+
+static inline uint32_t ALPHA_BLEND(uint32_t c, uint32_t a)
+{
+    ++a;
+    return (((((c >> 8) & 0x00ff00ff) * a) & 0xff00ff00) + ((((c & 0x00ff00ff) * a) >> 8) & 0x00ff00ff));
+}
+
+static inline uint32_t INTERPOLATE(uint32_t s, uint32_t d, uint8_t a)
+{
+    return (((((((s >> 8) & 0xff00ff) - ((d >> 8) & 0xff00ff)) * a) + (d & 0xff00ff00)) & 0xff00ff00) + ((((((s & 0xff00ff) - (d & 0xff00ff)) * a) >> 8) + (d & 0xff00ff)) & 0xff00ff));
+}
+
+static inline uint8_t INTERPOLATE8(uint8_t s, uint8_t d, uint8_t a)
+{
+    return (((s) * (a) + 0xff) >> 8) + (((d) * ~(a) + 0xff) >> 8);
+}
+
+static inline uint8_t A(uint32_t c)
+{
+    return ((c) >> 24);
+}
+
+static inline uint8_t IA(uint32_t c)
+{
+    return (~(c) >> 24);
+}
+
+static inline uint8_t C1(uint32_t c)
+{
+    return ((c) >> 16);
+}
+
+static inline uint8_t C2(uint32_t c)
+{
+    return ((c) >> 8);
+}
+
+static inline uint8_t C3(uint32_t c)
+{
+    return (c);
+}
+
+static inline uint32_t PREMULTIPLY(uint32_t c, uint8_t a)
+{
+    return (c & 0xff000000) + ((((c >> 8) & 0xff) * a) & 0xff00) + ((((c & 0x00ff00ff) * a) >> 8) & 0x00ff00ff);
+}
+
+static inline uint32_t UNPREMULTIPLY(uint32_t data)
+{
+    auto a = A(data);
+    if (a == 255 || a == 0) return data;
+
+    uint8_t r = std::min(C1(data) * 255u / a, 255u);
+    uint8_t g = std::min(C2(data) * 255u / a, 255u);
+    uint8_t b = std::min(C3(data) * 255u / a, 255u);
+
+    return JOIN(a, r, g, b);
+}
+
+static inline uint32_t opBlendInterp(uint32_t s, uint32_t d, uint8_t a)
+{
+    return INTERPOLATE(s, d, a);
+}
+
+static inline uint32_t opBlendNormal(uint32_t s, uint32_t d, uint8_t a)
+{
+    auto t = ALPHA_BLEND(s, a);
+    return t + ALPHA_BLEND(d, IA(t));
+}
+
+static inline uint32_t opBlendPreNormal(uint32_t s, uint32_t d, TVG_UNUSED uint8_t a)
+{
+    return s + ALPHA_BLEND(d, IA(s));
+}
+
+static inline uint32_t opBlendSrcOver(uint32_t s, TVG_UNUSED uint32_t d, TVG_UNUSED uint8_t a)
+{
+    return s;
+}
+
+void utilExport(SwOutline* outline, const Matrix& transform, BBox& bbox);
+bool utilBBox(const BBox& bbox, const RenderRegion& clipBox, RenderRegion& renderBox, bool fastTrack);
+
+void shapeReset(SwShape& shape);
+void shapeDelOutline(SwShape& shape);
+bool shapeGenRle(SwShape& shape, const RenderShape* rshape, const Matrix& transform, const RenderRegion& clipBox, RenderRegion& renderBox, SwMpool* mpool, unsigned tid, bool composite, bool antiAlias);
+void shapeResetStroke(SwShape& shape, const RenderShape* rshape, const Matrix& transform, SwMpool* mpool, unsigned tid);
+bool shapeGenStrokeRle(SwShape& shape, const RenderShape* rshape, const Matrix& transform, const RenderRegion& clipBox, RenderRegion& renderBox, SwMpool* mpool, unsigned tid, bool antiAlias);
+void shapeFree(SwShape& shape);
+void shapeDelStroke(SwShape& shape);
+bool shapeStrokeBBox(SwShape& shape, const RenderShape* rshape, Point* pt4, const Matrix& m, SwMpool* mpool);
+
+void strokeReset(SwStroke* stroke, const RenderShape* shape, const Matrix& transform, SwMpool* mpool, unsigned tid);
+bool strokeParseOutline(SwStroke* stroke, const SwOutline& outline);
+SwOutline* strokeExportOutline(SwStroke* stroke, SwMpool* mpool, unsigned tid);
+void strokeFree(SwStroke* stroke);
+
+bool imagePrepare(SwImage& image, const Matrix& transform, const RenderRegion& clipBox, RenderRegion& renderBox, SwMpool* mpool, unsigned tid);
+bool imageGenRle(SwImage& image, const RenderRegion& bbox, SwMpool* mpool, unsigned tid, bool antiAlias);
+void imageReset(SwImage& image);
+void imageFree(SwImage& image);
+
+bool fillPrepare(SwFill*& fill, const Fill* fdata, const Matrix& transform, SwSurface* surface, uint8_t opacity, bool ctable);
+const Fill::ColorStop* fillFetchSolid(const SwFill* fill, const Fill* fdata);
+void fillReset(SwFill* fill);
+void fillRaster(const SwFill* fill, uint8_t* dst, uint32_t y, uint32_t x, uint32_t len, SwMask maskOp, uint8_t opacity);
+void fillRaster(const SwFill* fill, uint8_t* dst, uint32_t y, uint32_t x, uint32_t len, uint8_t* cmp, SwMask maskOp, uint8_t opacity);
+void fillRaster(const SwFill* fill, uint32_t* dst, uint32_t y, uint32_t x, uint32_t len, SwBlenderA op, uint8_t a);
+void fillRaster(const SwSurface* surface, const SwFill* fill, uint32_t* dst, uint32_t y, uint32_t x, uint32_t len, SwBlenderA op, SwBlender op2, uint8_t a);
+void fillRaster(const SwFill* fill, uint32_t* dst, uint32_t y, uint32_t x, uint32_t len, uint8_t* cmp, SwAlpha alpha, uint8_t csize, uint8_t opacity);
+
+SwRle* rleRender(SwRle* rle, const SwOutline* outline, const RenderRegion& bbox, SwMpool* mpool, unsigned tid, bool antiAlias);
+SwRle* rleRender(const RenderRegion* bbox);
+void rleFree(SwRle* rle);
+void rleReset(SwRle* rle);
+void rleMerge(SwRle* rle, SwRle* clip1, SwRle* clip2);
+bool rleClip(SwRle* rle, const SwRle* clip);
+bool rleClip(SwRle* rle, const RenderRegion* clip);
+bool rleIntersect(const SwRle* rle, const RenderRegion& region);
+
+void mpoolInit(uint32_t threads);
+void mpoolTerm();
+SwMpool* mpoolReq();
+
+void rasterInit();
+Result rasterCompositor(SwSurface* surface);
+bool rasterShape(SwSurface* surface, SwShape* shape, const RenderRegion& bbox, RenderColor& c);
+bool rasterTexmapPolygon(SwSurface* surface, const SwImage& image, const Matrix& transform, const RenderRegion& bbox, uint8_t opacity);
+bool rasterScaledImage(SwSurface* surface, const SwImage& image, const Matrix& transform, const RenderRegion& bbox, uint8_t opacity);
+bool rasterDirectImage(SwSurface* surface, const SwImage& image, const RenderRegion& bbox, uint8_t opacity);
+bool rasterScaledRleImage(SwSurface* surface, const SwImage& image, const Matrix& transform, const RenderRegion& bbox, uint8_t opacity);
+bool rasterDirectRleImage(SwSurface* surface, const SwImage& image, const RenderRegion& bbox, uint8_t opacity);
+bool rasterStroke(SwSurface* surface, SwShape* shape, const RenderRegion& bbox, RenderColor& c);
+bool rasterGradientShape(SwSurface* surface, SwShape* shape, const RenderRegion& bbox, const Fill* fdata, uint8_t opacity);
+bool rasterGradientStroke(SwSurface* surface, SwShape* shape, const RenderRegion& bbox, const Fill* fdata, uint8_t opacity);
+bool rasterClear(SwSurface* surface, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
+void rasterUnpremultiplySurface(RenderSurface* surface);
+void rasterPremultiplySurface(RenderSurface* surface);
+bool rasterConvertCS(RenderSurface* surface, ColorSpace to);
+
+bool effectMotionBlur(SwCompositor* cmp, SwSurface* surface, const RenderEffectMotionBlur* params);
+bool effectMotionBlurRegion(RenderEffectMotionBlur* params);
+void effectMotionBlurUpdate(RenderEffectMotionBlur* params, const Matrix& transform);
+bool effectGaussianBlur(SwCompositor* cmp, SwSurface* surface, const RenderEffectGaussianBlur* params);
+bool effectGaussianBlurRegion(RenderEffectGaussianBlur* effect);
+void effectGaussianBlurUpdate(RenderEffectGaussianBlur* effect, const Matrix& transform);
+bool effectDropShadow(SwCompositor* cmp, SwSurface* surfaces[2], const RenderEffectDropShadow* params, bool direct);
+bool effectDropShadowRegion(RenderEffectDropShadow* effect);
+void effectDropShadowUpdate(RenderEffectDropShadow* effect, const Matrix& transform);
+void effectFillUpdate(RenderEffectFill* effect);
+bool effectFill(SwCompositor* cmp, const RenderEffectFill* params, bool direct);
+void effectTintUpdate(RenderEffectTint* effect);
+bool effectTint(SwCompositor* cmp, const RenderEffectTint* params, bool direct);
+void effectTritoneUpdate(RenderEffectTritone* effect);
+bool effectTritone(SwCompositor* cmp, const RenderEffectTritone* params, bool direct);
+
+uint32_t blendDifference(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendExclusion(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendAdd(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendScreen(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendMultiply(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendOverlay(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendDarken(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendLighten(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendColorDodge(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendColorBurn(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendHardLight(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendSoftLight(TVG_UNUSED const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendHue(const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendSaturation(const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendColor(const SwSurface* surface, uint32_t s, uint32_t d);
+uint32_t blendLuminosity(const SwSurface* surface, uint32_t s, uint32_t d);
+
+#endif

@@ -1,0 +1,169 @@
+# Build: requests, engines and diagnostics
+
+SwiftCode module: `SwiftCodeBuild`. CLI: `swiftcode build`.
+
+## Requests
+
+A build request names:
+
+| Field | Meaning | xcodebuild flag |
+|---|---|---|
+| container | a project (`.xcodeproj`), workspace (`.xcworkspace`) or package directory (`Package.swift`) | `-project`, `-workspace`, or the working directory |
+| scheme | scheme name | `-scheme` |
+| configuration | build configuration (`Debug`, `Release`) | `-configuration` |
+| destination | `key=value[,key=value]` specifier, e.g. `platform=macOS,arch=arm64`, `platform=iOS Simulator,name=…` | `-destination` |
+| action | `build`, `clean`, `test`, `analyze`, `build-for-testing` | trailing action word |
+| derivedDataPath | where products and intermediates go | `-derivedDataPath` |
+| settings | `NAME=value` overrides, highest precedence | trailing `NAME=value` arguments |
+
+The IDE commands map as follows (shortcuts from Apple's public Xcode
+keyboard-shortcut reference): Build ⌘B → `build`; Run ⌘R → `build` then
+launch; Test ⌘U → `test`; Clean Build Folder ⇧⌘K → `clean`; Analyze ⇧⌘B →
+`analyze`; Stop ⌘. cancels the running operation.
+
+## Engines
+
+A build engine takes a request and returns an operation: an ordered event
+stream plus a cancel action. Events are:
+
+- `output(line)`: one raw log line (for the build log / report navigator);
+- `activity(text)`: short progress text for the toolbar activity view;
+- `issue(diagnostic)`: one finished diagnostic (see below);
+- `finished(result)`: status (`succeeded`, `failed`, `cancelled`), exit code
+  and all issues. It is always the last event.
+
+Engine 1 (`XcodebuildEngine`) runs `xcrun xcodebuild <args>` with
+stdout and stderr merged, stdin closed. Exit status 0 means success. Cancel
+sends SIGINT (xcodebuild then stops its build and reports failure; SwiftCode
+reports `cancelled`).
+
+Engine 2 (`SwiftBuildEngine`) builds with swift-build from a PIF that SwiftCode
+generates (`build-pif.md`), by running swift-build's `swbuild`
+command-line client. It emits the same events, so the UI does not depend
+on which engine runs.
+
+Status (2026-10-28): both engines are implemented in `SwiftCodeBuild`. The
+IDE's default is swift-build (Settings ▸ Locations ▸ Build System,
+`settings.md`): it is wrapped in `FallbackEngine`, which uses xcodebuild
+for any request swift-build cannot describe, and the IDE uses xcodebuild
+outright when `swbuild` cannot be found.
+
+### The command line
+
+`swiftcode build [<container>] [--engine xcodebuild|swift-build|swiftpm]`
+(`CommandLineBuild`). The container is the path given, else the current
+folder. Without `--engine`:
+
+| Host | Package folder (a `Package.swift`, no `.xcodeproj` or `.xcworkspace`) | Project, workspace, other folder |
+|---|---|---|
+| macOS | xcodebuild (`xcrun xcodebuild`) | xcodebuild |
+| Linux, host build or Flatpak | `swiftpm` | xcodebuild, which on Linux is swiftcodebuild |
+
+This is the Linux IDE's choice (`ShellBuildSetup`), with the same switch:
+`SWIFTCODE_IDE_ENGINE=swiftcodebuild` sends packages to swiftcodebuild too. The
+`swiftpm` engine (`PackageBuildEngine`) runs the toolchain's SwiftPM:
+`swift build --package-path <dir>` (`-c release` for `-configuration
+Release`), `swift test` for `--test`, `swift build --build-tests` for
+`--build-for-testing`, `swift package clean` for `--clean`. `-scheme`,
+`-destination` and `-derivedDataPath` do not apply to it. In the Flatpak,
+`swift` is the host-tool wrapper, which runs the host's toolchain through
+the host bridge (`packaging/flatpak/host-tool.sh`), as the IDE's builds do.
+
+Missing tools are errors, exit 1:
+
+| Situation | Message |
+|---|---|
+| no `swift` on `PATH` (host build) | the build's one issue: `SwiftCode could not find a Swift toolchain. Install Swift 6 or later (swift.org/install), make sure \`swift\` is on your PATH, then build again.` |
+| no Swift on the host (Flatpak) | the wrapper's `SwiftCode: no Swift toolchain was found on this computer (swift is missing).` and how to install one, exit 127 from the wrapper |
+| the Flatpak cannot reach the host | the wrapper's message naming the `--talk-name=org.freedesktop.Flatpak` permission |
+
+When SwiftPM's driver exits 127 without an error of its own (it did not
+run: the shell's "command not found", or the wrapper's two cases above),
+its output lines, joined, are the build's one error issue, so the IDE's
+issue navigator and `swiftcode build --quiet` show the reason too.
+| swiftcodebuild not found (Linux) | `swiftcode: SwiftCode could not find its build tool, swiftcodebuild. …` |
+| `--engine swift-build` without `swbuild` | `swiftcode: swbuild not found (set SWIFTCODE_SWBUILD). Swift packages build with --engine swiftpm` (`, the default here.` on Linux) |
+
+Activity text: a log line that starts with a known step verb maps to a
+label plus the last path component on the line — `CompileSwift`,
+`SwiftCompile`, `CompileC` → "Compiling"; `Ld` → "Linking"; `CodeSign` →
+"Signing"; `CompileAssetCatalog`; `ProcessInfoPlistFile`;
+`PhaseScriptExecution` → "Running script"; `Resolve Package Graph`.
+
+## Diagnostics
+
+Line grammar (the clang/swiftc/ld textual form, one issue per line):
+
+```
+issue    := [prefix ": "] severity ": " message
+prefix   := file ":" line [":" column] | file | tool
+severity := "error" | "warning" | "note" | "remark"
+fixit    := 'fix-it:"' file '":{' l1 ':' c1 '-' l2 ':' c2 '}:"' text '"'
+```
+
+- The earliest `": <severity>: "` marker splits prefix from message, so a
+  message may itself contain such text.
+- Numbers are taken from the end of the prefix (at most two), so file paths
+  may contain colons. A prefix with no numbers is a file (line 0) when it
+  contains `/` or `.`, else a tool name (no location), e.g. `ld: warning:`.
+- Lines that start with whitespace (source excerpts, carets) are not issues.
+- A `note` attaches to the open issue; a `fix-it` line (clang's
+  `-fdiagnostics-parseable-fixits` form; text uses C escapes) attaches to the
+  open issue. A note with no open issue stands alone.
+- An issue is complete when the next issue line or the end of the stream
+  arrives.
+- An exact repeat (same severity, message, location, notes, fix-its) is
+  dropped: compilers repeat issues when a file is built for several
+  architectures.
+
+`swiftcode build --quiet` prints errors and warnings in the same line form plus
+a status line on stderr; exit status 0 on success, 1 otherwise.
+
+## IDE tool actions (IDE-QUICKWINS, 2026-10-30)
+
+Product menu items that run one of swiftcodebuild's actions inside the IDE
+(`Xcodebuild.run` with a captured console, as Organizer ▸ Archive does),
+off the main thread. The activity view shows "<title>" while it runs and
+"<title> Succeeded" / "<title> Failed" after; the output becomes a report
+"<title> <scheme>" in the Report navigator. A failure shows the last lines
+of the output in a sheet; a success reveals what it made in Finder.
+
+| Item | Command line | Notes |
+|---|---|---|
+| Export Localizations… | `-exportLocalizations -localizationPath <folder> -project <P> -exportLanguage <l>…` | A save panel names the folder ("<project> Localizations"). Languages: the development region, then the other known regions without `Base`. |
+| Import Localizations… | `-importLocalizations -localizationPath <xcloc or xliff> -project <P>` | An open panel picks the `.xcloc` (or `.xliff`). |
+| Build Documentation ⌃⇧⌘D | `[-project P \| -workspace W] -scheme <S> -derivedDataPath <dir>/.swiftcode-build/Documentation docbuild` | Packages run in the package folder. The archives are `<dd>/Build/Products/<configuration>/*.doccarchive`. SwiftCode has no documentation viewer: they are revealed in Finder. |
+| Delete Derived Data… | – | Asks first, then deletes the workspace's derived data folder: the build folder (the product path before `/Products/`) for swift-build's layout, its parent for xcodebuild's `<…>/Build`. |
+
+Export and Import act on the project, or a workspace's first project
+(by path); they are disabled in a package workspace (`reference-ui-5.md`
+§2.9 item 17) and while a build runs. Code: `SwiftCodeIDECore`
+`IDEToolActions`, `WorkspaceSession+Tools.swift`; `SwiftCodeUI`
+`WorkspaceWindowController+ToolActions.swift`. Tests:
+`IDEQuickWinsTests`, `IDEQuickWinsUITests`.
+
+## Evidence
+
+- Request flags and actions: `xcodebuild -help`/`man xcodebuild` (level 1/3).
+- Diagnostic line grammar: clang and Swift compiler documentation and open
+  source (`-fdiagnostics-parseable-fixits`, swift-driver) (level 1); a
+  black-box `xcodebuild` run of a two-line Swift package with an undefined
+  identifier gave `…/main.swift:2:7: error: cannot find 'y' in scope` (level 3).
+- Step verbs in the build log: observed in `xcodebuild` output (level 3).
+- Shortcuts: Apple's published Xcode keyboard-shortcut list (level 1).
+- Issue grouping is by file: `specs/ide/reference-ui-2.md` §1 (level 3).
+  Build log layout: same spec §5.
+- OPEN QUESTION: whether build-system `note:` lines without a location appear in the issue
+  navigator. Needs a GUI observation pass.
+- OPEN QUESTION: exact cancel behavior of the IDE's Stop during a build.
+- `swiftcode build`'s engine choice and its messages are SwiftCode decisions that
+  follow the Linux IDE's (`ShellBuildSetup`); SwiftPM's commands and flags
+  are open source (level 1); checked with SwiftCode's host builds on macOS and
+  Linux and in its Flatpak (level 3, SwiftCode only).
+- IDE tool actions: the menu items and shortcuts from `reference-ui-5.md`
+  §2.9; the commands from `specs/xcodebuild/localization.md` and
+  `build-actions.md` §5. The panels, report titles, the documentation
+  derived-data folder and revealing in Finder are SwiftCode decisions.
+- OPEN QUESTION: the reference's Export Localizations sheet (language
+  choice, screenshots option), its Import review sheet, and what it shows
+  after Build Documentation (its documentation window) were not observed.

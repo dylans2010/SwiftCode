@@ -1,0 +1,149 @@
+name: Release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  check:
+    name: Check the version
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - id: version
+        name: The tag must match swiftcode/VERSION
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(cd swiftcode && scripts/version.sh)"
+          if [ "$REF_TYPE" = tag ] && [ "$TAG" != "v$version" ]; then
+            echo "::error::Tag $TAG does not match swiftcode/VERSION ($version)"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: CHANGELOG.md must have notes for this version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: python3 -I .github/scripts/changelog-section.py "$VERSION" > /dev/null
+      - name: The metainfo's newest release must match the CHANGELOG version and date
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: python3 -I .github/scripts/check-release-metadata.py "$VERSION"
+      - name: Scan for private names, secrets and files that must not be public
+        run: python3 -I .github/scripts/scan-public.py
+  macos:
+    name: Disk image (macOS)
+    needs: check
+    runs-on: xcode-27
+    timeout-minutes: 120
+    outputs:
+      signing: ${{ steps.dmg.outputs.signing }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-swift
+      - id: dmg
+        name: Build, sign and verify the disk image
+        working-directory: swiftcode
+        env:
+          MACOS_CERTIFICATE_P12_BASE64: ${{ secrets.MACOS_CERTIFICATE_P12_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          SWIFTCODE_SIGN_IDENTITY: ${{ secrets.SWIFTCODE_SIGN_IDENTITY }}
+          NOTARY_KEY_P8_BASE64: ${{ secrets.NOTARY_KEY_P8_BASE64 }}
+          NOTARY_KEY_ID: ${{ secrets.NOTARY_KEY_ID }}
+          NOTARY_ISSUER_ID: ${{ secrets.NOTARY_ISSUER_ID }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          SWIFTCODE_BUILD_NUMBER: ${{ github.run_number }}
+        run: |
+          signing=ad-hoc
+          if [ -n "$MACOS_CERTIFICATE_P12_BASE64" ]; then
+            signing=developer-id
+            if [ -n "$NOTARY_KEY_P8_BASE64" ] && [ -n "$NOTARY_KEY_ID" ] && [ -n "$NOTARY_ISSUER_ID" ]; then
+              signing=notarized
+              export SWIFTCODE_VERIFY_REQUIRE_GATEKEEPER=1
+            fi
+          fi
+          scripts/make-dmg.sh "$GITHUB_WORKSPACE/dist"
+          echo "signing=$signing" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: package-macos
+          path: dist/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+  flatpak:
+    name: Flatpak (${{ matrix.arch }})
+    needs: check
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - arch: x86_64
+            os: ubuntu-24.04
+          - arch: aarch64
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Install Flatpak and let it use user namespaces
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq flatpak flatpak-builder
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Build the bundle
+        run: packaging/flatpak/build-flatpak.sh "$GITHUB_WORKSPACE/dist"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: package-flatpak-${{ matrix.arch }}
+          path: |
+            dist/*.flatpak
+            dist/*.tar.xz
+          if-no-files-found: error
+          retention-days: 14
+  publish:
+    name: Publish the release
+    if: github.ref_type == 'tag'
+    needs: [check, macos, flatpak]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          pattern: package-*
+          path: artifacts
+      - name: Write the checksums and notes
+        env:
+          VERSION: ${{ needs.check.outputs.version }}
+          SIGNING: ${{ needs.macos.outputs.signing }}
+        run: .github/scripts/prepare-release.sh artifacts release/files "$VERSION" "$SIGNING"
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ needs.check.outputs.version }}
+        run: |
+          gh release create "$TAG" release/files/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --latest \
+            --title "SwiftCode $VERSION" \
+            --notes-file release/release-notes.md

@@ -1,0 +1,7 @@
+disabled_rules:
+  - force_cast
+  - force_try
+  - empty_collection_literal
+  - empty_count
+  - empty_string
+  - identical_operands
