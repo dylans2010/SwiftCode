@@ -444,6 +444,7 @@ targets:
       - target: YcodeStrings
       - target: YcodeSigning
       - target: YcodeHealthStore
+      - target: SwiftCodeCloud
       - package: StoreKit
         product: StoreKitConfiguration
       - package: StoreKit

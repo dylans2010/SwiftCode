@@ -3691,6 +3691,13 @@
 			remoteGlobalIDString = 486805C32C3B1555F587581D;
 			remoteInfo = YcodePlist;
 		};
+		29B041E839CB2249890CC736 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 69299E4BACC3E0AE44D58074 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EBD15D86470CF63D04EEA9D6;
+			remoteInfo = SwiftCodeCloud;
+		};
 		29C2FCFD3CE7330E0E5B020A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 69299E4BACC3E0AE44D58074 /* Project object */;
@@ -8869,7 +8876,6 @@
 				A320B6438C763B7D2F1B15B3 /* UseTermFunction.swift */,
 				9BED37B232E6E3B8EBA524C5 /* UseWorkersTool.swift */,
 				34FE68A94D77C4BFEAA4DC82 /* WorkerMessageTool.swift */,
-				6C30EF308AF7BA092B608DAD /* __pycache__ */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -8894,16 +8900,6 @@
 			path = AdvancedTools;
 			sourceTree = "<group>";
 		};
-		118DF6E50AE1AD09F005C7A6 /* Workspace */ = {
-			isa = PBXGroup;
-			children = (
-				475940D357F0E9044DF3CB2A /* AppKit */,
-				11EF4AB9F4798DAA272BEADF /* Providers */,
-				CC6981A7DF41AA6847838403 /* UI */,
-			);
-			path = Workspace;
-			sourceTree = "<group>";
-		};
 		11CAFE5DEE5B7A574D00505D /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -8912,13 +8908,6 @@
 				862ED2F5BC299F62FCEACBAE /* SettingsViewModel.swift */,
 			);
 			path = Settings;
-			sourceTree = "<group>";
-		};
-		11EF4AB9F4798DAA272BEADF /* Providers */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Providers;
 			sourceTree = "<group>";
 		};
 		128F119A20B419421F1E5505 /* Runtimes */ = {
@@ -9013,7 +9002,6 @@
 				B929A399A7A1BB3F06EDA2FD /* KVM */,
 				B18C8C8DD47565F1F4805B25 /* Providers */,
 				7C0C8F32409586F3DAD108B7 /* UI */,
-				118DF6E50AE1AD09F005C7A6 /* Workspace */,
 			);
 			path = Virtualization;
 			sourceTree = "<group>";
@@ -9782,13 +9770,6 @@
 			path = Runtime;
 			sourceTree = "<group>";
 		};
-		475940D357F0E9044DF3CB2A /* AppKit */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = AppKit;
-			sourceTree = "<group>";
-		};
 		47A7CD4BF41834897F6A24E1 /* OfflineModels */ = {
 			isa = PBXGroup;
 			children = (
@@ -9942,14 +9923,6 @@
 			);
 			name = YcodeDebug;
 			path = swiftcode/Sources/YcodeDebug;
-			sourceTree = "<group>";
-		};
-		537E4E8B9DA46355D9450131 /* Gists */ = {
-			isa = PBXGroup;
-			children = (
-				66CC8FDEF3D091EADDAE46C6 /* Components */,
-			);
-			path = Gists;
 			sourceTree = "<group>";
 		};
 		5400CC6A109BA58D7CEE35F6 /* YcodeEditorKit */ = {
@@ -10329,13 +10302,6 @@
 			path = Documentation;
 			sourceTree = "<group>";
 		};
-		66CC8FDEF3D091EADDAE46C6 /* Components */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Components;
-			sourceTree = "<group>";
-		};
 		6B4CE828AF08D5E79617233A /* Context */ = {
 			isa = PBXGroup;
 			children = (
@@ -10343,13 +10309,6 @@
 				1D5B5D248345CE50EB39B8C7 /* WorkerTaskDecomposer.swift */,
 			);
 			path = Context;
-			sourceTree = "<group>";
-		};
-		6C30EF308AF7BA092B608DAD /* __pycache__ */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = __pycache__;
 			sourceTree = "<group>";
 		};
 		6E0DBCE49D5C6E8C2AF57F04 /* Engines */ = {
@@ -11493,13 +11452,6 @@
 			path = Targets;
 			sourceTree = "<group>";
 		};
-		A465DD7B816F3A26CA5C5F20 /* Legacy */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Legacy;
-			sourceTree = "<group>";
-		};
 		A56D8656E53C881907D93920 /* YcodePreviews */ = {
 			isa = PBXGroup;
 			children = (
@@ -12442,8 +12394,6 @@
 				7E5085A5AB141306027E5677 /* SourceControlView.swift */,
 				600D529D6D71CE11CC678D8D /* SourceControlWorkspaceViews.swift */,
 				984CF8BBD15AD470496940E2 /* TagsView.swift */,
-				537E4E8B9DA46355D9450131 /* Gists */,
-				A465DD7B816F3A26CA5C5F20 /* Legacy */,
 			);
 			path = SourceControl;
 			sourceTree = "<group>";
@@ -12463,13 +12413,6 @@
 				2DA0E0062CBA6C9298952B8D /* RepoPermManager.swift */,
 			);
 			path = Services;
-			sourceTree = "<group>";
-		};
-		CC6981A7DF41AA6847838403 /* UI */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = UI;
 			sourceTree = "<group>";
 		};
 		CE85EFA8CF15D7EB693FF7FF /* YcodeBuild */ = {
@@ -14577,6 +14520,7 @@
 				A873714E64F2E0529F3344AA /* PBXTargetDependency */,
 				BBDF3D7A75006E9E985149A5 /* PBXTargetDependency */,
 				547C613A4B3EFD4838B2355A /* PBXTargetDependency */,
+				288D7D3247B6710E9B637668 /* PBXTargetDependency */,
 				FC31D1A51AD3015B5F4D2EF2 /* PBXTargetDependency */,
 				86AC9E23A773D59D23F42B09 /* PBXTargetDependency */,
 				0B4EF18BD42300ADD07E36EA /* PBXTargetDependency */,
@@ -19622,6 +19566,11 @@
 			isa = PBXTargetDependency;
 			target = 683DABBEB4B34DF6F10B485C /* YcodeIDEShell */;
 			targetProxy = C4E69D6945150566206125EE /* PBXContainerItemProxy */;
+		};
+		288D7D3247B6710E9B637668 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EBD15D86470CF63D04EEA9D6 /* SwiftCodeCloud */;
+			targetProxy = 29B041E839CB2249890CC736 /* PBXContainerItemProxy */;
 		};
 		29090EE6A827867D582B2170 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
