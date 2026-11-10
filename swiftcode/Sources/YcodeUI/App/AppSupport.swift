@@ -1,8 +1,10 @@
 import AppKit
+import SwiftUI
 import YcodeAssistant
 import SwiftCodeCloud
 import YcodeIDECore
 import YcodeLanguage
+import YcodeDecompiler
 #if canImport(SwiftCodeExtensions)
 import SwiftCodeExtensions
 #endif
@@ -426,6 +428,12 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValid
         if LayoutProbe.startIfRequested() { return }
         AlertSoundPlayer.installBuildSoundHook()
         ToolbarToolRouter.install()
+        // Decompiler subsystem: register analysis engines once and inject the
+        // Decompile Assist chat panel into every decompiler workspace window.
+        DecompilerLifecycle.installDefaultEngines()
+        DecompilerLifecycle.setAssistPanel { state in
+            AnyView(DecompileAssistView(state: state))
+        }
         #if canImport(SwiftCodeExtensions)
         ExtensionPermissionPresenter.shared.install()
         #endif

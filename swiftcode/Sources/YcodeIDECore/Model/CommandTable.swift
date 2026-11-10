@@ -187,6 +187,7 @@ public enum CommandTable {
                 c("Coding Dictionary", "", "openCodingDictionary:"),
                 c("Virtualization Console", "", "openVirtualization:"),
                 c("Source Control Workspace", "", "openSourceControlWorkspace:"),
+                c("Decompiler", "⇧⌘D", "openDecompiler:"),
                 c("SDK Studio", "", "showSDKStudio:"),
                 sep,
                 .submenu("Advanced Tools", [

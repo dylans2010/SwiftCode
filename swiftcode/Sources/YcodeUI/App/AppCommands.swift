@@ -3,6 +3,7 @@ import YcodeIDECore
 import SwiftUI
 import YcodeAssistant
 import SwiftCodeSDKStudio
+import YcodeDecompiler
 
 @MainActor
 public final class AppCommands: NSObject {
@@ -26,7 +27,7 @@ public final class AppCommands: NSObject {
         "showDeveloperDocumentation:", "showHumanInterfaceGuidelines:", "showSwiftBook:", "openMoreDeveloperTools:",
         "openDeveloperTool:", "showDownloads:", "compareFiles:", "showAboutWindow:", "showSwiftCodeHelp:", "showReleaseNotes:", "reportBug:",
         "openVisualUIBuilder:", "openCodingDictionary:", "openDeviceConnect:", "exportIPA:", "createWorkflow:", "manageWorkflows:", "openCIWorkflows:",
-        "openTerminal:", "openTerminalAtLocation:", "openRepositoryExplorer:", "openVirtualization:", "openSCToolsDrawer:", "showSDKStudio:", "openSourceControlWorkspace:",
+        "openTerminal:", "openTerminalAtLocation:", "openRepositoryExplorer:", "openVirtualization:", "openSCToolsDrawer:", "showSDKStudio:", "openSourceControlWorkspace:", "openDecompiler:",
         "showExtensionMarketplace:", "showAssetManager:", "showTestTools:", "showDebuggingTools:", "showChooseModel:",
     ]
 
@@ -98,6 +99,10 @@ public final class AppCommands: NSObject {
 
     @objc public func openSourceControlWorkspace(_ sender: Any?) {
         SourceControlWindowManager.shared.showWindow(workspaceFolder: activeWorkspaceURL)
+    }
+
+    @objc public func openDecompiler(_ sender: Any?) {
+        DecompilerWindowManager.shared.showWindow()
     }
 
     @objc public func showExtensionMarketplace(_ sender: Any?) { FeaturesWindowManager.shared.showExtensionMarketplace() }

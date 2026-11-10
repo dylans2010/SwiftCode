@@ -173,7 +173,7 @@ package.products += [.library(name: "YcodeUI", targets: ["YcodeUI"]),
                      .executable(name: "YcodeApp", targets: ["YcodeApp"])]
 package.targets += [
     .target(name: "YcodeUI", dependencies: ["YcodeMCP", "YcodeIDECore", "YcodeCompletion", "YcodePreviews", "YcodeProject", "YcodeWorkspace", "YcodeSettings", "YcodeBuild", "YcodeDebug", "YcodeLanguage", "YcodeXcodebuild", "YcodeSubprocess", "YcodeAssistant", "SwiftCodeGitHub", "SwiftCodeExtensions", "YcodeSimFeatures", "YcodeDeviceModel", "YcodeDeviceUI", "YcodeProfiler", "SwiftCodeCloud", "SwiftCodePaywall", "SwiftCodeSDK", "SwiftCodeSDKStudio", "YcodeHealthStore", "YcodeIDEShell", "YcodeSigning",
-                                            "SwiftCodeConnect", "SwiftCodeCollaboration", "YcodeIcon",
+                                            "SwiftCodeConnect", "SwiftCodeCollaboration", "YcodeIcon", "YcodeDecompiler",
                                             .product(name: "Markdown", package: "swift-markdown")]),
     .executableTarget(name: "YcodeApp", dependencies: ["YcodeRelease", "YcodeUI"]),
     .testTarget(name: "YcodeUITests", dependencies: ["YcodeMCP", "YcodeUI", "YcodeIDECore", "YcodeCompletion", "YcodePreviews", "YcodeDisplayStream", "YcodeSimFeatures", "YcodeDeviceModel", "YcodeDeviceUI", "YcodeBuild", "YcodeDebug", "YcodeLanguage", "YcodeXcodebuild", "YcodeSubprocess", "YcodeAssistant", "SwiftCodeExtensions", "YcodeProfiler", "YcodeBuildServer", "YcodeIDEShell", "SwiftCodeCloud", "SwiftCodeSDK", "YcodeIcon"]),
@@ -309,3 +309,12 @@ package.targets += [
                                                       "YcodeDarwinKernel"]),
 ]
 #endif
+
+package.products += [.library(name: "YcodeDecompiler", targets: ["YcodeDecompiler"])]
+package.targets += [
+    .target(name: "YcodeDecompiler", dependencies: ["YcodeAssistant", "YcodeSubprocess"],
+            path: "Sources/YcodeDecompiler",
+            resources: [.copy("Resources")]),
+    .testTarget(name: "YcodeDecompilerTests", dependencies: ["YcodeDecompiler"],
+                path: "Tests/YcodeDecompilerTests"),
+]

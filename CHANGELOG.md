@@ -6,6 +6,22 @@ Notable changes to SwiftCode are recorded here. The format follows
 
 ## [Unreleased]
 
+## [3.2] - 2026-11-09
+
+### Added
+
+- **Decompiler workspace:** a dedicated macOS window (Tools ▸ Decompiler, ⇧⌘D) for reverse engineering binaries.
+  Import Mach-O, ELF and PE files — thin, universal and misleading-extension binaries are detected by content, not
+  extension. Inspect segments, sections, symbols, imports, exports, dependencies, strings and signatures.
+- **Two working modes:** Friendly Mode guides less experienced users with plain-language explanations; Master Mode
+  provides a multi-pane workspace with disassembly, pseudocode, hex and graph views.
+- **Real analysis engines:** disassembly through LLVM (`llvm-objdump`), high-level pseudocode through Ghidra headless
+  (optional install, auto-detected), function discovery, cross-references, call graphs and string extraction.
+- **`.scdecomp` projects:** persistent analysis workspaces with a manifest, SQLite (or JSON fallback) storage,
+  caching and user annotations — renames, comments, labels and findings never modify the original binary.
+- **Decompile Assist:** a dedicated assistant identity using the Antigravity provider exclusively, with its own System
+  Assets, context builder and a tool catalog for binary inspection, function, symbol, string and annotation queries.
+
 ## [1.0.0-beta.2] - 2026-11-05
 
 The Linux IDE catches up with most of the macOS one: debugging, source control, tests, language features, the structured
