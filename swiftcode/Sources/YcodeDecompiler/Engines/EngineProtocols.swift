@@ -34,11 +34,18 @@ public protocol DisassemblerProvider: Sendable {
     var id: String { get }
     var displayName: String { get }
     var version: String? { get }
+    var supportedFormats: Set<BinaryFormat> { get }
+    var supportedArchitectures: Set<BinaryArchitecture> { get }
     func capabilities(for image: BinaryImage) -> DecompilerCapabilitiesSet
     func isAvailable() async -> Bool
     /// Decode instructions covering [start, end) virtual addresses.
     func disassemble(image: BinaryImage, start: DecompilerAddress, end: DecompilerAddress,
                      progress: (@Sendable (AnalysisProgress) -> Void)?) async throws -> [Instruction]
+}
+
+public extension DisassemblerProvider {
+    var supportedFormats: Set<BinaryFormat> { [] }
+    var supportedArchitectures: Set<BinaryArchitecture> { [] }
 }
 
 /// Decompilation backend contract (e.g. Ghidra headless).
@@ -47,6 +54,8 @@ public protocol DecompilerProvider: Sendable {
     var displayName: String { get }
     var version: String? { get }
     var isPrimary: Bool { get }
+    var supportedFormats: Set<BinaryFormat> { get }
+    var supportedArchitectures: Set<BinaryArchitecture> { get }
     func isAvailable() async -> Bool
     /// Human-readable reason when unavailable (shown in UI).
     func availabilityDetail() async -> String
@@ -56,6 +65,11 @@ public protocol DecompilerProvider: Sendable {
     /// Optional batch decompilation for efficiency.
     func decompileBatch(_ requests: [DecompilationRequest],
                         progress: (@Sendable (AnalysisProgress) -> Void)?) async throws -> [DecompilationResult]
+}
+
+public extension DecompilerProvider {
+    var supportedFormats: Set<BinaryFormat> { [] }
+    var supportedArchitectures: Set<BinaryArchitecture> { [] }
 }
 
 /// Lightweight analysis backend contract (function discovery, xrefs, strings).

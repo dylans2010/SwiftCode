@@ -64,6 +64,12 @@ public struct GhidraDecompiler: DecompilerProvider {
         ]
     }
 
+    public var supportedFormats: Set<BinaryFormat> { [.machO, .elf, .pe] }
+
+    public var supportedArchitectures: Set<BinaryArchitecture> {
+        [.arm64, .x86_64, .armv7, .armv7s, .armv6, .i386, .riscv64, .powerpc, .powerpc64, .mips]
+    }
+
     public func decompile(_ request: DecompilationRequest,
                           progress: (@Sendable (AnalysisProgress) -> Void)?) async throws -> DecompilationResult {
         var imported: [String: ProjectPaths] = [:]

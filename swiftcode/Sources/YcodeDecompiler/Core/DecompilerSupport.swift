@@ -43,7 +43,7 @@ public struct AnalysisProgress: Sendable {
         case idle, importing, parsing, detectingArchitecture
         case discoveringFunctions, buildingSymbols, disassembling
         case decompiling, buildingReferences, extractingStrings
-        case persisting, completed, failed, cancelled
+        case building, linking, persisting, completed, failed, cancelled
     }
 
     public var stage: Stage

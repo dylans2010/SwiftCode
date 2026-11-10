@@ -434,6 +434,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValid
         DecompilerLifecycle.setAssistPanel { state in
             AnyView(DecompileAssistView(state: state))
         }
+        DecompilerLifecycle.setEditorHandoff(IDEEditorHandoff())
         #if canImport(SwiftCodeExtensions)
         ExtensionPermissionPresenter.shared.install()
         #endif

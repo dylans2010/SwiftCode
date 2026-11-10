@@ -25,6 +25,16 @@ public actor DecompilerSession {
 
     private let registry: EngineRegistry
     private var analysisTask: Task<Void, Never>?
+    public private(set) var reconstructedProject: ReconstructedProject?
+    public private(set) var lastAssembly: AssemblyResult?
+
+    public func setReconstructedProject(_ project: ReconstructedProject?) {
+        reconstructedProject = project
+    }
+
+    public func setLastAssembly(_ result: AssemblyResult?) {
+        lastAssembly = result
+    }
 
     public init(id: UUID = UUID(), registry: EngineRegistry = .shared) {
         self.id = id
@@ -157,6 +167,47 @@ public actor DecompilerSession {
         await store.recordHistory(AnalysisHistoryEntry(operation: "decompile", engineID: backend.id,
                                                        detail: fn.displayName))
         return result
+    }
+
+    /// Decompile every discovered function through the resolved backend.
+    /// Exported functions go first so the public interface is covered even
+    /// when `maxBulkDecompileFunctions` bounds the run. Throws when no
+    /// decompiler backend supports this binary; callers fall back to the
+    /// assembly-preservation path instead of failing the whole pipeline.
+    public func decompileAllFunctions() async throws -> [UInt64: DecompilationResult] {
+        guard let image = await store.binary else {
+            throw DecompilerError.invalidRequest("no binary loaded")
+        }
+        let maxFunctions = configuration.maxBulkDecompileFunctions
+        let ordered = await store.functions
+            .filter { $0.kind != .importedSymbol }
+            .sorted {
+                let aExported = $0.kind == .exportedSymbol
+                let bExported = $1.kind == .exportedSymbol
+                if aExported != bExported { return aExported }
+                return $0.address.value < $1.address.value
+            }
+        let selected = maxFunctions > 0 ? Array(ordered.prefix(maxFunctions)) : ordered
+        let requests = selected.map { fn in
+            DecompilationRequest(functionAddress: fn.address, functionName: fn.name,
+                                 imagePath: image.identity.originalLocation,
+                                 architecture: image.architecture, format: image.format)
+        }
+        guard let backend = await registry.resolveDecompiler(
+            for: image, required: [.decompileBatch],
+            preferredID: configuration.preferredDecompilerID) else {
+            throw DecompilerError.engineUnavailable("no decompiler backend supports this binary")
+        }
+        let results = try await backend.decompileBatch(requests) { p in
+            Task { await self.store.setProgress(p) }
+        }
+        for result in results {
+            await store.storePseudocode(result)
+        }
+        await store.recordHistory(AnalysisHistoryEntry(
+            operation: "decompile-batch", engineID: backend.id,
+            detail: "\(results.count) functions via \(backend.displayName)"))
+        return await store.pseudocode
     }
 
     // MARK: - User metadata edits (never touch the original binary)

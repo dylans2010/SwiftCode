@@ -250,6 +250,7 @@ public struct MachOParser: BinaryParser {
         var symtab: (symoff: UInt64, nsyms: UInt32, stroff: UInt64, strsize: UInt32)? = nil
         var dependencies: [BinaryDependency] = []
         var installName: String? = nil
+        var runpaths: [String] = []
         var dylinker: String? = nil
         var sawDWARF = false
         var hasLocalDefinedSymbol = false
@@ -322,6 +323,12 @@ public struct MachOParser: BinaryParser {
                 let nameOff = Int(try cur.u32())
                 installName = try stringAt(cmdStart: cmdStart, nameOffset: nameOff,
                                            data: sliceData, order: order)
+
+            case LC.rpath:
+                let pathOff = Int(try cur.u32())
+                let path = try stringAt(cmdStart: cmdStart, nameOffset: pathOff,
+                                        data: sliceData, order: order)
+                runpaths.append(path)
 
             case LC.loadDylinker:
                 let nameOff = Int(try cur.u32())
@@ -441,7 +448,7 @@ public struct MachOParser: BinaryParser {
         default: "mh-\(fileTypeRaw)"
         }
 
-        return BinaryImage(
+        var image = BinaryImage(
             identity: ident, format: .machO, architecture: ident.architecture,
             cpuIdentifier: cpuID, fileType: fileType,
             entryPoint: entryPoint, segments: segments,
@@ -452,6 +459,9 @@ public struct MachOParser: BinaryParser {
             buildVersion: buildVersion, minOSVersion: minOSVersion,
             hasDebugInfo: hasLocalDefinedSymbol || sawDWARF,
             byteCount: Int64(slice.size), byteProvider: byteProvider)
+        image.installName = installName
+        image.runpaths = runpaths
+        return image
     }
 
     // MARK: - Segment / section parsing

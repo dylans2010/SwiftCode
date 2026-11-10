@@ -56,6 +56,33 @@ public struct FriendlyWorkspaceView: View {
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
                         Button {
+                            state.decompileAsset()
+                        } label: {
+                            Label("Decompile Asset", systemImage: "arrow.down.doc")
+                        }
+                        .help("Decompile every function and generate the editable source project")
+                        .disabled(state.binary == nil || state.isDecompilingAsset)
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            state.assemble()
+                        } label: {
+                            Label("Assemble", systemImage: "hammer")
+                        }
+                        .help("Compile and link the reconstructed project into a new dynamic library")
+                        .disabled(state.reconstructedProject == nil || state.isAssembling)
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
+                            state.openInMainEditor()
+                        } label: {
+                            Label("Open in Editor", systemImage: "arrow.up.forward.app")
+                        }
+                        .help("Open the reconstructed project in SwiftCode's main editor")
+                        .disabled(state.reconstructedProject == nil)
+                    }
+                    ToolbarItem(placement: .primaryAction) {
+                        Button {
                             state.showInspector.toggle()
                         } label: {
                             Label("Inspector", systemImage: "sidebar.right")

@@ -88,6 +88,10 @@ public final class DecompilerObservableState {
 
     /// Engine descriptors for pickers (populated lazily).
     public private(set) var engines: [EngineDescriptor] = []
+    public private(set) var reconstructedProject: ReconstructedProject?
+    public private(set) var lastAssembly: AssemblyResult?
+    public private(set) var isDecompilingAsset = false
+    public private(set) var isAssembling = false
 
     public init(session: DecompilerSession) {
         self.session = session
@@ -112,6 +116,8 @@ public final class DecompilerObservableState {
         findings = await store.findings
         pinnedFunctions = await store.pinnedFunctions
         mode = await session.mode
+        reconstructedProject = await session.reconstructedProject
+        lastAssembly = await session.lastAssembly
         // NOTE: `session.isAnalyzing` is not used — the session keeps its
         // finished task referenced, so it never reports false again. This
         // object tracks analysis-in-flight itself in `startAnalysis()`.
@@ -335,6 +341,102 @@ public final class DecompilerObservableState {
         guard let fn = selectedFunction else { return nil }
         if let cached = pseudocode[fn.address.value] { return cached }
         return try await decompileSelected()
+    }
+
+    /// Bulk reconstruction: decompile every function, generate the editable
+    /// source project, and remember it on the session for Assemble.
+    public func decompileAsset() {
+        guard !isDecompilingAsset else { return }
+        guard binary != nil else {
+            log("Import a binary before running Decompile Asset.", kind: .warning)
+            return
+        }
+        isDecompilingAsset = true
+        log("Decompiling asset…")
+        Task { [weak self] in
+            guard let self else { return }
+            defer { self.isDecompilingAsset = false }
+            do {
+                let project = try await ReconstructionPipeline.decompileAsset(session: session)
+                await refresh()
+                let counts = project.source.records.reduce(into: [String: Int]()) {
+                    $0[$1.quality.rawValue, default: 0] += 1
+                }
+                let summary = counts.sorted { $0.key < $1.key }
+                    .map { "\($0.key): \($0.value)" }.joined(separator: ", ")
+                log("Decompiled \(project.source.records.count) functions into \(project.rootURL.path) (\(summary))", kind: .engine)
+            } catch {
+                await refresh()
+                log("Decompile Asset failed: \(error.localizedDescription)", kind: .error)
+            }
+        }
+    }
+
+    /// Compile and link the reconstructed project into a new dynamic library.
+    public func assemble() {
+        guard !isAssembling else { return }
+        guard reconstructedProject != nil || binary != nil else {
+            log("Run Decompile Asset before Assemble.", kind: .warning)
+            return
+        }
+        isAssembling = true
+        log("Assembling…")
+        Task { [weak self] in
+            guard let self else { return }
+            defer { self.isAssembling = false }
+            do {
+                let result = try await ReconstructionPipeline.assemble(session: session)
+                await refresh()
+                if result.succeeded {
+                    log("Assembled \(result.outputURL.lastPathComponent) (\(result.filesCompiled.count) compiled, \(result.filesReused.count) reused)", kind: .engine)
+                    if let equivalence = result.equivalence {
+                        log("Equivalence: \(equivalence.verdict.rawValue), ABI compatible: \(equivalence.isABICompatible)", kind: .engine)
+                    }
+                } else {
+                    log("Assembly failed: \(result.errors.first?.message ?? "unknown error")", kind: .error)
+                    for diag in result.errors {
+                        log("\(diag.displayLocation) \(diag.message)", kind: .error)
+                    }
+                }
+            } catch {
+                await refresh()
+                log("Assemble failed: \(error.localizedDescription)", kind: .error)
+            }
+        }
+    }
+
+    /// Open the reconstructed project in SwiftCode's main editor.
+    public func openInMainEditor() {
+        Task { [weak self] in
+            guard let self else { return }
+            guard let project = reconstructedProject
+                ?? (try? await ReconstructionPipeline.loadReconstructedProject(session: session)) else {
+                log("Run Decompile Asset first — there is no reconstructed project to open.", kind: .warning)
+                return
+            }
+            await refresh()
+            let opened = await DecompilerEditorBridge.openReconstructedProject(project)
+            if opened {
+                log("Opened \(project.libraryName) in the main editor.", kind: .engine)
+            } else {
+                log("The main editor is not available for this project. The reconstructed project is at \(project.rootURL.path).", kind: .warning)
+            }
+        }
+    }
+
+    /// Jump from a binary address to its reconstructed source location.
+    public func openSourceLocation(for address: DecompilerAddress) {
+        Task { [weak self] in
+            guard let self else { return }
+            guard let project = reconstructedProject else {
+                log("Run Decompile Asset first.", kind: .warning)
+                return
+            }
+            let opened = await DecompilerEditorBridge.openSourceLocation(address: address, in: project)
+            if !opened {
+                log("No source mapping for \(address.hexString).", kind: .warning)
+            }
+        }
     }
 
     // MARK: - User metadata edits

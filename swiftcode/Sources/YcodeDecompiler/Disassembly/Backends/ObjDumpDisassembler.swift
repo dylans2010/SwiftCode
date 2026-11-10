@@ -37,11 +37,14 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
     }
 
     public func capabilities(for image: BinaryImage) -> DecompilerCapabilitiesSet {
-        // llvm-objdump performs linear disassembly only; there is no
-        // decompiler capability to advertise. An empty set still resolves via
-        // EngineRegistry.resolveDisassembler (which does not filter on caps).
-        _ = image
-        return []
+        if image.architecture != .unknown, Self.triple(for: image.architecture) == nil { return [] }
+        return [.disassemble]
+    }
+
+    public var supportedFormats: Set<BinaryFormat> { [.machO, .elf, .pe] }
+
+    public var supportedArchitectures: Set<BinaryArchitecture> {
+        [.arm64, .arm64_32, .x86_64, .armv7, .armv7s, .armv6, .i386, .riscv64, .powerpc, .powerpc64, .mips]
     }
 
     public func disassemble(image: BinaryImage,

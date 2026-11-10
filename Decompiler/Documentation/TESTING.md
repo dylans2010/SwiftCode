@@ -62,13 +62,20 @@ symbol lookup matches `contains("main")`).
 | `MachOParserTests.swift` | Mach-O detection, slice enumeration (arm64), header fields, `__TEXT` segment + executable `__text` section at expected VA, `_main` symbol |
 | `DetectorTests.swift` | All magics (thin 32/64 Mach-O, fat 32/64, ELF, PE via MZ+PE-header and MZ-only), unknown-signature and tiny-file rejection, SHA-256 stability/format |
 | `StoreTests.swift` | `AnalysisStore` function/symbol upsert + dedup + sort, `function(at:)`/`function(containing:)` (incl. end-address and next-function bounds), reversible renames (`originalName`, `userName`, `effectiveName`, symbol sync), comments/labels hex keys, `storePseudocode`→`hasPseudocode`, pin toggling |
+| `ReconstructionTests.swift` | C identifier sanitization/escaping, Ghidra type/signature mapping, language identification, clang/linker diagnostic parsing, equivalence compare (incl. never claiming behavioral equivalence), build-config inference (Mach-O vs ELF flags), source-map lookup + JSON round-trip, reconstruction from fabricated pseudocode (FUN_/DAT_ rewriting, quality labels), assembly fallback, project-generation layout (Package.swift dynamic product, manifest + source-map decode), and `testEndToEndRebuild`: gcc fixture `.so` → ELF parse → objdump-derived instructions → reconstruct → generate → Assemble → re-parse → export compare → `dlopen` + call `sc_add`/`sc_answer`/`sc_greeting` |
 
 ## Known gaps in coverage
 
 - **No engine-backend tests** — `ObjDumpDisassembler` and
   `GhidraDecompiler` are implemented but untested (they need
   llvm-objdump/Ghidra installed; a fake-tool PATH shim would be the way
-  to test them hermetically).
+  to test them hermetically). The E2E rebuild test parses GNU objdump
+  output itself as a test-only stand-in; the Ghidra pseudocode→C path is
+  covered only with fabricated `DecompilationResult` values, and the
+  arm64 relocation repair has no end-to-end test on a real arm64 binary.
+- **No Mach-O end-to-end test** — the rebuild loop is verified for
+  ELF/x86_64 on Linux only; a Mach-O `.dylib` fixture plus the Xcode
+  build on Dylan's Mac is the remaining gate.
 - **No persistence round-trip test** — `AnalysisPersistence` /
   `CacheManager` deserve save→load diff tests against a temp
   `.scdecomp`.

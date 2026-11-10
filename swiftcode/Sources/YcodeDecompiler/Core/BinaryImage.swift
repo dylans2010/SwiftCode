@@ -103,6 +103,8 @@ public struct BinaryImage: Sendable {
     public var isSigned: Bool
     public var entitlements: String?
     public var codeSignatureInfo: String?
+    public var installName: String?
+    public var runpaths: [String] = []
     public var buildVersion: String?
     public var minOSVersion: String?
     public var hasDebugInfo: Bool

@@ -31,23 +31,28 @@ public actor EngineRegistry {
     }
 
     /// All registered engines with live availability status.
+    ///
+    /// Capability sets are queried against a minimal unknown-format image, so
+    /// backends that gate on a configured installation (Ghidra) report their
+    /// real capabilities here; format/architecture support comes from the
+    /// provider's own declarations, not the placeholder image.
     public func descriptors() async -> [EngineDescriptor] {
         if let cached = cachedDescriptors { return cached }
         var out: [EngineDescriptor] = []
         for d in disassemblers {
-            guard let image = placeholderImage else { continue }
             out.append(EngineDescriptor(
                 id: d.id, displayName: d.displayName, kind: .disassembler,
-                version: d.version, supportedFormats: [], supportedArchitectures: [],
-                capabilities: d.capabilities(for: image),
+                version: d.version, supportedFormats: d.supportedFormats,
+                supportedArchitectures: d.supportedArchitectures,
+                capabilities: d.capabilities(for: Self.placeholderImage),
                 isAvailable: await d.isAvailable()))
         }
         for d in decompilers {
-            guard let image = placeholderImage else { continue }
             out.append(EngineDescriptor(
                 id: d.id, displayName: d.displayName, kind: .decompiler,
-                version: d.version, supportedFormats: [], supportedArchitectures: [],
-                capabilities: d.capabilities(for: image),
+                version: d.version, supportedFormats: d.supportedFormats,
+                supportedArchitectures: d.supportedArchitectures,
+                capabilities: d.capabilities(for: Self.placeholderImage),
                 isAvailable: await d.isAvailable(),
                 availabilityDetail: await d.availabilityDetail(),
                 isPrimaryDecompiler: d.isPrimary))
@@ -57,7 +62,7 @@ public actor EngineRegistry {
     }
 
     /// A minimal image used for capability queries when no binary is loaded.
-    private var placeholderImage: BinaryImage? {
+    private static var placeholderImage: BinaryImage {
         BinaryImage(identity: BinaryIdentity(sha256: "", originalFileName: "", originalLocation: "",
                                               fileSize: 0, format: .unknown, architecture: .unknown),
                     format: .unknown, architecture: .unknown, cpuIdentifier: "",
@@ -72,7 +77,13 @@ public actor EngineRegistry {
     /// Pick a disassembler that supports this image.
     public func resolveDisassembler(for image: BinaryImage,
                                     preferredID: String? = nil) -> (any DisassemblerProvider)? {
-        let candidates = disassemblers.filter { $0.capabilities(for: image).contains(.decompileFunction) || true }
+        let candidates = disassemblers.filter {
+            $0.capabilities(for: image).contains(.disassemble)
+                && (image.format == .unknown || $0.supportedFormats.isEmpty
+                    || $0.supportedFormats.contains(image.format))
+                && (image.architecture == .unknown || $0.supportedArchitectures.isEmpty
+                    || $0.supportedArchitectures.contains(image.architecture))
+        }
         if let preferredID, let match = candidates.first(where: { $0.id == preferredID }) { return match }
         return candidates.first
     }
@@ -81,8 +92,7 @@ public actor EngineRegistry {
     public func resolveDecompiler(for image: BinaryImage, required: DecompilerCapabilitiesSet,
                                   preferredID: String? = nil) -> (any DecompilerProvider)? {
         let capable = decompilers.filter { d in
-            let caps = d.capabilities(for: image)
-            return caps.isSuperset(of: required) || caps.contains(.decompileFunction)
+            d.capabilities(for: image).isSuperset(of: required)
         }
         if let preferredID, let match = capable.first(where: { $0.id == preferredID }) { return match }
         return capable.first(where: \.isPrimary) ?? capable.first

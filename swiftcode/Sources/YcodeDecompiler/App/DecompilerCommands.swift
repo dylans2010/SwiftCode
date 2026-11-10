@@ -34,6 +34,13 @@ public enum DecompilerCommands {
         /// Write a text report (pseudocode, disassembly, strings, symbols)
         /// to a user-chosen file.
         case exportAnalysis
+        /// Bulk decompile every function and generate the editable source
+        /// project (headers, sources, assembly fallback, mappings).
+        case decompileAsset
+        /// Compile and link the reconstructed project into a new dylib.
+        case assemble
+        /// Open the reconstructed project in SwiftCode's main editor.
+        case openInMainEditor
         /// Reset pane visibility and selection to defaults.
         case restoreLayout
     }
@@ -111,6 +118,15 @@ public enum DecompilerCommands {
 
         case .exportAnalysis:
             exportAnalysis(state)
+
+        case .decompileAsset:
+            state.decompileAsset()
+
+        case .assemble:
+            state.assemble()
+
+        case .openInMainEditor:
+            state.openInMainEditor()
 
         case .restoreLayout:
             state.showInspector = true

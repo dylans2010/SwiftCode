@@ -16,6 +16,9 @@ public enum DecompilerToolbarItem: String {
     case goToFunction = "decompiler.goToFunction"
     case exportAnalysis = "decompiler.exportAnalysis"
     case restoreLayout = "decompiler.restoreLayout"
+    case decompileAsset = "decompiler.decompileAsset"
+    case assemble = "decompiler.assemble"
+    case openInMainEditor = "decompiler.openInMainEditor"
 }
 
 /// NSWindowController hosting the Decompiler workspace (Friendly or Master
@@ -203,6 +206,33 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
             toolbarItem.action = #selector(restoreLayoutAction(_:))
             return toolbarItem
 
+        case .decompileAsset:
+            toolbarItem.label = "Decompile Asset"
+            toolbarItem.paletteLabel = "Decompile Asset"
+            toolbarItem.toolTip = "Decompile every function and generate the editable source project"
+            toolbarItem.image = NSImage(systemSymbolName: "arrow.down.doc", accessibilityDescription: nil)
+            toolbarItem.target = self
+            toolbarItem.action = #selector(decompileAssetAction(_:))
+            return toolbarItem
+
+        case .assemble:
+            toolbarItem.label = "Assemble"
+            toolbarItem.paletteLabel = "Assemble"
+            toolbarItem.toolTip = "Compile and link the reconstructed project into a new dynamic library"
+            toolbarItem.image = NSImage(systemSymbolName: "hammer", accessibilityDescription: nil)
+            toolbarItem.target = self
+            toolbarItem.action = #selector(assembleAction(_:))
+            return toolbarItem
+
+        case .openInMainEditor:
+            toolbarItem.label = "Open in Editor"
+            toolbarItem.paletteLabel = "Open in Main Editor"
+            toolbarItem.toolTip = "Open the reconstructed project in SwiftCode's main editor"
+            toolbarItem.image = NSImage(systemSymbolName: "arrow.up.forward.app", accessibilityDescription: nil)
+            toolbarItem.target = self
+            toolbarItem.action = #selector(openInMainEditorAction(_:))
+            return toolbarItem
+
         }
     }
 
@@ -214,6 +244,9 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
             NSToolbarItem.Identifier(DecompilerToolbarItem.cancelAnalysis.rawValue),
             NSToolbarItem.Identifier(DecompilerToolbarItem.importBinary.rawValue),
             NSToolbarItem.Identifier(DecompilerToolbarItem.saveProject.rawValue),
+            NSToolbarItem.Identifier(DecompilerToolbarItem.decompileAsset.rawValue),
+            NSToolbarItem.Identifier(DecompilerToolbarItem.assemble.rawValue),
+            NSToolbarItem.Identifier(DecompilerToolbarItem.openInMainEditor.rawValue),
             .flexibleSpace,
             NSToolbarItem.Identifier(DecompilerToolbarItem.search.rawValue),
             NSToolbarItem.Identifier(DecompilerToolbarItem.goToAddress.rawValue),
@@ -290,5 +323,17 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
 
     @objc private func restoreLayoutAction(_ sender: Any?) {
         DecompilerCommands.perform(.restoreLayout, on: state)
+    }
+
+    @objc private func decompileAssetAction(_ sender: Any?) {
+        DecompilerCommands.perform(.decompileAsset, on: state)
+    }
+
+    @objc private func assembleAction(_ sender: Any?) {
+        DecompilerCommands.perform(.assemble, on: state)
+    }
+
+    @objc private func openInMainEditorAction(_ sender: Any?) {
+        DecompilerCommands.perform(.openInMainEditor, on: state)
     }
 }

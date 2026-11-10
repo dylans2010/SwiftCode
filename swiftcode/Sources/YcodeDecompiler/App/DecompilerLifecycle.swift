@@ -64,4 +64,12 @@ public enum DecompilerLifecycle {
     /// Provider used to fill `assistPanel` on newly created states.
     @MainActor
     public static var assistPanelProvider: (@MainActor (DecompilerObservableState) -> AnyView)?
+
+    /// Register the main-editor handoff (implemented by the app layer) so
+    /// reconstructed projects open in SwiftCode's primary editor instead of
+    /// the Decompiler's read-only viewers.
+    @MainActor
+    public static func setEditorHandoff(_ handoff: (any DecompilerEditorHandoff)?) {
+        DecompilerEditorBridge.register(handoff)
+    }
 }

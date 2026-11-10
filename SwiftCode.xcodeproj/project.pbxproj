@@ -3564,6 +3564,19 @@
 		FFDCC06EEDE8A2C62F840143 /* DeviceConnectEnvironmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0789A05A7B628AFDE916415 /* DeviceConnectEnvironmentView.swift */; };
 		FFDF60ABD9354A83A5E41E6B /* CC-BY-SA-2.0-UK.txt in Resources */ = {isa = PBXBuildFile; fileRef = 03660BECEF401EFDC2F13E25 /* CC-BY-SA-2.0-UK.txt */; };
 		FFF470A127F3C635B0106EDB /* AssistXcodeProjectResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368DE2B5454D45F1AC647E0E /* AssistXcodeProjectResolver.swift */; };
+		BD0AA42C0A1C30D6CBED88E0 /* AssemblyDiagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 197E1B2CCFCD06E18D960581 /* AssemblyDiagnostic.swift */; };
+		6F32DC5F9B09CBD6E4589477 /* Assembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3DED96941186DB289ED03D1 /* Assembler.swift */; };
+		3654C75D7D68F0349F4AA2FD /* BuildConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECD40708C751813C5D04F3EA /* BuildConfiguration.swift */; };
+		8081FC2C6BA6D58F3DAE24C2 /* EquivalenceChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C5AE47CA52F7EC94734262 /* EquivalenceChecker.swift */; };
+		39DE32FF66B2B95584ADECD9 /* DecompilerEditorBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B1CD6D7058841009D4928DC /* DecompilerEditorBridge.swift */; };
+		2A6BDBE79874C0F9678648C2 /* ReconstructedProjectGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A06F848399583016C92D3285 /* ReconstructedProjectGenerator.swift */; };
+		9FC7CAC97D31187FD0F71CB2 /* SourceMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE027C6FA55CCED7E8DB4F8 /* SourceMapping.swift */; };
+		8023184D5CB22E78A43F5058 /* AssemblyFallback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25BBFE3219487F9140F3B278 /* AssemblyFallback.swift */; };
+		6643F4142C82D8EA23A8F74B /* ReconstructionPipeline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E557B90A46965A4013C047B /* ReconstructionPipeline.swift */; };
+		805C4A95EFBDEAD3CDD18CC8 /* ReconstructionRecord.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3C91CC013D0A16BEAFFCB5F /* ReconstructionRecord.swift */; };
+		02EB32C491FAFFBA79EF6E53 /* ReconstructionUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F9A194BEA2B34A44276EC1 /* ReconstructionUtilities.swift */; };
+		4E452D0617D2A8EE34FCE122 /* SourceReconstructor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24CA2184A45FC24147F52AA6 /* SourceReconstructor.swift */; };
+		C512D6ADB0B168E5B94F05B9 /* DecompilerEditorHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E1DBB9713AC2AC2B90E2CD /* DecompilerEditorHandoff.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -8418,6 +8431,19 @@
 		FFC6C9170F15A334178CBC5D /* AssistPermissionsAuditTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistPermissionsAuditTool.swift; sourceTree = "<group>"; };
 		FFCC69C564E99D39646CDB27 /* KVMVirtualizationDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KVMVirtualizationDashboardView.swift; sourceTree = "<group>"; };
 		FFD6A6856A6C5AD8D9459A32 /* radvd.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = radvd.txt; sourceTree = "<group>"; };
+		197E1B2CCFCD06E18D960581 /* AssemblyDiagnostic.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = AssemblyDiagnostic.swift; sourceTree = "<group>"; };
+		B3DED96941186DB289ED03D1 /* Assembler.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = Assembler.swift; sourceTree = "<group>"; };
+		ECD40708C751813C5D04F3EA /* BuildConfiguration.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = BuildConfiguration.swift; sourceTree = "<group>"; };
+		83C5AE47CA52F7EC94734262 /* EquivalenceChecker.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = EquivalenceChecker.swift; sourceTree = "<group>"; };
+		1B1CD6D7058841009D4928DC /* DecompilerEditorBridge.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = DecompilerEditorBridge.swift; sourceTree = "<group>"; };
+		A06F848399583016C92D3285 /* ReconstructedProjectGenerator.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ReconstructedProjectGenerator.swift; sourceTree = "<group>"; };
+		6CE027C6FA55CCED7E8DB4F8 /* SourceMapping.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SourceMapping.swift; sourceTree = "<group>"; };
+		25BBFE3219487F9140F3B278 /* AssemblyFallback.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = AssemblyFallback.swift; sourceTree = "<group>"; };
+		1E557B90A46965A4013C047B /* ReconstructionPipeline.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ReconstructionPipeline.swift; sourceTree = "<group>"; };
+		E3C91CC013D0A16BEAFFCB5F /* ReconstructionRecord.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ReconstructionRecord.swift; sourceTree = "<group>"; };
+		38F9A194BEA2B34A44276EC1 /* ReconstructionUtilities.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ReconstructionUtilities.swift; sourceTree = "<group>"; };
+		24CA2184A45FC24147F52AA6 /* SourceReconstructor.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SourceReconstructor.swift; sourceTree = "<group>"; };
+		24E1DBB9713AC2AC2B90E2CD /* DecompilerEditorHandoff.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = DecompilerEditorHandoff.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -8529,6 +8555,7 @@
 				5EC7500476D67ADED0D1557D /* ComposioSettingsView.swift */,
 				938F9018B88610C3CB4E3851 /* CreateBackupView.swift */,
 				15DA8E13BE302227CA53415C /* CreditsView.swift */,
+				24E1DBB9713AC2AC2B90E2CD /* DecompilerEditorHandoff.swift */,
 				7F265D7836415279D551C59A /* GitHubOAuth.swift */,
 				03978465157CA63B607844C4 /* GlassBars.swift */,
 				84D3F8F647313CF4DBDC2CBE /* InstalledOfflineModelsView.swift */,
@@ -12008,6 +12035,7 @@
 		A57B8BA2BF2CA70358026B81 /* YcodeDecompiler */ = {
 			isa = PBXGroup;
 			children = (
+				46A4444B45B0FBC009638A7E /* Assembly */,
 				F22DF6D998B32870E3A7A6FE /* Bundle+Module.swift */,
 				55C7394C25C987CBD006C9A8 /* AI */,
 				CFC68BA8C137ADF9D441DBBE /* Analysis */,
@@ -12017,11 +12045,14 @@
 				CFDCFEBEEB045448B3797C66 /* Core */,
 				1764B1AC466AF1CCA1D63546 /* Decompilation */,
 				6A526D160EC71D614D0DE2C7 /* Disassembly */,
+				4802B56947D56FDFF608B053 /* EditorIntegration */,
 				1F6ED6F9E3AFD71EB77FC5C7 /* Engines */,
 				AD7255F765C3B7910BFFBD2B /* Export */,
 				FC49443D98A2091FC6ADC67E /* Formats */,
 				FB03A3B1034AAF49771142B4 /* Interface */,
 				7A6C5FB2265C1C31D988A67A /* IntermediateRepresentation */,
+				E1F4F7342ACE42A45C95AE18 /* ProjectGeneration */,
+				3B09FE02BAF6151AFFD7EB08 /* Reconstruction */,
 				AF737EADF86520CEC953B5E4 /* Security */,
 				9E315718BE7267BE29B52BF6 /* Storage */,
 				C860206F7CAF143511434A8C /* Symbols */,
@@ -14496,6 +14527,50 @@
 				5955C5A637C2E03B057F7112 /* AssistSkillsCheck.swift */,
 			);
 			path = Functions;
+			sourceTree = "<group>";
+		};
+		46A4444B45B0FBC009638A7E /* Assembly */ = {
+			isa = PBXGroup;
+			children = (
+				197E1B2CCFCD06E18D960581 /* AssemblyDiagnostic.swift */,
+				83C5AE47CA52F7EC94734262 /* EquivalenceChecker.swift */,
+				B3DED96941186DB289ED03D1 /* Assembler.swift */,
+				ECD40708C751813C5D04F3EA /* BuildConfiguration.swift */,
+			);
+			name = Assembly;
+			path = Assembly;
+			sourceTree = "<group>";
+		};
+		4802B56947D56FDFF608B053 /* EditorIntegration */ = {
+			isa = PBXGroup;
+			children = (
+				1B1CD6D7058841009D4928DC /* DecompilerEditorBridge.swift */,
+			);
+			name = EditorIntegration;
+			path = EditorIntegration;
+			sourceTree = "<group>";
+		};
+		E1F4F7342ACE42A45C95AE18 /* ProjectGeneration */ = {
+			isa = PBXGroup;
+			children = (
+				6CE027C6FA55CCED7E8DB4F8 /* SourceMapping.swift */,
+				A06F848399583016C92D3285 /* ReconstructedProjectGenerator.swift */,
+			);
+			name = ProjectGeneration;
+			path = ProjectGeneration;
+			sourceTree = "<group>";
+		};
+		3B09FE02BAF6151AFFD7EB08 /* Reconstruction */ = {
+			isa = PBXGroup;
+			children = (
+				1E557B90A46965A4013C047B /* ReconstructionPipeline.swift */,
+				24CA2184A45FC24147F52AA6 /* SourceReconstructor.swift */,
+				25BBFE3219487F9140F3B278 /* AssemblyFallback.swift */,
+				38F9A194BEA2B34A44276EC1 /* ReconstructionUtilities.swift */,
+				E3C91CC013D0A16BEAFFCB5F /* ReconstructionRecord.swift */,
+			);
+			name = Reconstruction;
+			path = Reconstruction;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -18421,6 +18496,7 @@
 				8412B3423CC68EB5048439D5 /* DebugNavigatorRows.swift in Sources */,
 				FE5CC3DD08A9CC8BF6E7F06D /* DebugSessionsSidebarView.swift in Sources */,
 				111D72A544666C7C38B04059 /* DebuggingToolsView.swift in Sources */,
+				C512D6ADB0B168E5B94F05B9 /* DecompilerEditorHandoff.swift in Sources */,
 				AEB772267351350BB5A3C8C0 /* DefaultLightTheme.swift in Sources */,
 				B58D846C65644FB1AA8EB4A0 /* DeploymentService.swift in Sources */,
 				B2F19BF6F656C9492BAAC6DD /* DeploymentTargets.swift in Sources */,
@@ -19018,7 +19094,10 @@
 				E1CAF39EFA78C97169FA46E6 /* AnalysisStore.swift in Sources */,
 				C3C11AA7C24D06AB0AE7AC93 /* AnalysisTools.swift in Sources */,
 				8F24B52904D05681C53D65DC /* AnnotationTools.swift in Sources */,
+				6F32DC5F9B09CBD6E4589477 /* Assembler.swift in Sources */,
+				BD0AA42C0A1C30D6CBED88E0 /* AssemblyDiagnostic.swift in Sources */,
 				F2096DC60628A2B6A41FC5FE /* AssemblyExporter.swift in Sources */,
+				8023184D5CB22E78A43F5058 /* AssemblyFallback.swift in Sources */,
 				9E5B3B61446DA0B893B485E1 /* AssistantTools.swift in Sources */,
 				B735CDF0BE52F953B07F7C9E /* BinaryDetector.swift in Sources */,
 				5DA09870E7D611211CDC4650 /* BinaryFormat.swift in Sources */,
@@ -19026,6 +19105,7 @@
 				BF7EA5AA71D44733478E2747 /* BinaryInspectionTools.swift in Sources */,
 				AC818F5B5C48B73D13804A0F /* BinaryLoader.swift in Sources */,
 				94627A170D72F3A715B70547 /* BinarySecurityPolicy.swift in Sources */,
+				3654C75D7D68F0349F4AA2FD /* BuildConfiguration.swift in Sources */,
 				F2AA55D23321D164DAEB26DA /* Bundle+Module.swift in Sources */,
 				15017B01DB1694083DAFEA53 /* CacheManager.swift in Sources */,
 				31C87AE3D091D117A2F2AA6F /* CallGraphAnalyzer.swift in Sources */,
@@ -19046,6 +19126,7 @@
 				E5836CFDF733EB9197DC32E0 /* DecompilerCommands.swift in Sources */,
 				1484E52644699B3D91F81DE1 /* DecompilerConfiguration.swift in Sources */,
 				039F77AD2763BF525F076435 /* DecompilerDatabase.swift in Sources */,
+				39DE32FF66B2B95584ADECD9 /* DecompilerEditorBridge.swift in Sources */,
 				6090909B8C25F5C51D2C4C9F /* DecompilerLifecycle.swift in Sources */,
 				E761BDAE34288C5BBD39D66E /* DecompilerObservableState.swift in Sources */,
 				696D643F421A645F54A48C16 /* DecompilerProjectManager.swift in Sources */,
@@ -19063,6 +19144,7 @@
 				D0BE1531CA55E7EB60CC8DB6 /* EngineProtocols.swift in Sources */,
 				74B93B2530317E8CAFBBB939 /* EngineRegistry+Resolution.swift in Sources */,
 				CBFCC6DF2298DCFB8C0C7CF0 /* EngineRegistry.swift in Sources */,
+				8081FC2C6BA6D58F3DAE24C2 /* EquivalenceChecker.swift in Sources */,
 				532D4A7EFBF3BE28F4A92D7C /* ExportAnalysis.swift in Sources */,
 				093643B2F29D118104C7A6C1 /* FormatSupport.swift in Sources */,
 				2E491A847A41EF8F1398B31D /* FriendlyDetailViews.swift in Sources */,
@@ -19089,8 +19171,14 @@
 				0287C30F970A6B12BB57875B /* ProjectExporter.swift in Sources */,
 				0887AB6E4112DBD38C195CDF /* ProjectManifest.swift in Sources */,
 				A822512B759F5A456E3C135F /* PseudocodeExporter.swift in Sources */,
+				2A6BDBE79874C0F9678648C2 /* ReconstructedProjectGenerator.swift in Sources */,
+				6643F4142C82D8EA23A8F74B /* ReconstructionPipeline.swift in Sources */,
+				805C4A95EFBDEAD3CDD18CC8 /* ReconstructionRecord.swift in Sources */,
+				02EB32C491FAFFBA79EF6E53 /* ReconstructionUtilities.swift in Sources */,
 				D5AFF443E7EB9400EC110673 /* ResourceLimits.swift in Sources */,
 				5C125F4D1181400B18EFD4DC /* SharedComponents.swift in Sources */,
+				9FC7CAC97D31187FD0F71CB2 /* SourceMapping.swift in Sources */,
+				4E452D0617D2A8EE34FCE122 /* SourceReconstructor.swift in Sources */,
 				468D9038C610EA7D3C901910 /* StringAnalysis.swift in Sources */,
 				66442BBC60A77C56B113976B /* StringTools.swift in Sources */,
 				351FD44BF1E60C2D4B116C49 /* SymbolAnalysis.swift in Sources */,

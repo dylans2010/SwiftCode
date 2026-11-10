@@ -2,9 +2,25 @@
 
 Status report for the Decompiler subsystem. Sections A–O follow the
 implementation-report outline; each states what is **actually implemented**
-versus pending or unwired. Verified against the current tree (89 Swift
+versus pending or unwired. Verified against the current tree (103 Swift
 files + resources at `swiftcode/Sources/YcodeDecompiler/`; documentation
 at `Decompiler/Documentation/`).
+
+## A2. Reconstruction, Assemble & editor handoff (added 2026-11-10)
+
+The module now also covers the binary→source→binary loop: bulk
+**Decompile Asset** reconstructs every function into an editable source
+project (`Reconstruction/`, `ProjectGeneration/`), **Assemble**
+(`Assembly/`) compiles and links it into a new dynamic library with a
+real compiler, an equivalence report compares the rebuild against the
+original without ever claiming behavioral equivalence, and
+**Open in Editor** (`EditorIntegration/` + `YcodeUI/App/
+DecompilerEditorHandoff.swift`) hands the generated project to
+SwiftCode's main editor through `ProjectOpeningCoordinator` /
+`WorkspaceWindowController`. Functions without usable pseudocode are
+emitted as assembly with verbatim bytes plus PC-relative relocation
+repair (x86_64 and arm64), and are labelled `.partial`, never claimed
+working. See `LIMITATIONS.md` for the honest quality ceilings.
 
 ## A. Scope & objectives
 
@@ -26,7 +42,25 @@ executing binaries, patching binaries, redistributing Ghidra.
 - Pipeline driver `AnalysisCoordinator` with honest `AnalysisProgress`
   stages and cancellation checks.
 - Provider protocols for parsers, disassemblers, decompilers, analyzers
-  with per-image capability resolution.
+  with per-image capability resolution. `EngineRegistry` now filters on a
+  real `.disassemble` capability (llvm-objdump advertises it per
+  architecture; the old `|| true` bypass is gone) and descriptors report
+  real `supportedFormats`/`supportedArchitectures`.
+- Reconstruction pipeline (`ReconstructionPipeline.decompileAsset`):
+  bulk-decompiles via `DecompilerSession.decompileAllFunctions`
+  (exported-first, bounded by `maxBulkDecompileFunctions`), generates C
+  from Ghidra pseudocode with `FUN_`/`DAT_` rewriting, falls back to
+  repaired assembly, and writes the project through
+  `ReconstructedProjectGenerator` (`Package.swift` dynamic-library
+  product + `CMakeLists.txt`, source map, build config, diagnostics).
+- Assemble (`AssembleService`): direct clang subprocess, incremental
+  per-file objects via FNV-1a content+flags hash manifest, clang/linker
+  diagnostic parsing, ad-hoc codesign on macOS, last-good preservation,
+  output re-parsed with the module's own parsers, equivalence compare.
+- Editor handoff: `DecompilerEditorBridge` protocol in the module;
+  `IDEEditorHandoff` in `YcodeUI` registered from `AppSupport` next to
+  the existing lifecycle wiring; Decompile Asset / Assemble / Open in
+  Editor are toolbar items and `DecompilerCommands` cases.
 
 See `ARCHITECTURE.md`.
 
@@ -161,10 +195,18 @@ llvm-objdump (Xcode toolchain), Ghidra (user-installed, Apache-2.0),
 
 `swiftcode/Tests/YcodeDecompilerTests/` — XCTest suite, hand-built
 fixtures (ELF64, PE32+, Mach-O arm64, signature buffers): parser contract
-tests via `BinaryLoader.parsers`, detector tests, address/store tests.
-Run: `cd swiftcode && swift test --filter YcodeDecompilerTests`.
-Gaps: no engine-backend, persistence round-trip, session end-to-end, or
-UI tests. See `TESTING.md`.
+tests via `BinaryLoader.parsers`, detector tests, address/store tests,
+plus `ReconstructionTests.swift` (utilities, Ghidra signature mapping,
+diagnostic parsing, equivalence, build-config inference, source mapping,
+project-generation layout, and an end-to-end rebuild: compile a known C
+fixture to a `.so`, reconstruct, Assemble, re-parse, compare exports,
+and `dlopen` the rebuild to call the functions). Run:
+`cd swiftcode && swift test --filter YcodeDecompilerTests`.
+Verified 2026-11-10 on Linux (Swift 6.2.3, Foundation-only subset
+mini-package): 66 tests, 0 failures. Gaps: no engine-backend,
+persistence round-trip, session end-to-end, or UI tests; the Ghidra
+pseudocode path and the arm64 relocation repair have not been exercised
+end to end. See `TESTING.md`.
 
 ## M. Documentation
 
@@ -179,12 +221,20 @@ Headline items (full list in `LIMITATIONS.md`):
 
 - Extended analysis passes, IR, exporters and `CacheManager` are
   implemented but **unwired** — the coordinator pipeline is unchanged.
-- Engines/UI exist but app-startup wiring (`installDefaultEngines`,
-  `setAssistPanel`) is not called yet → engines unregistered and assist
-  panel absent until wired.
+- App-startup wiring exists (`AppSupport` calls
+  `installDefaultEngines` and `setAssistPanel`, and now registers the
+  editor handoff); the earlier "not called yet" claim in this report was
+  wrong and is corrected here.
 - llvm-objdump = linear sweep; Ghidra = optional install, path-hash
   cache; PE/ELF/Mach-O depth bounded by the canonical model (no DWARF/
   PDB/ObjC metadata).
+- Reconstruction quality ceilings: no ObjC/Swift metadata recovery
+  (only symbol-proven forward declarations); Ghidra pseudocode is
+  labelled Reconstructed/Inferred with provenance, never presented as
+  recovered original; assembly fallback is `.partial`; arm64 relocation
+  repair is implemented but has no end-to-end test on a real arm64
+  binary; the Xcode build and a live Mach-O rebuild on Dylan's Mac are
+  still the gate.
 - `Configuration/*` preferences persist but are inert; persistence is
   full-rewrite v1.
 
@@ -192,10 +242,10 @@ Headline items (full list in `LIMITATIONS.md`):
 
 | Item | Status |
 |---|---|
-| Source-level audit of all module files | Verified (89 Swift files + resources) |
+| Source-level audit of all module files | Verified (103 Swift files + resources) |
 | Docs accuracy vs. sources | Verified by inspection; unwired items marked |
-| `swift build` / `swift test` | **Not run** (out of scope; parsers/engines/UI now exist so a build attempt is the next step) |
-| End-to-end import→analysis→UI | Code-complete; requires app-startup wiring to exercise |
+| `swift build` / `swift test` | **Run 2026-11-10 on Linux Swift 6.2.3** (Foundation-only subset mini-package; 66 tests, 0 failures, incl. E2E rebuild + `dlopen` check). Full-app Xcode build + Mach-O E2E still pending on Dylan's Mac |
+| End-to-end import→analysis→UI | Import→analysis→reconstruction→Assemble verified on Linux for ELF/x86_64; Mach-O/arm64 path not yet exercised end to end |
 | Clean-room compliance | All docs are original prose; no Apple code or decompiler output reproduced |
 
 ## Evidence

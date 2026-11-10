@@ -69,15 +69,44 @@ and integration gaps. Verified against current sources.
 - String `isReferenced` is never set — no string→code reference
   resolution yet.
 
+## Reconstruction & Assemble (added 2026-11-10)
+
+- **No ObjC/Swift metadata recovery** — only symbol-proven facts are
+  emitted (`@class` forward declarations for `OBJC_CLASS_$_` symbols,
+  a Swift symbol list with an explicit "not reliable" diagnostic).
+  No methods, properties, or Swift types are invented.
+- **Ghidra pseudocode is machine-generated** — labelled
+  Reconstructed/Inferred with provenance and a `ghidra_types.h` compat
+  header; unknown imports are declared `extern long name();` (honest,
+  links) and known libc functions get real system headers. Raw Ghidra
+  output is ~8% compilable as-is in published measurements, so the
+  assembly fallback + address map always ship alongside.
+- **Assembly fallback is `.partial` by design** — PC-relative repair
+  covers x86_64 RIP-relative/GOT and arm64 adrp/adr/bl + GOT-pair
+  rewrites; unrepairable references keep their bytes plus a warning.
+  The x86_64 path is verified end to end (Linux E2E rebuild +
+  `dlopen`); the arm64 path is implemented but has no end-to-end test
+  on a real arm64 binary.
+- **Assemble needs a real compiler** (`xcrun clang` on macOS, `clang`/
+  `cc`/`gcc` on PATH elsewhere); without one it reports guidance,
+  not a fake artifact. Output is validated by re-parsing with the
+  module's own parsers; equivalence reports export/import/dependency
+  diffs and never claims behavioral equivalence from build success.
+- **No DWARF-based line/type recovery** — source maps are
+  function-level (address → file/line of the generated definition),
+  not original line numbers.
+
 ## AI (Decompile Assist)
 
 - Implemented end-to-end in code: asset loading (17 `.md` present),
   provider policy (Antigravity/Gemini only), context builder, SDK session
   multiplexing, ~40 tools across 7 files with approval gating.
-- **Not yet wired into the app**: `DecompilerLifecycle.
-  installDefaultEngines()`/`setAssistPanel(_:)` have no call sites in
-  `swiftcode/Sources`, so the assist panel is not injected and engines
-  are not auto-registered at startup.
+- Wired into the app at startup (`AppSupport` calls
+  `DecompilerLifecycle.installDefaultEngines()` and
+  `setAssistPanel(_:)`); the earlier "no call sites" claim was wrong.
+  `GoogleCloudSDKRuntime.toolExecutionHandler` is still a single global
+  slot shared by Decompile Assist sessions — concurrent sessions can
+  clobber each other.
 - Model output is unverified by definition; findings require user
   confirmation.
 - Provider policy is intentionally narrow — no OAuth **and** no Gemini
@@ -87,10 +116,11 @@ and integration gaps. Verified against current sources.
 
 - UI is implemented (`Interface/` Friendly+Master, `App/` window
   manager/controller/commands) and `openDecompiler:` routes to
-  `DecompilerWindowManager` — but nothing calls
-  `DecompilerLifecycle.installDefaultEngines()`, so `EngineRegistry`
-  starts empty unless bootstrap runs; sessions will report
-  `engineUnavailable` for disassembly/decompilation until then.
+  `DecompilerWindowManager`; `AppSupport` calls
+  `DecompilerLifecycle.installDefaultEngines()` at startup, so
+  `EngineRegistry` is populated. Decompile Asset / Assemble / Open in
+  Editor are wired as toolbar items, `DecompilerCommands` cases, and
+  Friendly toolbar buttons.
 - `.scdecomp` is not a declared document type (`Info.plist`/`project.yml`).
 - No XcodeGen test target for `YcodeDecompilerTests`.
 - `exportAnalysis` command writes a hand-built text summary; the six

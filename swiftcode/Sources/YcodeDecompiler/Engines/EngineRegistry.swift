@@ -12,6 +12,7 @@ public struct DecompilerCapabilitiesSet: OptionSet, Sendable, Codable, Hashable 
     public static let controlFlowGraph = DecompilerCapabilitiesSet(rawValue: 1 << 5)
     public static let callGraph = DecompilerCapabilitiesSet(rawValue: 1 << 6)
     public static let pcode = DecompilerCapabilitiesSet(rawValue: 1 << 7)
+    public static let disassemble = DecompilerCapabilitiesSet(rawValue: 1 << 8)
 }
 
 /// A registered analysis engine (decompiler/disassembler backend).
