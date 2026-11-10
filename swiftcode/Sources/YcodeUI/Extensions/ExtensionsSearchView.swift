@@ -14,9 +14,9 @@ public struct ExtensionsSearchView: View {
             HStack {
                 TextField("Search extensions…", text: $query, onCommit: search)
                     .textFieldStyle(.roundedBorder)
+                    .onSubmit(search)
                 Button("Search", action: search)
                     .buttonStyle(.borderedProminent)
-                    .disabled(query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
             .padding()
             Divider()
@@ -34,27 +34,53 @@ public struct ExtensionsSearchView: View {
                     systemImage: "magnifyingglass",
                     description: Text("Results come from the configured registry. Nothing here is hardcoded."))
             } else {
-                List(manager.searchResults) { result in
-                    let installed = manager.installed.first { $0.id == result.id }
-                    ExtensionSidebarRow(
-                        metadata: result,
-                        state: installed?.state ?? .notInstalled,
-                        isInstalling: manager.installingIDs.contains(result.id),
-                        onInstall: {
-                            Task {
-                                do { try await manager.install(metadata: result) }
-                                catch { errorMessage = error.localizedDescription }
+                List {
+                    ForEach(manager.searchResults) { result in
+                        let installed = manager.installed.first { $0.id == result.id }
+                        ExtensionSidebarRow(
+                            metadata: result,
+                            state: installed?.state ?? .notInstalled,
+                            isInstalling: manager.installingIDs.contains(result.id),
+                            onInstall: {
+                                Task {
+                                    do { try await manager.install(metadata: result) }
+                                    catch { errorMessage = error.localizedDescription }
+                                }
+                            },
+                            onOpen: installed == nil ? nil : {
+                                runExtensionId = installed?.id
+                            })
+                        .onAppear {
+                            if result.id == manager.searchResults.last?.id {
+                                manager.loadMoreSearchResults()
                             }
-                        },
-                        onOpen: installed == nil ? nil : {
-                            runExtensionId = installed?.id
-                        })
+                        }
+                    }
+                    if manager.isSearching {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Loading more…")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                        .listRowSeparator(.hidden)
+                    } else if !manager.searchHasMore && manager.searchResults.count > 0 {
+                        Text("Showing all \(manager.searchResults.count) of \(manager.searchTotal) extensions")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                            .frame(maxWidth: .infinity)
+                            .listRowSeparator(.hidden)
+                    }
                 }
                 .listStyle(.plain)
-                if manager.searchResults.count >= 20 {
-                    Button("Load more") { manager.loadMoreSearchResults() }
-                        .padding()
-                }
+            }
+        }
+        .task {
+            if manager.searchResults.isEmpty && !manager.isSearching {
+                manager.search(query: query)
             }
         }
         .alert(

@@ -17,6 +17,8 @@ public final class ExtensionManager: ObservableObject {
     @Published public private(set) var searchResults: [ExtensionMetadata] = []
     @Published public private(set) var searchError: String?
     @Published public private(set) var isSearching: Bool = false
+    @Published public private(set) var searchHasMore: Bool = false
+    @Published public private(set) var searchTotal: Int = 0
     @Published public private(set) var installingIDs: Set<String> = []
     @Published public private(set) var updates: [ExtensionUpdateInfo] = []
     @Published public private(set) var contributions: [String: ExtensionContribution] = [:]
@@ -125,50 +127,51 @@ public final class ExtensionManager: ObservableObject {
         try? storage.saveInstalled(installed)
     }
 
+    public static let searchPageSize = 50
+
     public func search(query: String) {
         searchTask?.cancel()
         let trimmed = query.trimmingCharacters(in: .whitespaces)
-        guard !trimmed.isEmpty else {
-            searchResults = []
-            searchError = nil
-            isSearching = false
-            lastSearchQuery = nil
-            searchOffset = 0
-            return
-        }
         isSearching = true
         searchError = nil
         lastSearchQuery = trimmed
         searchOffset = 0
+        searchResults = []
+        searchHasMore = false
+        searchTotal = 0
         searchTask = Task {
             do {
                 let client = RegistryClient(settings: settings)
-                let page = try await client.search(query: trimmed)
+                let page = try await client.search(query: trimmed, pageSize: Self.searchPageSize)
                 guard !Task.isCancelled else { return }
                 searchResults = page.results
                 searchOffset = page.results.count
+                searchHasMore = page.hasMore
+                searchTotal = page.total
                 isSearching = false
             } catch {
                 guard !Task.isCancelled else { return }
                 searchError = error.localizedDescription
                 searchResults = []
+                searchHasMore = false
                 isSearching = false
             }
         }
     }
 
     public func loadMoreSearchResults() {
-        guard let query = lastSearchQuery, !query.isEmpty else { return }
+        guard let query = lastSearchQuery, searchHasMore, !isSearching else { return }
         let offset = searchOffset
-        searchTask?.cancel()
         isSearching = true
         searchTask = Task {
             do {
                 let client = RegistryClient(settings: settings)
-                let page = try await client.search(query: query, offset: offset)
+                let page = try await client.search(query: query, offset: offset, pageSize: Self.searchPageSize)
                 guard !Task.isCancelled else { return }
                 searchResults += page.results
                 searchOffset = offset + page.results.count
+                searchHasMore = page.hasMore
+                searchTotal = page.total
                 isSearching = false
             } catch {
                 guard !Task.isCancelled else { return }

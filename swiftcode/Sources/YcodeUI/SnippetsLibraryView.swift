@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
+import YcodeIDECore
 
 private struct SnippetsExportDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
@@ -21,6 +22,15 @@ private struct SnippetsExportDocument: FileDocument {
 }
 
 struct SnippetsLibraryView: View {
+    var onInsert: ((LibraryCodeSnippet) -> Void)?
+    var onSnippetsChanged: (() -> Void)?
+
+    init(onInsert: ((LibraryCodeSnippet) -> Void)? = nil,
+         onSnippetsChanged: (() -> Void)? = nil) {
+        self.onInsert = onInsert
+        self.onSnippetsChanged = onSnippetsChanged
+    }
+
     @State private var snippets: [LibraryCodeSnippet] = LibraryCodeSnippetStore.load()
     @State private var selectedCategory: LibrarySnippetCategory = .swiftUIViews
     @State private var searchQuery = ""
@@ -662,7 +672,7 @@ struct SnippetsLibraryView: View {
             saved.usageCount = max(saved.usageCount, snippets[idx].usageCount)
             snippets[idx] = saved
         }
-        LibraryCodeSnippetStore.save(snippets)
+        persistSnippets()
         selectedSnippet = saved
         showEditSheet = false
         draft = .empty
@@ -671,7 +681,7 @@ struct SnippetsLibraryView: View {
     private func updateSnippet(_ snippet: LibraryCodeSnippet) {
         if let idx = snippets.firstIndex(where: { $0.id == snippet.id }) {
             snippets[idx] = snippet
-            LibraryCodeSnippetStore.save(snippets)
+            persistSnippets()
             if selectedSnippet?.id == snippet.id {
                 selectedSnippet = snippet
             }
@@ -701,7 +711,7 @@ struct SnippetsLibraryView: View {
             isPinned: snippet.isPinned
         )
         snippets.append(copy)
-        LibraryCodeSnippetStore.save(snippets)
+        persistSnippets()
         selectedSnippet = copy
     }
 
@@ -723,14 +733,23 @@ struct SnippetsLibraryView: View {
 
     private func deleteSnippet(_ snippet: LibraryCodeSnippet) {
         snippets.removeAll { $0.id == snippet.id }
-        LibraryCodeSnippetStore.save(snippets)
+        persistSnippets()
         if selectedSnippet?.id == snippet.id {
             selectedSnippet = nil
         }
     }
 
+    private func persistSnippets() {
+        LibraryCodeSnippetStore.save(snippets)
+        onSnippetsChanged?()
+    }
+
     private func insertIntoEditor(_ snippet: LibraryCodeSnippet) {
-        YcodeIDECore.ProjectSessionStore.shared.activeFileContent += "\n\n" + snippet.code
+        if let onInsert {
+            onInsert(snippet)
+        } else {
+            YcodeIDECore.ProjectSessionStore.shared.activeFileContent += "\n\n" + snippet.code
+        }
         var updated = snippet
         updated.usageCount += 1
         updateSnippet(updated)
@@ -767,6 +786,6 @@ struct SnippetsLibraryView: View {
                 snippets.append(snippet)
             }
         }
-        LibraryCodeSnippetStore.save(snippets)
+        persistSnippets()
     }
 }

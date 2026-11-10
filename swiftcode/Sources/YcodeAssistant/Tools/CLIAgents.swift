@@ -33,12 +33,15 @@ public enum CLIAgentKind: String, Codable, Sendable, CaseIterable {
     public var suggestedModels: [String] {
         switch self {
         case .claudeCode: ["sonnet", "opus", "haiku"]
-        case .codex, .antigravity: []
+        case .codex: []
+        case .antigravity: ["gemini-3.8-flash-high", "gemini-3.8-flash-medium", "gemini-3.8-flash-low",
+                            "claude-sonnet-4-6", "claude-opus-4-6-thinking", "gpt-oss-120b-medium"]
         }
     }
 
     public func arguments(model: String?, workingDirectory: String, prompt: String, toolsEnabled: Bool = true,
-                          mcp: AgentAttachment.MCPEndpoint? = nil, mcpConfig: String? = nil) -> [String] {
+                          mcp: AgentAttachment.MCPEndpoint? = nil, mcpConfig: String? = nil,
+                          cliMode: String? = nil) -> [String] {
         let m = model.flatMap { $0.isEmpty ? nil : $0 }
         switch self {
         case .claudeCode where mcpConfig != nil:
@@ -69,7 +72,7 @@ public enum CLIAgentKind: String, Codable, Sendable, CaseIterable {
             if let m { a += ["-m", m] }
             return a + ["-"]
         case .antigravity:
-            var a = ["-p", prompt, "--output-format", "stream-json", "--mode", "plan", "--sandbox", "--disable-slash-commands"]
+            var a = ["-p", prompt, "--output-format", "stream-json", "--mode", cliMode ?? "plan", "--sandbox"]
             if let m { a += ["--model", m] }
             return a
         }
@@ -215,7 +218,10 @@ public struct AntigravityEventParser: CLIEventParser {
                 sawText = true
                 return [.text(t)]
             }
-            if (s["step_type"] as? String) == "tool", (s["state"] as? String) == "ACTIVE", let name = s["tool_name"] as? String {
+            if (s["step_type"] as? String).map({ $0.contains("tool") || $0.contains("command") || $0.contains("shell") }) == true,
+               (s["state"] as? String) == "ACTIVE" {
+                let name = (s["tool_name"] as? String) ?? (s["name"] as? String) ?? (s["title"] as? String)
+                    ?? (s["step_type"] as? String) ?? "tool"
                 return [.activity(name)]
             }
             return []
@@ -282,13 +288,24 @@ public struct CLIAgentProvider: AgentAttachable {
     public var kind: ProviderKind { agent.providerKind }
     public var executable: URL?
     public var argumentsOverride: [String]?
+    public var assistMode: AssistMode?
 
     public var attachment: AgentAttachment?
 
-    public init(agent: CLIAgentKind, executable: URL?, argumentsOverride: [String]? = nil) {
+    public init(agent: CLIAgentKind, executable: URL?, argumentsOverride: [String]? = nil, assistMode: AssistMode? = nil) {
         self.agent = agent
         self.executable = executable
         self.argumentsOverride = argumentsOverride
+        self.assistMode = assistMode
+    }
+
+    var cliMode: String? {
+        guard agent == .antigravity, let assistMode else { return nil }
+        switch assistMode {
+        case .plan: return "plan"
+        case .agent: return "accept-edits"
+        case .turbo: return "auto"
+        }
     }
 
     public var isAttached: Bool { attachment != nil }
@@ -336,7 +353,8 @@ public struct CLIAgentProvider: AgentAttachable {
             }
             defer { if let f = configFile { try? FileManager.default.removeItem(at: f.deletingLastPathComponent()) } }
             let args = provider.argumentsOverride ?? provider.agent.arguments(model: request.model, workingDirectory: dir.path, prompt: prompt,
-                                                                             mcp: provider.attachment?.mcp, mcpConfig: configFile?.path)
+                                                                             mcp: provider.attachment?.mcp, mcpConfig: configFile?.path,
+                                                                             cliMode: provider.cliMode)
             var parser = provider.agent.makeParser()
             var finished = false
             do {

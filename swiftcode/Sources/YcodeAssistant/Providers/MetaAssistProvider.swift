@@ -801,8 +801,25 @@ public struct MetaAssistAssistantProvider: AssistantProvider, AgentAttachable, S
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
-        eventStream { continuation in
-            continuation.yield(.text("Meta Assist provider active."))
+        let prompt = request.flattenedPrompt
+        let workspaceRoot = request.workingDirectory?.path
+            ?? FileManager.default.homeDirectoryForCurrentUser.path
+        return eventStream { continuation in
+            if let model = request.model, !model.isEmpty {
+                await MainActor.run { AppSettings.shared.metaAssistModelID = model }
+            }
+            try await withTaskCancellationHandler {
+                try await MetaAssistProvider.shared.executeTurn(
+                    prompt: prompt,
+                    history: [],
+                    workspaceRoot: workspaceRoot,
+                    onTextDelta: { delta in continuation.yield(.text(delta)) },
+                    onThinkingDelta: nil
+                )
+                continuation.yield(.finished(nil))
+            } onCancel: {
+                Task { await MetaAssistProvider.shared.cancelTurn() }
+            }
         }
     }
 

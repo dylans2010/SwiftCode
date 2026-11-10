@@ -57,7 +57,7 @@ public final class RegistryClient: Sendable {
         return (data, http)
     }
 
-    public func search(query: String, offset: Int = 0, pageSize: Int = 20) async throws -> SearchPage {
+    public func search(query: String, offset: Int = 0, pageSize: Int = 50) async throws -> SearchPage {
         let (data, _) = try await get(path: "-/search", query: [
             URLQueryItem(name: "query", value: query),
             URLQueryItem(name: "size", value: "\(pageSize)"),

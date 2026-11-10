@@ -12,7 +12,8 @@ extension WorkspaceWindowController {
         switch index {
         case 0: return [item("New File…", #selector(newFile(_:))), item("New Folder", #selector(newFolder(_:))), item("Add Files…", #selector(addFiles(_:)))]
         case 1: return [item("Commit…", #selector(showCommitSheet(_:))), item("Refresh File Status", #selector(refreshFileStatus(_:)))]
-        case 2: return [item("Bookmark File", #selector(bookmarkFile(_:))), item("Bookmark Line", #selector(bookmarkLine(_:)))]
+        case 2: return [item("Bookmark File", #selector(bookmarkFile(_:))), item("Bookmark Line", #selector(bookmarkLine(_:))),
+                        item("Snippets Library…", #selector(showSnippetsLibrary(_:)))]
         case 5: return [item("New Unit Test Target…", nil), item("New UI Test Target…", nil), item("New Unit Test Class…", #selector(newFile(_:)))]
         case 8: return [item("Show Build Folder in Finder", #selector(showBuildFolderInFinder(_:)))]
         default: return []

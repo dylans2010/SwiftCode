@@ -33,6 +33,8 @@ public final class OutlineItem: NSObject {
     public var rowButtons: [(symbol: String, toolTip: String, action: String)] = []
     public var findIndex: (file: Int, match: Int?)?
     public var diagnostic: Diagnostic?
+    public var snippet: LibraryCodeSnippet?
+    public var opensSnippetLibrary = false
     public enum RowAction: Equatable { case fixIssues }
     public var rowAction: RowAction?
 
@@ -89,6 +91,8 @@ public final class NavigatorAreaController: NSViewController, NSOutlineViewDataS
     public private(set) var selectedIndex = 0
     public var onOpen: ((String, Int?) -> Void)?
     public var onFixIssues: (() -> Void)?
+    public var onSnippet: ((LibraryCodeSnippet) -> Void)?
+    public var onOpenSnippetLibrary: (() -> Void)?
     let selectionFromOpen = FlagBox()
     private var scrollerStyleObserver: NSObjectProtocol?
 
@@ -715,11 +719,22 @@ public final class NavigatorAreaController: NSViewController, NSOutlineViewDataS
 
     public var addMenuTitles: [String] { (addBreakpointButton.menu?.items.dropFirst() ?? []).map(\.title) }
 
+    private var allSnippets: [LibraryCodeSnippet] = []
+
+    public func setSnippets(_ snippets: [LibraryCodeSnippet]) {
+        allSnippets = snippets
+        rebuildBookmarksRoots()
+    }
+
     public func setBookmarks(_ list: [Bookmark]) {
         allBookmarks = list
-        let shown = bookmarksIncompleteOnly ? list.filter { $0.done != true } : list
+        rebuildBookmarksRoots()
+    }
+
+    private func rebuildBookmarksRoots() {
+        let shown = bookmarksIncompleteOnly ? allBookmarks.filter { $0.done != true } : allBookmarks
         let byFile = Dictionary(grouping: shown, by: \.file)
-        roots[2] = byFile.keys.sorted().map { file in
+        var items = byFile.keys.sorted().map { file in
             OutlineItem(title: URL(fileURLWithPath: file).lastPathComponent, symbol: OutlineItem.fileSymbol(file), children: byFile[file]!.map { b in
                 let row = OutlineItem(title: b.line.map { "\(b.label) — line \($0)" } ?? b.label, symbol: "bookmark.fill", tint: .systemBlue,
                                       path: b.file, line: b.line)
@@ -729,6 +744,22 @@ public final class NavigatorAreaController: NSViewController, NSOutlineViewDataS
                 return row
             }, path: byFile[file]!.contains { $0.line == nil } ? file : nil)
         }
+        if !allSnippets.isEmpty {
+            let snippetRows = allSnippets.sorted {
+                if $0.isPinned != $1.isPinned { return $0.isPinned }
+                return $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending
+            }.map { s -> OutlineItem in
+                let row = OutlineItem(title: s.title, symbol: "curlybraces", tint: .systemPurple)
+                row.detail = "\(s.language) · \(s.category.rawValue)"
+                row.snippet = s
+                return row
+            }
+            let libraryRow = OutlineItem(title: "Snippets Library…", symbol: "arrow.up.forward.app", tint: .secondaryLabelColor)
+            libraryRow.opensSnippetLibrary = true
+            items.append(OutlineItem(title: "Snippets (\(allSnippets.count))", symbol: "curlybraces",
+                                     tint: .systemPurple, children: snippetRows + [libraryRow]))
+        }
+        roots[2] = items
         reloadIfShowing(2)
         if selectedIndex == 2 { outline.expandItem(nil, expandChildren: true) }
     }
@@ -1309,6 +1340,8 @@ public final class NavigatorAreaController: NSViewController, NSOutlineViewDataS
     @objc private func rowClicked() {
         guard let item = outline.item(atRow: outline.clickedRow) as? OutlineItem else { return }
         if item.rowAction == .fixIssues { onFixIssues?(); return }
+        if item.opensSnippetLibrary { onOpenSnippetLibrary?(); return }
+        if let s = item.snippet { onSnippet?(s); return }
         if item.enabledMarker != nil, let path = item.path, let line = item.line, let e = NSApp.currentEvent,
            outline.convert(e.locationInWindow, from: nil).x > outline.bounds.maxX - 26 {
             onToggleBreakpointEnabled?(path, line)

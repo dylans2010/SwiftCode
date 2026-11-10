@@ -124,9 +124,22 @@ final class StandInTools {
         let args = tools.recorded("agy", "args").split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
         #expect(args.first == "-p")
         #expect(args.contains("--mode") && args[args.firstIndex(of: "--mode")! + 1] == "plan")
-        #expect(args.contains("--sandbox") && args.contains("--disable-slash-commands"))
+        #expect(args.contains("--sandbox") && !args.contains("--disable-slash-commands"))
         #expect(!args.contains("--dangerously-skip-permissions"))
         #expect(tools.recorded("agy", "args").contains("What does main do?"))
+    }
+
+    @Test func antigravityAssistModeMapsToCLIMode() async throws {
+        let tools = try StandInTools()
+        let exe = try tools.tool("agy", lines: [
+            #"{"event":"result","result":{"status":"SUCCESS","response":"ok","usage":{}}}"#,
+        ], readsStdin: false)
+        for (mode, expected) in [(AssistMode.plan, "plan"), (.agent, "accept-edits"), (.turbo, "auto")] {
+            let provider = CLIAgentProvider(agent: .antigravity, executable: exe, assistMode: mode)
+            _ = try await collect(provider.send(request))
+            let args = tools.recorded("agy", "args").split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+            #expect(args[args.firstIndex(of: "--mode")! + 1] == expected)
+        }
     }
 
     @Test func antigravityErrorStatus() async throws {

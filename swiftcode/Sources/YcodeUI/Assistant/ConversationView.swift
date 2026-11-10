@@ -15,7 +15,7 @@ public final class ConversationView: NSView {
     public let providerButton = NSButton()
     private var modelPickerPopover: NSPopover?
     private var modelPickerHosting: NSHostingController<AssistModelPickerView>?
-    public let modeControl = NSSegmentedControl(labels: AssistMode.allCases.map(\.displayName), trackingMode: .selectOne, target: nil, action: nil)
+    public let modePicker = NSHostingView(rootView: AssistModePicker(selection: .agent, isEnabled: false, onSelect: { _ in }))
     public let modeDescriptionLabel = NSTextField(labelWithString: "")
     public let statusLabel = NSTextField(wrappingLabelWithString: "")
     public let statusButtons = NSStackView()
@@ -127,15 +127,13 @@ public final class ConversationView: NSView {
         planLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         chips.orientation = .horizontal
         chips.spacing = 6
-        modeControl.controlSize = .small
-        modeControl.target = self
-        modeControl.action = #selector(modeChanged(_:))
-        modeControl.setAccessibilityLabel("Assist mode: Plan, Agent or Turbo")
+        modePicker.sizingOptions = [.intrinsicContentSize]
+        modePicker.setAccessibilityLabel("Assist mode: Plan, Agent or Turbo")
         modeDescriptionLabel.font = .systemFont(ofSize: 10)
         modeDescriptionLabel.textColor = .secondaryLabelColor
         modeDescriptionLabel.lineBreakMode = .byTruncatingTail
         modeDescriptionLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let modeRow = NSStackView(views: [modeControl, modeDescriptionLabel])
+        let modeRow = NSStackView(views: [modePicker, modeDescriptionLabel])
         modeRow.orientation = .horizontal
         modeRow.spacing = 10
         modeRow.alignment = .centerY
@@ -183,6 +181,7 @@ public final class ConversationView: NSView {
             messageScroll.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             messageScroll.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             messageScroll.heightAnchor.constraint(equalToConstant: 72),
+            modePicker.heightAnchor.constraint(equalToConstant: 30),
             bottom.topAnchor.constraint(equalTo: messageScroll.bottomAnchor, constant: 6),
             bottom.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
             bottom.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
@@ -272,11 +271,6 @@ public final class ConversationView: NSView {
             if models.isEmpty { return ["\(kind.displayName)/Choose \(kind.displayName)"] }
             return models.map { "\(kind.displayName)/\($0.displayName.isEmpty ? "Default" : $0.displayName)" }
         }
-    }
-
-    @objc func modeChanged(_ sender: NSSegmentedControl) {
-        guard let id = conversationID, AssistMode.allCases.indices.contains(sender.selectedSegment) else { return }
-        model.setMode(AssistMode.allCases[sender.selectedSegment], for: id)
     }
 
     @objc func refreshClicked() { model.refreshAvailability() }
@@ -414,10 +408,12 @@ public final class ConversationView: NSView {
         sendButton.toolTip = running ? "Stop the response" : "Send (Return)"
         sendButton.isEnabled = !(fixedID != nil && conversation == nil)
         let mode = conversationID.map(model.mode(for:)) ?? .agent
-        modeControl.selectedSegment = AssistMode.allCases.firstIndex(of: mode) ?? 1
+        modePicker.rootView = AssistModePicker(selection: mode, isEnabled: conversation != nil) { [weak self] m in
+            guard let self, let id = self.conversationID else { return }
+            self.model.setMode(m, for: id)
+        }
         modeDescriptionLabel.stringValue = mode.shortDescription
-        modeControl.toolTip = "\(mode.displayName) mode — \(mode.shortDescription)"
-        modeControl.isEnabled = conversation != nil
+        modeDescriptionLabel.toolTip = "\(mode.displayName) mode — \(mode.shortDescription)"
         planLabel.isHidden = !model.usesChatGPTPlan
         messageView.placeholder = "Ask \(model.sourceLabel)"
         messageView.needsDisplay = true
@@ -695,12 +691,10 @@ public final class MessageView: NSStackView {
             a.textColor = .secondaryLabelColor
             addArrangedSubview(a)
         }
-        for line in message.activity.suffix(6) {
-            let l = NSTextField(labelWithString: "› " + line)
-            l.font = .systemFont(ofSize: 10)
-            l.textColor = .tertiaryLabelColor
-            l.lineBreakMode = .byTruncatingMiddle
-            addArrangedSubview(l)
+        if !message.activity.isEmpty {
+            let card = ActivityCardView(lines: message.activity)
+            card.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
+            addArrangedSubview(card)
         }
         if message.role == .user {
             

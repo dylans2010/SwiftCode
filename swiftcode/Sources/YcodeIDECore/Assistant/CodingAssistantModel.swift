@@ -246,6 +246,10 @@ public final class CodingAssistantModel {
             return id
         }
         var provider = services.provider(kind, prefs: prefs)
+        if var cli = provider as? CLIAgentProvider {
+            cli.assistMode = mode
+            provider = cli
+        }
         if var meta = provider as? MetaAssistAssistantProvider, let ids = mcpToolIDsProvider?() {
             meta.knownToolIDs = ids
             provider = meta
@@ -398,6 +402,10 @@ public final class CodingAssistantModel {
                     failovers += 1
                     appendActivity(id, "“\(failedID)” failed (\(modelRouter.classify(error: error).rawValue)); switching to \(nextModel.displayName)")
                     var nextProvider = services.backends(prefs).provider(forModelID: nextModel.id)
+                    if var cli = nextProvider as? CLIAgentProvider {
+                        cli.assistMode = mode
+                        nextProvider = cli
+                    }
                     if var meta = nextProvider as? MetaAssistAssistantProvider, let ids = mcpToolIDsProvider?() {
                         meta.knownToolIDs = ids
                         nextProvider = meta

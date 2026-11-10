@@ -281,6 +281,9 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         _ = bookmarks
         navigator.onOpen = { [weak self] path, line in self?.openFromNavigator(path: path, line: line) }
         navigator.onFixIssues = { [weak self] in _ = self?.sendBuildIssuesToAssistant() }
+        navigator.onSnippet = { [weak self] s in self?.insertSnippetIntoEditor(s) }
+        navigator.onOpenSnippetLibrary = { [weak self] in self?.showSnippetsLibrary(nil) }
+        navigator.setSnippets(LibraryCodeSnippetStore.load())
         installFindHooks()
         prefsObserver = NotificationCenter.default.addObserver(forName: Preferences.didChange, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.applyPreferences() }
@@ -1740,7 +1743,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             item.toolTip = "Extensions"
             item.isBordered = true
             item.target = self
-            item.action = #selector(toggleExtensionsPanel(_:))
+            item.action = #selector(showExtensions(_:))
             item.visibilityPriority = .high
             return item
         case Self.toolsDrawerID:
