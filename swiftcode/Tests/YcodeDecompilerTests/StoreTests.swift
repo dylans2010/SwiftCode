@@ -132,8 +132,10 @@ final class StoreTests: XCTestCase {
         let addr = DecompilerAddress(virtual: 0x1234)
         await store.setComment("hello", at: addr)
         await store.setUserLabel("start", at: addr)
-        XCTAssertEqual(await store.comment(at: addr), "hello")
-        XCTAssertEqual(await store.userLabels[addr.hexString], "start")
+        let comment = await store.comment(at: addr)
+        let labels = await store.userLabels
+        XCTAssertEqual(comment, "hello")
+        XCTAssertEqual(labels[addr.hexString], "start")
     }
 
     func testStorePseudocodeMarksFunction() async {

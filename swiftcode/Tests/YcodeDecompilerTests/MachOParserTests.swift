@@ -72,9 +72,9 @@ final class MachOParserTests: XCTestCase {
         b += u32(0x2)
         b += u32(24)                       // cmdsize
         b += u32(UInt32(symoff))           // symoff
-        b += nsyms                         // nsyms
+        b += u32(nsyms)                     // nsyms
         b += u32(UInt32(stroff))           // stroff
-        b += strsize                       // strsize
+        b += u32(strsize)                  // strsize
 
         // pad to 0x100
         b += [UInt8](repeating: 0, count: 0x100 - b.count)
