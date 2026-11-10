@@ -298,6 +298,8 @@ public struct GhidraDecompiler: DecompilerProvider {
                 "Resources/EngineScripts/DecompileDump.py"))
             candidates.append(mainResources.appendingPathComponent(
                 "YcodeDecompiler/EngineScripts/DecompileDump.py"))
+            // XcodeGen flattens bundle resources into Contents/Resources.
+            candidates.append(mainResources.appendingPathComponent("DecompileDump.py"))
         }
         // Source-relative fallback for unbundled development trees:
         // …/Decompilation/Backends/<file> → …/YcodeDecompiler/Resources/…

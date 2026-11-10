@@ -28,6 +28,9 @@ public struct DecompileAssistAssetLoader: Sendable {
         if let mainResources = Bundle.main.resourceURL {
             dirs.append(mainResources.appendingPathComponent("SystemAssets/DecompileAssist", isDirectory: true))
             dirs.append(mainResources.appendingPathComponent("Decompiler/SystemAssets/DecompileAssist", isDirectory: true))
+            // XcodeGen flattens bundle resources: assets may sit at the
+            // Resources root with no enclosing directory.
+            dirs.append(mainResources)
         }
         // Source-relative fallback: …/Sources/YcodeDecompiler/AI/DecompileAssist/<file>
         // → …/Sources/YcodeDecompiler/Resources/SystemAssets/DecompileAssist
