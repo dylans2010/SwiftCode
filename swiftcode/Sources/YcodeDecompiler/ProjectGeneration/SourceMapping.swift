@@ -7,14 +7,30 @@ public struct SourceMapping: Sendable, Codable {
         public var line: Int
         public var function: String?
         public var quality: ReconstructionQuality
+        public var language: SourceLanguage?
 
         public init(address: UInt64, file: String, line: Int, function: String? = nil,
-                    quality: ReconstructionQuality) {
+                    quality: ReconstructionQuality, language: SourceLanguage? = nil) {
             self.address = address
             self.file = file
             self.line = line
             self.function = function
             self.quality = quality
+            self.language = language
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case address, file, line, function, quality, language
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            address = try container.decode(UInt64.self, forKey: .address)
+            file = try container.decode(String.self, forKey: .file)
+            line = try container.decode(Int.self, forKey: .line)
+            function = try container.decodeIfPresent(String.self, forKey: .function)
+            quality = try container.decode(ReconstructionQuality.self, forKey: .quality)
+            language = try container.decodeIfPresent(SourceLanguage.self, forKey: .language)
         }
     }
 

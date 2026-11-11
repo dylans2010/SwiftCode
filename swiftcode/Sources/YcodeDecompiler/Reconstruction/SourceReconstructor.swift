@@ -125,7 +125,7 @@ public enum SourceReconstructor {
             if let file = record.generatedFile, let line = record.generatedLine {
                 mapEntries.append(SourceMapping.Entry(address: record.functionAddress.value, file: file,
                                                       line: line, function: record.recoveredName,
-                                                      quality: record.quality))
+                                                      quality: record.quality, language: .c))
             }
         }
 
@@ -172,7 +172,8 @@ public enum SourceReconstructor {
         for rep in repaired {
             mapEntries.append(SourceMapping.Entry(address: rep.function.address.value,
                                                   file: "Assembly/original_text.s", line: 1,
-                                                  function: rep.cName, quality: .partial))
+                                                  function: rep.cName, quality: .partial,
+                                                  language: .assembly))
         }
 
         let asmText: String? = repaired.isEmpty ? nil : AssemblyFallback.emitAssemblyFile(
@@ -223,6 +224,23 @@ public enum SourceReconstructor {
             diagnostics.append(ReconstructionDiagnostic(
                 severity: .warning,
                 message: "Swift source reconstruction is not reliable: Swift symbols and metadata are preserved as a symbol list, and functions are reconstructed as C or assembly. Do not treat the output as original Swift source."))
+        }
+
+        if let emitter = InterfaceEmitterRegistry.emitter(for: language) {
+            let emission = emitter.emit(libraryName: libraryName, records: records)
+            files.append(emission.file)
+            for shim in emission.shims {
+                mapEntries.append(SourceMapping.Entry(address: shim.functionAddress,
+                                                      file: emission.file.relativePath, line: shim.line,
+                                                      function: shim.shimSymbol, quality: shim.quality,
+                                                      language: emitter.language))
+            }
+            for omission in emission.omitted {
+                diagnostics.append(ReconstructionDiagnostic(
+                    severity: .warning,
+                    message: "Function \(omission.recoveredName) has no \(emitter.language.displayName) interface shim: \(omission.reason).",
+                    functionAddress: DecompilerAddress(virtual: omission.functionAddress)))
+            }
         }
 
         let sourceMap = SourceMapping(entries: mapEntries.sorted { $0.address < $1.address },

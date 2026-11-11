@@ -3601,6 +3601,9 @@
 		F95C626AD547D1F740599B67 /* LuaBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C65C4C8690DDB9BBCA1953 /* LuaBackend.swift */; };
 		7C4F8E60563FA7BF4CCCBE93 /* RuntimeShimSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A3C5E37AEB5FFDD9DDA6D5B /* RuntimeShimSupport.swift */; };
 		79ADAAE388014D757A5101F9 /* EmbeddedBackends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C5D93CC7682D21C260D8F4F /* EmbeddedBackends.swift */; };
+		602F069B6CEA9EAADE556571 /* InterfaceEmitterRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73F77F2CB4C4FBE65209D005 /* InterfaceEmitterRegistry.swift */; };
+		10BBABDB182351DE0E61385C /* RustInterfaceEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B63C57D69AF3F6693EA070 /* RustInterfaceEmitter.swift */; };
+		5011863CA26857B49875B3E4 /* SwiftInterfaceEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5C0F7F56265C4B3B72DCDA /* SwiftInterfaceEmitter.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -8492,6 +8495,9 @@
 		14C65C4C8690DDB9BBCA1953 /* LuaBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = LuaBackend.swift; sourceTree = "<group>"; };
 		6A3C5E37AEB5FFDD9DDA6D5B /* RuntimeShimSupport.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = RuntimeShimSupport.swift; sourceTree = "<group>"; };
 		1C5D93CC7682D21C260D8F4F /* EmbeddedBackends.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = EmbeddedBackends.swift; sourceTree = "<group>"; };
+		73F77F2CB4C4FBE65209D005 /* InterfaceEmitterRegistry.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = InterfaceEmitterRegistry.swift; sourceTree = "<group>"; };
+		60B63C57D69AF3F6693EA070 /* RustInterfaceEmitter.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = RustInterfaceEmitter.swift; sourceTree = "<group>"; };
+		8C5C0F7F56265C4B3B72DCDA /* SwiftInterfaceEmitter.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SwiftInterfaceEmitter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -14614,6 +14620,7 @@
 		3B09FE02BAF6151AFFD7EB08 /* Reconstruction */ = {
 			isa = PBXGroup;
 			children = (
+				D656ADCE22E1874D8FDB7001 /* LanguageEmitters */,
 				1E557B90A46965A4013C047B /* ReconstructionPipeline.swift */,
 				24CA2184A45FC24147F52AA6 /* SourceReconstructor.swift */,
 				25BBFE3219487F9140F3B278 /* AssemblyFallback.swift */,
@@ -14652,6 +14659,16 @@
 			);
 			name = Backends;
 			path = Backends;
+			sourceTree = "<group>";
+		};
+		D656ADCE22E1874D8FDB7001 /* LanguageEmitters */ = {
+			isa = PBXGroup;
+			children = (
+				73F77F2CB4C4FBE65209D005 /* InterfaceEmitterRegistry.swift */,
+				60B63C57D69AF3F6693EA070 /* RustInterfaceEmitter.swift */,
+				8C5C0F7F56265C4B3B72DCDA /* SwiftInterfaceEmitter.swift */,
+			);
+			path = LanguageEmitters;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -19250,6 +19267,7 @@
 				71FAAA59A9AACE8E837E2A04 /* ImportAnalysis.swift in Sources */,
 				E0D5E1DEBBE3978A93884DA8 /* InputValidation.swift in Sources */,
 				E907B18D7599483E81FA709F /* Instruction.swift in Sources */,
+				602F069B6CEA9EAADE556571 /* InterfaceEmitterRegistry.swift in Sources */,
 				1552B7D7B89976C242F22C30 /* JSEngine.swift in Sources */,
 				0A43F0AD0371C4D65488A255 /* JavaJVMBackend.swift in Sources */,
 				078967CF3D8D7B71B991CC4B /* JavaNativeBackend.swift in Sources */,
@@ -19279,12 +19297,14 @@
 				D5AFF443E7EB9400EC110673 /* ResourceLimits.swift in Sources */,
 				7C4F8E60563FA7BF4CCCBE93 /* RuntimeShimSupport.swift in Sources */,
 				2CE7BB16343A497B7F2857B0 /* RustBackend.swift in Sources */,
+				10BBABDB182351DE0E61385C /* RustInterfaceEmitter.swift in Sources */,
 				5C125F4D1181400B18EFD4DC /* SharedComponents.swift in Sources */,
 				9FC7CAC97D31187FD0F71CB2 /* SourceMapping.swift in Sources */,
 				4E452D0617D2A8EE34FCE122 /* SourceReconstructor.swift in Sources */,
 				468D9038C610EA7D3C901910 /* StringAnalysis.swift in Sources */,
 				66442BBC60A77C56B113976B /* StringTools.swift in Sources */,
 				4D7B54BD3D64B46843E1AA48 /* SwiftBackend.swift in Sources */,
+				5011863CA26857B49875B3E4 /* SwiftInterfaceEmitter.swift in Sources */,
 				351FD44BF1E60C2D4B116C49 /* SymbolAnalysis.swift in Sources */,
 				D074675236E61FA28DE23D2D /* SymbolDemangler.swift in Sources */,
 				0036A0005B0BCC15EB425C63 /* SymbolExporter.swift in Sources */,
