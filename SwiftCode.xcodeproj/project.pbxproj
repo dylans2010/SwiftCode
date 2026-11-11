@@ -3594,6 +3594,13 @@
 		B3965A3DB59CB407CC414193 /* NimBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B2FCE025E8A4CA2EE7CE2D /* NimBackend.swift */; };
 		7D24F6895BD5A3781B103D08 /* DBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 115C3C50035B7F923B81BD7A /* DBackend.swift */; };
 		0F2CDD6358DD659D6D31C8F6 /* NativeBackendsB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9724D0B92859EFC6F5F32803 /* NativeBackendsB.swift */; };
+		1552B7D7B89976C242F22C30 /* JSEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73576C85F8F62190AEAE69D2 /* JSEngine.swift */; };
+		D2587D67622C4FD641C6BBCE /* JavaScriptBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF9B224E150D0ADF96A39A0 /* JavaScriptBackend.swift */; };
+		0A43F0AD0371C4D65488A255 /* JavaJVMBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB0A4B5208D2B9679F836AF /* JavaJVMBackend.swift */; };
+		E41CE446E519D11C2C985B38 /* PythonBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD472AFA3536B7C130924F32 /* PythonBackend.swift */; };
+		F95C626AD547D1F740599B67 /* LuaBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C65C4C8690DDB9BBCA1953 /* LuaBackend.swift */; };
+		7C4F8E60563FA7BF4CCCBE93 /* RuntimeShimSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A3C5E37AEB5FFDD9DDA6D5B /* RuntimeShimSupport.swift */; };
+		79ADAAE388014D757A5101F9 /* EmbeddedBackends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C5D93CC7682D21C260D8F4F /* EmbeddedBackends.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -8478,6 +8485,13 @@
 		F8B2FCE025E8A4CA2EE7CE2D /* NimBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = NimBackend.swift; sourceTree = "<group>"; };
 		115C3C50035B7F923B81BD7A /* DBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = DBackend.swift; sourceTree = "<group>"; };
 		9724D0B92859EFC6F5F32803 /* NativeBackendsB.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = NativeBackendsB.swift; sourceTree = "<group>"; };
+		73576C85F8F62190AEAE69D2 /* JSEngine.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = JSEngine.swift; sourceTree = "<group>"; };
+		BAF9B224E150D0ADF96A39A0 /* JavaScriptBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = JavaScriptBackend.swift; sourceTree = "<group>"; };
+		7CB0A4B5208D2B9679F836AF /* JavaJVMBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = JavaJVMBackend.swift; sourceTree = "<group>"; };
+		CD472AFA3536B7C130924F32 /* PythonBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = PythonBackend.swift; sourceTree = "<group>"; };
+		14C65C4C8690DDB9BBCA1953 /* LuaBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = LuaBackend.swift; sourceTree = "<group>"; };
+		6A3C5E37AEB5FFDD9DDA6D5B /* RuntimeShimSupport.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = RuntimeShimSupport.swift; sourceTree = "<group>"; };
+		1C5D93CC7682D21C260D8F4F /* EmbeddedBackends.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = EmbeddedBackends.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -14615,11 +14629,18 @@
 			children = (
 				E837FEEB6F7EFF113AD8C92B /* CSharpBackend.swift */,
 				115C3C50035B7F923B81BD7A /* DBackend.swift */,
+				1C5D93CC7682D21C260D8F4F /* EmbeddedBackends.swift */,
+				73576C85F8F62190AEAE69D2 /* JSEngine.swift */,
+				7CB0A4B5208D2B9679F836AF /* JavaJVMBackend.swift */,
 				B4C97769CA95AB3D0EAAAA49 /* JavaNativeBackend.swift */,
+				BAF9B224E150D0ADF96A39A0 /* JavaScriptBackend.swift */,
 				812C93DB034AD0D1E72F7488 /* KotlinBackend.swift */,
+				14C65C4C8690DDB9BBCA1953 /* LuaBackend.swift */,
 				347632F694FD545CD25CAC0A /* NativeBackends.swift */,
 				9724D0B92859EFC6F5F32803 /* NativeBackendsB.swift */,
 				F8B2FCE025E8A4CA2EE7CE2D /* NimBackend.swift */,
+				CD472AFA3536B7C130924F32 /* PythonBackend.swift */,
+				6A3C5E37AEB5FFDD9DDA6D5B /* RuntimeShimSupport.swift */,
 				4795CB6DD1EBB75A5653D6F3 /* RustBackend.swift */,
 				560670DF2D015705B1285AE1 /* BackendRegistry.swift */,
 				73B8EEDA32B2F52F52C3E537 /* BackendToolDiscovery.swift */,
@@ -19205,6 +19226,7 @@
 				77220E91EA49AA4466DD715C /* DependencyAnalysis.swift in Sources */,
 				6D50BBE49CE8739493AD497E /* DisassemblerProvider.swift in Sources */,
 				B005BB40BE2017280EE43F45 /* ELFBinaryParser.swift in Sources */,
+				79ADAAE388014D757A5101F9 /* EmbeddedBackends.swift in Sources */,
 				D533835D45594148B6BDE8D3 /* EngineBootstrap.swift in Sources */,
 				D9EB56FF4D827F803BEE9651 /* EngineConfiguration.swift in Sources */,
 				D0BE1531CA55E7EB60CC8DB6 /* EngineProtocols.swift in Sources */,
@@ -19228,8 +19250,12 @@
 				71FAAA59A9AACE8E837E2A04 /* ImportAnalysis.swift in Sources */,
 				E0D5E1DEBBE3978A93884DA8 /* InputValidation.swift in Sources */,
 				E907B18D7599483E81FA709F /* Instruction.swift in Sources */,
+				1552B7D7B89976C242F22C30 /* JSEngine.swift in Sources */,
+				0A43F0AD0371C4D65488A255 /* JavaJVMBackend.swift in Sources */,
 				078967CF3D8D7B71B991CC4B /* JavaNativeBackend.swift in Sources */,
+				D2587D67622C4FD641C6BBCE /* JavaScriptBackend.swift in Sources */,
 				5A324B5D0497027EB242B85D /* KotlinBackend.swift in Sources */,
+				F95C626AD547D1F740599B67 /* LuaBackend.swift in Sources */,
 				DD89058CFA7AD6FBB2D0FEA4 /* MachOParser.swift in Sources */,
 				F5B2BD917798227FF9B3D2CA /* MasterBrowsers.swift in Sources */,
 				DB8C77E391AC735A8FAAAF24 /* MasterEditors.swift in Sources */,
@@ -19245,11 +19271,13 @@
 				0287C30F970A6B12BB57875B /* ProjectExporter.swift in Sources */,
 				0887AB6E4112DBD38C195CDF /* ProjectManifest.swift in Sources */,
 				A822512B759F5A456E3C135F /* PseudocodeExporter.swift in Sources */,
+				E41CE446E519D11C2C985B38 /* PythonBackend.swift in Sources */,
 				2A6BDBE79874C0F9678648C2 /* ReconstructedProjectGenerator.swift in Sources */,
 				6643F4142C82D8EA23A8F74B /* ReconstructionPipeline.swift in Sources */,
 				805C4A95EFBDEAD3CDD18CC8 /* ReconstructionRecord.swift in Sources */,
 				02EB32C491FAFFBA79EF6E53 /* ReconstructionUtilities.swift in Sources */,
 				D5AFF443E7EB9400EC110673 /* ResourceLimits.swift in Sources */,
+				7C4F8E60563FA7BF4CCCBE93 /* RuntimeShimSupport.swift in Sources */,
 				2CE7BB16343A497B7F2857B0 /* RustBackend.swift in Sources */,
 				5C125F4D1181400B18EFD4DC /* SharedComponents.swift in Sources */,
 				9FC7CAC97D31187FD0F71CB2 /* SourceMapping.swift in Sources */,

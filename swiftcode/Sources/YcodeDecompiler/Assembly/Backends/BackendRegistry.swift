@@ -11,6 +11,7 @@ public enum BackendRegistry {
     private static let defaultsRegistered: Bool = {
         NativeBackends.registerAll()
         NativeBackendsB.registerAll()
+        EmbeddedBackends.registerAll()
         return true
     }()
 
