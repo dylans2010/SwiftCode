@@ -1,5 +1,4 @@
 import Foundation
-import YcodeSubprocess
 
 public struct AssemblyResult: Sendable {
     public var succeeded: Bool
@@ -36,26 +35,39 @@ public struct ObjectManifestEntry: Sendable, Codable {
     public var objectPath: String
     public var sourceHash: String
     public var flagsHash: String
+    public var backendID: String = ""
 
-    public init(sourcePath: String, objectPath: String, sourceHash: String, flagsHash: String) {
+    public init(sourcePath: String, objectPath: String, sourceHash: String, flagsHash: String, backendID: String = "") {
         self.sourcePath = sourcePath
         self.objectPath = objectPath
         self.sourceHash = sourceHash
         self.flagsHash = flagsHash
+        self.backendID = backendID
+    }
+}
+
+public struct BackendSourceGroup: Sendable {
+    public var backend: any AssembleBackend
+    public var sources: [URL]
+
+    public init(backend: any AssembleBackend, sources: [URL]) {
+        self.backend = backend
+        self.sources = sources
     }
 }
 
 public enum AssembleService {
-    public static let sourceExtensions: Set<String> = ["c", "m", "mm", "cpp", "cc", "cxx", "s", "S"]
+    public static var sourceExtensions: Set<String> { BackendRegistry.allSourceExtensions() }
 
     public static func discoverSources(in projectRoot: URL) -> [URL] {
         let fm = FileManager.default
+        let extensions = BackendRegistry.allSourceExtensions()
         var sources: [URL] = []
-        for subdir in ["Sources", "Assembly"] {
+        for subdir in BackendRegistry.allDiscoveryRoots() {
             let dir = projectRoot.appendingPathComponent(subdir, isDirectory: true)
             guard let enumerator = fm.enumerator(at: dir, includingPropertiesForKeys: nil) else { continue }
             for case let url as URL in enumerator {
-                if sourceExtensions.contains(url.pathExtension) {
+                if extensions.contains(url.pathExtension) {
                     sources.append(url)
                 }
             }
@@ -63,37 +75,37 @@ public enum AssembleService {
         return sources.sorted { $0.path < $1.path }
     }
 
+    public static func groupSources(_ sources: [URL], selectedBackend: (any AssembleBackend)?) throws -> [BackendSourceGroup] {
+        var groups: [String: BackendSourceGroup] = [:]
+        var order: [String] = []
+        for source in sources {
+            let backend: any AssembleBackend
+            if let selectedBackend {
+                backend = selectedBackend
+            } else if let resolved = BackendRegistry.backend(forExtension: source.pathExtension) {
+                backend = resolved
+            } else {
+                throw DecompilerError.invalidRequest("No Assemble backend is registered for .\(source.pathExtension) files (\(source.lastPathComponent)). Registered extensions: \(BackendRegistry.allSourceExtensions().sorted().joined(separator: ", ")).")
+            }
+            if groups[backend.id] == nil {
+                groups[backend.id] = BackendSourceGroup(backend: backend, sources: [])
+                order.append(backend.id)
+            }
+            groups[backend.id]?.sources.append(source)
+        }
+        return order.compactMap { groups[$0] }
+    }
+
     public static func locateCompiler(preferredPath: String? = nil) -> String? {
         let fm = FileManager.default
         if let preferredPath, fm.isExecutableFile(atPath: preferredPath) {
             return preferredPath
         }
-        if let xcrun = locateViaXcrun() { return xcrun }
-        for candidate in ["/usr/bin/clang", "/usr/local/bin/clang", "/opt/homebrew/bin/clang",
-                          "/usr/bin/cc", "/usr/bin/gcc", "/usr/local/bin/gcc"] {
-            if fm.isExecutableFile(atPath: candidate) { return candidate }
-        }
-        let pathDirs = (ProcessInfo.processInfo.environment["PATH"] ?? "").split(separator: ":").map(String.init)
-        for dir in pathDirs {
-            for tool in ["clang", "cc", "gcc"] {
-                let candidate = (dir as NSString).appendingPathComponent(tool)
-                if fm.isExecutableFile(atPath: candidate) { return candidate }
-            }
-        }
-        return nil
+        return ClangBackend.locateCompiler()
     }
 
     public static func locateViaXcrun() -> String? {
-        for xcrun in ["/usr/bin/xcrun", "/bin/xcrun"] {
-            guard FileManager.default.isExecutableFile(atPath: xcrun) else { continue }
-            guard let out = try? Subprocess.run(xcrun, ["-f", "clang"], captureStderr: false),
-                  out.status == 0 else { continue }
-            let path = out.stdoutText.trimmingCharacters(in: .whitespacesAndNewlines)
-            if !path.isEmpty, FileManager.default.isExecutableFile(atPath: path) {
-                return path
-            }
-        }
-        return nil
+        BackendToolDiscovery.locateViaXcrun(tool: "clang")
     }
 
     public static func compilerGuidance(format: BinaryFormat) -> String {
@@ -107,95 +119,187 @@ public enum AssembleService {
 
     public static func assemble(project: ReconstructedProject, originalImage: BinaryImage,
                                 configuration: BuildConfiguration,
+                                selectedBackendID: String? = nil,
+                                initialDiagnostics: [AssemblyDiagnostic] = [],
                                 progress: (@Sendable (AnalysisProgress) -> Void)? = nil) async throws -> AssemblyResult {
         let started = Date()
         let fm = FileManager.default
         let projectRoot = project.rootURL
         let format = originalImage.format
-        guard let compiler = locateCompiler(preferredPath: configuration.compilerPath) else {
-            throw DecompilerError.engineUnavailable(compilerGuidance(format: format))
-        }
+        var diagnostics = initialDiagnostics
+        let selectedBackend = try resolveSelectedBackend(selectedBackendID)
         let sources = discoverSources(in: projectRoot)
         guard !sources.isEmpty else {
             throw DecompilerError.invalidRequest("No source files found in \(projectRoot.path); nothing to assemble.")
         }
+        let grouped = try groupSources(sources, selectedBackend: selectedBackend)
         let objectsDir = projectRoot.appendingPathComponent("Build/Objects", isDirectory: true)
         try fm.createDirectory(at: objectsDir, withIntermediateDirectories: true)
         let outputURL = configuration.outputURL(in: projectRoot)
         try fm.createDirectory(at: outputURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         let manifestURL = objectsDir.appendingPathComponent("manifest.json")
         var manifest = loadObjectManifest(at: manifestURL)
-        var diagnostics: [AssemblyDiagnostic] = []
+        if diagnostics.contains(where: { $0.severity == .error }) {
+            return try await finishFailure(project: project, originalImage: originalImage,
+                                           configuration: configuration, outputURL: outputURL,
+                                           diagnostics: diagnostics, compiled: [], reused: [],
+                                           started: started, compiler: "")
+        }
+        var toolPaths: [String: String] = [:]
+        for group in grouped {
+            switch group.backend.availability(configuration: configuration) {
+            case .available(let path, _):
+                toolPaths[group.backend.id] = path
+            case .unavailable(let reason, let guidance):
+                throw DecompilerError.engineUnavailable("\(group.backend.displayName) is unavailable: \(reason) \(guidance)")
+            }
+        }
         var compiled: [String] = []
         var reused: [String] = []
         var objects: [URL] = []
-        let flagsHash = CacheManager.fnv1a64(configuration.compilerFlags.joined(separator: " ")
-            + configuration.optimizationLevel + configuration.symbolVisibility)
-
-        for (index, source) in sources.enumerated() {
-            try Task.checkCancellation()
-            progress?(AnalysisProgress(stage: .building,
-                                       fraction: Double(index) / Double(sources.count),
-                                       message: "Compiling \(source.lastPathComponent)",
-                                       itemsProcessed: index, itemsTotal: sources.count))
-            let relative = source.path.replacingOccurrences(of: projectRoot.path + "/", with: "")
-            let objectName = relative.replacingOccurrences(of: "/", with: "_") + ".o"
-            let objectURL = objectsDir.appendingPathComponent(objectName)
-            let sourceHash = (try? fnv1a64(Data(contentsOf: source))) ?? ""
-            if let entry = manifest[relative], entry.sourceHash == sourceHash,
-               entry.flagsHash == flagsHash, fm.fileExists(atPath: objectURL.path) {
-                reused.append(relative)
-                objects.append(objectURL)
+        var allSources: [URL] = []
+        var libraryBuilt = false
+        var libraryToolPath = ""
+        var globalIndex = 0
+        let totalSources = sources.count
+        for group in grouped {
+            let backend = group.backend
+            let groupSources = group.sources
+            try backend.prepareProject(projectRoot: projectRoot, configuration: configuration)
+            if backend.buildMode == .library {
+                guard grouped.count == 1 else {
+                    throw DecompilerError.invalidRequest("\(backend.displayName) builds a complete library in a single step and cannot be combined with sources for another language in one Assemble run. Keep the project to one library backend per Assemble run.")
+                }
+                try Task.checkCancellation()
+                progress?(AnalysisProgress(stage: .building, fraction: 0,
+                                           message: "Building \(configuration.outputFileName) with \(backend.displayName)",
+                                           itemsProcessed: 0, itemsTotal: totalSources))
+                preserveLastGood(outputURL: outputURL, projectRoot: projectRoot)
+                let toolPath = toolPaths[backend.id] ?? ""
+                let args = backend.libraryArguments(sources: groupSources, output: outputURL,
+                                                    projectRoot: projectRoot, configuration: configuration)
+                let output = try ProcessRunnerRegistry.shared.run(
+                    executable: toolPath, arguments: args,
+                    environment: backend.libraryEnvironment(configuration: configuration),
+                    currentDirectory: backend.libraryWorkingDirectory(projectRoot: projectRoot, configuration: configuration))
+                if output.status != 0 {
+                    diagnostics.append(contentsOf: backend.parseDiagnostics(
+                        output.stderrText + "\n" + output.stdoutText, projectRoot: projectRoot))
+                    if diagnostics.allSatisfy({ $0.severity != .error }) {
+                        diagnostics.append(AssemblyDiagnostic(
+                            severity: .error, message: "\(backend.displayName) exited with status \(output.status).",
+                            origin: .projectConfiguration, rawText: output.stderrText))
+                    }
+                    return try await finishFailure(project: project, originalImage: originalImage,
+                                                   configuration: configuration, outputURL: outputURL,
+                                                   diagnostics: diagnostics, compiled: compiled, reused: reused,
+                                                   started: started, compiler: toolPath)
+                }
+                diagnostics.append(contentsOf: backend.parseDiagnostics(
+                    output.stderrText + "\n" + output.stdoutText, projectRoot: projectRoot))
+                compiled.append(contentsOf: groupSources.map { relativePath(of: $0, projectRoot: projectRoot) })
+                allSources.append(contentsOf: groupSources)
+                libraryBuilt = true
+                libraryToolPath = toolPath
                 continue
             }
-            let args = configuration.compileArguments(source: source, object: objectURL,
-                                                      projectRoot: projectRoot, format: format)
-            let output = try Subprocess.run(compiler, args, captureStderr: true)
-            if output.status != 0 {
-                diagnostics.append(contentsOf: AssemblyDiagnosticParser.parseCompilerOutput(
-                    output.stderrText + "\n" + output.stdoutText, projectRoot: projectRoot))
-                if diagnostics.allSatisfy({ $0.severity != .error }) {
-                    diagnostics.append(AssemblyDiagnostic(
-                        severity: .error, message: "Compiler exited with status \(output.status) for \(relative).",
-                        file: relative, origin: .projectConfiguration,
-                        rawText: output.stderrText))
+            let flagsHash = CacheManager.fnv1a64([
+                backend.id,
+                toolPaths[backend.id] ?? "",
+                configuration.architectures.map(\.rawValue).joined(separator: ","),
+                configuration.deploymentTarget ?? "",
+                configuration.sdk ?? "",
+                configuration.compilerFlags.joined(separator: " "),
+                configuration.optimizationLevel,
+                configuration.symbolVisibility,
+                (configuration.perBackendFlags[backend.id] ?? []).joined(separator: " ")
+            ].joined(separator: "\n"))
+            for source in groupSources {
+                try Task.checkCancellation()
+                progress?(AnalysisProgress(stage: .building,
+                                           fraction: Double(globalIndex) / Double(totalSources),
+                                           message: "Compiling \(source.lastPathComponent)",
+                                           itemsProcessed: globalIndex, itemsTotal: totalSources))
+                let relative = relativePath(of: source, projectRoot: projectRoot)
+                let objectName = relative.replacingOccurrences(of: "/", with: "_") + ".o"
+                let objectURL = objectsDir.appendingPathComponent(objectName)
+                let sourceHash = (try? fnv1a64(Data(contentsOf: source))) ?? ""
+                if let entry = manifest[relative], entry.sourceHash == sourceHash,
+                   entry.flagsHash == flagsHash, entry.backendID == backend.id,
+                   fm.fileExists(atPath: objectURL.path) {
+                    reused.append(relative)
+                    objects.append(objectURL)
+                    globalIndex += 1
+                    continue
                 }
-                let result = try await finishFailure(project: project, originalImage: originalImage,
-                                                     outputURL: outputURL, diagnostics: diagnostics,
-                                                     compiled: compiled, reused: reused,
-                                                     started: started, compiler: compiler)
-                return result
+                let args = backend.compileArguments(source: source, object: objectURL,
+                                                    projectRoot: projectRoot, configuration: configuration)
+                let toolPath = toolPaths[backend.id] ?? ""
+                let output = try ProcessRunnerRegistry.shared.run(
+                    executable: toolPath, arguments: args, environment: nil, currentDirectory: nil)
+                if output.status != 0 {
+                    diagnostics.append(contentsOf: backend.parseDiagnostics(
+                        output.stderrText + "\n" + output.stdoutText, projectRoot: projectRoot))
+                    if diagnostics.allSatisfy({ $0.severity != .error }) {
+                        diagnostics.append(AssemblyDiagnostic(
+                            severity: .error, message: "Compiler exited with status \(output.status) for \(relative).",
+                            file: relative, origin: .projectConfiguration,
+                            rawText: output.stderrText))
+                    }
+                    return try await finishFailure(project: project, originalImage: originalImage,
+                                                   configuration: configuration, outputURL: outputURL,
+                                                   diagnostics: diagnostics, compiled: compiled, reused: reused,
+                                                   started: started, compiler: toolPath)
+                }
+                diagnostics.append(contentsOf: backend.parseDiagnostics(
+                    output.stderrText + "\n" + output.stdoutText, projectRoot: projectRoot))
+                manifest[relative] = ObjectManifestEntry(sourcePath: relative, objectPath: objectName,
+                                                         sourceHash: sourceHash, flagsHash: flagsHash,
+                                                         backendID: backend.id)
+                compiled.append(relative)
+                objects.append(objectURL)
+                globalIndex += 1
             }
-            let newDiagnostics = AssemblyDiagnosticParser.parseCompilerOutput(
-                output.stderrText + "\n" + output.stdoutText, projectRoot: projectRoot)
-            diagnostics.append(contentsOf: newDiagnostics)
-            manifest[relative] = ObjectManifestEntry(sourcePath: relative, objectPath: objectName,
-                                                     sourceHash: sourceHash, flagsHash: flagsHash)
-            compiled.append(relative)
-            objects.append(objectURL)
+            diagnostics.append(contentsOf: backend.postCompileDiagnostics(
+                sources: groupSources, projectRoot: projectRoot, configuration: configuration))
+            allSources.append(contentsOf: groupSources)
         }
         saveObjectManifest(manifest, at: manifestURL)
-        try Task.checkCancellation()
-        progress?(AnalysisProgress(stage: .linking, message: "Linking \(configuration.outputFileName)"))
-
-        preserveLastGood(outputURL: outputURL, projectRoot: projectRoot)
-        let linkArgs = configuration.linkArguments(objects: objects, output: outputURL, format: format)
-        let linkOutput = try Subprocess.run(compiler, linkArgs, captureStderr: true)
-        if linkOutput.status != 0 {
-            diagnostics.append(contentsOf: AssemblyDiagnosticParser.parseLinkerOutput(
-                linkOutput.stderrText + "\n" + linkOutput.stdoutText))
-            if diagnostics.allSatisfy({ $0.severity != .error }) {
-                diagnostics.append(AssemblyDiagnostic(
-                    severity: .error, message: "Linker exited with status \(linkOutput.status).",
-                    origin: .linker, rawText: linkOutput.stderrText))
+        var compiler: String
+        if !libraryBuilt {
+            try Task.checkCancellation()
+            progress?(AnalysisProgress(stage: .linking, message: "Linking \(configuration.outputFileName)"))
+            preserveLastGood(outputURL: outputURL, projectRoot: projectRoot)
+            let linkBackend = resolveLinkBackend(grouped: grouped, selectedBackend: selectedBackend)
+            let linkToolPath = toolPaths[linkBackend.id] ?? ""
+            compiler = linkToolPath
+            let linkArgs = linkBackend.linkArguments(objects: objects, sources: allSources,
+                                                     output: outputURL, configuration: configuration)
+            let linkOutput = try ProcessRunnerRegistry.shared.run(
+                executable: linkToolPath, arguments: linkArgs, environment: nil, currentDirectory: nil)
+            if linkOutput.status != 0 {
+                diagnostics.append(contentsOf: AssemblyDiagnosticParser.parseLinkerOutput(
+                    linkOutput.stderrText + "\n" + linkOutput.stdoutText))
+                if diagnostics.allSatisfy({ $0.severity != .error }) {
+                    diagnostics.append(AssemblyDiagnostic(
+                        severity: .error, message: "Linker exited with status \(linkOutput.status).",
+                        origin: .linker, rawText: linkOutput.stderrText))
+                }
+                return try await finishFailure(project: project, originalImage: originalImage,
+                                               configuration: configuration, outputURL: outputURL,
+                                               diagnostics: diagnostics, compiled: compiled, reused: reused,
+                                               started: started, compiler: compiler)
             }
-            return try await finishFailure(project: project, originalImage: originalImage,
-                                           outputURL: outputURL, diagnostics: diagnostics,
-                                           compiled: compiled, reused: reused,
-                                           started: started, compiler: compiler)
+            diagnostics.append(contentsOf: AssemblyDiagnosticParser.parseLinkerOutput(linkOutput.stderrText))
+            if configuration.architectures.count > 1 && !linkBackend.handlesMultipleArchitectures {
+                diagnostics.append(AssemblyDiagnostic(
+                    severity: .warning,
+                    message: "\(linkBackend.displayName) builds one architecture per invocation, so the output covers \(configuration.architectures.first?.displayName ?? "a single architecture") only; the configured architectures (\(configuration.architectures.map(\.displayName).joined(separator: ", "))) were not all built. Build once per architecture and combine with lipo for a universal library.",
+                    origin: .projectConfiguration))
+            }
+        } else {
+            compiler = libraryToolPath
         }
-        diagnostics.append(contentsOf: AssemblyDiagnosticParser.parseLinkerOutput(linkOutput.stderrText))
-
         if format == .machO {
             await codeSign(outputURL: outputURL, identity: configuration.codeSignIdentity,
                            diagnostics: &diagnostics)
@@ -246,11 +350,34 @@ public enum AssembleService {
                               reportURL: reportURL)
     }
 
+    private static func resolveSelectedBackend(_ id: String?) throws -> (any AssembleBackend)? {
+        guard let id else { return nil }
+        guard let backend = BackendRegistry.backend(id: id) else {
+            throw DecompilerError.invalidRequest("Unknown Assemble backend '\(id)'. Registered backends: \(BackendRegistry.allBackends().map(\.id).sorted().joined(separator: ", ")).")
+        }
+        return backend
+    }
+
+    private static func resolveLinkBackend(grouped: [BackendSourceGroup], selectedBackend: (any AssembleBackend)?) -> any AssembleBackend {
+        if let selectedBackend, selectedBackend.buildMode == .object {
+            return selectedBackend
+        }
+        if let nonClang = grouped.first(where: { $0.backend.buildMode == .object && !($0.backend is ClangBackend) }) {
+            return nonClang.backend
+        }
+        return ClangBackend()
+    }
+
+    private static func relativePath(of url: URL, projectRoot: URL) -> String {
+        url.path.replacingOccurrences(of: projectRoot.path + "/", with: "")
+    }
+
     private static func finishFailure(project: ReconstructedProject, originalImage: BinaryImage,
+                                      configuration: BuildConfiguration,
                                       outputURL: URL, diagnostics: [AssemblyDiagnostic],
                                       compiled: [String], reused: [String], started: Date,
                                       compiler: String) async throws -> AssemblyResult {
-        let reportURL = try writeBuildReport(project: project, configuration: project.configuration,
+        let reportURL = try writeBuildReport(project: project, configuration: configuration,
                                              result: AssemblyResult(
                                                 succeeded: false, outputURL: outputURL,
                                                 diagnostics: diagnostics, equivalence: nil,
@@ -280,8 +407,9 @@ public enum AssembleService {
         let codesign = "/usr/bin/codesign"
         guard FileManager.default.isExecutableFile(atPath: codesign) else { return }
         do {
-            let output = try Subprocess.run(codesign, ["--force", "--sign", signIdentity, outputURL.path],
-                                            captureStderr: true)
+            let output = try ProcessRunnerRegistry.shared.run(
+                executable: codesign, arguments: ["--force", "--sign", signIdentity, outputURL.path],
+                environment: nil, currentDirectory: nil)
             if output.status != 0 {
                 diagnostics.append(AssemblyDiagnostic(
                     severity: .warning,

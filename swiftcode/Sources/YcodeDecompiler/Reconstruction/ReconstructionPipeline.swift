@@ -99,8 +99,14 @@ public enum ReconstructionPipeline {
         let config = configuration ?? project.configuration
         let store = await session.analysisStore()
         await store.setProgress(AnalysisProgress(stage: .building, message: "Assembling \(config.outputFileName)"))
+        let backendID = await session.selectedBackendID ?? config.selectedBackendID
+        var preDiagnostics: [AssemblyDiagnostic] = []
+        for validator in PreAssembleValidatorRegistry.validators {
+            preDiagnostics.append(contentsOf: try await validator.validate(project: project, configuration: config))
+        }
         let result = try await AssembleService.assemble(
-            project: project, originalImage: image, configuration: config) { progress in
+            project: project, originalImage: image, configuration: config,
+            selectedBackendID: backendID, initialDiagnostics: preDiagnostics) { progress in
                 Task { await store.setProgress(progress) }
             }
         await session.setLastAssembly(result)

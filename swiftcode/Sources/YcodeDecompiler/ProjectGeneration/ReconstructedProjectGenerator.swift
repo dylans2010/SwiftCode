@@ -38,6 +38,7 @@ public struct ReconstructedProjectManifest: Sendable, Codable {
     public var generatedAt: Date
     public var generatorVersion: String
     public var language: String
+    public var fileLanguages: [String: String]
     public var qualityCounts: [String: Int]
     public var enginesUsed: [String]
     public var decompilerAvailable: Bool
@@ -48,7 +49,8 @@ public struct ReconstructedProjectManifest: Sendable, Codable {
                 originalInstallName: String? = nil, originalUUID: String? = nil,
                 originalDependencies: [String] = [], originalExports: [String] = [],
                 generatedAt: Date = Date(), generatorVersion: String = "1.0.0",
-                language: String, qualityCounts: [String: Int] = [:],
+                language: String, fileLanguages: [String: String] = [:],
+                qualityCounts: [String: Int] = [:],
                 enginesUsed: [String] = [], decompilerAvailable: Bool, files: [String] = []) {
         self.schemaVersion = schemaVersion
         self.libraryName = libraryName
@@ -63,6 +65,7 @@ public struct ReconstructedProjectManifest: Sendable, Codable {
         self.generatedAt = generatedAt
         self.generatorVersion = generatorVersion
         self.language = language
+        self.fileLanguages = fileLanguages
         self.qualityCounts = qualityCounts
         self.enginesUsed = enginesUsed
         self.decompilerAvailable = decompilerAvailable
@@ -121,6 +124,10 @@ public enum ReconstructedProjectGenerator {
         for record in source.records {
             qualityCounts[record.quality.rawValue, default: 0] += 1
         }
+        var fileLanguages: [String: String] = [:]
+        for file in source.files {
+            fileLanguages[file.relativePath] = file.language.rawValue
+        }
         let manifest = ReconstructedProjectManifest(
             libraryName: source.libraryName,
             originalFileName: image.identity.originalFileName,
@@ -132,6 +139,7 @@ public enum ReconstructedProjectGenerator {
             originalDependencies: image.dependencies.map(\.path),
             originalExports: source.exportedNames,
             language: source.language.rawValue,
+            fileLanguages: fileLanguages,
             qualityCounts: qualityCounts,
             enginesUsed: source.enginesUsed,
             decompilerAvailable: source.decompilerAvailable,
@@ -145,42 +153,65 @@ public enum ReconstructedProjectGenerator {
 
     public static func packageManifest(libraryName: String, configuration: BuildConfiguration,
                                        sourceFiles: [GeneratedSourceFile]) -> String {
-        let cSources = sourceFiles.filter { $0.relativePath.hasPrefix("Sources/") && $0.relativePath.hasSuffix(".c") }
-        let asmSources = sourceFiles.filter { $0.relativePath.hasPrefix("Assembly/") }
+        let cFamilyExtensions: Set<String> = ["c", "m", "mm", "cpp", "cc", "cxx", "s", "S"]
+        let projectFiles = sourceFiles.filter {
+            $0.relativePath.hasPrefix("Sources/") || $0.relativePath.hasPrefix("Assembly/")
+        }
+        let cSources = projectFiles.filter { cFamilyExtensions.contains(($0.relativePath as NSString).pathExtension) }
+        let swiftSources = projectFiles.filter { ($0.relativePath as NSString).pathExtension == "swift" }
+        let otherSources = projectFiles.filter {
+            !cFamilyExtensions.contains(($0.relativePath as NSString).pathExtension)
+                && ($0.relativePath as NSString).pathExtension != "swift"
+        }
+        var targetNames: [String] = []
         var lines: [String] = []
         lines.append("// swift-tools-version: 5.9")
         lines.append("import PackageDescription")
         lines.append("")
+        if !otherSources.isEmpty {
+            lines.append("// Assembled by SwiftCode, not SwiftPM: \(otherSources.map(\.relativePath).joined(separator: ", "))")
+            lines.append("")
+        }
         lines.append("let package = Package(")
         lines.append("    name: \"\(libraryName)\",")
         lines.append("    products: [")
-        lines.append("        .library(name: \"\(libraryName)\", type: .dynamic, targets: [\"\(libraryName)\"]),")
+        if !cSources.isEmpty || !swiftSources.isEmpty {
+            if !cSources.isEmpty { targetNames.append(libraryName) }
+            if !swiftSources.isEmpty { targetNames.append("\(libraryName)Swift") }
+            lines.append("        .library(name: \"\(libraryName)\", type: .dynamic, targets: [\(targetNames.map { "\"\($0)\"" }.joined(separator: ", "))]),")
+        }
         lines.append("    ],")
         lines.append("    targets: [")
-        lines.append("        .target(")
-        lines.append("            name: \"\(libraryName)\",")
-        var sources: [String] = []
-        sources.append(contentsOf: cSources.map { "\"\($0.relativePath)\"" })
-        sources.append(contentsOf: asmSources.map { "\"\($0.relativePath)\"" })
-        if !sources.isEmpty {
-            lines.append("            sources: [\(sources.joined(separator: ", "))],")
+        if !cSources.isEmpty {
+            lines.append("        .target(")
+            lines.append("            name: \"\(libraryName)\",")
+            lines.append("            sources: [\(cSources.map { "\"\($0.relativePath)\"" }.joined(separator: ", "))],")
+            lines.append("            publicHeadersPath: \"Headers\",")
+            lines.append("            cSettings: [")
+            for define in configuration.definitions {
+                lines.append("                .define(\"\(define)\"),")
+            }
+            lines.append("                .unsafeFlags([\"-O\(configuration.optimizationLevel)\"])")
+            lines.append("            ],")
+            lines.append("            linkerSettings: [")
+            for framework in configuration.frameworks {
+                lines.append("                .linkedFramework(\"\(framework)\"),")
+            }
+            for library in configuration.linkedLibraries {
+                lines.append("                .linkedLibrary(\"\(library)\"),")
+            }
+            lines.append("            ]")
+            lines.append("        ),")
         }
-        lines.append("            publicHeadersPath: \"Headers\",")
-        lines.append("            cSettings: [")
-        for define in configuration.definitions {
-            lines.append("                .define(\"\(define)\"),")
+        if !swiftSources.isEmpty {
+            lines.append("        .target(")
+            lines.append("            name: \"\(libraryName)Swift\",")
+            if !cSources.isEmpty {
+                lines.append("            dependencies: [\"\(libraryName)\"],")
+            }
+            lines.append("            sources: [\(swiftSources.map { "\"\($0.relativePath)\"" }.joined(separator: ", "))]")
+            lines.append("        ),")
         }
-        lines.append("                .unsafeFlags([\"-O\(configuration.optimizationLevel)\"])")
-        lines.append("            ],")
-        lines.append("            linkerSettings: [")
-        for framework in configuration.frameworks {
-            lines.append("                .linkedFramework(\"\(framework)\"),")
-        }
-        for library in configuration.linkedLibraries {
-            lines.append("                .linkedLibrary(\"\(library)\"),")
-        }
-        lines.append("            ]")
-        lines.append("        ),")
         lines.append("    ]")
         lines.append(")")
         return lines.joined(separator: "\n") + "\n"
@@ -188,12 +219,35 @@ public enum ReconstructedProjectGenerator {
 
     public static func cmakeLists(libraryName: String, configuration: BuildConfiguration,
                                   sourceFiles: [GeneratedSourceFile]) -> String {
+        let cFamilyExtensions: Set<String> = ["c", "m", "mm", "cpp", "cc", "cxx", "s", "S"]
+        let projectFiles = sourceFiles.filter {
+            $0.relativePath.hasPrefix("Sources/") || $0.relativePath.hasPrefix("Assembly/")
+        }
+        let extensions = Set(projectFiles.map { ($0.relativePath as NSString).pathExtension })
+        var languages: [String] = []
+        if !extensions.intersection(["c", "m", "s", "S"]).isEmpty { languages.append("C") }
+        if !extensions.intersection(["cpp", "cc", "cxx", "mm"]).isEmpty { languages.append("CXX") }
+        if extensions.contains("swift") { languages.append("Swift") }
+        if !extensions.intersection(["s", "S"]).isEmpty { languages.append("ASM") }
+        if languages.isEmpty { languages = ["C"] }
+        let buildableFiles = projectFiles.filter {
+            cFamilyExtensions.contains(($0.relativePath as NSString).pathExtension)
+                || ($0.relativePath as NSString).pathExtension == "swift"
+        }
+        let otherFiles = projectFiles.filter {
+            !cFamilyExtensions.contains(($0.relativePath as NSString).pathExtension)
+                && ($0.relativePath as NSString).pathExtension != "swift"
+        }
         var lines: [String] = []
         lines.append("cmake_minimum_required(VERSION 3.20)")
-        lines.append("project(\(libraryName) C)")
+        lines.append("project(\(libraryName) \(languages.joined(separator: " ")))")
         lines.append("")
+        if !otherFiles.isEmpty {
+            lines.append("# Assembled by SwiftCode, not CMake: \(otherFiles.map(\.relativePath).joined(separator: ", "))")
+            lines.append("")
+        }
         lines.append("add_library(\(libraryName) SHARED")
-        for file in sourceFiles where file.relativePath.hasPrefix("Sources/") || file.relativePath.hasPrefix("Assembly/") {
+        for file in buildableFiles {
             lines.append("    ${CMAKE_CURRENT_SOURCE_DIR}/../\(file.relativePath)")
         }
         lines.append(")")

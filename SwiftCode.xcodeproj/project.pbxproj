@@ -3577,6 +3577,17 @@
 		02EB32C491FAFFBA79EF6E53 /* ReconstructionUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38F9A194BEA2B34A44276EC1 /* ReconstructionUtilities.swift */; };
 		4E452D0617D2A8EE34FCE122 /* SourceReconstructor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24CA2184A45FC24147F52AA6 /* SourceReconstructor.swift */; };
 		C512D6ADB0B168E5B94F05B9 /* DecompilerEditorHandoff.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24E1DBB9713AC2AC2B90E2CD /* DecompilerEditorHandoff.swift */; };
+		8DF13BAD29093B61CC6DFCE7 /* AssembleBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2F17485F52A99AF917C5F98 /* AssembleBackend.swift */; };
+		F74B65A78676BE02C9942C28 /* BackendRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560670DF2D015705B1285AE1 /* BackendRegistry.swift */; };
+		7753AC7E52CE8D4958CE88CC /* BackendToolDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73B8EEDA32B2F52F52C3E537 /* BackendToolDiscovery.swift */; };
+		74D98AA082992BC225E430D4 /* ClangBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1A801038EB1560654B7154B /* ClangBackend.swift */; };
+		4D7B54BD3D64B46843E1AA48 /* SwiftBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B20F0FA098D2036C0B7D18 /* SwiftBackend.swift */; };
+		2CE7BB16343A497B7F2857B0 /* RustBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4795CB6DD1EBB75A5653D6F3 /* RustBackend.swift */; };
+		A064E64008D363724B8ADAFB /* GoBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEDEC3F44FA51F69193701AD /* GoBackend.swift */; };
+		2042A6F68572DE5B55B7D742 /* ZigBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 773406687F878BA1974819DB /* ZigBackend.swift */; };
+		258E3335D7A9CEBFBA7990D5 /* NativeBackends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347632F694FD545CD25CAC0A /* NativeBackends.swift */; };
+		615235C4F76ACF1110424E01 /* ProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFE1C9011E44E52AFC86A9E /* ProcessRunner.swift */; };
+		0A887D3836C6EE013D4CF0A0 /* PreAssembleValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC62BEED5D6996AB015B916A /* PreAssembleValidation.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -8444,6 +8455,17 @@
 		38F9A194BEA2B34A44276EC1 /* ReconstructionUtilities.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ReconstructionUtilities.swift; sourceTree = "<group>"; };
 		24CA2184A45FC24147F52AA6 /* SourceReconstructor.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SourceReconstructor.swift; sourceTree = "<group>"; };
 		24E1DBB9713AC2AC2B90E2CD /* DecompilerEditorHandoff.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = DecompilerEditorHandoff.swift; sourceTree = "<group>"; };
+		C2F17485F52A99AF917C5F98 /* AssembleBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = AssembleBackend.swift; sourceTree = "<group>"; };
+		560670DF2D015705B1285AE1 /* BackendRegistry.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = BackendRegistry.swift; sourceTree = "<group>"; };
+		73B8EEDA32B2F52F52C3E537 /* BackendToolDiscovery.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = BackendToolDiscovery.swift; sourceTree = "<group>"; };
+		A1A801038EB1560654B7154B /* ClangBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ClangBackend.swift; sourceTree = "<group>"; };
+		85B20F0FA098D2036C0B7D18 /* SwiftBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SwiftBackend.swift; sourceTree = "<group>"; };
+		4795CB6DD1EBB75A5653D6F3 /* RustBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = RustBackend.swift; sourceTree = "<group>"; };
+		EEDEC3F44FA51F69193701AD /* GoBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = GoBackend.swift; sourceTree = "<group>"; };
+		773406687F878BA1974819DB /* ZigBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ZigBackend.swift; sourceTree = "<group>"; };
+		347632F694FD545CD25CAC0A /* NativeBackends.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = NativeBackends.swift; sourceTree = "<group>"; };
+		9FFE1C9011E44E52AFC86A9E /* ProcessRunner.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ProcessRunner.swift; sourceTree = "<group>"; };
+		BC62BEED5D6996AB015B916A /* PreAssembleValidation.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = PreAssembleValidation.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -14533,9 +14555,12 @@
 			isa = PBXGroup;
 			children = (
 				197E1B2CCFCD06E18D960581 /* AssemblyDiagnostic.swift */,
+				5CCDD2668E18EFCC315377CA /* Backends */,
 				83C5AE47CA52F7EC94734262 /* EquivalenceChecker.swift */,
 				B3DED96941186DB289ED03D1 /* Assembler.swift */,
 				ECD40708C751813C5D04F3EA /* BuildConfiguration.swift */,
+				BC62BEED5D6996AB015B916A /* PreAssembleValidation.swift */,
+				9FFE1C9011E44E52AFC86A9E /* ProcessRunner.swift */,
 			);
 			name = Assembly;
 			path = Assembly;
@@ -14571,6 +14596,23 @@
 			);
 			name = Reconstruction;
 			path = Reconstruction;
+			sourceTree = "<group>";
+		};
+		5CCDD2668E18EFCC315377CA /* Backends */ = {
+			isa = PBXGroup;
+			children = (
+				347632F694FD545CD25CAC0A /* NativeBackends.swift */,
+				4795CB6DD1EBB75A5653D6F3 /* RustBackend.swift */,
+				560670DF2D015705B1285AE1 /* BackendRegistry.swift */,
+				73B8EEDA32B2F52F52C3E537 /* BackendToolDiscovery.swift */,
+				773406687F878BA1974819DB /* ZigBackend.swift */,
+				85B20F0FA098D2036C0B7D18 /* SwiftBackend.swift */,
+				A1A801038EB1560654B7154B /* ClangBackend.swift */,
+				C2F17485F52A99AF917C5F98 /* AssembleBackend.swift */,
+				EEDEC3F44FA51F69193701AD /* GoBackend.swift */,
+			);
+			name = Backends;
+			path = Backends;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -19094,11 +19136,14 @@
 				E1CAF39EFA78C97169FA46E6 /* AnalysisStore.swift in Sources */,
 				C3C11AA7C24D06AB0AE7AC93 /* AnalysisTools.swift in Sources */,
 				8F24B52904D05681C53D65DC /* AnnotationTools.swift in Sources */,
+				8DF13BAD29093B61CC6DFCE7 /* AssembleBackend.swift in Sources */,
 				6F32DC5F9B09CBD6E4589477 /* Assembler.swift in Sources */,
 				BD0AA42C0A1C30D6CBED88E0 /* AssemblyDiagnostic.swift in Sources */,
 				F2096DC60628A2B6A41FC5FE /* AssemblyExporter.swift in Sources */,
 				8023184D5CB22E78A43F5058 /* AssemblyFallback.swift in Sources */,
 				9E5B3B61446DA0B893B485E1 /* AssistantTools.swift in Sources */,
+				F74B65A78676BE02C9942C28 /* BackendRegistry.swift in Sources */,
+				7753AC7E52CE8D4958CE88CC /* BackendToolDiscovery.swift in Sources */,
 				B735CDF0BE52F953B07F7C9E /* BinaryDetector.swift in Sources */,
 				5DA09870E7D611211CDC4650 /* BinaryFormat.swift in Sources */,
 				BA4CCB672A8346E5E280C375 /* BinaryImage.swift in Sources */,
@@ -19109,6 +19154,7 @@
 				F2AA55D23321D164DAEB26DA /* Bundle+Module.swift in Sources */,
 				15017B01DB1694083DAFEA53 /* CacheManager.swift in Sources */,
 				31C87AE3D091D117A2F2AA6F /* CallGraphAnalyzer.swift in Sources */,
+				74D98AA082992BC225E430D4 /* ClangBackend.swift in Sources */,
 				96A8B3464A48BD6CCF4FA47A /* ControlFlowAnalyzer.swift in Sources */,
 				7E092158027E7C14ED5B3344 /* CrossReferenceBuilder.swift in Sources */,
 				B710E10AF38B1773036565DE /* DataFlowAnalyzer.swift in Sources */,
@@ -19153,6 +19199,7 @@
 				6BBA43B856FA893B33EA92D3 /* FunctionDiscovery.swift in Sources */,
 				882F4DE7C698346A18BB27C4 /* FunctionTools.swift in Sources */,
 				2D224CFF489FA44771B0DA23 /* GhidraDecompiler.swift in Sources */,
+				A064E64008D363724B8ADAFB /* GoBackend.swift in Sources */,
 				6246228548F9E28938522E5F /* GraphExporter.swift in Sources */,
 				5C689CB7AF37BCCAF1585A53 /* IRBasicBlock.swift in Sources */,
 				2D753D898CFD03A10F41A88D /* IRFunction.swift in Sources */,
@@ -19165,9 +19212,12 @@
 				F5B2BD917798227FF9B3D2CA /* MasterBrowsers.swift in Sources */,
 				DB8C77E391AC735A8FAAAF24 /* MasterEditors.swift in Sources */,
 				ABFB719E32EC7FB8FDC281BD /* MasterWorkspaceView.swift in Sources */,
+				258E3335D7A9CEBFBA7990D5 /* NativeBackends.swift in Sources */,
 				9DA10F1EDE381AB181849D93 /* ObjDumpDisassembler.swift in Sources */,
 				079A12E2266E727FA99E8798 /* PEBinaryParser.swift in Sources */,
 				FFA423E45BC36F4D6476AE8F /* PermissionPolicy.swift in Sources */,
+				0A887D3836C6EE013D4CF0A0 /* PreAssembleValidation.swift in Sources */,
+				615235C4F76ACF1110424E01 /* ProcessRunner.swift in Sources */,
 				0287C30F970A6B12BB57875B /* ProjectExporter.swift in Sources */,
 				0887AB6E4112DBD38C195CDF /* ProjectManifest.swift in Sources */,
 				A822512B759F5A456E3C135F /* PseudocodeExporter.swift in Sources */,
@@ -19176,11 +19226,13 @@
 				805C4A95EFBDEAD3CDD18CC8 /* ReconstructionRecord.swift in Sources */,
 				02EB32C491FAFFBA79EF6E53 /* ReconstructionUtilities.swift in Sources */,
 				D5AFF443E7EB9400EC110673 /* ResourceLimits.swift in Sources */,
+				2CE7BB16343A497B7F2857B0 /* RustBackend.swift in Sources */,
 				5C125F4D1181400B18EFD4DC /* SharedComponents.swift in Sources */,
 				9FC7CAC97D31187FD0F71CB2 /* SourceMapping.swift in Sources */,
 				4E452D0617D2A8EE34FCE122 /* SourceReconstructor.swift in Sources */,
 				468D9038C610EA7D3C901910 /* StringAnalysis.swift in Sources */,
 				66442BBC60A77C56B113976B /* StringTools.swift in Sources */,
+				4D7B54BD3D64B46843E1AA48 /* SwiftBackend.swift in Sources */,
 				351FD44BF1E60C2D4B116C49 /* SymbolAnalysis.swift in Sources */,
 				D074675236E61FA28DE23D2D /* SymbolDemangler.swift in Sources */,
 				0036A0005B0BCC15EB425C63 /* SymbolExporter.swift in Sources */,
@@ -19189,6 +19241,7 @@
 				1C90681306BC6754856068BE /* TemporaryFilePolicy.swift in Sources */,
 				5001DF987B3FCD59E44B8C29 /* TypeRecovery.swift in Sources */,
 				6D3CB4F596D987A4555AD3FD /* WorkspacePreferences.swift in Sources */,
+				2042A6F68572DE5B55B7D742 /* ZigBackend.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

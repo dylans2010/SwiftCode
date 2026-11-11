@@ -90,6 +90,7 @@ public final class DecompilerObservableState {
     public private(set) var engines: [EngineDescriptor] = []
     public private(set) var reconstructedProject: ReconstructedProject?
     public private(set) var lastAssembly: AssemblyResult?
+    public private(set) var selectedBackendID: String?
     public private(set) var isDecompilingAsset = false
     public private(set) var isAssembling = false
 
@@ -117,6 +118,11 @@ public final class DecompilerObservableState {
         pinnedFunctions = await store.pinnedFunctions
         mode = await session.mode
         reconstructedProject = await session.reconstructedProject
+        if await session.selectedBackendID == nil,
+           let savedBackend = reconstructedProject?.configuration.selectedBackendID {
+            await session.setSelectedBackendID(savedBackend)
+        }
+        selectedBackendID = await session.selectedBackendID
         lastAssembly = await session.lastAssembly
         // NOTE: `session.isAnalyzing` is not used — the session keeps its
         // finished task referenced, so it never reports false again. This
@@ -213,6 +219,16 @@ public final class DecompilerObservableState {
         await session.setMode(newMode)
         mode = newMode
         log("Switched to \(newMode == .friendly ? "Friendly" : "Master") mode")
+    }
+
+    public func setBackend(_ id: String?) async {
+        await session.setSelectedBackendID(id)
+        selectedBackendID = id
+        if let id, let backend = BackendRegistry.backend(id: id) {
+            log("Assemble backend: \(backend.displayName)")
+        } else {
+            log("Assemble backend: automatic (per file extension)")
+        }
     }
 
     public func toggleMode() async {
@@ -380,7 +396,11 @@ public final class DecompilerObservableState {
             return
         }
         isAssembling = true
-        log("Assembling…")
+        if let id = selectedBackendID, let backend = BackendRegistry.backend(id: id) {
+            log("Assembling with \(backend.displayName)…")
+        } else {
+            log("Assembling…")
+        }
         Task { [weak self] in
             guard let self else { return }
             defer { self.isAssembling = false }

@@ -27,6 +27,11 @@ public actor DecompilerSession {
     private var analysisTask: Task<Void, Never>?
     public private(set) var reconstructedProject: ReconstructedProject?
     public private(set) var lastAssembly: AssemblyResult?
+    public private(set) var selectedBackendID: String?
+
+    public func setSelectedBackendID(_ id: String?) {
+        selectedBackendID = id
+    }
 
     public func setReconstructedProject(_ project: ReconstructedProject?) {
         reconstructedProject = project
@@ -48,6 +53,8 @@ public actor DecompilerSession {
     @discardableResult
     public func importBinary(at url: URL, sliceIndex: Int? = nil) async throws -> BinaryImage {
         try await AnalysisSecurityPolicy.validateImport(url: url)
+        selectedBackendID = nil
+        lastAssembly = nil
         sourceURL = url
         await setProgress(.init(stage: .importing, message: url.lastPathComponent))
 

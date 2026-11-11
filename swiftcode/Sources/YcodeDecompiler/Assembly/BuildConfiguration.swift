@@ -27,6 +27,107 @@ public struct BuildConfiguration: Sendable, Codable {
     public var inferredSettings: [String]
     public var manualSettings: [String]
     public var unrecoveredSettings: [String]
+    public var format: BinaryFormat = .unknown
+    public var selectedBackendID: String? = nil
+    public var perBackendFlags: [String: [String]] = [:]
+
+    private enum CodingKeys: String, CodingKey {
+        case outputFileName
+        case outputDirectory
+        case architectures
+        case deploymentTarget
+        case sdk
+        case compilerPath
+        case optimizationLevel
+        case debugSymbols
+        case symbolVisibility
+        case exportedSymbols
+        case frameworks
+        case linkedLibraries
+        case headerSearchPaths
+        case librarySearchPaths
+        case definitions
+        case compilerFlags
+        case linkerFlags
+        case codeSignIdentity
+        case runpaths
+        case installName
+        case currentVersion
+        case compatibilityVersion
+        case universalBinary
+        case inferredSettings
+        case manualSettings
+        case unrecoveredSettings
+        case format
+        case selectedBackendID
+        case perBackendFlags
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        outputFileName = try container.decodeIfPresent(String.self, forKey: .outputFileName) ?? "libreconstructed.dylib"
+        outputDirectory = try container.decodeIfPresent(String.self, forKey: .outputDirectory)
+        architectures = try container.decodeIfPresent([BinaryArchitecture].self, forKey: .architectures) ?? [.arm64]
+        deploymentTarget = try container.decodeIfPresent(String.self, forKey: .deploymentTarget)
+        sdk = try container.decodeIfPresent(String.self, forKey: .sdk)
+        compilerPath = try container.decodeIfPresent(String.self, forKey: .compilerPath)
+        optimizationLevel = try container.decodeIfPresent(String.self, forKey: .optimizationLevel) ?? "2"
+        debugSymbols = try container.decodeIfPresent(Bool.self, forKey: .debugSymbols) ?? true
+        symbolVisibility = try container.decodeIfPresent(String.self, forKey: .symbolVisibility) ?? "default"
+        exportedSymbols = try container.decodeIfPresent([String].self, forKey: .exportedSymbols) ?? []
+        frameworks = try container.decodeIfPresent([String].self, forKey: .frameworks) ?? []
+        linkedLibraries = try container.decodeIfPresent([String].self, forKey: .linkedLibraries) ?? []
+        headerSearchPaths = try container.decodeIfPresent([String].self, forKey: .headerSearchPaths) ?? []
+        librarySearchPaths = try container.decodeIfPresent([String].self, forKey: .librarySearchPaths) ?? []
+        definitions = try container.decodeIfPresent([String].self, forKey: .definitions) ?? []
+        compilerFlags = try container.decodeIfPresent([String].self, forKey: .compilerFlags) ?? []
+        linkerFlags = try container.decodeIfPresent([String].self, forKey: .linkerFlags) ?? []
+        codeSignIdentity = try container.decodeIfPresent(String.self, forKey: .codeSignIdentity)
+        runpaths = try container.decodeIfPresent([String].self, forKey: .runpaths) ?? []
+        installName = try container.decodeIfPresent(String.self, forKey: .installName)
+        currentVersion = try container.decodeIfPresent(String.self, forKey: .currentVersion)
+        compatibilityVersion = try container.decodeIfPresent(String.self, forKey: .compatibilityVersion)
+        universalBinary = try container.decodeIfPresent(Bool.self, forKey: .universalBinary) ?? false
+        inferredSettings = try container.decodeIfPresent([String].self, forKey: .inferredSettings) ?? []
+        manualSettings = try container.decodeIfPresent([String].self, forKey: .manualSettings) ?? []
+        unrecoveredSettings = try container.decodeIfPresent([String].self, forKey: .unrecoveredSettings) ?? []
+        format = try container.decodeIfPresent(BinaryFormat.self, forKey: .format) ?? .unknown
+        selectedBackendID = try container.decodeIfPresent(String.self, forKey: .selectedBackendID)
+        perBackendFlags = try container.decodeIfPresent([String: [String]].self, forKey: .perBackendFlags) ?? [:]
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(outputFileName, forKey: .outputFileName)
+        try container.encode(outputDirectory, forKey: .outputDirectory)
+        try container.encode(architectures, forKey: .architectures)
+        try container.encode(deploymentTarget, forKey: .deploymentTarget)
+        try container.encode(sdk, forKey: .sdk)
+        try container.encode(compilerPath, forKey: .compilerPath)
+        try container.encode(optimizationLevel, forKey: .optimizationLevel)
+        try container.encode(debugSymbols, forKey: .debugSymbols)
+        try container.encode(symbolVisibility, forKey: .symbolVisibility)
+        try container.encode(exportedSymbols, forKey: .exportedSymbols)
+        try container.encode(frameworks, forKey: .frameworks)
+        try container.encode(linkedLibraries, forKey: .linkedLibraries)
+        try container.encode(headerSearchPaths, forKey: .headerSearchPaths)
+        try container.encode(librarySearchPaths, forKey: .librarySearchPaths)
+        try container.encode(definitions, forKey: .definitions)
+        try container.encode(compilerFlags, forKey: .compilerFlags)
+        try container.encode(linkerFlags, forKey: .linkerFlags)
+        try container.encode(codeSignIdentity, forKey: .codeSignIdentity)
+        try container.encode(runpaths, forKey: .runpaths)
+        try container.encode(installName, forKey: .installName)
+        try container.encode(currentVersion, forKey: .currentVersion)
+        try container.encode(compatibilityVersion, forKey: .compatibilityVersion)
+        try container.encode(universalBinary, forKey: .universalBinary)
+        try container.encode(inferredSettings, forKey: .inferredSettings)
+        try container.encode(manualSettings, forKey: .manualSettings)
+        try container.encode(unrecoveredSettings, forKey: .unrecoveredSettings)
+        try container.encode(format, forKey: .format)
+        try container.encode(selectedBackendID, forKey: .selectedBackendID)
+        try container.encode(perBackendFlags, forKey: .perBackendFlags)
+    }
 
     public init(outputFileName: String, outputDirectory: String? = nil,
                 architectures: [BinaryArchitecture] = [.arm64],
@@ -41,7 +142,8 @@ public struct BuildConfiguration: Sendable, Codable {
                 installName: String? = nil, currentVersion: String? = nil,
                 compatibilityVersion: String? = nil, universalBinary: Bool = false,
                 inferredSettings: [String] = [], manualSettings: [String] = [],
-                unrecoveredSettings: [String] = []) {
+                unrecoveredSettings: [String] = [], format: BinaryFormat = .unknown,
+                selectedBackendID: String? = nil, perBackendFlags: [String: [String]] = [:]) {
         self.outputFileName = outputFileName
         self.outputDirectory = outputDirectory
         self.architectures = architectures
@@ -68,6 +170,9 @@ public struct BuildConfiguration: Sendable, Codable {
         self.inferredSettings = inferredSettings
         self.manualSettings = manualSettings
         self.unrecoveredSettings = unrecoveredSettings
+        self.format = format
+        self.selectedBackendID = selectedBackendID
+        self.perBackendFlags = perBackendFlags
     }
 
     public static func inferred(from image: BinaryImage, libraryName: String) -> BuildConfiguration {
@@ -120,7 +225,20 @@ public struct BuildConfiguration: Sendable, Codable {
             linkedLibraries: linkedLibraries,
             runpaths: runpaths,
             installName: installName,
-            universalBinary: false)
+            universalBinary: false,
+            format: image.format)
+        var backendsToCheck: [any AssembleBackend] = [ClangBackend()]
+        switch LanguageIdentification.identify(image: image) {
+        case .swift: backendsToCheck.append(SwiftBackend())
+        case .rust: backendsToCheck.append(RustBackend())
+        case .go: backendsToCheck.append(GoBackend())
+        default: break
+        }
+        for backend in backendsToCheck {
+            if case .unavailable(let reason, _) = backend.availability(configuration: config) {
+                unrecovered.append("toolchain: \(backend.displayName) unavailable (\(reason))")
+            }
+        }
         config.inferredSettings = inferred
         config.unrecoveredSettings = unrecovered
         return config
