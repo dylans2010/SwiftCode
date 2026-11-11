@@ -150,21 +150,54 @@ public final class DecompilerObservableState {
     @discardableResult
     public func importBinary(at url: URL) async throws -> BinaryImage {
         log("Importing \(url.lastPathComponent)…")
-        do {
-            let image = try await session.importBinary(at: url)
+        return try await withLiveProgress {
+            try await session.importBinary(at: url)
+        } reload: { image in
             await reloadAll()
             log("Imported \(image.identity.originalFileName) (\(image.format.displayName), \(image.architecture.displayName))",
                 kind: .engine)
-            return image
-        } catch {
+        } onError: { error in
+            await refresh()
             log("Import failed: \(error.localizedDescription)", kind: .error)
+        }
+    }
+
+    /// `session.importBinary`/`selectSlice` run auto-analysis inline before
+    /// returning, which can take minutes on large binaries. Mark the
+    /// workspace busy and poll the store so the status bar, progress text
+    /// and function list update while the import is in flight.
+    private func withLiveProgress<T>(
+        _ work: () async throws -> T,
+        reload: (T) async -> Void,
+        onError: (Error) async -> Void
+    ) async throws -> T {
+        isAnalyzing = true
+        let poller = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.refresh()
+                try? await Task.sleep(for: .milliseconds(400))
+            }
+        }
+        defer {
+            poller.cancel()
+            isAnalyzing = false
+        }
+        do {
+            let result = try await work()
+            await reload(result)
+            return result
+        } catch {
+            await onError(error)
             throw error
         }
     }
 
     public func selectSlice(_ index: Int) async throws {
-        try await session.selectSlice(index)
-        await reloadAll()
+        _ = try await withLiveProgress(
+            { try await session.selectSlice(index) },
+            reload: { _ in await reloadAll() },
+            onError: { _ in await refresh() }
+        )
         log("Switched architecture slice to \(index)")
     }
 

@@ -54,7 +54,10 @@ public enum DecompilerCommands {
                 allowedTypes: ["mach-o", "elf", "bin", "o", "a", "dylib", "so", "exe", "dll"]) else { return }
             Task {
                 do { _ = try await state.importBinary(at: url) }
-                catch { state.log("Import failed: \(error.localizedDescription)", kind: .error) }
+                catch {
+                    state.log("Import failed: \(error.localizedDescription)", kind: .error)
+                    presentErrorAlert("Import Binary", error.localizedDescription)
+                }
             }
 
         case .openProject:
@@ -147,6 +150,18 @@ public enum DecompilerCommands {
     }
 
     // MARK: - Panels
+
+    /// Modal error alert for failures the console log alone would hide
+    /// (the console is collapsed by default).
+    @MainActor
+    private static func presentErrorAlert(_ title: String, _ message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
 
     @MainActor
     @discardableResult

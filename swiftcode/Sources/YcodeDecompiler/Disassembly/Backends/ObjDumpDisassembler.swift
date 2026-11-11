@@ -79,7 +79,7 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         // extraction and `otool -x` both miss.
         let listing: [ListingEntry]?
         do {
-            listing = try await Self.containerListing(tool: tool, image: image)
+            listing = try await Self.containerListing(tool: tool, image: image, progress: progress)
         } catch is CancellationError {
             throw CancellationError()
         } catch {
@@ -87,7 +87,11 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         }
         if let lines = listing {
             var instructions: [Instruction] = []
-            for entry in lines where entry.address >= lo && entry.address < hi {
+            instructions.reserveCapacity(lines.count)
+            var scanned = 0
+            for entry in lines {
+                scanned += 1
+                guard entry.address >= lo, entry.address < hi else { continue }
                 let parsed = ParsedLine(
                     address: entry.address,
                     bytes: Self.decodeContainerBytes(
@@ -95,6 +99,14 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
                     mnemonic: entry.mnemonic,
                     operandText: entry.operandText)
                 instructions.append(makeInstruction(parsed, image: image))
+                if scanned % 16384 == 0 {
+                    progress?(AnalysisProgress(
+                        stage: .disassembling,
+                        fraction: Double(scanned) / Double(max(lines.count, 1)),
+                        message: "Decoding instructions (\(instructions.count) so far)",
+                        itemsProcessed: instructions.count,
+                        itemsTotal: lines.count))
+                }
             }
             return instructions.sorted { $0.address.value < $1.address.value }
         }
@@ -209,7 +221,8 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
     /// Extract the image's slice bytes, write them to a temp file and run
     /// `llvm-objdump -d` once. Returns nil (caller falls back to per-section
     /// extraction) when the image cannot be materialised or objdump fails.
-    private static func containerListing(tool: String, image: BinaryImage) async throws -> [ListingEntry]? {
+    private static func containerListing(tool: String, image: BinaryImage,
+                                         progress: (@Sendable (AnalysisProgress) -> Void)? = nil) async throws -> [ListingEntry]? {
         let key = "\(image.identity.originalLocation)|\(image.containerOffset)|\(image.byteCount)|\(image.architecture.rawValue)"
         if let cached = ListingCache.shared.get(key) { return cached }
 
@@ -229,9 +242,17 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         defer { try? FileManager.default.removeItem(at: tmpFile) }
 
         var entries: [ListingEntry] = []
+        var scanned = 0
         do {
             for try await raw in StreamingSubprocess.lines(URL(fileURLWithPath: tool), ["-d", tmpFile.path]) {
                 if let parsed = parseContainerLine(raw) { entries.append(parsed) }
+                scanned += 1
+                if scanned % 65536 == 0 {
+                    progress?(AnalysisProgress(
+                        stage: .disassembling,
+                        message: "llvm-objdump: \(scanned) lines",
+                        itemsProcessed: entries.count))
+                }
             }
         } catch is CancellationError {
             throw CancellationError()

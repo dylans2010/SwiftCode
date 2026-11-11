@@ -85,14 +85,26 @@ public struct OtoolDisassembler: DisassemblerProvider {
             throw DecompilerError.unsupportedArchitecture(image.architecture)
         }
 
-        let lines = try await Self.listing(tool: tool, image: image, filePath: filePath)
+        let lines = try await Self.listing(tool: tool, image: image, filePath: filePath,
+                                           progress: progress)
         progress?(AnalysisProgress(stage: .disassembling,
                                    message: "Disassembling \(image.identity.originalFileName) (otool)"))
 
         var instructions: [Instruction] = []
+        instructions.reserveCapacity(lines.count)
+        var scanned = 0
         for line in lines {
+            scanned += 1
             guard line.address >= lo, line.address < hi else { continue }
             instructions.append(makeInstruction(line, image: image))
+            if scanned % 16384 == 0 {
+                progress?(AnalysisProgress(
+                    stage: .disassembling,
+                    fraction: Double(scanned) / Double(max(lines.count, 1)),
+                    message: "Decoding instructions (\(instructions.count) so far)",
+                    itemsProcessed: instructions.count,
+                    itemsTotal: lines.count))
+            }
         }
         return instructions.sorted { $0.address.value < $1.address.value }
     }
@@ -110,7 +122,8 @@ public struct OtoolDisassembler: DisassemblerProvider {
     /// Run `otool -xjV` once per (file, arch) and cache the parsed lines.
     /// Bounded to a few entries; entries are dropped oldest-first.
     private static func listing(tool: String, image: BinaryImage,
-                                filePath: String) async throws -> [ListingLine] {
+                                filePath: String,
+                                progress: (@Sendable (AnalysisProgress) -> Void)? = nil) async throws -> [ListingLine] {
         let archName = otoolArch(for: image)
         let key = "\(filePath)|\(archName ?? "default")"
         if let cached = ListingCache.shared.get(key) { return cached }
@@ -122,11 +135,19 @@ public struct OtoolDisassembler: DisassemblerProvider {
         let toolURL = URL(fileURLWithPath: tool)
         var lines: [ListingLine] = []
         var sawInstruction = false
+        var scanned = 0
         do {
             for try await raw in StreamingSubprocess.lines(toolURL, args) {
                 guard let parsed = parseLine(raw, image: image) else { continue }
                 sawInstruction = true
                 lines.append(parsed)
+                scanned += 1
+                if scanned % 65536 == 0 {
+                    progress?(AnalysisProgress(
+                        stage: .disassembling,
+                        message: "otool: \(scanned) instructions",
+                        itemsProcessed: lines.count))
+                }
             }
         } catch let error as StreamingSubprocess.ExitError {
             // `-arch` can fail on unusual slices; retry once without it when

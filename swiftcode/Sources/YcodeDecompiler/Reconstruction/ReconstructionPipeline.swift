@@ -74,12 +74,26 @@ public enum ReconstructionPipeline {
         guard let manifestData = try? Data(contentsOf: manifestURL),
               let manifest = try? JSONDecoder().decode(ReconstructedProjectManifest.self, from: manifestData),
               let configData = try? Data(contentsOf: configURL),
-              let configuration = try? JSONDecoder().decode(BuildConfiguration.self, from: configData),
-              let image = await session.binary() else { return nil }
-        let source = SourceReconstructor.reconstruct(
-            image: image, functions: await session.functions(),
-            pseudocode: await session.pseudocodeResults(),
-            instructions: Array(await session.analysisStore().instructions.values),
+              let configuration = try? JSONDecoder().decode(BuildConfiguration.self, from: configData) else { return nil }
+        // Load a lightweight source view from the on-disk artifacts instead
+        // of re-running SourceReconstructor over every instruction — for
+        // large binaries that rebuild takes minutes and the generated files
+        // already exist. `records` stays empty; consumers that need per-
+        // function detail go through `session.functions()` or regenerate
+        // via `decompileAsset`.
+        let mapURL = rootURL.appendingPathComponent("Mappings/source-map.json")
+        let sourceMap = (try? Data(contentsOf: mapURL))
+            .flatMap { try? JSONDecoder().decode(SourceMapping.self, from: $0) }
+            ?? SourceMapping(originalSHA256: manifest.originalSHA256,
+                             originalFileName: manifest.originalFileName)
+        let source = ReconstructedSource(
+            libraryName: manifest.libraryName,
+            language: SourceLanguage(rawValue: manifest.language) ?? .unknown,
+            records: [], files: [], diagnostics: [],
+            sourceMap: sourceMap,
+            exportedNames: manifest.originalExports,
+            unresolvedImports: [],
+            enginesUsed: manifest.enginesUsed,
             decompilerAvailable: manifest.decompilerAvailable)
         let project = ReconstructedProject(rootURL: rootURL, libraryName: manifest.libraryName,
                                            source: source, configuration: configuration,
