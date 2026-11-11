@@ -73,6 +73,19 @@ public struct FriendlyWorkspaceView: View {
                         .disabled(state.reconstructedProject == nil || state.isAssembling)
                     }
                     ToolbarItem(placement: .primaryAction) {
+                        Picker("Backend", selection: backendSelection) {
+                            Text("Automatic").tag(nil as String?)
+                            ForEach(backendOptions, id: \.0.id) { backend, availability in
+                                Text(availability.isAvailable ? backend.displayName : "\(backend.displayName) (unavailable)")
+                                    .tag(Optional(backend.id))
+                                    .disabled(!availability.isAvailable)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .help(backendPickerHelp)
+                        .disabled(state.reconstructedProject == nil)
+                    }
+                    ToolbarItem(placement: .primaryAction) {
                         Button {
                             state.openInMainEditor()
                         } label: {
@@ -117,6 +130,12 @@ public struct FriendlyWorkspaceView: View {
             detailContent
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+            if state.lastAssembly != nil {
+                Divider()
+                AssemblyResultView(state: state)
+                    .frame(maxHeight: 320)
+            }
+
             // Decompile Assist slot: the AI module injects its chat UI via
             // `state.assistPanel`. The panel chrome (header + status) is real
             // even before the chat content is attached.
@@ -124,6 +143,33 @@ public struct FriendlyWorkspaceView: View {
                 assistPanel
             }
         }
+    }
+
+    private var backendOptions: [(any AssembleBackend, BackendAvailability)] {
+        let configuration = state.reconstructedProject?.configuration
+            ?? BuildConfiguration(outputFileName: "libreconstructed.dylib")
+        return BackendRegistry.availableBackends(configuration: configuration)
+    }
+
+    private var backendSelection: Binding<String?> {
+        Binding(
+            get: { state.selectedBackendID },
+            set: { id in Task { await state.setBackend(id) } }
+        )
+    }
+
+    private var backendPickerHelp: String {
+        let unavailable = backendOptions.filter { !$0.1.isAvailable }
+        guard !unavailable.isEmpty else {
+            return "Choose the Assemble backend. Automatic routes each source file to the backend registered for its extension."
+        }
+        let details = unavailable.map { backend, availability in
+            if case .unavailable(let reason, let guidance) = availability {
+                return "\(backend.displayName): \(reason) \(guidance)"
+            }
+            return backend.displayName
+        }.joined(separator: " ")
+        return "Choose the Assemble backend. Unavailable backends need their toolchain installed. \(details)"
     }
 
     @ViewBuilder

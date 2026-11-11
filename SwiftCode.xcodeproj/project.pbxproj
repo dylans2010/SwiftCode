@@ -3604,6 +3604,7 @@
 		602F069B6CEA9EAADE556571 /* InterfaceEmitterRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73F77F2CB4C4FBE65209D005 /* InterfaceEmitterRegistry.swift */; };
 		10BBABDB182351DE0E61385C /* RustInterfaceEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B63C57D69AF3F6693EA070 /* RustInterfaceEmitter.swift */; };
 		5011863CA26857B49875B3E4 /* SwiftInterfaceEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5C0F7F56265C4B3B72DCDA /* SwiftInterfaceEmitter.swift */; };
+		55DF8C680B0FFC719C55A24E /* AssemblyResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE19702AD7D7D015BCB9B84B /* AssemblyResultView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -8498,6 +8499,7 @@
 		73F77F2CB4C4FBE65209D005 /* InterfaceEmitterRegistry.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = InterfaceEmitterRegistry.swift; sourceTree = "<group>"; };
 		60B63C57D69AF3F6693EA070 /* RustInterfaceEmitter.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = RustInterfaceEmitter.swift; sourceTree = "<group>"; };
 		8C5C0F7F56265C4B3B72DCDA /* SwiftInterfaceEmitter.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SwiftInterfaceEmitter.swift; sourceTree = "<group>"; };
+		FE19702AD7D7D015BCB9B84B /* AssemblyResultView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = AssemblyResultView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -14009,6 +14011,7 @@
 		D039839EED60D4B325F17EE0 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				FE19702AD7D7D015BCB9B84B /* AssemblyResultView.swift */,
 				AB48616D549C4F04288EB784 /* DecompilerObservableState.swift */,
 				0D038179A0A8275644C25FC9 /* SharedComponents.swift */,
 			);
@@ -19197,6 +19200,7 @@
 				BD0AA42C0A1C30D6CBED88E0 /* AssemblyDiagnostic.swift in Sources */,
 				F2096DC60628A2B6A41FC5FE /* AssemblyExporter.swift in Sources */,
 				8023184D5CB22E78A43F5058 /* AssemblyFallback.swift in Sources */,
+				55DF8C680B0FFC719C55A24E /* AssemblyResultView.swift in Sources */,
 				9E5B3B61446DA0B893B485E1 /* AssistantTools.swift in Sources */,
 				F74B65A78676BE02C9942C28 /* BackendRegistry.swift in Sources */,
 				7753AC7E52CE8D4958CE88CC /* BackendToolDiscovery.swift in Sources */,

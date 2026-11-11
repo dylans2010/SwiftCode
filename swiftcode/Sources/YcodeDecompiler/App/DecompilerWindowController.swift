@@ -18,6 +18,7 @@ public enum DecompilerToolbarItem: String {
     case restoreLayout = "decompiler.restoreLayout"
     case decompileAsset = "decompiler.decompileAsset"
     case assemble = "decompiler.assemble"
+    case backendPicker = "decompiler.backendPicker"
     case openInMainEditor = "decompiler.openInMainEditor"
 }
 
@@ -26,6 +27,7 @@ public enum DecompilerToolbarItem: String {
 @MainActor
 public final class DecompilerWindowController: NSWindowController, NSToolbarDelegate {
     public let state: DecompilerObservableState
+    private weak var backendPicker: NSPopUpButton?
 
     public init(state: DecompilerObservableState) {
         self.state = state
@@ -224,6 +226,22 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
             toolbarItem.action = #selector(assembleAction(_:))
             return toolbarItem
 
+        case .backendPicker:
+            let popup = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 170, height: 24), pullsDown: false)
+            popup.autoenablesItems = false
+            popup.controlSize = .small
+            populateBackendPicker(popup)
+            popup.menu?.delegate = self
+            popup.target = self
+            popup.action = #selector(backendChanged(_:))
+            popup.setAccessibilityLabel("Assemble backend")
+            backendPicker = popup
+            toolbarItem.view = popup
+            toolbarItem.label = "Backend"
+            toolbarItem.paletteLabel = "Assemble Backend"
+            toolbarItem.toolTip = "Choose the Assemble backend"
+            return toolbarItem
+
         case .openInMainEditor:
             toolbarItem.label = "Open in Editor"
             toolbarItem.paletteLabel = "Open in Main Editor"
@@ -246,6 +264,7 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
             NSToolbarItem.Identifier(DecompilerToolbarItem.saveProject.rawValue),
             NSToolbarItem.Identifier(DecompilerToolbarItem.decompileAsset.rawValue),
             NSToolbarItem.Identifier(DecompilerToolbarItem.assemble.rawValue),
+            NSToolbarItem.Identifier(DecompilerToolbarItem.backendPicker.rawValue),
             NSToolbarItem.Identifier(DecompilerToolbarItem.openInMainEditor.rawValue),
             .flexibleSpace,
             NSToolbarItem.Identifier(DecompilerToolbarItem.search.rawValue),
@@ -333,7 +352,44 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
         DecompilerCommands.perform(.assemble, on: state)
     }
 
+    private func populateBackendPicker(_ popup: NSPopUpButton) {
+        popup.removeAllItems()
+        popup.addItem(withTitle: "Automatic")
+        let configuration = state.reconstructedProject?.configuration
+            ?? BuildConfiguration(outputFileName: "libreconstructed.dylib")
+        for (backend, availability) in BackendRegistry.availableBackends(configuration: configuration) {
+            popup.addItem(withTitle: backend.displayName)
+            guard let item = popup.lastItem else { continue }
+            item.representedObject = backend.id
+            switch availability {
+            case .available:
+                break
+            case .unavailable(let reason, let guidance):
+                item.isEnabled = false
+                item.toolTip = "\(reason) \(guidance)"
+            }
+        }
+        if let selected = state.selectedBackendID {
+            let index = popup.itemArray.firstIndex { ($0.representedObject as? String) == selected } ?? 0
+            popup.selectItem(at: index)
+        } else {
+            popup.selectItem(at: 0)
+        }
+    }
+
+    @objc private func backendChanged(_ sender: NSPopUpButton) {
+        let id = sender.selectedItem?.representedObject as? String
+        Task { await state.setBackend(id) }
+    }
+
     @objc private func openInMainEditorAction(_ sender: Any?) {
         DecompilerCommands.perform(.openInMainEditor, on: state)
+    }
+}
+
+extension DecompilerWindowController: NSMenuDelegate {
+    public func menuNeedsUpdate(_ menu: NSMenu) {
+        guard let popup = backendPicker, menu === popup.menu else { return }
+        populateBackendPicker(popup)
     }
 }
