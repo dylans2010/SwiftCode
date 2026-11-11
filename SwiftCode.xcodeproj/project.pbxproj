@@ -3588,6 +3588,12 @@
 		258E3335D7A9CEBFBA7990D5 /* NativeBackends.swift in Sources */ = {isa = PBXBuildFile; fileRef = 347632F694FD545CD25CAC0A /* NativeBackends.swift */; };
 		615235C4F76ACF1110424E01 /* ProcessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFE1C9011E44E52AFC86A9E /* ProcessRunner.swift */; };
 		0A887D3836C6EE013D4CF0A0 /* PreAssembleValidation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC62BEED5D6996AB015B916A /* PreAssembleValidation.swift */; };
+		A450B512F32D757290BC9A92 /* CSharpBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = E837FEEB6F7EFF113AD8C92B /* CSharpBackend.swift */; };
+		078967CF3D8D7B71B991CC4B /* JavaNativeBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C97769CA95AB3D0EAAAA49 /* JavaNativeBackend.swift */; };
+		5A324B5D0497027EB242B85D /* KotlinBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 812C93DB034AD0D1E72F7488 /* KotlinBackend.swift */; };
+		B3965A3DB59CB407CC414193 /* NimBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8B2FCE025E8A4CA2EE7CE2D /* NimBackend.swift */; };
+		7D24F6895BD5A3781B103D08 /* DBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 115C3C50035B7F923B81BD7A /* DBackend.swift */; };
+		0F2CDD6358DD659D6D31C8F6 /* NativeBackendsB.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9724D0B92859EFC6F5F32803 /* NativeBackendsB.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -8466,6 +8472,12 @@
 		347632F694FD545CD25CAC0A /* NativeBackends.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = NativeBackends.swift; sourceTree = "<group>"; };
 		9FFE1C9011E44E52AFC86A9E /* ProcessRunner.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = ProcessRunner.swift; sourceTree = "<group>"; };
 		BC62BEED5D6996AB015B916A /* PreAssembleValidation.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = PreAssembleValidation.swift; sourceTree = "<group>"; };
+		E837FEEB6F7EFF113AD8C92B /* CSharpBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = CSharpBackend.swift; sourceTree = "<group>"; };
+		B4C97769CA95AB3D0EAAAA49 /* JavaNativeBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = JavaNativeBackend.swift; sourceTree = "<group>"; };
+		812C93DB034AD0D1E72F7488 /* KotlinBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = KotlinBackend.swift; sourceTree = "<group>"; };
+		F8B2FCE025E8A4CA2EE7CE2D /* NimBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = NimBackend.swift; sourceTree = "<group>"; };
+		115C3C50035B7F923B81BD7A /* DBackend.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = DBackend.swift; sourceTree = "<group>"; };
+		9724D0B92859EFC6F5F32803 /* NativeBackendsB.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = NativeBackendsB.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -14601,7 +14613,13 @@
 		5CCDD2668E18EFCC315377CA /* Backends */ = {
 			isa = PBXGroup;
 			children = (
+				E837FEEB6F7EFF113AD8C92B /* CSharpBackend.swift */,
+				115C3C50035B7F923B81BD7A /* DBackend.swift */,
+				B4C97769CA95AB3D0EAAAA49 /* JavaNativeBackend.swift */,
+				812C93DB034AD0D1E72F7488 /* KotlinBackend.swift */,
 				347632F694FD545CD25CAC0A /* NativeBackends.swift */,
+				9724D0B92859EFC6F5F32803 /* NativeBackendsB.swift */,
+				F8B2FCE025E8A4CA2EE7CE2D /* NimBackend.swift */,
 				4795CB6DD1EBB75A5653D6F3 /* RustBackend.swift */,
 				560670DF2D015705B1285AE1 /* BackendRegistry.swift */,
 				73B8EEDA32B2F52F52C3E537 /* BackendToolDiscovery.swift */,
@@ -19152,11 +19170,13 @@
 				94627A170D72F3A715B70547 /* BinarySecurityPolicy.swift in Sources */,
 				3654C75D7D68F0349F4AA2FD /* BuildConfiguration.swift in Sources */,
 				F2AA55D23321D164DAEB26DA /* Bundle+Module.swift in Sources */,
+				A450B512F32D757290BC9A92 /* CSharpBackend.swift in Sources */,
 				15017B01DB1694083DAFEA53 /* CacheManager.swift in Sources */,
 				31C87AE3D091D117A2F2AA6F /* CallGraphAnalyzer.swift in Sources */,
 				74D98AA082992BC225E430D4 /* ClangBackend.swift in Sources */,
 				96A8B3464A48BD6CCF4FA47A /* ControlFlowAnalyzer.swift in Sources */,
 				7E092158027E7C14ED5B3344 /* CrossReferenceBuilder.swift in Sources */,
+				7D24F6895BD5A3781B103D08 /* DBackend.swift in Sources */,
 				B710E10AF38B1773036565DE /* DataFlowAnalyzer.swift in Sources */,
 				742BE680657E7D2D6A344FFF /* DebugInformationAnalysis.swift in Sources */,
 				C756D5CEFE84652135875EE2 /* DecompileAssistAssetLoader.swift in Sources */,
@@ -19208,11 +19228,15 @@
 				71FAAA59A9AACE8E837E2A04 /* ImportAnalysis.swift in Sources */,
 				E0D5E1DEBBE3978A93884DA8 /* InputValidation.swift in Sources */,
 				E907B18D7599483E81FA709F /* Instruction.swift in Sources */,
+				078967CF3D8D7B71B991CC4B /* JavaNativeBackend.swift in Sources */,
+				5A324B5D0497027EB242B85D /* KotlinBackend.swift in Sources */,
 				DD89058CFA7AD6FBB2D0FEA4 /* MachOParser.swift in Sources */,
 				F5B2BD917798227FF9B3D2CA /* MasterBrowsers.swift in Sources */,
 				DB8C77E391AC735A8FAAAF24 /* MasterEditors.swift in Sources */,
 				ABFB719E32EC7FB8FDC281BD /* MasterWorkspaceView.swift in Sources */,
 				258E3335D7A9CEBFBA7990D5 /* NativeBackends.swift in Sources */,
+				0F2CDD6358DD659D6D31C8F6 /* NativeBackendsB.swift in Sources */,
+				B3965A3DB59CB407CC414193 /* NimBackend.swift in Sources */,
 				9DA10F1EDE381AB181849D93 /* ObjDumpDisassembler.swift in Sources */,
 				079A12E2266E727FA99E8798 /* PEBinaryParser.swift in Sources */,
 				FFA423E45BC36F4D6476AE8F /* PermissionPolicy.swift in Sources */,

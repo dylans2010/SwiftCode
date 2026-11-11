@@ -28,7 +28,10 @@ final class BackendRegistryTests: XCTestCase {
     func testAvailableBackendsListsAllNativeBackends() {
         let config = BuildConfiguration(outputFileName: "libx.so", architectures: [.x86_64], format: .elf)
         let listed = BackendRegistry.availableBackends(configuration: config)
-        XCTAssertEqual(listed.map(\.0.id).sorted(), ["clang", "go", "rust", "swift", "zig"])
+        let ids = Set(listed.map(\.0.id))
+        for expected in ["clang", "go", "rust", "swift", "zig", "csharp", "d", "java-native", "kotlin", "nim"] {
+            XCTAssertTrue(ids.contains(expected), expected)
+        }
         for (backend, availability) in listed {
             switch availability {
             case .available(let path, _):
