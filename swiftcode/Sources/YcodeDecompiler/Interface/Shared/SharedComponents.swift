@@ -146,6 +146,8 @@ public struct StatusBar: View {
         case .buildingSymbols: return "Building symbols"
         case .disassembling: return "Disassembling"
         case .decompiling: return "Decompiling"
+        case .building: return "Building"
+        case .linking: return "Linking"
         case .buildingReferences: return "Building references"
         case .extractingStrings: return "Extracting strings"
         case .persisting: return "Saving"

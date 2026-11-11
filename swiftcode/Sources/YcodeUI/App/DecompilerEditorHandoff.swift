@@ -2,7 +2,7 @@ import AppKit
 import YcodeDecompiler
 import YcodeIDECore
 
-final class IDEEditorHandoff: DecompilerEditorHandoff {
+@MainActor final class IDEEditorHandoff: DecompilerEditorHandoff {
     private var windowControllers: [WorkspaceWindowController] = []
 
     @MainActor func openProject(at url: URL) async throws {

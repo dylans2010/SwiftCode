@@ -429,8 +429,11 @@ public final class DecompilerObservableState {
     public func openInMainEditor() {
         Task { [weak self] in
             guard let self else { return }
-            guard let project = reconstructedProject
-                ?? (try? await ReconstructionPipeline.loadReconstructedProject(session: session)) else {
+            var project = reconstructedProject
+            if project == nil {
+                project = await ReconstructionPipeline.loadReconstructedProject(session: session)
+            }
+            guard let project else {
                 log("Run Decompile Asset first — there is no reconstructed project to open.", kind: .warning)
                 return
             }
