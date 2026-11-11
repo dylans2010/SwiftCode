@@ -38,7 +38,7 @@ public struct JavaScriptBackend: AssembleBackend {
     public func prepareProject(projectRoot: URL, configuration: BuildConfiguration) throws {
         let sources = RuntimeShimSupport.scriptSources(projectRoot: projectRoot, extensions: sourceExtensions)
         for source in sources where source.pathExtension == "ts" {
-            throw DecompilerError.invalidRequest("TypeScript file \(source.lastPathComponent) cannot be assembled by the JavaScript backend: JavaScriptCore parses JavaScript only. Transpile it to JavaScript first (for example with tsc) and assemble the .js output instead.")
+            throw DecompilerError.invalidRequest("TypeScript file \(source.lastPathComponent) cannot be assembled by the JavaScript backend: \(engine.displayName) parses JavaScript only. Transpile it to JavaScript first (for example with tsc) and assemble the .js output instead.")
         }
         for source in sources where source.pathExtension == "js" {
             let data = try Data(contentsOf: source)

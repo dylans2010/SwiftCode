@@ -2,9 +2,10 @@
 
 Status report for the Decompiler subsystem. Sections A–O follow the
 implementation-report outline; each states what is **actually implemented**
-versus pending or unwired. Verified against the current tree (103 Swift
-files + resources at `swiftcode/Sources/YcodeDecompiler/`; documentation
-at `Decompiler/Documentation/`).
+versus pending or unwired. Verified against the current tree (108 Swift
+files + vendored C sources at `swiftcode/Sources/YcodeDecompiler/` and
+`swiftcode/Sources/CQuickJS/`; documentation at
+`Decompiler/Documentation/`).
 
 ## A2. Reconstruction, Assemble & editor handoff (added 2026-11-10)
 
@@ -21,6 +22,52 @@ SwiftCode's main editor through `ProjectOpeningCoordinator` /
 emitted as assembly with verbatim bytes plus PC-relative relocation
 repair (x86_64 and arm64), and are labelled `.partial`, never claimed
 working. See `LIMITATIONS.md` for the honest quality ceilings.
+
+## A3. Multi-language Assemble (Slices 1–6, added 2026-11-10)
+
+Assemble is no longer C-only. A backend registry
+(`Assembly/BackendRegistry.swift`) maps source languages to
+`AssembleBackend` implementations, and the generated project can be
+assembled through any of them, so an edited reconstruction can be
+rebuilt as a native `.dylib` in the language the user chose to edit
+in. The honest constraint stands: a `.dylib` is native machine code,
+so reconstruction is C/assembly by nature and the original source
+language cannot be recovered — the backends below are for *rebuilding
+edited source*, not for claiming the original was written in that
+language. Managed/scripted languages reach a native `.dylib` only
+through an embedded runtime, and the backend reports that.
+
+| Slice | What landed |
+|---|---|
+| 1 | Registry, `AssembleBackend` protocol, `ProcessRunner` + `PreAssembleValidator` seams, backend discovery |
+| 2 | Native backends batch A: C/C++/ObjC (clang), Swift (`swiftc`), Rust (`cdylib`), Go (`c-shared`), Zig (`build-lib`) |
+| 3 | Native backends batch B: C# (NativeAOT), Java/GraalVM (`native-image --shared`), Kotlin/Native, Nim, D (LDC); embedded backends: Java/JVM (JNI), JavaScript (JavaScriptCore), Python (embedded CPython), Lua (embedded interpreter) |
+| 4 | Mixed-language reconstruction: Swift `@_cdecl` shims and Rust `extern "C"` wrappers over the C core; source-map entries carry a language |
+| 5 | Backend picker toolbar item (Automatic + every available backend, unavailable ones disabled with install guidance) and `AssemblyResultView` (output path, Reveal in Finder, equivalence verdict, diagnostics, build-config summary) |
+| 6 | Live packages behind Slice 1's seams: swift-subprocess runner, swift-tree-sitter source validator, QuickJS as an alternate JavaScript engine (vendored QuickJS-NG), LSP server management for multi-language editing, consolidated docs |
+
+Backend table (17 languages): C, C++, Objective-C, Swift, Rust, Go, Zig,
+C#, Java (GraalVM native-image; embedded JVM as `java-jvm`), Kotlin,
+Nim, D, JavaScript (JavaScriptCore default; QuickJS alternate),
+Python, Lua. Each backend reports its own availability (toolchain
+present or not) and its own limits; see `LIMITATIONS.md`.
+
+Slice 6 details: `Assembly/SubprocessRunner.swift` implements
+`ProcessRunner` on swift-subprocess 1.0.2 (streaming output,
+cancellation teardown) and is registered as the default runner at
+engine-install time; `Assembly/TreeSitterSourceValidator.swift`
+implements `PreAssembleValidator` on swift-tree-sitter 0.10.0 with
+grammars for C, C++, Rust, Go, Java, JavaScript, Python and C#, plus
+SwiftParser for Swift, and reports syntax errors before any compiler
+runs; `Assembly/Backends/QuickJSEngine.swift` implements `JSEngine`
+over vendored QuickJS-NG (MIT, `swiftcode/Sources/CQuickJS/`, bundled
+again under `Resources/QuickJS/` for Assemble-time linking);
+`EditorIntegration/LanguageServerManager.swift` +
+`LanguageServerDefinitions.swift` launch and supervise one language
+server per language (sourcekit-lsp, rust-analyzer, clangd, gopls,
+pyright, …) with crash recovery and install guidance when a binary is
+missing. Full LSP features (completion, hover, diagnostics) in the
+main editor are explicitly a follow-up, not part of this slice.
 
 ## A. Scope & objectives
 
@@ -176,17 +223,46 @@ See `SYSTEM_ASSETS.md`.
 ## J. Integration with production app
 
 - `swiftcode/Package.swift`: product + target (deps `YcodeAssistant`,
-  `YcodeSubprocess`, `.copy("Resources")`) + `YcodeDecompilerTests`.
+  `YcodeSubprocess`, `CQuickJS`, plus swift-subprocess, swift-tree-sitter
+  and 8 grammar packages, LanguageServerProtocol, LanguageClient, and
+  SwiftParser/SwiftParserDiagnostics from swift-syntax, all scoped to
+  the `YcodeDecompiler` target; `.copy("Resources")`) +
+  `YcodeDecompilerTests`. `CQuickJS` is a SwiftPM C target vendoring
+  QuickJS-NG.
 - `project.yml`: `YcodeDecompiler` static lib (excl. `Resources/**`);
   resources into `SwiftCode` app target; app + `swiftcode-cli` depend on
-  it.
+  it. The same packages are declared at project level and linked per
+  target under `YcodeDecompiler`; `CQuickJS` is declared as a static
+  library target there. The checked-in `.xcodeproj` is hand-patched,
+  not regenerated from `project.yml` — if it is ever regenerated, the
+  hand-applied file registrations must be re-applied.
 - **Pending**: `DecompilerLifecycle.installDefaultEngines()` /
   `setAssistPanel(_:)` have no call sites in `swiftcode/Sources`;
   `.scdecomp` not a declared document type; no XcodeGen test target.
 
 ## K. Dependencies
 
-No new external packages. In-repo: `YcodeAssistant`, `YcodeSubprocess`.
+In-repo: `YcodeAssistant`, `YcodeSubprocess`. External packages, all
+scoped to the `YcodeDecompiler` target (Slice 6): swift-subprocess
+1.0.2, swift-tree-sitter 0.10.0, tree-sitter grammar packages for C
+(0.16.0+, resolved 0.24.2), C++, Go, Rust, Java, C# (master),
+JavaScript (exact 0.23.1) and Python (exact 0.23.6),
+LanguageServerProtocol 0.14.x (resolved 0.14.2), LanguageClient 0.8.2
+(pinned by revision `211384c`), swift-syntax 604.0.0 (already a repo
+dependency; SwiftParser + SwiftParserDiagnostics used for Swift
+validation). swift-system is a transitive dependency of
+swift-subprocess (1.8.1) only; it is not declared directly anywhere.
+JavaScript and Python are pinned to 0.23.x because their 0.25.0
+manifests decide whether to compile the external scanner with a
+relative-path file check that evaluates false when the package is a
+dependency under SwiftPM 6.2.3, so `parser.c` references scanner
+symbols that are never compiled and linking fails; 0.23.x lists the
+scanner unconditionally and is compatible with the tree-sitter 0.25.10
+runtime. Vendored: QuickJS-NG (MIT) as the `CQuickJS` C target, with
+a second copy under `Resources/QuickJS/` for Assemble-time bundling;
+the two copies are pinned byte-identical by test. The `CQuickJS`
+target carries `quickjs.h` twice: under `include/` for the SwiftPM
+module map, and flat at the target root for Assemble bundling.
 System: `sqlite3` via `CSQLite` (SwiftPM only). External optional:
 llvm-objdump (Xcode toolchain), Ghidra (user-installed, Apache-2.0),
 `swift-demangle`/`c++filt`. See `DEPENDENCIES.md`.
@@ -202,8 +278,16 @@ project-generation layout, and an end-to-end rebuild: compile a known C
 fixture to a `.so`, reconstruct, Assemble, re-parse, compare exports,
 and `dlopen` the rebuild to call the functions). Run:
 `cd swiftcode && swift test --filter YcodeDecompilerTests`.
-Verified 2026-11-10 on Linux (Swift 6.2.3, Foundation-only subset
-mini-package): 66 tests, 0 failures. Gaps: no engine-backend,
+Verified 2026-11-11 on Linux (Swift 6.2.3, Foundation-only subset
+mini-package): 150 tests passed, 12 skipped, 0 failures, including
+`PackageIntegrationTests.swift` (Slice 6: subprocess-runner parity,
+streaming and environment merge; tree-sitter validation of valid and
+broken C/Swift; QuickJS evaluation and a full QuickJS Assemble
+rebuild with `dlopen` and live calls; LSP definition lookup,
+missing-binary guidance, and manager lifecycle with crash recovery).
+The 12 skips are pre-existing end-to-end rebuild tests whose
+toolchains (Go, Rust, Zig, C#, D, Java, Kotlin, Nim, Lua, JVM Java)
+are absent from this Linux VM. Gaps: no engine-backend,
 persistence round-trip, session end-to-end, or UI tests; the Ghidra
 pseudocode path and the arm64 relocation repair have not been exercised
 end to end. See `TESTING.md`.
@@ -242,9 +326,9 @@ Headline items (full list in `LIMITATIONS.md`):
 
 | Item | Status |
 |---|---|
-| Source-level audit of all module files | Verified (103 Swift files + resources) |
+| Source-level audit of all module files | Verified (108 Swift files + vendored C sources) |
 | Docs accuracy vs. sources | Verified by inspection; unwired items marked |
-| `swift build` / `swift test` | **Run 2026-11-10 on Linux Swift 6.2.3** (Foundation-only subset mini-package; 66 tests, 0 failures, incl. E2E rebuild + `dlopen` check). Full-app Xcode build + Mach-O E2E still pending on Dylan's Mac |
+| `swift build` / `swift test` | **Run 2026-11-11 on Linux Swift 6.2.3** (Foundation-only subset mini-package; 150 tests passed, 12 skipped, 0 failures, incl. QuickJS E2E rebuild + `dlopen` check). Full-app Xcode build + Mach-O E2E still pending on Dylan's Mac |
 | End-to-end import→analysis→UI | Import→analysis→reconstruction→Assemble verified on Linux for ELF/x86_64; Mach-O/arm64 path not yet exercised end to end |
 | Clean-room compliance | All docs are original prose; no Apple code or decompiler output reproduced |
 

@@ -195,6 +195,18 @@ package.targets += [
 
 package.dependencies += [.package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "604.0.0")]
 package.dependencies += [.package(url: "https://github.com/apple/swift-markdown.git", from: "0.5.0")]
+package.dependencies += [.package(url: "https://github.com/swiftlang/swift-subprocess.git", exact: "1.0.2")]
+package.dependencies += [.package(url: "https://github.com/tree-sitter/swift-tree-sitter.git", exact: "0.10.0")]
+package.dependencies += [.package(url: "https://github.com/tree-sitter/tree-sitter-c.git", from: "0.16.0")]
+package.dependencies += [.package(url: "https://github.com/tree-sitter/tree-sitter-cpp.git", branch: "master")]
+package.dependencies += [.package(url: "https://github.com/tree-sitter/tree-sitter-go.git", branch: "master")]
+package.dependencies += [.package(url: "https://github.com/tree-sitter/tree-sitter-javascript.git", exact: "0.23.1")]
+package.dependencies += [.package(url: "https://github.com/tree-sitter/tree-sitter-python.git", exact: "0.23.6")]
+package.dependencies += [.package(url: "https://github.com/tree-sitter/tree-sitter-rust.git", branch: "master")]
+package.dependencies += [.package(url: "https://github.com/tree-sitter/tree-sitter-java.git", branch: "master")]
+package.dependencies += [.package(url: "https://github.com/tree-sitter/tree-sitter-c-sharp.git", branch: "master")]
+package.dependencies += [.package(url: "https://github.com/ChimeHQ/LanguageServerProtocol.git", from: "0.14.0")]
+package.dependencies += [.package(url: "https://github.com/ChimeHQ/LanguageClient.git", revision: "211384c40e960d5bc12d3fd8f2ada318541d6a24")]
 package.dependencies += [.package(path: "../frameworks/storekit")]
 
 package.targets += [
@@ -312,7 +324,24 @@ package.targets += [
 
 package.products += [.library(name: "YcodeDecompiler", targets: ["YcodeDecompiler"])]
 package.targets += [
-    .target(name: "YcodeDecompiler", dependencies: ["YcodeAssistant", "YcodeSubprocess"],
+    .target(name: "CQuickJS",
+            cSettings: [.define("_GNU_SOURCE", .when(platforms: [.linux]))]),
+    .target(name: "YcodeDecompiler", dependencies: ["YcodeAssistant", "YcodeSubprocess", "CQuickJS",
+                                                    .product(name: "Subprocess", package: "swift-subprocess"),
+                                                    .product(name: "SwiftTreeSitter", package: "swift-tree-sitter"),
+                                                    .product(name: "TreeSitterC", package: "tree-sitter-c"),
+                                                    .product(name: "TreeSitterCPP", package: "tree-sitter-cpp"),
+                                                    .product(name: "TreeSitterGo", package: "tree-sitter-go"),
+                                                    .product(name: "TreeSitterJavaScript", package: "tree-sitter-javascript"),
+                                                    .product(name: "TreeSitterPython", package: "tree-sitter-python"),
+                                                    .product(name: "TreeSitterRust", package: "tree-sitter-rust"),
+                                                    .product(name: "TreeSitterJava", package: "tree-sitter-java"),
+                                                    .product(name: "TreeSitterCSharp", package: "tree-sitter-c-sharp"),
+                                                    .product(name: "LanguageServerProtocol", package: "LanguageServerProtocol"),
+                                                    .product(name: "LanguageClient", package: "LanguageClient"),
+                                                    .product(name: "SwiftSyntax", package: "swift-syntax"),
+                                                    .product(name: "SwiftParser", package: "swift-syntax"),
+                                                    .product(name: "SwiftParserDiagnostics", package: "swift-syntax")],
             path: "Sources/YcodeDecompiler",
             resources: [.copy("Resources")]),
     .testTarget(name: "YcodeDecompilerTests", dependencies: ["YcodeDecompiler"],

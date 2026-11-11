@@ -17,6 +17,13 @@ public enum DecompilerLifecycle {
     private static func installOnce() {
         guard !didInstall else { return }
         didInstall = true
+#if canImport(Subprocess)
+        ProcessRunnerRegistry.register(SwiftSubprocessRunner())
+#endif
+#if canImport(SwiftTreeSitter)
+        PreAssembleValidatorRegistry.register(TreeSitterSourceValidator())
+#endif
+        BackendRegistry.register(QuickJSBackend())
         Task {
             // Built-in registry defaults plus concrete engine bootstrap
             // (Ghidra headless, bundled tools, etc.) provided by the

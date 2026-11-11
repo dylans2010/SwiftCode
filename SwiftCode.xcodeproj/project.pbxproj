@@ -3605,6 +3605,11 @@
 		10BBABDB182351DE0E61385C /* RustInterfaceEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 60B63C57D69AF3F6693EA070 /* RustInterfaceEmitter.swift */; };
 		5011863CA26857B49875B3E4 /* SwiftInterfaceEmitter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5C0F7F56265C4B3B72DCDA /* SwiftInterfaceEmitter.swift */; };
 		55DF8C680B0FFC719C55A24E /* AssemblyResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE19702AD7D7D015BCB9B84B /* AssemblyResultView.swift */; };
+		C36A526D35E7ED7CC6710970 /* SubprocessRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7ABB1F19420878C16FD43A40 /* SubprocessRunner.swift */; };
+		BE10A5F1F93201D4C86E1436 /* TreeSitterSourceValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0808E3396FC7C9EA75FFEE46 /* TreeSitterSourceValidator.swift */; };
+		E6A274F6BAE84BEA52EE4C3C /* QuickJSEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B8AA5611C27B90405FF3749 /* QuickJSEngine.swift */; };
+		EA08DCC0F30F359CF58D0E33 /* LanguageServerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6664EF4153EA8376FC36AB0E /* LanguageServerManager.swift */; };
+		82CFA39DA2241B0EFA9E6344 /* LanguageServerDefinitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6ED1451B0B4E63D1F5988D /* LanguageServerDefinitions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -8500,6 +8505,11 @@
 		60B63C57D69AF3F6693EA070 /* RustInterfaceEmitter.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = RustInterfaceEmitter.swift; sourceTree = "<group>"; };
 		8C5C0F7F56265C4B3B72DCDA /* SwiftInterfaceEmitter.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SwiftInterfaceEmitter.swift; sourceTree = "<group>"; };
 		FE19702AD7D7D015BCB9B84B /* AssemblyResultView.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = AssemblyResultView.swift; sourceTree = "<group>"; };
+		7ABB1F19420878C16FD43A40 /* SubprocessRunner.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = SubprocessRunner.swift; sourceTree = "<group>"; };
+		0808E3396FC7C9EA75FFEE46 /* TreeSitterSourceValidator.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = TreeSitterSourceValidator.swift; sourceTree = "<group>"; };
+		5B8AA5611C27B90405FF3749 /* QuickJSEngine.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = QuickJSEngine.swift; sourceTree = "<group>"; };
+		6664EF4153EA8376FC36AB0E /* LanguageServerManager.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = LanguageServerManager.swift; sourceTree = "<group>"; };
+		CA6ED1451B0B4E63D1F5988D /* LanguageServerDefinitions.swift */ = {isa = PBXFileReference; explicitFileType = sourcecode.swift; path = LanguageServerDefinitions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -14596,6 +14606,8 @@
 				ECD40708C751813C5D04F3EA /* BuildConfiguration.swift */,
 				BC62BEED5D6996AB015B916A /* PreAssembleValidation.swift */,
 				9FFE1C9011E44E52AFC86A9E /* ProcessRunner.swift */,
+				7ABB1F19420878C16FD43A40 /* SubprocessRunner.swift */,
+				0808E3396FC7C9EA75FFEE46 /* TreeSitterSourceValidator.swift */,
 			);
 			name = Assembly;
 			path = Assembly;
@@ -14605,6 +14617,8 @@
 			isa = PBXGroup;
 			children = (
 				1B1CD6D7058841009D4928DC /* DecompilerEditorBridge.swift */,
+				CA6ED1451B0B4E63D1F5988D /* LanguageServerDefinitions.swift */,
+				6664EF4153EA8376FC36AB0E /* LanguageServerManager.swift */,
 			);
 			name = EditorIntegration;
 			path = EditorIntegration;
@@ -14650,6 +14664,7 @@
 				9724D0B92859EFC6F5F32803 /* NativeBackendsB.swift */,
 				F8B2FCE025E8A4CA2EE7CE2D /* NimBackend.swift */,
 				CD472AFA3536B7C130924F32 /* PythonBackend.swift */,
+				5B8AA5611C27B90405FF3749 /* QuickJSEngine.swift */,
 				6A3C5E37AEB5FFDD9DDA6D5B /* RuntimeShimSupport.swift */,
 				4795CB6DD1EBB75A5653D6F3 /* RustBackend.swift */,
 				560670DF2D015705B1285AE1 /* BackendRegistry.swift */,
@@ -19277,6 +19292,8 @@
 				078967CF3D8D7B71B991CC4B /* JavaNativeBackend.swift in Sources */,
 				D2587D67622C4FD641C6BBCE /* JavaScriptBackend.swift in Sources */,
 				5A324B5D0497027EB242B85D /* KotlinBackend.swift in Sources */,
+				82CFA39DA2241B0EFA9E6344 /* LanguageServerDefinitions.swift in Sources */,
+				EA08DCC0F30F359CF58D0E33 /* LanguageServerManager.swift in Sources */,
 				F95C626AD547D1F740599B67 /* LuaBackend.swift in Sources */,
 				DD89058CFA7AD6FBB2D0FEA4 /* MachOParser.swift in Sources */,
 				F5B2BD917798227FF9B3D2CA /* MasterBrowsers.swift in Sources */,
@@ -19294,6 +19311,7 @@
 				0887AB6E4112DBD38C195CDF /* ProjectManifest.swift in Sources */,
 				A822512B759F5A456E3C135F /* PseudocodeExporter.swift in Sources */,
 				E41CE446E519D11C2C985B38 /* PythonBackend.swift in Sources */,
+				E6A274F6BAE84BEA52EE4C3C /* QuickJSEngine.swift in Sources */,
 				2A6BDBE79874C0F9678648C2 /* ReconstructedProjectGenerator.swift in Sources */,
 				6643F4142C82D8EA23A8F74B /* ReconstructionPipeline.swift in Sources */,
 				805C4A95EFBDEAD3CDD18CC8 /* ReconstructionRecord.swift in Sources */,
@@ -19307,6 +19325,7 @@
 				4E452D0617D2A8EE34FCE122 /* SourceReconstructor.swift in Sources */,
 				468D9038C610EA7D3C901910 /* StringAnalysis.swift in Sources */,
 				66442BBC60A77C56B113976B /* StringTools.swift in Sources */,
+				C36A526D35E7ED7CC6710970 /* SubprocessRunner.swift in Sources */,
 				4D7B54BD3D64B46843E1AA48 /* SwiftBackend.swift in Sources */,
 				5011863CA26857B49875B3E4 /* SwiftInterfaceEmitter.swift in Sources */,
 				351FD44BF1E60C2D4B116C49 /* SymbolAnalysis.swift in Sources */,
@@ -19315,6 +19334,7 @@
 				05D4266BEADA7685A2D80DA2 /* SymbolTools.swift in Sources */,
 				5258DCACAAAF915EFE50CE2E /* Symbols.swift in Sources */,
 				1C90681306BC6754856068BE /* TemporaryFilePolicy.swift in Sources */,
+				BE10A5F1F93201D4C86E1436 /* TreeSitterSourceValidator.swift in Sources */,
 				5001DF987B3FCD59E44B8C29 /* TypeRecovery.swift in Sources */,
 				6D3CB4F596D987A4555AD3FD /* WorkspacePreferences.swift in Sources */,
 				2042A6F68572DE5B55B7D742 /* ZigBackend.swift in Sources */,

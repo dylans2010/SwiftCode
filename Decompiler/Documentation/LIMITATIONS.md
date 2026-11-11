@@ -96,6 +96,65 @@ and integration gaps. Verified against current sources.
   function-level (address → file/line of the generated definition),
   not original line numbers.
 
+## Multi-language Assemble (Slices 1–6, added 2026-11-10)
+
+- **The original source language cannot be recovered** — a `.dylib`
+  is native machine code; reconstruction is C/assembly by nature.
+  The 17 backends rebuild *edited* source in the language the user
+  chose; they say nothing about what the original was written in.
+- **Managed/scripted languages are not native** — JavaScript, Python,
+  Lua and JVM Java reach a `.dylib` only through an embedded runtime
+  (JavaScriptCore/QuickJS, CPython, Lua interpreter, JNI). The
+  produced library is a shim plus a bundled script, not compiled
+  source, and the backend reports that. QuickJS has no JIT; it is an
+  interpreter, so QuickJS-built libraries are slower than
+  JavaScriptCore's.
+- **No SwiftPM tree-sitter grammar for Swift, Lua, Kotlin, Nim, or D**
+  — Swift is validated with SwiftParser (swift-syntax, already a repo
+  dependency); Lua/Kotlin/Nim/D sources are skipped by the validator
+  with an honest info diagnostic, not silently passed as valid.
+- **The tree-sitter validator checks syntax only** — it reports parse
+  errors before a compiler runs; it does not type-check, resolve
+  imports, or guarantee the code compiles.
+- **LSP is server management only** — `LanguageServerManager`
+  launches, supervises and restarts language servers and reports
+  missing binaries with install guidance. Completion, hover and
+  diagnostics are not wired into the main editor; that is a follow-up.
+  On Linux the manager does not use Foundation's
+  `terminationHandler` or `terminationStatus`: when a server is
+  launched from a Swift-concurrency context, the handler never fires
+  for a terminated process and `terminationStatus` can trap, because
+  the child inherits the pool thread's blocked SIGTERM mask and never
+  dies from SIGTERM at all. The manager instead polls `waitpid`
+  (WNOHANG) per server for exit detection and stops a server with
+  SIGTERM followed by SIGKILL after 200 ms if it is still alive.
+  SIGKILL cannot be blocked, so stopping is guaranteed. This is a
+  Linux-verified workaround; the macOS behaviour of the same code is
+  untested until the Mac build.
+- **Backend availability is toolchain-dependent** — a backend that
+  cannot find its toolchain reports unavailable with guidance; the
+  picker disables it. No backend is ever faked as available.
+- **JavaScript/Python grammars are pinned to tree-sitter 0.23.x** —
+  their 0.25.0 manifests use a relative-path file check to decide
+  whether to compile the external scanner, which evaluates false when
+  the package is a dependency under SwiftPM 6.2.3, producing a link
+  failure. 0.23.1 (JavaScript) and 0.23.6 (Python) list the scanner
+  unconditionally. Re-check before upgrading.
+- **The vendored QuickJS copies differ in layout** — the `CQuickJS`
+  target keeps `quickjs.h` under `include/` for its SwiftPM module
+  map and also flat at the target root for Assemble bundling; the
+  `Resources/QuickJS/` copy is flat only. The drift test pins the
+  flat files byte-identical; the `include/` copy is not covered by
+  that test.
+- **The Xcode build is still the gate** — the multi-language Assemble
+  work (including the new packages and the `CQuickJS` target) is
+  verified on Linux via the Foundation-only mini-package; the Xcode
+  build, the Xcode test suite, and a live Mach-O `.dylib` rebuild on
+  Dylan's Mac are pending. The `CQuickJS` Xcode target is declared in
+  `project.yml`; whether Xcode picks up the C target (including its
+  module map for `import CQuickJS`) from the hand-patched `.xcodeproj`
+  is unverified until the Mac build.
+
 ## AI (Decompile Assist)
 
 - Implemented end-to-end in code: asset loading (17 `.md` present),
