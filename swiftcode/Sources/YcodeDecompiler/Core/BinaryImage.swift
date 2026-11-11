@@ -107,6 +107,16 @@ public struct BinaryImage: Sendable {
     public var runpaths: [String] = []
     public var buildVersion: String?
     public var minOSVersion: String?
+    /// Target platform for Apple binaries: "macos", "ios",
+    /// "ios-simulator", "tvos", "tvos-simulator", "watchos",
+    /// "watchos-simulator", "bridgeos", "mac-catalyst", "driverkit",
+    /// "xros", "xros-simulator". nil for non-Apple formats.
+    public var targetPlatform: String?
+    /// Absolute file offset where this slice begins inside a fat/universal
+    /// container; 0 for thin files. `byteProvider` uses absolute offsets,
+    /// so slice bytes are read at `containerOffset ..< containerOffset +
+    /// byteCount`.
+    public var containerOffset: UInt64
     public var hasDebugInfo: Bool
     /// Raw bytes of the slice (bounded by file size; used for hex view & string scans).
     /// Stored lazily through `byteProvider` for large files.
@@ -122,7 +132,8 @@ public struct BinaryImage: Sendable {
                 isEncrypted: Bool, isSigned: Bool, entitlements: String?,
                 codeSignatureInfo: String?, buildVersion: String?, minOSVersion: String?,
                 hasDebugInfo: Bool, byteCount: Int64,
-                byteProvider: @escaping @Sendable (UInt64, UInt64) throws -> Data) {
+                byteProvider: @escaping @Sendable (UInt64, UInt64) throws -> Data,
+                targetPlatform: String? = nil, containerOffset: UInt64 = 0) {
         self.identity = identity
         self.format = format
         self.architecture = architecture
@@ -142,6 +153,8 @@ public struct BinaryImage: Sendable {
         self.codeSignatureInfo = codeSignatureInfo
         self.buildVersion = buildVersion
         self.minOSVersion = minOSVersion
+        self.targetPlatform = targetPlatform
+        self.containerOffset = containerOffset
         self.hasDebugInfo = hasDebugInfo
         self.byteCount = byteCount
         self.byteProvider = byteProvider

@@ -255,6 +255,36 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertTrue(source.diagnostics.contains { $0.message.lowercased().contains("decompiler") })
     }
 
+    /// spotifyglass.dylib-style failure mode: symbol/function metadata
+    /// exists but the disassembler decoded nothing and no decompiler ran.
+    /// Reconstruction must keep every function unresolved and must not
+    /// emit source files that pretend to contain recovered implementations.
+    func testMetadataOnlyPipelineNeverClaimsRecovery() {
+        let image = makeImage(exports: ["sg_a", "sg_b"], format: .machO, architecture: .arm64)
+        let fns = ["sg_a", "sg_b"].enumerated().map { index, name in
+            DecompilerFunction(
+                address: DecompilerAddress(virtual: 0x1000 + UInt64(index) * 0x100),
+                size: 0x100, name: name, kind: .exportedSymbol,
+                source: AnalysisSource(provenance: .symbolTable))
+        }
+        let source = SourceReconstructor.reconstruct(
+            image: image, functions: fns, pseudocode: [:],
+            instructions: [], decompilerAvailable: false)
+        XCTAssertEqual(source.records.count, 2)
+        XCTAssertTrue(source.records.allSatisfy { $0.quality == .unresolved },
+                      "metadata-only functions must be unresolved, got \(source.records.map(\.quality))")
+        XCTAssertFalse(source.records.contains { $0.hasPseudocode || $0.hasAssemblyFallback })
+        XCTAssertFalse(source.files.contains { $0.relativePath == "Sources/reconstructed.c" },
+                       "no C implementations may be emitted without disassembly or pseudocode")
+        XCTAssertFalse(source.files.contains { $0.relativePath.hasPrefix("Assembly/") },
+                       "no assembly fallback may be emitted without decoded instructions")
+        XCTAssertTrue(source.sourceMap.entries.isEmpty,
+                      "source map must not claim mappings for unrecovered functions")
+        XCTAssertTrue(source.diagnostics.contains {
+            $0.message.contains("no disassembly")
+        }, "diagnostics must report the missing disassembly honestly")
+    }
+
     // MARK: - Project generation
 
     func testProjectGenerationLayout() throws {
@@ -373,8 +403,11 @@ final class ReconstructionTests: XCTestCase {
         let loader = BinaryLoader()
         let container = try await loader.loadContainer(at: originalURL)
         let image = try await loader.parseSlice(container: container, sliceIndex: 0, sourceURL: originalURL)
-        XCTAssertEqual(image.format, .elf)
-        XCTAssertEqual(image.architecture, .x86_64)
+        // This test parses GNU `objdump -d` output, which only matches ELF
+        // fixtures; on macOS `cc -shared` produces a Mach-O dylib.
+        guard image.format == .elf, image.architecture == .x86_64 else {
+            throw XCTSkip("fixture is \(image.format.rawValue)/\(image.architecture.rawValue), not ELF/x86_64")
+        }
 
         let (objStatus, objOut) = try run("/usr/bin/objdump", ["-d", "--show-raw-insn", originalURL.path])
         XCTAssertEqual(objStatus, 0)
@@ -446,5 +479,141 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertEqual(answer(), 42)
         let greeting = unsafeBitCast(dlsym(handle, "sc_greeting"), to: GreetingFn.self)
         XCTAssertEqual(String(cString: greeting()), "hello")
+    }
+
+    /// End-to-end Mach-O arm64 (iOS) rebuild: parse → container-mode
+    /// llvm-objdump disassembly → assembly-preserving reconstruction →
+    /// platform-aware clang assemble → equivalence check. Guards on the
+    /// iPhoneOS SDK so it runs wherever Xcode CLT is installed.
+    func testMachOArm64EndToEndRebuild() async throws {
+        #if os(macOS)
+        guard let clang = AssembleService.locateCompiler() else {
+            throw XCTSkip("no C compiler available")
+        }
+        let sdk = Self.xcrunSDKPath("iphoneos")
+        guard let sdk else { throw XCTSkip("iPhoneOS SDK not available") }
+
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("e2e-macho-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: dir) }
+
+        let fixture = """
+            int sg_add(int a, int b) { return a + b; }
+            int sg_answer(void) { return 42; }
+            const char *sg_greeting(void) { return "hello"; }
+            """
+        let fixtureURL = dir.appendingPathComponent("fixture.c")
+        try fixture.write(to: fixtureURL, atomically: true, encoding: .utf8)
+        let originalURL = dir.appendingPathComponent("libsg.dylib")
+        let (ccStatus, ccOut) = try run(clang,
+            ["-dynamiclib", "-arch", "arm64", "-isysroot", sdk,
+             "-miphoneos-version-min=16.0", "-O1", "-o", originalURL.path, fixtureURL.path])
+        XCTAssertEqual(ccStatus, 0, ccOut)
+
+        let loader = BinaryLoader()
+        let container = try await loader.loadContainer(at: originalURL)
+        let image = try await loader.parseSlice(container: container, sliceIndex: 0, sourceURL: originalURL)
+        XCTAssertEqual(image.format, .machO)
+        XCTAssertEqual(image.architecture, .arm64)
+        XCTAssertEqual(image.targetPlatform, "ios")
+
+        await EngineBootstrap.installDefaults()
+        let registry = EngineRegistry.shared
+        guard let disassembler = await registry.resolveDisassembler(for: image) else {
+            throw XCTSkip("no disassembler backend available")
+        }
+        let exec = image.executableSections
+        let lo = exec.map { $0.address.value }.min() ?? 0
+        let hi = exec.map { $0.address.value + $0.size }.max() ?? 0
+        let instructions = try await disassembler.disassemble(
+            image: image,
+            start: DecompilerAddress(virtual: lo),
+            end: DecompilerAddress(virtual: hi), progress: nil)
+        XCTAssertFalse(instructions.isEmpty, "container-mode disassembly produced no instructions")
+
+        let exportedNames = image.exports.map(\.name)
+        for expected in ["sg_add", "sg_answer", "sg_greeting"] {
+            XCTAssertTrue(exportedNames.contains(expected)
+                          || exportedNames.contains("_\(expected)"),
+                          "missing export \(expected) in \(exportedNames)")
+        }
+
+        let sortedExports = image.exports.sorted { $0.address.value < $1.address.value }
+        var functions: [DecompilerFunction] = []
+        var usedAddrs = Set<UInt64>()
+        for (index, exp) in sortedExports.enumerated() {
+            let addr = exp.address.value
+            guard usedAddrs.insert(addr).inserted else { continue }
+            var end = addr + 64
+            for other in sortedExports[(index + 1)...] {
+                if other.address.value > addr { end = other.address.value; break }
+            }
+            let fnIns = instructions.filter { $0.address.value >= addr && $0.address.value < end }
+            guard !fnIns.isEmpty else { continue }
+            functions.append(DecompilerFunction(
+                address: DecompilerAddress(virtual: addr),
+                endAddress: DecompilerAddress(virtual: end),
+                size: end - addr, name: exp.name, kind: .exportedSymbol,
+                source: AnalysisSource(provenance: .symbolTable)))
+        }
+        XCTAssertGreaterThanOrEqual(functions.count, 3)
+
+        let source = SourceReconstructor.reconstruct(
+            image: image, functions: functions, pseudocode: [:],
+            instructions: instructions, decompilerAvailable: false)
+        XCTAssertGreaterThanOrEqual(source.records.count, 3)
+
+        let config = BuildConfiguration.inferred(from: image, libraryName: "sg")
+        XCTAssertEqual(config.platform, "ios")
+        XCTAssertEqual(config.sdkName, "iphoneos")
+        XCTAssertTrue(config.compileArguments(
+            source: fixtureURL, object: dir.appendingPathComponent("x.o"),
+            projectRoot: dir, format: .machO)
+            .contains { $0.hasPrefix("-miphoneos-version-min=") },
+            "iOS deployment flag missing from compile arguments")
+
+        let root = dir.appendingPathComponent("Reconstructed")
+        let project = try ReconstructedProjectGenerator.generate(
+            source: source, image: image, configuration: config, at: root)
+        let result = try await AssembleService.assemble(
+            project: project, originalImage: image, configuration: config)
+        XCTAssertTrue(result.succeeded,
+                      result.diagnostics.map { $0.message }.joined(separator: "\n"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: result.outputURL.path))
+
+        let rebuiltContainer = try await loader.loadContainer(at: result.outputURL)
+        let rebuilt = try await loader.parseSlice(container: rebuiltContainer, sliceIndex: 0,
+                                                  sourceURL: result.outputURL)
+        XCTAssertEqual(rebuilt.format, .machO)
+        XCTAssertEqual(rebuilt.architecture, .arm64)
+        XCTAssertEqual(rebuilt.targetPlatform, "ios")
+        let rebuiltExports = Set(rebuilt.exports.map { $0.name.hasPrefix("_") ? String($0.name.dropFirst()) : $0.name })
+        for expected in ["sg_add", "sg_answer", "sg_greeting"] {
+            XCTAssertTrue(rebuiltExports.contains(expected),
+                          "rebuilt library missing export \(expected): \(rebuiltExports)")
+        }
+        XCTAssertNotNil(result.equivalence)
+        XCTAssertEqual(result.equivalence?.missingExports.count, 0,
+                       "missing exports: \((result.equivalence?.missingExports ?? []).map { $0.name })")
+        #else
+        throw XCTSkip("Mach-O tests require macOS")
+        #endif
+    }
+
+    private static func xcrunSDKPath(_ name: String) -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+        process.arguments = ["--sdk", name, "--show-sdk-path"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        do { try process.run() } catch { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
+        let path = String(decoding: data, as: UTF8.self)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return path.hasPrefix("/") ? path : nil
     }
 }

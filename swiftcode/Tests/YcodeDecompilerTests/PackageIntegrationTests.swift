@@ -76,7 +76,7 @@ final class PackageIntegrationTests: XCTestCase {
         let cases: [(String, [String])] = [
             ("/bin/echo", ["hello", "world"]),
             ("/bin/sh", ["-c", "echo out; echo err >&2"]),
-            ("/bin/false", []),
+            ("/usr/bin/false", []),
             ("/bin/sh", ["-c", "exit 3"]),
         ]
         for (executable, args) in cases {

@@ -45,15 +45,7 @@ public struct TreeSitterSourceValidator: PreAssembleValidator {
                          configuration: BuildConfiguration) async throws -> [AssemblyDiagnostic] {
         var diagnostics: [AssemblyDiagnostic] = []
         var skippedExtensions: Set<String> = []
-        let roots = ["Sources", "Assembly", "Headers"]
-        var files: [URL] = []
-        for root in roots {
-            let dir = project.rootURL.appendingPathComponent(root, isDirectory: true)
-            guard let enumerator = FileManager.default.enumerator(at: dir, includingPropertiesForKeys: nil) else { continue }
-            for case let url as URL in enumerator where !url.hasDirectoryPath {
-                files.append(url)
-            }
-        }
+        let files = Self.collectSourceFiles(under: project.rootURL)
         for file in files.sorted(by: { $0.path < $1.path }) {
             let ext = file.pathExtension.lowercased()
             let relative = Self.relativePath(of: file, projectRoot: project.rootURL)
@@ -85,6 +77,21 @@ public struct TreeSitterSourceValidator: PreAssembleValidator {
                 suggestion: "Syntax errors in those files are still reported by the compiler during Assemble."))
         }
         return diagnostics
+    }
+
+    /// Synchronous directory walk — `DirectoryEnumerator` sequence iteration
+    /// is unavailable from async contexts on recent SDKs.
+    static func collectSourceFiles(under root: URL) -> [URL] {
+        var files: [URL] = []
+        for dir in ["Sources", "Assembly", "Headers"] {
+            let base = root.appendingPathComponent(dir, isDirectory: true)
+            guard let enumerator = FileManager.default.enumerator(
+                at: base, includingPropertiesForKeys: nil) else { continue }
+            for case let url as URL in enumerator where !url.hasDirectoryPath {
+                files.append(url)
+            }
+        }
+        return files
     }
 
     static let unsupportedExtensions: Set<String> = [
@@ -226,8 +233,13 @@ public struct TreeSitterSourceValidator: PreAssembleValidator {
     }
 
     static func relativePath(of url: URL, projectRoot: URL) -> String {
-        url.path.hasPrefix(projectRoot.path)
-            ? String(url.path.dropFirst(projectRoot.path.count + 1))
+        // `temporaryDirectory` yields /var/... while directory enumeration can
+        // return /private/var/... — compare symlink-resolved paths.
+        var rootPath = projectRoot.resolvingSymlinksInPath().path
+        while rootPath.hasSuffix("/") { rootPath.removeLast() }
+        let path = url.resolvingSymlinksInPath().path
+        return path.hasPrefix(rootPath)
+            ? String(path.dropFirst(rootPath.count + 1))
             : url.lastPathComponent
     }
 }

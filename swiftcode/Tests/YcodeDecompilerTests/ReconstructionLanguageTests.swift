@@ -321,12 +321,23 @@ final class ReconstructionLanguageTests: XCTestCase {
         let loader = BinaryLoader()
         let container = try await loader.loadContainer(at: originalURL)
         var image = try await loader.parseSlice(container: container, sliceIndex: 0, sourceURL: originalURL)
-        XCTAssertEqual(image.format, .elf)
+        // `cc -shared` emits ELF on Linux and Mach-O on macOS; the Swift
+        // backend configuration below targets ELF/x86_64.
+        XCTAssertTrue(image.format == .elf || image.format == .machO,
+                      "unexpected fixture format \(image.format.rawValue)")
+        guard image.format == .elf else {
+            throw XCTSkip("fixture is \(image.format.rawValue), not ELF")
+        }
         image.symbols.append(BinarySymbol(name: "$s7fixture6sc_add", kind: .global,
                                           source: AnalysisSource(provenance: .symbolTable)))
 
+        func baseExportName(_ name: String) -> String {
+            // Mach-O symbols carry a leading underscore; ELF names do not.
+            name.hasPrefix("_") ? String(name.dropFirst()) : name
+        }
         let sortedExports = image.exports.sorted { $0.address.value < $1.address.value }
-        XCTAssertEqual(Set(sortedExports.map(\.name)), ["sc_add", "sc_answer", "sc_greeting"])
+        XCTAssertEqual(Set(sortedExports.map { baseExportName($0.name) }),
+                       ["sc_add", "sc_answer", "sc_greeting"])
         var functions: [DecompilerFunction] = []
         var pseudocode: [UInt64: DecompilationResult] = [:]
         for (index, exp) in sortedExports.enumerated() {
@@ -345,7 +356,7 @@ final class ReconstructionLanguageTests: XCTestCase {
             let hex = String(start, radix: 16, uppercase: true)
             let padded = String(repeating: "0", count: max(0, 8 - hex.count)) + hex
             let functionName = "FUN_\(padded)"
-            switch exp.name {
+            switch baseExportName(exp.name) {
             case "sc_add":
                 pseudocode[start] = DecompilationResult(
                     functionAddress: DecompilerAddress(virtual: start), functionName: functionName,
@@ -385,12 +396,15 @@ final class ReconstructionLanguageTests: XCTestCase {
         let rebuilt = try await loader.parseSlice(container: rebuiltContainer, sliceIndex: 0,
                                                   sourceURL: result.outputURL)
         let rebuiltExports = Set(rebuilt.exports.map(\.name))
-        XCTAssertTrue(rebuiltExports.contains("sc_add"))
-        XCTAssertTrue(rebuiltExports.contains("sc_answer"))
-        XCTAssertTrue(rebuiltExports.contains("sc_greeting"))
-        XCTAssertTrue(rebuiltExports.contains("sc_add_swift"))
-        XCTAssertTrue(rebuiltExports.contains("sc_answer_swift"))
-        XCTAssertTrue(rebuiltExports.contains("sc_greeting_swift"))
+        func hasExport(_ names: Set<String>, _ base: String) -> Bool {
+            names.contains(base) || names.contains("_\(base)")
+        }
+        XCTAssertTrue(hasExport(rebuiltExports, "sc_add"))
+        XCTAssertTrue(hasExport(rebuiltExports, "sc_answer"))
+        XCTAssertTrue(hasExport(rebuiltExports, "sc_greeting"))
+        XCTAssertTrue(hasExport(rebuiltExports, "sc_add_swift"))
+        XCTAssertTrue(hasExport(rebuiltExports, "sc_answer_swift"))
+        XCTAssertTrue(hasExport(rebuiltExports, "sc_greeting_swift"))
         XCTAssertTrue(result.equivalence?.isABICompatible == true)
 
         guard let handle = dlopen(result.outputURL.path, RTLD_NOW) else {
@@ -401,13 +415,17 @@ final class ReconstructionLanguageTests: XCTestCase {
         typealias AddFn = @convention(c) (Int32, Int32) -> Int32
         typealias AnswerFn = @convention(c) () -> Int32
         typealias GreetingFn = @convention(c) () -> UnsafePointer<CChar>
-        let add = unsafeBitCast(dlsym(handle, "sc_add"), to: AddFn.self)
+        func lookup(_ name: String) -> UnsafeMutableRawPointer? {
+            // Mach-O exports carry a leading underscore that dlsym requires.
+            dlsym(handle, name) ?? dlsym(handle, "_\(name)")
+        }
+        let add = unsafeBitCast(lookup("sc_add"), to: AddFn.self)
         XCTAssertEqual(add(2, 3), 5)
-        let addSwift = unsafeBitCast(dlsym(handle, "sc_add_swift"), to: AddFn.self)
+        let addSwift = unsafeBitCast(lookup("sc_add_swift"), to: AddFn.self)
         XCTAssertEqual(addSwift(2, 3), 5)
-        let answerSwift = unsafeBitCast(dlsym(handle, "sc_answer_swift"), to: AnswerFn.self)
+        let answerSwift = unsafeBitCast(lookup("sc_answer_swift"), to: AnswerFn.self)
         XCTAssertEqual(answerSwift(), 42)
-        let greetingSwift = unsafeBitCast(dlsym(handle, "sc_greeting_swift"), to: GreetingFn.self)
+        let greetingSwift = unsafeBitCast(lookup("sc_greeting_swift"), to: GreetingFn.self)
         XCTAssertEqual(String(cString: greetingSwift()), "hello")
     }
 
@@ -441,8 +459,17 @@ final class ReconstructionLanguageTests: XCTestCase {
         let loader = BinaryLoader()
         let container = try await loader.loadContainer(at: originalURL)
         var image = try await loader.parseSlice(container: container, sliceIndex: 0, sourceURL: originalURL)
+        // The Rust backend configuration targets ELF/x86_64; `cc -shared`
+        // produces Mach-O on macOS, which this fixture cannot exercise.
+        guard image.format == .elf else {
+            throw XCTSkip("fixture is \(image.format.rawValue), not ELF")
+        }
         image.symbols.append(BinarySymbol(name: "_RNvC7fixture6sc_add", kind: .global,
                                           source: AnalysisSource(provenance: .symbolTable)))
+        func baseExportName(_ name: String) -> String {
+            // Mach-O symbols carry a leading underscore; ELF names do not.
+            name.hasPrefix("_") ? String(name.dropFirst()) : name
+        }
         let sortedExports = image.exports.sorted { $0.address.value < $1.address.value }
         var functions: [DecompilerFunction] = []
         var pseudocode: [UInt64: DecompilationResult] = [:]
@@ -462,7 +489,7 @@ final class ReconstructionLanguageTests: XCTestCase {
             let hex = String(start, radix: 16, uppercase: true)
             let padded = String(repeating: "0", count: max(0, 8 - hex.count)) + hex
             let functionName = "FUN_\(padded)"
-            switch exp.name {
+            switch baseExportName(exp.name) {
             case "sc_add":
                 pseudocode[start] = DecompilationResult(
                     functionAddress: DecompilerAddress(virtual: start), functionName: functionName,
@@ -516,9 +543,12 @@ final class ReconstructionLanguageTests: XCTestCase {
         let rebuilt = try await loader.parseSlice(container: rebuiltContainer, sliceIndex: 0,
                                                   sourceURL: result.outputURL)
         let rebuiltExports = Set(rebuilt.exports.map(\.name))
-        XCTAssertTrue(rebuiltExports.contains("sc_add_rs"))
-        XCTAssertTrue(rebuiltExports.contains("sc_answer_rs"))
-        XCTAssertTrue(rebuiltExports.contains("sc_greeting_rs"))
+        func hasExport(_ base: String) -> Bool {
+            rebuiltExports.contains(base) || rebuiltExports.contains("_\(base)")
+        }
+        XCTAssertTrue(hasExport("sc_add_rs"))
+        XCTAssertTrue(hasExport("sc_answer_rs"))
+        XCTAssertTrue(hasExport("sc_greeting_rs"))
 
         guard let coreHandle = dlopen(originalURL.path, RTLD_NOW | RTLD_GLOBAL) else {
             XCTFail("dlopen of C core failed: \(String(cString: dlerror()))")
@@ -533,11 +563,15 @@ final class ReconstructionLanguageTests: XCTestCase {
         typealias AddFn = @convention(c) (Int32, Int32) -> Int32
         typealias AnswerFn = @convention(c) () -> Int32
         typealias GreetingFn = @convention(c) () -> UnsafePointer<CChar>
-        let addRs = unsafeBitCast(dlsym(handle, "sc_add_rs"), to: AddFn.self)
+        func lookup(_ name: String) -> UnsafeMutableRawPointer? {
+            // Mach-O exports carry a leading underscore that dlsym requires.
+            dlsym(handle, name) ?? dlsym(handle, "_\(name)")
+        }
+        let addRs = unsafeBitCast(lookup("sc_add_rs"), to: AddFn.self)
         XCTAssertEqual(addRs(2, 3), 5)
-        let answerRs = unsafeBitCast(dlsym(handle, "sc_answer_rs"), to: AnswerFn.self)
+        let answerRs = unsafeBitCast(lookup("sc_answer_rs"), to: AnswerFn.self)
         XCTAssertEqual(answerRs(), 42)
-        let greetingRs = unsafeBitCast(dlsym(handle, "sc_greeting_rs"), to: GreetingFn.self)
+        let greetingRs = unsafeBitCast(lookup("sc_greeting_rs"), to: GreetingFn.self)
         XCTAssertEqual(String(cString: greetingRs()), "hello")
     }
 }

@@ -7,18 +7,15 @@ import YcodeSubprocess
 /// `which llvm-objdump` on PATH, then the `SWIFTCODE_LLVM_OBJDUMP`
 /// environment override (checked first).
 ///
-/// Rather than disassembling the container file directly (which fails or
-/// picks the wrong slice for fat Mach-O / multi-arch inputs), each
-/// executable section overlapping the requested range is extracted through
-/// the image's `byteProvider` and disassembled as a raw binary:
-///
-///   llvm-objdump -D -b binary --triple=<arch-triple>
-///       --adjust-vma=<sectionVMA> --start-address=<lo> --stop-address=<hi>
-///
-/// This works uniformly for Mach-O, ELF and PE payloads on every
-/// architecture LLVM knows (AArch64, x86/x86_64, ARM, RISC-V, PowerPC, MIPS).
-/// `-D` forces linear disassembly of the whole section; bytes LLVM cannot
-/// decode surface as `.byte`/`(bad)` and are classified `.invalid`.
+/// Preferred path is whole-container disassembly: the image's slice bytes
+/// are written to a temp file and `llvm-objdump -d` decodes every
+/// instruction-bearing section natively (Mach-O `__text`/`__stubs`/
+/// `__objc_stubs`, ELF `.text`, COFF `.text`). A per-section raw-bytes
+/// fallback is retained for images llvm-objdump cannot parse as a
+/// container. This works uniformly for Mach-O, ELF and PE payloads on
+/// every architecture LLVM knows (AArch64, x86/x86_64, ARM, RISC-V,
+/// PowerPC, MIPS). Bytes LLVM cannot decode surface as `.byte`/`(bad)`
+/// and are classified `.invalid`.
 public struct ObjDumpDisassembler: DisassemblerProvider {
     public let id = "llvm-objdump"
     public let displayName = "LLVM objdump"
@@ -73,6 +70,33 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         guard !sections.isEmpty else {
             throw DecompilerError.unmappedAddress(
                 String(format: "0x%llx-0x%llx", lo, hi))
+        }
+
+        // Preferred path: `llvm-objdump` understands Mach-O, ELF and COFF
+        // containers natively, so the whole slice is written to a temp file
+        // and disassembled in one pass. This covers every instruction-bearing
+        // section — including `__stubs`/`__objc_stubs`, which per-section
+        // extraction and `otool -x` both miss.
+        let listing: [ListingEntry]?
+        do {
+            listing = try await Self.containerListing(tool: tool, image: image)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            listing = nil
+        }
+        if let lines = listing {
+            var instructions: [Instruction] = []
+            for entry in lines where entry.address >= lo && entry.address < hi {
+                let parsed = ParsedLine(
+                    address: entry.address,
+                    bytes: Self.decodeContainerBytes(
+                        hexDigits: entry.hexDigits, architecture: image.architecture),
+                    mnemonic: entry.mnemonic,
+                    operandText: entry.operandText)
+                instructions.append(makeInstruction(parsed, image: image))
+            }
+            return instructions.sorted { $0.address.value < $1.address.value }
         }
 
         let fileManager = FileManager.default
@@ -147,6 +171,146 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         }
 
         return instructions.sorted { $0.address.value < $1.address.value }
+    }
+
+    // MARK: - Container mode
+
+    /// Parsed instruction line retained for range filtering.
+    private struct ListingEntry {
+        var address: UInt64
+        var hexDigits: String
+        var mnemonic: String
+        var operandText: String
+    }
+
+    /// Cache of whole-container `llvm-objdump -d` output, keyed by the
+    /// slice's identity so fat slices and re-imports do not collide.
+    private final class ListingCache: @unchecked Sendable {
+        static let shared = ListingCache()
+        private let lock = NSLock()
+        private var entries: [String: [ListingEntry]] = [:]
+        private var order: [String] = []
+        private let capacity = 3
+
+        func get(_ key: String) -> [ListingEntry]? {
+            lock.lock(); defer { lock.unlock() }
+            return entries[key]
+        }
+        func put(key: String, value: [ListingEntry]) {
+            lock.lock(); defer { lock.unlock() }
+            if entries[key] == nil { order.append(key) }
+            entries[key] = value
+            while order.count > capacity {
+                entries.removeValue(forKey: order.removeFirst())
+            }
+        }
+    }
+
+    /// Extract the image's slice bytes, write them to a temp file and run
+    /// `llvm-objdump -d` once. Returns nil (caller falls back to per-section
+    /// extraction) when the image cannot be materialised or objdump fails.
+    private static func containerListing(tool: String, image: BinaryImage) async throws -> [ListingEntry]? {
+        let key = "\(image.identity.originalLocation)|\(image.containerOffset)|\(image.byteCount)|\(image.architecture.rawValue)"
+        if let cached = ListingCache.shared.get(key) { return cached }
+
+        let length = Int(image.byteCount)
+        guard length > 0 else { return nil }
+        let bytes: Data
+        do {
+            bytes = try image.bytes(fileOffset: image.containerOffset, length: length)
+        } catch { return nil }
+        guard !bytes.isEmpty else { return nil }
+
+        let tmpDir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SwiftCodeDecompiler/objdump", isDirectory: true)
+        try? FileManager.default.createDirectory(at: tmpDir, withIntermediateDirectories: true)
+        let tmpFile = tmpDir.appendingPathComponent("container-\(UUID().uuidString).bin")
+        try bytes.write(to: tmpFile)
+        defer { try? FileManager.default.removeItem(at: tmpFile) }
+
+        var entries: [ListingEntry] = []
+        do {
+            for try await raw in StreamingSubprocess.lines(URL(fileURLWithPath: tool), ["-d", tmpFile.path]) {
+                if let parsed = parseContainerLine(raw) { entries.append(parsed) }
+            }
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            return nil
+        }
+        guard !entries.isEmpty else { return nil }
+        ListingCache.shared.put(key: key, value: entries)
+        return entries
+    }
+
+    /// Parse `llvm-objdump -d` output lines:
+    /// `    <hexaddr>: <hex bytes>  \t<mnemonic>\t<operands>`
+    /// Section headers (`Disassembly of section …`), symbol headers
+    /// (`<addr> <name>:`) and data dumps return nil.
+    private static func parseContainerLine(_ raw: String) -> ListingEntry? {
+        var line = raw
+        if line.hasSuffix("\r") { line.removeLast() }
+        guard let colon = line.firstIndex(of: ":") else { return nil }
+        let addrText = line[..<colon].trimmingCharacters(in: .whitespaces)
+        guard !addrText.isEmpty, addrText.allSatisfy(\.isHexDigit),
+              let address = UInt64(addrText, radix: 16) else { return nil }
+
+        let fields = line[line.index(after: colon)...]
+            .components(separatedBy: "\t")
+        var index = 0
+        while index < fields.count,
+              fields[index].trimmingCharacters(in: .whitespaces).isEmpty {
+            index += 1
+        }
+        guard index + 1 < fields.count else { return nil }
+
+        // First tab field after the colon holds the byte-hex column
+        // (space separated for some targets); the mnemonic follows.
+        let hexField = fields[index]
+        let hexDigits = hexField.filter(\.isHexDigit)
+        guard hexDigits.count >= 2, hexDigits.count % 2 == 0 else { return nil }
+
+        let mnemonic = fields[index + 1].trimmingCharacters(in: .whitespaces)
+        guard !mnemonic.isEmpty else { return nil }
+
+        let operandText = fields[(index + 2)...]
+            .joined(separator: " ")
+            .trimmingCharacters(in: .whitespaces)
+
+        return ListingEntry(address: address, hexDigits: hexDigits,
+                            mnemonic: mnemonic, operandText: operandText)
+    }
+
+    /// Convert the objdump hex column to raw instruction bytes. AArch64
+    /// prints the 32-bit instruction word (stored little-endian in the
+    /// file); other targets print bytes in memory order.
+    private static func decodeContainerBytes(hexDigits: String,
+                                             architecture: BinaryArchitecture) -> Data {
+        switch architecture {
+        case .arm64, .arm64_32:
+            guard hexDigits.count == 8, let word = UInt32(hexDigits, radix: 16) else {
+                return bytePairs(hexDigits)
+            }
+            var bytes = Data()
+            bytes.reserveCapacity(4)
+            for shift in stride(from: 0, through: 24, by: 8) {
+                bytes.append(UInt8((word >> UInt32(shift)) & 0xff))
+            }
+            return bytes
+        default:
+            return bytePairs(hexDigits)
+        }
+    }
+
+    private static func bytePairs(_ hexDigits: String) -> Data {
+        var bytes = Data()
+        bytes.reserveCapacity(hexDigits.count / 2)
+        var nibbles = hexDigits.makeIterator()
+        while let hi = nibbles.next(), let lo = nibbles.next(),
+              let h = hi.hexDigitValue, let l = lo.hexDigitValue {
+            bytes.append(UInt8(h * 16 + l))
+        }
+        return bytes
     }
 
     // MARK: - Parsing
@@ -254,8 +418,10 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         "blt", "bgt", "ble", "bge", "bso", "bns", "bun",
     ]
 
-    private static func classify(mnemonic: String,
-                                 operandText: String) -> (Instruction.Classification, DecompilerAddress?) {
+    /// Shared with `OtoolDisassembler`, which reuses the same mnemonic
+    /// classification tables for Mach-O output.
+    static func classify(mnemonic: String,
+                         operandText: String) -> (Instruction.Classification, DecompilerAddress?) {
         let lower = mnemonic.lowercased()
 
         let isReturn = returnMnemonics.contains(lower)
@@ -402,9 +568,10 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
             let path = ObjDumpDisassembler.locateToolPath()
             var ver: String? = nil
             if let path,
-               let out = try? Subprocess.run(path, ["--version"], captureStderr: false),
+               let out = try? Subprocess.run(path, ["--version"], captureStderr: true),
                out.status == 0 {
-                ver = Self.parseVersion(out.stdoutText)
+                let text = out.stdoutText.isEmpty ? out.stderrText : out.stdoutText
+                ver = Self.parseVersion(text)
             }
 
             lock.lock()

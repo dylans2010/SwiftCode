@@ -89,6 +89,7 @@ public struct AssemblyFallback {
         for fn in functions {
             let asmName = ReconstructionUtilities.asmSymbolName(fn.cName, format: format)
             out.append("")
+            out.append("/* original: \(fn.function.originalName ?? fn.function.name) @ 0x\(String(fn.function.address.value, radix: 16)) */")
             out.append(".globl \(asmName)")
             if format == .elf {
                 out.append(".type \(asmName),@function")

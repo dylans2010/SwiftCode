@@ -261,6 +261,7 @@ public struct MachOParser: BinaryParser {
         var sawCodeSignature = false
         var minOSVersion: String? = nil
         var buildVersion: String? = nil
+        var targetPlatform: String? = nil
         var uuidBytes: Data? = nil
         var signatureNotes: [String] = []
 
@@ -379,12 +380,20 @@ public struct MachOParser: BinaryParser {
                 let sdk = try cur.u32()
                 _ = try cur.u32() // ntools
                 minOSVersion = unpackVersion(minos)
+                targetPlatform = platformID(platform)
                 buildVersion = "platform \(platformName(platform)), minOS \(unpackVersion(minos)), SDK \(unpackVersion(sdk))"
 
             case LC.versionMinMacOSX, LC.versionMinIPhoneOS, LC.versionMinTVOS, LC.versionMinWatchOS:
                 let v = try cur.u32()
                 _ = try cur.u32() // sdk version
                 minOSVersion = unpackVersion(v)
+                targetPlatform = switch cmd {
+                case LC.versionMinMacOSX: "macos"
+                case LC.versionMinIPhoneOS: "ios"
+                case LC.versionMinTVOS: "tvos"
+                case LC.versionMinWatchOS: "watchos"
+                default: nil
+                }
 
             default:
                 break // unknown command: skipped via cmdsize
@@ -458,7 +467,8 @@ public struct MachOParser: BinaryParser {
             entitlements: nil, codeSignatureInfo: codeSigInfo,
             buildVersion: buildVersion, minOSVersion: minOSVersion,
             hasDebugInfo: hasLocalDefinedSymbol || sawDWARF,
-            byteCount: Int64(slice.size), byteProvider: byteProvider)
+            byteCount: Int64(slice.size), byteProvider: byteProvider,
+            targetPlatform: targetPlatform, containerOffset: slice.offset)
         image.installName = installName
         image.runpaths = runpaths
         return image
@@ -711,6 +721,26 @@ public struct MachOParser: BinaryParser {
 
     private func versionString(_ packed: UInt32) -> String? {
         packed == 0 ? nil : unpackVersion(packed)
+    }
+
+    /// Canonical platform identifier for `BinaryImage.targetPlatform`,
+    /// derived from the LC_BUILD_VERSION platform constant.
+    private func platformID(_ p: UInt32) -> String? {
+        switch p {
+        case 1: return "macos"
+        case 2: return "ios"
+        case 3: return "tvos"
+        case 4: return "watchos"
+        case 5: return "bridgeos"
+        case 6: return "mac-catalyst"
+        case 7: return "ios-simulator"
+        case 8: return "tvos-simulator"
+        case 9: return "watchos-simulator"
+        case 10: return "driverkit"
+        case 11: return "xros"
+        case 12: return "xros-simulator"
+        default: return nil
+        }
     }
 
     private func platformName(_ p: UInt32) -> String {

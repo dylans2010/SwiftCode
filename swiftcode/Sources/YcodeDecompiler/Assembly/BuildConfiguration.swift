@@ -1,4 +1,5 @@
 import Foundation
+import YcodeSubprocess
 
 public struct BuildConfiguration: Sendable, Codable {
     public var outputFileName: String
@@ -28,6 +29,15 @@ public struct BuildConfiguration: Sendable, Codable {
     public var manualSettings: [String]
     public var unrecoveredSettings: [String]
     public var format: BinaryFormat = .unknown
+    /// Target platform for Apple builds: "macos", "ios", "ios-simulator",
+    /// "tvos", "tvos-simulator", "watchos", "watchos-simulator",
+    /// "bridgeos", "mac-catalyst", "driverkit", "xros", "xros-simulator".
+    /// nil means host platform / non-Apple format.
+    public var platform: String? = nil
+    /// SDK name or absolute path (e.g. "iphoneos", "macosx",
+    /// "/Applications/Xcode.app/.../iPhoneOS.sdk"). Names are resolved via
+    /// `xcrun --sdk <name> --show-sdk-path` at argument-build time.
+    public var sdkName: String? = nil
     public var selectedBackendID: String? = nil
     public var perBackendFlags: [String: [String]] = [:]
 
@@ -59,6 +69,8 @@ public struct BuildConfiguration: Sendable, Codable {
         case manualSettings
         case unrecoveredSettings
         case format
+        case platform
+        case sdkName
         case selectedBackendID
         case perBackendFlags
     }
@@ -92,6 +104,8 @@ public struct BuildConfiguration: Sendable, Codable {
         manualSettings = try container.decodeIfPresent([String].self, forKey: .manualSettings) ?? []
         unrecoveredSettings = try container.decodeIfPresent([String].self, forKey: .unrecoveredSettings) ?? []
         format = try container.decodeIfPresent(BinaryFormat.self, forKey: .format) ?? .unknown
+        platform = try container.decodeIfPresent(String.self, forKey: .platform)
+        sdkName = try container.decodeIfPresent(String.self, forKey: .sdkName)
         selectedBackendID = try container.decodeIfPresent(String.self, forKey: .selectedBackendID)
         perBackendFlags = try container.decodeIfPresent([String: [String]].self, forKey: .perBackendFlags) ?? [:]
     }
@@ -125,6 +139,8 @@ public struct BuildConfiguration: Sendable, Codable {
         try container.encode(manualSettings, forKey: .manualSettings)
         try container.encode(unrecoveredSettings, forKey: .unrecoveredSettings)
         try container.encode(format, forKey: .format)
+        try container.encode(platform, forKey: .platform)
+        try container.encode(sdkName, forKey: .sdkName)
         try container.encode(selectedBackendID, forKey: .selectedBackendID)
         try container.encode(perBackendFlags, forKey: .perBackendFlags)
     }
@@ -143,6 +159,7 @@ public struct BuildConfiguration: Sendable, Codable {
                 compatibilityVersion: String? = nil, universalBinary: Bool = false,
                 inferredSettings: [String] = [], manualSettings: [String] = [],
                 unrecoveredSettings: [String] = [], format: BinaryFormat = .unknown,
+                platform: String? = nil, sdkName: String? = nil,
                 selectedBackendID: String? = nil, perBackendFlags: [String: [String]] = [:]) {
         self.outputFileName = outputFileName
         self.outputDirectory = outputDirectory
@@ -171,6 +188,8 @@ public struct BuildConfiguration: Sendable, Codable {
         self.manualSettings = manualSettings
         self.unrecoveredSettings = unrecoveredSettings
         self.format = format
+        self.platform = platform
+        self.sdkName = sdkName
         self.selectedBackendID = selectedBackendID
         self.perBackendFlags = perBackendFlags
     }
@@ -185,7 +204,7 @@ public struct BuildConfiguration: Sendable, Codable {
         }
         var inferred: [String] = ["outputFileName", "architectures"]
         var unrecovered: [String] = []
-        var deploymentTarget = image.minOSVersion
+        let deploymentTarget = image.minOSVersion
         if deploymentTarget != nil { inferred.append("deploymentTarget") }
         else { unrecovered.append("deploymentTarget") }
         var installName = image.installName
@@ -210,9 +229,18 @@ public struct BuildConfiguration: Sendable, Codable {
                 var lib = String(base.dropFirst(3))
                 if lib.hasSuffix(".dylib") { lib = String(lib.dropLast(6)) }
                 if lib.hasSuffix(".tbd") { lib = String(lib.dropLast(4)) }
-                linkedLibraries.append(lib)
+                // Versioned install names (libSystem.B.dylib, libc++.1.dylib)
+                // map to the unversioned -l name the SDK provides.
+                if let dot = lib.firstIndex(of: ".") { lib = String(lib[..<dot]) }
+                if !lib.isEmpty { linkedLibraries.append(lib) }
             }
         }
+        linkedLibraries = Array(Set(linkedLibraries)).sorted()
+        frameworks = Array(Set(frameworks)).sorted()
+        let platform = image.targetPlatform
+        let sdkName = platform.map { Self.defaultSDKName(for: $0) }
+        if platform != nil { inferred.append("platform") }
+        if sdkName != nil { inferred.append("sdk") }
         if !frameworks.isEmpty || !linkedLibraries.isEmpty { inferred.append("dependencies") }
         var config = BuildConfiguration(
             outputFileName: outputFileName,
@@ -226,7 +254,9 @@ public struct BuildConfiguration: Sendable, Codable {
             runpaths: runpaths,
             installName: installName,
             universalBinary: false,
-            format: image.format)
+            format: image.format,
+            platform: platform,
+            sdkName: sdkName)
         var backendsToCheck: [any AssembleBackend] = [ClangBackend()]
         switch LanguageIdentification.identify(image: image) {
         case .swift: backendsToCheck.append(SwiftBackend())
@@ -266,12 +296,12 @@ public struct BuildConfiguration: Sendable, Codable {
                 args.append("-arch")
                 args.append(arch.clangName)
             }
-            if let sdk {
+            if let sdkPath = resolvedSDKPath() {
                 args.append("-isysroot")
-                args.append(sdk)
+                args.append(sdkPath)
             }
-            if let deploymentTarget {
-                args.append("-mmacosx-version-min=\(deploymentTarget)")
+            if let deploymentTarget, let minFlag = Self.deploymentMinFlag(for: platform) {
+                args.append("\(minFlag)=\(deploymentTarget)")
             }
         } else {
             args.append("-fPIC")
@@ -305,12 +335,12 @@ public struct BuildConfiguration: Sendable, Codable {
                 args.append("-arch")
                 args.append(arch.clangName)
             }
-            if let deploymentTarget {
-                args.append("-mmacosx-version-min=\(deploymentTarget)")
+            if let deploymentTarget, let minFlag = Self.deploymentMinFlag(for: platform) {
+                args.append("\(minFlag)=\(deploymentTarget)")
             }
-            if let sdk {
+            if let sdkPath = resolvedSDKPath() {
                 args.append("-isysroot")
-                args.append(sdk)
+                args.append(sdkPath)
             }
             if let installName {
                 args.append("-install_name")
@@ -337,6 +367,112 @@ public struct BuildConfiguration: Sendable, Codable {
         }
         args.append(contentsOf: linkerFlags)
         return args
+    }
+
+    // MARK: - Platform / SDK resolution
+
+    /// Canonical SDK name for an Apple target platform (xcrun --sdk name).
+    public static func defaultSDKName(for platform: String?) -> String {
+        switch platform {
+        case "ios", "ios-simulator", "mac-catalyst": return "iphoneos"
+        case "tvos", "tvos-simulator": return "appletvos"
+        case "watchos", "watchos-simulator": return "watchos"
+        case "xros", "xros-simulator": return "xros"
+        case "bridgeos": return "bridgeos"
+        case "driverkit": return "driverkit"
+        default: return "macosx"
+        }
+    }
+
+    /// clang `-m…-version-min` flag stem for the platform, or nil when the
+    /// platform is unknown/host (caller then emits no deployment flag).
+    public static func deploymentMinFlag(for platform: String?) -> String? {
+        switch platform {
+        case "macos": return "-mmacosx-version-min"
+        case "ios": return "-miphoneos-version-min"
+        case "ios-simulator": return "-mios-simulator-version-min"
+        case "tvos": return "-mtvos-version-min"
+        case "tvos-simulator": return "-mtvos-simulator-version-min"
+        case "watchos": return "-mwatchos-version-min"
+        case "watchos-simulator": return "-mwatchos-simulator-version-min"
+        case "bridgeos": return "-mbridgeos-version-min"
+        case "xros": return "-mxros-version-min"
+        case "xros-simulator": return "-mxros-simulator-version-min"
+        case "mac-catalyst", "driverkit": return nil
+        default: return "-mmacosx-version-min"
+        }
+    }
+
+    /// Resolve `sdk`/`sdkName` to an SDK path. Absolute paths pass through;
+    /// names go through `xcrun --sdk <name> --show-sdk-path` (cached).
+    /// Returns nil when no SDK can be resolved — callers then omit
+    /// `-isysroot` and the compiler default applies.
+    public func resolvedSDKPath() -> String? {
+        if let sdk, sdk.hasPrefix("/") { return sdk }
+        let name = sdkName ?? sdk
+        guard let name, !name.isEmpty else { return nil }
+        if name.hasPrefix("/") { return name }
+        return Self.sdkPathCache.path(for: name)
+    }
+
+    /// Process-wide cache of xcrun SDK resolutions.
+    private static let sdkPathCache = SDKPathCache()
+
+    private final class SDKPathCache: @unchecked Sendable {
+        private let lock = NSLock()
+        private var paths: [String: String?] = [:]
+
+        func path(for name: String) -> String? {
+            lock.lock()
+            if let cached = paths[name] { lock.unlock(); return cached }
+            lock.unlock()
+
+            var resolved: String?
+            for xcrun in ["/usr/bin/xcrun", "/bin/xcrun"]
+            where FileManager.default.isExecutableFile(atPath: xcrun) {
+                if let out = try? Subprocess.run(
+                    xcrun, ["--sdk", name, "--show-sdk-path"],
+                    captureStderr: false),
+                   out.status == 0 {
+                    let path = out.stdoutText
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !path.isEmpty, path.hasPrefix("/") {
+                        resolved = path
+                        break
+                    }
+                }
+            }
+            // Fall back to well-known SDK directories when xcrun is absent
+            // or the named SDK is not installed.
+            if resolved == nil {
+                let candidates = [
+                    "/Library/Developer/CommandLineTools/SDKs/\(sdkFileName(for: name))",
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/\(sdkFileName(for: name))",
+                ]
+                for candidate in candidates where FileManager.default.fileExists(atPath: candidate) {
+                    resolved = candidate
+                    break
+                }
+            }
+
+            lock.lock()
+            paths[name] = resolved
+            lock.unlock()
+            return resolved
+        }
+
+        private func sdkFileName(for name: String) -> String {
+            switch name {
+            case "macosx": return "MacOSX.sdk"
+            case "iphoneos": return "iPhoneOS.sdk"
+            case "appletvos": return "AppleTVOS.sdk"
+            case "watchos": return "WatchOS.sdk"
+            case "xros": return "XRSimulator.sdk"
+            case "bridgeos": return "iPhoneOS.sdk"
+            case "driverkit": return "DriverKit.sdk"
+            default: return "\(name).sdk"
+            }
+        }
     }
 }
 

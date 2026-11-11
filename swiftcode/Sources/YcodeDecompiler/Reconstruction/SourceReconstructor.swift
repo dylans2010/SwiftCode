@@ -77,7 +77,9 @@ public enum SourceReconstructor {
             if let result = pseudocode[fn.address.value], !result.pseudocode.isEmpty {
                 enginesUsed.insert(result.engineID)
                 let mapped = result.signature.flatMap {
-                    ReconstructionUtilities.mapGhidraSignature($0, functionName: result.functionName)
+                    ReconstructionUtilities.mapGhidraSignature(
+                        Self.normalizeEngineSignature($0),
+                        functionName: result.functionName)
                 }
                 let returnType = mapped?.returnType
                     ?? (result.returnType.map { ReconstructionUtilities.ghidraTypeToC($0) })
@@ -179,6 +181,35 @@ public enum SourceReconstructor {
         let asmText: String? = repaired.isEmpty ? nil : AssemblyFallback.emitAssemblyFile(
             functions: repaired, format: image.format, architecture: image.architecture)
 
+        // Human-readable decoded listing next to the byte-exact .s fallback:
+        // address, mnemonic and operands for every preserved instruction so
+        // reviewers can read the original disassembly without re-running a
+        // disassembler.
+        let disassemblyText: String? = asmFunctions.isEmpty ? nil : {
+            var lines: [String] = []
+            var emittedInstructions = 0
+            for fn in asmFunctions.sorted(by: { $0.address.value < $1.address.value }) {
+                let fnInstructions = instructionsByFunction[fn.address.value] ?? []
+                guard !fnInstructions.isEmpty else { continue }
+                let cName = nameByAddress[fn.address.value] ?? "fn_\(String(fn.address.value, radix: 16))"
+                lines.append("; function \(cName) @ 0x\(String(fn.address.value, radix: 16)) (\(fn.originalName ?? fn.name))")
+                for ins in fnInstructions.sorted(by: { $0.address.value < $1.address.value }) {
+                    var line = "0x\(String(ins.address.value, radix: 16)): \(ins.mnemonic) \(ins.operandText)"
+                    if let comment = ins.comment, !comment.isEmpty {
+                        line += " ; \(comment)"
+                    }
+                    lines.append(line)
+                    emittedInstructions += 1
+                }
+                lines.append("")
+            }
+            guard emittedInstructions > 0 else { return nil }
+            lines.insert("; Disassembly listing for \(libraryName) (\(image.architecture.displayName), \(image.format.displayName))", at: 0)
+            lines.insert("; Format: <address>: <mnemonic> <operands> [; <comment>]", at: 1)
+            lines.insert("", at: 2)
+            return lines.joined(separator: "\n")
+        }()
+
         let headerText = buildHeader(image: image, libraryName: libraryName,
                                      functions: functions, nameByAddress: nameByAddress,
                                      records: records, referencedStrings: referencedStrings,
@@ -215,6 +246,11 @@ public enum SourceReconstructor {
         if let asmText {
             files.append(GeneratedSourceFile(relativePath: "Assembly/original_text.s",
                                              contents: asmText, language: .assembly, quality: .partial))
+        }
+        if let disassemblyText {
+            files.append(GeneratedSourceFile(relativePath: "Assembly/disassembly.txt",
+                                             contents: disassemblyText, language: .unknown,
+                                             quality: .partial))
         }
         if language == .swift {
             files.append(GeneratedSourceFile(
@@ -265,20 +301,24 @@ public enum SourceReconstructor {
 
     private static func groupInstructions(_ instructions: [Instruction],
                                           functions: [DecompilerFunction]) -> [UInt64: [Instruction]] {
-        let sortedFunctions = functions.sorted { $0.address.value < $1.address.value }
+        // Binary search for the owning function — a linear scan per
+        // instruction is O(instructions × functions) and does not scale to
+        // real binaries (millions of instructions, tens of thousands of
+        // functions).
+        let sortedFunctions = functions
+            .filter { $0.kind != .importedSymbol }
+            .sorted { $0.address.value < $1.address.value }
+        let addresses = sortedFunctions.map(\.address.value)
         var out: [UInt64: [Instruction]] = [:]
         for ins in instructions {
-            var owner: DecompilerFunction?
-            for fn in sortedFunctions {
-                if fn.address.value <= ins.address.value {
-                    owner = fn
-                } else {
-                    break
-                }
+            // Last function with address <= instruction address.
+            var lo = 0, hi = addresses.count
+            while lo < hi {
+                let mid = (lo + hi) / 2
+                if addresses[mid] <= ins.address.value { lo = mid + 1 } else { hi = mid }
             }
-            if let owner {
-                out[owner.address.value, default: []].append(ins)
-            }
+            guard lo > 0 else { continue }
+            out[sortedFunctions[lo - 1].address.value, default: []].append(ins)
         }
         return out
     }
@@ -288,6 +328,17 @@ public enum SourceReconstructor {
             return "\(returnType) \(name)()"
         }
         return "\(returnType) \(name)(\(parameters.joined(separator: ", ")))"
+    }
+
+    /// Normalize engine-specific signature spellings before Ghidra-style
+    /// mapping. angr emits `<ret> <fqname>(<args>) -> <realret>(<params>)`;
+    /// only the leading prototype is usable for C generation.
+    private static func normalizeEngineSignature(_ signature: String) -> String {
+        var sig = signature.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let arrow = sig.range(of: " -> ", options: .backwards) {
+            sig = String(sig[..<arrow.lowerBound])
+        }
+        return sig
     }
 
     private static func extractBody(_ pseudocode: String) -> String? {
@@ -343,6 +394,15 @@ public enum SourceReconstructor {
                 message: "Data reference DAT_\(hex) could not be resolved to bytes in the binary.",
                 functionAddress: functionAddress))
             return nil
+        }
+        // angr names unknown call targets `sub_<hexaddr>`.
+        out = rewritePattern(out, pattern: "\\bsub_([0-9a-fA-F]{4,})\\b") { hex in
+            guard let addr = UInt64(hex, radix: 16),
+                  let name = nameByAddress[addr] else {
+                unresolved.append("sub_\(hex)")
+                return nil
+            }
+            return name
         }
         return out
     }

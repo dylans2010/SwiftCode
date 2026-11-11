@@ -37,19 +37,38 @@ public struct AnalysisCoordinator: Sendable {
             await store.setProgress(.init(stage: .disassembling, message: "Disassembling \(disassembler.displayName)"))
             var allInstructions: [Instruction] = []
             let sections = image.executableSections
+            var disassemblyErrors: [String] = []
             for (idx, section) in sections.enumerated() {
                 try Task.checkCancellation()
                 let start = section.address
                 let end = DecompilerAddress(virtual: section.address.value + section.size)
-                let chunk = try await disassembler.disassemble(image: image, start: start, end: end,
-                                                                progress: nil)
-                allInstructions.append(contentsOf: chunk)
+                do {
+                    let chunk = try await disassembler.disassemble(image: image, start: start, end: end,
+                                                                    progress: nil)
+                    allInstructions.append(contentsOf: chunk)
+                } catch is CancellationError {
+                    throw CancellationError()
+                } catch {
+                    disassemblyErrors.append("\(section.name): \(error.localizedDescription)")
+                }
                 await store.setProgress(.init(stage: .disassembling,
                                               fraction: sections.isEmpty ? nil : Double(idx + 1) / Double(sections.count),
                                               message: "Disassembled \(section.name)",
                                               itemsProcessed: allInstructions.count))
             }
+            for error in disassemblyErrors {
+                await store.addFinding(AnalysisFinding(
+                    title: "Disassembly incomplete",
+                    detail: error,
+                    provenance: .engine))
+            }
             await store.storeInstructions(allInstructions)
+            if allInstructions.isEmpty {
+                await store.addFinding(AnalysisFinding(
+                    title: "No instructions decoded",
+                    detail: "The disassembler produced no instructions for the executable sections; function-level assembly preservation and decompilation have no input.",
+                    provenance: .engine))
+            }
 
             // 5. Cross-references from decoded control flow.
             if configuration.buildReferences {

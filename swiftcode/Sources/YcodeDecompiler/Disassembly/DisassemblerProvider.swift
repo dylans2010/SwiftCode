@@ -8,8 +8,11 @@ import Foundation
 public enum DisassemblerBackends {
 
     /// All disassembler providers known to this build, in preference order.
+    /// `ObjDumpDisassembler` precedes `OtoolDisassembler` so Mach-O images
+    /// get whole-container coverage (stubs included); otool is the fallback
+    /// for environments without an LLVM toolchain.
     public static func all() -> [any DisassemblerProvider] {
-        [ObjDumpDisassembler()]
+        [ObjDumpDisassembler(), OtoolDisassembler()]
     }
 
     /// Register every built-in disassembler with the shared registry.

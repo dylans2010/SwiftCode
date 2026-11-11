@@ -9,7 +9,12 @@ public enum EngineBootstrap {
 
     public static func installDefaults() async {
         let registry = EngineRegistry.shared
+        // llvm-objdump first: its container mode covers stubs sections that
+        // `otool -x` does not disassemble. otool remains the fallback for
+        // environments without an LLVM toolchain.
         await registry.register(disassembler: ObjDumpDisassembler())
+        await registry.register(disassembler: OtoolDisassembler())
         await registry.register(decompiler: GhidraDecompiler())
+        await registry.register(decompiler: AngrDecompiler())
     }
 }

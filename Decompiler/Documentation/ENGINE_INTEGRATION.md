@@ -1,9 +1,10 @@
 # YcodeDecompiler — Engine Integration
 
-How the two concrete analysis backends work:
-`ObjDumpDisassembler` (LLVM `llvm-objdump`) and `GhidraDecompiler`
-(Ghidra `analyzeHeadless`). Both are implemented and registered by
-`EngineBootstrap.installDefaults()`.
+How the concrete analysis backends work. Disassemblers:
+`ObjDumpDisassembler` (LLVM `llvm-objdump`, container mode for Mach-O/ELF)
+and `OtoolDisassembler` (Apple `otool`). Decompilers: `GhidraDecompiler`
+(Ghidra `analyzeHeadless`) and `AngrDecompiler` (Python `angr` bridge).
+All are implemented and registered by `EngineBootstrap.installDefaults()`.
 
 ## Provider contracts (`Engines/EngineProtocols.swift`)
 
@@ -70,30 +71,39 @@ availability for UI. `EngineRegistry.installDefaults()` is an empty hook;
 
 Version is parsed from `llvm-objdump --version` output and cached.
 
-**Invocation model** — the container file is *not* disassembled directly
-(fat/multi-arch inputs would pick the wrong slice). Instead, for each
-executable section overlapping `[start, end)`:
+**Invocation model** — two modes:
 
-1. Section bytes are extracted through `BinaryImage.byteProvider`.
-2. A raw binary is disassembled per section:
+- *Container mode* (preferred): the image's slice bytes
+  (`containerOffset`/`byteCount`) are written to a temp file and
+  `llvm-objdump -d` decodes every instruction-bearing section natively in
+  one pass — Mach-O `__text`/`__stubs`/`__objc_stubs`, ELF `.text`,
+  COFF `.text`. Output is cached per image identity and filtered to
+  `[lo, hi)`. This covers stub sections that raw-section disassembly and
+  `otool -x` both miss.
+- *Raw mode* (fallback): the container file is *not* disassembled directly
+  (fat/multi-arch inputs would pick the wrong slice). Instead, for each
+  executable section overlapping `[start, end)`:
 
-   ```
-   llvm-objdump -D -b binary --triple=<arch-triple>
-       --adjust-vma=<sectionVMA>
-       --start-address=<lo> --stop-address=<hi>
-   ```
+  1. Section bytes are extracted through `BinaryImage.byteProvider`.
+  2. A raw binary is disassembled per section:
 
-   `-D` forces linear disassembly of the entire section; `--adjust-vma`
-   rebases addresses so output addresses match the image's virtual
-   addresses; start/stop bound the requested range.
+     ```
+     llvm-objdump -D -b binary --triple=<arch-triple>
+         --adjust-vma=<sectionVMA>
+         --start-address=<lo> --stop-address=<hi>
+     ```
 
-3. Output lines are parsed (`parseLine`) into address/mnemonic/operand
-   text/raw bytes; lines outside `[lo, hi)` are filtered.
-4. `makeInstruction` builds `Instruction` values: operands become
-   `.other(text)` (no structured operand decoding), `classification` is
-   derived from mnemonic tables (`returnMnemonics`, `callMnemonics`,
-   `branchMnemonics`), and `branchTarget` is extracted from operand text
-   when it looks like an address.
+     `-D` forces linear disassembly of the entire section; `--adjust-vma`
+     rebases addresses so output addresses match the image's virtual
+     addresses; start/stop bound the requested range.
+
+  3. Output lines are parsed (`parseLine`) into address/mnemonic/operand
+     text/raw bytes; lines outside `[lo, hi)` are filtered.
+  4. `makeInstruction` builds `Instruction` values: operands become
+     `.other(text)` (no structured operand decoding), `classification` is
+     derived from mnemonic tables (`returnMnemonics`, `callMnemonics`,
+     `branchMnemonics`), and `branchTarget` is extracted from operand text
+     when it looks like an address.
 
 **Triples** (`triple(for:)`): aarch64, aarch64_32, x86_64, armv7/armv7s
 (`armv7-linux-gnueabihf`), armv6, i386, riscv64, powerpc, powerpc64, mips —
@@ -107,6 +117,35 @@ all `*-linux-gnu*`; `.unknown` → `unsupportedArchitecture`.
 - No structured operands — operand text is preserved verbatim.
 - Subprocess runs through `YcodeSubprocess` (`Subprocess.run` /
   `StreamingSubprocess`), inheriting `MainThreadGuard` and pipe bounds.
+- Per-section container-mode failures are caught by
+  `AnalysisCoordinator`, which continues with other sections and records a
+  `Disassembly incomplete` finding rather than failing the analysis.
+
+## OtoolDisassembler (`Disassembly/Backends/OtoolDisassembler.swift`)
+
+Apple `otool` backend for Mach-O only — the preferred disassembler for
+Mach-O images on macOS when `llvm-objdump` is absent.
+
+**Tool discovery** (`locateToolPath`, cached in `ToolCache`):
+
+1. `SWIFTCODE_OTOOL` environment override
+2. `xcrun -f otool` (Apple toolchains)
+3. `/usr/bin/otool`, `/bin/otool`, then `which otool`
+
+**Invocation**: `otool -xjV [-arch <arch>] <file>` — `-x` disassembles
+every text section, `-j` prints the instruction word, `-V` resolves
+operands symbolically (`; symbol stub for: …` comments). Output lines are
+`ADDR\tHEX\tMNEMONIC\tOPERANDS`; the hex column is the 32-bit instruction
+word on AArch64 (stored little-endian) and raw bytes elsewhere.
+
+**Caching**: the full listing is parsed once per (file, arch) and kept in
+a small LRU (`ListingCache`, capacity 3); each `disassemble` call filters
+to `[lo, hi)`. An `-arch` failure retries once without `-arch` (covers
+arm64e subtype drift on thin files).
+
+**Classification** reuses `ObjDumpDisassembler.classify`; stub comments
+(`symbol stub for:`) become `Instruction.comment`. Mach-O only —
+`capabilities` returns empty for non-Mach-O formats.
 
 ## GhidraDecompiler (`Decompilation/Backends/GhidraDecompiler.swift`)
 
@@ -190,6 +229,51 @@ exposed even though the script uses the decompiler internally.
 `engineCancelled`, non-zero exit → `engineFailure` with a 600-char stderr
 tail; `CancellationError` → `engineCancelled`.
 
+## AngrDecompiler (`Decompilation/Backends/AngrDecompiler.swift`)
+
+Python `angr` backend — the fallback decompiler when Ghidra is not
+installed. Requires a CPython with `angr` importable (Python 3.10–3.13).
+
+**Interpreter discovery** (`pythonCandidates` + `probe`, cached in
+`AngrState`):
+
+1. `SWIFTCODE_ANGR_PYTHON` environment override
+2. `~/.swiftcode-engines/angr-venv/bin/python`
+3. `python3`, `python3.12`, `python3.13`, `python3.14` resolved via `which`
+4. Well-known absolute paths (`/opt/homebrew/bin/…`, `/usr/local/bin`, …)
+
+Each candidate is probed with `python -c "import angr; print(angr.__version__)"`.
+
+**Bridge script** (`Resources/EngineScripts/AngrDecompile.py`, located via
+`Bundle.module` → `Bundle.main` → `#filePath` fallback):
+
+```
+python3 AngrDecompile.py <binary> <out.json> [--arch=NAME] <addrHex>…
+```
+
+Loads the binary once with angr/cle (`auto_load_libs=False`, `--arch`
+hint for fat slices), builds one CFGFast model, then runs angr's
+`Decompiler` per requested address. JSON schema matches `DecompileDump.py`
+(one object per line; `{"error": …}` records for failures). Records are
+**streamed** to the output file as they are produced, so a killed or
+timed-out run still yields every completed function.
+
+**Batch** (`decompileBatch`): all requests share one process — the CFG
+cost is paid once. Results are keyed by entry-point address; duplicate
+addresses consume records in order.
+
+**Timeouts**: CFGFast is capped in-script (`ANGR_CFGFAST_TIMEOUT`,
+default 240 s → per-function mode without a global CFG); each function is
+capped (`ANGR_FUNC_TIMEOUT`, default 90 s → `decompile-timeout` record);
+the whole batch is capped Swift-side (`SWIFTCODE_ANGR_TIMEOUT_SECONDS`,
+default 1200 s → process killed, partial records parsed, every result
+annotated with a timeout warning). `0`/negative disables each limit.
+
+**Capabilities** (when angr is importable): `decompileFunction`,
+`decompileBatch`. Supported formats: Mach-O, ELF, PE; architectures map
+to angr/archinfo names (`AARCH64`, `AMD64`, `ARM`, `X86`, `RISCV64`,
+`MIPS32`, `PPC32`, `PPC64`).
+
 ## Protocol / JSON contract summary
 
 - In-process: the Swift protocols above; no IPC.
@@ -213,6 +297,14 @@ tail; `CancellationError` → `engineCancelled`.
 - `engineTimeoutSeconds` (default 600 s, `AnalysisSandbox` max 600) is a
   configuration value; headless runs are bounded by process cancellation,
   not an in-code timer.
+- llvm-objdump path on very large images produces a multi-hundred-MB
+  listing; `containerListing` caches it per image identity for the
+  process lifetime.
+- angr path: pseudocode quality is below Ghidra's on large/optimised
+  binaries; CFGFast timeout degrades gracefully to slower per-function
+  recovery. angr does not load external libraries
+  (`auto_load_libs=False`), so calls into system frameworks appear as
+  unresolved imports in the pseudocode.
 
 ## Evidence
 
@@ -220,5 +312,7 @@ tail; `CancellationError` → `engineCancelled`.
 |---|---|
 | Provider contracts, registry, bootstrap | 1 — source inspection |
 | llvm-objdump discovery order, flags, triples, classification | 1 — `ObjDumpDisassembler.swift` |
+| Otool discovery, `-xjV` parsing, arch mapping, listing cache | 1 — `OtoolDisassembler.swift` |
 | Ghidra discovery, cache layout, invocation, JSON contract, retry/prune | 1 — `GhidraDecompiler.swift` + `DecompileDump.py` |
+| Angr interpreter discovery, bridge contract, timeout env vars | 1 — `AngrDecompiler.swift` + `AngrDecompile.py` |
 | Unwired config preferences | 1 — grep-verified |

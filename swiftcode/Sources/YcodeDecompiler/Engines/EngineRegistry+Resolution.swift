@@ -74,15 +74,20 @@ public actor EngineRegistry {
                     byteProvider: { _, _ in Data() })
     }
 
-    /// Pick a disassembler that supports this image.
+    /// Pick a disassembler that supports this image. Providers whose tool
+    /// cannot actually run are skipped so a missing `llvm-objdump` does not
+    /// shadow a working `otool` (and vice versa).
     public func resolveDisassembler(for image: BinaryImage,
-                                    preferredID: String? = nil) -> (any DisassemblerProvider)? {
-        let candidates = disassemblers.filter {
-            $0.capabilities(for: image).contains(.disassemble)
-                && (image.format == .unknown || $0.supportedFormats.isEmpty
-                    || $0.supportedFormats.contains(image.format))
-                && (image.architecture == .unknown || $0.supportedArchitectures.isEmpty
-                    || $0.supportedArchitectures.contains(image.architecture))
+                                    preferredID: String? = nil) async -> (any DisassemblerProvider)? {
+        var candidates: [any DisassemblerProvider] = []
+        for provider in disassemblers {
+            guard provider.capabilities(for: image).contains(.disassemble)
+                && (image.format == .unknown || provider.supportedFormats.isEmpty
+                    || provider.supportedFormats.contains(image.format))
+                && (image.architecture == .unknown || provider.supportedArchitectures.isEmpty
+                    || provider.supportedArchitectures.contains(image.architecture))
+            else { continue }
+            if await provider.isAvailable() { candidates.append(provider) }
         }
         if let preferredID, let match = candidates.first(where: { $0.id == preferredID }) { return match }
         return candidates.first

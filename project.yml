@@ -24,15 +24,37 @@ settings:
       - "$(BUILD_DIR)/../../SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include"
       - "$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/src/include"
       - "$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/extensions/include"
+      - "$(BUILD_DIR)/../../SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include"
     HEADER_SEARCH_PATHS:
       - "$(BUILD_DIR)/../../SourcePackages/checkouts/swift-syntax/Sources/_SwiftSyntaxCShims/include"
       - "$(BUILD_DIR)/../../SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include"
       - "$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/src/include"
+      - "$(BUILD_DIR)/../../SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include"
       - "$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/extensions/include"
     OTHER_SWIFT_FLAGS:
       - "$(inherited)"
       - "-package-name"
       - "SwiftCode"
+      # Clang modules vendored by package C targets are not always passed to
+      # client Swift targets; point the importer at Xcode's generated maps.
+      - "-Xcc"
+      - "-fmodule-map-file=$(OBJROOT)/GeneratedModuleMaps/TreeSitter.modulemap"
+      - "-Xcc"
+      - "-fmodule-map-file=$(OBJROOT)/GeneratedModuleMaps/TreeSitterC.modulemap"
+      - "-Xcc"
+      - "-fmodule-map-file=$(OBJROOT)/GeneratedModuleMaps/TreeSitterCPP.modulemap"
+      - "-Xcc"
+      - "-fmodule-map-file=$(OBJROOT)/GeneratedModuleMaps/TreeSitterGo.modulemap"
+      - "-Xcc"
+      - "-fmodule-map-file=$(OBJROOT)/GeneratedModuleMaps/TreeSitterJava.modulemap"
+      - "-Xcc"
+      - "-fmodule-map-file=$(OBJROOT)/GeneratedModuleMaps/TreeSitterJavaScript.modulemap"
+      - "-Xcc"
+      - "-fmodule-map-file=$(OBJROOT)/GeneratedModuleMaps/TreeSitterPython.modulemap"
+      - "-Xcc"
+      - "-fmodule-map-file=$(OBJROOT)/GeneratedModuleMaps/TreeSitterRust.modulemap"
+      - "-Xcc"
+      - "-fmodule-map-file=$(OBJROOT)/GeneratedModuleMaps/TreeSitterCSharp.modulemap"
 
 packages:
   ZIPFoundation:
@@ -721,6 +743,32 @@ targets:
         product: SwiftParser
       - package: SwiftSyntax
         product: SwiftIDEUtils
+      - package: SwiftSyntax
+        product: SwiftParserDiagnostics
+      - package: SwiftSubprocess
+        product: Subprocess
+      - package: SwiftTreeSitter
+        product: SwiftTreeSitter
+      - package: TreeSitterC
+        product: TreeSitterC
+      - package: TreeSitterCPP
+        product: TreeSitterCPP
+      - package: TreeSitterGo
+        product: TreeSitterGo
+      - package: TreeSitterJava
+        product: TreeSitterJava
+      - package: TreeSitterJavaScript
+        product: TreeSitterJavaScript
+      - package: TreeSitterPython
+        product: TreeSitterPython
+      - package: TreeSitterRust
+        product: TreeSitterRust
+      - package: TreeSitterCSharp
+        product: TreeSitterCSharp
+      - package: LanguageServerProtocol
+        product: LanguageServerProtocol
+      - package: LanguageClient
+        product: LanguageClient
       - package: StoreKit
         product: StoreKitConfiguration
       - package: StoreKit

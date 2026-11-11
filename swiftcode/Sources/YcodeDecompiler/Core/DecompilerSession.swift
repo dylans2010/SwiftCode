@@ -196,9 +196,14 @@ public actor DecompilerSession {
             }
         let selected = maxFunctions > 0 ? Array(ordered.prefix(maxFunctions)) : ordered
         let requests = selected.map { fn in
-            DecompilationRequest(functionAddress: fn.address, functionName: fn.name,
-                                 imagePath: image.identity.originalLocation,
-                                 architecture: image.architecture, format: image.format)
+            var options: [String: String] = [:]
+            let end = fn.endAddress
+                ?? (fn.size > 0 ? DecompilerAddress(virtual: fn.address.value + fn.size) : nil)
+            if let end { options["endAddress"] = end.hexString }
+            return DecompilationRequest(functionAddress: fn.address, functionName: fn.name,
+                                        imagePath: image.identity.originalLocation,
+                                        architecture: image.architecture, format: image.format,
+                                        options: options)
         }
         guard let backend = await registry.resolveDecompiler(
             for: image, required: [.decompileBatch],
@@ -269,6 +274,11 @@ public actor DecompilerSession {
     // MARK: - Mode & project
 
     public func setMode(_ newMode: Mode) { mode = newMode }
+
+    /// Mutate the analysis configuration (e.g. decompile limits, engine picks).
+    public func updateConfiguration(_ transform: (inout AnalysisConfiguration) -> Void) {
+        transform(&configuration)
+    }
     public func attachProject(_ p: DecompilerProject) { project = p }
 
     private func setProgress(_ p: AnalysisProgress) async {
