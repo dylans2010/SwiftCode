@@ -974,13 +974,35 @@ struct Trace: ParsableCommand {
     @Argument var operation: String
     func run() throws {
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
+        let api = SpacesAPI(repo: repo)
         let start = Date()
-        let countsBefore = try MaintenanceOps(repo: repo).countObjects().total
-        print("trace: \(operation) — \(countsBefore) objects before")
-        // Operations are executed via the same commands; this is a wrapper.
-        print("elapsed setup: \(String(format: "%.1f", Date().timeIntervalSince(start) * 1000)) ms")
-        let countsAfter = try MaintenanceOps(repo: repo).countObjects().total
-        print("objects after: \(countsAfter) (delta \(countsAfter - countsBefore))")
+        let countsBefore = try api.countObjects().total
+        let summary: String
+        switch operation {
+        case "status":
+            let report = try api.status()
+            summary = "branch \(report.branch ?? "detached"), \(report.staged.count) staged, \(report.unstaged.count) unstaged, \(report.untrackedFiles.count) untracked, clean: \(report.isClean)"
+        case "log":
+            let commits = try api.log(limit: 100)
+            summary = "\(commits.count) commit(s), latest: \(commits.first?.summary ?? "none")"
+        case "fsck":
+            let issues = try api.fsck()
+            summary = "\(issues.count) issue(s)"
+        case "storage":
+            let storage = try api.storage()
+            summary = "\(storage.total) bytes total, \(storage.fileCount) file(s)"
+        case "search":
+            let results = try api.search(SearchOps.Query(text: "a", limit: 50))
+            summary = "\(results.count) result(s)"
+        default:
+            throw SpacesError.invalidArgument("unknown operation: \(operation) (status, log, fsck, storage, search)")
+        }
+        let elapsedMs = Date().timeIntervalSince(start) * 1000
+        let countsAfter = try api.countObjects().total
+        print("trace: \(operation)")
+        print("elapsed: \(String(format: "%.1f", elapsedMs)) ms")
+        print("objects before: \(countsBefore), after: \(countsAfter) (delta \(countsAfter - countsBefore))")
+        print("result: \(summary)")
     }
 }
 
@@ -1342,7 +1364,7 @@ struct Worktrees: ParsableCommand {
 }
 
 struct WorktreeList: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "list", abstract: "List worktrees")
+    static let configuration = CommandConfiguration(abstract: "List worktrees")
     @Option(name: .long) var repo: String?
     func run() throws {
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
@@ -1353,7 +1375,7 @@ struct WorktreeList: ParsableCommand {
 }
 
 struct WorktreeAdd: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "add", abstract: "Add a worktree")
+    static let configuration = CommandConfiguration(abstract: "Add a worktree")
     @Option(name: .long) var repo: String?
     @Argument var path: String
     @Option(name: .long) var branch: String?
@@ -1366,7 +1388,7 @@ struct WorktreeAdd: ParsableCommand {
 }
 
 struct WorktreeRemove: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "remove", abstract: "Remove a worktree")
+    static let configuration = CommandConfiguration(abstract: "Remove a worktree")
     @Option(name: .long) var repo: String?
     @Argument var name: String
     func run() throws {
@@ -1403,7 +1425,7 @@ struct WorkspaceCreate: ParsableCommand {
 }
 
 struct WorkspaceSwitch: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "switch", abstract: "Switch workspace")
+    static let configuration = CommandConfiguration(abstract: "Switch workspace")
     @Option(name: .long) var repo: String?
     @Argument var path: String
     func run() throws {
@@ -1412,7 +1434,7 @@ struct WorkspaceSwitch: ParsableCommand {
 }
 
 struct WorkspaceRemove: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "remove", abstract: "Remove a workspace")
+    static let configuration = CommandConfiguration(abstract: "Remove a workspace")
     @Option(name: .long) var repo: String?
     @Argument var name: String
     func run() throws {
@@ -1422,7 +1444,7 @@ struct WorkspaceRemove: ParsableCommand {
 }
 
 struct WorkspaceList: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "list", abstract: "List workspaces")
+    static let configuration = CommandConfiguration(abstract: "List workspaces")
     @Option(name: .long) var repo: String?
     func run() throws {
         var cmd = try WorktreeList.parseAsRoot(["--repo", repo ?? "."])

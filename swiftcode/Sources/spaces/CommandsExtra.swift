@@ -311,7 +311,7 @@ struct ExtensionRemove: ParsableCommand {
 // MARK: - Misc top-level aliases
 
 struct MergeStrategyList: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "merge-strategy", abstract: "List merge strategies")
+    static let configuration = CommandConfiguration(commandName: "merge-strategies", abstract: "List merge strategies")
     @Option(name: .long) var repo: String?
     func run() throws {
         var cmd = try MergeStrategy.parseAsRoot(["--repo", repo ?? "."])

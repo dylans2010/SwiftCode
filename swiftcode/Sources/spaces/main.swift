@@ -42,6 +42,16 @@ struct SpacesCLI: AsyncParsableCommand {
             WorkspaceCreate.self, WorkspaceSwitch.self, WorkspaceRemove.self,
             WorkspaceList.self, LsFiles.self, LsTree.self, CatFile.self,
             MergeStrategy.self,
+            SemanticSearch.self, HistorySearch.self, Dependencies.self,
+            FileEvolution.self, BranchStack.self, BranchCheckpoint.self,
+            ChangeSet.self,
+            Provenance.self, Policy.self, SecurityReport.self, SecretHistory.self,
+            Ownership.self, Review.self, ReviewStatus.self, Discussion.self,
+            Notifications.self, Backup.self, BackupVerify.self, BackupRestore.self,
+            StorageHeatmap.self, StorageProfile.self, WorkspaceTemplate.self,
+            Automation.self, PatchCollection.self, SymbolHistory.self,
+            ApiCompatibility.self, TestProvenance.self, BuildImpact.self,
+            Performance.self, OperationUndo.self, Snapshots.self, History.self,
         ])
 
     static func formatError(_ message: String) -> String {
