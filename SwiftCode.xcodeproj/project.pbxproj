@@ -3617,6 +3617,7 @@
 		FB866757F89AB6A1EDD9121A /* libregexp.h in Resources */ = {isa = PBXBuildFile; fileRef = 8AEA1C8871EB44B5F4C46106 /* libregexp.h */; };
 		FB8ABB7840E6B1F31DE19369 /* Preferences+AppKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C581ED92B8730342E1DE268 /* Preferences+AppKit.swift */; };
 		FB9AC2263F1730D0298D63AF /* DeviceHubUnifiedWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4977A7F94082748814CB03A /* DeviceHubUnifiedWorkspace.swift */; };
+		FB9AC2263F1730D0298D63B0 /* DeviceHubSimulatorInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4977A7F94082748814CB03B /* DeviceHubSimulatorInstaller.swift */; };
 		FC037B91D5059C280F812C1C /* SwiftUI.swift.txt in Resources */ = {isa = PBXBuildFile; fileRef = E2EA3ACE53F3FF22618F12BC /* SwiftUI.swift.txt */; };
 		FC1351CB4075B00456681DFD /* GPL-3.0-389-ds-base-exception.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3730B29BAC41879139994AE5 /* GPL-3.0-389-ds-base-exception.txt */; };
 		FC254F5C39B36A3FAE2DA3D2 /* StreamingSubprocess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FCAEBAC8681224C787F5ED9 /* StreamingSubprocess.swift */; };
@@ -8476,6 +8477,7 @@
 		F48DA27642AFB0E356758FDB /* SUL-1.0.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "SUL-1.0.txt"; sourceTree = "<group>"; };
 		F48EC9F61FFD69C7C3AC8647 /* APIDocumentationEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIDocumentationEditor.swift; sourceTree = "<group>"; };
 		F4977A7F94082748814CB03A /* DeviceHubUnifiedWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceHubUnifiedWorkspace.swift; sourceTree = "<group>"; };
+		F4977A7F94082748814CB03B /* DeviceHubSimulatorInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceHubSimulatorInstaller.swift; sourceTree = "<group>"; };
 		F499F6BE28B3B5D43883F2E8 /* ExtensionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionsView.swift; sourceTree = "<group>"; };
 		F4A397B56B326406CA0F51B7 /* CDLA-Permissive-2.0.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "CDLA-Permissive-2.0.txt"; sourceTree = "<group>"; };
 		F4AF499651D8B1D54B0E3BD7 /* ThreadSuspend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreadSuspend.swift; sourceTree = "<group>"; };
@@ -11306,6 +11308,7 @@
 				ED654A230A914E1821919039 /* DeviceHubRemote.swift */,
 				87B7CCB000637600014E96F5 /* DeviceHubToolbar.swift */,
 				F4977A7F94082748814CB03A /* DeviceHubUnifiedWorkspace.swift */,
+				F4977A7F94082748814CB03B /* DeviceHubSimulatorInstaller.swift */,
 				DFF860D58225BBD651A6A7D7 /* DeviceInspectorCard.swift */,
 				886D995C95FAF5B8FBF08FD9 /* DeviceManagementView.swift */,
 				742599DC0EF3E27CE4DFAFF8 /* DevicesController.swift */,
@@ -18966,6 +18969,7 @@
 				C97EE3415C864BEB3555319B /* DeviceHubRemote.swift in Sources */,
 				D1C2552F6BF04DDCCE965546 /* DeviceHubToolbar.swift in Sources */,
 				FB9AC2263F1730D0298D63AF /* DeviceHubUnifiedWorkspace.swift in Sources */,
+				FB9AC2263F1730D0298D63B0 /* DeviceHubSimulatorInstaller.swift in Sources */,
 				87F361595BFD61304DF4F86F /* DeviceInspectorCard.swift in Sources */,
 				1EA69EA8D08A9FBB442EDA86 /* DeviceManagementView.swift in Sources */,
 				46588AEFF2C3983DCF835ECA /* DevicePickerView.swift in Sources */,

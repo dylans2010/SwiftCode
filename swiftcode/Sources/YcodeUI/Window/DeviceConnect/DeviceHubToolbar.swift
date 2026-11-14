@@ -5,6 +5,8 @@ import YcodeDeviceUI
 @MainActor
 final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToolbarItemValidation {
     unowned let owner: DevicesController
+    private weak var workspaceGroup: NSToolbarItemGroup?
+    private weak var bootSimulatorItem: NSToolbarItem?
     private weak var zoomGroup: NSToolbarItemGroup?
     private weak var tabGroup: NSToolbarItemGroup?
     private weak var captureGroup: NSToolbarItemGroup?
@@ -13,6 +15,8 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
     private let filterMenu = NSMenu(title: "Filter")
     private let moreMenu = NSMenu(title: "More Actions")
 
+    static let workspace = NSToolbarItem.Identifier("hub.workspace")
+    static let bootSimulator = NSToolbarItem.Identifier("hub.bootSimulator")
     static let add = NSToolbarItem.Identifier("hub.addDevice")
     static let filter = NSToolbarItem.Identifier("hub.filter")
     static let captureGroup = NSToolbarItem.Identifier("hub.captureGroup")
@@ -40,7 +44,7 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
     }
 
     static let order: [NSToolbarItem.Identifier] = [.flexibleSpace, add, filter, .toggleSidebar, .sidebarTrackingSeparator, .flexibleSpace,
-                                                    headset, captureGroup, zoom, open, more, .inspectorTrackingSeparator, .flexibleSpace, tabs]
+                                                    workspace, bootSimulator, headset, captureGroup, zoom, open, more, .inspectorTrackingSeparator, .flexibleSpace, tabs]
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         if #available(macOS 14.0, *) { return Self.order }
@@ -72,6 +76,27 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
             return i
         case .toggleSidebar:
             return nil
+        case Self.workspace:
+            let labels = ["Live Device", "Visual UI & Artboards", "Device Connect"]
+            let images = ["iphone", "square.stack.3d.down.forward", "cable.connector"].enumerated().compactMap { image($0.element, labels[$0.offset]) }
+            let g = NSToolbarItemGroup(itemIdentifier: id, images: images, selectionMode: .selectOne, labels: labels,
+                                       target: self, action: #selector(workspaceChosen(_:)))
+            for (sub, l) in zip(g.subitems, labels) { sub.toolTip = l }
+            g.controlRepresentation = .expanded
+            workspaceGroup = g
+            updateWorkspace()
+            return g
+        case Self.bootSimulator:
+            let i = NSToolbarItem(itemIdentifier: id)
+            i.image = image("play.fill", "Boot Simulator")
+            i.label = "Boot Simulator"
+            i.toolTip = "Boot Simulator and Show Content"
+            i.isBordered = true
+            i.target = self
+            i.action = #selector(bootSimulatorClicked(_:))
+            bootSimulatorItem = i
+            updateBootSimulator()
+            return i
         case Self.captureGroup:
             let labels = ["Capture Keyboard", "Enter resize mode"]
             let images = ["keyboard", "rectangle.inset.filled"].enumerated().compactMap { image($0.element, labels[$0.offset]) }
@@ -139,12 +164,38 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
     }
 
     func update() {
+        updateWorkspace()
+        updateBootSimulator()
         updateZoom()
         updateTabs()
         updateFilterLook()
         updateCapture(owner.canvas.capturesKeyboard)
         updateSidebarItems()
         owner.view.window?.toolbar?.validateVisibleItems()
+    }
+
+    func updateWorkspace() {
+        workspaceGroup?.selectedIndex = owner.workspaceMode.rawValue
+    }
+
+    func updateBootSimulator() {
+        guard let item = bootSimulatorItem else { return }
+        guard let r = owner.selected, owner.isLocalSimulator(r) || r.isSwiftCodeRemote else {
+            item.isEnabled = false
+            item.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "Boot Simulator")
+            item.toolTip = "Boot Simulator"
+            return
+        }
+        item.isEnabled = true
+        if r.state == "Booted" {
+            item.image = NSImage(systemSymbolName: "stop.fill", accessibilityDescription: "Shut Down Simulator")
+            item.label = "Shut Down"
+            item.toolTip = "Shut Down Simulator"
+        } else {
+            item.image = NSImage(systemSymbolName: "play.fill", accessibilityDescription: "Boot Simulator")
+            item.label = "Boot"
+            item.toolTip = "Boot Simulator and Show Content"
+        }
     }
 
     func updateZoom() {
@@ -199,8 +250,22 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
             item.image = NSImage(systemSymbolName: title == "View in Headset" ? "eyeglasses" : "macwindow", accessibilityDescription: title)
             if #available(macOS 15.0, *) { item.isHidden = !owner.headsetControlsShown }
             return owner.canToggleHeadset(owner.selected)
+        case Self.bootSimulator:
+            updateBootSimulator()
+            guard let r = owner.selected else { return false }
+            return owner.isLocalSimulator(r) || r.isSwiftCodeRemote
+        case Self.workspace: return true
         default: return true
         }
+    }
+
+    @objc func workspaceChosen(_ sender: NSToolbarItemGroup) {
+        guard let mode = DeviceHubUnifiedWorkspace.HubWorkspaceMode(rawValue: sender.selectedIndex) else { return }
+        owner.setWorkspaceMode(mode)
+    }
+
+    @objc func bootSimulatorClicked(_ sender: Any?) {
+        owner.toggleBootSelectedSimulator(sender)
     }
 
     @objc func captureGroupChosen(_ sender: NSToolbarItemGroup) {
@@ -252,10 +317,16 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
             }
         }
         out.append(.separator())
-        let newSim = NSMenuItem(title: "New Simulator…", action: #selector(DevicesController.newSimulatorChosen(_:)), keyEquivalent: "")
+        let installRuntimes = NSMenuItem(title: "Install Simulator Runtimes…", action: #selector(DevicesController.showInstallSimulatorsSheet(_:)), keyEquivalent: "")
+        installRuntimes.target = hub
+        installRuntimes.isEnabled = hub != nil
+        out.append(installRuntimes)
+
+        let newSim = NSMenuItem(title: "New Simulator…", action: #selector(DevicesController.showCreateSimulatorSheet(_:)), keyEquivalent: "")
         newSim.target = hub
         newSim.isEnabled = hub != nil
         out.append(newSim)
+
         let pair = NSMenuItem(title: "Pair Nearby Device…", action: #selector(DevicesController.pairNearbyChosen(_:)), keyEquivalent: "")
         pair.target = hub
         pair.isEnabled = hub != nil

@@ -27,6 +27,12 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     let searchField = NSSearchField()
     let details = NSStackView()
     public let canvas = DeviceCanvasView(mode: .hub)
+    public var workspaceMode: DeviceHubUnifiedWorkspace.HubWorkspaceMode = .canvas
+    private let workspaceContainer = NSView()
+    private var visualUISplitVC: VisualUIBuilderSplitViewController?
+    private var visualUIContainer: NSView?
+    private var deviceConnectHostingView: NSHostingView<DeviceConnectView>?
+    private var modeSwitcher: NSSegmentedControl?
     private let sidebarVC = NSViewController()
     private let canvasVC = NSViewController()
     let inspectorVC = NSViewController()
@@ -979,12 +985,46 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
 
     private func makeCanvas() -> NSView {
         let root = NSView()
-        canvas.translatesAutoresizingMaskIntoConstraints = false
-        root.addSubview(canvas)
+
+        let headerBar = NSView()
+        headerBar.translatesAutoresizingMaskIntoConstraints = false
+        headerBar.wantsLayer = true
+        root.addSubview(headerBar)
+
+        let switcher = NSSegmentedControl(labels: [
+            "Live Device", "Visual UI & Artboards", "Device Connect"
+        ], trackingMode: .selectOne, target: self, action: #selector(workspaceModeChanged(_:)))
+        switcher.translatesAutoresizingMaskIntoConstraints = false
+        switcher.segmentStyle = .texturedRounded
+        switcher.selectedSegment = workspaceMode.rawValue
+        headerBar.addSubview(switcher)
+        self.modeSwitcher = switcher
+
+        workspaceContainer.translatesAutoresizingMaskIntoConstraints = false
+        root.addSubview(workspaceContainer)
+
         NSLayoutConstraint.activate([
-            canvas.topAnchor.constraint(equalTo: root.safeAreaLayoutGuide.topAnchor),
-            canvas.leadingAnchor.constraint(equalTo: root.leadingAnchor), canvas.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            canvas.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+            headerBar.topAnchor.constraint(equalTo: root.safeAreaLayoutGuide.topAnchor),
+            headerBar.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            headerBar.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            headerBar.heightAnchor.constraint(equalToConstant: 34),
+
+            switcher.centerXAnchor.constraint(equalTo: headerBar.centerXAnchor),
+            switcher.centerYAnchor.constraint(equalTo: headerBar.centerYAnchor),
+
+            workspaceContainer.topAnchor.constraint(equalTo: headerBar.bottomAnchor),
+            workspaceContainer.leadingAnchor.constraint(equalTo: root.leadingAnchor),
+            workspaceContainer.trailingAnchor.constraint(equalTo: root.trailingAnchor),
+            workspaceContainer.bottomAnchor.constraint(equalTo: root.bottomAnchor),
+        ])
+
+        canvas.translatesAutoresizingMaskIntoConstraints = false
+        workspaceContainer.addSubview(canvas)
+        NSLayoutConstraint.activate([
+            canvas.topAnchor.constraint(equalTo: workspaceContainer.topAnchor),
+            canvas.leadingAnchor.constraint(equalTo: workspaceContainer.leadingAnchor),
+            canvas.trailingAnchor.constraint(equalTo: workspaceContainer.trailingAnchor),
+            canvas.bottomAnchor.constraint(equalTo: workspaceContainer.bottomAnchor),
         ])
         canvas.handlesKeyEquivalents = true
         canvas.showsBezels = defaults.object(forKey: Self.bezelsKey) as? Bool ?? true
@@ -1000,7 +1040,139 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         canvas.headsetCommandEnabled = { [weak self] in self?.canToggleHeadset(self?.selected) ?? false }
         canvas.headsetCommandTitle = { [weak self] in self?.headsetCommandTitle(for: self?.selected) ?? "View in Headset" }
         canvas.onTakeBack = { [weak self] in if let r = self?.selected { self?.backToDesktop(r) } }
+
+        updateWorkspaceViews()
         return root
+    }
+
+    @objc func workspaceModeChanged(_ sender: NSSegmentedControl) {
+        guard let mode = DeviceHubUnifiedWorkspace.HubWorkspaceMode(rawValue: sender.selectedSegment) else { return }
+        setWorkspaceMode(mode)
+    }
+
+    public func setWorkspaceMode(_ mode: DeviceHubUnifiedWorkspace.HubWorkspaceMode) {
+        self.workspaceMode = mode
+        modeSwitcher?.selectedSegment = mode.rawValue
+        toolbarController.updateWorkspace()
+        updateWorkspaceViews()
+        syncSelectedDeviceWithActiveWorkspace()
+    }
+
+    private func updateWorkspaceViews() {
+        switch workspaceMode {
+        case .canvas:
+            canvas.isHidden = false
+            visualUIContainer?.isHidden = true
+            deviceConnectHostingView?.isHidden = true
+        case .visualUI:
+            canvas.isHidden = true
+            ensureVisualUILoaded()
+            visualUIContainer?.isHidden = false
+            deviceConnectHostingView?.isHidden = true
+        case .deviceConnect:
+            canvas.isHidden = true
+            visualUIContainer?.isHidden = true
+            ensureDeviceConnectLoaded()
+            deviceConnectHostingView?.isHidden = false
+        }
+    }
+
+    private func ensureVisualUILoaded() {
+        guard visualUIContainer == nil else { return }
+        let container = NSView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        workspaceContainer.addSubview(container)
+        NSLayoutConstraint.activate([
+            container.topAnchor.constraint(equalTo: workspaceContainer.topAnchor),
+            container.leadingAnchor.constraint(equalTo: workspaceContainer.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: workspaceContainer.trailingAnchor),
+            container.bottomAnchor.constraint(equalTo: workspaceContainer.bottomAnchor),
+        ])
+        let splitVC = VisualUIBuilderSplitViewController()
+        addChild(splitVC)
+        container.addSubview(splitVC.view)
+        splitVC.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            splitVC.view.topAnchor.constraint(equalTo: container.topAnchor),
+            splitVC.view.leadingAnchor.constraint(equalTo: container.leadingAnchor),
+            splitVC.view.trailingAnchor.constraint(equalTo: container.trailingAnchor),
+            splitVC.view.bottomAnchor.constraint(equalTo: container.bottomAnchor),
+        ])
+        self.visualUISplitVC = splitVC
+        self.visualUIContainer = container
+    }
+
+    private func ensureDeviceConnectLoaded() {
+        guard deviceConnectHostingView == nil else { return }
+        let hosting = NSHostingView(rootView: DeviceConnectView())
+        hosting.translatesAutoresizingMaskIntoConstraints = false
+        workspaceContainer.addSubview(hosting)
+        NSLayoutConstraint.activate([
+            hosting.topAnchor.constraint(equalTo: workspaceContainer.topAnchor),
+            hosting.leadingAnchor.constraint(equalTo: workspaceContainer.leadingAnchor),
+            hosting.trailingAnchor.constraint(equalTo: workspaceContainer.trailingAnchor),
+            hosting.bottomAnchor.constraint(equalTo: workspaceContainer.bottomAnchor),
+        ])
+        self.deviceConnectHostingView = hosting
+    }
+
+    public func syncSelectedDeviceWithActiveWorkspace() {
+        switch workspaceMode {
+        case .canvas:
+            break
+        case .visualUI:
+            DeviceHubUnifiedWorkspace.syncDeviceWithUIBuilder(selected)
+        case .deviceConnect:
+            DeviceHubUnifiedWorkspace.syncDeviceWithDeviceConnect(selected, isSimulator: selected.map(isLocalSimulator) ?? false)
+        }
+    }
+
+    public func bootAndShowContent(_ r: DeviceRow) {
+        localLiveViewEnabled = true
+        start(r)
+    }
+
+    @objc public func bootAndShowContentChosen(_ sender: Any?) {
+        if let r = row(from: sender) {
+            bootAndShowContent(r)
+        }
+    }
+
+    @objc public func toggleBootSelectedSimulator(_ sender: Any?) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        if r.state == "Booted" {
+            shutDown(r)
+        } else {
+            bootAndShowContent(r)
+        }
+    }
+
+    @objc public func showInstallSimulatorsSheet(_ sender: Any? = nil) {
+        guard let window = view.window else { return }
+        let sheet = InstallSimulatorSheet { [weak self] in
+            self?.refreshLocalRows()
+        }
+        let hosting = NSHostingController(rootView: sheet)
+        let sheetWindow = NSWindow(contentViewController: hosting)
+        sheetWindow.styleMask = [.titled, .closable]
+        sheetWindow.title = "Install Simulator Runtimes"
+        window.beginSheet(sheetWindow)
+    }
+
+    @objc public func showCreateSimulatorSheet(_ sender: Any? = nil) {
+        guard let window = view.window else { return }
+        let sheet = CreateSimulatorSheet { [weak self] udid in
+            self?.refreshLocalRows()
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                self?.refreshLocalRows()
+            }
+        }
+        let hosting = NSHostingController(rootView: sheet)
+        let sheetWindow = NSWindow(contentViewController: hosting)
+        sheetWindow.styleMask = [.titled, .closable]
+        sheetWindow.title = "Create Simulator"
+        window.beginSheet(sheetWindow)
     }
 
     func performWithoutDisplay(_ c: DeviceCommand) -> Bool {
@@ -1070,6 +1242,7 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         refreshCanvas()
         updateWindowTitle()
         toolbarController.update()
+        syncSelectedDeviceWithActiveWorkspace()
     }
 
     func refreshCanvas() {
