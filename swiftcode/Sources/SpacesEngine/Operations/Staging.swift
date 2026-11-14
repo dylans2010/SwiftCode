@@ -130,6 +130,7 @@ public struct StagingOps {
         index.entries.removeValue(forKey: path)
         try repo.saveIndex(index)
         if !cachedOnly {
+            _ = try? RecoveryVaultOps(repo: repo).vaultRetain(paths: [path], reason: "remove")
             let url = try repo.worktreeURL(forRelativePath: path)
             try? FileManager.default.removeItem(at: url)
         }
@@ -178,6 +179,7 @@ public struct StagingOps {
         guard let entry = index.entries[path] else { throw SpacesError.pathNotFound(path) }
         let data = try repo.blobData(entry.oid)
         let url = try repo.worktreeURL(forRelativePath: path)
+        _ = try? RecoveryVaultOps(repo: repo).vaultRetain(paths: [path], reason: "restore")
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                                 withIntermediateDirectories: true)
         if entry.mode.isSymlink {
@@ -203,6 +205,7 @@ public struct StagingOps {
             if dryRun {
                 removed.append(s.path)
             } else {
+                _ = try? RecoveryVaultOps(repo: repo).vaultRetain(paths: [s.path], reason: "clean")
                 try? FileManager.default.removeItem(at: url)
                 removed.append(s.path)
             }
@@ -231,16 +234,28 @@ public struct StagingOps {
         public var filesChanged: Int
     }
 
-    /// `spaces commit` — creates a commit from the index (or worktree when
-    /// `stageAll` is true). Runs pre-commit/post-commit hooks.
     @discardableResult
     public func commit(message: String, stageAll: Bool = false,
                        amend: Bool = false, author: Signature? = nil,
                        trailers: [String: String] = [:]) throws -> CommitResult {
+        try commitCore(message: message, stageAll: stageAll, amend: amend, author: author,
+                       trailers: trailers, metadata: CommitMetadata(trailers: trailers))
+    }
+
+    @discardableResult
+    public func commitWithMetadata(message: String, metadata: CommitMetadata,
+                                   stageAll: Bool = false, amend: Bool = false,
+                                   author: Signature? = nil) throws -> CommitResult {
+        try commitCore(message: message, stageAll: stageAll, amend: amend, author: author,
+                       trailers: metadata.trailers, metadata: metadata)
+    }
+
+    @discardableResult
+    public func commitCore(message: String, stageAll: Bool = false,
+                           amend: Bool = false, author: Signature? = nil,
+                           trailers: [String: String] = [:],
+                           metadata: CommitMetadata) throws -> CommitResult {
         try repo.performTransaction(steps: ["commit"]) {
-            if repo.inMerge() {
-                // Merge commit: two parents.
-            }
             if amend && repo.inMerge() {
                 throw SpacesError.invalidArgument("cannot amend a merge in progress")
             }
@@ -251,7 +266,6 @@ public struct StagingOps {
                 index = try repo.index()
             }
 
-            // Determine parents.
             var parents: [ObjectID] = []
             var headOID: ObjectID? = nil
             if amend {
@@ -264,7 +278,6 @@ public struct StagingOps {
                 if let head = try repo.refs.headOID(objects: repo.objects) {
                     parents.append(head)
                 }
-                // Merge second parent.
                 if repo.inMerge(), let mergeHead = repo.readState("MERGE_HEAD"),
                    let oid = try? ObjectID(validating: mergeHead.trimmingCharacters(in: .whitespacesAndNewlines)) {
                     parents.append(oid)
@@ -273,9 +286,6 @@ public struct StagingOps {
 
             let treeOID = try writeIndexTree()
 
-            // Nothing-to-commit check: same tree as HEAD, or an empty root
-            // commit with nothing staged. Empty commits only allowed via
-            // trailers["allow-empty"].
             let isEmptyRoot = parents.isEmpty && index.entries.isEmpty
             var unchangedFromHead = false
             if parents.count == 1,
@@ -287,7 +297,6 @@ public struct StagingOps {
                 throw SpacesError.nothingToCommit
             }
 
-            // File-change count vs first parent.
             var changed = 0
             if let first = parents.first {
                 let oldFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: repo.commitObject(first).tree)
@@ -297,17 +306,15 @@ public struct StagingOps {
                 changed = index.entries.count
             }
 
-            // Pre-commit hook.
             try runHook(.preCommit, input: message)
 
             let ident = repo.identity()
-            let meta = CommitMetadata(trailers: trailers)
+            let meta = metadata
             let payload = CommitPayload(tree: treeOID, parents: parents,
                                         author: author ?? ident, committer: ident,
                                         message: message, metadata: meta)
             let oid = try repo.objects.write(.commit, value: payload)
 
-            // Update ref.
             let oldHead = try repo.refs.headOID(objects: repo.objects)
             if let sym = try repo.refs.symbolicHEAD() {
                 let old = try repo.refs.updateRef(sym, to: oid)
@@ -318,7 +325,6 @@ public struct StagingOps {
             }
             _ = oldHead; _ = headOID
 
-            // Clear operation state on merge commit.
             if repo.inMerge() && parents.count > 1 {
                 repo.clearState(["MERGE_HEAD", "MERGE_MSG", "MERGE_MODE", "conflicts.json"])
                 try? FileManager.default.removeItem(at: repo.metaURL.appendingPathComponent("rebase-merge"))

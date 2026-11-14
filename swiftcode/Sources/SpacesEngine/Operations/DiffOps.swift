@@ -18,14 +18,24 @@ public struct DiffOps {
         public var added: Int
         public var removed: Int
         public var patch: String?
+        public var oldSize: Int? = nil
+        public var newSize: Int? = nil
+        public var oldDigest: String? = nil
+        public var newDigest: String? = nil
+        public var similarityRatio: Double? = nil
 
         public enum StatusKind: String, Sendable {
             case added, deleted, modified, renamed, typechanged
         }
     }
 
-    /// Diffs two flattened trees. Rename detection pairs delete+add with
-    /// identical OIDs.
+    public struct DirectoryComparison: Sendable {
+        public var directory: String
+        public var added: Int
+        public var removed: Int
+        public var changed: Int
+    }
+
     public func diffTrees(_ oldTree: ObjectID, _ newTree: ObjectID) throws -> [FileDiff] {
         let oldFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: oldTree)
         let newFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: newTree)
@@ -37,12 +47,11 @@ public struct DiffOps {
         var diffs: [FileDiff] = []
         var consumedNew = Set<String>()
 
-        // Detect renames: deleted old paths whose OID appears in added new paths.
         var addedByOID: [ObjectID: [String]] = [:]
         for (path, e) in newFlat where oldFlat[path] == nil {
             addedByOID[e.oid, default: []].append(path)
         }
-        var renamePairs: [String: String] = [:] // old -> new
+        var renamePairs: [String: String] = [:]
         for (oldPath, oldE) in oldFlat where newFlat[oldPath] == nil {
             if var candidates = addedByOID[oldE.oid], !candidates.isEmpty {
                 let newPath = candidates.removeFirst()
@@ -52,12 +61,34 @@ public struct DiffOps {
             }
         }
 
-        // Old-side entries.
+        var renameSimilarity: [String: Double] = [:]
+        for (oldPath, oldE) in oldFlat.sorted(by: { $0.key < $1.key })
+        where newFlat[oldPath] == nil && renamePairs[oldPath] == nil {
+            guard let oldData = try? repo.blobData(oldE.oid),
+                  !DiffEngine.isBinary(oldData) else { continue }
+            var best: (path: String, ratio: Double)? = nil
+            for (newPath, newE) in newFlat.sorted(by: { $0.key < $1.key })
+            where oldFlat[newPath] == nil && !consumedNew.contains(newPath) {
+                guard let newData = try? repo.blobData(newE.oid),
+                      !DiffEngine.isBinary(newData) else { continue }
+                let ratio = byteSimilarity(old: oldData, new: newData)
+                if ratio >= 0.5 && (best == nil || ratio > best!.ratio) {
+                    best = (newPath, ratio)
+                }
+            }
+            if let match = best {
+                renamePairs[oldPath] = match.path
+                renameSimilarity[oldPath] = match.ratio
+                consumedNew.insert(match.path)
+            }
+        }
+
         for (path, oldE) in oldFlat.sorted(by: { $0.key < $1.key }) {
             if let newPath = renamePairs[path] {
                 let newE = newFlat[newPath]!
                 diffs.append(try makeDiff(oldPath: path, newPath: newPath,
-                                          oldE: oldE, newE: newE, status: .renamed))
+                                          oldE: oldE, newE: newE, status: .renamed,
+                                          similarity: renameSimilarity[path] ?? 1.0))
                 continue
             }
             if let newE = newFlat[path] {
@@ -71,7 +102,6 @@ public struct DiffOps {
                                           oldE: oldE, newE: nil, status: .deleted))
             }
         }
-        // New-side additions.
         for (path, newE) in newFlat.sorted(by: { $0.key < $1.key }) {
             if oldFlat[path] == nil && !consumedNew.contains(path) {
                 diffs.append(try makeDiff(oldPath: path, newPath: path,
@@ -84,7 +114,8 @@ public struct DiffOps {
     private func makeDiff(oldPath: String, newPath: String,
                           oldE: (oid: ObjectID, mode: FileMode)?,
                           newE: (oid: ObjectID, mode: FileMode)?,
-                          status: FileDiff.StatusKind) throws -> FileDiff {
+                          status: FileDiff.StatusKind,
+                          similarity: Double? = nil) throws -> FileDiff {
         var isBinary = false
         var added = 0, removed = 0
         var patch: String? = nil
@@ -111,7 +142,58 @@ public struct DiffOps {
                         oldOID: oldE?.oid, newOID: newE?.oid,
                         oldMode: oldE?.mode, newMode: newE?.mode,
                         status: status, isBinary: isBinary,
-                        added: added, removed: removed, patch: patch)
+                        added: added, removed: removed, patch: patch,
+                        oldSize: oldData?.count, newSize: newData?.count,
+                        oldDigest: oldE?.oid.hex, newDigest: newE?.oid.hex,
+                        similarityRatio: similarity)
+    }
+
+    private func byteSimilarity(old: Data, new: Data) -> Double {
+        let aLines = DiffEngine.splitLines(old)
+        let bLines = DiffEngine.splitLines(new)
+        if aLines.isEmpty && bLines.isEmpty { return 1.0 }
+        if aLines.isEmpty || bLines.isEmpty { return 0.0 }
+        var counts: [String: Int] = [:]
+        for line in aLines { counts[line, default: 0] += 1 }
+        var shared = 0
+        for line in bLines {
+            if let remaining = counts[line], remaining > 0 {
+                counts[line] = remaining - 1
+                shared += 1
+            }
+        }
+        return Double(shared) / Double(max(aLines.count, bLines.count))
+    }
+
+    public func compareDirectories(from: ObjectID, to: ObjectID) throws -> [DirectoryComparison] {
+        let diffs = try diffTrees(from, to)
+        var byDirectory: [String: DirectoryComparison] = [:]
+        for diff in diffs {
+            let path = diff.status == .deleted ? diff.oldPath : diff.newPath
+            for directory in ancestorDirectories(of: path) {
+                var entry = byDirectory[directory] ?? DirectoryComparison(directory: directory, added: 0, removed: 0, changed: 0)
+                switch diff.status {
+                case .added: entry.added += 1
+                case .deleted: entry.removed += 1
+                default: entry.changed += 1
+                }
+                byDirectory[directory] = entry
+            }
+        }
+        return byDirectory.values.sorted { $0.directory < $1.directory }
+    }
+
+    private func ancestorDirectories(of path: String) -> [String] {
+        var directories = [""]
+        var parts = path.split(separator: "/").map(String.init)
+        guard !parts.isEmpty else { return directories }
+        parts.removeLast()
+        var current = ""
+        for part in parts {
+            current = current.isEmpty ? part : current + "/" + part
+            directories.append(current)
+        }
+        return directories
     }
 
     /// `spaces diff` (worktree vs index, or index vs HEAD with stagedOnly).
@@ -156,6 +238,10 @@ public struct DiffOps {
         let fromCommit = try repo.commitObject(fromOID)
         let toCommit = try repo.commitObject(toOID)
         return try diffTrees(fromCommit.tree, toCommit.tree)
+    }
+
+    public func compareRevisions(from: String, to: String = "HEAD") throws -> [FileDiff] {
+        try commitDiff(from, to)
     }
 
     /// Diff a single file between two revisions or worktree.

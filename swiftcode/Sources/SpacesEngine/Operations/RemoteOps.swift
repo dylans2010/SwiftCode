@@ -6,7 +6,153 @@ import Foundation
 /// remotes require a Spaces server (documented limitation).
 public struct RemoteOps {
     public let repo: Repository
+    public var cancelRequested = false
     public init(repo: Repository) { self.repo = repo }
+
+    public struct TransferProgress: Codable, Sendable {
+        public var remote: String
+        public var direction: String
+        public var transferred: Int
+        public var alreadyPresent: Int
+        public var failed: [String]
+        public var objectIDs: [String]
+        public var lastCheckpoint: Int64
+        public var completed: Bool
+    }
+
+    public struct TransferReport: Sendable {
+        public var remote: String
+        public var direction: String
+        public var transferred: Int
+        public var alreadyPresent: Int
+        public var failed: [String]
+        public var totalObjects: Int
+    }
+
+    public struct RemoteHealth: Sendable {
+        public var remote: String
+        public var reachable: Bool
+        public var lastSync: Int64?
+        public var objectCount: Int
+        public var remoteRefCount: Int
+    }
+
+    public mutating func requestCancellation() {
+        cancelRequested = true
+    }
+
+    private func remoteDirectory(_ remote: String) -> URL {
+        repo.metaURL.appendingPathComponent("remotes").appendingPathComponent(remote)
+    }
+
+    private func progressURL(_ remote: String) -> URL {
+        remoteDirectory(remote).appendingPathComponent("progress.json")
+    }
+
+    private func cancelURL(_ remote: String) -> URL {
+        remoteDirectory(remote).appendingPathComponent("cancel")
+    }
+
+    private func loadProgress(_ remote: String) -> TransferProgress? {
+        guard let data = try? Data(contentsOf: progressURL(remote)) else { return nil }
+        return try? JSONDecoder().decode(TransferProgress.self, from: data)
+    }
+
+    private func saveProgress(_ progress: TransferProgress) throws {
+        let dir = remoteDirectory(progress.remote)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
+        try repo.refs.atomicWrite(progressURL(progress.remote), contents: encoder.encode(progress))
+    }
+
+    private func checkCancellation(_ remote: String) throws {
+        if cancelRequested || FileManager.default.fileExists(atPath: cancelURL(remote).path) {
+            throw SpacesError.cancelled
+        }
+    }
+
+    public func cancelRemoteTransfer(_ remote: String) throws {
+        let dir = remoteDirectory(remote)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try Data().write(to: cancelURL(remote), options: .atomic)
+    }
+
+    public func clearRemoteCancel(_ remote: String) {
+        try? FileManager.default.removeItem(at: cancelURL(remote))
+    }
+
+    public func lastTransferReport(_ remote: String) throws -> TransferReport? {
+        guard let progress = loadProgress(remote) else { return nil }
+        return TransferReport(remote: progress.remote, direction: progress.direction,
+                              transferred: progress.transferred, alreadyPresent: progress.alreadyPresent,
+                              failed: progress.failed,
+                              totalObjects: progress.transferred + progress.alreadyPresent + progress.failed.count)
+    }
+
+    @discardableResult
+    public func resumeFetch(_ remote: String) throws -> TransferReport {
+        _ = try fetch(remote)
+        guard let report = try lastTransferReport(remote) else {
+            throw SpacesError.internalInconsistency("missing transfer progress for \(remote)")
+        }
+        return report
+    }
+
+    @discardableResult
+    public func resumePush(_ remote: String, refspec: String) throws -> TransferReport {
+        _ = try push(remote, refspec: refspec)
+        guard let report = try lastTransferReport(remote) else {
+            throw SpacesError.internalInconsistency("missing transfer progress for \(remote)")
+        }
+        return report
+    }
+
+    public func remoteHealth(_ remote: String) throws -> RemoteHealth {
+        guard let cfg = repo.config.remotes[remote] else {
+            throw SpacesError.remoteNotFound(remote)
+        }
+        let reachable: Bool
+        if cfg.url.hasPrefix("http://") || cfg.url.hasPrefix("https://") || cfg.url.hasPrefix("spaces://") {
+            reachable = httpReachable(urlString: cfg.url)
+        } else {
+            reachable = (try? LocalTransport(path: cfg.url).resolve()) != nil
+        }
+        var lastSync: Int64? = nil
+        var refCount = 0
+        for ref in try repo.refs.allRefs() where ref.name.hasPrefix("refs/remotes/\(remote)/") {
+            refCount += 1
+            if let entry = try repo.readReflog(refName: ref.name, limit: 1).first {
+                if lastSync == nil || entry.timestamp > (lastSync ?? 0) {
+                    lastSync = entry.timestamp
+                }
+            }
+        }
+        let counts = try MaintenanceOps(repo: repo).countObjects()
+        return RemoteHealth(remote: remote, reachable: reachable, lastSync: lastSync,
+                            objectCount: counts.total, remoteRefCount: refCount)
+    }
+
+    private func httpReachable(urlString: String) -> Bool {
+        var target = urlString
+        if target.hasPrefix("spaces://") {
+            target = "https://" + target.dropFirst("spaces://".count)
+        }
+        guard let url = URL(string: target) else { return false }
+        var request = URLRequest(url: url)
+        request.httpMethod = "HEAD"
+        request.timeoutInterval = 5
+        let semaphore = DispatchSemaphore(value: 0)
+        var ok = false
+        URLSession.shared.dataTask(with: request) { _, response, _ in
+            if let http = response as? HTTPURLResponse, (200...399).contains(http.statusCode) {
+                ok = true
+            }
+            semaphore.signal()
+        }.resume()
+        semaphore.wait()
+        return ok
+    }
 
     public struct RemoteInfo: Sendable {
         public var name: String
@@ -87,15 +233,13 @@ public struct RemoteOps {
         public var remoteRefs: [Ref]
     }
 
-    /// `spaces fetch <remote>` — negotiates wants/haves, transfers missing
-    /// objects, updates remote-tracking refs.
     @discardableResult
     public func fetch(_ remote: String, prune: Bool = false) throws -> FetchReport { return try repo.withLock {
+        try checkCancellation(remote)
         let transport = try transport(for: remote)
         let conn = try transport.connect()
         defer { conn.close() }
 
-        // Protocol handshake.
         try conn.send(["v": RepositoryFormat.protocolVersion, "op": "hello",
                        "caps": ["objects-v1", "refs-v1"]])
         _ = try conn.receive()
@@ -112,22 +256,23 @@ public struct RemoteOps {
             remoteRefs.append(Ref(name: name, oid: oid))
         }
 
-        // Compute wants: remote commits not reachable locally.
         let localReachable = try MaintenanceOps(repo: repo).reachableSet()
         var wants: [String] = []
         var haves: [String] = []
-        // Haves: all local ref tips + HEAD.
         for ref in try repo.refs.allRefs() { haves.append(ref.oid.hex) }
         for r in remoteRefs {
-            // Only want commit-ish refs (branches, tags, HEAD).
             guard r.name.hasPrefix("refs/heads/") || r.name.hasPrefix("refs/tags/") else { continue }
             if !localReachable.contains(r.oid) {
                 wants.append(r.oid.hex)
             }
         }
         guard !wants.isEmpty else {
-            // Still update tracking refs below.
-            return try updateTrackingRefs(remote: remote, remoteRefs: remoteRefs, newObjects: 0)
+            let report = try updateTrackingRefs(remote: remote, remoteRefs: remoteRefs, newObjects: 0)
+            try saveProgress(TransferProgress(remote: remote, direction: "fetch", transferred: 0,
+                                              alreadyPresent: 0, failed: [], objectIDs: [],
+                                              lastCheckpoint: Int64(Date().timeIntervalSince1970),
+                                              completed: true))
+            return report
         }
 
         try conn.send(["v": RepositoryFormat.protocolVersion, "op": "want",
@@ -137,9 +282,11 @@ public struct RemoteOps {
               let objects = packMsg["objects"] as? [[String: Any]] else {
             throw SpacesError.protocolError("expected pack response")
         }
+        try checkCancellation(remote)
 
-        // Store received objects with integrity verification.
         var stored = 0
+        var alreadyPresent = 0
+        var receivedIDs: [String] = []
         for o in objects {
             guard let hex = o["id"] as? String,
                   let typeRaw = o["type"] as? String,
@@ -150,11 +297,26 @@ public struct RemoteOps {
             guard ObjectID.compute(type: type, payload: payload) == oid else {
                 throw SpacesError.objectCorrupt(hex)
             }
-            if !repo.objects.exists(oid) {
-                _ = try repo.objects.write(type: type, payload: payload)
-                stored += 1
+            receivedIDs.append(hex)
+            if repo.objects.exists(oid) {
+                alreadyPresent += 1
+                continue
+            }
+            _ = try repo.objects.write(type: type, payload: payload)
+            stored += 1
+        }
+
+        var failed: [String] = []
+        for hex in receivedIDs {
+            if let oid = try? ObjectID(validating: hex) {
+                do { _ = try repo.objects.read(oid) } catch { failed.append(hex) }
             }
         }
+        try saveProgress(TransferProgress(remote: remote, direction: "fetch", transferred: stored,
+                                          alreadyPresent: alreadyPresent, failed: failed,
+                                          objectIDs: receivedIDs,
+                                          lastCheckpoint: Int64(Date().timeIntervalSince1970),
+                                          completed: failed.isEmpty))
 
         return try updateTrackingRefs(remote: remote, remoteRefs: remoteRefs,
                                       newObjects: stored)
@@ -223,11 +385,14 @@ public struct RemoteOps {
         public var objectsSent: Int
     }
 
-    /// `spaces push <remote> <refspec>[:<dst>]` — negotiates with remote via
-    /// "have"/"ack", sends missing objects, updates remote refs.
     @discardableResult
-    public func push(_ remote: String, refspec: String) throws -> PushReport { return try repo.withLock {
-        // Parse refspec "src:dst" or "src".
+    public func push(_ remote: String, refspec: String) throws -> PushReport {
+        try push(remote, refspec: refspec, force: false)
+    }
+
+    @discardableResult
+    public func push(_ remote: String, refspec: String, force: Bool) throws -> PushReport { return try repo.withLock {
+        try checkCancellation(remote)
         let parts = refspec.split(separator: ":", maxSplits: 1).map(String.init)
         let src = parts[0]
         let dst = parts.count > 1 ? parts[1] : src
@@ -251,24 +416,24 @@ public struct RemoteOps {
                 return (n, o)
             }
 
-        // Non-fast-forward check.
         if let existing = remoteRefs.first(where: { $0.name == dstRefName }),
            existing.oid != srcOID {
-            let isAncestor = try isAncestorLocal(existing.oid, of: srcOID)
-            if !isAncestor {
-                throw SpacesError.remoteError(
-                    "non-fast-forward: \(dstRefName) on remote is not an ancestor (use --force)")
+            if force {
+                let protected = try ProtectedHistoryOps(repo: repo).checkProtectedHistory(ref: dstRefName, operation: "force-push")
+                if !protected.allowed {
+                    try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "force-push", details: "\(remote) \(refspec)", result: "denied: \(protected.reasons.joined(separator: "; "))")
+                    throw SpacesError.invalidArgument(protected.reasons.joined(separator: "; "))
+                }
+            } else {
+                let isAncestor = try isAncestorLocal(existing.oid, of: srcOID)
+                if !isAncestor {
+                    throw SpacesError.remoteError(
+                        "non-fast-forward: \(dstRefName) on remote is not an ancestor (use --force)")
+                }
             }
         }
 
-        // Objects to send: reachable from srcOID minus remote-reachable.
-        // Remote reachable ≈ objects reachable from all its refs.
         let remoteSeeds = remoteRefs.map(\.oid)
-        // We can't compute remote reachability locally; conservatively send
-        // objects reachable from srcOID that we know remote lacks by asking:
-        // send "have" for srcOID; remote acks what it has — but for object
-        // delta we approximate: send all objects reachable from srcOID that
-        // aren't reachable from our own remote-tracking refs for this remote.
         var haveSeeds: [ObjectID] = []
         for ref in try repo.refs.allRefs()
         where ref.name.hasPrefix("refs/remotes/\(remote)/") {
@@ -276,27 +441,56 @@ public struct RemoteOps {
         }
         let haveReach = try repo.objects.reachable(from: haveSeeds)
         let wantReach = try repo.objects.reachable(from: [srcOID])
-        let toSend = wantReach.subtracting(haveReach)
+        var toSend = wantReach.subtracting(haveReach)
+        var resumedIDs = Set<ObjectID>()
+        let priorProgress = loadProgress(remote)
+        if let prior = priorProgress, prior.direction == "push", !prior.completed {
+            for hex in prior.objectIDs {
+                if let oid = try? ObjectID(validating: hex) { resumedIDs.insert(oid) }
+            }
+        }
+        let alreadyPresent = toSend.intersection(resumedIDs).count
+        toSend.subtract(resumedIDs)
 
-        // Send objects in batches.
         var sent = 0
+        var sentIDs: [String] = priorProgress?.objectIDs ?? []
+        var failed: [String] = []
         let batchSize = 500
         let sorted = toSend.sorted { $0.hex < $1.hex }
         for chunkStart in stride(from: 0, to: sorted.count, by: batchSize) {
+            do {
+                try checkCancellation(remote)
+            } catch {
+                try saveProgress(TransferProgress(remote: remote, direction: "push", transferred: sent,
+                                                  alreadyPresent: alreadyPresent, failed: failed,
+                                                  objectIDs: sentIDs,
+                                                  lastCheckpoint: Int64(Date().timeIntervalSince1970),
+                                                  completed: false))
+                throw error
+            }
             let chunk = Array(sorted[chunkStart..<min(chunkStart + batchSize, sorted.count)])
             var objects: [[String: Any]] = []
             for id in chunk {
-                guard let stored = try? repo.objects.read(id) else { continue }
-                objects.append(["id": id.hex, "type": stored.type.rawValue,
-                                "data": stored.payload.base64EncodedString()])
+                do {
+                    let stored = try repo.objects.read(id)
+                    objects.append(["id": id.hex, "type": stored.type.rawValue,
+                                    "data": stored.payload.base64EncodedString()])
+                } catch {
+                    failed.append(id.hex)
+                }
             }
             try conn.send(["v": RepositoryFormat.protocolVersion, "op": "store",
                            "objects": objects])
             _ = try conn.receive()
             sent += objects.count
+            sentIDs.append(contentsOf: objects.compactMap { $0["id"] as? String })
+            try saveProgress(TransferProgress(remote: remote, direction: "push", transferred: sent,
+                                              alreadyPresent: alreadyPresent, failed: failed,
+                                              objectIDs: sentIDs,
+                                              lastCheckpoint: Int64(Date().timeIntervalSince1970),
+                                              completed: false))
         }
 
-        // Update remote ref.
         try conn.send(["v": RepositoryFormat.protocolVersion, "op": "update-refs",
                        "refs": [["name": dstRefName, "oid": srcOID.hex]]])
         let ok = try conn.receive()
@@ -304,9 +498,15 @@ public struct RemoteOps {
             throw SpacesError.protocolError("remote rejected ref update")
         }
 
-        // Update local remote-tracking ref.
         let trackName = "refs/remotes/\(remote)/\(dst)"
         _ = try repo.refs.updateRef(trackName, to: srcOID)
+        try saveProgress(TransferProgress(remote: remote, direction: "push", transferred: sent,
+                                          alreadyPresent: alreadyPresent, failed: failed,
+                                          objectIDs: sentIDs,
+                                          lastCheckpoint: Int64(Date().timeIntervalSince1970),
+                                          completed: failed.isEmpty))
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: force ? "force-push" : "push",
+                                                         details: "\(remote) \(refspec)", result: "success")
         return PushReport(remote: remote, refsUpdated: [dstRefName], objectsSent: sent)
         }
     }

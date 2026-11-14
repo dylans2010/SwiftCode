@@ -99,6 +99,78 @@ public struct MaintenanceOps {
         }
     }
 
+    public struct StorageBudgetReport: Sendable {
+        public var pruned: Int
+        public var reachable: Int
+        public var totalBytes: Int64
+        public var maxBytes: Int64?
+        public var overBudgetBy: Int64
+    }
+
+    public func gcWithBudget() throws -> StorageBudgetReport {
+        let result = try gc()
+        let usage = try storage()
+        let maxBytes = try RetentionPolicyOps(repo: repo).policy().maxBytes
+        let over = maxBytes.map { max(Int64(0), usage.total - $0) } ?? 0
+        return StorageBudgetReport(pruned: result.pruned, reachable: result.reachable,
+                                   totalBytes: usage.total, maxBytes: maxBytes, overBudgetBy: over)
+    }
+
+    public struct DuplicateContentReport: Sendable {
+        public var sharedBlobCount: Int
+        public var sharedBytes: Int64
+        public var bytesSaved: Int64
+        public var unreachableBlobCount: Int
+        public var unreachableBlobBytes: Int64
+        public var snapshotCount: Int
+    }
+
+    public func duplicateContentReport() throws -> DuplicateContentReport {
+        let dedup = try SnapshotDedupOps(repo: repo).deduplicationReport()
+        let reachable = try reachableSet()
+        var unreachableBlobs = 0
+        var unreachableBytes: Int64 = 0
+        for id in try repo.objects.allIDs() where !reachable.contains(id) {
+            if let stored = try? repo.objects.read(id), stored.type == .blob {
+                unreachableBlobs += 1
+                unreachableBytes += Int64(stored.payload.count)
+            }
+        }
+        return DuplicateContentReport(sharedBlobCount: dedup.sharedBlobCount,
+                                      sharedBytes: dedup.sharedBytes,
+                                      bytesSaved: dedup.bytesSaved,
+                                      unreachableBlobCount: unreachableBlobs,
+                                      unreachableBlobBytes: unreachableBytes,
+                                      snapshotCount: dedup.snapshotCount)
+    }
+
+    public struct PerformanceDiagnostics: Sendable {
+        public var statusMs: Int64
+        public var logMs: Int64
+        public var fsckMs: Int64
+        public var storageMs: Int64
+        public var timestamp: Int64
+    }
+
+    public func performanceDiagnostics() throws -> PerformanceDiagnostics {
+        let api = SpacesAPI(repo: repo)
+        var start = Date()
+        _ = try api.status()
+        let statusMs = Int64(ceil(Date().timeIntervalSince(start) * 1000))
+        start = Date()
+        _ = try api.log(limit: 100)
+        let logMs = Int64(ceil(Date().timeIntervalSince(start) * 1000))
+        start = Date()
+        _ = try api.fsck()
+        let fsckMs = Int64(ceil(Date().timeIntervalSince(start) * 1000))
+        start = Date()
+        _ = try api.storage()
+        let storageMs = Int64(ceil(Date().timeIntervalSince(start) * 1000))
+        return PerformanceDiagnostics(statusMs: statusMs, logMs: logMs, fsckMs: fsckMs,
+                                      storageMs: storageMs,
+                                      timestamp: Int64(Date().timeIntervalSince1970))
+    }
+
     /// `spaces count` — object counts by type.
     public func countObjects() throws -> (blobs: Int, trees: Int, commits: Int,
                                           tags: Int, snapshots: Int, total: Int) {

@@ -30,9 +30,6 @@ public struct MergeEngine {
         }
     }
 
-    /// Computes the merge of `theirsOID` into the current HEAD without
-    /// touching the worktree — returns the merged tree + conflicts.
-    /// `baseOID` is the merge base (computed if nil).
     public func mergeTrees(oursHead: ObjectID, theirsOID: ObjectID,
                            baseOID: ObjectID? = nil) throws
         -> (tree: ObjectID, conflicts: [ConflictInfo], resolved: [String: Data]) {
@@ -42,7 +39,6 @@ public struct MergeEngine {
         } else if let mb = try HistoryOps(repo: repo).mergeBase(oursHead, theirsOID) {
             base = mb
         } else {
-            // Unrelated histories: merge against empty tree.
             base = try TreeBuilder.emptyTree(objects: repo.objects)
         }
         let baseCommit = try? repo.commitObject(base)
@@ -57,12 +53,12 @@ public struct MergeEngine {
         let allPaths = Set(baseFlat.keys).union(oursFlat.keys).union(theirsFlat.keys)
         var merged: [String: (oid: ObjectID, mode: FileMode)] = [:]
         var conflicts: [ConflictInfo] = []
-        var resolvedContents: [String: Data] = [:] // path → merged bytes for clean text merges
+        var resolvedContents: [String: Data] = [:]
+        let policies = (try? resolutionPolicies()) ?? []
 
         for path in allPaths.sorted() {
             let b = baseFlat[path], o = oursFlat[path], t = theirsFlat[path]
 
-            // Same on all sides or unchanged relative to base.
             func same(_ x: (oid: ObjectID, mode: FileMode)?, _ y: (oid: ObjectID, mode: FileMode)?) -> Bool {
                 switch (x, y) {
                 case (nil, nil): return true
@@ -70,55 +66,73 @@ public struct MergeEngine {
                 default: return false
                 }
             }
-            if same(o, t) { // includes both nil
+            if same(o, t) {
                 if let entry = o { merged[path] = entry }
                 continue
             }
             if same(b, o) {
-                // Only theirs changed.
                 if let entry = t { merged[path] = entry }
                 continue
             }
             if same(b, t) {
-                // Only ours changed.
                 if let entry = o { merged[path] = entry }
                 continue
             }
 
-            // Both sides changed differently (or one deleted).
             let oursDeleted = o == nil, theirsDeleted = t == nil
             if oursDeleted && theirsDeleted { continue }
             if oursDeleted || theirsDeleted {
                 let survivor = oursDeleted ? t! : o!
-                let deletedBy = oursDeleted ? "ours" : "theirs"
-                // delete/modify conflict unless the modification is identical
-                // to base (already handled above).
+                if let action = policyAction(for: path, policies: policies) {
+                    switch action {
+                    case .takeOurs:
+                        if let entry = o { merged[path] = entry }
+                    case .takeTheirs:
+                        if let entry = t { merged[path] = entry }
+                    case .manual:
+                        conflicts.append(ConflictInfo(path: path,
+                                                      kind: .deleteModify,
+                                                      baseOID: b?.oid,
+                                                      oursOID: o?.oid,
+                                                      theirsOID: t?.oid))
+                        merged[path] = survivor
+                    }
+                    continue
+                }
                 conflicts.append(ConflictInfo(path: path,
                                               kind: .deleteModify,
                                               baseOID: b?.oid,
                                               oursOID: o?.oid,
                                               theirsOID: t?.oid))
-                // Keep the modified version in worktree for resolution.
                 merged[path] = survivor
-                _ = deletedBy
                 continue
             }
 
-            // Both present, different content.
             let oData = try repo.blobData(o!.oid)
             let tData = try repo.blobData(t!.oid)
             let bData = b.map { try? repo.blobData($0.oid) } ?? nil
             let binary = DiffEngine.isBinary(oData) || DiffEngine.isBinary(tData)
                 || (bData.map { DiffEngine.isBinary($0) } ?? false)
             if binary {
-                conflicts.append(ConflictInfo(path: path, kind: .binary,
-                                              baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
-                // Keep ours in tree; conflict markers impossible for binary.
-                merged[path] = o!
+                if let action = policyAction(for: path, policies: policies) {
+                    switch action {
+                    case .takeOurs:
+                        merged[path] = o!
+                    case .takeTheirs:
+                        merged[path] = t!
+                    case .manual:
+                        conflicts.append(ConflictInfo(path: path, kind: .binary,
+                                                      baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
+                        merged[path] = o!
+                    }
+                } else {
+                    conflicts.append(ConflictInfo(path: path, kind: .binary,
+                                                  baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
+                    merged[path] = o!
+                }
                 continue
             }
 
-            // Text 3-way merge.
             let baseText = bData.map { String(decoding: $0, as: UTF8.self) } ?? ""
             let oursText = String(decoding: oData, as: UTF8.self)
             let theirsText = String(decoding: tData, as: UTF8.self)
@@ -130,17 +144,29 @@ public struct MergeEngine {
                 merged[path] = (oid, mode)
                 resolvedContents[path] = data
             } else {
-                // Write conflict-markered content, keep as unmerged.
-                let data = Data(result.text.utf8)
-                let oid = try repo.objects.write(type: .blob, payload: data)
-                merged[path] = (oid, o!.mode)
-                conflicts.append(ConflictInfo(path: path, kind: .content,
-                                              baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
+                if let action = policyAction(for: path, policies: policies) {
+                    switch action {
+                    case .takeOurs:
+                        merged[path] = (o!.oid, o!.mode)
+                    case .takeTheirs:
+                        merged[path] = (t!.oid, t!.mode)
+                    case .manual:
+                        let data = Data(result.text.utf8)
+                        let oid = try repo.objects.write(type: .blob, payload: data)
+                        merged[path] = (oid, o!.mode)
+                        conflicts.append(ConflictInfo(path: path, kind: .content,
+                                                      baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
+                    }
+                } else {
+                    let data = Data(result.text.utf8)
+                    let oid = try repo.objects.write(type: .blob, payload: data)
+                    merged[path] = (oid, o!.mode)
+                    conflicts.append(ConflictInfo(path: path, kind: .content,
+                                                  baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
+                }
             }
         }
 
-        // Directory/file conflicts: if merged map has both "a" as file and
-        // "a/b" paths, that's a structural conflict — detect and report.
         var hasDirFile = false
         let paths = Set(merged.keys)
         for p in paths {
@@ -160,7 +186,6 @@ public struct MergeEngine {
         return (treeOID, conflicts, resolvedContents)
     }
 
-    /// `spaces merge <branch>` — full merge into current branch.
     public struct MergeOutcome {
         public var result: MergeResult
         public var conflicts: [ConflictInfo]
@@ -170,7 +195,7 @@ public struct MergeEngine {
     @discardableResult
     public func merge(_ target: String, allowFF: Bool = true,
                       strategy: String = "ort") throws -> MergeOutcome {
-        _ = strategy // reserved for future strategy selection
+        _ = strategy
         return try repo.performTransaction(steps: ["merge:\(target)"]) {
             if repo.inMerge() { throw SpacesError.mergeInProgress }
             if repo.inRebase() { throw SpacesError.rebaseInProgress }
@@ -185,10 +210,8 @@ public struct MergeEngine {
             let headCommit = try repo.commitObject(headOID)
             let theirsCommit = try repo.commitObject(theirsOID)
 
-            // Fast-forward check: head is ancestor of theirs.
             let base = try HistoryOps(repo: repo).mergeBase(headOID, theirsOID)
             if allowFF, base == headOID {
-                // FF: move branch ref to theirs, update worktree+index.
                 try checkoutCommit(theirsOID)
                 if let sym = try repo.refs.symbolicHEAD() {
                     _ = try repo.refs.updateRef(sym, to: theirsOID)
@@ -198,12 +221,10 @@ public struct MergeEngine {
                 return MergeOutcome(result: .fastForward(theirsOID), conflicts: [], commitOID: nil)
             }
 
-            // Three-way merge.
             _ = try StagingOps(repo: repo).runHook(.preMerge, input: "")
             let merged = try mergeTrees(oursHead: headOID, theirsOID: theirsOID, baseOID: base)
 
             if merged.conflicts.isEmpty {
-                // Clean merge → merge commit.
                 let ident = repo.identity()
                 let message = "Merge \(target) into \(try repo.refs.currentBranch() ?? "HEAD")"
                 let payload = CommitPayload(tree: merged.tree,
@@ -225,18 +246,21 @@ public struct MergeEngine {
                                     conflicts: [], commitOID: commitOID)
             }
 
-            // Conflicted merge: write merged tree to worktree, mark conflicts,
-            // set MERGE_HEAD, leave for user resolution.
             try checkoutTree(merged.tree, overlay: merged.resolved)
-            // Write conflicts.json.
             let records = merged.conflicts.map {
                 WorktreeScanner.ConflictRecord(path: $0.path, resolved: false,
-                                               ours: nil, theirs: nil, base: nil)
+                                               ours: $0.oursOID?.hex, theirs: $0.theirsOID?.hex,
+                                               base: $0.baseOID?.hex)
             }
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.sortedKeys]
             try encoder.encode(records).write(
                 to: repo.metaURL.appendingPathComponent("conflicts.json"))
+            writeConflictProvenance(merged.conflicts)
+            recordConflictHistory(ours: headOID, theirs: theirsOID, base: base,
+                                  paths: merged.conflicts.map { $0.path },
+                                  categories: merged.conflicts.map { ConflictCategory(kind: $0.kind).rawValue },
+                                  resolution: "unresolved")
             try repo.writeState("MERGE_HEAD", contents: theirsOID.hex + "\n")
             try repo.writeState("MERGE_MSG",
                                 contents: "Merge \(target) into \(try repo.refs.currentBranch() ?? "HEAD")\n")
@@ -247,8 +271,6 @@ public struct MergeEngine {
         }
     }
 
-    /// `spaces merge-continue` — after resolving conflicts, creates the
-    /// merge commit.
     @discardableResult
     public func mergeContinue(message: String? = nil) throws -> ObjectID {
         return try repo.performTransaction(steps: ["merge-continue"]) {
@@ -263,14 +285,16 @@ public struct MergeEngine {
             guard let headOID = try repo.refs.headOID(objects: repo.objects) else {
                 throw SpacesError.branchNotFound("HEAD")
             }
-            // Stage everything (resolved files were written to worktree).
+            let prior = (try? conflictProvenance()) ?? []
             _ = try StagingOps(repo: repo).add(".", all: true)
             let staging = StagingOps(repo: repo)
             let msg = message ?? repo.readState("MERGE_MSG") ?? "Merge commit"
-            // Build commit manually with two parents (StagingOps.commit would
-            // read MERGE_HEAD itself — reuse it).
             let result = try staging.commit(message: msg)
             _ = mergeOID
+            recordConflictHistory(ours: headOID, theirs: mergeOID, base: nil,
+                                  paths: prior.map { $0.path },
+                                  categories: prior.map { $0.category.rawValue },
+                                  resolution: "resolved")
             return result.oid
         }
     }
@@ -296,8 +320,6 @@ public struct MergeEngine {
         }
     }
 
-    /// `spaces cherry-pick <rev>` / `spaces revert <rev>`.
-    /// Both apply a commit's diff onto HEAD as a new commit.
     @discardableResult
     public func cherryPick(_ rev: String, revert: Bool = false) throws -> ObjectID? {
         return try repo.performTransaction(steps: [revert ? "revert:\(rev)" : "cherry-pick:\(rev)"]) {
@@ -309,7 +331,6 @@ public struct MergeEngine {
             }
             let parentCommit = try repo.commitObject(parent)
 
-            // Compute diff parent→commit, apply to HEAD tree.
             guard let headOID = try repo.refs.headOID(objects: repo.objects) else {
                 throw SpacesError.branchNotFound("HEAD")
             }
@@ -318,7 +339,6 @@ public struct MergeEngine {
             let baseTree = revert ? commit.tree : parentCommit.tree
             _ = sourceTree
 
-            // 3-way merge: base=parent(or commit for revert), ours=HEAD, theirs=commit(or parent for revert).
             let theirsOID = revert ? parent : oid
             let baseOID = revert ? oid : parent
             let merged = try mergeTrees(oursHead: headOID, theirsOID: theirsOID, baseOID: baseOID)
@@ -327,17 +347,22 @@ public struct MergeEngine {
                 try checkoutTree(merged.tree, overlay: merged.resolved)
                 let records = merged.conflicts.map {
                     WorktreeScanner.ConflictRecord(path: $0.path, resolved: false,
-                                                   ours: nil, theirs: nil, base: nil)
+                                                   ours: $0.oursOID?.hex, theirs: $0.theirsOID?.hex,
+                                                   base: $0.baseOID?.hex)
                 }
                 let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
                 try encoder.encode(records).write(
                     to: repo.metaURL.appendingPathComponent("conflicts.json"))
+                writeConflictProvenance(merged.conflicts)
+                recordConflictHistory(ours: headOID, theirs: oid, base: baseOID,
+                                      paths: merged.conflicts.map { $0.path },
+                                      categories: merged.conflicts.map { ConflictCategory(kind: $0.kind).rawValue },
+                                      resolution: "unresolved")
                 try repo.writeState(revert ? "REVERT_HEAD" : "CHERRY_PICK_HEAD",
                                     contents: oid.hex + "\n")
                 return nil
             }
 
-            // Clean: create commit with HEAD as only parent.
             let ident = repo.identity()
             let verb = revert ? "Revert" : "Cherry-pick"
             let origSummary = commit.summary
@@ -410,6 +435,183 @@ public struct MergeEngine {
             try repo.saveIndex(index)
             repo.clearState(["CHERRY_PICK_HEAD", "REVERT_HEAD", "conflicts.json"])
         }
+    }
+
+    public enum ConflictCategory: String, Codable, Sendable {
+        case content
+        case rename
+        case deleteModify
+        case binary
+
+        init(kind: ConflictInfo.ConflictKind) {
+            switch kind {
+            case .content, .addAdd, .directoryFile: self = .content
+            case .binary: self = .binary
+            case .deleteModify: self = .deleteModify
+            case .renameDelete: self = .rename
+            }
+        }
+    }
+
+    public struct ConflictProvenance: Codable, Sendable {
+        public var path: String
+        public var category: ConflictCategory
+        public var ours: String?
+        public var theirs: String?
+        public var base: String?
+        public var resolved: Bool
+
+        public var oursOID: ObjectID? { ours.flatMap { try? ObjectID(validating: $0) } }
+        public var theirsOID: ObjectID? { theirs.flatMap { try? ObjectID(validating: $0) } }
+        public var baseOID: ObjectID? { base.flatMap { try? ObjectID(validating: $0) } }
+    }
+
+    public struct ConflictHistoryEntry: Codable, Sendable {
+        public var timestamp: Int64
+        public var ours: String
+        public var theirs: String
+        public var base: String?
+        public var paths: [String]
+        public var categories: [String]
+        public var resolution: String
+    }
+
+    public enum ResolutionAction: String, Codable, Sendable {
+        case takeOurs
+        case takeTheirs
+        case manual
+    }
+
+    public struct MergeResolutionPolicy: Codable, Sendable {
+        public var path: String
+        public var resolution: ResolutionAction
+    }
+
+    public func conflictProvenance() throws -> [ConflictProvenance] {
+        let dir = repo.metaURL.appendingPathComponent("conflicts")
+        var entries: [ConflictProvenance] = []
+        if let data = try? Data(contentsOf: dir.appendingPathComponent("provenance.json")),
+           let decoded = try? JSONDecoder().decode([ConflictProvenance].self, from: data) {
+            entries = decoded
+        }
+        let recordsURL = repo.metaURL.appendingPathComponent("conflicts.json")
+        guard let data = try? Data(contentsOf: recordsURL),
+              let records = try? JSONDecoder().decode([WorktreeScanner.ConflictRecord].self, from: data) else {
+            return entries
+        }
+        if entries.isEmpty {
+            return records.map { record in
+                ConflictProvenance(path: record.path, category: categoryForRecord(record),
+                                   ours: record.ours, theirs: record.theirs, base: record.base,
+                                   resolved: record.resolved)
+            }
+        }
+        var resolvedByPath: [String: Bool] = [:]
+        for record in records { resolvedByPath[record.path] = record.resolved }
+        for i in entries.indices {
+            if let resolved = resolvedByPath[entries[i].path] { entries[i].resolved = resolved }
+        }
+        return entries
+    }
+
+    public func conflictHistory() throws -> [ConflictHistoryEntry] {
+        let url = repo.metaURL.appendingPathComponent("conflicts").appendingPathComponent("history.jsonl")
+        guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        let decoder = JSONDecoder()
+        return text.components(separatedBy: "\n").compactMap { line in
+            guard !line.isEmpty else { return nil }
+            return try? decoder.decode(ConflictHistoryEntry.self, from: Data(line.utf8))
+        }
+    }
+
+    public func resolutionPolicies() throws -> [MergeResolutionPolicy] {
+        let url = repo.metaURL.appendingPathComponent("merge").appendingPathComponent("resolutions.json")
+        guard let data = try? Data(contentsOf: url) else { return [] }
+        return (try? JSONDecoder().decode([MergeResolutionPolicy].self, from: data)) ?? []
+    }
+
+    public func setResolutionPolicy(path: String, resolution: ResolutionAction) throws {
+        try repo.withLock {
+            var policies = try resolutionPolicies()
+            policies.removeAll { $0.path == path }
+            policies.append(MergeResolutionPolicy(path: path, resolution: resolution))
+            let dir = repo.metaURL.appendingPathComponent("merge")
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
+            try repo.refs.atomicWrite(dir.appendingPathComponent("resolutions.json"),
+                                     contents: encoder.encode(policies.sorted { $0.path < $1.path }))
+        }
+    }
+
+    public func removeResolutionPolicy(path: String) throws {
+        try repo.withLock {
+            var policies = try resolutionPolicies()
+            policies.removeAll { $0.path == path }
+            let dir = repo.metaURL.appendingPathComponent("merge")
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
+            try repo.refs.atomicWrite(dir.appendingPathComponent("resolutions.json"),
+                                     contents: encoder.encode(policies.sorted { $0.path < $1.path }))
+        }
+    }
+
+    func policyAction(for path: String, policies: [MergeResolutionPolicy]) -> ResolutionAction? {
+        for policy in policies where securityGlobMatch(pattern: policy.path, value: path) {
+            return policy.resolution
+        }
+        return nil
+    }
+
+    func writeConflictProvenance(_ conflicts: [ConflictInfo]) {
+        let entries = conflicts.map { info in
+            ConflictProvenance(path: info.path, category: ConflictCategory(kind: info.kind),
+                               ours: info.oursOID?.hex, theirs: info.theirsOID?.hex,
+                               base: info.baseOID?.hex, resolved: false)
+        }
+        let dir = repo.metaURL.appendingPathComponent("conflicts")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        if let data = try? encoder.encode(entries) {
+            try? repo.refs.atomicWrite(dir.appendingPathComponent("provenance.json"), contents: data)
+        }
+    }
+
+    func recordConflictHistory(ours: ObjectID, theirs: ObjectID, base: ObjectID?,
+                               paths: [String], categories: [String], resolution: String) {
+        let entry = ConflictHistoryEntry(timestamp: Int64(Date().timeIntervalSince1970),
+                                         ours: ours.hex, theirs: theirs.hex, base: base?.hex,
+                                         paths: paths, categories: categories, resolution: resolution)
+        let dir = repo.metaURL.appendingPathComponent("conflicts")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let url = dir.appendingPathComponent("history.jsonl")
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let encoded = try? encoder.encode(entry) else { return }
+        var line = Data(encoded)
+        line.append(0x0A)
+        if FileManager.default.fileExists(atPath: url.path) {
+            if let handle = try? FileHandle(forWritingTo: url) {
+                defer { try? handle.close() }
+                try? handle.seekToEnd()
+                try? handle.write(contentsOf: line)
+            }
+        } else {
+            try? line.write(to: url, options: .atomic)
+        }
+    }
+
+    private func categoryForRecord(_ record: WorktreeScanner.ConflictRecord) -> ConflictCategory {
+        if record.ours == nil || record.theirs == nil { return .deleteModify }
+        for hex in [record.ours, record.theirs].compactMap({ $0 }) {
+            if let oid = try? ObjectID(validating: hex),
+               let data = try? repo.blobData(oid), DiffEngine.isBinary(data) {
+                return .binary
+            }
+        }
+        return .content
     }
 
     // MARK: - Tree checkout helpers

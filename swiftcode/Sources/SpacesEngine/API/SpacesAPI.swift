@@ -1,3 +1,4 @@
+import Crypto
 import Foundation
 
 /// Public API surface for Spaces. Typed, async, cancellable. The CLI and the
@@ -94,7 +95,8 @@ public final class SpacesAPI: @unchecked Sendable {
     @discardableResult
     public func commit(message: String, amend: Bool = false,
                        trailers: [String: String] = [:]) throws -> StagingOps.CommitResult {
-        try StagingOps(repo: repo).commit(message: message, amend: amend, trailers: trailers)
+        try validateCommitPolicies(message: message)
+        return try StagingOps(repo: repo).commit(message: message, amend: amend, trailers: trailers)
     }
 
     public func log(limit: Int = 100, all: Bool = false,
@@ -128,7 +130,13 @@ public final class SpacesAPI: @unchecked Sendable {
     }
 
     public func deleteBranch(_ name: String, force: Bool = false) throws {
+        let check = try ProtectedHistoryOps(repo: repo).checkProtectedHistory(ref: "refs/heads/" + name, operation: "delete")
+        if !check.allowed {
+            try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "branch-delete", details: name, result: "denied: \(check.reasons.joined(separator: "; "))")
+            throw SpacesError.invalidArgument(check.reasons.joined(separator: "; "))
+        }
         try repo.performTransaction { try BranchOps(repo: repo).delete(name, force: force) }
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "branch-delete", details: name, result: "success")
     }
 
     public func renameBranch(_ old: String, to new: String) throws {
@@ -147,7 +155,10 @@ public final class SpacesAPI: @unchecked Sendable {
 
     @discardableResult
     public func merge(_ target: String) throws -> MergeEngine.MergeOutcome {
-        try MergeEngine(repo: repo).merge(target)
+        let outcome = try MergeEngine(repo: repo).merge(target)
+        let result = outcome.commitOID == nil && !outcome.conflicts.isEmpty ? "conflicted" : "success"
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "merge", details: target, result: result)
+        return outcome
     }
 
     public func mergeContinue() throws -> ObjectID {
@@ -286,6 +297,10 @@ public final class SpacesAPI: @unchecked Sendable {
         try RemoteOps(repo: repo).push(remote, refspec: refspec)
     }
 
+    public func push(_ remote: String, refspec: String, force: Bool) throws -> RemoteOps.PushReport {
+        try RemoteOps(repo: repo).push(remote, refspec: refspec, force: force)
+    }
+
     // MARK: - Diff
 
     public func diff(stagedOnly: Bool = false) throws -> [DiffOps.FileDiff] {
@@ -365,6 +380,333 @@ public final class SpacesAPI: @unchecked Sendable {
     /// direct `Repository`/ops-layer call.
     public func events() -> AsyncStream<SpacesEvent> {
         SpacesEventHub.shared.subscribe(worktree: repo.worktreeURL)
+    }
+}
+
+extension SpacesAPI {
+    public struct CommitComparison: Sendable {
+        public var from: ObjectID
+        public var to: ObjectID
+        public var diffs: [DiffOps.FileDiff]
+        public var metadataDifferences: [String]
+    }
+
+    public struct ExpiredBranch: Sendable {
+        public var branch: String
+        public var expiresAt: Int64
+        public var tipCommitTimestamp: Int64
+    }
+
+    public struct BranchActivity: Sendable {
+        public var branch: String
+        public var commitCount: Int
+        public var reflogEntries: Int
+        public var lastCommitTimestamp: Int64
+    }
+
+    public struct BranchSyncReport: Sendable {
+        public var branch: String
+        public var hasUpstream: Bool
+        public var upstream: String?
+        public var ahead: Int
+        public var behind: Int
+    }
+
+    private func validateCommitPolicies(message: String) throws {
+        let rules = try ValidationPolicyOps(repo: repo).commitPolicies()
+        guard !rules.isEmpty else { return }
+        let staged = try status().staged.map { $0.path }
+        let violations = try ValidationPolicyOps(repo: repo).validateCommit(message: message, stagedPaths: staged)
+        guard violations.isEmpty else {
+            throw SpacesError.invalidArgument("commit blocked by policy: \(violations.map { $0.message }.joined(separator: "; "))")
+        }
+    }
+
+    @discardableResult
+    public func commitWithMetadata(message: String, metadata: CommitMetadata) throws -> StagingOps.CommitResult {
+        try validateCommitPolicies(message: message)
+        return try StagingOps(repo: repo).commitWithMetadata(message: message, metadata: metadata)
+    }
+
+    @discardableResult
+    public func addAnnotation(rev: String, annotation: String) throws -> ObjectID {
+        let oldOID = try repo.resolveRevision(rev)
+        return try repo.performTransaction(steps: ["annotate"]) {
+            var payload = try repo.commitObject(oldOID)
+            payload.metadata.annotations.append(annotation)
+            let newOID = try repo.objects.write(.commit, value: payload)
+            try rewriteRefs(from: oldOID, to: newOID, message: "annotate commit")
+            return newOID
+        }
+    }
+
+    public func compareCommits(from: String, to: String) throws -> CommitComparison {
+        let fromOID = try repo.resolveRevision(from)
+        let toOID = try repo.resolveRevision(to)
+        let fromPayload = try repo.commitObject(fromOID)
+        let toPayload = try repo.commitObject(toOID)
+        let diffs = try DiffOps(repo: repo).commitDiff(from, to)
+        var differences: [String] = []
+        if fromPayload.author != toPayload.author { differences.append("author differs") }
+        if fromPayload.committer != toPayload.committer { differences.append("committer differs") }
+        if fromPayload.message != toPayload.message { differences.append("message differs") }
+        if fromPayload.metadata.category != toPayload.metadata.category { differences.append("category differs") }
+        let allTrailerKeys = Set(fromPayload.metadata.trailers.keys).union(toPayload.metadata.trailers.keys)
+        for key in allTrailerKeys.sorted() where fromPayload.metadata.trailers[key] != toPayload.metadata.trailers[key] {
+            differences.append("trailer \(key) differs")
+        }
+        for annotation in Set(fromPayload.metadata.annotations).subtracting(toPayload.metadata.annotations).sorted() {
+            differences.append("annotation removed: \(annotation)")
+        }
+        for annotation in Set(toPayload.metadata.annotations).subtracting(fromPayload.metadata.annotations).sorted() {
+            differences.append("annotation added: \(annotation)")
+        }
+        if (fromPayload.metadata.signature != nil) != (toPayload.metadata.signature != nil) {
+            differences.append("signature presence differs")
+        }
+        return CommitComparison(from: fromOID, to: toOID, diffs: diffs, metadataDifferences: differences)
+    }
+
+    public func signingIdentities() throws -> [String] {
+        var identities = ["default"]
+        let files = (try? FileManager.default.contentsOfDirectory(atPath: repo.metaURL.path)) ?? []
+        for file in files where file.hasPrefix("signing-") && file.hasSuffix(".key") {
+            let name = String(file.dropFirst("signing-".count).dropLast(".key".count))
+            if !name.isEmpty && name != "default" { identities.append(name) }
+        }
+        return identities.sorted()
+    }
+
+    @discardableResult
+    public func signCommit(rev: String, identity: String = "default") throws -> (oid: ObjectID, signature: String) {
+        let oldOID = try repo.resolveRevision(rev)
+        let payload = try repo.commitObject(oldOID)
+        let canonical = canonicalCommitString(payload)
+        let signature: String
+        if identity == "default" {
+            signature = try SigningOps(repo: repo).sign(type: .commit, object: canonical)
+        } else {
+            signature = try signWithIdentity(identity: identity, object: canonical)
+        }
+        let newOID = try repo.performTransaction(steps: ["sign-commit"]) {
+            var rewritten = payload
+            rewritten.metadata.signature = signature
+            var trailers = rewritten.metadata.trailers
+            trailers["signing-identity"] = identity
+            rewritten.metadata.trailers = trailers
+            let oid = try repo.objects.write(.commit, value: rewritten)
+            try rewriteRefs(from: oldOID, to: oid, message: "sign commit")
+            return oid
+        }
+        return (newOID, signature)
+    }
+
+    public func verifyCommitSignature(rev: String) throws -> Bool {
+        let oid = try repo.resolveRevision(rev)
+        let payload = try repo.commitObject(oid)
+        guard let signature = payload.metadata.signature else { return false }
+        let identity = payload.metadata.trailers["signing-identity"] ?? "default"
+        let canonical = canonicalCommitString(payload)
+        if identity == "default" {
+            return try SigningOps(repo: repo).verify(type: .commit, object: canonical, signature: signature)
+        }
+        return (try? signWithIdentity(identity: identity, object: canonical)) == signature
+    }
+
+    private func canonicalCommitString(_ payload: CommitPayload) -> String {
+        let parents = payload.parents.map { $0.hex }.joined(separator: ",")
+        return "\(payload.tree.hex)\n\(parents)\n\(payload.author.name) <\(payload.author.email)> \(payload.author.timestamp)\n\(payload.committer.name) <\(payload.committer.email)> \(payload.committer.timestamp)\n\(payload.message)"
+    }
+
+    private func signWithIdentity(identity: String, object: String) throws -> String {
+        guard !identity.isEmpty, !identity.contains("/"), !identity.contains("\\"),
+              identity != ".", identity != ".." else {
+            throw SpacesError.invalidArgument("invalid signing identity: \(identity)")
+        }
+        let keyURL = repo.metaURL.appendingPathComponent("signing-" + identity + ".key")
+        let keyData: Data
+        if let existing = try? Data(contentsOf: keyURL), existing.count >= 32 {
+            keyData = existing
+        } else {
+            let generated = SymmetricKey(size: .bits256)
+            let data = generated.withUnsafeBytes { Data($0) }
+            try data.write(to: keyURL, options: .atomic)
+            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: keyURL.path)
+            keyData = data
+        }
+        let mac = HMAC<SHA256>.authenticationCode(
+            for: Data("spaces-sign-v1\ncommit\n\(object)".utf8),
+            using: SymmetricKey(data: keyData))
+        return mac.map { String(format: "%02x", $0) }.joined()
+    }
+
+    private func rewriteRefs(from oldOID: ObjectID, to newOID: ObjectID, message: String) throws {
+        for ref in try repo.refs.allRefs() where ref.oid == oldOID {
+            let old = try repo.refs.updateRef(ref.name, to: newOID)
+            try repo.appendReflog(refName: ref.name, old: old, new: newOID, message: message)
+        }
+    }
+
+    private func branchStoreURL(_ file: String) -> URL {
+        repo.metaURL.appendingPathComponent("branches").appendingPathComponent(file)
+    }
+
+    private func loadBranchJSON<T: Decodable>(_ file: String) -> T? {
+        guard let data = try? Data(contentsOf: branchStoreURL(file)) else { return nil }
+        return try? JSONDecoder().decode(T.self, from: data)
+    }
+
+    private func saveBranchJSON<T: Encodable>(_ file: String, value: T) throws {
+        let dir = repo.metaURL.appendingPathComponent("branches")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .prettyPrinted]
+        try repo.refs.atomicWrite(branchStoreURL(file), contents: encoder.encode(value))
+    }
+
+    public func setBranchOwner(branch: String, owner: String) throws {
+        try repo.withLock {
+            var owners: [String: String] = loadBranchJSON("owners.json") ?? [:]
+            owners[branch] = owner
+            try saveBranchJSON("owners.json", value: owners)
+        }
+    }
+
+    public func branchOwner(branch: String) throws -> String? {
+        let owners: [String: String] = loadBranchJSON("owners.json") ?? [:]
+        return owners[branch]
+    }
+
+    public func setBranchExpiration(branch: String, date: Date) throws {
+        try repo.withLock {
+            var expirations: [String: Int64] = loadBranchJSON("expirations.json") ?? [:]
+            expirations[branch] = Int64(date.timeIntervalSince1970)
+            try saveBranchJSON("expirations.json", value: expirations)
+        }
+    }
+
+    public func expiredBranches() throws -> [ExpiredBranch] {
+        let expirations: [String: Int64] = loadBranchJSON("expirations.json") ?? [:]
+        let now = Int64(Date().timeIntervalSince1970)
+        var result: [ExpiredBranch] = []
+        for (branch, expiresAt) in expirations where now >= expiresAt {
+            var tipTimestamp: Int64 = 0
+            if let tip = try repo.refs.readRef("refs/heads/" + branch),
+               let commit = try? repo.commitObject(tip) {
+                tipTimestamp = commit.committer.timestamp
+            }
+            result.append(ExpiredBranch(branch: branch, expiresAt: expiresAt, tipCommitTimestamp: tipTimestamp))
+        }
+        return result.sorted { $0.branch < $1.branch }
+    }
+
+    public func protectBranch(branch: String, rules: [ProtectedHistoryOps.ProtectedRefRule]) throws {
+        try repo.withLock {
+            var stored: [String: [ProtectedHistoryOps.ProtectedRefRule]] = loadBranchJSON("protection.json") ?? [:]
+            stored[branch] = rules
+            try saveBranchJSON("protection.json", value: stored)
+            var history = try ProtectedHistoryOps(repo: repo).protectedHistoryRules()
+            history.refs.removeAll { $0.pattern == branch || $0.pattern == "refs/heads/" + branch }
+            history.refs.append(contentsOf: rules)
+            try ProtectedHistoryOps(repo: repo).setProtectedHistoryRules(history)
+        }
+    }
+
+    public func branchProtection(branch: String) throws -> [ProtectedHistoryOps.ProtectedRefRule] {
+        let stored: [String: [ProtectedHistoryOps.ProtectedRefRule]] = loadBranchJSON("protection.json") ?? [:]
+        return stored[branch] ?? []
+    }
+
+    public func branchActivity(branch: String) throws -> BranchActivity {
+        guard let tip = try repo.refs.readRef("refs/heads/" + branch) else {
+            throw SpacesError.branchNotFound(branch)
+        }
+        let commits = try HistoryOps(repo: repo).walk(start: tip)
+        let entries = try repo.readReflog(refName: "refs/heads/" + branch, limit: 1000)
+        return BranchActivity(branch: branch, commitCount: commits.count,
+                              reflogEntries: entries.count,
+                              lastCommitTimestamp: commits.first?.timestamp ?? 0)
+    }
+
+    public func branchSyncReport(branch: String) throws -> BranchSyncReport {
+        guard let tip = try repo.refs.readRef("refs/heads/" + branch) else {
+            throw SpacesError.branchNotFound(branch)
+        }
+        guard let upstream = repo.config.branchTracking[branch] else {
+            return BranchSyncReport(branch: branch, hasUpstream: false, upstream: nil, ahead: 0, behind: 0)
+        }
+        guard let upstreamOID = try repo.refs.readRef("refs/remotes/" + upstream) else {
+            return BranchSyncReport(branch: branch, hasUpstream: false, upstream: upstream, ahead: 0, behind: 0)
+        }
+        let counts = try WorktreeScanner(repo: repo).countAheadBehind(head: tip, upstream: upstreamOID)
+        return BranchSyncReport(branch: branch, hasUpstream: true, upstream: upstream,
+                                ahead: counts.ahead, behind: counts.behind)
+    }
+}
+
+extension SpacesAPI {
+    public func compareRevisions(from: String, to: String = "HEAD") throws -> [DiffOps.FileDiff] {
+        try DiffOps(repo: repo).compareRevisions(from: from, to: to)
+    }
+
+    public func compareDirectories(from: ObjectID, to: ObjectID) throws -> [DiffOps.DirectoryComparison] {
+        try DiffOps(repo: repo).compareDirectories(from: from, to: to)
+    }
+
+    public func conflictProvenance() throws -> [MergeEngine.ConflictProvenance] {
+        try MergeEngine(repo: repo).conflictProvenance()
+    }
+
+    public func conflictHistory() throws -> [MergeEngine.ConflictHistoryEntry] {
+        try MergeEngine(repo: repo).conflictHistory()
+    }
+
+    public func setResolutionPolicy(path: String, resolution: MergeEngine.ResolutionAction) throws {
+        try MergeEngine(repo: repo).setResolutionPolicy(path: path, resolution: resolution)
+    }
+
+    public func resolutionPolicies() throws -> [MergeEngine.MergeResolutionPolicy] {
+        try MergeEngine(repo: repo).resolutionPolicies()
+    }
+
+    public func removeResolutionPolicy(path: String) throws {
+        try MergeEngine(repo: repo).removeResolutionPolicy(path: path)
+    }
+
+    public func resumeFetch(_ remote: String) throws -> RemoteOps.TransferReport {
+        try RemoteOps(repo: repo).resumeFetch(remote)
+    }
+
+    public func resumePush(_ remote: String, refspec: String) throws -> RemoteOps.TransferReport {
+        try RemoteOps(repo: repo).resumePush(remote, refspec: refspec)
+    }
+
+    public func lastTransferReport(_ remote: String) throws -> RemoteOps.TransferReport? {
+        try RemoteOps(repo: repo).lastTransferReport(remote)
+    }
+
+    public func remoteHealth(_ remote: String) throws -> RemoteOps.RemoteHealth {
+        try RemoteOps(repo: repo).remoteHealth(remote)
+    }
+
+    public func cancelRemoteTransfer(_ remote: String) throws {
+        try RemoteOps(repo: repo).cancelRemoteTransfer(remote)
+    }
+
+    public func clearRemoteCancel(_ remote: String) {
+        RemoteOps(repo: repo).clearRemoteCancel(remote)
+    }
+
+    public func gcWithBudget() throws -> MaintenanceOps.StorageBudgetReport {
+        try MaintenanceOps(repo: repo).gcWithBudget()
+    }
+
+    public func duplicateContentReport() throws -> MaintenanceOps.DuplicateContentReport {
+        try MaintenanceOps(repo: repo).duplicateContentReport()
+    }
+
+    public func performanceDiagnostics() throws -> MaintenanceOps.PerformanceDiagnostics {
+        try MaintenanceOps(repo: repo).performanceDiagnostics()
     }
 }
 
