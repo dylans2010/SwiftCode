@@ -41,13 +41,13 @@ public struct Style26WelcomeView: View {
                 .frame(width: 460)
 
             Divider()
-                .overlay(Color.white.opacity(0.06))
+                .overlay(Color.primary.opacity(0.08))
 
             rightPane
                 .frame(width: 340)
         }
         .frame(width: Self.windowSize.width, height: Self.windowSize.height)
-        .background(Color(red: 0.07, green: 0.10, blue: 0.18))
+        .background(.clear)
         .onAppear {
             reloadRecents()
             NotificationCenter.default.addObserver(forName: RecentProjects.didChange, object: nil, queue: .main) { _ in
@@ -58,17 +58,18 @@ public struct Style26WelcomeView: View {
 
     private var leftPane: some View {
         ZStack(alignment: .topLeading) {
-            Color(red: 0.08, green: 0.11, blue: 0.20)
+            Rectangle()
+                .fill(.regularMaterial)
                 .ignoresSafeArea()
 
             Button(action: onClose) {
                 ZStack {
                     Circle()
-                        .fill(Color.white.opacity(0.12))
+                        .fill(.primary.opacity(0.10))
                         .frame(width: 24, height: 24)
                     Image(systemName: "xmark")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Color.white.opacity(0.75))
+                        .foregroundStyle(.secondary)
                 }
             }
             .buttonStyle(.plain)
@@ -91,18 +92,18 @@ public struct Style26WelcomeView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 124, height: 124)
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-                .shadow(color: Color.black.opacity(0.45), radius: 14, x: 0, y: 7)
+                .shadow(color: .black.opacity(0.35), radius: 14, x: 0, y: 7)
 
                 // App Name
                 Text("SwiftCode")
                     .font(.system(size: 34, weight: .bold, design: .default))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                     .padding(.top, 16)
 
                 // Version line pulled from CFBundleVersion
                 Text(versionText)
                     .font(.system(size: 13, weight: .regular))
-                    .foregroundStyle(Color.white.opacity(0.65))
+                    .foregroundStyle(.secondary)
                     .padding(.top, 4)
 
                 // Action buttons
@@ -145,17 +146,18 @@ public struct Style26WelcomeView: View {
 
     private var rightPane: some View {
         ZStack {
-            Color(red: 0.06, green: 0.14, blue: 0.30)
+            Rectangle()
+                .fill(.thinMaterial)
                 .ignoresSafeArea()
 
             if recentURLs.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "folder")
                         .font(.system(size: 32))
-                        .foregroundStyle(Color.white.opacity(0.25))
+                        .foregroundStyle(.quaternary)
                     Text("No Recent Projects")
                         .font(.system(size: 13))
-                        .foregroundStyle(Color.white.opacity(0.45))
+                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -200,12 +202,12 @@ private struct Style26ButtonCard: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(Color.white.opacity(0.9))
+                .foregroundStyle(.secondary)
                 .frame(width: 22)
 
             Text(title)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
 
             Spacer()
         }
@@ -214,11 +216,11 @@ private struct Style26ButtonCard: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(Color.white.opacity(isHovered ? 0.14 : 0.07))
+                .fill(.primary.opacity(isHovered ? 0.12 : 0.06))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .stroke(Color.white.opacity(isHovered ? 0.15 : 0.08), lineWidth: 1)
+                .stroke(Color.primary.opacity(isHovered ? 0.14 : 0.07), lineWidth: 1)
         )
         .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
         .onHover { isHovered = $0 }
@@ -245,12 +247,12 @@ private struct Style26RecentItemRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(RecentProjects.displayName(url))
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(isSelected ? Color.white : Color.primary)
                         .lineLimit(1)
 
                     Text(RecentProjects.folderText(url))
                         .font(.system(size: 11, weight: .regular))
-                        .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.white.opacity(0.55))
+                        .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -261,7 +263,7 @@ private struct Style26RecentItemRow: View {
             .padding(.vertical, 8)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(isSelected ? Color(red: 0.12, green: 0.40, blue: 0.88) : (isHovered ? Color.white.opacity(0.06) : Color.clear))
+                    .fill(isSelected ? Color.accentColor.opacity(0.9) : (isHovered ? Color.primary.opacity(0.07) : Color.clear))
             )
             .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         }

@@ -189,9 +189,9 @@ public struct WorkspaceHubTool: Identifiable, Hashable, Sendable {
 public final class SwiftCodeToolbarDelegate: NSObject, NSToolbarDelegate {
     public static let shared = SwiftCodeToolbarDelegate()
 
-    public static let itemPrefix = "com.swiftcode.toolbar."
+    public nonisolated static let itemPrefix = "com.swiftcode.toolbar."
 
-    public static let allAvailableTools: [WorkspaceHubTool] = [
+    public nonisolated static let allAvailableTools: [WorkspaceHubTool] = [
         WorkspaceHubTool(id: "terminal", name: "Terminal Console", description: "Open local shells, run background commands, manage SSH nodes, and configure terminal themes.", iconName: "terminal.fill", colorHex: "#5AC8FA", category: "Utilities", destination: "terminal"),
         WorkspaceHubTool(id: "build_settings", name: "Xcode Build Settings", description: "Manage optimization levels, target SDKs, and build parameters.", iconName: "gearshape.2.fill", colorHex: "#34C759", category: "Build & Deploy", destination: "xcodeBuildSettings"),
         WorkspaceHubTool(id: "build_logs", name: "Xcode Build Logs", description: "Stream compile warnings, errors, and live build output.", iconName: "doc.text.fill", colorHex: "#FF9500", category: "Build & Deploy", destination: "xcodeBuildLogs"),
@@ -226,11 +226,11 @@ public final class SwiftCodeToolbarDelegate: NSObject, NSToolbarDelegate {
         WorkspaceHubTool(id: "file_navigator", name: "File Navigator", description: "Toggle workspace file tree navigator panel.", iconName: "sidebar.left", colorHex: "#007AFF", category: "Search & Navigation", destination: "fileNavigator")
     ]
 
-    public static func identifier(for tool: WorkspaceHubTool) -> NSToolbarItem.Identifier {
+    public nonisolated static func identifier(for tool: WorkspaceHubTool) -> NSToolbarItem.Identifier {
         NSToolbarItem.Identifier("\(itemPrefix)\(tool.id)")
     }
 
-    public static func tool(for identifier: NSToolbarItem.Identifier) -> WorkspaceHubTool? {
+    public nonisolated static func tool(for identifier: NSToolbarItem.Identifier) -> WorkspaceHubTool? {
         let raw = identifier.rawValue
         if raw.hasPrefix(itemPrefix) {
             let toolId = String(raw.dropFirst(itemPrefix.count))
@@ -239,7 +239,7 @@ public final class SwiftCodeToolbarDelegate: NSObject, NSToolbarDelegate {
         return allAvailableTools.first(where: { $0.id == raw || $0.destination == raw })
     }
 
-    public func toolbar(
+    public nonisolated func toolbar(
         _ toolbar: NSToolbar,
         itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
         willBeInsertedIntoToolbar flag: Bool
@@ -260,7 +260,7 @@ public final class SwiftCodeToolbarDelegate: NSObject, NSToolbarDelegate {
         return item
     }
 
-    public func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    public nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         var defaults: [NSToolbarItem.Identifier] = []
         if let codeSearch = Self.allAvailableTools.first(where: { $0.id == "code_search" }) {
             defaults.append(Self.identifier(for: codeSearch))
@@ -278,13 +278,13 @@ public final class SwiftCodeToolbarDelegate: NSObject, NSToolbarDelegate {
         return defaults
     }
 
-    public func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    public nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         var allowed: [NSToolbarItem.Identifier] = Self.allAvailableTools.map { Self.identifier(for: $0) }
         allowed.append(contentsOf: [.space, .flexibleSpace])
         return allowed
     }
 
-    @objc private func handleToolbarAction(_ sender: NSToolbarItem) {
+    @objc nonisolated private func handleToolbarAction(_ sender: NSToolbarItem) {
         if let tool = Self.tool(for: sender.itemIdentifier) {
             let targetID = tool.destination.isEmpty ? tool.id : tool.destination
             NotificationCenter.default.post(

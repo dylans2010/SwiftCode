@@ -124,6 +124,15 @@ public enum TemplateOptionID {
     public static let team = "team"
     public static let marketingVersion = "marketingVersion"
     public static let currentProjectVersion = "currentProjectVersion"
+    public static let includeReadme = "includeREADME"
+    public static let includeLicense = "includeLicense"
+    public static let includeChangelog = "includeChangelog"
+    public static let includeGitignore = "includeGitignore"
+    public static let includePrivacyManifest = "includePrivacyManifest"
+    public static let includeEntitlements = "includeEntitlements"
+    public static let includeStoreKit = "includeStoreKitConfig"
+    public static let includeContributing = "includeContributing"
+    public static let includeEditorConfig = "includeEditorConfig"
 }
 
 public enum TemplateFields {

@@ -107,6 +107,8 @@ public final class WelcomeWindowController: NSWindowController, NSTableViewDataS
         currentStyle = style
         guard let window else { return }
         if style == .style26 {
+            window.isOpaque = false
+            window.backgroundColor = .clear
             window.setContentSize(Style26WelcomeView.windowSize)
             let hosting = NSHostingView(rootView: Style26WelcomeView(
                 onOpenSelected: { [weak self] u in self?.open(u) },

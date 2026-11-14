@@ -2,9 +2,9 @@ import AppKit
 
 @MainActor
 enum FlushSidebar {
-    static var forced: Bool?
+    nonisolated(unsafe) static var forced: Bool?
 
-    static var isActive: Bool {
+    nonisolated static var isActive: Bool {
         forced ?? (ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26)
     }
 
@@ -23,7 +23,7 @@ enum FlushSidebar {
         width - ((item.viewController as? FlushSidebarController)?.overhang ?? 0)
     }
 
-    static var separatorIdentifier: NSToolbarItem.Identifier { isActive ? trackingSeparatorID : .sidebarTrackingSeparator }
+    nonisolated static var separatorIdentifier: NSToolbarItem.Identifier { isActive ? trackingSeparatorID : .sidebarTrackingSeparator }
     nonisolated static let trackingSeparatorID = NSToolbarItem.Identifier("SwiftCodeSidebarTrackingSeparator")
 
     static func trackingSeparator(_ id: NSToolbarItem.Identifier, splitView: NSSplitView) -> NSToolbarItem? {

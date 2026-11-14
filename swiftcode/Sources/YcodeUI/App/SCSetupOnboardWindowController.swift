@@ -9,14 +9,21 @@ public final class SCSetupOnboardWindowController: NSWindowController, NSWindowD
 
     @discardableResult
     public static func offerIfNeeded() -> Bool {
-        guard !GitRepository.isGitInstalled()
-            || defaultSecretStore().readString(SecretAccount.githubToken) == nil
-        else { return false }
+        let gitMissing = !GitRepository.isGitInstalled()
+        Task.detached(priority: .userInitiated) {
+            let tokenMissing = defaultSecretStore().readString(SecretAccount.githubToken) == nil
+            guard gitMissing || tokenMissing else { return }
+            await MainActor.run { present() }
+        }
+        return true
+    }
+
+    @MainActor
+    private static func present() {
         let controller = SCSetupOnboardWindowController()
         retained = controller
         controller.window?.center()
         controller.window?.makeKeyAndOrderFront(nil)
-        return true
     }
 
     public init() {

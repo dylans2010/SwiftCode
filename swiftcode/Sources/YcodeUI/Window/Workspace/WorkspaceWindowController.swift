@@ -1571,23 +1571,23 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         }
     }
 
-    static let runID = NSToolbarItem.Identifier("run")
-    static let stopID = NSToolbarItem.Identifier("stop")
-    static let schemeID = NSToolbarItem.Identifier("scheme")
-    static let activityID = NSToolbarItem.Identifier("activity")
-    static let libraryID = NSToolbarItem.Identifier("library")
-    static let inspectorToggleID = NSToolbarItem.Identifier("inspectorToggle")
-    static let leftPanesID = NSToolbarItem.Identifier("leftPanes")
-    static let historyID = NSToolbarItem.Identifier("history")
-    static let editorModesID = NSToolbarItem.Identifier("editorModes")
-    static let extensionsID = NSToolbarItem.Identifier("extensions")
-    static let toolsDrawerID = NSToolbarItem.Identifier("toolsDrawer")
-    static let issuesID = NSToolbarItem.Identifier("issues")
-    static let newConversationID = NSToolbarItem.Identifier("newConversation")
-    static let branchSelectorID = NSToolbarItem.Identifier("branchSelector")
-    static let customizeToolbarID = NSToolbarItem.Identifier("customizeToolbar")
+    nonisolated static let runID = NSToolbarItem.Identifier("run")
+    nonisolated static let stopID = NSToolbarItem.Identifier("stop")
+    nonisolated static let schemeID = NSToolbarItem.Identifier("scheme")
+    nonisolated static let activityID = NSToolbarItem.Identifier("activity")
+    nonisolated static let libraryID = NSToolbarItem.Identifier("library")
+    nonisolated static let inspectorToggleID = NSToolbarItem.Identifier("inspectorToggle")
+    nonisolated static let leftPanesID = NSToolbarItem.Identifier("leftPanes")
+    nonisolated static let historyID = NSToolbarItem.Identifier("history")
+    nonisolated static let editorModesID = NSToolbarItem.Identifier("editorModes")
+    nonisolated static let extensionsID = NSToolbarItem.Identifier("extensions")
+    nonisolated static let toolsDrawerID = NSToolbarItem.Identifier("toolsDrawer")
+    nonisolated static let issuesID = NSToolbarItem.Identifier("issues")
+    nonisolated static let newConversationID = NSToolbarItem.Identifier("newConversation")
+    nonisolated static let branchSelectorID = NSToolbarItem.Identifier("branchSelector")
+    nonisolated static let customizeToolbarID = NSToolbarItem.Identifier("customizeToolbar")
 
-    public func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    public nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
             Self.leftPanesID,
             FlushSidebar.separatorIdentifier,
@@ -1694,7 +1694,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         observeToolbarRoom()
     }
 
-    public func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    public nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         var allowed: [NSToolbarItem.Identifier] = [
             Self.leftPanesID,
             Self.branchSelectorID,
@@ -1725,7 +1725,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         return allowed
     }
 
-    public func toolbarSelectableItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    public nonisolated func toolbarSelectableItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         []
     }
 

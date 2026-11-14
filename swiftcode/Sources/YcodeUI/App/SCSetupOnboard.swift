@@ -13,6 +13,7 @@ public struct SCSetupOnboard: View {
     @State private var gitFound = GitRepository.isGitInstalled()
     @State private var token = ""
     @State private var tokenSaved = false
+    @State private var savedTokenStatus: Bool?
     @State private var errorMessage: String?
 
     public enum Step: Int, CaseIterable {
@@ -92,6 +93,12 @@ public struct SCSetupOnboard: View {
         }
         .padding(24)
         .frame(width: 560, height: 420)
+        .task {
+            let store = self.store
+            savedTokenStatus = await Task.detached(priority: .userInitiated) {
+                store.readString(SecretAccount.githubToken)?.isEmpty == false
+            }.value
+        }
     }
 
     private var overviewStep: some View {
@@ -103,7 +110,7 @@ public struct SCSetupOnboard: View {
                 .foregroundStyle(.secondary)
             Label("Git: \(gitFound ? "found at \(gitPath)" : "not found")", systemImage: gitFound ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .foregroundStyle(gitFound ? .green : .orange)
-            Label("GitHub token: \(store.readString(SecretAccount.githubToken)?.isEmpty == false ? "saved" : "not saved")", systemImage: "key.fill")
+            Label("GitHub token: \(savedTokenStatus.map { $0 ? "saved" : "not saved" } ?? "checking…")", systemImage: "key.fill")
                 .foregroundStyle(.secondary)
         }
     }
