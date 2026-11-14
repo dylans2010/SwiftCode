@@ -113,7 +113,7 @@ import Testing
         guard MetaAssistBridgeTests.pythonAvailable() else { return }
         let dir = try Self.installHangingMuse()
         defer { try? FileManager.default.removeItem(at: dir) }
-        let bridge = MuseCodeMSPBridge()
+        let bridge = MuseCodeMSPBridge.shared
         let executor = MetaAssistTurnExecutor(bridge: bridge)
         defer { Task { await bridge.stopHost() } }
         let started = Date()
@@ -140,7 +140,7 @@ import Testing
             try? FileManager.default.removeItem(at: dir)
         }
         _ = locator
-        let bridge = MuseCodeMSPBridge()
+        let bridge = MuseCodeMSPBridge.shared
         let executor = MetaAssistTurnExecutor(bridge: bridge)
         defer { Task { await bridge.stopHost() } }
         final class EventBox: @unchecked Sendable {

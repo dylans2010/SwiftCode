@@ -301,6 +301,7 @@ public final class SwiftCodeToolbarDelegate: NSObject, NSToolbarDelegate {
             ?? NSApplication.shared.windows.first(where: { $0.isVisible && $0.toolbar != nil && !($0 is NSPanel) })
 
         if let toolbar = window?.toolbar {
+            toolbar.allowsUserCustomization = true
             toolbar.runCustomizationPalette(nil)
         } else {
             NotificationCenter.default.post(

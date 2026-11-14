@@ -207,6 +207,18 @@ public struct NativeGeneralSettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            Section("Welcome Style Interface") {
+                Picker("Interface Style", selection: $settings.welcomeStyleInterface) {
+                    ForEach(WelcomeStyleInterface.allCases, id: \.self) { style in
+                        Text(style.rawValue).tag(style)
+                    }
+                }
+                .pickerStyle(.segmented)
+                Text("Style 27 is the standard vertical launcher. Style 26 provides the classic two-pane project selector.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Editor Defaults") {
                 Stepper(value: $settings.editorFontSize, in: 9...36, step: 1) {
                     HStack {

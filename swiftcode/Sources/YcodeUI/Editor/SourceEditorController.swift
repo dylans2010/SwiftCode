@@ -316,17 +316,31 @@ final class JumpBar: NSView {
     static let height: CGFloat = bandHeight + separatorHeight
     let stack = NSStackView()
     let issueStack = NSStackView()
+    let accessoryStack = NSStackView()
     var onToggleMinimap: (() -> Void)?
     let paneState = JumpBarPaneState()
 
+    var onGoBack: (() -> Void)?
+    var onGoForward: (() -> Void)?
+    var canGoBack: Bool = false { didSet { backButton?.isEnabled = canGoBack } }
+    var canGoForward: Bool = false { didSet { forwardButton?.isEnabled = canGoForward } }
+    private(set) var backButton: NSButton?
+    private(set) var forwardButton: NSButton?
+
+    var onToggleCounterpart: (() -> Void)?
+    var onAddEditorPane: (() -> Void)?
+    private(set) var counterpartButton: NSButton?
+    private(set) var addPaneButton: NSButton?
+
     override init(frame: NSRect) {
         super.init(frame: frame)
-        for s in [stack, issueStack] {
+        for s in [stack, issueStack, accessoryStack] {
             s.orientation = .horizontal
             s.spacing = 2
             s.translatesAutoresizingMaskIntoConstraints = false
             addSubview(s)
         }
+        setupAccessoryButtons()
         NSLayoutConstraint.activate([
             stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
             stack.centerYAnchor.constraint(equalTo: centerYAnchor, constant: Self.pathRaise),
@@ -335,12 +349,34 @@ final class JumpBar: NSView {
                 c.priority = .defaultLow
                 return c
             }(),
-            issueStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+            issueStack.trailingAnchor.constraint(equalTo: accessoryStack.leadingAnchor, constant: -6),
             issueStack.centerYAnchor.constraint(equalTo: centerYAnchor),
+            accessoryStack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
+            accessoryStack.centerYAnchor.constraint(equalTo: centerYAnchor),
         ])
         issueStack.setContentCompressionResistancePriority(.required, for: .horizontal)
+        accessoryStack.setContentCompressionResistancePriority(.required, for: .horizontal)
         clipsToBounds = true
     }
+
+    private func setupAccessoryButtons() {
+        let cp = iconButton("rectangle.split.2x1", "Toggle Assistant Editor (Counterpart)")
+        cp.target = self
+        cp.action = #selector(counterpartClicked)
+        counterpartButton = cp
+        accessoryStack.addArrangedSubview(cp)
+
+        let add = iconButton("plus", "Add Editor Pane")
+        add.target = self
+        add.action = #selector(addPaneClicked)
+        addPaneButton = add
+        accessoryStack.addArrangedSubview(add)
+    }
+
+    @objc private func backClicked() { onGoBack?() }
+    @objc private func forwardClicked() { onGoForward?() }
+    @objc private func counterpartClicked() { onToggleCounterpart?() }
+    @objc private func addPaneClicked() { onAddEditorPane?() }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
@@ -396,6 +432,19 @@ final class JumpBar: NSView {
             relatedItemsButton = b
             stack.addArrangedSubview(b)
         }
+        let back = iconButton("chevron.left", "Go Back")
+        back.target = self
+        back.action = #selector(backClicked)
+        back.isEnabled = canGoBack
+        backButton = back
+        stack.addArrangedSubview(back)
+
+        let fwd = iconButton("chevron.right", "Go Forward")
+        fwd.target = self
+        fwd.action = #selector(forwardClicked)
+        fwd.isEnabled = canGoForward
+        forwardButton = fwd
+        stack.addArrangedSubview(fwd)
         addPaneDivider()
         counterpartsMenu = nil
         modeMenu = nil
@@ -558,6 +607,18 @@ public final class SourceEditorController: NSViewController, NSTextViewDelegate,
     public var history = NavigationHistory()
     public var onActivate: (() -> Void)?
     public var onRelatedItems: (() -> Void)? { didSet { jumpBar.onRelatedItems = onRelatedItems } }
+    public var onGoBack: (() -> Void)? { didSet { jumpBar.onGoBack = onGoBack } }
+    public var onGoForward: (() -> Void)? { didSet { jumpBar.onGoForward = onGoForward } }
+    public var onToggleCounterpart: (() -> Void)? { didSet { jumpBar.onToggleCounterpart = onToggleCounterpart } }
+    public var onAddEditorPane: (() -> Void)? { didSet { jumpBar.onAddEditorPane = onAddEditorPane } }
+    public var canGoBack: Bool {
+        get { jumpBar.canGoBack }
+        set { jumpBar.canGoBack = newValue }
+    }
+    public var canGoForward: Bool {
+        get { jumpBar.canGoForward }
+        set { jumpBar.canGoForward = newValue }
+    }
     public var onClosePane: (() -> Void)? { didSet { jumpBar.onClose = onClosePane } }
     public var showsCloseButton: Bool {
         get { jumpBar.showsCloseButton }

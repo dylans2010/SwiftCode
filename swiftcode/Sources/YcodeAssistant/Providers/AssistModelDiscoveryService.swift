@@ -3,6 +3,39 @@ import os
 
 private let logger = Logger(subsystem: "com.swiftcode.Assist", category: "ModelDiscovery")
 
+public protocol ModelDiscoveryTransport: Sendable {
+    func get(url: URL, headers: [String: String], timeout: TimeInterval) async throws -> (data: Data, status: Int)
+}
+
+public struct URLSessionModelDiscoveryTransport: ModelDiscoveryTransport {
+    public init() {}
+    public func get(url: URL, headers: [String: String], timeout: TimeInterval) async throws -> (data: Data, status: Int) {
+        var req = URLRequest(url: url)
+        req.httpMethod = "GET"
+        req.timeoutInterval = timeout
+        for (k, v) in headers { req.setValue(v, forHTTPHeaderField: k) }
+        let (data, response) = try await URLSession.shared.data(for: req)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 200
+        return (data, status)
+    }
+}
+
+public struct AssistDiscoveredModel: Sendable, Equatable {
+    public var id: String
+    public var providerID: String
+    public var providerName: String
+    public var isSynthetic: Bool
+    public var nativeProvider: ProviderKind
+
+    public init(id: String, providerID: String, providerName: String, isSynthetic: Bool = false, nativeProvider: ProviderKind) {
+        self.id = id
+        self.providerID = providerID
+        self.providerName = providerName
+        self.isSynthetic = isSynthetic
+        self.nativeProvider = nativeProvider
+    }
+}
+
 @Observable
 @MainActor
 public final class AssistModelDiscoveryService: Sendable {
@@ -14,6 +47,9 @@ public final class AssistModelDiscoveryService: Sendable {
     public var lastDiscoveryErrors: [String: String] = [:]
     public var hiddenProviderNames: Set<String> = []
     public var removedModelIDs: Set<String> = []
+    public var transport: ModelDiscoveryTransport = URLSessionModelDiscoveryTransport()
+    public var store: SecretStore? = nil
+    public var catalog: AntigravitySDKCatalog? = nil
 
     var hasFreshDiscoveryCache: Bool {
         guard let lastDiscoveryDate else { return false }
@@ -27,7 +63,10 @@ public final class AssistModelDiscoveryService: Sendable {
     private let hiddenProvidersKey = "com.swiftcode.assist.hidden_provider_names"
     private let removedModelsKey = "com.swiftcode.assist.removed_model_ids"
 
-    private init() {
+    public init(store: SecretStore? = nil, transport: ModelDiscoveryTransport = URLSessionModelDiscoveryTransport(), catalog: AntigravitySDKCatalog? = nil) {
+        self.store = store
+        self.transport = transport
+        self.catalog = catalog
         if let savedHidden = UserDefaults.standard.stringArray(forKey: hiddenProvidersKey) {
             self.hiddenProviderNames = Set(savedHidden)
         }
@@ -35,8 +74,243 @@ public final class AssistModelDiscoveryService: Sendable {
             self.removedModelIDs = Set(savedRemoved)
         }
         self.discoveredModels = self.generateBaselineModels()
-        Task { [weak self] in
-            await self?.discoverAllModels(forceRefresh: true)
+        if store == nil {
+            Task { [weak self] in
+                await self?.discoverAllModels(forceRefresh: true)
+            }
+        }
+    }
+
+    public static func parseGeminiModels(_ data: Data) -> [AssistAvailableModel] {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let modelsArray = obj["models"] as? [[String: Any]] else {
+            return []
+        }
+        return modelsArray.compactMap { entry in
+            guard let rawName = entry["name"] as? String else { return nil }
+            let id = rawName.hasPrefix("models/") ? String(rawName.dropFirst("models/".count)) : rawName
+            let lower = id.lowercased()
+            if lower.contains("embed") || lower.contains("imagen") { return nil }
+            let dName = (entry["displayName"] as? String) ?? id
+            let context = entry["inputTokenLimit"] as? Int ?? 1_000_000
+            let priority = lower.contains("flash") ? 10 : 20
+            return AssistAvailableModel(
+                id: id,
+                displayName: dName,
+                providerID: "gemini",
+                providerName: "Gemini",
+                modelIdentifier: id,
+                capabilities: .advancedReasoning,
+                source: .gemini,
+                isConfigured: true,
+                isAvailable: true,
+                supportsStreaming: true,
+                supportsToolCalling: true,
+                supportsVision: true,
+                supportsStructuredOutput: true,
+                supportsAgenticUse: true,
+                supportsSubagents: true,
+                priority: priority,
+                statusDescription: "Available",
+                status: .available,
+                contextWindow: context
+            )
+        }
+    }
+
+    public static func parseClaudeModels(_ data: Data) -> [AssistAvailableModel] {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let entries = obj["data"] as? [[String: Any]] else {
+            return []
+        }
+        return entries.compactMap { entry in
+            guard let id = entry["id"] as? String else { return nil }
+            let dName = (entry["display_name"] as? String) ?? id
+            let lower = id.lowercased()
+            let priority: Int
+            if lower.contains("opus") {
+                priority = 25
+            } else if lower.contains("sonnet") {
+                priority = 15
+            } else if lower.contains("haiku") {
+                priority = 14
+            } else {
+                priority = 20
+            }
+            return AssistAvailableModel(
+                id: id,
+                displayName: dName,
+                providerID: "anthropic",
+                providerName: "Claude",
+                modelIdentifier: id,
+                capabilities: .advancedReasoning,
+                source: .claude,
+                isConfigured: true,
+                isAvailable: true,
+                supportsStreaming: true,
+                supportsToolCalling: true,
+                supportsVision: true,
+                supportsStructuredOutput: true,
+                supportsAgenticUse: true,
+                supportsSubagents: true,
+                priority: priority,
+                statusDescription: "Available",
+                status: .available,
+                contextWindow: 200_000
+            )
+        }
+    }
+
+    public static func parseOpenAIModels(_ data: Data) -> [AssistAvailableModel] {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let entries = obj["data"] as? [[String: Any]] else {
+            return []
+        }
+        return entries.compactMap { entry in
+            guard let id = entry["id"] as? String else { return nil }
+            let lower = id.lowercased()
+            if lower.contains("embed") || lower.contains("dall-e") || lower.contains("whisper") || lower.contains("tts") || lower.contains("audio-preview") {
+                return nil
+            }
+            guard lower.hasPrefix("gpt-") || lower.hasPrefix("o1") || lower.hasPrefix("o3") || lower.hasPrefix("o4") || lower.hasPrefix("chatgpt-") else {
+                return nil
+            }
+            let priority: Int
+            if lower.contains("o3") {
+                priority = 12
+            } else if lower.contains("mini") {
+                priority = 18
+            } else {
+                priority = 10
+            }
+            return AssistAvailableModel(
+                id: id,
+                displayName: id,
+                providerID: "openai",
+                providerName: "OpenAI",
+                modelIdentifier: id,
+                capabilities: .standardCloud,
+                source: .openAI,
+                isConfigured: true,
+                isAvailable: true,
+                supportsStreaming: true,
+                supportsToolCalling: true,
+                supportsVision: lower.contains("4o"),
+                supportsStructuredOutput: true,
+                supportsAgenticUse: true,
+                supportsSubagents: true,
+                priority: priority,
+                statusDescription: "Available",
+                status: .available,
+                contextWindow: 128_000
+            )
+        }
+    }
+
+    public static func parseMistralModels(_ data: Data) -> [AssistAvailableModel] {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let entries = obj["data"] as? [[String: Any]] else {
+            return []
+        }
+        return entries.compactMap { entry in
+            guard let id = entry["id"] as? String else { return nil }
+            let lower = id.lowercased()
+            if lower.contains("embed") { return nil }
+            return AssistAvailableModel(
+                id: id,
+                displayName: id,
+                providerID: "mistral",
+                providerName: "Mistral",
+                modelIdentifier: id,
+                capabilities: .standardCloud,
+                source: .openRouter,
+                isConfigured: true,
+                isAvailable: true,
+                supportsStreaming: true,
+                supportsToolCalling: true,
+                supportsVision: lower.contains("pixtral"),
+                supportsStructuredOutput: true,
+                supportsAgenticUse: true,
+                supportsSubagents: true,
+                priority: 28,
+                statusDescription: "Available",
+                status: .available,
+                contextWindow: 128_000
+            )
+        }
+    }
+
+    public static func parseQwenModels(_ data: Data) -> [AssistAvailableModel] {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let entries = obj["data"] as? [[String: Any]] else {
+            return []
+        }
+        return entries.compactMap { entry in
+            guard let id = entry["id"] as? String else { return nil }
+            let lower = id.lowercased()
+            if lower.contains("embed") { return nil }
+            return AssistAvailableModel(
+                id: id,
+                displayName: id,
+                providerID: "qwen",
+                providerName: "Qwen",
+                modelIdentifier: id,
+                capabilities: .standardCloud,
+                source: .openRouter,
+                isConfigured: true,
+                isAvailable: true,
+                supportsStreaming: true,
+                supportsToolCalling: true,
+                supportsVision: lower.contains("vl"),
+                supportsStructuredOutput: true,
+                supportsAgenticUse: true,
+                supportsSubagents: true,
+                priority: 30,
+                statusDescription: "Available",
+                status: .available,
+                contextWindow: 128_000
+            )
+        }
+    }
+
+    public static func candidates(from discovered: [AssistDiscoveredModel]) -> [AssistCandidateModel] {
+        return discovered.map { model in
+            let provider: ProviderKind
+            let modelIdentifier: String
+            var endpointURL: String? = nil
+
+            switch model.nativeProvider {
+            case .gemini:
+                provider = .openRouter
+                modelIdentifier = "google/\(model.id)"
+            case .anthropic:
+                provider = .anthropic
+                modelIdentifier = "anthropic/\(model.id)"
+            case .openAI:
+                provider = .openAI
+                modelIdentifier = model.id
+            case .mistral:
+                provider = .mistral
+                modelIdentifier = "mistralai/\(model.id)"
+                endpointURL = "https://api.mistral.ai/v1"
+            case .qwen:
+                provider = .openRouter
+                modelIdentifier = "qwen/\(model.id)"
+            default:
+                provider = .openRouter
+                modelIdentifier = model.id
+            }
+
+            return AssistCandidateModel(
+                id: model.id,
+                displayName: model.id,
+                provider: provider,
+                modelIdentifier: modelIdentifier,
+                isConfigured: true,
+                hasCredentials: true,
+                endpointURL: endpointURL,
+                isSynthetic: model.isSynthetic
+            )
         }
     }
 
@@ -244,7 +518,7 @@ public final class AssistModelDiscoveryService: Sendable {
 
         isDiscovering = true
         lastDiscoveryErrors.removeAll()
-        let task = Task { @MainActor in
+        let task = Task.detached(priority: .userInitiated) {
             await self.performModelDiscovery()
         }
         discoveryTask = task
@@ -337,7 +611,7 @@ public final class AssistModelDiscoveryService: Sendable {
         }
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
-        request.timeoutInterval = 8.0
+        request.timeoutInterval = 2.0
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -479,7 +753,7 @@ public final class AssistModelDiscoveryService: Sendable {
         request.httpMethod = "GET"
         request.setValue(trimmedKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.timeoutInterval = 8.0
+        request.timeoutInterval = 2.0
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -548,7 +822,7 @@ public final class AssistModelDiscoveryService: Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(trimmedKey)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 8.0
+        request.timeoutInterval = 2.0
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -634,7 +908,7 @@ public final class AssistModelDiscoveryService: Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(trimmedKey)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 8.0
+        request.timeoutInterval = 2.0
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -702,7 +976,7 @@ public final class AssistModelDiscoveryService: Sendable {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(trimmedKey)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 8.0
+        request.timeoutInterval = 2.0
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
@@ -891,7 +1165,7 @@ public final class AssistModelDiscoveryService: Sendable {
         for url in candidateURLs {
             var request = URLRequest(url: url)
             request.httpMethod = "GET"
-            request.timeoutInterval = 4.0
+            request.timeoutInterval = 2.0
 
             if !endpoint.isLocal && !endpoint.apiKey.isEmpty {
                 request.setValue("Bearer \(endpoint.apiKey)", forHTTPHeaderField: "Authorization")

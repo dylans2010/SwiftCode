@@ -309,6 +309,8 @@ struct GeneralSettingsView: View {
                 VStack(spacing: 24) {
                     settingsExperienceSection
 
+                    welcomeStyleInterfaceSection
+
                     proSection
 
                     SettingsCardSection {
@@ -672,6 +674,21 @@ struct GeneralSettingsView: View {
             Label("Settings Experience", systemImage: "macwindow.on.rectangle")
         } footer: {
             Text("Switch between the legacy multi-column preferences and the modern native settings window experience.")
+        }
+    }
+
+    private var welcomeStyleInterfaceSection: some View {
+        SettingsCardSection {
+            Picker("Interface Style", selection: $settings.welcomeStyleInterface) {
+                ForEach(WelcomeStyleInterface.allCases, id: \.self) { style in
+                    Text(style.rawValue).tag(style)
+                }
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Label("Welcome Style Interface", systemImage: "macwindow")
+        } footer: {
+            Text("Choose between Style 27 (current launcher) and Style 26 (two-pane interface).")
         }
     }
 

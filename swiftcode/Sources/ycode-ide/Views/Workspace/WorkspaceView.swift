@@ -45,12 +45,79 @@ extension Notification.Name {
     static let showDevTools = Notification.Name("com.swiftcode.showDevTools")
 }
 
+struct GitBranchProjectSelector: View {
+    @Bindable var model: WorkspaceShellModel
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let c = ShellColors(scheme)
+        let branch = model.currentBranch ?? "main"
+        Menu {
+            Section(model.workspaceName) {
+                let branches = model.sourceControl.snapshot.branches
+                if branches.isEmpty {
+                    Button(branch) {}
+                        .disabled(true)
+                } else {
+                    ForEach(branches, id: \.name) { b in
+                        Button {
+                            model.sourceControl.choose(.checkout(b.name))
+                        } label: {
+                            HStack {
+                                Text(b.name)
+                                if b.name == branch {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Divider()
+            Button("New Branch…") {
+                model.sourceControl.choose(.newBranch(from: nil))
+            }
+            Button("Manage Branches…") {
+                model.showLeftPane(assistant: false)
+                model.sourceControl.mode = .repositories
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "arrow.triangle.branch")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Color.accentColor)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(model.workspaceName)
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(c.label)
+                        .lineLimit(1)
+                    Text(branch)
+                        .font(.system(size: 9))
+                        .foregroundStyle(c.secondaryLabel)
+                        .lineLimit(1)
+                }
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 7, weight: .semibold))
+                    .foregroundStyle(c.tertiaryLabel)
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(Color(white: scheme == .dark ? 0.2 : 0.88).opacity(0.5))
+            }
+        }
+        .menuStyle(.borderlessButton)
+        .help("Active Branch: \(branch)")
+    }
+}
+
 struct NavigatorToolbar: View {
     var model: WorkspaceShellModel
 
     var body: some View {
-        let lp = WorkspaceChrome.leftPanes, rs = WorkspaceChrome.runStop
-        HStack(spacing: 0) {
+        let lp = WorkspaceChrome.leftPanes
+        HStack(spacing: 8) {
             let navigatorsOn = model.isNavigatorShown && !model.assistant.isShown
             GlassSegments(segments: [
                 .init(symbol: lp.symbols[0], help: navigatorsOn ? "Hide the Navigator" : "Show the Navigator", isOn: navigatorsOn,
@@ -59,15 +126,48 @@ struct NavigatorToolbar: View {
                     model.showLeftPane(assistant: true)
                 },
             ], segmentWidth: 36, dividers: false)
-            Spacer(minLength: 8)
-            GlassSegments(segments: [
-                .init(symbol: rs.symbols[0], help: rs.toolTips[0], isEnabled: model.isEnabled(.run), target: "tb run") { model.perform(.run) },
-                .init(symbol: rs.symbols[1], help: rs.toolTips[1], isEnabled: model.isEnabled(.stop), target: "tb stop") { model.perform(.stop) },
-            ], segmentWidth: 34)
+
+            GitBranchProjectSelector(model: model)
+
+            Spacer(minLength: 4)
         }
         .padding(.leading, 96)
-        .padding(.trailing, 8.5)
+        .padding(.trailing, 8)
         .frame(height: CGFloat(WorkspaceChrome.toolbarHeight) - 1)
+    }
+}
+
+struct ToolbarBuildStatusView: View {
+    var model: WorkspaceShellModel
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let c = ShellColors(scheme)
+        HStack(spacing: 6) {
+            if model.isBusy {
+                ProgressView()
+                    .controlSize(.small)
+                    .scaleEffect(0.7)
+                    .frame(width: 14, height: 14)
+            } else if !model.activityText.isEmpty {
+                Image(systemName: model.activityText.lowercased().contains("succeeded") ? "checkmark.circle.fill" : "circle.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(model.activityText.lowercased().contains("succeeded") ? Color.green : c.tertiaryLabel)
+            }
+
+            let statusText = model.activityText.isEmpty ? "Ready" : model.activityText
+            Text(verbatim: statusText)
+                .font(ShellFonts.small)
+                .foregroundStyle(c.secondaryLabel)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color(white: scheme == .dark ? 0.18 : 0.92).opacity(0.4))
+        }
+        .help("Build Status: \(model.activityText.isEmpty ? "Ready" : model.activityText)")
     }
 }
 
@@ -75,36 +175,26 @@ struct CenterToolbar: View {
     @Bindable var model: WorkspaceShellModel
     var app: ShellAppModel
     var body: some View {
-        let h = WorkspaceChrome.history, modes = WorkspaceChrome.editorModes
-        VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                GlassSegments(segments: [
-                    .init(symbol: h.symbols[0], help: h.toolTips[0], isEnabled: model.canGoBack, target: "tb back") { model.perform(.goBack) },
-                    .init(symbol: h.symbols[1], help: h.toolTips[1], isEnabled: model.canGoForward, target: "tb forward") { model.perform(.goForward) },
-                ], segmentWidth: 34)
-                ActivityView(model: model)
-                    .padding(.leading, 4)
-                Spacer(minLength: 8)
-                NewConversationToolbarButton(assistant: model.assistant)
-                SchemeCapsule(model: model, app: app)
-                    .padding(.leading, 8)
-                Spacer(minLength: 8)
-                GlassSegments(segments: [
-                    .init(symbol: WorkspaceChrome.addEditor.symbols[0], help: ShellText.notInBeta(WorkspaceChrome.addEditor.toolTips[0]), isEnabled: false, target: "tb add editor") {},
-                    .init(symbol: WorkspaceChrome.editorOptions.symbols[0], help: ShellText.notInBeta(WorkspaceChrome.editorOptions.toolTips[0]), isEnabled: false, target: "tb editor options") {},
-                ], segmentWidth: 34, dividers: false)
-                GlassSegments(segments: [
-                    .init(symbol: modes.symbols[0], help: modes.toolTips[0], isOn: model.previewCanvas.isModeOn, isEnabled: model.isEnabled(.toggleCanvas),
-                          target: "tb canvas") { model.perform(.toggleCanvas) },
-                    .init(symbol: modes.symbols[1], help: ShellText.notInBeta(modes.toolTips[1]), isEnabled: false, target: "tb assistant editor") {},
-                    .init(symbol: modes.symbols[2], help: ShellText.notInBeta(modes.toolTips[2]), isEnabled: false, target: "tb code review") {},
-                ], segmentWidth: 34)
-                .padding(.leading, 8)
-            }
-            .padding(.leading, 7.5)
-            .padding(.trailing, 8)
-            .frame(height: CGFloat(WorkspaceChrome.toolbarHeight))
+        let rs = WorkspaceChrome.runStop
+        HStack(spacing: 10) {
+            Spacer(minLength: 4)
+
+            // Run and Stop buttons
+            GlassSegments(segments: [
+                .init(symbol: rs.symbols[0], help: rs.toolTips[0], isEnabled: model.isEnabled(.run), target: "tb run") { model.perform(.run) },
+                .init(symbol: rs.symbols[1], help: rs.toolTips[1], isEnabled: model.isEnabled(.stop), target: "tb stop") { model.perform(.stop) },
+            ], segmentWidth: 34)
+
+            // Scheme & Destination capsule
+            SchemeCapsule(model: model, app: app)
+
+            // Build status message to the right of the center capsule
+            ToolbarBuildStatusView(model: model)
+
+            Spacer(minLength: 4)
         }
+        .padding(.horizontal, 8)
+        .frame(height: CGFloat(WorkspaceChrome.toolbarHeight))
     }
 }
 
@@ -199,8 +289,37 @@ struct InspectorToolbar: View {
     var model: WorkspaceShellModel
 
     var body: some View {
-        HStack(spacing: 0) {
+        let modes = WorkspaceChrome.editorModes
+        HStack(spacing: 8) {
             Spacer(minLength: 0)
+
+            Button {
+                SwiftCodeToolbarDelegate.presentCustomizationPalette()
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.plain)
+            .help("Customize Toolbar…")
+
+            Button {
+                NotificationCenter.default.post(name: NSNotification.Name("com.swiftcode.showLibrary"), object: nil)
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 12))
+            }
+            .buttonStyle(.plain)
+            .help("Show Library (⇧⌘L)")
+
+            GlassSegments(segments: [
+                .init(symbol: modes.symbols[0], help: modes.toolTips[0], isOn: model.previewCanvas.isModeOn, isEnabled: model.isEnabled(.toggleCanvas),
+                      target: "tb canvas") { model.perform(.toggleCanvas) },
+                .init(symbol: modes.symbols[1], help: modes.toolTips[1], isOn: model.assistant.isShown, isEnabled: true,
+                      target: "tb assistant editor") { model.assistant.isShown.toggle() },
+                .init(symbol: modes.symbols[2], help: ShellText.notInBeta(modes.toolTips[2]), isEnabled: false,
+                      target: "tb code review") {},
+            ], segmentWidth: 32)
+
             GlassCircleButton(symbol: WorkspaceChrome.inspectorToggle.symbols[0],
                               help: model.isInspectorShown ? "Hide Inspector" : "Show Inspector", target: "tb inspector") {
                 model.perform(.toggleInspector)
@@ -220,7 +339,7 @@ struct CenterColumn: View {
             HStack(spacing: 0) {
                 if !model.isNavigatorShown { NavigatorToolbar(model: model).frame(width: 290) }
                 CenterToolbar(model: model, app: app)
-                if !model.isInspectorShown { InspectorToolbar(model: model).frame(width: 52) }
+                if !model.isInspectorShown { InspectorToolbar(model: model).frame(width: 170) }
             }
             if model.isDebugAreaShown {
                 VSplitView {

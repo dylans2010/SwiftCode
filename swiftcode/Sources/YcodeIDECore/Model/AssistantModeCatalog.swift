@@ -53,32 +53,53 @@ public enum AssistantModeCatalog {
 
     public static func includedBy(_ path: String, in files: [String], readFile: (String) -> String?) -> [String] {
         let name = URL(fileURLWithPath: path).lastPathComponent
+        guard !name.isEmpty else { return [] }
         return files.filter { f in
-            f != path && cFamily.contains(URL(fileURLWithPath: f).pathExtension.lowercased())
-                && (readFile(f)?.split(separator: "\n").contains { l in
-                    let t = l.trimmingCharacters(in: .whitespaces)
-                    return (t.hasPrefix("#include") || t.hasPrefix("#import")) && (t.contains("\"\(name)\"") || t.contains("/\(name)\""))
-                } ?? false)
+            guard f != path, cFamily.contains(URL(fileURLWithPath: f).pathExtension.lowercased()) else { return false }
+            guard let content = readFile(f), content.contains(name) else { return false }
+            for l in content.split(separator: "\n") {
+                let t = l.trimmingCharacters(in: .whitespaces)
+                if (t.hasPrefix("#include") || t.hasPrefix("#import")) && (t.contains("\"\(name)\"") || t.contains("/\(name)\"")) {
+                    return true
+                }
+            }
+            return false
         }.sorted()
     }
 
     public static func extensions(of path: String, in files: [String], readFile: (String) -> String?) -> [String] {
-        guard let type = readFile(path).flatMap(AssistantMode.firstDeclaredType) else { return [] }
+        guard let text = readFile(path),
+              let type = AssistantMode.firstDeclaredType(text),
+              !type.isEmpty else { return [] }
         return files.filter { f in
-            f != path && f.hasSuffix(".swift") && (readFile(f)?.split(separator: "\n").contains { l in
-                let words = l.split(whereSeparator: { " \t:{<".contains($0) })
-                return words.contains("extension") && words.drop(while: { $0 != "extension" }).dropFirst().first.map(String.init) == type
-            } ?? false)
+            guard f != path, f.hasSuffix(".swift") else { return false }
+            guard let content = readFile(f) else { return false }
+            guard content.contains("extension"), content.contains(type) else { return false }
+            for l in content.split(separator: "\n") {
+                let trimmed = l.trimmingCharacters(in: .whitespaces)
+                if trimmed.hasPrefix("//") || trimmed.hasPrefix("/*") || trimmed.hasPrefix("*") { continue }
+                guard trimmed.contains("extension") else { continue }
+                let words = trimmed.split(whereSeparator: { " \t:{<()".contains($0) }).map(String.init)
+                if let extIdx = words.firstIndex(of: "extension"), extIdx + 1 < words.count {
+                    if words[extIdx + 1] == type {
+                        return true
+                    }
+                }
+            }
+            return false
         }.sorted()
     }
 
     public static func userInterfaces(of path: String, in files: [String], readFile: (String) -> String?) -> [String] {
         let ext = URL(fileURLWithPath: path).pathExtension.lowercased()
         if ext == "storyboard" || ext == "xib" { return AssistantMode.topLevelObjects.files(for: path, in: files, readFile: readFile) }
-        guard let type = readFile(path).flatMap(AssistantMode.firstDeclaredType) else { return [] }
+        guard let text = readFile(path),
+              let type = AssistantMode.firstDeclaredType(text),
+              !type.isEmpty else { return [] }
         return files.filter { f in
-            ["storyboard", "xib"].contains(URL(fileURLWithPath: f).pathExtension.lowercased())
-                && (readFile(f)?.contains("customClass=\"\(type)\"") ?? false)
+            guard ["storyboard", "xib"].contains(URL(fileURLWithPath: f).pathExtension.lowercased()) else { return false }
+            guard let content = readFile(f) else { return false }
+            return content.contains("customClass=\"\(type)\"")
         }.sorted()
     }
 

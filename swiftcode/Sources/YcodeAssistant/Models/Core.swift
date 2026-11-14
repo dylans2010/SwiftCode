@@ -12,6 +12,7 @@ public enum ProviderKind: String, Codable, Sendable, CaseIterable, Hashable {
     case metaAssist
     case gemini
     case mistral
+    case qwen
     case offlineModels
 
     public var displayName: String {
@@ -32,6 +33,7 @@ public enum ProviderKind: String, Codable, Sendable, CaseIterable, Hashable {
         case .anthropic: "Anthropic"
         case .gemini: "Gemini"
         case .mistral: "Mistral"
+        case .qwen: "Qwen"
         case .offlineModels: "Offline Models"
         }
     }

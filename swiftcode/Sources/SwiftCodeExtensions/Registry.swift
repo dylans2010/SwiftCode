@@ -29,12 +29,15 @@ public final class RegistryClient: Sendable {
     }
 
     public convenience init(settings: ExtensionSettings) {
-        let base = URL(string: settings.registryBaseURL) ?? URL(string: "https://open-vsx.org/api")!
+        let fallback = URL(string: "https://open-vsx.org/api") ?? URL(fileURLWithPath: "/")
+        let base = URL(string: settings.registryBaseURL) ?? fallback
         self.init(baseURL: base)
     }
 
     private func get(path: String, query: [URLQueryItem] = []) async throws -> (Data, HTTPURLResponse) {
-        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
+            throw SwiftCodeExtensionError.registry("Invalid registry URL.")
+        }
         if !query.isEmpty { components.queryItems = query }
         guard let url = components.url else { throw SwiftCodeExtensionError.registry("Invalid registry URL.") }
         var request = URLRequest(url: url)

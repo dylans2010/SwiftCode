@@ -8,11 +8,36 @@ import YcodeSubprocess
 
 public enum HostScript {
     public static var source: String {
-        guard let url = Bundle.module.url(forResource: "extension-host", withExtension: "js"),
-              let text = try? String(contentsOf: url, encoding: .utf8) else {
-            return ""
+        if let url = Bundle.module.url(forResource: "extension-host", withExtension: "js"),
+           let text = try? String(contentsOf: url, encoding: .utf8), !text.isEmpty {
+            return text
         }
-        return text
+        if let url = Bundle.main.url(forResource: "extension-host", withExtension: "js"),
+           let text = try? String(contentsOf: url, encoding: .utf8), !text.isEmpty {
+            return text
+        }
+        if let resourceURL = Bundle.main.resourceURL {
+            let candidates = [
+                resourceURL.appendingPathComponent("extension-host.js"),
+                resourceURL.appendingPathComponent("Ycode_SwiftCodeExtensions.bundle/Contents/Resources/extension-host.js"),
+                resourceURL.appendingPathComponent("Resources/extension-host.js")
+            ]
+            for candidate in candidates {
+                if let text = try? String(contentsOf: candidate, encoding: .utf8), !text.isEmpty {
+                    return text
+                }
+            }
+        }
+        let fallbackPaths = [
+            "/Applications/SwiftCode.app/Contents/Resources/extension-host.js",
+            "/Applications/SwiftCode.app/Contents/Resources/Ycode_SwiftCodeExtensions.bundle/Contents/Resources/extension-host.js"
+        ]
+        for path in fallbackPaths {
+            if let text = try? String(contentsOfFile: path, encoding: .utf8), !text.isEmpty {
+                return text
+            }
+        }
+        return ""
     }
 
     public static func hostScriptURL(storage: ExtensionStorage) -> URL {
@@ -22,7 +47,11 @@ public enum HostScript {
     public static func ensureHostScript(storage: ExtensionStorage) throws -> URL {
         let url = hostScriptURL(storage: storage)
         let source = source
-        guard !source.isEmpty else {
+        if source.isEmpty {
+            if FileManager.default.fileExists(atPath: url.path),
+               let existing = try? String(contentsOf: url, encoding: .utf8), !existing.isEmpty {
+                return url
+            }
             throw SwiftCodeExtensionError.host("The bundled extension host script could not be loaded.")
         }
         try FileManager.default.createDirectory(at: storage.hostDirectory, withIntermediateDirectories: true)

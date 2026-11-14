@@ -8,13 +8,15 @@ import SwiftCodeExtensions
 
 
 @MainActor
-public final class ExtensionsWindowManager {
+public final class ExtensionsWindowManager: NSObject, NSWindowDelegate {
     public static let shared = ExtensionsWindowManager()
 
     private var window: NSWindow?
     private var didCheckUpdates = false
 
-    private init() {}
+    private override init() {
+        super.init()
+    }
 
     public func show() {
         Task {
@@ -25,20 +27,26 @@ public final class ExtensionsWindowManager {
                 await manager.checkUpdates()
             }
         }
-        if let window, window.isVisible {
+        if let window {
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
         }
         let controller = NSHostingController(rootView: ExtensionsHomeView())
-        let w = window ?? NSWindow(contentViewController: controller)
-        w.contentViewController = controller
+        let w = NSWindow(contentViewController: controller)
+        w.isReleasedWhenClosed = false
+        w.delegate = self
         w.title = "SwiftCode Extensions"
         w.setContentSize(NSSize(width: 1024, height: 660))
         w.minSize = NSSize(width: 820, height: 520)
-        window = w
+        w.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+        self.window = w
         w.center()
         w.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    public func windowWillClose(_ notification: Notification) {
+        self.window = nil
     }
 }

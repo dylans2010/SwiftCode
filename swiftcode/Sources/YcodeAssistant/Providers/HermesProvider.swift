@@ -649,12 +649,50 @@ public struct HermesAssistantProvider: AssistantProvider {
     public init() {}
 
     public func availability() async -> ProviderAvailability {
-        .ready([ModelInfo(id: "hermes-default", displayName: "Hermes Default")])
+        guard let _ = HermesProvider.resolveExecutable() else {
+            return .notInstalled(hint: "Hermes is not installed. Install Hermes CLI and run `hermes setup` in a terminal.")
+        }
+        do {
+            let discovered = try await HermesProvider.fetchModels()
+            let models = discovered.map { ModelInfo(id: $0.storedID, displayName: $0.displayName) }
+            return models.isEmpty ? .ready([ModelInfo(id: "hermes-default", displayName: "Hermes Default")]) : .ready(models)
+        } catch {
+            return .ready([ModelInfo(id: "hermes-default", displayName: "Hermes Default")])
+        }
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
-        eventStream { continuation in
-            continuation.yield(.text("Hermes provider active."))
+        return eventStream { continuation in
+            guard let _ = HermesProvider.resolveExecutable() else {
+                throw AssistantError.failed("Hermes CLI is not installed or not found on PATH.")
+            }
+            let rawModel = request.model ?? "hermes-default"
+            let hermesModel: String
+            if HermesModelID.isHermesModelID(rawModel) {
+                hermesModel = rawModel
+            } else if rawModel.starts(with: "hermes:") {
+                hermesModel = rawModel
+            } else {
+                hermesModel = "hermes:\(rawModel)"
+            }
+            let prompt = request.messages.last?.content ?? request.flattenedPrompt
+            let workDir = request.workingDirectory?.path ?? FileManager.default.currentDirectoryPath
+            let runReq = HermesRunRequest(
+                model: hermesModel,
+                systemPrompt: request.instructions,
+                userText: prompt,
+                directory: workDir
+            )
+            let provider = HermesProvider()
+            let stream = await provider.run(runReq) { event in
+                if case .running = event.state {
+                    continuation.yield(.activity("Running \(event.toolName)..."))
+                }
+            }
+            for try await delta in stream {
+                continuation.yield(.text(delta))
+            }
+            continuation.yield(.finished(nil))
         }
     }
 }

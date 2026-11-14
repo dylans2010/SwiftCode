@@ -247,6 +247,7 @@ public struct AssistModelPickerView: View {
         case .anthropic: "brain"
         case .gemini: "sparkle"
         case .mistral: "bolt"
+        case .qwen: "cpu"
         case .offlineModels: "externaldrive"
         }
     }

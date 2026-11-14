@@ -438,9 +438,13 @@ public final class AssistModelRouter: Sendable {
         }
     }
 
-    public func isQuotaOrRateLimit(errorText: String) -> Bool {
+    public static func isQuotaOrRateLimit(errorText: String) -> Bool {
         let desc = errorText.lowercased()
         return desc.contains("429") || desc.contains("resource_exhausted") || desc.contains("quota exceeded") || desc.contains("rate limit") || desc.contains("rate_limit") || desc.contains("too many requests")
+    }
+
+    public func isQuotaOrRateLimit(errorText: String) -> Bool {
+        Self.isQuotaOrRateLimit(errorText: errorText)
     }
 
     public func isModelQuarantined(modelIdentifier: String) -> Bool {
@@ -450,7 +454,7 @@ public final class AssistModelRouter: Sendable {
         return false
     }
 
-    public func classify(error: Error) -> ModelRoutingFailureClass {
+    public static func classify(error: Error) -> ModelRoutingFailureClass {
         let desc = error.localizedDescription.lowercased()
         let nsError = error as NSError
 
@@ -479,6 +483,10 @@ public final class AssistModelRouter: Sendable {
         }
 
         return .internalAntigravityFailure
+    }
+
+    public func classify(error: Error) -> ModelRoutingFailureClass {
+        Self.classify(error: error)
     }
 
     public func markRateLimited(modelID: String, retryAfter: TimeInterval? = nil) {

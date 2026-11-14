@@ -10,7 +10,7 @@ public final class CodingAssistantServices {
 
     public var store: SecretStore
     public let account: OpenAIAccount
-    public var providerOverride: ((ProviderKind) -> AssistantProvider?)?
+    public var providerOverride: (@Sendable (ProviderKind) -> AssistantProvider?)?
     public var locator = CLIToolLocator()
     public var preferences: Preferences?
 
@@ -49,13 +49,38 @@ public final class CodingAssistantServices {
     }
 
     public func survey(prefs: Preferences = .shared) async -> [ProviderKind: ProviderAvailability] {
-        let kinds = ProviderKind.allCases
-        let providers = kinds.map { provider($0, prefs: prefs) }
-        return await withTaskGroup(of: (ProviderKind, ProviderAvailability).self) { group in
-            for (k, p) in zip(kinds, providers) { group.addTask { (k, await p.availability()) } }
-            var out: [ProviderKind: ProviderAvailability] = [:]
-            for await (k, a) in group { out[k] = a }
-            return out
-        }
+        let store = self.store
+        let account = self.account
+        let locator = self.locator
+        let settings = prefs.codingAssistant
+        let override = self.providerOverride
+
+        return await Task.detached(priority: .userInitiated) {
+            let backends = AssistantBackends(settings: settings, store: store, account: account, locator: locator)
+            let kinds = ProviderKind.allCases
+            return await withTaskGroup(of: (ProviderKind, ProviderAvailability).self) { group in
+                for k in kinds {
+                    let p = override?(k) ?? backends.provider(k)
+                    group.addTask {
+                        let avail = await withTaskGroup(of: ProviderAvailability.self) { inner in
+                            inner.addTask {
+                                await p.availability()
+                            }
+                            inner.addTask {
+                                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                                return .notRunning(hint: "\(k.displayName) availability check timed out.")
+                            }
+                            let res = await inner.next() ?? .notRunning(hint: "\(k.displayName) availability check timed out.")
+                            inner.cancelAll()
+                            return res
+                        }
+                        return (k, avail)
+                    }
+                }
+                var out: [ProviderKind: ProviderAvailability] = [:]
+                for await (k, a) in group { out[k] = a }
+                return out
+            }
+        }.value
     }
 }

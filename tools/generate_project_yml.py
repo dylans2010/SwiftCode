@@ -27,9 +27,21 @@ settings:
     SWIFT_INCLUDE_PATHS:
       - "$(BUILD_ROOT)/SourcePackages/checkouts/swift-syntax/Sources/_SwiftSyntaxCShims/include"
       - "$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-syntax/Sources/_SwiftSyntaxCShims/include"
+      - "$(BUILD_ROOT)/SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include"
+      - "$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include"
+      - "$(BUILD_ROOT)/SourcePackages/checkouts/swift-cmark/src/include"
+      - "$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/src/include"
+      - "$(BUILD_ROOT)/SourcePackages/checkouts/swift-cmark/extensions/include"
+      - "$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/extensions/include"
     HEADER_SEARCH_PATHS:
       - "$(BUILD_ROOT)/SourcePackages/checkouts/swift-syntax/Sources/_SwiftSyntaxCShims/include"
       - "$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-syntax/Sources/_SwiftSyntaxCShims/include"
+      - "$(BUILD_ROOT)/SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include"
+      - "$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include"
+      - "$(BUILD_ROOT)/SourcePackages/checkouts/swift-cmark/src/include"
+      - "$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/src/include"
+      - "$(BUILD_ROOT)/SourcePackages/checkouts/swift-cmark/extensions/include"
+      - "$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/extensions/include"
     OTHER_SWIFT_FLAGS:
       - "$(inherited)"
       - "-package-name"
@@ -566,6 +578,8 @@ targets:
       - target: YcodeIDEShell
       - target: SwiftCodeConnect
       - target: SwiftCodeCollaboration
+      - package: SwiftMarkdown
+        product: Markdown
 
   SwiftCode:
     type: application

@@ -178,6 +178,34 @@ struct JumpBar: View {
         HStack(spacing: 4) {
             Image(systemName: "square.grid.2x2").font(.system(size: 11)).foregroundStyle(c.secondaryLabel)
                 .help("Navigate to Related Items")
+
+            HStack(spacing: 2) {
+                Button {
+                    model.perform(.goBack)
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(model.canGoBack ? c.label : c.secondaryLabel.opacity(0.4))
+                        .frame(width: 14, height: 14)
+                }
+                .buttonStyle(.plain)
+                .disabled(!model.canGoBack)
+                .help("Go Back (⌃⌘←)")
+
+                Button {
+                    model.perform(.goForward)
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(model.canGoForward ? c.label : c.secondaryLabel.opacity(0.4))
+                        .frame(width: 14, height: 14)
+                }
+                .buttonStyle(.plain)
+                .disabled(!model.canGoForward)
+                .help("Go Forward (⌃⌘→)")
+            }
+            .padding(.horizontal, 2)
+
             Rectangle().fill(c.separator).frame(width: 1, height: 12).padding(.horizontal, 2)
             if model.document != nil {
                 let pathList = model.jumpPath
@@ -226,6 +254,31 @@ struct JumpBar: View {
                     }
                     .buttonStyle(.plain).help("Jump to Next Issue")
                 }
+                .padding(.trailing, 6)
+            }
+
+            HStack(spacing: 6) {
+                Button {
+                    model.assistant.isShown.toggle()
+                } label: {
+                    Image(systemName: "rectangle.split.2x1")
+                        .font(.system(size: 11))
+                        .foregroundStyle(model.assistant.isShown ? Color.accentColor : c.secondaryLabel)
+                        .padding(2)
+                }
+                .buttonStyle(.plain)
+                .help("Toggle Assistant Editor (Counterpart)")
+
+                Button {
+                    NotificationCenter.default.post(name: NSNotification.Name("com.swiftcode.addEditorPane"), object: nil)
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 11))
+                        .foregroundStyle(c.secondaryLabel)
+                        .padding(2)
+                }
+                .buttonStyle(.plain)
+                .help("Add Editor Pane")
             }
         }
         .padding(.horizontal, 6)

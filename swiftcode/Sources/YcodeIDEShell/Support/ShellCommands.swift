@@ -26,7 +26,7 @@ public enum ShellCommand: String, CaseIterable, Sendable {
     case scmResolveConflicts, scmContinueIntegration, scmAbortIntegration
     case showSourceControlNavigator, showTestNavigator, showReportNavigator
     case testAgain
-    case showCodingAssistant, newConversation, jumpToNextActiveConversation
+    case showCodingAssistant, toggleAssistant, newConversation, jumpToNextActiveConversation
     case codingToolExplain, codingToolDocument, codingToolGeneratePlayground, codingToolGeneratePreview
     case toggleCanvas, canvasLayoutAutomatic, canvasLayoutRight, canvasLayoutBottom
 

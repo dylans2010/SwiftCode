@@ -31,21 +31,54 @@ extension WorkspaceWindowController {
 
     func showCustomAssistantMode(_ a: SourceEditorController, current: String) {
         guard let mode = assistantExtra.customMode else { return }
+        assistantExtra.task?.cancel()
         let files = workspaceFiles
-        let read: (String) -> String? = { [weak self] p in
-            if let e = self?.editorArea.allEditors.first(where: { $0.fileURL?.path == p && $0.isDirty }) { return e.textView.string }
+        var dirtyBuffers: [String: String] = [:]
+        for e in editorArea.allEditors where e.isDirty {
+            if let path = e.fileURL?.path {
+                dirtyBuffers[path] = e.textView.string
+            }
+        }
+        let capturedBuffers = dirtyBuffers
+        let read: @Sendable (String) -> String? = { p in
+            if let dirty = capturedBuffers[p] { return dirty }
             return try? String(contentsOfFile: p, encoding: .utf8)
         }
         func showFiles(_ list: [String]) {
             a.setCounterparts(list.map { (URL(fileURLWithPath: $0).lastPathComponent, $0) }) { [weak self, weak a] p in
                 if let self, let a { self.open(path: p, line: nil, in: a) }
             }
-            if let first = list.first { if a.fileURL?.path != first { open(path: first, line: nil, in: a) } } else { a.showText("No Editor", title: "No Editor") }
+            if let first = list.first {
+                if a.fileURL?.path != first { open(path: first, line: nil, in: a) }
+            } else {
+                a.showText("No Editor", title: "No Editor")
+            }
         }
         switch mode {
-        case "Extensions": showFiles(AssistantModeCatalog.extensions(of: current, in: files, readFile: read))
-        case "User Interfaces": showFiles(AssistantModeCatalog.userInterfaces(of: current, in: files, readFile: read))
-        case "Included By": showFiles(AssistantModeCatalog.includedBy(current, in: files, readFile: read))
+        case "Extensions":
+            assistantExtra.task = Task { [weak self, weak a] in
+                let found = await Task.detached(priority: .userInitiated) {
+                    AssistantModeCatalog.extensions(of: current, in: files, readFile: read)
+                }.value
+                guard !Task.isCancelled, let self, let a, self.assistantExtra.customMode == mode else { return }
+                showFiles(found)
+            }
+        case "User Interfaces":
+            assistantExtra.task = Task { [weak self, weak a] in
+                let found = await Task.detached(priority: .userInitiated) {
+                    AssistantModeCatalog.userInterfaces(of: current, in: files, readFile: read)
+                }.value
+                guard !Task.isCancelled, let self, let a, self.assistantExtra.customMode == mode else { return }
+                showFiles(found)
+            }
+        case "Included By":
+            assistantExtra.task = Task { [weak self, weak a] in
+                let found = await Task.detached(priority: .userInitiated) {
+                    AssistantModeCatalog.includedBy(current, in: files, readFile: read)
+                }.value
+                guard !Task.isCancelled, let self, let a, self.assistantExtra.customMode == mode else { return }
+                showFiles(found)
+            }
         case "Generated Interface":
             let text = read(current).map(AssistantModeCatalog.generatedInterface) ?? ""
             a.showText(text.isEmpty ? "No Editor" : text, title: URL(fileURLWithPath: current).lastPathComponent + " (Interface)")

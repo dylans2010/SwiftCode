@@ -161,6 +161,14 @@ public struct FileActivityItem: Codable, Identifiable, Sendable {
     public var hasChanges: Bool {
         return addedLines > 0 || deletedLines > 0
     }
+
+    public var summary: String {
+        diffSummary ?? ""
+    }
+
+    public var diffText: String {
+        diffHunks.joined(separator: "\n")
+    }
 }
 
 public struct TerminalActivityItem: Codable, Identifiable, Sendable {

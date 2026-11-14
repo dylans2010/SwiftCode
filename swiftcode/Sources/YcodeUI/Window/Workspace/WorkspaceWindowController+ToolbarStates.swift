@@ -23,5 +23,15 @@ extension WorkspaceWindowController {
             default: break
             }
         }
+        for e in editorArea.allEditors {
+            e.canGoBack = editor.history.canGoBack
+            e.canGoForward = editor.history.canGoForward
+            if e.onGoBack == nil {
+                e.onGoBack = { [weak self] in self?.goBack(nil) }
+                e.onGoForward = { [weak self] in self?.goForward(nil) }
+                e.onToggleCounterpart = { [weak self] in self?.toggleAssistant(nil) }
+                e.onAddEditorPane = { [weak self] in self?.splitEditor(nil) }
+            }
+        }
     }
 }

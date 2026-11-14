@@ -324,6 +324,12 @@ public final class GeneralSettingsPane: SettingsPane {
     public private(set) var lastConfirmation: String?
 
     override func build() {
+        heading("Welcome Style Interface")
+        row("Welcome style:", popUp(WelcomeStyleInterface.allCases.map(\.rawValue), selected: prefs.welcomeStyleInterface.rawValue) { [prefs] in
+            prefs.welcomeStyleInterface = WelcomeStyleInterface(rawValue: $0) ?? .style27
+        })
+        note("Choose between Style 27 (current launcher) and Style 26 (two-pane interface).")
+
         heading("Starting Points")
         row("Restore open projects and workspaces:", popUp(Preferences.RestoreWindows.allCases.map(\.rawValue), selected: prefs.restoreWindows.rawValue) { [prefs] in
             prefs.restoreWindows = Preferences.RestoreWindows(rawValue: $0) ?? .system

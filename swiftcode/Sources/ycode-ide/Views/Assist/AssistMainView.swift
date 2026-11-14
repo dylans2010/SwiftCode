@@ -29,6 +29,25 @@ public struct AssistMainView: View {
 
     @State private var showEnhancementError = false
     @State private var enhancementErrorMessage: String? = nil
+    @State private var showTodoList = true
+    @State private var history = AssistConversationHistory.shared
+    @AppStorage("com.swiftcode.assist.reasoningLevel") private var reasoningLevel: String = "Minimal"
+
+    private var currentTaskTitle: String {
+        if let activeID = history.activeConversationID,
+           let item = history.conversations.first(where: { $0.id == activeID }),
+           !item.title.isEmpty {
+            return item.title
+        }
+        if let firstMsg = manager.messages.first(where: { $0.role == .user }),
+           !firstMsg.content.isEmpty {
+            let truncated = firstMsg.content.components(separatedBy: .newlines).first ?? ""
+            if !truncated.isEmpty {
+                return String(truncated.prefix(28))
+            }
+        }
+        return "New Assist Task"
+    }
 
     @Bindable private var bridgeManager = CodexBridgeManager.shared
 
@@ -66,7 +85,61 @@ public struct AssistMainView: View {
     public var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                
+                Menu {
+                    Button {
+                        searchConversationText = ""
+                        attachedFiles = []
+                        selectedExplicitSkills = []
+                        selectedExplicitMCPServers = []
+                        selectedExplicitFiles = []
+                        editingQueueId = nil
+                        editingQueueText = ""
+                        manager.clearChat()
+                        history.activeConversationID = UUID()
+                    } label: {
+                        Label("New Task", systemImage: "square.and.pencil")
+                    }
+
+                    Divider()
+
+                    if !history.activeConversations.isEmpty {
+                        Text("Recent Tasks").font(.caption).foregroundStyle(.secondary)
+                        ForEach(history.activeConversations.prefix(6)) { conv in
+                            Button {
+                                history.activeConversationID = conv.id
+                            } label: {
+                                HStack {
+                                    Text(conv.title)
+                                    if conv.id == history.activeConversationID {
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                        Divider()
+                    }
+
+                    Button {
+                        showConversationsSheet = true
+                    } label: {
+                        Label("Task History…", systemImage: "clock")
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Text(currentTaskTitle)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+
                 Button {
                     if [AssistModelProvider.openCode, .openRouter, .hermes].contains(AssistProviderSelection.persistedProvider) {
                         showSDKModelProviderList = true
@@ -147,38 +220,26 @@ public struct AssistMainView: View {
 
                 
                 Button {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.8)) {
+                        showTodoList.toggle()
+                    }
+                } label: {
+                    Image(systemName: showTodoList ? "checklist.checked" : "checklist")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(showTodoList ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(showTodoList ? "Hide Todo List" : "Show Todo List")
+
+                Button {
                     showConversationsSheet = true
                 } label: {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 13))
+                    Image(systemName: "clock")
+                        .font(.system(size: 13, weight: .semibold))
                 }
                 .buttonStyle(.plain)
                 .help("Conversations History")
 
-                
-                Button {
-                    if [AssistModelProvider.openCode, .openRouter, .hermes].contains(AssistProviderSelection.persistedProvider) {
-                        showSDKModelProviderList = true
-                    } else {
-                        showExecutionModeSheet = true
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: isAgentMode ? "cpu" : "text.bubble")
-                            .font(.system(size: 11))
-                        Text(isAgentMode ? "Agent" : "Chat")
-                            .font(.system(size: 10, weight: .semibold))
-                    }
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 4)
-                    .background(Color.secondary.opacity(0.12), in: Capsule())
-                }
-                .buttonStyle(.plain)
-                .help("Toggle Execution Mode")
-
-                executionModePopover
-
-                
                 Button {
                     searchConversationText = ""
                     attachedFiles = []
@@ -188,12 +249,13 @@ public struct AssistMainView: View {
                     editingQueueId = nil
                     editingQueueText = ""
                     manager.clearChat()
+                    history.activeConversationID = UUID()
                 } label: {
-                    Image(systemName: "trash")
-                        .font(.system(size: 12))
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 13, weight: .semibold))
                 }
                 .buttonStyle(.plain)
-                .help("Clear Chat History (⌘K)")
+                .help("New Task")
 
                 
                 Button {
@@ -257,92 +319,112 @@ public struct AssistMainView: View {
             Divider()
 
             if manager.messages.isEmpty {
-                VStack {
+                VStack(spacing: 12) {
                     Spacer()
-                    ContentUnavailableView(
-                        "No Conversation",
-                        systemImage: "bubble.left.and.bubble.right.fill",
-                        description: Text("Chat history cleared. Send a prompt to begin.")
-                    )
-                    .foregroundStyle(.secondary)
+                    ZStack {
+                        Circle()
+                            .fill(LinearGradient(colors: [.purple.opacity(0.2), .blue.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 56, height: 56)
+
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 26, weight: .semibold))
+                            .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    }
+
+                    Text("New Conversation")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(.primary)
+
+                    Text("with \(currentActiveModelShortName.isEmpty ? "GPT-5" : currentActiveModelShortName)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
                     Spacer()
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(spacing: 16) {
-                            HStack {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundStyle(.secondary)
-                                TextField("Search chats...", text: $searchConversationText)
-                                        .textFieldStyle(.plain)
-                                if !searchConversationText.isEmpty {
-                                    Button {
-                                        searchConversationText = ""
-                                    } label: {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .foregroundStyle(.secondary)
+                ZStack(alignment: .top) {
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            LazyVStack(spacing: 16) {
+                                HStack {
+                                    Image(systemName: "magnifyingglass")
+                                        .foregroundStyle(.secondary)
+                                    TextField("Search chats...", text: $searchConversationText)
+                                            .textFieldStyle(.plain)
+                                    if !searchConversationText.isEmpty {
+                                        Button {
+                                            searchConversationText = ""
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        .buttonStyle(.plain)
                                     }
-                                    .buttonStyle(.plain)
+                                }
+                                .padding(6)
+                                .liquidGlass(style: .subtle, cornerRadius: 8)
+                                .padding(.horizontal, 12)
+                                .padding(.top, 8)
+
+                                ForEach(filteredMessages) { message in
+                                    if let composio = message.composioExecution {
+                                        AgentUseComposio(metadata: composio)
+                                    } else if let mcp = message.mcpExecution {
+                                        AgentUseMCP(metadata: mcp)
+                                    } else if message.noticeLevel != nil {
+                                        AssistNoticeView(message: message)
+                                    } else {
+                                        AssistChatBubble(message: message)
+                                    }
+                                }
+
+                                if let error = manager.lastError {
+                                    AssistInlineDiagnostic(
+                                        message: error,
+                                        severity: .error,
+                                        date: manager.lastErrorDate,
+                                        phase: manager.lastErrorPhase
+                                    )
+                                }
+
+                                if let warning = manager.lastWarning {
+                                    AssistInlineDiagnostic(
+                                        message: warning,
+                                        severity: .warning,
+                                        date: manager.lastWarningDate,
+                                        phase: manager.lastWarningPhase
+                                    )
+                                }
+
+                                processingIndicator
+                            }
+                            .padding(.bottom, 12)
+                            .blur(radius: manager.takeoverReason != nil ? 8 : 0)
+                            .overlay {
+                                if let reason = manager.takeoverReason {
+                                    AssistUserTakeover(
+                                        reason: reason,
+                                        onResume: {
+                                            manager.takeoverReason = nil
+                                        },
+                                        onAbort: {
+                                            manager.takeoverReason = nil
+                                            manager.clearChat()
+                                        }
+                                    )
                                 }
                             }
-                            .padding(6)
-                            .liquidGlass(style: .subtle, cornerRadius: 8)
-                            .padding(.horizontal, 12)
-                            .padding(.top, 8)
-
-                            ForEach(filteredMessages) { message in
-                                if let composio = message.composioExecution {
-                                    AgentUseComposio(metadata: composio)
-                                } else if let mcp = message.mcpExecution {
-                                    AgentUseMCP(metadata: mcp)
-                                } else if message.noticeLevel != nil {
-                                    AssistNoticeView(message: message)
-                                } else {
-                                    AssistChatBubble(message: message)
-                                }
-                            }
-
-                            if let error = manager.lastError {
-                                AssistInlineDiagnostic(
-                                    message: error,
-                                    severity: .error,
-                                    date: manager.lastErrorDate,
-                                    phase: manager.lastErrorPhase
-                                )
-                            }
-
-                            if let warning = manager.lastWarning {
-                                AssistInlineDiagnostic(
-                                    message: warning,
-                                    severity: .warning,
-                                    date: manager.lastWarningDate,
-                                    phase: manager.lastWarningPhase
-                                )
-                            }
-
-                            processingIndicator
+                            .id("Bottom")
                         }
-                        .padding(.bottom, 12)
-                        .blur(radius: manager.takeoverReason != nil ? 8 : 0)
-                        .overlay {
-                            if let reason = manager.takeoverReason {
-                                AssistUserTakeover(
-                                    reason: reason,
-                                    onResume: {
-                                        manager.takeoverReason = nil
-                                    },
-                                    onAbort: {
-                                        manager.takeoverReason = nil
-                                        manager.clearChat()
-                                    }
-                                )
-                            }
+                        .onChange(of: manager.messages.count) { _, _ in
+                            withAnimation { proxy.scrollTo("Bottom", anchor: .bottom) }
                         }
-                        .id("Bottom")
                     }
-                    .onChange(of: manager.messages.count) { _, _ in
-                        withAnimation { proxy.scrollTo("Bottom", anchor: .bottom) }
+
+                    if showTodoList {
+                        AssistTodoListCard(isPresented: $showTodoList)
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                            .zIndex(2)
                     }
                 }
             }
@@ -1125,7 +1207,8 @@ public struct AssistMainView: View {
 
                 ZStack {
                     let isBusy = manager.isProcessing || bridgeManager.streamStatus == "Streaming"
-                    let placeholder = isBusy ? "Queue next message..." : "What should I build next? (Type @ for MCP/files, / for skills)"
+                    let modelName = currentActiveModelShortName.isEmpty ? "Claude Agent" : currentActiveModelShortName
+                    let placeholder = isBusy ? "Queue next message..." : "Message \(modelName)"
                     TextField(placeholder, text: $inputText, axis: .vertical)
                         .padding(8)
                         .background(
@@ -1225,6 +1308,42 @@ public struct AssistMainView: View {
                     .buttonStyle(.plain)
                 }
             }
+
+            HStack(spacing: 8) {
+                Menu {
+                    ForEach(["Minimal", "Medium", "High", "Extended"], id: \.self) { opt in
+                        Button {
+                            reasoningLevel = opt
+                        } label: {
+                            HStack {
+                                Text(opt)
+                                if reasoningLevel == opt {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Reasoning: \(reasoningLevel)")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.secondary)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 3)
+                    .background(Color.primary.opacity(0.04), in: Capsule())
+                    .overlay(Capsule().stroke(Color.primary.opacity(0.08), lineWidth: 0.8))
+                }
+                .menuStyle(.borderlessButton)
+                .fixedSize()
+                .help("Model Reasoning Effort")
+
+                Spacer()
+            }
+            .padding(.horizontal, 4)
         }
         .padding(10)
         .liquidGlass(style: .standard, cornerRadius: 16)

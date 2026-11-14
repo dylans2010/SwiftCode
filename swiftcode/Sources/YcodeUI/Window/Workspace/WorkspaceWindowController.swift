@@ -255,7 +255,8 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         let toolbar = NSToolbar(identifier: "SwiftCodeWorkspaceToolbar")
         toolbar.delegate = self
         toolbar.displayMode = .iconOnly
-        toolbar.allowsUserCustomization = false
+        toolbar.allowsUserCustomization = true
+        toolbar.autosavesConfiguration = true
         window?.toolbar = toolbar
         styleToolbarToggles()
         labelSchemePill()
@@ -1583,12 +1584,30 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
     static let toolsDrawerID = NSToolbarItem.Identifier("toolsDrawer")
     static let issuesID = NSToolbarItem.Identifier("issues")
     static let newConversationID = NSToolbarItem.Identifier("newConversation")
+    static let branchSelectorID = NSToolbarItem.Identifier("branchSelector")
+    static let customizeToolbarID = NSToolbarItem.Identifier("customizeToolbar")
 
     public func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        [Self.leftPanesID, .flexibleSpace, Self.runID, FlushSidebar.separatorIdentifier, Self.historyID, Self.activityID, .flexibleSpace,
-         Self.newConversationID, .space, Self.schemeID, Self.issuesID,
-         .flexibleSpace, EditorOptionsMenu.addEditorID, EditorOptionsMenu.editorOptionsID, Self.editorModesID, Self.extensionsID, Self.toolsDrawerID,
-         .inspectorTrackingSeparator, .flexibleSpace, Self.inspectorToggleID]
+        [
+            Self.leftPanesID,
+            FlushSidebar.separatorIdentifier,
+            Self.branchSelectorID,
+            .flexibleSpace,
+            Self.runID,
+            Self.schemeID,
+            Self.activityID,
+            Self.issuesID,
+            .flexibleSpace,
+            Self.libraryID,
+            EditorOptionsMenu.addEditorID,
+            EditorOptionsMenu.editorOptionsID,
+            Self.editorModesID,
+            Self.extensionsID,
+            Self.toolsDrawerID,
+            .inspectorTrackingSeparator,
+            .flexibleSpace,
+            Self.inspectorToggleID
+        ]
     }
 
     public var leftPanesControl: NSSegmentedControl { toolbarControls.leftPanes }
@@ -1676,22 +1695,64 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
     }
 
     public func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
-        toolbarDefaultItemIdentifiers(toolbar) + [.space]
+        var allowed: [NSToolbarItem.Identifier] = [
+            Self.leftPanesID,
+            Self.branchSelectorID,
+            Self.runID,
+            Self.stopID,
+            Self.schemeID,
+            Self.activityID,
+            Self.issuesID,
+            Self.historyID,
+            Self.newConversationID,
+            Self.libraryID,
+            EditorOptionsMenu.addEditorID,
+            EditorOptionsMenu.editorOptionsID,
+            Self.editorModesID,
+            Self.extensionsID,
+            Self.toolsDrawerID,
+            Self.customizeToolbarID,
+            FlushSidebar.separatorIdentifier,
+            .inspectorTrackingSeparator,
+            Self.inspectorToggleID,
+            .space,
+            .flexibleSpace
+        ]
+        let tools = SwiftCodeToolbarDelegate.allAvailableTools.map { SwiftCodeToolbarDelegate.identifier(for: $0) }
+        for t in tools where !allowed.contains(t) {
+            allowed.append(t)
+        }
+        return allowed
+    }
+
+    public func toolbarSelectableItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+        []
     }
 
     public func toolbar(_ toolbar: NSToolbar, itemForItemIdentifier id: NSToolbarItem.Identifier, willBeInsertedIntoToolbar flag: Bool) -> NSToolbarItem? {
-        if let item = rightGroupToolbarItem(id) { return item }
+        if let item = rightGroupToolbarItem(id) {
+            item.paletteLabel = item.label
+            return item
+        }
         if let item = FlushSidebar.trackingSeparator(id, splitView: mainSplit.splitView) { return item }
         func button(_ symbol: String, _ label: String, _ action: Selector) -> NSToolbarItem {
             let item = NSToolbarItem(itemIdentifier: id)
             item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: label)
             item.label = label
+            item.paletteLabel = label
             item.toolTip = label
             item.action = action
             item.isBordered = true
             return item
         }
         switch id {
+        case Self.branchSelectorID:
+            return branchSelectorToolbarItem()
+        case Self.customizeToolbarID:
+            let item = button("slider.horizontal.3", "Customize Toolbar…", #selector(runToolbarCustomizationPalette(_:)))
+            item.paletteLabel = "Customize Toolbar"
+            item.toolTip = "Customize Toolbar Actions"
+            return item
         case Self.runID:
             let c = NSSegmentedControl(images: WorkspaceChrome.runStop.images(descriptions: ["Run", "Stop"]),
                                        trackingMode: .momentary, target: self, action: #selector(runStopChosen(_:)))
@@ -1699,6 +1760,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = c
             item.label = "Run"
+            item.paletteLabel = "Run / Stop"
             return item
         case Self.historyID:
             let c = NSSegmentedControl(images: WorkspaceChrome.history.images(descriptions: ["Go Back", "Go Forward"]),
@@ -1707,12 +1769,14 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = c
             item.label = "Back/Forward"
+            item.paletteLabel = "Navigation History"
             activityView.leadingNeighbor = c
             return item
         case Self.newConversationID:
             let item = NSToolbarItem(itemIdentifier: id)
             item.image = NSImage(systemSymbolName: WorkspaceChrome.newConversation.symbols[0], accessibilityDescription: "New Conversation")
             item.label = "New Conversation"
+            item.paletteLabel = "New Conversation"
             item.toolTip = "New Conversation"
             item.isBordered = true
             item.target = self
@@ -1725,6 +1789,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = c
             item.label = "Navigators"
+            item.paletteLabel = "Sidebar & Assistant Toggle"
             return item
         case Self.editorModesID:
             let c = toolbarControls.editorModes
@@ -1733,6 +1798,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = c
             item.label = "Editor Modes"
+            item.paletteLabel = "Editor Modes"
             item.visibilityPriority = .low
             item.menuFormRepresentation = editorModesMenuItem()
             return item
@@ -1740,6 +1806,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             let item = NSToolbarItem(itemIdentifier: id)
             item.image = NSImage(systemSymbolName: "puzzlepiece.extension", accessibilityDescription: "Extensions")
             item.label = "Extensions"
+            item.paletteLabel = "Extensions"
             item.toolTip = "Extensions"
             item.isBordered = true
             item.target = self
@@ -1750,16 +1817,24 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             let item = NSToolbarItem(itemIdentifier: id)
             item.image = NSImage(systemSymbolName: "wrench.and.screwdriver", accessibilityDescription: "Tools")
             item.label = "Tools"
+            item.paletteLabel = "Developer Tools"
             item.toolTip = "Developer Tools Drawer"
             item.isBordered = true
             item.target = self
             item.action = #selector(toggleToolsDrawer(_:))
             item.visibilityPriority = .high
             return item
-        case Self.stopID: return button("stop.fill", "Stop", #selector(stopProduct(_:)))
-        case Self.libraryID: return button("plus", "Library", #selector(showLibrary(_:)))
+        case Self.stopID:
+            let item = button("stop.fill", "Stop", #selector(stopProduct(_:)))
+            item.paletteLabel = "Stop"
+            return item
+        case Self.libraryID:
+            let item = button("plus", "Library", #selector(showLibrary(_:)))
+            item.paletteLabel = "Library"
+            return item
         case Self.inspectorToggleID:
             let item = button(WorkspaceChrome.inspectorToggle.symbols[0], Self.inspectorToggleTitle(shown: inspectorItem.map { !$0.isCollapsed } ?? true), #selector(toggleInspector(_:)))
+            item.paletteLabel = "Inspector Toggle"
             item.visibilityPriority = .user
             return item
         case Self.schemeID:
@@ -1782,6 +1857,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = stack
             item.label = "Scheme"
+            item.paletteLabel = "Scheme & Destination Capsule"
             item.visibilityPriority = .high
             item.isBordered = true
             return item
@@ -1789,6 +1865,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = issueCapsule
             item.label = "Issues"
+            item.paletteLabel = "Issues Capsule"
             item.visibilityPriority = .high
             item.isBordered = true
             item.isHidden = issueCapsule.isHidden
@@ -1803,11 +1880,145 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
             let item = NSToolbarItem(itemIdentifier: id)
             item.view = activityView
             item.label = "Activity"
+            item.paletteLabel = "Build Status & Activity"
             item.isBordered = false
             activityView.onNaturalWidthChange = { [weak self] in self?.scheduleToolbarFit() }
             return item
-        default: return nil
+        default:
+            if let item = SwiftCodeToolbarDelegate.shared.toolbar(toolbar, itemForItemIdentifier: id, willBeInsertedIntoToolbar: flag) {
+                item.paletteLabel = item.label
+                return item
+            }
+            return nil
         }
+    }
+
+    @objc public func runToolbarCustomizationPalette(_ sender: Any?) {
+        guard let toolbar = window?.toolbar else { return }
+        toolbar.allowsUserCustomization = true
+        toolbar.runCustomizationPalette(sender)
+    }
+
+    public func branchSelectorToolbarItem() -> NSToolbarItem {
+        let item = NSToolbarItem(itemIdentifier: Self.branchSelectorID)
+        item.view = makeBranchSelectorView()
+        item.label = "Branch / Project"
+        item.paletteLabel = "Git Branch / Project Selector"
+        item.toolTip = "Active Branch: \(sourceControl.snapshot.currentBranch ?? "main")"
+        item.visibilityPriority = .high
+        return item
+    }
+
+    public func makeBranchSelectorView() -> NSView {
+        let icon = NSImageView()
+        icon.image = NSImage(systemSymbolName: "arrow.triangle.branch", accessibilityDescription: "Branch")
+        icon.contentTintColor = .systemBlue
+        icon.setContentHuggingPriority(.required, for: .horizontal)
+
+        let projectLabel = NSTextField(labelWithString: session.model.displayName)
+        projectLabel.font = .systemFont(ofSize: 10, weight: .bold)
+        projectLabel.lineBreakMode = .byTruncatingTail
+        projectLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let branchName = sourceControl.snapshot.currentBranch ?? "main"
+        let branchLabel = NSTextField(labelWithString: branchName)
+        branchLabel.font = .systemFont(ofSize: 9)
+        branchLabel.textColor = .secondaryLabelColor
+        branchLabel.lineBreakMode = .byTruncatingTail
+        branchLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let textStack = NSStackView(views: [projectLabel, branchLabel])
+        textStack.orientation = .vertical
+        textStack.alignment = .leading
+        textStack.spacing = 0
+
+        let chevron = NSTextField(labelWithString: "⌵")
+        chevron.font = .systemFont(ofSize: 8, weight: .bold)
+        chevron.textColor = .tertiaryLabelColor
+        chevron.setContentHuggingPriority(.required, for: .horizontal)
+
+        let container = NSStackView(views: [icon, textStack, chevron])
+        container.orientation = .horizontal
+        container.alignment = .centerY
+        container.spacing = 5
+        container.edgeInsets = NSEdgeInsets(top: 2, left: 6, bottom: 2, right: 6)
+        container.wantsLayer = true
+        container.layer?.cornerRadius = 6
+        container.layer?.backgroundColor = NSColor.quaternaryLabelColor.withAlphaComponent(0.25).cgColor
+
+        let button = NSButton(frame: .zero)
+        button.isBordered = false
+        button.title = ""
+        button.target = self
+        button.action = #selector(branchSelectorClicked(_:))
+
+        let wrapper = NSView()
+        wrapper.addSubview(container)
+        wrapper.addSubview(button)
+        container.translatesAutoresizingMaskIntoConstraints = false
+        button.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            container.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
+            container.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
+            container.topAnchor.constraint(equalTo: wrapper.topAnchor),
+            container.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor),
+            button.leadingAnchor.constraint(equalTo: wrapper.leadingAnchor),
+            button.trailingAnchor.constraint(equalTo: wrapper.trailingAnchor),
+            button.topAnchor.constraint(equalTo: wrapper.topAnchor),
+            button.bottomAnchor.constraint(equalTo: wrapper.bottomAnchor),
+            wrapper.heightAnchor.constraint(equalToConstant: 28),
+            wrapper.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
+            wrapper.widthAnchor.constraint(lessThanOrEqualToConstant: 180)
+        ])
+        return wrapper
+    }
+
+    @objc func branchSelectorClicked(_ sender: NSView) {
+        let menu = NSMenu(title: "Branches")
+        let titleItem = NSMenuItem(title: session.model.displayName, action: nil, keyEquivalent: "")
+        titleItem.isEnabled = false
+        menu.addItem(titleItem)
+        menu.addItem(.separator())
+
+        let current = sourceControl.snapshot.currentBranch ?? "main"
+        let branches = sourceControl.snapshot.branches
+        if branches.isEmpty {
+            let item = NSMenuItem(title: current, action: nil, keyEquivalent: "")
+            item.state = .on
+            menu.addItem(item)
+        } else {
+            for b in branches {
+                let item = NSMenuItem(title: b.name, action: #selector(branchMenuChosen(_:)), keyEquivalent: "")
+                item.target = self
+                item.state = b.name == current ? .on : .off
+                menu.addItem(item)
+            }
+        }
+        menu.addItem(.separator())
+        let newBranchItem = NSMenuItem(title: "New Branch…", action: #selector(newBranchFromToolbarMenu(_:)), keyEquivalent: "")
+        newBranchItem.target = self
+        menu.addItem(newBranchItem)
+
+        let manageItem = NSMenuItem(title: "Manage Branches…", action: #selector(manageBranchesFromToolbarMenu(_:)), keyEquivalent: "")
+        manageItem.target = self
+        menu.addItem(manageItem)
+
+        menu.popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.maxY + 4), in: sender)
+    }
+
+    @objc func branchMenuChosen(_ item: NSMenuItem) {
+        sourceControl.checkout(item.title, changes: .carry)
+        window?.toolbar?.items.first(where: { $0.itemIdentifier == Self.branchSelectorID })?.view = makeBranchSelectorView()
+    }
+
+    @objc func newBranchFromToolbarMenu(_ sender: Any?) {
+        setLeftPane(codingAssistant: false)
+        sourceControl.setMode(.repositories)
+    }
+
+    @objc func manageBranchesFromToolbarMenu(_ sender: Any?) {
+        setLeftPane(codingAssistant: false)
+        sourceControl.setMode(.repositories)
     }
 
     public static let runStopToolTips = WorkspaceChrome.runStop.toolTips

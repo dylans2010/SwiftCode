@@ -74,7 +74,7 @@ public struct OpenRouterProvider: AssistantProvider {
         request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         let response: HTTP.Response
         do {
-            response = try await HTTP.send(request, timeout: 15)
+            response = try await HTTP.send(request, timeout: 2.0)
         } catch where HTTP.isUnreachable(error) {
             throw AssistantError.unreachable(service: "OpenRouter", url: baseURL, hint: "Check the network connection.")
         }
@@ -109,15 +109,39 @@ public struct OpenRouterProvider: AssistantProvider {
         return supported.contains("tools") ? .supports : .doesNotSupport
     }
 
+    public static func canonicalModelID(_ raw: String?) -> String {
+        guard let raw = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return "anthropic/claude-3.5-sonnet"
+        }
+        if raw.contains("/") { return raw }
+        let lower = raw.lowercased()
+        if lower.contains("claude") {
+            if lower.contains("3-7") || lower.contains("3.7") { return "anthropic/claude-3.7-sonnet" }
+            if lower.contains("haiku") { return "anthropic/claude-3.5-haiku" }
+            return "anthropic/claude-3.5-sonnet"
+        }
+        if lower.contains("gpt-4o-mini") { return "openai/gpt-4o-mini" }
+        if lower.contains("gpt-4o") || lower.contains("gpt-4") { return "openai/gpt-4o" }
+        if lower.contains("o1") { return "openai/o1" }
+        if lower.contains("o3") { return "openai/o3-mini" }
+        if lower.contains("deepseek-r1") { return "deepseek/deepseek-r1" }
+        if lower.contains("deepseek") { return "deepseek/deepseek-chat" }
+        return raw
+    }
+
     static func chatBody(_ request: ChatRequest) -> [String: Any] {
+        let model = canonicalModelID(request.model)
         var messages: [[String: Any]] = [["role": "system", "content": request.instructions]]
         messages += request.messages.map { ["role": $0.role.rawValue, "content": ChatCompletionsProvider.messageContent($0)] }
         var body: [String: Any] = ["messages": messages, "stream": true, "stream_options": ["include_usage": true]]
-        if let m = request.model, !m.isEmpty { body["model"] = m }
+        body["model"] = model
         let g = request.generation
         if let n = g.maxOutputTokens { body["max_tokens"] = n }
-        if let t = g.temperature { body["temperature"] = t }
-        if let p = g.topP { body["top_p"] = p }
+        let isReasoning = model.contains("o1") || model.contains("o3") || model.contains("r1")
+        if !isReasoning {
+            if let t = g.temperature { body["temperature"] = t }
+            if let p = g.topP { body["top_p"] = p }
+        }
         return body
     }
 
@@ -179,6 +203,8 @@ public struct OpenRouterProvider: AssistantProvider {
             return .modelNotFound(model: model, hint: "Choose another model from the discovered list in Settings ▸ Assist.")
         case 429:
             return .usageLimit(message.isEmpty ? "OpenRouter rate-limited this request (429). Wait briefly and try again." : message)
+        case 502, 503, 504:
+            return .temporarilyUnavailable("OpenRouter upstream provider error (HTTP \(status)): \(message.isEmpty ? "The upstream model provider is temporarily unavailable." : message)")
         default:
             return .http(status: status, message: message)
         }

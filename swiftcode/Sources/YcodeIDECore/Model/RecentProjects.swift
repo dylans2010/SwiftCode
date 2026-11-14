@@ -54,6 +54,15 @@ public final class RecentProjects {
         Task { try? await ProjectRegistryStore.shared.note(rootURL: rootURL, name: name, kind: kind) }
     }
 
+    public func remove(_ url: URL) {
+        let path = Self.containerURL(url).path
+        var list = defaults.stringArray(forKey: Self.defaultsKey) ?? []
+        list.removeAll { $0 == path }
+        defaults.set(list, forKey: Self.defaultsKey)
+        persist()
+        NotificationCenter.default.post(name: Self.didChange, object: self)
+    }
+
     public func clear() {
         defaults.removeObject(forKey: Self.defaultsKey)
         persist()

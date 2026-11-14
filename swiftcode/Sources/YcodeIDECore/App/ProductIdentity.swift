@@ -8,6 +8,19 @@ public enum ProductIdentity {
 
     public static var versionText: String { "Version \(marketingVersion)" }
     public static var fullVersionText: String { "Version \(marketingVersion) (\(version))" }
+    public static var cfBundleVersionText: String {
+        let bundleVersion = (Bundle.main.infoDictionary?["CFBundleVersion"] as? String)
+            ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String)
+            ?? SwiftCodeRelease.version
+        let marketingVersion = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String)
+            ?? (Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String)
+            ?? SwiftCodeRelease.marketingVersion
+        if !marketingVersion.isEmpty && marketingVersion != bundleVersion {
+            return "Version \(marketingVersion) (\(bundleVersion))"
+        } else {
+            return "Version \(bundleVersion)"
+        }
+    }
 
     public static let copyright = "Copyright © 2026 MarcoDotIO and the SwiftCode contributors"
     public static let license = "MIT License"

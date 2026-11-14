@@ -440,6 +440,7 @@ public final class LLMService: Sendable {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.timeoutInterval = 2.0
         setupHeaders(for: &request, provider: provider, key: key)
 
         let (data, response) = try await self.urlSession.data(for: request)
@@ -490,6 +491,7 @@ public final class LLMService: Sendable {
         }
 
         let isFallbackEnabled = UserDefaults.standard.bool(forKey: "free_models_fallback_enabled")
+            || AppSettings.shared.assistAutomaticallySwitchModels
 
         do {
             return try await sendChatRequestInternal(model: model, messages: messages, key: key, providerOverride: providerOverride)
@@ -715,6 +717,7 @@ public final class LLMService: Sendable {
         }
 
         let isFallbackEnabled = UserDefaults.standard.bool(forKey: "free_models_fallback_enabled")
+            || AppSettings.shared.assistAutomaticallySwitchModels
 
         do {
             try await streamChatInternal(messages: messages, model: model, systemPrompt: systemPrompt, providerOverride: providerOverride, onToken: onToken)
@@ -850,11 +853,17 @@ public final class LLMService: Sendable {
             }
             try await OfflineModelRunner.shared.loadModel(at: modelDir)
             let prompt = formatFullPrompt(messages: messages, systemPrompt: systemPrompt)
-            try await OfflineModelRunner.shared.streamResponse(prompt: prompt) { token in
-                Task {
-                    await onToken(token)
+            let (tokenStream, tokenContinuation) = AsyncStream.makeStream(of: String.self)
+            let runnerTask = Task { @MainActor in
+                defer { tokenContinuation.finish() }
+                try await OfflineModelRunner.shared.streamResponse(prompt: prompt) { token in
+                    tokenContinuation.yield(token)
                 }
             }
+            for await token in tokenStream {
+                await onToken(token)
+            }
+            try await runnerTask.value
             return
         }
 
@@ -907,6 +916,12 @@ public final class LLMService: Sendable {
                 guard jsonString != "[DONE]" else { break }
 
                 if let data = jsonString.data(using: .utf8) {
+                    if let jsonObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                       let errDict = jsonObj["error"] as? [String: Any],
+                       let errMsg = errDict["message"] as? String {
+                        throw LLMError.unknown(errMsg)
+                    }
+
                     if provider == .anthropic {
                         if let chunk = try? JSONDecoder().decode(AnthropicStreamChunk.self, from: data),
                            let token = chunk.delta?.text {
@@ -924,12 +939,26 @@ public final class LLMService: Sendable {
             logWarning("[streamChat] Stream failed: \(error.localizedDescription). Checking fallback eligibility.")
             if await shouldFallbackToOffline(for: provider) {
                 logInfo("[streamChat] Falling back to offline runner stream.")
-                _ = try await defaultOfflineModelName()
-                try await OfflineModelRunner.shared.loadModel(at: try await defaultOfflineModelDirectory())
-                try await OfflineModelRunner.shared.streamResponse(prompt: messages.last?.content ?? "") { token in
-                    Task { await onToken(token) }
+                if let offlineName = try? await defaultOfflineModelName(),
+                   let offlineDir = try? await defaultOfflineModelDirectory() {
+                    do {
+                        try await OfflineModelRunner.shared.loadModel(at: offlineDir)
+                        let (tokenStream, tokenContinuation) = AsyncStream.makeStream(of: String.self)
+                        let runnerTask = Task { @MainActor in
+                            defer { tokenContinuation.finish() }
+                            try await OfflineModelRunner.shared.streamResponse(prompt: messages.last?.content ?? "") { token in
+                                tokenContinuation.yield(token)
+                            }
+                        }
+                        for await token in tokenStream {
+                            await onToken(token)
+                        }
+                        try await runnerTask.value
+                        return
+                    } catch {
+                        logError("[streamChat] Offline fallback runner failed: \(error.localizedDescription)")
+                    }
                 }
-                return
             }
             throw error
         }
@@ -1097,6 +1126,7 @@ public final class LLMService: Sendable {
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
+        request.timeoutInterval = 2.0
         request.timeoutInterval = 10.0
 
         if !endpoint.isLocal {

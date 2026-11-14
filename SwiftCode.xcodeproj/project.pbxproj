@@ -272,6 +272,7 @@
 		1269F6BC9F1F61DB06FDE714 /* PeerSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0B6399A3F247E6A3462F64 /* PeerSessionManager.swift */; };
 		126F409B1B9AE634FB3A8D4E /* WorkspaceWindowController+ToolbarRight.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4176D58B5A65DBF17A3A97E /* WorkspaceWindowController+ToolbarRight.swift */; };
 		127294C5CA045844A23D6BBF /* Nokia-Qt-exception-1.1.txt in Resources */ = {isa = PBXBuildFile; fileRef = 114C97B88FAA47C8C1F0FEED /* Nokia-Qt-exception-1.1.txt */; };
+		127564DC61BB2CC2EB09A795 /* Style26WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F3405D54AF2961542752A45 /* Style26WelcomeView.swift */; };
 		128099AFDC92089B67F6B2DB /* BitTorrent-1.1.txt in Resources */ = {isa = PBXBuildFile; fileRef = 5B5991CDC7847F0C972BC9A1 /* BitTorrent-1.1.txt */; };
 		1296965C19EA42D036DDF5DF /* ViewerConnection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971EE2E0B6D2CC3D0AFCB68E /* ViewerConnection.swift */; };
 		12A923192A9BB6CC1ABB948D /* GitHubIssuesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C85CFAA1447D2E1F8EB3FA5A /* GitHubIssuesView.swift */; };
@@ -824,6 +825,7 @@
 		3689544BEDD4FED011F2E303 /* SwiftCodeTools+TestingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE89B060A2D551F5113E3965 /* SwiftCodeTools+TestingSupport.swift */; };
 		368D1387A5EA376CA2E9BB5E /* BSD-2-Clause-Views.txt in Resources */ = {isa = PBXBuildFile; fileRef = CDAC3AE1A2318C86737D2C03 /* BSD-2-Clause-Views.txt */; };
 		3690C1D088670B1FF058C88C /* GitViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 123420E60F4F30409C87FE4E /* GitViewModel.swift */; };
+		36A92489DD741AD75570BD94 /* CodingAssistantSidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D3DC725557A35E6A23F19BB /* CodingAssistantSidebarView.swift */; };
 		36BD49A06098A51ACCD4A281 /* DocumentationWithGitHub.md in Resources */ = {isa = PBXBuildFile; fileRef = 7FE65E6FB0F8134D66977925 /* DocumentationWithGitHub.md */; };
 		36C2C4E0F9E00302E5675371 /* ModulePreparer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78F4B28B5124C736605D2749 /* ModulePreparer.swift */; };
 		36E38840BD31D2CB26D11A9F /* WorkspaceShellModel+Assistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075F337D2B2D8506CB64F87B /* WorkspaceShellModel+Assistant.swift */; };
@@ -1234,6 +1236,7 @@
 		54D7E4530B1D74F850AF0BE8 /* DiffEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D38520D22FAF4EC072E1ABD6 /* DiffEngine.swift */; };
 		54DFDDF3A7B984EA74A83E97 /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7475B2AA1B6E1832AA1640B5 /* JSON.swift */; };
 		54E1DBCBA3154371CABD9DB1 /* BranchGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D76DA20D1A4AB3811C17EF4E /* BranchGraphView.swift */; };
+		54F0BB582994FDCF7A7AFA00 /* WelcomeStyleInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2822CE6C1FD7E3222D475C8 /* WelcomeStyleInterface.swift */; };
 		54F44121613D08081084D8A3 /* GaugeTimelineView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAE1A3134559550407DB115C /* GaugeTimelineView.swift */; };
 		54FC33AE4F01B98C6DE7F1D6 /* Latex2e.txt in Resources */ = {isa = PBXBuildFile; fileRef = 9AF7C072F185442B51E4DCE9 /* Latex2e.txt */; };
 		55132C6BA89E025CC6891597 /* AssistMarkdownLinkCheckTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27CEB62517A586AD5472BBCF /* AssistMarkdownLinkCheckTool.swift */; };
@@ -2822,6 +2825,7 @@
 		C33D3EE31B88A399ACAE688A /* TransferSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC2012AB73D387CA7447FAE /* TransferSession.swift */; };
 		C3441815B3E6F89FF84ABF98 /* RuntimeShimSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDC3B19480EC25B45FC244E8 /* RuntimeShimSupport.swift */; };
 		C357AD52E441205F673A0E98 /* CSS.css.txt in Resources */ = {isa = PBXBuildFile; fileRef = BB98B89879B32ADDF940C78C /* CSS.css.txt */; };
+		C388DFEF82D957596C016544 /* ModelCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E95797E615F43228DBDEEA9 /* ModelCatalog.swift */; };
 		C3A20A805EDC060ED33EFD8A /* CC-BY-3.0-NL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 428C05F379EB438010DA1F24 /* CC-BY-3.0-NL.txt */; };
 		C3A782076C697D25EE97B57C /* SecurityNotesEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03F31C05BDF08FBC7429C172 /* SecurityNotesEditor.swift */; };
 		C3BBAEB305F7CF8AC50A887F /* RuntimeTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3EC77DCED4D8E7B339364E0 /* RuntimeTransport.swift */; };
@@ -6616,6 +6620,7 @@
 		6ED9696B21BD0132F17CB047 /* X11-no-permit-persons.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "X11-no-permit-persons.txt"; sourceTree = "<group>"; };
 		6EF5B55EE37C85DDD00C8995 /* XcodeBuildManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeBuildManager.swift; sourceTree = "<group>"; };
 		6F085EF21ACFFD66B1182AA7 /* DarwinTrapDispatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DarwinTrapDispatcher.swift; sourceTree = "<group>"; };
+		6F3405D54AF2961542752A45 /* Style26WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Style26WelcomeView.swift; sourceTree = "<group>"; };
 		6F3F25C2EDFE01D73013B6F9 /* AssistTakeScreenrecordTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistTakeScreenrecordTool.swift; sourceTree = "<group>"; };
 		6F4A3922D9F7B5C787A93F18 /* AssistProjectEntitlementsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistProjectEntitlementsTool.swift; sourceTree = "<group>"; };
 		6F4D58CD297A6042BA4226F4 /* Advanced-Cryptics-Dictionary.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Advanced-Cryptics-Dictionary.txt"; sourceTree = "<group>"; };
@@ -6841,6 +6846,7 @@
 		7E6A8E7E9BEFBF774F661AC9 /* README_Template.md.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = README_Template.md.txt; sourceTree = "<group>"; };
 		7E71D15A95F5CD3ED37AA671 /* SwiftCode_Satisfying_ClickBloom.aiff */ = {isa = PBXFileReference; lastKnownFileType = audio.aiff; path = SwiftCode_Satisfying_ClickBloom.aiff; sourceTree = "<group>"; };
 		7E8E1F8B44814EF1C3400F46 /* ChangelogEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChangelogEditor.swift; sourceTree = "<group>"; };
+		7E95797E615F43228DBDEEA9 /* ModelCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelCatalog.swift; sourceTree = "<group>"; };
 		7E972F43165229403894FB2A /* PreviewMacHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewMacHost.swift; sourceTree = "<group>"; };
 		7EA4D7ADD5F38277C8E0A103 /* Elastic-2.0.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Elastic-2.0.txt"; sourceTree = "<group>"; };
 		7EA719254C8D1B0B5FFFED1F /* GitHubLoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitHubLoadingView.swift; sourceTree = "<group>"; };
@@ -7247,6 +7253,7 @@
 		9D044A7813AAF6E8547C7DBD /* SwiftCodeTools+TerminalSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCodeTools+TerminalSupport.swift"; sourceTree = "<group>"; };
 		9D28536FA29DA132A025A492 /* ActivityLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogView.swift; sourceTree = "<group>"; };
 		9D2F01A702C7C17C70E13025 /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalView.swift; sourceTree = "<group>"; };
+		9D3DC725557A35E6A23F19BB /* CodingAssistantSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodingAssistantSidebarView.swift; sourceTree = "<group>"; };
 		9D5AF7F37F87865E0B3A2B9A /* ProjectEditorModel+Controls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectEditorModel+Controls.swift"; sourceTree = "<group>"; };
 		9D5D56CFF285B053B4A7A8BF /* Zend-2.0.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "Zend-2.0.txt"; sourceTree = "<group>"; };
 		9D7356595E4F4B1C763F344E /* MachOImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MachOImage.swift; sourceTree = "<group>"; };
@@ -8437,6 +8444,7 @@
 		F24C70B640A5BC9493D0316A /* GitRepository+Conflicts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GitRepository+Conflicts.swift"; sourceTree = "<group>"; };
 		F2582593129F39DBB95057F2 /* TargetMutations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TargetMutations.swift; sourceTree = "<group>"; };
 		F26878D9B1037DA9833804F4 /* AssistGitBranchManagerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistGitBranchManagerTool.swift; sourceTree = "<group>"; };
+		F2822CE6C1FD7E3222D475C8 /* WelcomeStyleInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeStyleInterface.swift; sourceTree = "<group>"; };
 		F2840CBF3C0A88A6BD933DBB /* CC-BY-NC-ND-2.0.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "CC-BY-NC-ND-2.0.txt"; sourceTree = "<group>"; };
 		F284B625F3961F5F50BB2937 /* PreviewScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewScene.swift; sourceTree = "<group>"; };
 		F29FCB8FB0CD1B1F3356B4C6 /* BreakpointEditorController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BreakpointEditorController.swift; sourceTree = "<group>"; };
@@ -10022,6 +10030,7 @@
 				DD962C4D6B07A6144A412655 /* AssistModePickerView.swift */,
 				D5BC83F0B38E567BBD7744F5 /* AssistSpeechUI.swift */,
 				37E4B4A758AAC92B926D0E7B /* AttachmentPicker.swift */,
+				9D3DC725557A35E6A23F19BB /* CodingAssistantSidebarView.swift */,
 				4A40F3922372FC028C03D636 /* CodingAssistantViewController.swift */,
 				19053AFBD4318AEC8B14B1AB /* ComposerScrollView.swift */,
 				2F99F01F7969D6F931D15759 /* ConversationView.swift */,
@@ -10268,6 +10277,7 @@
 				2F166FABB3ADE99683029033 /* TerminalApprovalRequest.swift */,
 				A658165F8ED8D107AAB4291B /* TerminalApprovalSettings.swift */,
 				FAA49CC6D794603B29CE36CB /* UserMemoryManager.swift */,
+				F2822CE6C1FD7E3222D475C8 /* WelcomeStyleInterface.swift */,
 				61CF2A4A7FBC844C6C51E95C /* XcodeProjParse.swift */,
 			);
 			path = Models;
@@ -13140,6 +13150,7 @@
 				0549A12211494E390C7D5837 /* SimulatorToolbar.swift */,
 				71D3C905D2005FCAFC84DAC4 /* SingleFileWindowController.swift */,
 				97BD7F2FCC69FFA3A47EF9C1 /* StatusIndicator.swift */,
+				6F3405D54AF2961542752A45 /* Style26WelcomeView.swift */,
 				913E519DBDD3E8479C8FB722 /* SymbolOutlineView.swift */,
 				9335226D92E5C547BF45E2F1 /* ToolbarCustomizationView.swift */,
 				7BB049236FFB5E24EFF5B0D8 /* ToolbarItem.swift */,
@@ -13214,6 +13225,7 @@
 				547EE4C1DF5B64C64D03B526 /* MetaAssistProvider.swift */,
 				5795EE3F53460D89E5FB9FB0 /* MetaAssistProvider+ToolNames.swift */,
 				B59B68F88061104A4993F19F /* MetaAssistTurnExecutor.swift */,
+				7E95797E615F43228DBDEEA9 /* ModelCatalog.swift */,
 				ACF710F79A47F2C75B247C6B /* MuseCodeCLIHelper.swift */,
 				8C1A722CD090C5605D723F0F /* MuseCodeMSPBridge.swift */,
 				F303B27D4CB4AC62D984743A /* MuseOtherModelsBridge.swift */,
@@ -18830,6 +18842,7 @@
 				5CE00B0DAE57F76F271CEA2C /* CodexUndoRedoView.swift in Sources */,
 				0328F6D7B2D5048BDE580B35 /* CodexUsageView.swift in Sources */,
 				96D8EF2AB0F29D509586D420 /* CodingAssistantSettingsPane.swift in Sources */,
+				36A92489DD741AD75570BD94 /* CodingAssistantSidebarView.swift in Sources */,
 				F86432DA75D335AC0C30C74E /* CodingAssistantViewController.swift in Sources */,
 				F98D8303F27411587A197B19 /* CodingDictionaryModels.swift in Sources */,
 				5190471C4BC25767F05980B8 /* CodingDictionaryService.swift in Sources */,
@@ -19329,6 +19342,7 @@
 				85780B63DBA71D0E3E80E590 /* StringCatalogEditorController.swift in Sources */,
 				F13E887058B4F0954E14269B /* StructureBlur.swift in Sources */,
 				0D664A995ACEB1577492404A /* StructuredRecordEditor.swift in Sources */,
+				127564DC61BB2CC2EB09A795 /* Style26WelcomeView.swift in Sources */,
 				9A3DD302B0D0ECD3EA5E6D98 /* StylingBootstrap.swift in Sources */,
 				4291DAA47941270664720949 /* SwiftCodeSDKAssistResolver.swift in Sources */,
 				32E5FBFFD0FD6C4FCA3A0B1D /* SwiftCodeSDKToolRunner.swift in Sources */,
@@ -20742,6 +20756,7 @@
 				70A7F8AAE9296F23CDB3CA5C /* MetaAssistTurnExecutor.swift in Sources */,
 				92CCE3499ACC12AD7FF2E450 /* MetaSlashCommandEffects.swift in Sources */,
 				68A5BDBAF98ADAF225DB8877 /* MetaSlashCommandManager.swift in Sources */,
+				C388DFEF82D957596C016544 /* ModelCatalog.swift in Sources */,
 				541C29DE24CF5F36CA1FDFCB /* ModelSessionManager.swift in Sources */,
 				73E75E882C37C8F4B8C61DF2 /* MuseCodeCLIHelper.swift in Sources */,
 				AFC0EEFA9F8F482C34B8AAC3 /* MuseCodeMSPBridge.swift in Sources */,
@@ -20815,6 +20830,7 @@
 				1F6DFDC38A243561845058C1 /* UseTermFunction.swift in Sources */,
 				8DD5E44732E357EE0D427777 /* UseWorkersTool.swift in Sources */,
 				D9BD4C4B4877005A0CF26FCB /* UserMemoryManager.swift in Sources */,
+				54F0BB582994FDCF7A7AFA00 /* WelcomeStyleInterface.swift in Sources */,
 				813A4A254434DC7B21859117 /* WorkerContextBuilder.swift in Sources */,
 				A935E9D8EED5DFF9E2C95480 /* WorkerEngine.swift in Sources */,
 				AAECCA8E6F9FDE83A84AA4FF /* WorkerEvent.swift in Sources */,
@@ -22390,6 +22406,11 @@
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/src/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/extensions/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-syntax/Sources/_SwiftSyntaxCShims/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/src/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/extensions/include",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 3.2;
@@ -22428,6 +22449,11 @@
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/src/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/extensions/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-syntax/Sources/_SwiftSyntaxCShims/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/src/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/extensions/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include",
 				);
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 6.0;
@@ -23557,6 +23583,11 @@
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/src/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/extensions/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-syntax/Sources/_SwiftSyntaxCShims/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/src/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/extensions/include",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 3.2;
@@ -23596,6 +23627,11 @@
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/src/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-cmark/extensions/include",
 					"$(BUILD_DIR)/../../SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-syntax/Sources/_SwiftSyntaxCShims/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-markdown/Sources/CAtomic/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/src/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-cmark/extensions/include",
+					"$(SRCROOT)/build/DerivedData/SourcePackages/checkouts/swift-subprocess/Sources/_SubprocessCShims/include",
 				);
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 6.0;

@@ -43,11 +43,10 @@ public struct ChatCompletionsProvider: AssistantProvider {
 
     public func availability() async -> ProviderAvailability {
         guard let req = request(prefixed("models")) else { return .failed("The \(serviceName) address “\(baseURL)” is not a valid URL.") }
-        // Local servers (llama.cpp) answer in milliseconds; remote APIs
-        // (Gemini, Mistral) need a realistic network timeout.
-        let isLoopback = ["127.0.0.1", "localhost", "::1"].contains { baseURL.contains($0) }
+        // Local servers and remote APIs during availability checks are capped at 2.0s
+        // so the UI never blocks.
         do {
-            let r = try await HTTP.send(req, timeout: isLoopback ? 3 : 15)
+            let r = try await HTTP.send(req, timeout: 2.0)
             if r.status == 503 { return .notRunning(hint: "\(serviceName) is still loading its model. Try again in a moment.") }
             if r.status == 401 { return .signedOut(hint: "\(serviceName) needs an API key. Enter the key it was started with in Settings ▸ Assist.") }
             guard r.status == 200 else { return .failed("\(serviceName) answered HTTP \(r.status): \(HTTP.errorMessage(r.body).message)") }
@@ -90,14 +89,30 @@ public struct ChatCompletionsProvider: AssistantProvider {
     }
 
     static func chatBody(_ request: ChatRequest) -> [String: Any] {
-        var messages: [[String: Any]] = [["role": "system", "content": request.instructions]]
-        messages += request.messages.map { ["role": $0.role.rawValue, "content": messageContent($0)] }
+        let model = request.model?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let isReasoning = model.hasPrefix("o1") || model.hasPrefix("o3") || model.hasPrefix("o4")
+        var messages: [[String: Any]] = []
+        if !request.instructions.isEmpty {
+            messages.append(["role": isReasoning ? "developer" : "system", "content": request.instructions])
+        }
+        messages += request.messages.map { msg -> [String: Any] in
+            let role = (msg.role == .system && isReasoning) ? "developer" : msg.role.rawValue
+            return ["role": role, "content": messageContent(msg)]
+        }
         var body: [String: Any] = ["messages": messages, "stream": true, "stream_options": ["include_usage": true]]
-        if let m = request.model, !m.isEmpty { body["model"] = m }
+        if !model.isEmpty { body["model"] = model }
         let g = request.generation
-        if let n = g.maxOutputTokens { body["max_tokens"] = n }
-        if let t = g.temperature { body["temperature"] = t }
-        if let p = g.topP { body["top_p"] = p }
+        if let n = g.maxOutputTokens {
+            if isReasoning {
+                body["max_completion_tokens"] = n
+            } else {
+                body["max_tokens"] = n
+            }
+        }
+        if !isReasoning {
+            if let t = g.temperature { body["temperature"] = t }
+            if let p = g.topP { body["top_p"] = p }
+        }
         if let k = g.topK { body["top_k"] = k }
         if let r = g.repeatPenalty { body["repeat_penalty"] = r }
         return body
@@ -151,12 +166,22 @@ public struct ChatCompletionsProvider: AssistantProvider {
         let d = data.trimmingCharacters(in: .whitespaces)
         if d == "[DONE]" { return [.done] }
         guard let o = JSON.object(d) else { throw AssistantError.malformed("The server sent an event that is not JSON.") }
+        if let errObj = o["error"] as? [String: Any] {
+            let msg = (errObj["message"] as? String) ?? "The server returned an error."
+            throw AssistantError.failed(msg)
+        }
         if o["error"] != nil {
             throw AssistantError.failed(HTTP.errorMessage(Data(d.utf8)).message)
         }
         var out: [Chunk] = []
         if let first = (o["choices"] as? [[String: Any]])?.first {
-            if let delta = first["delta"] as? [String: Any], let c = delta["content"] as? String, !c.isEmpty { out.append(.text(c)) }
+            if let delta = first["delta"] as? [String: Any] {
+                if let c = delta["content"] as? String, !c.isEmpty {
+                    out.append(.text(c))
+                } else if let r = delta["reasoning_content"] as? String, !r.isEmpty {
+                    out.append(.text(r))
+                }
+            }
             if let fr = first["finish_reason"] as? String, !fr.isEmpty {
                 if fr == "length" { out.append(.length) }
                 out.append(.finish)

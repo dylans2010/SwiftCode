@@ -130,6 +130,12 @@ public struct AssistantBackends: Sendable {
                 apiKey: Self.apiKey(store, SecretAccount.mistralKey,
                     keychainKeys: ["mistral_api_key", "mistral-api-key", LLMProvider.mistral.keychainKey]),
                 apiPrefix: "v1", serviceName: "Mistral", kind: .mistral)
+        case .qwen:
+            return ChatCompletionsProvider(
+                baseURL: "https://dashscope.aliyuncs.com/compatible-mode",
+                apiKey: Self.apiKey(store, "qwen_api_key",
+                    keychainKeys: ["qwen_api_key", "qwen-api-key", LLMProvider.qwen.keychainKey]),
+                apiPrefix: "v1", serviceName: "Qwen", kind: .qwen)
         case .foundationModels:
             return FoundationModelsProvider()
         case .scCloud:
@@ -190,7 +196,19 @@ public struct AssistantBackends: Sendable {
         await withTaskGroup(of: (ProviderKind, ProviderAvailability).self) { group in
             for k in ProviderKind.allCases {
                 let p = provider(k)
-                group.addTask { (k, await p.availability()) }
+                group.addTask {
+                    let avail = await withTaskGroup(of: ProviderAvailability.self) { inner in
+                        inner.addTask { await p.availability() }
+                        inner.addTask {
+                            try? await Task.sleep(nanoseconds: 2_000_000_000)
+                            return .notRunning(hint: "\(k.displayName) availability check timed out.")
+                        }
+                        let res = await inner.next() ?? .notRunning(hint: "\(k.displayName) availability check timed out.")
+                        inner.cancelAll()
+                        return res
+                    }
+                    return (k, avail)
+                }
             }
             var out: [ProviderKind: ProviderAvailability] = [:]
             for await (k, a) in group { out[k] = a }

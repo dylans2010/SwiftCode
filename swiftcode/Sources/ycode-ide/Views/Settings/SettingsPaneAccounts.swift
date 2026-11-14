@@ -21,7 +21,7 @@ struct AccountsSettingsPane: View {
             AccountsPage.Row(title: $0.teamName, detail: "\($0.appleID) · Team \($0.teamID)")
         }
         #endif
-        SettingsForm {
+        return SettingsForm {
             SettingsSection {
                 SettingsContentRow(inset: 0) {
                     VStack(spacing: 0) {

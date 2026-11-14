@@ -22,8 +22,20 @@ public struct MuseCallsNativeToolsUI: View {
         } else {
             let nativeTools = tools.filter { !$0.isMuseSDKTool }
             let museTools = tools.filter { $0.isMuseSDKTool }
+            let searchTools = tools.filter { $0.toolId.lowercased().contains("search") || $0.toolId.lowercased().contains("find") || $0.toolId.lowercased().contains("grep") }
 
             VStack(alignment: .leading, spacing: 12) {
+                if searchTools.count >= 2 {
+                    AssistToolSummaryCard(
+                        item: AssistToolSummaryItem(
+                            type: .search,
+                            title: "Search",
+                            summary: "\(searchTools.count) searches",
+                            details: searchTools.map(\.purpose).filter({ !$0.isEmpty }).joined(separator: "\n")
+                        )
+                    )
+                }
+
                 if !nativeTools.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         nativeHeaderBadge(
@@ -60,6 +72,14 @@ public struct MuseCallsNativeToolsUI: View {
                     .padding(8)
                     .liquidGlass(style: .standard, cornerRadius: 10, tint: .blue)
                 }
+
+                if !fileItems.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(fileItems) { file in
+                            diffCard(for: file)
+                        }
+                    }
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.vertical, 4)
@@ -67,6 +87,29 @@ public struct MuseCallsNativeToolsUI: View {
                 WorkersMainView()
             }
         }
+    }
+
+    private func diffCard(for file: FileActivityItem) -> some View {
+        let name = (file.filePath as NSString).lastPathComponent
+        let kind: AssistEditedFileDiffItem.ChangeKind = {
+            if file.addedLines > 0 && file.deletedLines == 0 {
+                return .added
+            } else if file.deletedLines > 0 && file.addedLines == 0 {
+                return .deleted
+            } else {
+                return .modified
+            }
+        }()
+        let item = AssistEditedFileDiffItem(
+            filename: name,
+            path: file.filePath,
+            addedLines: file.addedLines,
+            deletedLines: file.deletedLines,
+            changeKind: kind,
+            abstract: file.summary.isEmpty ? nil : file.summary,
+            previewContent: file.diffText.isEmpty ? nil : file.diffText
+        )
+        return AssistEditedFileDiffCard(item: item)
     }
 
     @ViewBuilder

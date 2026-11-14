@@ -318,7 +318,7 @@ struct Composer: View {
                                                      attachments: assistant.attachments))
                 .font(ShellFonts.mini).foregroundStyle(c.secondaryLabel).lineLimit(1)
                 .shellTarget("assistant context")
-            TextField(text: $assistant.draft, prompt: Text(verbatim: "Ask \(assistant.sourceLabel)"), axis: .vertical) { Text(verbatim: "Message") }
+            TextField(text: $assistant.draft, prompt: Text(verbatim: "Message \(assistant.sourceLabel)"), axis: .vertical) { Text(verbatim: "Message") }
                 .textFieldStyle(.plain)
                 .font(ShellFonts.row)
                 .focused($fieldFocused)

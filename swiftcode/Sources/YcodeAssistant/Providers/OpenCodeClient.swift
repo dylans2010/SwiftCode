@@ -383,7 +383,7 @@ public actor OpenCodeClient {
             throw OpenCodeError.invalidConfiguration("Invalid OpenCode server URL.")
         }
         var request = URLRequest(url: url)
-        request.timeoutInterval = 15
+        request.timeoutInterval = 2.0
         let (data, response) = try await urlSession.data(for: request)
         guard let http = response as? HTTPURLResponse else {
             throw OpenCodeError.modelUnavailable("OpenCode server returned a non-HTTP response.")

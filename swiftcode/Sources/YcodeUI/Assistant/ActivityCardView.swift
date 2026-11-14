@@ -62,23 +62,57 @@ final class ActivityCardView: NSView {
     }
 
     private static func row(symbol: String, text: String, secondary: Bool) -> NSView {
-        let icon = NSImageView(image: NSImage(systemSymbolName: symbol, accessibilityDescription: nil) ?? NSImage())
-        icon.symbolConfiguration = .init(pointSize: 9, weight: .medium)
-        icon.contentTintColor = .tertiaryLabelColor
+        let isSearch = text.lowercased().contains("search") || symbol == "magnifyingglass"
+        let isCompleted = text.hasPrefix("✓") || text.lowercased().contains("complete")
+        let isInProgress = text.hasPrefix("→") || text.lowercased().contains("progress") || text.lowercased().contains("running")
+
+        let iconName: String
+        let tintColor: NSColor
+        if isCompleted {
+            iconName = "checkmark.circle.fill"
+            tintColor = .systemGreen
+        } else if isInProgress {
+            iconName = "arrow.right.circle.fill"
+            tintColor = .systemBlue
+        } else if isSearch {
+            iconName = "magnifyingglass"
+            tintColor = .systemCyan
+        } else {
+            iconName = symbol
+            tintColor = .tertiaryLabelColor
+        }
+
+        let icon = NSImageView(image: NSImage(systemSymbolName: iconName, accessibilityDescription: nil) ?? NSImage())
+        icon.symbolConfiguration = .init(pointSize: 10, weight: .semibold)
+        icon.contentTintColor = tintColor
         icon.translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            icon.widthAnchor.constraint(equalToConstant: 12),
-            icon.heightAnchor.constraint(equalToConstant: 12),
+            icon.widthAnchor.constraint(equalToConstant: 14),
+            icon.heightAnchor.constraint(equalToConstant: 14),
         ])
+
         let label = NSTextField(labelWithString: text)
-        label.font = .systemFont(ofSize: 10.5)
-        label.textColor = secondary ? .tertiaryLabelColor : .secondaryLabelColor
+        label.font = .systemFont(ofSize: 11, weight: isInProgress ? .semibold : .regular)
+        label.textColor = secondary ? .tertiaryLabelColor : (isInProgress ? .labelColor : .secondaryLabelColor)
         label.lineBreakMode = .byTruncatingMiddle
         label.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         let row = NSStackView(views: [icon, label])
         row.orientation = .horizontal
         row.spacing = 6
         row.alignment = .centerY
+
+        // Check if there is diff badge text like +44 or -12
+        if text.contains("+") || text.contains("-") {
+            let parts = text.components(separatedBy: " ")
+            if let badgePart = parts.first(where: { $0.hasPrefix("+") || $0.hasPrefix("-") }) {
+                let badgeLabel = NSTextField(labelWithString: badgePart)
+                badgeLabel.font = .monospacedSystemFont(ofSize: 9.5, weight: .bold)
+                badgeLabel.textColor = badgePart.hasPrefix("+") ? .systemGreen : .systemRed
+                row.addArrangedSubview(badgeLabel)
+            }
+        }
+
         return row
     }
 }

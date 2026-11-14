@@ -54,6 +54,7 @@ public actor OpenRouterClient {
         )
 
         var urlRequest = URLRequest(url: URL(string: "https://openrouter.ai/api/v1/models")!)
+        urlRequest.timeoutInterval = 2.0
         if !apiKey.isEmpty {
             urlRequest.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
@@ -311,13 +312,18 @@ public actor OpenRouterClient {
             Task {
                 var toolCalls: [Int: (id: String, name: String, arguments: String)] = [:]
                 var toolOrder: [Int] = []
+                var didFlush = false
                 func flushToolCalls() {
+                    guard !didFlush else { return }
                     let calls = toolOrder.compactMap { index -> AgentToolCall? in
                         guard let call = toolCalls[index], !call.name.isEmpty else { return nil }
                         return AgentToolCall(id: call.id.isEmpty ? "call-\(index)" : call.id,
                                              name: call.name, arguments: call.arguments)
                     }
-                    if !calls.isEmpty { continuation.yield(.toolCall(calls)) }
+                    if !calls.isEmpty {
+                        didFlush = true
+                        continuation.yield(.toolCall(calls))
+                    }
                 }
                 do {
                     for try await line in result.lines {
@@ -331,27 +337,25 @@ public actor OpenRouterClient {
                             }
 
                             if let data = dataStr.data(using: .utf8),
-                               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                               let errorDict = json["error"] as? [String: Any],
-                               let errorMessage = errorDict["message"] as? String {
+                                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                                let errorDict = json["error"] as? [String: Any],
+                                let errorMessage = errorDict["message"] as? String {
                                 logger.error("[streamAgentTurn] SSE stream contained error: \(errorMessage, privacy: .public)")
                                 continuation.finish(throwing: AppError.aiError(errorMessage))
                                 return
                             }
 
                             if let chunk = decodeAgentChunk(dataStr) {
-                                switch chunk {
-                                case .text(let text):
+                                if let text = chunk.text {
                                     continuation.yield(.text(text))
-                                case .toolFragments(let fragments):
-                                    for fragment in fragments {
-                                        if toolCalls[fragment.index] == nil { toolOrder.append(fragment.index) }
-                                        var current = toolCalls[fragment.index] ?? (id: "", name: "", arguments: "")
-                                        if let id = fragment.id, !id.isEmpty { current.id = id }
-                                        if let name = fragment.name, !name.isEmpty { current.name = name }
-                                        current.arguments += fragment.arguments
-                                        toolCalls[fragment.index] = current
-                                    }
+                                }
+                                for fragment in chunk.toolFragments {
+                                    if toolCalls[fragment.index] == nil { toolOrder.append(fragment.index) }
+                                    var current = toolCalls[fragment.index] ?? (id: "", name: "", arguments: "")
+                                    if let id = fragment.id, !id.isEmpty { current.id = id }
+                                    if let name = fragment.name, !name.isEmpty { current.name = name }
+                                    current.arguments += fragment.arguments
+                                    toolCalls[fragment.index] = current
                                 }
                             }
                         }
@@ -373,9 +377,9 @@ public actor OpenRouterClient {
         var arguments: String
     }
 
-    private enum AgentChunk {
-        case text(String)
-        case toolFragments([ToolCallFragment])
+    private struct AgentChunk {
+        var text: String?
+        var toolFragments: [ToolCallFragment]
     }
 
     private func decodeAgentChunk(_ jsonString: String) -> AgentChunk? {
@@ -386,12 +390,16 @@ public actor OpenRouterClient {
             return nil
         }
 
+        var text: String? = nil
         if let content = delta["content"] as? String, !content.isEmpty {
-            return .text(content)
+            text = content
+        } else if let reasoning = delta["reasoning_content"] as? String, !reasoning.isEmpty {
+            text = reasoning
         }
 
+        var fragments: [ToolCallFragment] = []
         if let toolCallsData = delta["tool_calls"] as? [[String: Any]], !toolCallsData.isEmpty {
-            let fragments = toolCallsData.map { dict -> ToolCallFragment in
+            fragments = toolCallsData.map { dict -> ToolCallFragment in
                 let function = dict["function"] as? [String: Any]
                 return ToolCallFragment(
                     index: dict["index"] as? Int ?? 0,
@@ -399,10 +407,10 @@ public actor OpenRouterClient {
                     name: function?["name"] as? String,
                     arguments: function?["arguments"] as? String ?? "")
             }
-            return .toolFragments(fragments)
         }
 
-        return nil
+        if text == nil && fragments.isEmpty { return nil }
+        return AgentChunk(text: text, toolFragments: fragments)
     }
 }
 

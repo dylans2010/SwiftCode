@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import YcodeIDECore
 import SwiftCodeGitHub
 import YcodeAssistant
@@ -70,12 +71,17 @@ public final class WelcomeWindowController: NSWindowController, NSTableViewDataS
     }
     private var recentsObserver: NSObjectProtocol?
 
-    public static var versionText: String { ProductIdentity.versionText }
+    public static var versionText: String { ProductIdentity.cfBundleVersionText }
+
+    public private(set) var currentStyle: WelcomeStyleInterface = .style27
+    private var style27Built = false
 
     public init(recents: RecentProjects = .shared) {
         self.recents = recents
-        let window = NSWindow(contentRect: NSRect(origin: .zero, size: Self.size),
-                              styleMask: [.titled, .closable, .fullSizeContentView], backing: .buffered, defer: false)
+        let initialStyle = AppSettings.shared.welcomeStyleInterface
+        let initialSize = initialStyle == .style26 ? Style26WelcomeView.windowSize : Self.size
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: initialSize),
+                              styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView], backing: .buffered, defer: false)
         window.title = Self.title
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
@@ -83,20 +89,48 @@ public final class WelcomeWindowController: NSWindowController, NSTableViewDataS
         window.isReleasedWhenClosed = false
         for b in [NSWindow.ButtonType.closeButton, .miniaturizeButton, .zoomButton] { window.standardWindowButton(b)?.isHidden = true }
         super.init(window: window)
-        build()
-        reload()
+        applyStyle(initialStyle)
         window.center()
         recentsObserver = NotificationCenter.default.addObserver(forName: RecentProjects.didChange, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.reload() }
+        }
+        NotificationCenter.default.addObserver(forName: NSNotification.Name("WelcomeStyleDidChange"), object: nil, queue: .main) { [weak self] notif in
+            let style = (notif.object as? WelcomeStyleInterface) ?? AppSettings.shared.welcomeStyleInterface
+            MainActor.assumeIsolated {
+                self?.applyStyle(style)
+                self?.window?.center()
+            }
+        }
+    }
+
+    public func applyStyle(_ style: WelcomeStyleInterface) {
+        currentStyle = style
+        guard let window else { return }
+        if style == .style26 {
+            window.setContentSize(Style26WelcomeView.windowSize)
+            let hosting = NSHostingView(rootView: Style26WelcomeView(
+                onOpenSelected: { [weak self] u in self?.open(u) },
+                onCreateNewFile: { [weak self] in self?.createUntitledApp() },
+                onCloneGitRepo: { [weak self] in self?.cloneClicked(nil) },
+                onChooseTemplate: { [weak self] in self?.openTemplatePicker() },
+                onOpenFileOrFolder: { [weak self] in self?.openClicked(nil) },
+                onClose: { [weak self] in self?.close() }
+            ))
+            window.contentView = hosting
+        } else {
+            window.setContentSize(Self.size)
+            let content = NSView(frame: NSRect(origin: .zero, size: Self.size))
+            window.contentView = content
+            buildStyle27(content: content)
+            reload()
         }
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
-    private func build() {
-        guard let content = window?.contentView else { return }
-        iconView.image = ProductIcon.image
+    private func buildStyle27(content: NSView) {
+        iconView.image = AppIconManager.shared.currentIconImage ?? NSApp.applicationIconImage ?? ProductIcon.image
         iconView.imageScaling = .scaleProportionallyUpOrDown
         nameLabel.font = GlassBars.enabled ? Self.nameFont() : .systemFont(ofSize: 34, weight: .bold)
         nameLabel.alignment = .center
@@ -413,6 +447,19 @@ public final class WelcomeWindowController: NSWindowController, NSTableViewDataS
         if let w = names.first(where: { $0.hasSuffix(".xcworkspace") }) { return dir.appendingPathComponent(w) }
         if let p = names.first(where: { $0.hasSuffix(".xcodeproj") }) { return dir.appendingPathComponent(p) }
         return names.contains("Package.swift") ? dir : nil
+    }
+
+    @discardableResult
+    @objc public func openTemplatePicker() -> NewProjectSheetController? {
+        NewProjectFlow.start(row: NewProjectPicker.chooseTemplateIndex, defaults: Preferences.shared.defaults, location: newProjectLocation, parent: window,
+                            interactive: window?.isVisible == true,
+                            onCreated: { [weak self] created in
+                                self?.open(created.openURL)
+                                if let entry = created.entryFile { NewProjectFlow.openEntry(entry, of: created.openURL) }
+                            },
+                            onError: { text in
+                                NSApp.presentError(NSError(domain: "SwiftCode", code: 1, userInfo: [NSLocalizedDescriptionKey: text]))
+                            })
     }
 
     @discardableResult

@@ -3,6 +3,8 @@ import SwiftUI
 import YcodeIDECore
 import YcodeIDEShell
 
+typealias PlistEditorModel = YcodeIDEShell.PlistEditorModel
+
 struct PlistEditorView: View {
     var model: PlistEditorModel
     @FocusState private var hasKeyboard: Bool

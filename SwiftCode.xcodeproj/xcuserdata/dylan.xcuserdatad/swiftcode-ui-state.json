@@ -1,13 +1,17 @@
 {
+  "debugAreaHeight" : 135,
   "destinations" : {
-
+    "YcodeRelease" : "generic\/platform=macOS"
   },
   "expandedRows" : [
     "69299E4BACC3E0AE44D58074",
-    "1E15AA1A86315A9EDEB9AC26",
+    "720B4B5FC10AA450A0C8B78F",
+    "F77FE6B89BAD3F7DB63230D0",
+    "B0DA6A4ACC053DF16560A082",
+    "789FAC62891112E741340581",
+    "826DE319047EC04AEC4F591C",
     "152426D615F83EE39699B9B1",
-    "28F88714F327A821BB98707B",
-    "2B6ADC0C55C32E668E8E8F03"
+    "28F88714F327A821BB98707B"
   ],
   "recentFiles" : [
     "$(SDKROOT)\/System\/Library\/Frameworks\/MetalKit.framework",
@@ -17,9 +21,12 @@
     "\/Users\/dylan\/Downloads\/SwiftCode\/swiftcode\/Sources\/YcodeAssistant\/System Assets\/AgenticLoop.md",
     "\/Users\/dylan\/Downloads\/SwiftCode\/swiftcode\/Sources\/SwiftCodeExtensions\/Bridges.swift",
     "\/Users\/dylan\/Downloads\/SwiftCode\/swiftcode\/Sources\/SwiftCodeExtensions\/Bundle+Module.swift",
-    "\/Users\/dylan\/Downloads\/SwiftCode\/Info.plist",
     "\/Users\/dylan\/Downloads\/SwiftCode\/swiftcode\/Sources\/SwiftCodeSDK\/Resources\/SwiftCodeSDK.json",
     "\/Users\/dylan\/Downloads\/SwiftCode\/swiftcode\/Sources\/SwiftCodeExtensions\/Capabilities.swift",
-    "\/Users\/dylan\/Downloads\/SwiftCode\/SwiftCode.xcodeproj"
+    "\/Users\/dylan\/Downloads\/SwiftCode\/Info.plist",
+    "\/Users\/dylan\/Downloads\/SwiftCode\/SwiftCode.xcodeproj",
+    "\/Users\/dylan\/Downloads\/SwiftCode\/swiftcode\/Sources\/YcodeIDECore\/Resources\/File Templates\/HTML.html.txt",
+    "\/Users\/dylan\/Downloads\/SwiftCode\/swiftcode\/Sources\/YcodeDecompiler\/Resources\/QuickJS\/libregexp-opcode.h",
+    "\/Users\/dylan\/Downloads\/SwiftCode\/swiftcode\/Sources\/YcodeDecompiler\/Resources\/QuickJS\/libunicode-table.h"
   ]
 }

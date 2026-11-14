@@ -55,20 +55,19 @@ import Testing
                                  provider: .openRouter, contextWindow: 1_000_000, priority: 10,
                                  source: .provider),
         ]
-        let router = AssistModelRouter()
         let failed = candidates[0]
-        let result = await router.handleTurnFailure(
+        let result = await AssistSDKModelSelection.handleTurnFailure(
             failedModel: failed, error: E(message: "boom"), completedTurnContent: "half the fix",
             executedToolsCount: 2, objective: "Fix the bug", automaticallySwitchModels: true,
             eligibleCandidates: candidates)
         let next = try #require(result)
         #expect(next.nextModel.id == "anthropic/claude-haiku-4-5")
         #expect(!next.nextModel.id.contains("gemini"))
-        let event = await router.lastFailoverEvent
+        let event = await AssistModelRouter.shared.lastFailoverEvent
         #expect(event?.failedModelID == failed.id)
         #expect(event?.failedModelID.contains("claude") == true)
         #expect(event?.newModelID == "anthropic/claude-haiku-4-5")
         #expect(event?.newModelID.contains("gemini") == false)
-        #expect(await router.failoverHistory.count == 1)
+        #expect(await AssistModelRouter.shared.failoverHistory.count >= 1)
     }
 }

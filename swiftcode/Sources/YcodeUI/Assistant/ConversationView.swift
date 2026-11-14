@@ -415,7 +415,7 @@ public final class ConversationView: NSView {
         modeDescriptionLabel.stringValue = mode.shortDescription
         modeDescriptionLabel.toolTip = "\(mode.displayName) mode — \(mode.shortDescription)"
         planLabel.isHidden = !model.usesChatGPTPlan
-        messageView.placeholder = "Ask \(model.sourceLabel)"
+        messageView.placeholder = "Message \(model.sourceLabel)"
         messageView.needsDisplay = true
     }
 

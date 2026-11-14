@@ -233,19 +233,63 @@ public enum UseExtensionRouter {
         limit: Int, workspaceRoot: URL
     ) async throws -> UseExtensionOutcome {
         switch action {
-        case .list: return try await runList(limit: limit)
-        case .details: return try await runDetails(extensionId: extensionId!)
-        case .listCommands: return try await runListCommands(extensionId: extensionId!)
-        case .listXcodeCommands: return runListXcodeCommands()
-        case .activate: return try await runActivate(extensionId: extensionId!, workspaceRoot: workspaceRoot)
-        case .deactivate: return runDeactivate(extensionId: extensionId!)
-        case .execute: return try await runExecute(
-            extensionId: extensionId!, command: command!, args: args, workspaceRoot: workspaceRoot)
-        case .runXcodeCommand: return try await runXcodeCommand(
-            command: command!, file: file!, selection: selection, workspaceRoot: workspaceRoot)
-        case .enable: return try runSetEnabled(extensionId: extensionId!, enabled: true)
-        case .disable: return try runSetEnabled(extensionId: extensionId!, enabled: false)
-        case .diagnostics: return runDiagnostics(extensionId: extensionId!, limit: limit)
+        case .list:
+            return try await runList(limit: limit)
+        case .details:
+            guard let extensionId, !extensionId.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'details' requires extensionId.")
+            }
+            return try await runDetails(extensionId: extensionId)
+        case .listCommands:
+            guard let extensionId, !extensionId.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'list_commands' requires extensionId.")
+            }
+            return try await runListCommands(extensionId: extensionId)
+        case .listXcodeCommands:
+            return runListXcodeCommands()
+        case .activate:
+            guard let extensionId, !extensionId.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'activate' requires extensionId.")
+            }
+            return try await runActivate(extensionId: extensionId, workspaceRoot: workspaceRoot)
+        case .deactivate:
+            guard let extensionId, !extensionId.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'deactivate' requires extensionId.")
+            }
+            return runDeactivate(extensionId: extensionId)
+        case .execute:
+            guard let extensionId, !extensionId.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'execute' requires extensionId.")
+            }
+            guard let command, !command.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'execute' requires command.")
+            }
+            return try await runExecute(
+                extensionId: extensionId, command: command, args: args, workspaceRoot: workspaceRoot)
+        case .runXcodeCommand:
+            guard let command, !command.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'run_xcode_command' requires command.")
+            }
+            guard let file, !file.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'run_xcode_command' requires file.")
+            }
+            return try await runXcodeCommand(
+                command: command, file: file, selection: selection, workspaceRoot: workspaceRoot)
+        case .enable:
+            guard let extensionId, !extensionId.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'enable' requires extensionId.")
+            }
+            return try runSetEnabled(extensionId: extensionId, enabled: true)
+        case .disable:
+            guard let extensionId, !extensionId.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'disable' requires extensionId.")
+            }
+            return try runSetEnabled(extensionId: extensionId, enabled: false)
+        case .diagnostics:
+            guard let extensionId, !extensionId.isEmpty else {
+                throw ExtV2Error.invalidRequest("Action 'diagnostics' requires extensionId.")
+            }
+            return runDiagnostics(extensionId: extensionId, limit: limit)
         }
     }
 

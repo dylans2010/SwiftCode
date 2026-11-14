@@ -68,7 +68,7 @@ public struct SCCloudProvider: AssistantProvider {
         }
         let response: HTTP.Response
         do {
-            response = try await HTTP.send(request, timeout: 30)
+            response = try await HTTP.send(request, timeout: 2.0)
         } catch {
             if let cached = cache.modelsIfAny(for: baseURL) { return cached }
             if HTTP.isUnreachable(error) {

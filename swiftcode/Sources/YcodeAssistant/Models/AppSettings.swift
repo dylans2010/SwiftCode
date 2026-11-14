@@ -490,6 +490,14 @@ public final class AppSettings: ObservableObject, Sendable {
         }
     }
 
+    public var welcomeStyleInterface: WelcomeStyleInterface {
+        didSet {
+            debouncedSave("welcomeStyleInterface", welcomeStyleInterface.rawValue)
+            UserDefaults.standard.set(welcomeStyleInterface.rawValue, forKey: "welcomeStyleInterface")
+            NotificationCenter.default.post(name: NSNotification.Name("WelcomeStyleDidChange"), object: welcomeStyleInterface)
+        }
+    }
+
     private func debouncedSave(_ key: String, _ value: Any) {
         UserDefaults.standard.set(value, forKey: key)
         UserDefaults.standard.synchronize()
@@ -622,6 +630,9 @@ public final class AppSettings: ObservableObject, Sendable {
         customProjectsFolder = UserDefaults.standard.string(forKey: "customProjectsFolder") ?? ""
         defaultOrganization = UserDefaults.standard.string(forKey: "defaultOrganization") ?? "com.SwiftCode"
         useNewSettingsWindow = UserDefaults.standard.object(forKey: "useNewSettingsWindow") as? Bool ?? true
+
+        let rawWelcomeStyle = UserDefaults.standard.string(forKey: "welcomeStyleInterface") ?? WelcomeStyleInterface.style27.rawValue
+        welcomeStyleInterface = WelcomeStyleInterface(rawValue: rawWelcomeStyle) ?? .style27
 
         let rawNotif = UserDefaults.standard.string(forKey: "notificationSoundID") ?? "custom.chill.soft_bloom"
         notificationSoundID = (rawNotif == "none" || Self.isKnownSoundID(rawNotif)) ? rawNotif : "custom.chill.soft_bloom"

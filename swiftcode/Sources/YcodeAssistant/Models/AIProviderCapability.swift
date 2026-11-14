@@ -9,7 +9,7 @@ public enum AIProviderCapability: String, Codable, Sendable, CaseIterable {
 public extension ProviderKind {
     var aiCapabilities: Set<AIProviderCapability> {
         switch self {
-        case .openAI, .openRouter, .codex, .claudeCode, .openCode, .hermes, .acpAgent, .antigravity, .anthropic, .gemini, .mistral:
+        case .openAI, .openRouter, .codex, .claudeCode, .openCode, .hermes, .acpAgent, .antigravity, .anthropic, .gemini, .mistral, .qwen:
             return [.streaming, .toolCalling]
         case .ollama, .llamaCpp, .foundationModels, .scCloud, .metaAssist, .offlineModels:
             return [.streaming]

@@ -21,7 +21,7 @@ public struct OllamaProvider: AssistantProvider {
     public func availability() async -> ProviderAvailability {
         guard let url = HTTP.url(baseURL, "api/tags") else { return .failed("The Ollama address “\(baseURL)” is not a valid URL.") }
         do {
-            let r = try await HTTP.send(URLRequest(url: url), timeout: 3)
+            let r = try await HTTP.send(URLRequest(url: url), timeout: 2.0)
             guard r.status == 200 else { return .failed("Ollama answered HTTP \(r.status): \(HTTP.errorMessage(r.body).message)") }
             let models = Self.parseTags(r.body)
             return models.isEmpty ? .noModels(hint: Self.noModelsHint) : .ready(models)
@@ -51,7 +51,20 @@ public struct OllamaProvider: AssistantProvider {
         return nil
     }
 
+    public static func canonicalModelID(_ raw: String?) -> String {
+        guard var raw = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return suggestedModel
+        }
+        if raw.lowercased().hasPrefix("ollama/") {
+            raw = String(raw.dropFirst("ollama/".count))
+        } else if raw.lowercased().hasPrefix("ollama:") {
+            raw = String(raw.dropFirst("ollama:".count))
+        }
+        return raw.isEmpty ? suggestedModel : raw
+    }
+
     static func chatBody(_ request: ChatRequest) -> [String: Any] {
+        let model = canonicalModelID(request.model)
         var messages: [[String: Any]] = [["role": "system", "content": request.instructions]]
         messages += request.messages.map { message -> [String: Any] in
             var m: [String: Any] = ["role": message.role.rawValue, "content": message.content]
@@ -61,7 +74,7 @@ public struct OllamaProvider: AssistantProvider {
             }
             return m
         }
-        var body: [String: Any] = ["model": request.model ?? "", "messages": messages, "stream": true]
+        var body: [String: Any] = ["model": model, "messages": messages, "stream": true]
         var options: [String: Any] = [:]
         if let n = request.contextTokens { options["num_ctx"] = n }
         let g = request.generation
@@ -77,10 +90,10 @@ public struct OllamaProvider: AssistantProvider {
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
         let base = baseURL
         let hint = notRunningHint
+        let model = Self.canonicalModelID(request.model)
         return eventStream { out in
             guard let url = HTTP.url(base, "api/chat") else { throw AssistantError.failed("The Ollama address “\(base)” is not a valid URL.") }
             let req = try HTTP.jsonRequest(url, body: Self.chatBody(request))
-            let model = request.model ?? ""
             var finished = false
             do {
                 try await HTTP.streamLines(req, error: { status, body in
@@ -109,7 +122,22 @@ public struct OllamaProvider: AssistantProvider {
         guard let o = JSON.object(t) else { throw AssistantError.malformed("Ollama sent a line that is not JSON.") }
         if let e = o["error"] as? String { throw AssistantError.failed("Ollama: \(e)") }
         var events: [ChatEvent] = []
-        if let m = o["message"] as? [String: Any], let c = m["content"] as? String, !c.isEmpty { events.append(.text(c)) }
+        if let m = o["message"] as? [String: Any] {
+            if let c = m["content"] as? String, !c.isEmpty {
+                events.append(.text(c))
+            } else if let toolCalls = m["tool_calls"] as? [[String: Any]], !toolCalls.isEmpty {
+                for tc in toolCalls {
+                    if let fn = tc["function"] as? [String: Any], let fnName = fn["name"] as? String {
+                        events.append(.activity("Calling tool: \(fnName)"))
+                        if let args = fn["arguments"],
+                           let data = try? JSONSerialization.data(withJSONObject: args),
+                           let s = String(data: data, encoding: .utf8) {
+                            events.append(.text("\n```json\n\(s)\n```\n"))
+                        }
+                    }
+                }
+            }
+        }
         if (o["done"] as? Bool) == true {
             if o["done_reason"] as? String == "length" { events.append(.truncated) }
             events.append(.finished(TokenUsage(inputTokens: JSON.int(o["prompt_eval_count"]), outputTokens: JSON.int(o["eval_count"]))))

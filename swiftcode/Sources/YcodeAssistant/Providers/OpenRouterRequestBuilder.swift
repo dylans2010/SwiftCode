@@ -43,6 +43,8 @@ public struct OpenRouterRequestBuilder: Sendable {
 
         if !contents.isEmpty {
             dict["content"] = contents
+        } else {
+            dict["content"] = ""
         }
 
         for content in message.content {

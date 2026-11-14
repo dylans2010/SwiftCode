@@ -39,7 +39,7 @@ public struct OpenCodeProvider: AssistantProvider {
             return .failed("The OpenCode address “\(baseURL)” is not a valid URL.")
         }
         do {
-            let r = try await HTTP.send(URLRequest(url: url), timeout: 5)
+            let r = try await HTTP.send(URLRequest(url: url), timeout: 2.0)
             if r.status == 401 {
                 return .failed("OpenCode requires server authentication, which SwiftCode does not handle. Run it on loopback without server auth.")
             }

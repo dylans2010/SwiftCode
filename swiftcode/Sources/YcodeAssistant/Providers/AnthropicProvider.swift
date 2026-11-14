@@ -32,7 +32,7 @@ public struct AnthropicProvider: AssistantProvider {
         request.setValue(key, forHTTPHeaderField: "x-api-key")
         request.setValue(Self.anthropicVersion, forHTTPHeaderField: "anthropic-version")
         do {
-            let response = try await HTTP.send(request, timeout: 10)
+            let response = try await HTTP.send(request, timeout: 2.0)
             if response.status == 401 { return .signedOut(hint: "The Anthropic API key was rejected (401).") }
             guard response.status == 200 else {
                 return .failed("Anthropic answered HTTP \(response.status): \(HTTP.errorMessage(response.body).message)")
@@ -52,6 +52,26 @@ public struct AnthropicProvider: AssistantProvider {
             guard let id = entry["id"] as? String else { return nil }
             return ModelInfo(id: id, displayName: id)
         }
+    }
+
+    public static func canonicalModelID(_ raw: String?) -> String {
+        guard let raw = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return "claude-3-7-sonnet-20250219"
+        }
+        let lower = raw.lowercased()
+        if lower == "claude-sonnet-4-5" || lower == "claude-sonnet-4-6" || lower == "claude-3-5-sonnet" {
+            return "claude-3-5-sonnet-20241022"
+        }
+        if lower == "claude-3-7-sonnet" {
+            return "claude-3-7-sonnet-20250219"
+        }
+        if lower == "claude-3-5-haiku" {
+            return "claude-3-5-haiku-20241022"
+        }
+        if lower == "claude-3-opus" {
+            return "claude-3-opus-20240229"
+        }
+        return raw
     }
 
     static func requestBody(model: String, instructions: String, messages: [ChatMessage], stream: Bool,
@@ -77,7 +97,7 @@ public struct AnthropicProvider: AssistantProvider {
                     ]
                 ])
             }
-            if blocks.isEmpty { blocks.append(["type": "text", "text": " "]) }
+            if blocks.isEmpty { blocks.append(["type": "text", "text": "(empty)"]) }
             let role = message.role == .assistant ? "assistant" : "user"
             if let last = convo.indices.last, convo[last].role == role {
                 convo[last].blocks.append(contentsOf: blocks)
@@ -86,12 +106,13 @@ public struct AnthropicProvider: AssistantProvider {
             }
         }
         if convo.isEmpty {
-            convo.append((role: "user", blocks: [["type": "text", "text": " "]]))
+            convo.append((role: "user", blocks: [["type": "text", "text": "(empty)"]]))
         } else if convo.first?.role == "assistant" {
-            convo.insert((role: "user", blocks: [["type": "text", "text": " "]]), at: 0)
+            convo.insert((role: "user", blocks: [["type": "text", "text": "(empty)"]]), at: 0)
         }
+        let resolvedModel = canonicalModelID(model)
         var body: [String: Any] = [
-            "model": model,
+            "model": resolvedModel,
             "max_tokens": generation.maxOutputTokens.flatMap { $0 > 0 ? $0 : nil } ?? 4096,
             "stream": stream,
             "messages": convo.map { ["role": $0.role, "content": $0.blocks] }
@@ -118,7 +139,7 @@ public struct AnthropicProvider: AssistantProvider {
             urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
             urlRequest.setValue(key, forHTTPHeaderField: "x-api-key")
             urlRequest.setValue(Self.anthropicVersion, forHTTPHeaderField: "anthropic-version")
-            let model = request.model ?? "claude-sonnet-4-5"
+            let model = Self.canonicalModelID(request.model)
             urlRequest.httpBody = try JSONSerialization.data(
                 withJSONObject: Self.requestBody(model: model, instructions: request.instructions, messages: request.messages,
                                                  stream: true, generation: request.generation),
@@ -130,6 +151,7 @@ public struct AnthropicProvider: AssistantProvider {
                 for chunk in try Self.parseEvent(event.data) {
                     switch chunk {
                     case .text(let text): out.yield(.text(text))
+                    case .activity(let act): out.yield(.activity(act))
                     case .usage(let tokens): usage = tokens
                     case .done: finished = true; return true
                     case .none: break
@@ -139,7 +161,15 @@ public struct AnthropicProvider: AssistantProvider {
             }
             do {
                 try await HTTP.streamLines(urlRequest, error: { status, body in
-                    AssistantError.http(status: status, message: HTTP.errorMessage(body).message)
+                    let (msg, _) = HTTP.errorMessage(body)
+                    if status == 401 {
+                        return AssistantError.notSignedIn(hint: "The Anthropic API key was rejected (401).")
+                    } else if status == 404 {
+                        return AssistantError.modelNotFound(model: model, hint: "Select an available Claude model in Settings ▸ Assist.")
+                    } else if status == 429 {
+                        return AssistantError.usageLimit(msg.isEmpty ? "Anthropic rate limit reached (429)." : msg)
+                    }
+                    return AssistantError.http(status: status, message: msg)
                 }) { line in
                     guard let event = decoder.push(line: line) else { return false }
                     return try handle(event)
@@ -155,6 +185,7 @@ public struct AnthropicProvider: AssistantProvider {
 
     enum AnthropicChunk: Equatable {
         case text(String)
+        case activity(String)
         case usage(TokenUsage)
         case done
         case none
@@ -166,15 +197,33 @@ public struct AnthropicProvider: AssistantProvider {
         guard let object = JSON.object(trimmed) else {
             throw AssistantError.malformed("Anthropic sent an event that is not JSON.")
         }
+        if let errObj = object["error"] as? [String: Any], let message = errObj["message"] as? String {
+            throw AssistantError.failed(message)
+        }
         if object["error"] != nil {
             throw AssistantError.failed(HTTP.errorMessage(Data(trimmed.utf8)).message)
         }
         guard let type = object["type"] as? String else { return [.none] }
         switch type {
+        case "content_block_start":
+            if let block = object["content_block"] as? [String: Any],
+               let bType = block["type"] as? String {
+                if bType == "tool_use", let name = block["name"] as? String {
+                    return [.activity("Calling tool: \(name)")]
+                }
+            }
+            return [.none]
         case "content_block_delta":
-            if let delta = object["delta"] as? [String: Any],
-               let text = delta["text"] as? String, !text.isEmpty {
-                return [.text(text)]
+            if let delta = object["delta"] as? [String: Any] {
+                if let text = delta["text"] as? String, !text.isEmpty {
+                    return [.text(text)]
+                }
+                if let thinking = delta["thinking"] as? String, !thinking.isEmpty {
+                    return [.text(thinking)]
+                }
+                if let partialJSON = delta["partial_json"] as? String, !partialJSON.isEmpty {
+                    return [.text(partialJSON)]
+                }
             }
             return [.none]
         case "message_delta":

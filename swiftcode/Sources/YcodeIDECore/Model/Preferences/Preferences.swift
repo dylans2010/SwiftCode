@@ -1,4 +1,5 @@
 import Foundation
+import YcodeAssistant
 
 @MainActor
 public final class Preferences {
@@ -30,6 +31,20 @@ public final class Preferences {
     public var appearance: Appearance {
         get { Appearance(rawValue: get("appearance", "System")) ?? .system }
         set { set("appearance", newValue.rawValue) }
+    }
+    public var welcomeStyleInterface: WelcomeStyleInterface {
+        get {
+            let raw = defaults.string(forKey: "SwiftCode.welcomeStyleInterface")
+                ?? defaults.string(forKey: "welcomeStyleInterface")
+                ?? WelcomeStyleInterface.style27.rawValue
+            return WelcomeStyleInterface(rawValue: raw) ?? .style27
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: "SwiftCode.welcomeStyleInterface")
+            defaults.set(newValue.rawValue, forKey: "welcomeStyleInterface")
+            changed()
+            NotificationCenter.default.post(name: NSNotification.Name("WelcomeStyleDidChange"), object: newValue)
+        }
     }
     public enum FileExtensions: String, CaseIterable, Sendable { case hide = "Hide All", show = "Show All" }
     public var fileExtensions: FileExtensions {

@@ -57,7 +57,7 @@ public struct OpenAIProvider: AssistantProvider {
             r.setValue("Bearer \(try await bearer(forceRefresh: attempt > 0))", forHTTPHeaderField: "Authorization")
             let response: HTTP.Response
             do {
-                response = try await HTTP.send(r, timeout: 15)
+                response = try await HTTP.send(r, timeout: 2.0)
             } catch where HTTP.isUnreachable(error) {
                 throw AssistantError.unreachable(service: "OpenAI", url: baseURL, hint: "Check the network connection.")
             }
@@ -91,32 +91,87 @@ public struct OpenAIProvider: AssistantProvider {
 
     
     
+    public static func canonicalModelID(_ raw: String?) -> String {
+        guard let raw = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return "gpt-4o"
+        }
+        let lower = raw.lowercased()
+        if lower == "gpt-4" || lower == "gpt-4-turbo" { return "gpt-4o" }
+        if lower == "o3" { return "o3-mini" }
+        if lower == "o1" { return "o1" }
+        return raw
+    }
+
+    static func isReasoningModel(_ model: String) -> Bool {
+        let lower = model.lowercased()
+        return lower.hasPrefix("o1") || lower.hasPrefix("o3") || lower.hasPrefix("o4")
+    }
+
     static func responseContent(_ message: ChatMessage) -> Any {
         guard let images = message.images, !images.isEmpty else { return message.content }
-        var parts: [[String: Any]] = [["type": "input_text", "text": message.content]]
+        var parts: [[String: Any]] = [["type": "text", "text": message.content]]
         for image in images {
-            parts.append(["type": "input_image", "image_url": "data:\(image.mimeType);base64,\(image.data.base64EncodedString())"])
+            parts.append(["type": "image_url", "image_url": ["url": "data:\(image.mimeType);base64,\(image.data.base64EncodedString())"]])
         }
         return parts
     }
 
     static func responsesBody(_ request: ChatRequest) -> [String: Any] {
+        let model = canonicalModelID(request.model)
+        let isReasoning = isReasoningModel(model)
         let input: [[String: Any]] = request.messages.map {
-            ["role": $0.role == .system ? "developer" : $0.role.rawValue, "content": responseContent($0)]
+            ["role": $0.role == .system ? (isReasoning ? "developer" : "system") : $0.role.rawValue, "content": responseContent($0)]
         }
-        var body: [String: Any] = ["model": request.model ?? "", "instructions": request.instructions, "input": input, "store": false, "stream": true]
+        var body: [String: Any] = ["model": model, "instructions": request.instructions, "input": input, "store": false, "stream": true]
         let g = request.generation
         if let n = g.maxOutputTokens { body["max_output_tokens"] = n }
-        if let t = g.temperature { body["temperature"] = t }
-        if let p = g.topP { body["top_p"] = p }
+        if !isReasoning {
+            if let t = g.temperature { body["temperature"] = t }
+            if let p = g.topP { body["top_p"] = p }
+        }
+        return body
+    }
+
+    static func chatCompletionsBody(_ request: ChatRequest) -> [String: Any] {
+        let model = canonicalModelID(request.model)
+        let isReasoning = isReasoningModel(model)
+        var messages: [[String: Any]] = []
+        if !request.instructions.isEmpty {
+            messages.append(["role": isReasoning ? "developer" : "system", "content": request.instructions])
+        }
+        for msg in request.messages {
+            let role = (msg.role == .system && isReasoning) ? "developer" : msg.role.rawValue
+            messages.append(["role": role, "content": responseContent(msg)])
+        }
+        var body: [String: Any] = [
+            "model": model,
+            "messages": messages,
+            "stream": true,
+            "stream_options": ["include_usage": true]
+        ]
+        let g = request.generation
+        if let n = g.maxOutputTokens {
+            if isReasoning {
+                body["max_completion_tokens"] = n
+            } else {
+                body["max_tokens"] = n
+            }
+        }
+        if !isReasoning {
+            if let t = g.temperature { body["temperature"] = t }
+            if let p = g.topP { body["top_p"] = p }
+        }
         return body
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
         let provider = self
         return eventStream { out in
-            guard let url = HTTP.url(provider.baseURL, "responses") else { throw AssistantError.failed("The OpenAI address is not valid.") }
-            let body = try JSONSerialization.data(withJSONObject: Self.responsesBody(request), options: [.sortedKeys])
+            let useChatCompletions = !provider.usesPlan
+            let endpoint = useChatCompletions ? "chat/completions" : "responses"
+            guard let url = HTTP.url(provider.baseURL, endpoint) else { throw AssistantError.failed("The OpenAI address is not valid.") }
+            let bodyDict = useChatCompletions ? Self.chatCompletionsBody(request) : Self.responsesBody(request)
+            let body = try JSONSerialization.data(withJSONObject: bodyDict, options: [.sortedKeys])
             var attempt = 0
             while true {
                 var req = URLRequest(url: url)
@@ -127,6 +182,8 @@ public struct OpenAIProvider: AssistantProvider {
                 req.httpBody = body
                 var sse = SSEDecoder()
                 var finished = false
+                var truncated = false
+                var usage: TokenUsage?
                 do {
                     try await HTTP.streamLines(req, error: { status, body in
                         RetryableAuth(status: status, body: body)
@@ -134,14 +191,24 @@ public struct OpenAIProvider: AssistantProvider {
                         guard let e = sse.push(line: line) else { return false }
                         for ev in try Self.parseEvent(e.data, plan: provider.usesPlan) {
                             out.yield(ev)
-                            if case .finished = ev { finished = true }
+                            if case .finished(let u) = ev {
+                                finished = true
+                                if let u { usage = u }
+                            } else if case .truncated = ev {
+                                truncated = true
+                            }
                         }
                         return finished
                     }
                     if !finished, let e = sse.finish() {
                         for ev in try Self.parseEvent(e.data, plan: provider.usesPlan) {
                             out.yield(ev)
-                            if case .finished = ev { finished = true }
+                            if case .finished(let u) = ev {
+                                finished = true
+                                if let u { usage = u }
+                            } else if case .truncated = ev {
+                                truncated = true
+                            }
                         }
                     }
                 } catch let r as RetryableAuth {
@@ -150,7 +217,13 @@ public struct OpenAIProvider: AssistantProvider {
                 } catch where HTTP.isUnreachable(error) {
                     throw AssistantError.unreachable(service: "OpenAI", url: provider.baseURL, hint: "Check the network connection.")
                 }
-                if !finished { throw AssistantError.incomplete("the connection closed before the response completed") }
+                if !finished {
+                    if truncated {
+                        out.yield(.truncated)
+                    }
+                    out.yield(.finished(usage))
+                    return
+                }
                 return
             }
         }
@@ -162,6 +235,43 @@ public struct OpenAIProvider: AssistantProvider {
         let d = data.trimmingCharacters(in: .whitespaces)
         if d.isEmpty || d == "[DONE]" { return [] }
         guard let o = JSON.object(d) else { throw AssistantError.malformed("OpenAI sent an event that is not JSON.") }
+        
+        // Check for error payload in SSE event
+        if let errObj = o["error"] as? [String: Any] {
+            let msg = (errObj["message"] as? String) ?? "The request failed."
+            let code = errObj["code"] as? String
+            throw mapCode(code, message: msg, status: nil, plan: plan)
+        }
+
+        // Standard OpenAI chat/completions format: choices[0].delta
+        if let choices = o["choices"] as? [[String: Any]] {
+            var events: [ChatEvent] = []
+            if let first = choices.first {
+                if let delta = first["delta"] as? [String: Any] {
+                    if let content = delta["content"] as? String, !content.isEmpty {
+                        events.append(.text(content))
+                    } else if let reasoning = delta["reasoning_content"] as? String, !reasoning.isEmpty {
+                        events.append(.text(reasoning))
+                    }
+                }
+                if let finishReason = first["finish_reason"] as? String {
+                    if finishReason == "length" {
+                        events.append(.truncated)
+                    }
+                    if finishReason == "stop" || finishReason == "tool_calls" || finishReason == "length" {
+                        let u = o["usage"] as? [String: Any]
+                        let tokenUsage = u.map { TokenUsage(inputTokens: JSON.int($0["prompt_tokens"]), outputTokens: JSON.int($0["completion_tokens"])) }
+                        events.append(.finished(tokenUsage))
+                    }
+                }
+            }
+            if let u = o["usage"] as? [String: Any], !events.contains(where: { if case .finished = $0 { return true }; return false }) {
+                events.append(.finished(TokenUsage(inputTokens: JSON.int(u["prompt_tokens"]), outputTokens: JSON.int(u["completion_tokens"]))))
+            }
+            if !events.isEmpty { return events }
+        }
+
+        // OpenAI Responses format
         switch o["type"] as? String {
         case "response.output_text.delta":
             if let t = o["delta"] as? String, !t.isEmpty { return [.text(t)] }

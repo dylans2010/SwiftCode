@@ -8,12 +8,29 @@ import YcodeUI
 struct WelcomeView: View {
     @Bindable var app: ShellAppModel
     @State private var selected = 0
+    @State private var settings = AppSettings.shared
+    @ObservedObject private var iconManager = AppIconManager.shared
     @Environment(\.dismissWindow) private var dismissWindow
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
+        if settings.welcomeStyleInterface == .style26 {
+            Style26WelcomeView(
+                onOpenSelected: { url in app.open(path: url.path) },
+                onCreateNewFile: { app.showNewProject(row: 0) },
+                onCloneGitRepo: { app.showClone() },
+                onChooseTemplate: { app.showNewProject(row: NewProjectPicker.chooseTemplateIndex) },
+                onOpenFileOrFolder: { app.showOpenSheet() },
+                onClose: { dismissWindow() }
+            )
+        } else {
+            style27Body
+        }
+    }
+
+    private var style27Body: some View {
         let c = ShellColors(scheme)
-        ZStack(alignment: .topLeading) {
+        return ZStack(alignment: .topLeading) {
             c.content
             Button { dismissWindow() } label: {
                 Image(systemName: "xmark").font(.system(size: 13, weight: .semibold)).foregroundStyle(c.secondaryLabel)
@@ -26,13 +43,22 @@ struct WelcomeView: View {
             .shellTarget("welcome close")
             .padding(20)
             VStack(spacing: 0) {
-                SwiftCodeMark(size: 112)
-                    .frame(width: 104, height: 84)
-                    .padding(.top, 63)
+                Group {
+                    if let img = iconManager.currentIconImage ?? NSApp.applicationIconImage {
+                        Image(nsImage: img)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 104, height: 84)
+                    } else {
+                        SwiftCodeMark(size: 112)
+                            .frame(width: 104, height: 84)
+                    }
+                }
+                .padding(.top, 63)
                 Text("SwiftCode").font(.system(size: 34, weight: .bold)).foregroundStyle(c.label)
                     .frame(height: 41)
                     .padding(.top, 25)
-                Text(verbatim: ProductIdentity.versionText).font(.system(size: 13)).foregroundStyle(c.secondaryLabel)
+                Text(verbatim: ProductIdentity.cfBundleVersionText).font(.system(size: 13)).foregroundStyle(c.secondaryLabel)
                     .frame(height: 16)
                 HStack(spacing: 8) {
                     welcomeButton("Open…", width: 107, c) { app.showOpenSheet() }

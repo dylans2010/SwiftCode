@@ -197,7 +197,7 @@ public final class ExtensionsPanelViewModel {
     public var diagnosticsText: String {
         guard let d = diagnostics else { return "" }
         var lines = [d.hostStatus,
-                     d.nodeAvailable ? "Node.js found at \(d.nodePath!)." : "Node.js not found — VS Code extensions need Node.js 20 or later."]
+                     d.nodePath.map { "Node.js found at \($0)." } ?? "Node.js not found — VS Code extensions need Node.js 20 or later."]
         lines.append("")
         lines.append("Recent errors:")
         lines.append(contentsOf: d.recentErrors.isEmpty ? ["No diagnostics recorded."] : d.recentErrors)

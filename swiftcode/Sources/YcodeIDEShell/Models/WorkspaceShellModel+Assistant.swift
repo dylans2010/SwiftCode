@@ -18,7 +18,7 @@ extension WorkspaceShellModel {
 
     func isAssistantCommandEnabled(_ c: ShellCommand) -> Bool {
         switch c {
-        case .showCodingAssistant, .newConversation: true
+        case .showCodingAssistant, .toggleAssistant, .newConversation: true
         case .jumpToNextActiveConversation: assistant.hasActiveConversations
         default: c.codingTool.map(assistant.canRun) ?? false
         }
@@ -26,7 +26,7 @@ extension WorkspaceShellModel {
 
     func performAssistantCommand(_ c: ShellCommand) {
         switch c {
-        case .showCodingAssistant: showLeftPane(assistant: true)
+        case .showCodingAssistant, .toggleAssistant: showLeftPane(assistant: true)
         case .newConversation: assistant.newConversation()
         case .jumpToNextActiveConversation: assistant.jumpToNextActive()
         default: if let t = c.codingTool { assistant.run(t) }
@@ -124,6 +124,7 @@ extension WorkspaceShellModel {
 extension ShellCommand {
     static let assistantActions: [ShellCommand: (selector: String, menu: String)] = [
         .showCodingAssistant: ("showCodingAssistant:", "View"),
+        .toggleAssistant: ("toggleAssistant:", "Editor"),
         .newConversation: ("newConversation:", "File"),
         .jumpToNextActiveConversation: ("jumpToNextActiveConversation:", "Navigate"),
         .codingToolExplain: ("codingToolExplain:", "Editor"),
