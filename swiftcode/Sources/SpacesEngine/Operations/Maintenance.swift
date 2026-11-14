@@ -1,7 +1,7 @@
 import Foundation
 
-/// Repository maintenance: fsck, gc, count-objects, storage analysis,
-/// doctor diagnostics, index rebuild, object verification.
+
+
 public struct MaintenanceOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
@@ -13,11 +13,11 @@ public struct MaintenanceOps {
         public var object: String?
     }
 
-    /// `spaces fsck` — verifies every object's hash and reachability of all
-    /// refs. Returns issues; empty = clean.
+    
+    
     public func fsck() throws -> [FSCKIssue] {
         var issues: [FSCKIssue] = []
-        // 1) Verify all stored objects hash correctly.
+        
         let allIDs = try repo.objects.allIDs()
         for id in allIDs {
             do {
@@ -28,7 +28,7 @@ public struct MaintenanceOps {
                                         object: id.hex))
             }
         }
-        // 2) Verify all refs point at existing objects of right type.
+        
         for ref in try repo.refs.allRefs() {
             do {
                 let stored = try repo.objects.read(ref.oid)
@@ -53,13 +53,13 @@ public struct MaintenanceOps {
                                         object: ref.oid.hex))
             }
         }
-        // 3) HEAD sanity.
+        
         do {
             _ = try repo.refs.readHEAD()
         } catch {
             issues.append(FSCKIssue(severity: .error, message: "HEAD unreadable"))
         }
-        // 4) Unreachable objects count (warning only).
+        
         let reachable = try reachableSet()
         let unreachable = allIDs.filter { !reachable.contains($0) }
         if !unreachable.isEmpty {
@@ -69,28 +69,28 @@ public struct MaintenanceOps {
         return issues
     }
 
-    /// Set of objects reachable from all refs + index + snapshots.
+    
     public func reachableSet() throws -> Set<ObjectID> {
         var seeds: [ObjectID] = []
         for ref in try repo.refs.allRefs() { seeds.append(ref.oid) }
         if let head = try repo.refs.headOID(objects: repo.objects) { seeds.append(head) }
-        // Index blobs.
+        
         let index = try repo.index()
         for e in index.entries.values { seeds.append(e.oid) }
         return try repo.objects.reachable(from: seeds)
     }
 
-    /// `spaces gc` — repack is implicit (loose objects); prunes unreachable
-    /// objects older than grace period and compacts the journal.
+    
+    
     @discardableResult
     public func gc(pruneDays: Int = 0) throws -> (pruned: Int, reachable: Int) {
         try repo.performTransaction(steps: ["gc"]) {
             let reachable = try reachableSet()
             let all = try repo.objects.allIDs()
-            // With pruneDays=0 prune everything unreachable now.
+            
             var keep = reachable
             if pruneDays > 0 {
-                // Conservative: keep all (age-based pruning needs mtimes).
+                
             }
             let pruned = try repo.objects.prune(unreachable: keep)
             keep.removeAll()
@@ -171,7 +171,7 @@ public struct MaintenanceOps {
                                       timestamp: Int64(Date().timeIntervalSince1970))
     }
 
-    /// `spaces count` — object counts by type.
+    
     public func countObjects() throws -> (blobs: Int, trees: Int, commits: Int,
                                           tags: Int, snapshots: Int, total: Int) {
         var counts: [ObjectType: Int] = [:]
@@ -185,7 +185,7 @@ public struct MaintenanceOps {
                 counts.values.reduce(0, +))
     }
 
-    /// `spaces storage` — disk usage breakdown.
+    
     public func storage() throws -> (objects: Int64, index: Int64, total: Int64, fileCount: Int) {
         let objectsSize = try repo.objects.diskUsage()
         let indexURL = repo.metaURL.appendingPathComponent("index")
@@ -204,7 +204,7 @@ public struct MaintenanceOps {
         return (objectsSize, indexSize, total, fileCount)
     }
 
-    /// `spaces doctor` / `spaces diagnostics` — composite health report.
+    
     public struct Diagnostic: Sendable, Encodable {
         public enum Level: String, Sendable, Encodable { case ok, warning, error }
         public var level: Level
@@ -215,11 +215,11 @@ public struct MaintenanceOps {
     public func diagnose() throws -> [Diagnostic] {
         var diags: [Diagnostic] = []
 
-        // Config valid.
+        
         diags.append(Diagnostic(level: .ok, name: "config",
                                 detail: "format v\(repo.config.version)"))
 
-        // HEAD state.
+        
         if let branch = try repo.refs.currentBranch() {
             diags.append(Diagnostic(level: .ok, name: "HEAD",
                                     detail: "on branch \(branch)"))
@@ -227,7 +227,7 @@ public struct MaintenanceOps {
             diags.append(Diagnostic(level: .warning, name: "HEAD", detail: "detached"))
         }
 
-        // Unfinished operations.
+        
         if repo.inMerge() {
             diags.append(Diagnostic(level: .warning, name: "merge",
                                     detail: "merge in progress (MERGE_HEAD set)"))
@@ -241,7 +241,7 @@ public struct MaintenanceOps {
                                     detail: "operation in progress"))
         }
 
-        // Journal.
+        
         if repo.journal.hasUnfinishedTransactions {
             diags.append(Diagnostic(level: .warning, name: "journal",
                                     detail: "unfinished transaction entries"))
@@ -249,7 +249,7 @@ public struct MaintenanceOps {
             diags.append(Diagnostic(level: .ok, name: "journal", detail: "clean"))
         }
 
-        // FSCK quick pass.
+        
         let issues = try fsck()
         let errors = issues.filter { $0.severity == .error }
         let warnings = issues.filter { $0.severity == .warning }
@@ -258,7 +258,7 @@ public struct MaintenanceOps {
                                     ? "\(warnings.count) warning(s), all objects verified"
                                     : "\(errors.count) corrupt/missing object(s)"))
 
-        // Index validity.
+        
         do {
             _ = try repo.index()
             diags.append(Diagnostic(level: .ok, name: "index", detail: "valid"))
@@ -267,7 +267,7 @@ public struct MaintenanceOps {
                                     detail: error.localizedDescription))
         }
 
-        // Untracked/conflict state.
+        
         let status = try WorktreeScanner(repo: repo).status()
         let conflicts = status.unmerged
         if !conflicts.isEmpty {
@@ -277,7 +277,7 @@ public struct MaintenanceOps {
         return diags
     }
 
-    /// `spaces health` — single score + top issues.
+    
     public func healthScore() throws -> (score: Int, issues: [Diagnostic]) {
         let diags = try diagnose()
         var score = 100
@@ -291,8 +291,8 @@ public struct MaintenanceOps {
         return (max(0, score), diags.filter { $0.level != .ok })
     }
 
-    /// `spaces repair-index` / `spaces rebuild-index` — rebuild index from
-    /// HEAD tree + worktree scan.
+    
+    
     public func rebuildIndex() throws -> Int {
         try repo.performTransaction(steps: ["rebuild-index"]) {
             var index = Index()
@@ -309,9 +309,9 @@ public struct MaintenanceOps {
                     }
                 }
             }
-            // Add untracked-but-present files as untracked is implicit; index
-            // only holds tracked. Also re-add previously staged entries that
-            // still exist on disk.
+            
+            
+            
             let oldIndex = try repo.index()
             for (path, e) in oldIndex.entries where index.entries[path] == nil {
                 let url = try repo.worktreeURL(forRelativePath: path)
@@ -327,17 +327,17 @@ public struct MaintenanceOps {
         }
     }
 
-    /// `spaces repair` — attempts safe repairs: rebuild index, re-resolve
-    /// refs whose objects are missing by rewinding to last valid reflog entry.
+    
+    
     public func repair() throws -> [String] {
         var actions: [String] = []
-        // 1) Rebuild index.
+        
         let n = try rebuildIndex()
         actions.append("rebuilt index (\(n) entries)")
-        // 2) Check refs.
+        
         for ref in try repo.refs.allRefs() {
             if (try? repo.objects.read(ref.oid)) == nil {
-                // Try reflog for this ref to find last valid oid.
+                
                 if let entries = try? repo.readReflog(refName: ref.name, limit: 50),
                    let valid = entries.first(where: { e in
                        guard let oid = e.new else { return false }

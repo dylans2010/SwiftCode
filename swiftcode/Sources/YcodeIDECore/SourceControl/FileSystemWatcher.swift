@@ -53,9 +53,9 @@ package final class FileSystemWatcher {
             },
             path: path, latency: latency,
             flags: FSEventStreamCreateFlags(kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagWatchRoot | kFSEventStreamCreateFlagFileEvents))
-        // FSEventStreamCreate walks and opens every ancestor of the path, which
-        // can block for a long time on an unresponsive filesystem. Never run it
-        // on the main thread.
+        
+        
+        
         Task.detached { [weak self] in
             var context = request.context
             guard let s = FSEventStreamCreate(nil, request.callback, &context, [request.path] as CFArray,

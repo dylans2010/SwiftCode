@@ -29,14 +29,14 @@ public struct BuildConfiguration: Sendable, Codable {
     public var manualSettings: [String]
     public var unrecoveredSettings: [String]
     public var format: BinaryFormat = .unknown
-    /// Target platform for Apple builds: "macos", "ios", "ios-simulator",
-    /// "tvos", "tvos-simulator", "watchos", "watchos-simulator",
-    /// "bridgeos", "mac-catalyst", "driverkit", "xros", "xros-simulator".
-    /// nil means host platform / non-Apple format.
+    
+    
+    
+    
     public var platform: String? = nil
-    /// SDK name or absolute path (e.g. "iphoneos", "macosx",
-    /// "/Applications/Xcode.app/.../iPhoneOS.sdk"). Names are resolved via
-    /// `xcrun --sdk <name> --show-sdk-path` at argument-build time.
+    
+    
+    
     public var sdkName: String? = nil
     public var selectedBackendID: String? = nil
     public var perBackendFlags: [String: [String]] = [:]
@@ -229,8 +229,8 @@ public struct BuildConfiguration: Sendable, Codable {
                 var lib = String(base.dropFirst(3))
                 if lib.hasSuffix(".dylib") { lib = String(lib.dropLast(6)) }
                 if lib.hasSuffix(".tbd") { lib = String(lib.dropLast(4)) }
-                // Versioned install names (libSystem.B.dylib, libc++.1.dylib)
-                // map to the unversioned -l name the SDK provides.
+                
+                
                 if let dot = lib.firstIndex(of: ".") { lib = String(lib[..<dot]) }
                 if !lib.isEmpty { linkedLibraries.append(lib) }
             }
@@ -369,9 +369,9 @@ public struct BuildConfiguration: Sendable, Codable {
         return args
     }
 
-    // MARK: - Platform / SDK resolution
+    
 
-    /// Canonical SDK name for an Apple target platform (xcrun --sdk name).
+    
     public static func defaultSDKName(for platform: String?) -> String {
         switch platform {
         case "ios", "ios-simulator", "mac-catalyst": return "iphoneos"
@@ -384,8 +384,8 @@ public struct BuildConfiguration: Sendable, Codable {
         }
     }
 
-    /// clang `-m…-version-min` flag stem for the platform, or nil when the
-    /// platform is unknown/host (caller then emits no deployment flag).
+    
+    
     public static func deploymentMinFlag(for platform: String?) -> String? {
         switch platform {
         case "macos": return "-mmacosx-version-min"
@@ -403,10 +403,10 @@ public struct BuildConfiguration: Sendable, Codable {
         }
     }
 
-    /// Resolve `sdk`/`sdkName` to an SDK path. Absolute paths pass through;
-    /// names go through `xcrun --sdk <name> --show-sdk-path` (cached).
-    /// Returns nil when no SDK can be resolved — callers then omit
-    /// `-isysroot` and the compiler default applies.
+    
+    
+    
+    
     public func resolvedSDKPath() -> String? {
         if let sdk, sdk.hasPrefix("/") { return sdk }
         let name = sdkName ?? sdk
@@ -415,7 +415,7 @@ public struct BuildConfiguration: Sendable, Codable {
         return Self.sdkPathCache.path(for: name)
     }
 
-    /// Process-wide cache of xcrun SDK resolutions.
+    
     private static let sdkPathCache = SDKPathCache()
 
     private final class SDKPathCache: @unchecked Sendable {
@@ -442,8 +442,8 @@ public struct BuildConfiguration: Sendable, Codable {
                     }
                 }
             }
-            // Fall back to well-known SDK directories when xcrun is absent
-            // or the named SDK is not installed.
+            
+            
             if resolved == nil {
                 let candidates = [
                     "/Library/Developer/CommandLineTools/SDKs/\(sdkFileName(for: name))",

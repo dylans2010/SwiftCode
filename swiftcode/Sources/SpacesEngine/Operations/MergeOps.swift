@@ -1,8 +1,8 @@
 import Foundation
 
-/// Three-way merge engine. Merges trees (not working files directly):
-/// per-path resolution rules, then text-level 3-way line merge for
-/// both-modified text files, producing conflict markers when needed.
+
+
+
 public struct MergeEngine {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
@@ -21,12 +21,12 @@ public struct MergeEngine {
         public var theirsOID: ObjectID?
 
         public enum ConflictKind: String, Sendable {
-            case content        // both modified text
-            case binary         // both modified binary
-            case deleteModify   // one deleted, other modified
-            case addAdd         // both added differently
-            case renameDelete   // rename vs delete
-            case directoryFile  // file vs directory
+            case content        
+            case binary         
+            case deleteModify   
+            case addAdd         
+            case renameDelete   
+            case directoryFile  
         }
     }
 
@@ -299,7 +299,7 @@ public struct MergeEngine {
         }
     }
 
-    /// `spaces merge-abort` — restores pre-merge state.
+    
     public func mergeAbort() throws {
         try repo.performTransaction(steps: ["merge-abort"]) {
             guard repo.inMerge() else { throw SpacesError.noMergeInProgress }
@@ -307,7 +307,7 @@ public struct MergeEngine {
                   let headCommit = try? repo.commitObject(headOID) else {
                 throw SpacesError.internalInconsistency("no HEAD commit")
             }
-            // Reset worktree+index to HEAD tree.
+            
             _ = try TreeBuilder.checkout(repo: repo, treeOID: headCommit.tree)
             let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: headCommit.tree)
             var index = Index()
@@ -390,7 +390,7 @@ public struct MergeEngine {
             let unresolved = try WorktreeScanner(repo: repo).conflictedPaths()
             guard unresolved.isEmpty else { throw SpacesError.conflictsRemain(unresolved) }
             _ = try StagingOps(repo: repo).add(".", all: true)
-            // Determine which state file is set.
+            
             let isRevert = repo.inRevertState()
             let stateName = isRevert ? "REVERT_HEAD" : "CHERRY_PICK_HEAD"
             guard let text = repo.readState(stateName),
@@ -614,27 +614,27 @@ public struct MergeEngine {
         return .content
     }
 
-    // MARK: - Tree checkout helpers
+    
 
-    /// Writes a commit's tree to worktree+index.
+    
     func checkoutCommit(_ oid: ObjectID) throws {
         let commit = try repo.commitObject(oid)
         try checkoutTree(commit.tree, overlay: [:])
     }
 
-    /// Materializes a tree into worktree and rebuilds the index from it.
-    /// `overlay` provides pre-merged contents for conflicted paths.
+    
+    
     func checkoutTree(_ treeOID: ObjectID,
                       overlay: [String: Data]) throws {
         _ = try TreeBuilder.checkout(repo: repo, treeOID: treeOID)
-        // Apply overlay contents (already-conflict-markered text).
+        
         for (path, data) in overlay {
             let url = try repo.worktreeURL(forRelativePath: path)
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
                                                     withIntermediateDirectories: true)
             try data.write(to: url)
         }
-        // Rebuild index from tree.
+        
         let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: treeOID)
         var index = Index()
         for (path, e) in flat {
@@ -657,7 +657,7 @@ extension Repository {
 }
 
 
-/// Result of a three-way text merge.
+
 public struct ThreeWayMergeResult {
     public var text: String
     public var conflicts: [ConflictRegion]
@@ -671,15 +671,15 @@ public struct ConflictRegion {
     public var theirsEnd: Int
 }
 
-/// A changed region in base coordinates: base[start..<end] is replaced by
-/// `replacement`. Zero-width regions (start == end) are pure insertions.
+
+
 struct MergeRegion {
     var start: Int
     var end: Int
     var replacement: [String]
 }
 
-/// Computes per-side changed regions vs base using the line diff.
+
 func mergeRegions(base: [String], other: [String]) -> [MergeRegion] {
     let edits = DiffEngine.diff(base, other)
     var regs: [MergeRegion] = []
@@ -703,8 +703,8 @@ func mergeRegions(base: [String], other: [String]) -> [MergeRegion] {
     return regs
 }
 
-/// Reconstructs `other`'s version of base[s..<e] by applying that side's
-/// regions which fall inside the block.
+
+
 func applyRegions(base: [String], regs: [MergeRegion], s: Int, e: Int) -> [String] {
     var out: [String] = []
     var cur = s
@@ -717,8 +717,8 @@ func applyRegions(base: [String], regs: [MergeRegion], s: Int, e: Int) -> [Strin
     return out
 }
 
-/// diff3-style three-way line merge producing conflict markers.
-/// Returns merged text plus conflict regions.
+
+
 public func threeWayMerge(base: String, ours: String, theirs: String) -> ThreeWayMergeResult {
     let baseLines = DiffEngine.splitLines(Data(base.utf8))
     let oursLines = DiffEngine.splitLines(Data(ours.utf8))
@@ -755,8 +755,8 @@ public func threeWayMerge(base: String, ours: String, theirs: String) -> ThreeWa
             i = min(nextStart, baseLines.count)
         }
 
-        // Union-close the block: absorb every region (either side) whose
-        // start <= current block end.
+        
+        
         var blockEnd = i
         var oBlock: [MergeRegion] = []
         var tBlock: [MergeRegion] = []
@@ -799,7 +799,7 @@ public func threeWayMerge(base: String, ours: String, theirs: String) -> ThreeWa
                                              theirsStart: i, theirsEnd: e))
         }
         i = e
-        if e == i && oBlock.isEmpty && tBlock.isEmpty { break } // safety
+        if e == i && oBlock.isEmpty && tBlock.isEmpty { break } 
     }
 
     return ThreeWayMergeResult(text: output.joined(separator: "\n") + "\n",

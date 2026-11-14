@@ -1,34 +1,34 @@
 import Foundation
 import YcodeSubprocess
 
-/// Disassembly backend built on Apple's `otool` (`-xjV`).
-///
-/// `otool` ships with the Xcode Command Line Tools and understands Mach-O
-/// natively — including fat/universal containers (`-arch` selects the slice)
-/// — so it is the preferred disassembler for Mach-O images on macOS. It is
-/// located via `xcrun -f otool`, then `/usr/bin/otool`, `/bin/otool`, then
-/// the `SWIFTCODE_OTOOL` environment override (checked first).
-///
-/// Invocation:
-///
-///   otool -arch <arch> -xjV <file>
-///
-/// `-x` disassembles every text section, `-j` prints the raw instruction
-/// word/bytes, `-V` resolves operands symbolically (stub names, literal-pool
-/// and cfstring annotations appear as `; …` comments). Output lines look
-/// like:
-///
-///   0000000000004000\td10503ff\tsub\tsp, sp, #0x140
-///   0000000000004034\t941907ea\tbl\t0x645fdc ; symbol stub for: _objc_retain
-///
-/// The hex word column is the instruction encoding; for AArch64 it is the
-/// 32-bit instruction word (stored little-endian in the file), for other
-/// targets `-j` prints the bytes in memory order. `rawBytes` is reconstructed
-/// accordingly.
-///
-/// The full listing is produced once per (file, arch) and cached; each
-/// `disassemble` call filters the cached lines to the requested virtual
-/// range, so repeated per-section/per-function calls do not re-run otool.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public struct OtoolDisassembler: DisassemblerProvider {
     public let id = "otool"
     public let displayName = "otool (Apple)"
@@ -39,7 +39,7 @@ public struct OtoolDisassembler: DisassemblerProvider {
 
     public init() {}
 
-    // MARK: - Provider contract
+    
 
     public func isAvailable() async -> Bool {
         await Task.detached(priority: .utility) { Self.cache.resolve() }.value
@@ -109,7 +109,7 @@ public struct OtoolDisassembler: DisassemblerProvider {
         return instructions.sorted { $0.address.value < $1.address.value }
     }
 
-    // MARK: - Listing acquisition & cache
+    
 
     struct ListingLine: Sendable {
         var address: UInt64
@@ -119,8 +119,8 @@ public struct OtoolDisassembler: DisassemblerProvider {
         var comment: String?
     }
 
-    /// Run `otool -xjV` once per (file, arch) and cache the parsed lines.
-    /// Bounded to a few entries; entries are dropped oldest-first.
+    
+    
     private static func listing(tool: String, image: BinaryImage,
                                 filePath: String,
                                 progress: (@Sendable (AnalysisProgress) -> Void)? = nil) async throws -> [ListingLine] {
@@ -150,10 +150,10 @@ public struct OtoolDisassembler: DisassemblerProvider {
                 }
             }
         } catch let error as StreamingSubprocess.ExitError {
-            // `-arch` can fail on unusual slices; retry once without it when
-            // the file is thin (otool ignores arch selection for thin files
-            // only if the slice matches, so the retry covers subtype drift
-            // such as arm64 vs arm64e).
+            
+            
+            
+            
             if archName != nil {
                 let retried = try await runAndParse(tool: toolURL, args: ["-xjV", filePath],
                                                     image: image)
@@ -188,10 +188,10 @@ public struct OtoolDisassembler: DisassemblerProvider {
         return lines
     }
 
-    // MARK: - Line parsing
+    
 
-    /// Parse `ADDR\tHEX\tMNEMONIC\tOPERANDS` produced by `otool -jV`.
-    /// Returns nil for headers, section banners and blank lines.
+    
+    
     static func parseLine(_ raw: String, image: BinaryImage) -> ListingLine? {
         var line = raw
         if line.hasSuffix("\r") { line.removeLast() }
@@ -222,14 +222,14 @@ public struct OtoolDisassembler: DisassemblerProvider {
                            comment: comment)
     }
 
-    /// `-j` output is the instruction encoding. AArch64 prints the 32-bit
-    /// instruction word (big-endian hex of the value, stored LE in the
-    /// file); other targets print bytes in memory order.
+    
+    
+    
     private static func decodeBytes(hexDigits: String, image: BinaryImage) -> Data {
         switch image.architecture {
         case .arm64, .arm64_32:
             guard hexDigits.count == 8, let word = UInt32(hexDigits, radix: 16) else {
-                // Unexpected width: fall back to raw byte pairs.
+                
                 return bytePairs(hexDigits)
             }
             var bytes = Data()
@@ -254,7 +254,7 @@ public struct OtoolDisassembler: DisassemblerProvider {
         return bytes
     }
 
-    // MARK: - Instruction construction
+    
 
     private func makeInstruction(_ line: ListingLine, image: BinaryImage) -> Instruction {
         let (classification, target) = ObjDumpDisassembler.classify(
@@ -284,11 +284,11 @@ public struct OtoolDisassembler: DisassemblerProvider {
                 pass: "disassemble"))
     }
 
-    // MARK: - Architecture mapping
+    
 
-    /// otool `-arch` name for the image's architecture, or nil when otool
-    /// cannot disassemble it. arm64e slices still select via "arm64" on
-    /// current toolchains; the no-`-arch` retry covers the rest.
+    
+    
+    
     static func otoolArch(for image: BinaryImage) -> String? {
         switch image.architecture {
         case .arm64: return "arm64"
@@ -302,7 +302,7 @@ public struct OtoolDisassembler: DisassemblerProvider {
         }
     }
 
-    // MARK: - Tool location
+    
 
     static func locateToolPath() -> String? {
         var candidates: [String] = []
@@ -338,7 +338,7 @@ public struct OtoolDisassembler: DisassemblerProvider {
         return nil
     }
 
-    /// Lazily resolved, thread-safe cache for tool path and version.
+    
     private final class ToolCache: @unchecked Sendable {
         private let lock = NSLock()
         private var didResolve = false
@@ -355,7 +355,7 @@ public struct OtoolDisassembler: DisassemblerProvider {
             if let path,
                let out = try? Subprocess.run(path, ["--version"], captureStderr: true),
                out.status == 0 {
-                // otool prints its version banner on stderr.
+                
                 let text = out.stdoutText.isEmpty ? out.stderrText : out.stdoutText
                 ver = OtoolDisassembler.parseVersion(text)
             }
@@ -377,7 +377,7 @@ public struct OtoolDisassembler: DisassemblerProvider {
         return lines.first
     }
 
-    /// Small LRU-ish cache of parsed otool listings keyed by file+arch.
+    
     private final class ListingCache: @unchecked Sendable {
         static let shared = ListingCache()
         private let lock = NSLock()

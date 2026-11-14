@@ -4,19 +4,19 @@ import YcodeIDECore
 import AppKit
 #endif
 
-/// App-wide accent color state, backed by `Preferences.customAccentColor`.
-///
-/// Views that read `color`/`hex` inside `body` are invalidated automatically
-/// when the preference changes because this type is `@Observable` and mirrors
-/// the `Preferences.didChange` notification.
+
+
+
+
+
 @Observable
 @MainActor
 public final class AppAccentState {
     public static let shared = AppAccentState()
 
-    /// Current accent hex (`#RRGGBB`), empty when using the system default.
+    
     public private(set) var hex: String
-    /// Bumped whenever the stored accent changes.
+    
     public private(set) var revision = 0
 
     private nonisolated(unsafe) var observer: NSObjectProtocol?
@@ -41,8 +41,8 @@ public final class AppAccentState {
         if let observer { NotificationCenter.default.removeObserver(observer) }
     }
 
-    /// The resolved accent as a SwiftUI `Color`. Falls back to the environment
-    /// accent color (system accent) when no custom accent is configured.
+    
+    
     public var color: Color {
         if let c = ThemeColor(hex: hex) {
             return Color(.sRGB, red: c.redFraction, green: c.greenFraction, blue: c.blueFraction)
@@ -50,12 +50,12 @@ public final class AppAccentState {
         return .accentColor
     }
 
-    /// Applies a preset (or `nil` for the system default).
+    
     public func select(_ preset: AccentColorPreset?) {
         Preferences.shared.selectAccentPreset(preset)
     }
 
-    /// Stores an arbitrary `#RRGGBB` custom accent; empty restores the default.
+    
     public func setCustomHex(_ value: String) {
         Preferences.shared.appAccentColor = value
     }
@@ -66,11 +66,11 @@ public final class AppAccentState {
 }
 
 extension Theme {
-    /// SwiftUI `Color` equivalent of `Theme.accentColor` (app-wide accent).
+    
     public static var accentSwiftUIColor: Color { Color(nsColor: accentColor) }
 }
 
-/// Applies the app accent color as the SwiftUI tint for its content.
+
 public struct AppAccentTint<Content: View>: View {
     @State private var accent = AppAccentState.shared
     private let content: Content
@@ -84,8 +84,8 @@ public struct AppAccentTint<Content: View>: View {
     }
 }
 
-/// Reusable "SwiftCode Accent Color" settings control: preset swatches plus a
-/// custom color well and a system-default reset.
+
+
 public struct AccentColorSettingsRow: View {
     @State private var accent = AppAccentState.shared
     @State private var customColor: Color = .accentColor

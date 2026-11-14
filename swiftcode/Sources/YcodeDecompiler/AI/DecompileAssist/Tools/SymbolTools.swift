@@ -1,7 +1,7 @@
 import Foundation
 
-/// Symbol tools: search, inspect, demangle (via the Swift demangler
-/// subprocess when available), imports, exports.
+
+
 
 public struct SearchSymbolsTool: DecompileAssistTool {
     public init() {}
@@ -71,7 +71,7 @@ public struct InspectSymbolTool: DecompileAssistTool {
             symbol = await store.symbols.first {
                 $0.name == name || $0.effectiveName == name || $0.demangledName == name
             }
-            // Case-insensitive fallback.
+            
             if symbol == nil {
                 symbol = await store.symbols.first {
                     $0.name.caseInsensitiveCompare(name) == .orderedSame
@@ -118,7 +118,7 @@ public struct DemangleSymbolTool: DecompileAssistTool {
         var name = DecompileAssistToolSupport.string(arguments, "name")
         var storedDemangled: String? = nil
 
-        // Resolve via store when only an address or a lookup is possible.
+        
         let store = await session.analysisStore()
         if name == nil, let addr = DecompileAssistToolSupport.address(arguments, keys: ["symbol_address", "address"]) {
             if let s = await store.symbols.first(where: { $0.address?.value == addr.value }) {
@@ -144,9 +144,9 @@ public struct DemangleSymbolTool: DecompileAssistTool {
             ])
         }
 
-        // Use the module's demangler: Swift ($s…) via `xcrun swift-demangle`,
-        // Itanium C++ (_Z…) via `c++filt`, Mach-O underscore stripping, and a
-        // raw-name fallback.
+        
+        
+        
         let demangled = await Task.detached(priority: .userInitiated) {
             SymbolDemangler.demangle(mangled)
         }.value

@@ -1,12 +1,12 @@
 import Foundation
 
-/// Creates, opens, saves and validates `.scdecomp` projects.
+
 public actor DecompilerProjectManager {
     public static let shared = DecompilerProjectManager()
 
     public init() {}
 
-    /// Create a new project bundle on disk.
+    
     public func create(name: String, session: DecompilerSession? = nil) async throws -> DecompilerProject {
         let fm = FileManager.default
         let base = try fm.url(for: .documentDirectory, in: .userDomainMask,
@@ -26,7 +26,7 @@ public actor DecompilerProjectManager {
             manifest.binaries = [image.identity]
             manifest.activeBinaryID = image.identity.stableID
             manifest.selectedSlices[image.identity.stableID] = await session.selectedSliceIndex
-            // Copy the binary into the project so it is self-contained.
+            
             let dest = bundle.appendingPathComponent("Binaries/\(image.identity.stableID).bin")
             try? fm.copyItem(at: URL(fileURLWithPath: image.identity.originalLocation), to: dest)
         }
@@ -40,7 +40,7 @@ public actor DecompilerProjectManager {
         return project
     }
 
-    /// Open an existing `.scdecomp` bundle, validating its manifest.
+    
     public func open(url: URL) throws -> DecompilerProject {
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir), isDir.boolValue else {
@@ -63,7 +63,7 @@ public actor DecompilerProjectManager {
         try data.write(to: project.manifestURL, options: .atomic)
     }
 
-    /// Update manifest fields from a live session before saving.
+    
     public func syncManifest(_ project: DecompilerProject, session: DecompilerSession) async throws -> DecompilerProject {
         var manifest = project.manifest
         manifest.modifiedAt = Date()

@@ -43,8 +43,8 @@ public struct PlistSidebarGroup: Identifiable, Sendable {
 }
 
 extension PlistSidebarSection {
-    /// Sidebar grouping used by the Info.plist viewer. Keeps related key
-    /// families together instead of presenting one flat list of sections.
+    
+    
     public static let sidebarGroups: [PlistSidebarGroup] = [
         PlistSidebarGroup(title: "Bundle", sections: [.identity, .iconsLaunch, .orientations]),
         PlistSidebarGroup(title: "Privacy & Security", sections: [.privacy, .appTransportSecurity]),

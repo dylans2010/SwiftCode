@@ -23,12 +23,12 @@ let package = Package(
         .library(name: "YcodeSubprocess", targets: ["YcodeSubprocess"]),
         .library(name: "YcodeAssistant", targets: ["YcodeAssistant"]),
         .library(name: "YcodeCompletion", targets: ["YcodeCompletion"]),
-        // Gauge, the profiler (specs/ide/profiler.md): trace format, analysis, Linux recording
+        
         .library(name: "YcodeProfiler", targets: ["YcodeProfiler"]),
-        // Gauge's in-process sampler for Linux processes (LD_PRELOAD; profiler.md §3.2)
+        
         .library(name: "YcodeGaugeAgent", type: .dynamic, targets: ["CYcodeGaugeAgent"]),
         .library(name: "YcodePreviews", targets: ["YcodePreviews"]),
-        // Legacy libraries & tools
+        
         .library(name: "SwiftCodeGitHub", targets: ["SwiftCodeGitHub"]),
         .library(name: "SwiftCodeExtensions", targets: ["SwiftCodeExtensions"]),
         .library(name: "SwiftCodeCloud", targets: ["SwiftCodeCloud"]),
@@ -43,7 +43,7 @@ let package = Package(
         .executable(name: "documentation-indexer", targets: ["SwiftCodeSDKDocumentationIndexer"]),
         .library(name: "SwiftCodeConnect", targets: ["SwiftCodeConnect"]),
         .library(name: "SwiftCodeCollaboration", targets: ["SwiftCodeCollaboration"]),
-        // Spaces: SwiftCode's native source control engine, CLI and API
+        
         .library(name: "SpacesEngine", targets: ["SpacesEngine"]),
         .executable(name: "spaces", targets: ["spaces"]),
     ],
@@ -57,51 +57,51 @@ let package = Package(
         .target(name: "YcodeWorkspace", dependencies: ["YcodeProject"]),
         .target(name: "YcodeSettings", dependencies: ["YcodeProject"]),
         .target(name: "YcodeMachO"),
-        // Gauge (specs/ide/profiler.md)
+        
         .target(name: "CYcodeGauge"),
         .target(name: "CYcodeGaugeAgent"),
         .target(name: "YcodeProfiler", dependencies: ["YcodeMachO", "CYcodeGauge"]),
         .testTarget(name: "YcodeProfilerTests", dependencies: ["YcodeProfiler", "YcodeMachO"]),
-        // Simulator stage 2 (specs/simulator/vm-shim-protocol.md)
+        
         .target(name: "YcodeDarwinABI"),
         .target(name: "YcodeDarwinKernel", dependencies: ["YcodeDarwinABI"]),
         .target(name: "YcodeXPC"),
-        // Host services the VMM offers the guest (stage 7: IOSurface)
+        
         .target(name: "YcodeHostServices", dependencies: ["YcodeDarwinABI", "YcodeDarwinKernel", "YcodeXPC", "CYcodeCamera", "YcodeDisplayStream"]),
-        // The host camera layer's V4L2 access, JPEG decoder and pixel conversion (specs/simulator/camera-host.md)
+        
         .target(name: "CYcodeCamera", linkerSettings: [.linkedLibrary("m", .when(platforms: [.linux]))]),
-        // Stage 8a (specs/simulator/stage8-contract.md §5): the Metal host service and its Vulkan back end
+        
         .target(name: "YcodeMetalHost", dependencies: ["YcodeXPC", "YcodeDarwinKernel"]),
         .target(name: "CVulkan"),
         .target(name: "YcodeVulkan", dependencies: ["CVulkan", "YcodeMetalHost"], exclude: ["shaders"]),
         .target(name: "CKVM"),
         .target(name: "YcodeHypervisor", dependencies: ["CKVM", "YcodeDarwinABI"]),
-        // The live display stream and viewer input (specs/simulator/display-stream.md)
+        
         .target(name: "CYcodeCodec", linkerSettings: [.linkedLibrary("dl", .when(platforms: [.linux]))]),
-        // Low-latency H.264 through NVIDIA's NVENC / NVDEC, opened at run time (display-stream.md §14)
+        
         .target(name: "CYcodeVideo", exclude: ["nvheaders/ffnvcodec/README.md"], cSettings: [.headerSearchPath("nvheaders")], linkerSettings: [.linkedLibrary("dl", .when(platforms: [.linux]))]),
         .target(name: "YcodeDisplayStream"),
-        // The simulator's settings features (specs/simulator/simulator-features.md, "Ycode implementation")
+        
         .target(name: "YcodeSimFeatures"),
         .testTarget(name: "YcodeSimFeaturesTests", dependencies: ["YcodeSimFeatures"]),
-        // Shut-down edits of a device's HealthKit store: grants and seeded samples (specs/simulator/health-simulation.md, "Ycode implementation")
+        
         .systemLibrary(name: "CSQLite"),
         .target(name: "YcodeHealthStore", dependencies: ["CSQLite", "YcodeSimFeatures"]),
         .testTarget(name: "YcodeHealthStoreTests", dependencies: ["YcodeHealthStore", "YcodeSimFeatures"]),
-        // The device windows' model: frames, zoom, the hub's sidebar, commands (specs/ide/device-hub.md, "Ycode implementation")
+        
         .target(name: "YcodeDeviceModel"),
         .testTarget(name: "YcodeDeviceModelTests", dependencies: ["YcodeDeviceModel"]),
         .executableTarget(name: "ycode-simd", dependencies: ["YcodeRelease", "YcodeHypervisor", "YcodeDarwinABI", "YcodeDarwinKernel", "YcodeMachO", "YcodeXPC", "YcodeHostServices", "YcodeMetalHost", "YcodeVulkan", "YcodeDisplayStream", "CYcodeCodec", "CYcodeVideo", "YcodeSimFeatures", "YcodeHealthStore", "YcodeProfiler", "YcodeDebug", "YcodeXRReprojection"]),
         .executableTarget(name: "ycode", dependencies: ["YcodeRelease", "YcodePlist", "YcodeProject", "YcodeWorkspace", "YcodeSettings", "YcodeMachO", "YcodeBuild", "YcodeDebug", "YcodePreviews", "YcodeProfiler", "YcodeBuildServer", "YcodeXcodebuild", "YcodeAssetCatalog", "YcodeIDECore", "YcodeStrings", "YcodeSimLink", "YcodeCompletion"]),
-        // Subprocess invocation (specs/ide/subprocess.md)
+        
         .target(name: "YcodeSubprocess"),
         .testTarget(name: "YcodeSubprocessTests", dependencies: ["YcodeSubprocess"]),
-        // The in-IDE coding assistant (specs/ide/coding-assistant.md)
+        
         .target(name: "YcodeAssistant", dependencies: ["YcodeSubprocess", "YcodeBuild", "SwiftCodeExtensions", .product(name: "Crypto", package: "swift-crypto")],
                 exclude: ["Tools/validate_tools.py", "Resources/System Assets", "Reverse/ReverseBridge.mjs"],
                 resources: [.copy("System Assets"), .copy("Resources/SDKHosts"), .copy("Resources/ReverseBridge.mjs"), .copy("Resources/Codex")]),
         .testTarget(name: "YcodeAssistantTests", dependencies: ["YcodeAssistant", "YcodeSubprocess"]),
-        // Legacy targets
+        
         .target(name: "SwiftCodeGitHub"),
         .testTarget(name: "SwiftCodeGitHubTests", dependencies: ["SwiftCodeGitHub"]),
         .target(name: "SwiftCodeExtensions", dependencies: ["YcodeSubprocess", "YcodeLanguage", "YcodeDebug"],
@@ -115,7 +115,7 @@ let package = Package(
         .testTarget(name: "SwiftCodeConnectTests", dependencies: ["SwiftCodeConnect"]),
         .target(name: "SwiftCodeCollaboration"),
         .testTarget(name: "SwiftCodeCollaborationTests", dependencies: ["SwiftCodeCollaboration"]),
-        // Spaces engine + CLI
+        
         .target(name: "SpacesEngine", dependencies: [.product(name: "Crypto", package: "swift-crypto")]),
         .executableTarget(name: "spaces", dependencies: ["SpacesEngine", .product(name: "ArgumentParser", package: "swift-argument-parser")]),
         .testTarget(name: "SpacesEngineTests", dependencies: ["SpacesEngine"]),
@@ -131,10 +131,10 @@ let package = Package(
         .executableTarget(name: "SwiftCodeSDKExtensionValidator", dependencies: ["SwiftCodeSDK"]),
         .executableTarget(name: "SwiftCodeSDKDiagnostics", dependencies: ["SwiftCodeSDK"]),
         .executableTarget(name: "SwiftCodeSDKDocumentationIndexer", dependencies: ["SwiftCodeSDK"]),
-        // Inline code completion
+        
         .target(name: "YcodeCompletion", dependencies: ["YcodeAssistant"]),
         .testTarget(name: "YcodeCompletionTests", dependencies: ["YcodeCompletion", "YcodeAssistant"]),
-        // Build & debug
+        
         .target(name: "YcodeBuild", dependencies: ["YcodeProject", "YcodePlist", "YcodeWorkspace", "YcodeSubprocess"]),
         .target(name: "YcodeDebug", dependencies: ["YcodeSubprocess"]),
         .testTarget(name: "YcodeBuildTests", dependencies: ["YcodeBuild"]),

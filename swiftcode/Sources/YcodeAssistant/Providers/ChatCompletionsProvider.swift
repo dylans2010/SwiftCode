@@ -7,12 +7,12 @@ public struct ChatCompletionsProvider: AssistantProvider {
     public var kind: ProviderKind
     public var baseURL: String
     public var apiKey: String?
-    /// Version prefix prepended to the OpenAI-compatible endpoints
-    /// (`models`, `chat/completions`). `llama-server` and Mistral use `v1`;
-    /// Gemini's OpenAI-compatible surface lives directly under
-    /// `/v1beta/openai`, so it uses an empty prefix.
+    
+    
+    
+    
     public var apiPrefix: String
-    /// Name used in user-facing hints (defaults to llama-server wording).
+    
     public var serviceName: String
     public static let defaultBaseURL = "http://127.0.0.1:9931"
 
@@ -43,8 +43,8 @@ public struct ChatCompletionsProvider: AssistantProvider {
 
     public func availability() async -> ProviderAvailability {
         guard let req = request(prefixed("models")) else { return .failed("The \(serviceName) address “\(baseURL)” is not a valid URL.") }
-        // Local servers and remote APIs during availability checks are capped at 2.0s
-        // so the UI never blocks.
+        
+        
         do {
             let r = try await HTTP.send(req, timeout: 2.0)
             if r.status == 503 { return .notRunning(hint: "\(serviceName) is still loading its model. Try again in a moment.") }

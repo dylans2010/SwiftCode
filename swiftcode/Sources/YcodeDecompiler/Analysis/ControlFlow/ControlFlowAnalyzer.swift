@@ -1,10 +1,10 @@
 import Foundation
 
-/// Control-flow graph construction from decoded instructions.
-/// Uses only real branch/call/return classification from the disassembler.
+
+
 public enum ControlFlowAnalyzer {
-    /// Build basic blocks for one function's instruction list.
-    /// Blocks split at branch targets and after branch/return instructions.
+    
+    
     public static func basicBlocks(instructions: [Instruction],
                                    functionStart: DecompilerAddress) -> [BasicBlock] {
         guard !instructions.isEmpty else { return [] }
@@ -30,7 +30,7 @@ public enum ControlFlowAnalyzer {
             var branchKind: BasicBlock.BranchKind? = nil
             if last.classification == .branch, let t = last.branchTarget {
                 successors.append(t)
-                // conditional branches also fall through
+                
                 if i + 1 < leaderList.count, last.mnemonic.lowercased() != "b" {
                     successors.append(DecompilerAddress(virtual: end))
                     branchKind = .conditional
@@ -55,7 +55,7 @@ public enum ControlFlowAnalyzer {
                 isExit: isExit,
                 branchKind: branchKind))
         }
-        // Resolve predecessor links.
+        
         var byStart = Dictionary(uniqueKeysWithValues: blocks.map { ($0.startAddress.value, $0) })
         for i in blocks.indices {
             for succ in blocks[i].successors {

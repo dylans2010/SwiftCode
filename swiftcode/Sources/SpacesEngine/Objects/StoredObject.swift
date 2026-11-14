@@ -1,6 +1,6 @@
 import Foundation
 
-/// Spaces object types stored in the content-addressed object database.
+
 public enum ObjectType: String, Codable, Sendable, CaseIterable {
     case blob
     case tree
@@ -9,16 +9,16 @@ public enum ObjectType: String, Codable, Sendable, CaseIterable {
     case snapshot
 }
 
-/// On-disk framing for a stored object:
-///   magic "SPCO" | type tag byte | uint64 big-endian payload length | payload
-/// The object ID is the SHA-256 of `spaces-object-v1\n<type>\n<len>\n<payload>`.
+
+
+
 public struct StoredObject: Sendable {
     public let type: ObjectType
     public let payload: Data
 }
 
 enum ObjectCoding {
-    static let magic: [UInt8] = [0x53, 0x50, 0x43, 0x4f] // "SPCO"
+    static let magic: [UInt8] = [0x53, 0x50, 0x43, 0x4f] 
 
     static func tag(for type: ObjectType) -> UInt8 {
         switch type {
@@ -41,7 +41,7 @@ enum ObjectCoding {
         }
     }
 
-    /// Serializes an object into its stored (uncompressed) byte form.
+    
     static func encode(_ object: StoredObject) -> Data {
         var data = Data()
         data.append(contentsOf: magic)
@@ -52,8 +52,8 @@ enum ObjectCoding {
         return data
     }
 
-    /// Parses stored bytes. Verifies magic, tag, and length. The payload is
-    /// returned without interpreting it — object-type decoders validate it.
+    
+    
     static func decode(_ data: Data) throws -> StoredObject {
         guard data.count >= 13 else { throw SpacesError.invalidObject("object too short") }
         guard Array(data.prefix(4)) == magic else { throw SpacesError.invalidObject("bad object magic") }

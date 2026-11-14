@@ -135,8 +135,8 @@ struct AppearanceSettingsPane: View {
     }
 }
 
-/// Custom accent color well for the "SwiftCode Accent Color" settings section.
-/// Writes the chosen color to `Preferences.appAccentColor` as `#RRGGBB`.
+
+
 struct AccentCustomColorRow: View {
     @State private var color: Color = .accentColor
     @Environment(\.colorScheme) private var scheme

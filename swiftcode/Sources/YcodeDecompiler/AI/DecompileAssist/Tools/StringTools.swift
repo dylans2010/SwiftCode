@@ -1,7 +1,7 @@
 import Foundation
 
-/// String tools: search the extracted string table, inspect individual
-/// strings, find code that references them, and read surrounding context.
+
+
 
 public struct SearchStringsTool: DecompileAssistTool {
     public init() {}
@@ -67,7 +67,7 @@ public struct InspectStringTool: DecompileAssistTool {
         }
         var d = DecompileAssistToolSupport.stringDict(s)
         d["ok"] = true
-        // Which function references it?
+        
         let store = await session.analysisStore()
         let xrefs = await store.crossReferences.filter {
             $0.destination == s.address || $0.destination.value == s.address.value
@@ -144,7 +144,7 @@ public struct GetStringContextTool: DecompileAssistTool {
         let addr = try DecompileAssistToolSupport.requireAddress(arguments, tool: id)
         let strings = await session.strings()
         guard let index = strings.firstIndex(where: { $0.address == addr }) else {
-            // Fall back: nearest preceding string.
+            
             guard let nearest = strings.last(where: { $0.address.value <= addr.value }) else {
                 return DecompileAssistToolSupport.error("no strings near \(addr.hexString)")
             }

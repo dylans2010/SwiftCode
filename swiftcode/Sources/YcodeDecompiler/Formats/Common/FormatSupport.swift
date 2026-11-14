@@ -1,16 +1,16 @@
 import Foundation
 
-/// Little helpers shared by the binary format parsers under Formats/.
-/// This is original code written against public format documentation.
+
+
 
 enum FormatByteOrder {
     case little
     case big
 }
 
-/// Bounds-checked cursor over a `Data` buffer with endian-aware integer reads
-/// and ULEB128 decoding (used by Mach-O export/function-starts lists and
-/// DWARF-style data).
+
+
+
 struct ByteCursor {
     var data: Data
     var offset: Int
@@ -67,7 +67,7 @@ struct ByteCursor {
         return order == .big ? v.byteSwapped : v
     }
 
-    /// Signed variants for ELF dynamic tags etc.
+    
     mutating func i32() throws -> Int32 { Int32(bitPattern: try u32()) }
     mutating func i64() throws -> Int64 { Int64(bitPattern: try u64()) }
 
@@ -75,7 +75,7 @@ struct ByteCursor {
         Data(try rawBytes(count))
     }
 
-    /// NUL-terminated string; returns "" when the first byte is NUL.
+    
     mutating func cstring() throws -> String {
         var out = [UInt8]()
         while true {
@@ -86,7 +86,7 @@ struct ByteCursor {
         return String(decoding: out, as: UTF8.self)
     }
 
-    /// Unsigned LEB128. Used by Mach-O function starts and export trie.
+    
     mutating func uleb128() throws -> UInt64 {
         var result: UInt64 = 0
         var shift: UInt64 = 0
@@ -102,7 +102,7 @@ struct ByteCursor {
         return result
     }
 
-    /// Read a fixed-size byte field as a string, trimming at the first NUL.
+    
     static func fixedString(_ bytes: Data) -> String {
         var out = [UInt8]()
         for b in bytes {
@@ -113,9 +113,9 @@ struct ByteCursor {
     }
 }
 
-/// Random-access file reader used where the `byteProvider` closure is not
-/// available (slice enumeration happens before a provider is constructed).
-/// Returns a short read at EOF — callers bounds-check the returned count.
+
+
+
 func readFileRegion(url: URL, offset: UInt64, length: UInt64) throws -> Data {
     let handle = try FileHandle(forReadingFrom: url)
     defer { try? handle.close() }
@@ -128,13 +128,13 @@ func fileSize(url: URL) throws -> UInt64 {
     return (attrs[.size] as? NSNumber)?.uint64Value ?? 0
 }
 
-/// Format version string packed as major<<16 | minor<<8 | patch (Mach-O style).
+
 func unpackVersion(_ v: UInt32) -> String {
     "\(v >> 16).\((v >> 8) & 0xFF).\(v & 0xFF)"
 }
 
 extension Data {
-    /// UUID-style dash placement: 8-4-4-4-12 hex digits.
+    
     func hexDashedUUID() -> String {
         let hex = map { String(format: "%02X", $0) }.joined()
         let idx = [8, 12, 16, 20]

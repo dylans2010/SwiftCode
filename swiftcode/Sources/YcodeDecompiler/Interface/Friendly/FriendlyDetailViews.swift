@@ -1,9 +1,9 @@
 import SwiftUI
 import AppKit
 
-// MARK: - Binary overview
 
-/// Friendly landing page: what binary is loaded, what analysis found.
+
+
 public struct BinaryOverviewView: View {
     @Bindable var state: DecompilerObservableState
 
@@ -107,10 +107,10 @@ public struct BinaryOverviewView: View {
     }
 }
 
-// MARK: - Function browser
 
-/// Searchable, sortable function list. Selecting a row selects the function
-/// and loads its pseudocode (decompiling on demand).
+
+
+
 public struct FriendlyFunctionBrowser: View {
     @Bindable var state: DecompilerObservableState
     @Binding var searchText: String
@@ -231,10 +231,10 @@ public struct FriendlyFunctionBrowser: View {
     }
 }
 
-// MARK: - Code viewer (pseudocode with disassembly fallback)
 
-/// Shows pseudocode for the selected function; falls back to a disassembly
-/// listing when no decompiler backend produced pseudocode.
+
+
+
 public struct FriendlyCodeViewer: View {
     @Bindable var state: DecompilerObservableState
     @State private var showingDisassembly = false
@@ -320,7 +320,7 @@ public struct FriendlyCodeViewer: View {
     }
 }
 
-/// Loads disassembly for the selected function on appear.
+
 private struct DisassemblyLoadingView: View {
     let state: DecompilerObservableState
     var body: some View {
@@ -335,7 +335,7 @@ private struct DisassemblyLoadingView: View {
     }
 }
 
-/// Simple monospace listing used by the Friendly code view.
+
 public struct DisassemblyListingView: View {
     let instructions: [Instruction]
 
@@ -388,7 +388,7 @@ public struct DisassemblyListingView: View {
     }
 }
 
-/// Pseudocode with line numbers.
+
 public struct PseudocodeTextView: View {
     let result: DecompilationResult
 
@@ -428,7 +428,7 @@ public struct PseudocodeTextView: View {
     }
 }
 
-// MARK: - Strings browser
+
 
 public struct StringsBrowser: View {
     @Bindable var state: DecompilerObservableState
@@ -488,7 +488,7 @@ public struct StringsBrowser: View {
     }
 }
 
-// MARK: - Dependencies browser
+
 
 public struct DependenciesBrowser: View {
     @Bindable var state: DecompilerObservableState
@@ -534,7 +534,7 @@ public struct DependenciesBrowser: View {
     }
 }
 
-// MARK: - Symbols browser
+
 
 public struct SymbolsBrowser: View {
     @Bindable var state: DecompilerObservableState
@@ -591,7 +591,7 @@ public struct SymbolsBrowser: View {
     }
 }
 
-// MARK: - Binary information (segments/sections/signature)
+
 
 public struct BinaryInfoView: View {
     @Bindable var state: DecompilerObservableState
@@ -647,7 +647,7 @@ public struct BinaryInfoView: View {
 
     private func protectionString(_ seg: BinarySegmentInfo) -> String {
         var parts: [String] = []
-        // Mach-O VM protection bits: 1=read, 2=write, 4=execute.
+        
         if seg.initialProtection & 1 != 0 { parts.append("r") }
         if seg.initialProtection & 2 != 0 { parts.append("w") }
         if seg.initialProtection & 4 != 0 { parts.append("x") }
@@ -655,7 +655,7 @@ public struct BinaryInfoView: View {
     }
 }
 
-// MARK: - Analysis history
+
 
 public struct AnalysisHistoryView: View {
     let state: DecompilerObservableState
@@ -683,10 +683,10 @@ public struct AnalysisHistoryView: View {
     }
 }
 
-// MARK: - Friendly inspector
 
-/// Contextual inspector for Friendly mode: shows details for whatever is
-/// selected — function, address, instruction, or the binary itself.
+
+
+
 public struct FriendlyInspectorView: View {
     @Bindable var state: DecompilerObservableState
 
@@ -836,7 +836,7 @@ public struct FriendlyInspectorView: View {
         }
     }
 
-    // MARK: - Alert-driven edits (kept simple; no custom windows)
+    
 
     private func renameFunction(_ fn: DecompilerFunction) {
         let alert = NSAlert()
@@ -884,7 +884,7 @@ public struct FriendlyInspectorView: View {
     }
 }
 
-/// Tiny pasteboard helper shared by the browsers.
+
 func NSPasteboardCopy(_ string: String) {
     NSPasteboard.general.clearContents()
     NSPasteboard.general.setString(string, forType: .string)

@@ -1,7 +1,7 @@
 import Foundation
 
-/// Errors raised by the Spaces engine. Every failure path in Spaces maps to one
-/// of these cases so callers (CLI, API, UI) get structured, actionable errors.
+
+
 public enum SpacesError: Error, Equatable, Sendable {
     case notARepository(String)
     case alreadyARepository(String)

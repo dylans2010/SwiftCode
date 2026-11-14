@@ -1,8 +1,8 @@
 import Foundation
 
-/// Binary-level inspection tools: metadata, slices, segments, sections,
-/// entry point, code signature, entitlements, and dependencies.
-/// All data comes from the parsed `BinaryImage` in the session store.
+
+
+
 
 public struct InspectBinaryTool: DecompileAssistTool {
     public init() {}
@@ -278,7 +278,7 @@ public struct GetEntryPointTool: DecompileAssistTool {
         if let fn = await store.function(containing: entry.value) {
             d["function"] = DecompileAssistToolSupport.functionDict(fn)
         }
-        // Which section contains it?
+        
         for seg in image.segments {
             for sec in seg.sections where entry.value >= sec.address.value && entry.value < sec.address.value + sec.size {
                 d["section"] = "\(seg.name),\(sec.name)"
@@ -382,11 +382,11 @@ public struct InspectBinaryDependenciesTool: DecompileAssistTool {
     }
 }
 
-/// Shared helper: the session's source file URL (internal to this module).
+
 func sessionSourceURL(_ session: DecompilerSession) async -> URL? {
-    // DecompilerSession keeps sourceURL private; recover it via availableSlices
-    // fallback — but the public surface exposes it only indirectly. Use the
-    // store's binary identity location instead.
+    
+    
+    
     if let image = await session.binary() {
         let loc = image.identity.originalLocation
         if !loc.isEmpty { return URL(fileURLWithPath: loc) }

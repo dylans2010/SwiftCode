@@ -1,10 +1,10 @@
 import XCTest
 @testable import YcodeDecompiler
 
-/// Temporary reproduction harness for the spotifyglass.dylib diagnostic
-/// failure. Requires the binary at a local path; skipped when absent.
-/// Diagnostics are appended to /tmp/swiftcode-pipeline-repro.log because
-/// the xctest runner does not surface stdout reliably.
+
+
+
+
 final class PipelineReproTests: XCTestCase {
 
     private let fixturePath = "/Users/dylan/Downloads/Payload/Spotify.app/Frameworks/spotifyglass.dylib"
@@ -56,7 +56,7 @@ final class PipelineReproTests: XCTestCase {
         let history = await store.history
         for h in history.suffix(20) { log("HIST \(h.operation) \(h.engineID ?? "-") \(h.detail)") }
 
-        // Reconstruction
+        
         let project = try await ReconstructionPipeline.decompileAsset(session: session)
         log("PROJECT root=\(project.rootURL.path)")
         for file in project.source.files {

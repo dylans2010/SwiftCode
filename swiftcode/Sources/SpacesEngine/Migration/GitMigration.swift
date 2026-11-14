@@ -1,16 +1,16 @@
 import Foundation
 
-/// Git migration: import existing Git repositories into Spaces objects and
-/// export Spaces repositories to Git format.
-///
-/// Interop note: this is the ONE subsystem allowed to invoke `git` — it
-/// reads/writes Git's own formats for migration purposes only. Normal Spaces
-/// operations never touch git.
+
+
+
+
+
+
 public struct GitMigration {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
 
-    // MARK: - Import
+    
 
     public struct ImportReport: Sendable, Encodable {
         public var objectsWritten: Int
@@ -20,9 +20,9 @@ public struct GitMigration {
         public var warnings: [String]
     }
 
-    /// Imports a Git repository at `gitPath` into this Spaces repository.
-    /// Reads via `git cat-file --batch` and `git for-each-ref`; writes native
-    /// Spaces objects. The source repo is never modified.
+    
+    
+    
     @discardableResult
     public func importGit(at gitPath: String, dryRun: Bool = false) throws -> ImportReport {
         let git = try findGit()
@@ -31,7 +31,7 @@ public struct GitMigration {
         var report = ImportReport(objectsWritten: 0, commits: 0,
                                   branches: [], tags: [], warnings: [])
 
-        // 1) Enumerate refs.
+        
         let refsOut = try runGitRaw(git, ["-C", gitPath, "for-each-ref",
                                        "--format=%(refname) %(objectname)"])
         struct RefLine { var name: String; var oid: String }
@@ -41,8 +41,8 @@ public struct GitMigration {
             if parts.count == 2 { refLines.append(RefLine(name: parts[0], oid: parts[1])) }
         }
 
-        // 2) Stream all objects via cat-file --batch-all-objects.
-        // Format: "<oid> <type> <size>\n<contents>\n" per object.
+        
+        
         let batchCheck = try runGitRaw(git, ["-C", gitPath, "cat-file",
                                           "--batch-all-objects", "--batch-check=%(objectname) %(objecttype) %(objectsize)"])
         struct ObjInfo { var oid: String; var type: String; var size: Int }
@@ -54,12 +54,12 @@ public struct GitMigration {
             }
         }
 
-        // Map git oid → spaces oid.
+        
         var oidMap: [String: ObjectID] = [:]
 
-        // 3) Import blobs and trees first (bottom-up), then commits/tags.
-        // Two passes: non-commit objects, then commits (need mapped parents),
-        // then tag objects.
+        
+        
+        
         for pass in ["blob", "tree"] {
             for info in infos where info.type == pass {
                 let payload = try catFile(git: git, path: gitPath, oid: info.oid, size: info.size, type: info.type)
@@ -69,7 +69,7 @@ public struct GitMigration {
                     oidMap[info.oid] = spacesOID
                     report.objectsWritten += 1
                 } else {
-                    // Git tree binary format → Spaces tree JSON.
+                    
                     let treePayload = try convertGitTree(payload, oidMap: oidMap)
                     if let tp = treePayload {
                         let spacesOID = try repo.objects.write(.tree, value: tp)
@@ -82,7 +82,7 @@ public struct GitMigration {
             }
         }
 
-        // Git trees may reference trees imported later; iterate until stable.
+        
         var pendingTrees = infos.filter { $0.type == "tree" && oidMap[$0.oid] == nil }
         var guardCount = 0
         while !pendingTrees.isEmpty && guardCount < 10 {
@@ -104,9 +104,9 @@ public struct GitMigration {
             report.warnings.append("\(pendingTrees.count) trees could not be converted (missing subtrees)")
         }
 
-        // 4) Commits — parents must be imported before children, so iterate
-        // to a fixpoint: a commit is ready once every git-parent hex that is
-        // itself a commit in this repo has a spaces OID in oidMap.
+        
+        
+        
         let commitHexes = Set(infos.filter { $0.type == "commit" }.map { $0.oid })
         var pendingCommits = infos.filter { $0.type == "commit" }
         guardCount = 0
@@ -137,7 +137,7 @@ public struct GitMigration {
             report.warnings.append("skipped commit \(info.oid) (unresolved parents)")
         }
 
-        // 5) Tag objects (annotated).
+        
         for info in infos where info.type == "tag" {
             let payload = try catFile(git: git, path: gitPath, oid: info.oid, size: info.size, type: info.type)
             if let tagPayload = parseGitTagObject(payload, oidMap: oidMap) {
@@ -147,7 +147,7 @@ public struct GitMigration {
             }
         }
 
-        // 6) Refs.
+        
         for ref in refLines {
             guard let spacesOID = oidMap[ref.oid] else {
                 report.warnings.append("ref \(ref.name) target not imported")
@@ -170,14 +170,14 @@ public struct GitMigration {
             }
         }
 
-        // 7) Set HEAD to default branch.
+        
         if !dryRun {
             let defaultBranch = repo.config.core.defaultBranch
             if try repo.refs.readRef("refs/heads/\(defaultBranch)") != nil {
                 try repo.refs.setHEAD(ref: "refs/heads/\(defaultBranch)")
             } else if let first = report.branches.first {
                 try repo.refs.setHEAD(ref: "refs/heads/\(first)")
-                // Materialize worktree.
+                
                 if let oid = try repo.refs.readRef("refs/heads/\(first)") {
                     let commit = try repo.commitObject(oid)
                     try MergeEngine(repo: repo).checkoutTree(commit.tree, overlay: [:])
@@ -190,7 +190,7 @@ public struct GitMigration {
                     try repo.saveIndex(index)
                 }
             }
-            // Migration log.
+            
             let log = "imported \(report.commits) commits, \(report.objectsWritten) objects from \(gitPath) at \(Int64(Date().timeIntervalSince1970))\n"
             try Data(log.utf8).write(to: repo.metaURL.appendingPathComponent("migration.log"),
                                      options: .atomic)
@@ -198,7 +198,7 @@ public struct GitMigration {
         return report
     }
 
-    // MARK: - Git object parsing
+    
 
     private func catFile(git: String, path: String, oid: String, size: Int, type: String) throws -> Data {
         let process = Process()
@@ -216,13 +216,13 @@ public struct GitMigration {
         return data
     }
 
-    /// Parses a git tree object (binary) into a Spaces TreePayload.
-    /// Git tree entry: "<mode> <name>\0<20-byte-sha1>".
+    
+    
     private func convertGitTree(_ data: Data, oidMap: [String: ObjectID]) throws -> TreePayload? {
         var entries: [TreeEntry] = []
         var i = data.startIndex
         while i < data.endIndex {
-            // Read mode until space.
+            
             guard let spaceIdx = data[i...].firstIndex(of: 0x20) else { return nil }
             let modeStr = String(decoding: data[i..<spaceIdx], as: UTF8.self)
             guard let nulIdx = data[(spaceIdx + 1)...].firstIndex(of: 0x00) else { return nil }
@@ -233,7 +233,7 @@ public struct GitMigration {
             let gitOID = sha.map { String(format: "%02x", $0) }.joined()
             i = shaStart + 20
 
-            guard let spacesOID = oidMap[gitOID] else { return nil } // subtree not yet imported
+            guard let spacesOID = oidMap[gitOID] else { return nil } 
             let mode: FileMode
             switch modeStr {
             case "40000": mode = .directory
@@ -250,8 +250,8 @@ public struct GitMigration {
         return TreePayload(entries: entries)
     }
 
-    /// Parses a git commit object into a Spaces CommitPayload.
-    /// Format: headers (tree, parent, author, committer, ...) then message.
+    
+    
     private func parseGitCommit(_ data: Data, oidMap: [String: ObjectID]) -> CommitPayload? {
         let text = String(decoding: data, as: UTF8.self)
         let allParts = text.components(separatedBy: "\n\n")
@@ -267,8 +267,8 @@ public struct GitMigration {
         for line in headers {
             if line.hasPrefix("tree ") {
                 let hex = String(line.dropFirst(5))
-                // Git SHA-1 hex → we can't map object IDs across hash
-                // algorithms; look up in oidMap.
+                
+                
                 treeOID = oidMap[hex]
             } else if line.hasPrefix("parent ") {
                 let hex = String(line.dropFirst(7))
@@ -284,7 +284,7 @@ public struct GitMigration {
                              message: message, metadata: CommitMetadata())
     }
 
-    /// Extracts the `parent <hex>` header values from a raw git commit object.
+    
     private func gitCommitParentHexes(_ data: Data) -> [String] {
         let text = String(decoding: data, as: UTF8.self)
         var hexes: [String] = []
@@ -295,9 +295,9 @@ public struct GitMigration {
         return hexes
     }
 
-    /// Parses "Name <email> timestamp tz" git signature.
+    
     private func parseGitSignature(_ s: String) -> Signature? {
-        // Format: "Name <email> 1234567890 +0000"
+        
         guard let lt = s.firstIndex(of: "<"), let gt = s.firstIndex(of: ">") else { return nil }
         let name = String(s[..<lt]).trimmingCharacters(in: .whitespaces)
         let email = String(s[s.index(after: lt)..<gt])
@@ -306,7 +306,7 @@ public struct GitMigration {
         return Signature(name: name, email: email, timestamp: ts)
     }
 
-    /// Parses a git tag object.
+    
     private func parseGitTagObject(_ data: Data, oidMap: [String: ObjectID]) -> TagPayload? {
         let text = String(decoding: data, as: UTF8.self)
         let allParts = text.components(separatedBy: "\n\n")
@@ -330,7 +330,7 @@ public struct GitMigration {
                           tagger: tagger, message: tagMessage)
     }
 
-    // MARK: - Export
+    
 
     public struct ExportReport: Sendable, Encodable {
         public var gitDir: String
@@ -339,24 +339,24 @@ public struct GitMigration {
         public var warnings: [String]
     }
 
-    /// Exports this Spaces repository to a Git-format repository at
-    /// `destPath` (creates `<destPath>/.git`). Uses `git hash-object -w`,
-    /// `git mktree`, `git commit-tree`, `git update-ref` in the destination —
-    /// the migration subsystem may use git to write git formats.
+    
+    
+    
+    
     @discardableResult
     public func exportGit(to destPath: String, only: [String] = []) throws -> ExportReport {
         let git = try findGit()
         let dest = URL(fileURLWithPath: destPath)
         try FileManager.default.createDirectory(at: dest, withIntermediateDirectories: true)
-        // `git init` creates a proper .git (objects/, refs/, HEAD, config) —
-        // hash-object/mktree/commit-tree require it.
+        
+        
         _ = try runGitRaw(git, ["-C", destPath, "init", "-q"])
         let gitDir = dest.appendingPathComponent(".git")
 
         var report = ExportReport(gitDir: gitDir.path, objectsWritten: 0,
                                   refsWritten: [], warnings: [])
 
-        // Collect commits to export (all history or selected branches).
+        
         var seeds: [ObjectID] = []
         if only.isEmpty {
             for ref in try repo.refs.allRefs() where ref.kind == .branch || ref.kind == .tag {
@@ -369,12 +369,12 @@ public struct GitMigration {
         }
         let reachable = try repo.objects.reachable(from: seeds)
 
-        // Export objects oldest-first: trees/blobs before commits that use
-        // them isn't required by git, but commit-tree needs tree OIDs in git
-        // format — we must write git objects and map spaces oid → git oid.
+        
+        
+        
         var oidMap: [ObjectID: String] = [:]
 
-        // 1) Blobs.
+        
         for id in reachable.sorted() {
             guard let stored = try? repo.objects.read(id), stored.type == .blob else { continue }
             let gitOID = try writeGitBlob(git: git, gitDir: dest.path, payload: stored.payload)
@@ -382,7 +382,7 @@ public struct GitMigration {
             report.objectsWritten += 1
         }
 
-        // 2) Trees (need children mapped — iterate until stable).
+        
         var pendingTrees = reachable.filter { id in
             (try? repo.objects.read(id).type) == .tree
         }
@@ -395,13 +395,13 @@ public struct GitMigration {
                       let tree = try? JSONDecoder().decode(TreePayload.self, from: stored.payload) else {
                     still.insert(id); continue
                 }
-                // All children must be mapped.
+                
                 var ready = true
                 for e in tree.entries where !e.mode.isDirectory {
                     if oidMap[e.oid] == nil { ready = false; break }
                 }
-                // Directory children are trees — check they have git oids too
-                // (trees are written bottom-up via iteration).
+                
+                
                 for e in tree.entries where e.mode.isDirectory {
                     if oidMap[e.oid] == nil { ready = false; break }
                 }
@@ -416,8 +416,8 @@ public struct GitMigration {
             report.warnings.append("\(pendingTrees.count) trees not exported")
         }
 
-        // 3) Commits — parents must be written before children, so iterate
-        // to a fixpoint rather than relying on object-ID order.
+        
+        
         var commitOIDMap: [ObjectID: String] = [:]
         var pendingCommits = reachable.filter { id in
             (try? repo.objects.read(id).type) == .commit
@@ -446,7 +446,7 @@ public struct GitMigration {
             report.warnings.append("\(pendingCommits.count) commits not exported")
         }
 
-        // 4) Tags.
+        
         var tagOIDMap: [ObjectID: String] = [:]
         for id in reachable.sorted() {
             guard let stored = try? repo.objects.read(id), stored.type == .tag,
@@ -459,36 +459,36 @@ public struct GitMigration {
             report.objectsWritten += 1
         }
 
-        // 5) Refs.
+        
         for ref in try repo.refs.allRefs() {
             var gitOID: String? = nil
             switch ref.kind {
             case .branch, .remote:
                 gitOID = commitOIDMap[ref.oid]
             case .tag:
-                // Annotated tag → tag object; lightweight → commit.
+                
                 if let t = tagOIDMap[ref.oid] { gitOID = t }
                 else { gitOID = commitOIDMap[ref.oid] }
             default: break
             }
             guard let oid = gitOID else { continue }
-            let gitRefName = ref.name // same naming convention
+            let gitRefName = ref.name 
             try runGitRaw(git, ["-C", dest.path, "update-ref", gitRefName, oid])
             report.refsWritten.append(gitRefName)
         }
-        // HEAD.
+        
         if let sym = try repo.refs.symbolicHEAD() {
             let branch = String(sym.dropFirst("refs/heads/".count))
             try? runGitRaw(git, ["-C", dest.path, "symbolic-ref", "HEAD",
                                  "refs/heads/\(branch)"])
         }
 
-        // Init marker: ensure .git looks like a repo.
+        
         try? runGitRaw(git, ["-C", dest.path, "rev-parse", "--git-dir"])
         return report
     }
 
-    // MARK: - Git object writers
+    
 
     private func writeGitBlob(git: String, gitDir: String, payload: Data) throws -> String {
         let process = Process()
@@ -511,7 +511,7 @@ public struct GitMigration {
 
     private func writeGitTree(git: String, gitDir: String, tree: TreePayload,
                               oidMap: [ObjectID: String]) throws -> String {
-        // `git mktree` input format: "<mode> <type> <oid>\t<name>"
+        
         var input = ""
         for e in tree.entries {
             guard let childOID = oidMap[e.oid] else {
@@ -540,8 +540,8 @@ public struct GitMigration {
 
     private func writeGitCommit(git: String, gitDir: String, commit: CommitPayload,
                                 treeGitOID: String, parentGitOIDs: [String]) throws -> String {
-        // commit-tree takes tree/parents as arguments and identity from
-        // GIT_AUTHOR_*/GIT_COMMITTER_* env vars; stdin is the message body.
+        
+        
         var input = ""
         for (k, v) in commit.metadata.trailers.sorted(by: { $0.key < $1.key }) {
             input += "\(k): \(v)\n"
@@ -599,7 +599,7 @@ public struct GitMigration {
         return out.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Sets GIT_<ROLE>_NAME/EMAIL/DATE for commit-tree/mktag identity.
+    
     private func applyGitIdentity(_ env: inout [String: String], prefix: String,
                                   sig: Signature) {
         env[prefix + "NAME"] = sig.name
@@ -611,7 +611,7 @@ public struct GitMigration {
     }
 
     private func gitSignature(_ s: Signature) -> String {
-        // "Name <email> epoch tz"
+        
         let tz = TimeZone.current.secondsFromGMT(for: Date(timeIntervalSince1970: TimeInterval(s.timestamp)))
         let sign = tz >= 0 ? "+" : "-"
         let absTz = abs(tz)
@@ -619,13 +619,13 @@ public struct GitMigration {
         return "\(s.name) <\(s.email)> \(s.timestamp) \(sign)\(String(format: "%02d%02d", hh, mm))"
     }
 
-    // MARK: - Git helpers
+    
 
     private func findGit() throws -> String {
         for path in ["/usr/bin/git", "/opt/homebrew/bin/git", "/usr/local/bin/git"] {
             if FileManager.default.isExecutableFile(atPath: path) { return path }
         }
-        // PATH lookup.
+        
         if let pathEnv = ProcessInfo.processInfo.environment["PATH"] {
             for dir in pathEnv.components(separatedBy: ":") {
                 let candidate = dir + "/git"
@@ -636,7 +636,7 @@ public struct GitMigration {
     }
 
     private func resolveGitDir(git: String, path: String) throws -> String {
-        // git rev-parse --git-dir
+        
         let out = try runGitRaw(git, ["-C", path, "rev-parse", "--git-dir"])
         var dir = out.trimmingCharacters(in: .whitespacesAndNewlines)
         if !dir.hasPrefix("/") {

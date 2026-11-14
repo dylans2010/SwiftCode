@@ -1,5 +1,5 @@
-// C-CN-MODEL (plan.md §3): constants, enumerations, labels, keys and their
-// availability, identifiers, labeled values and the two exceptions.
+
+
 
 import Foundation
 import Testing
@@ -9,7 +9,7 @@ import Testing
 struct ConstantTests {
     @Test("identifiers.md string constants: every value of the table")
     func stringConstants() throws {
-        // The spec's table, read at test time: name → value.
+        
         #expect(swiftcodeAllStringConstants.count == 309)
         let byName = Dictionary(uniqueKeysWithValues: swiftcodeAllStringConstants.map { ($0.name, $0.value) })
         #expect(byName["CNContactPostalAddressesKey"] == "postalAddresses")
@@ -107,7 +107,7 @@ struct LocalizationTests {
         for (label, word) in expected {
             #expect(CNLabeledValue<NSString>.localizedString(forLabel: label) == word)
         }
-        // SwiftCode's rule for relation labels the spec does not list.
+        
         #expect(CNLabeledValue<NSString>.localizedString(forLabel: CNLabelContactRelationSisterInLawBrothersWife) == "sister-in-law")
         #expect(CNLabeledValue<NSString>.localizedString(forLabel: CNLabelContactRelationElderBrother) == "older brother")
         #expect(CNLabeledValue<NSString>.localizedString(forLabel: CNLabelContactRelationParentsSibling) == "parent's sibling")

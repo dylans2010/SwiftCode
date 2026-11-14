@@ -1,12 +1,12 @@
 import Foundation
 import SpacesEngine
 
-/// Async facade over the native Spaces engine, mirroring `GitService`'s API
-/// surface so existing source-control views work unchanged when the
-/// "spaces" source-control system is selected in Settings.
-///
-/// All operations run against `.spaces/` repositories through `SpacesAPI`;
-/// no git subprocess is involved.
+
+
+
+
+
+
 public actor SpacesService {
     public static let shared = SpacesService()
 
@@ -14,15 +14,15 @@ public actor SpacesService {
 
     public init() {}
 
-    /// True when the Spaces engine is usable (always — it is in-process).
+    
     public func isSpacesAvailable() async -> Bool { true }
 
-    /// Whether `url` is inside a Spaces (`.spaces/`) repository.
+    
     public func isSpacesRepository(at url: URL) -> Bool {
         Repository.isRepository(at: url)
     }
 
-    /// Creates a new `.spaces/` repository at `url` (like `spaces init`).
+    
     @discardableResult
     public func initialize(at url: URL, defaultBranch: String = "main") throws -> URL {
         let repo = try Repository.create(at: url, defaultBranch: defaultBranch)
@@ -49,7 +49,7 @@ public actor SpacesService {
         return String(p.dropFirst(prefix.count))
     }
 
-    // MARK: - Status
+    
 
     public func getStatus(for repositoryURL: URL) async throws -> GitStatusSnapshot {
         let (_, api) = try api(for: repositoryURL)
@@ -84,7 +84,7 @@ public actor SpacesService {
         }
     }
 
-    // MARK: - Mutations
+    
 
     public func stage(path: URL, repositoryURL: URL) async throws {
         let (repo, api) = try api(for: repositoryURL)
@@ -115,12 +115,12 @@ public actor SpacesService {
     }
 
     public func clone(remoteURL: URL, destinationURL: URL, token: String?) async throws {
-        // token is unused — Spaces transports authenticate via the
-        // credential store, not per-call tokens.
+        
+        
         _ = try CloneOps.clone(url: remoteURL.absoluteString, into: destinationURL)
     }
 
-    // MARK: - History
+    
 
     public func getLog(repositoryURL: URL) async throws -> [GitCommit] {
         let (_, api) = try api(for: repositoryURL)
@@ -163,7 +163,7 @@ public actor SpacesService {
         try api.renameBranch(old, to: new)
     }
 
-    // MARK: - Diff
+    
 
     public func getDiff(repositoryURL: URL) async throws -> [GitDiffHunk] {
         let (_, api) = try api(for: repositoryURL)
@@ -176,7 +176,7 @@ public actor SpacesService {
         return hunks
     }
 
-    /// Parses "@@ ... @@" hunks out of a unified diff patch body.
+    
     static func parseUnifiedPatch(_ patch: String, filePath: String) -> [GitDiffHunk] {
         var hunks: [GitDiffHunk] = []
         var header: String?
@@ -198,7 +198,7 @@ public actor SpacesService {
         return hunks
     }
 
-    // MARK: - Remote operations
+    
 
     public func fetch(repositoryURL: URL, remote: String = "origin") async throws {
         let (_, api) = try api(for: repositoryURL)
@@ -219,8 +219,8 @@ public actor SpacesService {
     }
 
     public func forcePush(branch: String, repositoryURL: URL) async throws {
-        // Spaces push enforces fast-forward; non-FF is rejected by the
-        // remote. Surface the error rather than silently forcing.
+        
+        
         try await push(repositoryURL: repositoryURL)
     }
 
@@ -229,7 +229,7 @@ public actor SpacesService {
         try api.reset(to: sha, mode: .hard)
     }
 
-    // MARK: - Extended operations used by Spaces-aware UI
+    
 
     public func merge(_ target: String, repositoryURL: URL) async throws {
         let (_, api) = try api(for: repositoryURL)
@@ -257,7 +257,7 @@ public actor SpacesService {
         }
     }
 
-    // MARK: - Worktrees
+    
 
     public func worktrees(repositoryURL: URL) async throws -> [WorktreeOps.WorktreeInfo] {
         let (repo, _) = try api(for: repositoryURL)
@@ -274,7 +274,7 @@ public actor SpacesService {
         try WorktreeOps(repo: repo).remove(nameOrPath)
     }
 
-    // MARK: - Commit Details & File Stats
+    
 
     public struct FileDiffStat: Sendable {
         public let path: String
@@ -336,7 +336,7 @@ public actor SpacesService {
         return out
     }
 
-    // MARK: - Rebase & Merge Control
+    
 
     public func rebase(onto: String, repositoryURL: URL) async throws {
         let (_, api) = try api(for: repositoryURL)
@@ -363,7 +363,7 @@ public actor SpacesService {
         try api.mergeAbort()
     }
 
-    // MARK: - Stashes & Snapshots
+    
 
     public func stashes(repositoryURL: URL) async throws -> [StashOps.StashEntry] {
         let (_, api) = try api(for: repositoryURL)
@@ -400,7 +400,7 @@ public actor SpacesService {
         try api.restoreSnapshot(rev)
     }
 
-    // MARK: - Maintenance
+    
 
     public func clean(repositoryURL: URL) async throws -> [String] {
         let (_, api) = try api(for: repositoryURL)

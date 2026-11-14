@@ -1,17 +1,17 @@
 import Foundation
 
-/// Scans the worktree and computes status against HEAD + index.
-///
-/// Status model:
-///   staged   = index differs from HEAD tree
-///   unstaged = worktree differs from index (or index differs for tracked)
-///   untracked= worktree file not in index
+
+
+
+
+
+
 public struct WorktreeScanner: Sendable {
     public let repo: Repository
 
     public init(repo: Repository) { self.repo = repo }
 
-    /// A discovered worktree file (not ignored, not inside .spaces/).
+    
     public struct FileEntry: Sendable {
         public var relativePath: String
         public var url: URL
@@ -21,8 +21,8 @@ public struct WorktreeScanner: Sendable {
         public var mode: FileMode
     }
 
-    /// Recursively lists candidate files, honoring ignore rules discovered
-    /// along the way. Does not hash contents — use `hashEntry` lazily.
+    
+    
     public func scan() throws -> [FileEntry] {
         var results: [FileEntry] = []
         var engine = IgnoreEngine.loadRootRules(worktree: repo.worktreeURL)
@@ -36,10 +36,10 @@ public struct WorktreeScanner: Sendable {
         let contents = try FileManager.default.contentsOfDirectory(
             at: dir, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey],
             options: [.skipsHiddenFiles])
-        // Note: .skipsHiddenFiles hides dotfiles entirely; Spaces tracks hidden
-        // files (e.g. .gitignore itself is ignored by rules but other dotfiles
-        // like .env may be tracked). Re-scan including hidden and filter
-        // manually to keep behavior correct.
+        
+        
+        
+        
         let all = (try? FileManager.default.contentsOfDirectory(
             at: dir, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey],
             options: [])) ?? []
@@ -53,17 +53,17 @@ public struct WorktreeScanner: Sendable {
             let isSymlink = values?.isSymbolicLink ?? false
             let isDir = (values?.isDirectory ?? false) && !isSymlink
 
-            // Nested ignore files apply to their subtree.
+            
             var localEngine = engine
             if !isDir, (name == RepositoryFormat.gitignoreFileName || name == RepositoryFormat.ignoreFileName) {
-                // The ignore file itself is still a normal file; its rules
-                // were loaded by the parent scan. Nothing extra to do here —
-                // nested files are handled when we descend.
+                
+                
+                
             }
             if isDir {
-                // Check ignore for the directory itself.
+                
                 if engine.isIgnored(rel, isDirectory: true) { continue }
-                // Load nested ignore files before descending.
+                
                 var nested = localEngine
                 for ignoreName in [RepositoryFormat.gitignoreFileName, RepositoryFormat.ignoreFileName] {
                     let ignoreURL = url.appendingPathComponent(ignoreName)
@@ -83,15 +83,15 @@ public struct WorktreeScanner: Sendable {
         }
     }
 
-    /// Hashes a worktree file into the object store, returning its blob OID
-    /// and mode. Symlinks store their target path as blob content.
+    
+    
     public func hashEntry(_ entry: FileEntry) throws -> (oid: ObjectID, mode: FileMode) {
         if entry.isSymlink {
             let target = try FileManager.default.destinationOfSymbolicLink(atPath: entry.url.path)
             let oid = try repo.objects.write(type: .blob, payload: Data(target.utf8))
             return (oid, .symlink)
         }
-        // Executable bit.
+        
         let attrs = try FileManager.default.attributesOfItem(atPath: entry.url.path)
         let perms = (attrs[.posixPermissions] as? Int) ?? 0o644
         let mode: FileMode = (perms & 0o111) != 0 ? .executable : .regular
@@ -100,7 +100,7 @@ public struct WorktreeScanner: Sendable {
         return (oid, mode)
     }
 
-    // MARK: - Status
+    
 
     public enum ChangeKind: String, Sendable {
         case added, modified, deleted, renamed, untracked, typechanged
@@ -108,8 +108,8 @@ public struct WorktreeScanner: Sendable {
 
     public struct FileStatus: Sendable {
         public var path: String
-        public var indexStatus: ChangeKind?   // staged change vs HEAD
-        public var worktreeStatus: ChangeKind? // unstaged change vs index
+        public var indexStatus: ChangeKind?   
+        public var worktreeStatus: ChangeKind? 
         public var oldPath: String?
 
         public var isStaged: Bool { indexStatus != nil && indexStatus != .untracked }
@@ -133,7 +133,7 @@ public struct WorktreeScanner: Sendable {
         public var isClean: Bool { entries.allSatisfy { !$0.isStaged && !$0.isUnstaged && $0.indexStatus != .untracked } }
     }
 
-    /// Flattens a tree object into path → (oid, mode).
+    
     public func flattenTree(_ treeOID: ObjectID, prefix: String = "") throws -> [String: (oid: ObjectID, mode: FileMode)] {
         var result: [String: (oid: ObjectID, mode: FileMode)] = [:]
         for entry in try repo.treeEntries(treeOID) {
@@ -147,9 +147,9 @@ public struct WorktreeScanner: Sendable {
         return result
     }
 
-    /// Computes full status: staged (index vs HEAD), unstaged (worktree vs
-    /// index), untracked. Rename detection pairs deleted+added paths with
-    /// identical blob OIDs.
+    
+    
+    
     public func status() throws -> StatusReport {
         let index = try repo.index()
         let headTree: [String: (oid: ObjectID, mode: FileMode)]
@@ -159,12 +159,12 @@ public struct WorktreeScanner: Sendable {
             headTree = [:]
         }
 
-        // Determine which tracked files need hashing: those whose stat cache
-        // doesn't match or that are new.
+        
+        
         var statuses: [FileStatus] = []
         let scanned = try scan()
 
-        // 1) Index vs HEAD → staged changes.
+        
         var stagedPaths = Set<String>()
         let allIndexPaths = Set(index.entries.keys)
         let allHeadPaths = Set(headTree.keys)
@@ -185,13 +185,13 @@ public struct WorktreeScanner: Sendable {
             stagedPaths.insert(path)
         }
 
-        // 2) Worktree vs index → unstaged; collect untracked.
+        
         var seen = Set<String>()
         for entry in scanned {
             let path = entry.relativePath
             seen.insert(path)
             if let ie = index.entries[path] {
-                // Tracked: hash if stat changed or entry missing data.
+                
                 let needsHash = !Index.statMatches(ie, fileAt: entry.url)
                 if needsHash {
                     let (oid, mode) = try hashEntry(entry)
@@ -199,7 +199,7 @@ public struct WorktreeScanner: Sendable {
                         if !stagedPaths.contains(path) {
                             statuses.append(FileStatus(path: path, indexStatus: nil, worktreeStatus: .modified))
                         } else {
-                            // Already has staged status; record unstaged too.
+                            
                             if let i = statuses.firstIndex(where: { $0.path == path }) {
                                 statuses[i].worktreeStatus = .modified
                             }
@@ -207,24 +207,24 @@ public struct WorktreeScanner: Sendable {
                     }
                 }
             } else {
-                // Untracked (not ignored — scanner already filtered).
+                
                 statuses.append(FileStatus(path: path, indexStatus: .untracked, worktreeStatus: nil))
             }
         }
 
-        // 3) Tracked in index but missing from worktree → deleted unstaged.
+        
         for path in allIndexPaths where !seen.contains(path) {
-            // Only count as unstaged-deleted if not already staged-deleted.
+            
             if let i = statuses.firstIndex(where: { $0.path == path && $0.indexStatus == .deleted }) {
                 continue
             }
             statuses.append(FileStatus(path: path, indexStatus: nil, worktreeStatus: .deleted))
         }
 
-        // 4) Rename detection among staged adds/deletes with same OID.
+        
         statuses = applyRenameDetection(statuses, index: index, headTree: headTree)
 
-        // Ahead/behind vs upstream.
+        
         var ahead = 0, behind = 0
         if let sym = try repo.refs.symbolicHEAD(),
            let upstream = repo.config.branchTracking[String(sym.dropFirst("refs/heads/".count))],
@@ -239,7 +239,7 @@ public struct WorktreeScanner: Sendable {
             }
         }
 
-        // Unmerged paths.
+        
         var unmerged: [String] = []
         if repo.inMerge() || repo.inCherryPick() {
             unmerged = try conflictedPaths()
@@ -253,9 +253,9 @@ public struct WorktreeScanner: Sendable {
                             unmerged: unmerged)
     }
 
-    /// Paths with unresolved conflict markers recorded by the merge engine.
+    
     public func conflictedPaths() throws -> [String] {
-        // The merge engine writes .spaces/conflicts.json during a merge.
+        
         let url = repo.metaURL.appendingPathComponent("conflicts.json")
         guard let data = try? Data(contentsOf: url),
               let arr = try? JSONDecoder().decode([ConflictRecord].self, from: data) else { return [] }
@@ -270,8 +270,8 @@ public struct WorktreeScanner: Sendable {
         public var base: String?
     }
 
-    /// Counts commits in head not in upstream and vice versa (first-parent
-    /// ancestry walk with memoization).
+    
+    
     public func countAheadBehind(head: ObjectID, upstream: ObjectID) throws -> (ahead: Int, behind: Int) {
         func ancestors(of start: ObjectID) throws -> Set<ObjectID> {
             var seen = Set<ObjectID>()
@@ -289,13 +289,13 @@ public struct WorktreeScanner: Sendable {
                 upAncestors.subtracting(headAncestors).count)
     }
 
-    /// Pairs staged deletions with staged additions that share the same blob
-    /// OID, rewriting them as `.renamed` entries (oldPath → new path).
+    
+    
     private func applyRenameDetection(_ statuses: [FileStatus], index: Index,
                                       headTree: [String: (oid: ObjectID, mode: FileMode)]) -> [FileStatus] {
         var result = statuses
         var consumed = Set<Int>()
-        // Map OID → indices of staged additions.
+        
         var addsByOID: [ObjectID: [Int]] = [:]
         for (i, s) in result.enumerated() where s.indexStatus == .added {
             if let oid = index.entries[s.path]?.oid { addsByOID[oid, default: []].append(i) }

@@ -18,19 +18,19 @@ public struct WorkspaceToolbarView: View {
     public var body: some View {
         let c = ShellColors(scheme)
         HStack(spacing: 8) {
-            // Left Group: Sidebar toggle, Assistant toggle, Git branch / project selector
+            
             NavigatorToolbar(model: model)
                 .fixedSize(horizontal: true, vertical: false)
 
             Spacer(minLength: 8)
 
-            // Center Group: Scheme & Destination capsule, Run & Stop, Build status
+            
             CenterToolbar(model: model, app: app)
                 .fixedSize(horizontal: true, vertical: false)
 
             Spacer(minLength: 8)
 
-            // Right Group: Library, Customize Toolbar, Editor Modes, Inspector Toggle
+            
             InspectorToolbar(model: model)
                 .fixedSize(horizontal: true, vertical: false)
         }

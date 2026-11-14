@@ -3,20 +3,20 @@ import Foundation
 import CryptoKit
 #endif
 
-/// Errors surfaced by the real Apple ID / developer-portal sign-in flow.
+
 public enum AppleIDAuthError: Error, Equatable, LocalizedError {
-    /// Apple rejected the Apple ID / password pair.
+    
     case invalidCredentials
-    /// The account must accept Apple's latest Apple ID / privacy terms first.
+    
     case termsNotAccepted
-    /// Apple reported a service-level failure (bad verification code, locked
-    /// account, no trusted devices, ...). `message` is Apple's own text.
+    
+    
     case appleService(String)
-    /// A non-2xx HTTP response from an Apple endpoint.
+    
     case httpStatus(Int, String?)
-    /// The JSON body could not be interpreted.
+    
     case malformedResponse(String)
-    /// The transport layer failed.
+    
     case transport(String)
 
     public var errorDescription: String? {
@@ -40,7 +40,7 @@ public enum AppleIDAuthError: Error, Equatable, LocalizedError {
     }
 }
 
-/// A trusted phone number Apple can text a two-factor code to.
+
 public struct AppleTrustedPhone: Identifiable, Hashable, Sendable {
     public let id: String
     public let numberWithDialCode: String
@@ -53,7 +53,7 @@ public struct AppleTrustedPhone: Identifiable, Hashable, Sendable {
     }
 }
 
-/// A trusted device (2-step verification) that can display a code.
+
 public struct AppleTrustedDevice: Identifiable, Hashable, Sendable {
     public let id: String
     public let name: String
@@ -64,26 +64,26 @@ public struct AppleTrustedDevice: Identifiable, Hashable, Sendable {
     }
 }
 
-/// How the user wants the second factor delivered.
+
 public enum AppleTwoFactorDelivery: Hashable, Sendable {
-    /// The code is pushed automatically to the user's trusted devices
-    /// (modern two-factor authentication).
+    
+    
     case trustedDevice
-    /// A specific trusted phone number; the code is texted/called to it.
+    
     case phone(String)
-    /// A specific legacy two-step trusted device; the code is requested on
-    /// that device and verified through the phone/securitycode endpoint.
+    
+    
     case device(String)
 }
 
-/// State captured when Apple answers the password step with HTTP 409 and
-/// asks for a two-factor / two-step code.
+
+
 public struct AppleTwoFactorContext: Sendable {
     public let codeLength: Int
     public let phones: [AppleTrustedPhone]
     public let devices: [AppleTrustedDevice]
-    /// True when the account has no trusted devices and Apple can only fall
-    /// back to SMS (`noTrustedDevices` in the auth response).
+    
+    
     public let smsFallbackOnly: Bool
 
     public init(codeLength: Int, phones: [AppleTrustedPhone], devices: [AppleTrustedDevice], smsFallbackOnly: Bool) {
@@ -94,23 +94,23 @@ public struct AppleTwoFactorContext: Sendable {
     }
 }
 
-/// How the Apple ID sign-in ended.
+
 public enum AppleIDSignInOutcome: Sendable {
-    /// Password accepted; the session cookie jar now holds a valid session.
+    
     case signedIn
-    /// Apple requires a verification code; `context` describes the options.
+    
     case twoFactorRequired(AppleTwoFactorContext)
 }
 
-/// The `widgetKey` / `authServiceKey` Apple issues to first-party web clients.
-/// It rotates, so it is fetched live (with a cached fallback) rather than
-/// hard-coded.
+
+
+
 public enum AppleServiceKey {
     public static let cacheKey = "apple.services.widgetKey"
 
-    /// Fetches the current service key. Order matches what real clients do:
-    /// the `/logout` redirect carries `widgetKey` in its Location header, and
-    /// the olympus app-config endpoint exposes `authServiceKey` as a fallback.
+    
+    
+    
     public static func fetch(defaults: UserDefaults = .standard) async throws -> String {
         if let cached = defaults.string(forKey: cacheKey), !cached.isEmpty {
             return cached
@@ -131,11 +131,11 @@ public enum AppleServiceKey {
         )
     }
 
-    /// `HEAD https://appstoreconnect.apple.com/logout` answers 302 with a
-    /// `Location: .../signout?...&widgetKey=<key>` header. The request must
-    /// not follow the redirect (that would sign out) and must not send the
-    /// session cookies, so it uses a dedicated session with a delegate that
-    /// refuses redirects.
+    
+    
+    
+    
+    
     private static func fetchFromSignoutRedirect() async throws -> String {
         guard let url = URL(string: "https://appstoreconnect.apple.com/logout") else {
             throw AppleIDAuthError.malformedResponse("logout URL")
@@ -162,8 +162,8 @@ public enum AppleServiceKey {
         return key
     }
 
-    /// `GET https://appstoreconnect.apple.com/olympus/v1/app/config?hostname=itunesconnect.apple.com`
-    /// returns JSON containing `authServiceKey`.
+    
+    
     private static func fetchFromOlympusConfig() async throws -> String {
         guard let url = URL(string: "https://appstoreconnect.apple.com/olympus/v1/app/config?hostname=itunesconnect.apple.com") else {
             throw AppleIDAuthError.malformedResponse("olympus config URL")
@@ -182,7 +182,7 @@ public enum AppleServiceKey {
     }
 }
 
-/// Prevents URLSession from following the `/logout` redirect.
+
 private final class RedirectRefusingDelegate: NSObject, URLSessionTaskDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask,
                     willPerformHTTPRedirection response: HTTPURLResponse,
@@ -192,9 +192,9 @@ private final class RedirectRefusingDelegate: NSObject, URLSessionTaskDelegate {
     }
 }
 
-/// Apple's hashcash challenge (`X-Apple-HC`): a SHA-1 partial preimage over
-/// `1:<bits>:<yyyyMMddHHmmss>:<challenge>::<counter>` requiring `bits`
-/// leading zero bits. Required by the idmsa sign-in endpoints.
+
+
+
 public enum AppleHashcash {
     public static func mint(bits: Int, challenge: String, date: Date = Date()) -> String {
         let formatter = DateFormatter()
@@ -202,7 +202,7 @@ public enum AppleHashcash {
         formatter.dateFormat = "yyyyMMddHHmmss"
         let stamp = formatter.string(from: date)
         var counter = 0
-        // bits is small (Apple uses ~11-20); cap defensively at the digest size.
+        
         let effectiveBits = max(0, min(bits, 160))
         while true {
             let candidate = "1:\(effectiveBits):\(stamp):\(challenge)::\(counter)"
@@ -226,22 +226,22 @@ public enum AppleHashcash {
     }
 }
 
-/// A real client for Apple's account sign-in endpoints (the same endpoints
-/// Xcode and other developer tools use):
-///
-///   idmsa.apple.com/appleauth/auth/signin          — password step
-///   idmsa.apple.com/appleauth/auth                 — 2FA options
-///   idmsa.apple.com/appleauth/auth/verify/...      — code verification
-///   idmsa.apple.com/appleauth/auth/2sv/trust       — mark session trusted
-///   appstoreconnect.apple.com/olympus/v1/session   — team/provider list
-///   developer.apple.com/services-account/QH65B2/…  — developer portal teams
-///
-/// Session state lives in the shared `HTTPCookieStorage`, exactly like a
-/// browser session: Apple sets `.apple.com` domain cookies that are then sent
-/// to both idmsa and appstoreconnect/developer hosts.
+
+
+
+
+
+
+
+
+
+
+
+
+
 public final class AppleIDAuthClient: @unchecked Sendable {
-    /// Shared session so cookies set by idmsa.apple.com are visible to
-    /// appstoreconnect.apple.com and developer.apple.com.
+    
+    
     public static let sharedSession: URLSession = {
         let configuration = URLSessionConfiguration.default
         configuration.httpCookieStorage = HTTPCookieStorage.shared
@@ -258,13 +258,13 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         self.widgetKey = widgetKey
     }
 
-    // MARK: - Password step
+    
 
-    /// Performs the password sign-in. Returns `.twoFactorRequired` when Apple
-    /// answers 409 (2FA/2-step enabled) — the verification code has already
-    /// been pushed to the account's trusted devices at that point.
+    
+    
+    
     public func signIn(appleID: String, password: String) async throws -> AppleIDSignInOutcome {
-        // 1. Hashcash challenge for the sign-in endpoints.
+        
         var hashcash: String?
         if let hc = try? await fetchHashcashChallenge() {
             hashcash = hc
@@ -302,7 +302,7 @@ public final class AppleIDAuthClient: @unchecked Sendable {
             scnt = http.value(forHTTPHeaderField: "scnt") ?? ""
             return .twoFactorRequired(try await fetchTwoFactorOptions())
         case 412:
-            // Apple ID / privacy acknowledgement or 2FA-upgrade required.
+            
             if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let authType = object["authType"] as? String,
                ["sa", "hsa", "non-sa", "hsa2"].contains(authType) {
@@ -317,10 +317,10 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         }
     }
 
-    // MARK: - Two-factor options
+    
 
-    /// `GET https://idmsa.apple.com/appleauth/auth` lists the trusted devices
-    /// and phone numbers a code can be sent to.
+    
+    
     private func fetchTwoFactorOptions() async throws -> AppleTwoFactorContext {
         guard let url = URL(string: "https://idmsa.apple.com/appleauth/auth") else {
             throw AppleIDAuthError.malformedResponse("auth options URL")
@@ -372,20 +372,20 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         )
     }
 
-    // MARK: - Verification
+    
 
-    /// Asks Apple to send a code to the chosen destination. For the modern
-    /// flow the code is pushed automatically and this is a no-op unless an
-    /// SMS/phone fallback was picked.
+    
+    
+    
     public func requestTwoFactorCode(delivery: AppleTwoFactorDelivery, context: AppleTwoFactorContext) async throws {
         switch delivery {
         case .trustedDevice:
-            // Modern two-factor authentication pushes the code automatically
-            // when the password step returned 409 — nothing to request.
+            
+            
             break
         case .device(let deviceID):
-            // Legacy two-step verification: poke the chosen device so it
-            // displays a code.
+            
+            
             try await putVerificationPath("verify/device/\(deviceID)/securitycode", body: nil)
         case .phone(let phoneID):
             let pushMode = context.phones.first(where: { $0.id == phoneID })?.pushMode ?? "sms"
@@ -396,7 +396,7 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         }
     }
 
-    /// Submits the code the user received.
+    
     public func verifyTwoFactorCode(_ code: String, delivery: AppleTwoFactorDelivery, context: AppleTwoFactorContext) async throws {
         let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -408,8 +408,8 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         switch delivery {
         case .trustedDevice:
             if context.phones.isEmpty, let device = context.devices.first {
-                // Two-step verification fallback: the code goes back keyed
-                // by the trusted device id.
+                
+                
                 path = "verify/phone/securitycode"
                 body = [
                     "phoneNumber": ["id": device.id],
@@ -439,9 +439,9 @@ public final class AppleIDAuthClient: @unchecked Sendable {
 
         try await postVerificationPath(path, body: body)
 
-        // Mark the browser-like session as trusted so Apple issues longer
-        // lived cookies. Best effort: failure here does not invalidate the
-        // session we just created.
+        
+        
+        
         try? await getTrustSession()
     }
 
@@ -485,8 +485,8 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         }
     }
 
-    /// `GET https://idmsa.apple.com/appleauth/auth/2sv/trust` upgrades the
-    /// session cookies. Returns normally on success; callers ignore errors.
+    
+    
     private func getTrustSession() async throws {
         guard let url = URL(string: "https://idmsa.apple.com/appleauth/auth/2sv/trust") else { return }
         var request = URLRequest(url: url)
@@ -494,20 +494,20 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         _ = try await Self.sharedSession.data(for: request)
     }
 
-    // MARK: - Teams
+    
 
-    /// A developer team the signed-in Apple Account belongs to.
+    
     public struct AppleTeam: Hashable, Sendable {
         public let teamID: String
         public let name: String
-        /// "developerPortal" or "appStoreConnect" — where the row came from.
+        
         public let source: String
     }
 
-    /// Fetches the teams for the current session. The developer portal
-    /// `listTeams.action` endpoint returns the real Developer Program team
-    /// IDs used for code signing; the App Store Connect olympus session lists
-    /// `availableProviders`. Both are merged, de-duplicated by team ID.
+    
+    
+    
+    
     public func fetchTeams() async throws -> [AppleTeam] {
         var teams: [AppleTeam] = []
         var seen = Set<String>()
@@ -535,8 +535,8 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         return teams.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
-    /// `POST https://developer.apple.com/services-account/QH65B2/account/listTeams.action`
-    /// — the developer portal endpoint behind Xcode's account team list.
+    
+    
     private func fetchDeveloperPortalTeams() async throws -> [AppleTeam] {
         guard let url = URL(string: "https://developer.apple.com/services-account/QH65B2/account/listTeams.action") else {
             throw AppleIDAuthError.malformedResponse("listTeams URL")
@@ -551,7 +551,7 @@ public final class AppleIDAuthClient: @unchecked Sendable {
             throw AppleIDAuthError.httpStatus((response as? HTTPURLResponse)?.statusCode ?? -1, nil)
         }
 
-        // The QH65B2 protocol answers JSON; guard against plist just in case.
+        
         var object: [String: Any]?
         if let json = try? JSONSerialization.jsonObject(with: data) {
             object = json as? [String: Any]
@@ -575,8 +575,8 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         }
     }
 
-    /// `GET https://appstoreconnect.apple.com/olympus/v1/session` — returns
-    /// the signed-in user plus `availableProviders` (App Store Connect teams).
+    
+    
     private func fetchAppStoreConnectProviders() async throws -> [AppleTeam] {
         guard let url = URL(string: "https://appstoreconnect.apple.com/olympus/v1/session") else {
             throw AppleIDAuthError.malformedResponse("olympus session URL")
@@ -601,11 +601,11 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         }
     }
 
-    // MARK: - Helpers
+    
 
-    /// `GET https://idmsa.apple.com/appleauth/auth/signin?widgetKey=…` returns
-    /// the `X-Apple-HC-Bits` / `X-Apple-HC-Challenge` headers used to mint the
-    /// hashcash stamp.
+    
+    
+    
     private func fetchHashcashChallenge() async throws -> String? {
         guard let url = URL(string: "https://idmsa.apple.com/appleauth/auth/signin?widgetKey=\(widgetKey)") else {
             return nil
@@ -634,9 +634,9 @@ public final class AppleIDAuthClient: @unchecked Sendable {
         }
     }
 
-    /// Extracts Apple's `serviceErrors[].message` text from a JSON body, if
-    /// present. Verification failures (e.g. a wrong code) arrive this way with
-    /// HTTP 200.
+    
+    
+    
     private func serviceErrorMessage(from data: Data) -> String? {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil

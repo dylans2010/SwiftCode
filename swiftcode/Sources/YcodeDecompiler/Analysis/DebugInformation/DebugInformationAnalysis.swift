@@ -1,7 +1,7 @@
 import Foundation
 
-/// Debug-information detection. Actual DWARF/PDB parsing is delegated to the
-/// decompiler backend; here we only report presence/absence honestly.
+
+
 public enum DebugInformationAnalysis {
     public struct Info: Sendable {
         public var hasDWARF: Bool

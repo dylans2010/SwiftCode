@@ -1,7 +1,7 @@
 import Foundation
 
-/// Owns all open Decompiler sessions. Sessions are independent: context from
-/// one binary never leaks into another session or into Decompile Assist.
+
+
 public actor DecompilerSessionManager {
     public static let shared = DecompilerSessionManager()
 
@@ -38,7 +38,7 @@ public actor DecompilerSessionManager {
         }
     }
 
-    /// Open a `.scdecomp` project into a session.
+    
     public func openProject(at url: URL) async throws -> DecompilerSession {
         let project = try await DecompilerProjectManager.shared.open(url: url)
         let session = createSession()
@@ -49,7 +49,7 @@ public actor DecompilerSessionManager {
         return session
     }
 
-    /// Create a new `.scdecomp` project wrapping an imported binary.
+    
     @discardableResult
     public func newProject(named name: String, binaryAt url: URL) async throws -> DecompilerSession {
         let session = createSession()

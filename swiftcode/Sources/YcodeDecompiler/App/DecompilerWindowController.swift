@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// Toolbar item identifiers for the Decompiler workspace window.
+
 public enum DecompilerToolbarItem: String {
     case modePicker = "decompiler.modePicker"
     case analyze = "decompiler.analyze"
@@ -22,8 +22,8 @@ public enum DecompilerToolbarItem: String {
     case openInMainEditor = "decompiler.openInMainEditor"
 }
 
-/// NSWindowController hosting the Decompiler workspace (Friendly or Master
-/// mode, driven by the session's mode).
+
+
 @MainActor
 public final class DecompilerWindowController: NSWindowController, NSToolbarDelegate {
     public let state: DecompilerObservableState
@@ -58,7 +58,7 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
         toolbar.displayMode = .iconAndLabel
         window.toolbar = toolbar
 
-        // Reflect the binary name in the title once loaded.
+        
         Task { [weak window] in
             await state.refresh()
             await MainActor.run {
@@ -74,7 +74,7 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
         fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - NSToolbarDelegate
+    
 
     public func toolbar(_ toolbar: NSToolbar,
                         itemForItemIdentifier itemIdentifier: NSToolbarItem.Identifier,
@@ -289,7 +289,7 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
         toolbarDefaultItemIdentifiers(toolbar)
     }
 
-    // MARK: - Actions
+    
 
     @objc private func modeChanged(_ sender: NSSegmentedControl) {
         let mode: DecompilerSession.Mode = sender.selectedSegment == 0 ? .friendly : .master

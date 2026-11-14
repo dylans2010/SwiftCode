@@ -35,8 +35,8 @@ final class BackendNativeTests: XCTestCase {
         let loader = BinaryLoader()
         let container = try await loader.loadContainer(at: originalURL)
         let image = try await loader.parseSlice(container: container, sliceIndex: 0, sourceURL: originalURL)
-        // These e2e tests configure ELF/x86_64 output; `cc -shared` produces
-        // Mach-O on macOS, which the backends under test cannot exercise.
+        
+        
         guard image.format == .elf else {
             throw XCTSkip("fixture is \(image.format.rawValue), not ELF")
         }

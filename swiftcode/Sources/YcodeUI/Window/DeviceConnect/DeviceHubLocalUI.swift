@@ -462,7 +462,7 @@ extension DevicesController {
 
         var cards: [NSView] = []
 
-        // 1. Appearance & Accessibility Card
+        
         let appearancePop = popup(["Light", "Dark"], selectedIndex: 0, sel: #selector(localAppearancePopupChanged(_:)))
         let contrastSwitch = toggle("Increase Contrast", #selector(localIncreaseContrastToggled(_:)), symbol: "circle.righthalf.filled", on: false)
         let motionSwitch = toggle("Reduce Motion", #selector(localReduceMotionToggled(_:)), symbol: "circle.dotted.and.circle", on: false)
@@ -480,7 +480,7 @@ extension DevicesController {
         ]
         cards.append(InspectorCard(rows: appearanceRows, identifier: "settings-local-appearance"))
 
-        // 2. Location Simulation Card
+        
         let locationChoices = [
             "None (Clear)",
             "Apple Park",
@@ -496,7 +496,7 @@ extension DevicesController {
         ]
         cards.append(InspectorCard(rows: locRows, identifier: "settings-local-location"))
 
-        // 3. Battery & Network Simulation Card
+        
         let batterySlider = NSSlider(value: 100, minValue: 0, maxValue: 100, target: self, action: #selector(localBatterySliderChanged(_:)))
         batterySlider.isContinuous = false
         batterySlider.controlSize = .small
@@ -509,7 +509,7 @@ extension DevicesController {
         ]
         cards.append(InspectorCard(rows: powerRows, identifier: "settings-local-power"))
 
-        // 4. iPad Specific Capabilities
+        
         if let r, DeviceHubUnifiedWorkspace.isIPad(for: r) {
             let stageSwitch = toggle("Stage Manager", #selector(localStageManagerToggled(_:)), symbol: "square.split.2x2", on: false)
             let iPadRows: [InspectorCard.Row] = [
@@ -520,7 +520,7 @@ extension DevicesController {
             cards.append(InspectorCard(rows: iPadRows, identifier: "settings-local-ipad"))
         }
 
-        // 5. Lifecycle & Quick Actions Card
+        
         var quickRows: [InspectorCard.Row] = [
             control("Clone Simulator…", #selector(showCloneSimulatorSheet(_:)), symbol: "square.on.square"),
             control("Shake Device", #selector(shakeChosen(_:)), symbol: "iphone.radiowaves.left.and.right"),

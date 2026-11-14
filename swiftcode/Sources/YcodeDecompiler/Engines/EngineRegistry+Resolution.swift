@@ -1,7 +1,7 @@
 import Foundation
 
-/// Registry of all analysis engines. Resolves the best provider for an
-/// operation based on format, architecture and required capability.
+
+
 public actor EngineRegistry {
     public static let shared = EngineRegistry()
 
@@ -30,12 +30,12 @@ public actor EngineRegistry {
         cachedDescriptors = nil
     }
 
-    /// All registered engines with live availability status.
-    ///
-    /// Capability sets are queried against a minimal unknown-format image, so
-    /// backends that gate on a configured installation (Ghidra) report their
-    /// real capabilities here; format/architecture support comes from the
-    /// provider's own declarations, not the placeholder image.
+    
+    
+    
+    
+    
+    
     public func descriptors() async -> [EngineDescriptor] {
         if let cached = cachedDescriptors { return cached }
         var out: [EngineDescriptor] = []
@@ -61,7 +61,7 @@ public actor EngineRegistry {
         return out
     }
 
-    /// A minimal image used for capability queries when no binary is loaded.
+    
     private static var placeholderImage: BinaryImage {
         BinaryImage(identity: BinaryIdentity(sha256: "", originalFileName: "", originalLocation: "",
                                               fileSize: 0, format: .unknown, architecture: .unknown),
@@ -74,9 +74,9 @@ public actor EngineRegistry {
                     byteProvider: { _, _ in Data() })
     }
 
-    /// Pick a disassembler that supports this image. Providers whose tool
-    /// cannot actually run are skipped so a missing `llvm-objdump` does not
-    /// shadow a working `otool` (and vice versa).
+    
+    
+    
     public func resolveDisassembler(for image: BinaryImage,
                                     preferredID: String? = nil) async -> (any DisassemblerProvider)? {
         var candidates: [any DisassemblerProvider] = []
@@ -93,7 +93,7 @@ public actor EngineRegistry {
         return candidates.first
     }
 
-    /// Pick a decompiler for a function-level request.
+    
     public func resolveDecompiler(for image: BinaryImage, required: DecompilerCapabilitiesSet,
                                   preferredID: String? = nil) -> (any DecompilerProvider)? {
         let capable = decompilers.filter { d in
@@ -106,9 +106,9 @@ public actor EngineRegistry {
     public func allDisassemblers() -> [any DisassemblerProvider] { disassemblers }
     public func allDecompilers() -> [any DecompilerProvider] { decompilers }
 
-    /// Install the built-in engine set. Called once at app startup.
+    
     public func installDefaults() async {
-        // Concrete engines register themselves; this hook exists so app
-        // startup order stays explicit.
+        
+        
     }
 }

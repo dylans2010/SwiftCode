@@ -1,9 +1,9 @@
 import Foundation
 
-/// Function-level tools: listing, inspection, pseudocode/disassembly,
-/// signatures, references, callers/callees, comparison, and basic blocks.
-/// Pseudocode is produced on demand through `session.decompileFunction` —
-/// a real backend call — and cached in the store.
+
+
+
+
 
 public struct ListFunctionsTool: DecompileAssistTool {
     public init() {}
@@ -277,7 +277,7 @@ public struct GetFunctionCallersTool: DecompileAssistTool {
         guard let fn = await store.function(atOrContaining: addr.value) else {
             return DecompileAssistToolSupport.error("no function at \(addr.hexString)")
         }
-        // Prefer recorded caller edges; fall back to call xrefs.
+        
         var callerAddrs = Set(fn.callers.map(\.value))
         let xrefs = await store.crossReferences
         for x in xrefs where x.kind == .call && x.destinationFunction == fn.address {
@@ -425,7 +425,7 @@ public struct InspectBasicBlockTool: DecompileAssistTool {
             return DecompileAssistToolSupport.error("no instructions decoded for \(fn.address.hexString)")
         }
 
-        // Structural basic-block partition.
+        
         var leaders = Set<UInt64>([instructions[0].address.value])
         for ins in instructions {
             if let target = ins.branchTarget { leaders.insert(target.value) }

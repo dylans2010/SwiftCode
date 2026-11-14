@@ -1,14 +1,14 @@
 import Foundation
 
-/// A node in an exported graph (function or basic block).
+
 public struct GraphNode: Codable, Sendable, Hashable {
     public var id: String
     public var label: String
-    /// Layer assigned by the layered layout (0 = sources).
+    
     public var layer: Int
-    /// Deterministic x position computed by the layout.
+    
     public var x: Double
-    /// Deterministic y position computed by the layout.
+    
     public var y: Double
 
     public init(id: String, label: String, layer: Int = 0, x: Double = 0, y: Double = 0) {
@@ -16,7 +16,7 @@ public struct GraphNode: Codable, Sendable, Hashable {
     }
 }
 
-/// A directed edge between two graph nodes.
+
 public struct GraphEdge: Codable, Sendable, Hashable {
     public var from: String
     public var to: String
@@ -26,7 +26,7 @@ public struct GraphEdge: Codable, Sendable, Hashable {
     }
 }
 
-/// A positioned graph ready for JSON or SVG export.
+
 public struct Graph: Codable, Sendable {
     public var title: String
     public var nodes: [GraphNode]
@@ -37,14 +37,14 @@ public struct Graph: Codable, Sendable {
     }
 }
 
-/// Builds call/basic-block graphs from analysis models and exports them
-/// as JSON or a simple SVG rendering with a deterministic layered layout.
-/// No external dependencies.
-public enum GraphExporter {
-    // MARK: - Graph construction
 
-    /// Call graph over functions: edge caller → callee for every recorded
-    /// callee address that resolves to a known function.
+
+
+public enum GraphExporter {
+    
+
+    
+    
     public static func callGraph(functions: [DecompilerFunction]) -> Graph {
         let byAddress = Dictionary(uniqueKeysWithValues: functions.map { ($0.address.value, $0) })
         var edges: [GraphEdge] = []
@@ -64,9 +64,9 @@ public enum GraphExporter {
         return Graph(title: "Call graph", nodes: nodes, edges: edges)
     }
 
-    /// Basic-block graph for one function. Node ids are prefixed with the
-    /// function address so graphs from multiple functions can be merged
-    /// without collisions.
+    
+    
+    
     public static func basicBlockGraph(functionAddress: DecompilerAddress,
                                        blocks: [BasicBlock]) -> Graph {
         let prefix = functionAddress.hexString
@@ -88,7 +88,7 @@ public enum GraphExporter {
                      nodes: nodes, edges: edges)
     }
 
-    /// Merge several per-function basic-block graphs into one.
+    
     public static func merge(_ graphs: [Graph], title: String = "Basic-block graphs") -> Graph {
         var nodes: [GraphNode] = []
         var edges: [GraphEdge] = []
@@ -99,18 +99,18 @@ public enum GraphExporter {
         return Graph(title: title, nodes: nodes, edges: edges)
     }
 
-    // MARK: - Layout
+    
 
-    /// Assign deterministic (x, y) positions using a longest-path layering:
-    /// each node's layer is 1 + max(layer of predecessors), iterated to a
-    /// fixed point so cycles still terminate. Nodes within a layer are
-    /// spaced evenly in id order.
+    
+    
+    
+    
     public static func layout(_ graph: Graph) -> [GraphNode] {
         let nodeIDs = Set(graph.nodes.map(\.id))
 
         var layer: [String: Int] = [:]
         for id in nodeIDs { layer[id] = 0 }
-        // Longest-path relaxation; bounded by node count so cycles end.
+        
         for _ in 0..<max(nodeIDs.count, 1) {
             var changed = false
             for edge in graph.edges where nodeIDs.contains(edge.from) && nodeIDs.contains(edge.to) {
@@ -138,11 +138,11 @@ public enum GraphExporter {
                 var copy = node
                 copy.layer = l
                 copy.x = Double(i) * horizontalSpacing - offset
-                copy.y = Double(maxLayer - l) * verticalSpacing // sources on top
+                copy.y = Double(maxLayer - l) * verticalSpacing 
                 positioned.append(copy)
             }
         }
-        // Deterministic final order.
+        
         positioned.sort {
             if $0.layer != $1.layer { return $0.layer < $1.layer }
             if $0.y != $1.y { return $0.y < $1.y }
@@ -152,22 +152,22 @@ public enum GraphExporter {
         return positioned
     }
 
-    // MARK: - Export
+    
 
-    /// JSON document: `{ "title", "nodes": [...], "edges": [...] }`
-    /// with layout coordinates included.
+    
+    
     public static func exportJSON(_ graph: Graph) throws -> Data {
         let laidOut = Graph(title: graph.title, nodes: layout(graph), edges: graph.edges)
         return try JSONEncoder.decompiler.encode(laidOut)
     }
 
-    /// JSON string variant.
+    
     public static func exportJSONText(_ graph: Graph) throws -> String {
         String(decoding: try exportJSON(graph), as: UTF8.self)
     }
 
-    /// Simple SVG rendering: nodes as rectangles with text labels,
-    /// edges as straight lines with an arrow marker. Pure Foundation.
+    
+    
     public static func exportSVG(_ graph: Graph,
                                  nodeWidth: Double = 150,
                                  nodeHeight: Double = 34) -> String {
@@ -193,7 +193,7 @@ public enum GraphExporter {
         svg += "<text x=\"\(margin)\" y=\"\(margin - 10)\" font-family=\"monospace\" " +
             "font-size=\"14\">\(escapeXML(graph.title))</text>\n"
 
-        // Edges first so nodes paint on top.
+        
         for edge in graph.edges {
             guard let from = byID[edge.from], let to = byID[edge.to] else { continue }
             let x1 = from.x + margin + nodeWidth / 2

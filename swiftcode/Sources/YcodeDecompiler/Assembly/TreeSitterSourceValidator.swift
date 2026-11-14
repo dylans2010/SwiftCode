@@ -79,8 +79,8 @@ public struct TreeSitterSourceValidator: PreAssembleValidator {
         return diagnostics
     }
 
-    /// Synchronous directory walk — `DirectoryEnumerator` sequence iteration
-    /// is unavailable from async contexts on recent SDKs.
+    
+    
     static func collectSourceFiles(under root: URL) -> [URL] {
         var files: [URL] = []
         for dir in ["Sources", "Assembly", "Headers"] {
@@ -233,8 +233,8 @@ public struct TreeSitterSourceValidator: PreAssembleValidator {
     }
 
     static func relativePath(of url: URL, projectRoot: URL) -> String {
-        // `temporaryDirectory` yields /var/... while directory enumeration can
-        // return /private/var/... — compare symlink-resolved paths.
+        
+        
         var rootPath = projectRoot.resolvingSymlinksInPath().path
         while rootPath.hasSuffix("/") { rootPath.removeLast() }
         let path = url.resolvingSymlinksInPath().path

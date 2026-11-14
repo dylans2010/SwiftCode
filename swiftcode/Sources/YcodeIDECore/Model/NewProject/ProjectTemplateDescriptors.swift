@@ -418,7 +418,7 @@ public enum ProjectTemplates {
               id + [renderer, immersion, TemplateFields.swiftLanguage, TemplateFields.unitTesting], "immersiveEnvironmentApp"),
         ]
         out += [
-            // Multiplatform additions
+            
             d(mp, appSection, "SwiftData Document App", 2, "A multiplatform document app stored in SwiftData", "doc.richtext",
               id + [documentStorage(false).with(default: "SwiftData"), TemplateFields.testing], "documentApp"),
             d(mp, appSection, "Metal Game", 11, "A multiplatform game rendered with Metal", "cube",
@@ -435,7 +435,7 @@ public enum ProjectTemplates {
               id + [TemplateOptionField(ID.bundleExtension, "Bundle Extension", .text, default: "bundle")], "bundle"),
         ]
         out += [
-            // iOS application additions
+            
             d(ios, appSection, "UIKit App", 6, "An iOS app built with UIKit storyboards (Swift or Objective-C)", "apps.iphone",
               id + [TemplateFields.interface.with(forced: "Storyboard"), TemplateFields.appLanguage, TemplateFields.testing,
                     TemplateFields.storage, TemplateFields.cloudKit], "app"),
@@ -469,7 +469,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.testing], "app"),
         ]
         out += [
-            // iOS framework & library additions
+            
             d(ios, lib, "Objective-C Framework", 20, "An iOS framework written in Objective-C", "shippingbox",
               id + [TemplateFields.language.with(default: "Objective-C"), TemplateFields.unitTesting, TemplateFields.documentation], "framework"),
             d(ios, lib, "Objective-C Static Library", 11, "An iOS static library written in Objective-C", "building.columns",
@@ -478,7 +478,7 @@ public enum ProjectTemplates {
               id + [TemplateOptionField(ID.bundleExtension, "Bundle Extension", .text, default: "bundle")], "bundle"),
         ]
         out += [
-            // macOS application additions
+            
             d(mac, appSection, "Cocoa App", 3, "A macOS app with a Cocoa storyboard interface", "macwindow",
               id + [TemplateFields.interface.with(forced: "Storyboard"), TemplateFields.appLanguage, TemplateFields.testing,
                     TemplateFields.storage, TemplateFields.cloudKit], "app"),
@@ -511,7 +511,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.language.with(forced: "Objective-C")], "commandLineTool"),
         ]
         out += [
-            // macOS framework & library additions
+            
             d(mac, lib, "Objective-C Framework", 20, "A macOS framework written in Objective-C", "shippingbox",
               id + [TemplateFields.language.with(default: "Objective-C"), TemplateFields.unitTesting, TemplateFields.documentation], "framework"),
             d(mac, lib, "C++ Dynamic Library", 11, "A C++ shared library using the STL", "shippingbox.fill",
@@ -530,7 +530,7 @@ public enum ProjectTemplates {
               ]), default: "Low Level").with(forced: "Low Level")], "xpcService"),
         ]
         out += [
-            // macOS other additions
+            
             d(mac, "Other", "Quick Look Preview Plug-in", nil, "A Quick Look preview generator bundle", "eye.square",
               id + [TemplateOptionField(ID.bundleExtension, "Bundle Extension", .text, default: "qlgenerator")], "bundle"),
             d(mac, "Other", "Spotlight Importer Plug-in", nil, "A Spotlight metadata importer bundle", "magnifyingglass.circle",
@@ -539,7 +539,7 @@ public enum ProjectTemplates {
               id + [TemplateOptionField(ID.bundleExtension, "Bundle Extension", .text, default: "action")], "bundle"),
         ]
         out += [
-            // watchOS additions
+            
             d(watch, appSection, "Companion App", 2, "A watchOS app with a new companion iOS app", "applewatch",
               id + [TemplateOptionField(ID.watchAppType, "Create Companion iOS App", .popUp([
                         "Watch-only App", "Watch App with New Companion iOS App",
@@ -552,7 +552,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.language.with(default: "Objective-C")], "staticLibrary"),
         ]
         out += [
-            // tvOS additions
+            
             d(tv, appSection, "UIKit App", 2, "A tvOS app built with UIKit storyboards", "tv",
               id + [TemplateFields.interface.with(forced: "Storyboard"), TemplateFields.lifecycle, TemplateFields.appLanguage,
                     TemplateFields.testing, TemplateFields.storage, TemplateFields.cloudKit], "app"),
@@ -565,7 +565,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.language.with(default: "Objective-C")], "staticLibrary"),
         ]
         out += [
-            // visionOS additions
+            
             d(vision, appSection, "Metal Immersive App", 2, "A visionOS app with a Metal-rendered immersive space", "cube.fill",
               id + [TemplateOptionField(ID.initialScene, "Initial Scene", .popUp(["Window", "Volume"]), default: "Window"),
                     renderer.with(default: "Metal"), immersion,
@@ -576,14 +576,14 @@ public enum ProjectTemplates {
               id + [TemplateFields.language.with(default: "Objective-C")], "staticLibrary"),
         ]
         out += [
-            // DriverKit additions
+            
             d(dk, "Driver", "User-Space Driver", nil, "A DriverKit driver for user-space devices", "cpu",
               id, "driver"),
             d(dk, lib, "Static Library", 11, "A DriverKit static library", "building.columns",
               id + [TemplateOptionField(ID.libraryType, "Type", .popUp(["Dynamic", "Static"]), default: "Static")], "driverKitLibrary"),
         ]
         out += [
-            // Other additions: external build systems
+            
             d("Other", "", "CMake Build System", nil, "A project whose targets run CMake", "shippingbox.and.arrow.backward",
               id + [TemplateOptionField(ID.buildTool, "Build Tool", .text, default: "cmake", required: true)], "externalBuildSystem"),
             d("Other", "", "Bazel Build System", nil, "A project whose targets run Bazel", "shippingbox.and.arrow.backward",
@@ -592,8 +592,8 @@ public enum ProjectTemplates {
               id + [TemplateOptionField(ID.buildTool, "Build Tool", .text, default: "xcodegen", required: true)], "externalBuildSystem"),
         ]
         out += [
-            // 50 New Templates
-            // Multiplatform (10)
+            
+            
             d(mp, appSection, "CloudKit Sync Starter", 12, "Multiplatform app with CloudKit container sync and offline conflict resolution", "icloud.and.arrow.down",
               id + [TemplateFields.testing, TemplateFields.storage, TemplateFields.cloudKit], "app"),
             d(mp, appSection, "SwiftData Model Container", 13, "Multiplatform data app with hierarchical schema migrations and SwiftData models", "cylinder.split.1x2",
@@ -615,7 +615,7 @@ public enum ProjectTemplates {
             d(mp, appSection, "App Intents Siri Shortcut", 37, "Interactive App Intents with parameterized voice queries and Focus filters", "mic.badge.plus",
               id + [TemplateFields.testing], "app"),
 
-            // iOS (10)
+            
             d(ios, appSection, "Dynamic Island Tracker", 33, "ActivityKit live delivery tracker with minimal and expanded island views", "capsule.portrait",
               id + [swiftOnlyLanguage], "app"),
             d(ios, appSection, "NFC Tag Reader", 34, "CoreNFC tag reader and writer supporting NDEF payloads and ISO 7816 tags", "wave.3.forward",
@@ -637,7 +637,7 @@ public enum ProjectTemplates {
             d(ios, appSection, "CallKit Audio Caller", 42, "VoIP background receiver with native incoming call UI", "phone.arrow.down.left",
               id + [swiftOnlyLanguage], "app"),
 
-            // macOS (10)
+            
             d(mac, appSection, "Virtualization Sandbox", 30, "Apple Virtualization framework Linux/macOS guest VM launcher", "laptopcomputer.and.ipad",
               id + [TemplateFields.testing], "app"),
             d(mac, "Other", "Finder Quick Action", nil, "Service bundle providing contextual file transformation actions", "sparkle.magnifyingglass",
@@ -659,7 +659,7 @@ public enum ProjectTemplates {
             d(mac, appSection, "Screen Capture Recorder", 35, "ScreenCaptureKit high performance display and audio stream recorder", "record.circle",
               id + [TemplateFields.testing], "app"),
 
-            // visionOS (8)
+            
             d(vision, appSection, "Spatial Object Manipulator", 4, "RealityKit entity with Drag, Rotate, Scale and physics gestures", "hand.draw",
               id + [renderer, immersion, TemplateFields.swiftLanguage, TemplateFields.unitTesting], "visionApp"),
             d(vision, appSection, "Spatial Audio Soundstage", 5, "Positional 3D spatial audio environment with room acoustics", "speaker.wave.3",
@@ -677,7 +677,7 @@ public enum ProjectTemplates {
             d(vision, appSection, "Anchored World Landmark", 11, "Plane detection and geographic image anchor placement", "mappin.and.ellipse",
               id + [renderer, immersion, TemplateFields.swiftLanguage, TemplateFields.unitTesting], "visionApp"),
 
-            // watchOS (5)
+            
             d(watch, appSection, "Workout Session Tracker", 3, "HKWorkoutSession with heart rate zones, calories, and outdoor GPS", "figure.run.square.stack",
               id + [TemplateFields.swiftLanguage, TemplateFields.testing], "watchApp"),
             d(watch, appSection, "Complication Widget Suite", 4, "ClockKit and WidgetKit complications for all watch faces", "gauge.with.needle",
@@ -689,7 +689,7 @@ public enum ProjectTemplates {
             d(watch, appSection, "Mindfulness Breathing Guide", 7, "Haptic-driven breathing coach with Heart Rate Variability logging", "wind",
               id + [TemplateFields.swiftLanguage, TemplateFields.testing], "watchApp"),
 
-            // tvOS (4)
+            
             d(tv, appSection, "Top Shelf Carousel", 3, "TVTopShelfSectionedItem carousel extension with deep-link bookmarks", "play.rectangle.on.rectangle",
               appFields, "app"),
             d(tv, appSection, "Remote Siri Game Controller", 12, "Apple TV Siri Remote micro-gamepad touch and motion controller", "gamecontroller",
@@ -699,7 +699,7 @@ public enum ProjectTemplates {
             d(tv, appSection, "Custom Focus Engine UI", 5, "Focus guide grid navigation with parallax card elevation", "eye.circle",
               appFields, "app"),
 
-            // Other / Tools (3)
+            
             d("Other", "", "Swift DocC Documentation Catalog", nil, "DocC documentation bundle with articles and interactive tutorials", "doc.text.magnifyingglass",
               id, "bundle"),
             d(mac, appSection, "Command-Line Tool with ArgumentParser", 55, "Swift ArgumentParser CLI with nested subcommands and flags", "terminal",
@@ -708,7 +708,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.language], "commandLineTool"),
         ]
         out += [
-            // ── Multiplatform applications ──────────────────────────────
+            
             d(mp, appSection, "Journal Sync App", 60, "A synced journaling app with SwiftData entries, tags and search", "book.closed",
               id + [documentStorage(false).with(default: "SwiftData"), TemplateFields.testing, TemplateFields.cloudKit] + extras(contributing: true), "documentApp"),
             d(mp, appSection, "Habit Tracker Plus", 61, "Streak-based habits with widgets, reminders and iCloud sync", "repeat.circle",
@@ -783,7 +783,7 @@ public enum ProjectTemplates {
               id + [documentStorage(false).with(default: "SwiftData"), TemplateFields.testing] + extras(), "documentApp"),
         ]
         out += [
-            // ── Multiplatform frameworks & libraries ────────────────────
+            
             d(mp, lib, "Crypto Utilities", 60, "Hashing, encoding and key helpers built on CryptoKit", "lock.shield",
               id + libraryLanguage + extras(privacy: false), "framework"),
             d(mp, lib, "Image Processing Kit", 61, "Resize, crop, filter and color-space helpers", "photo.badge.arrow.down",
@@ -802,7 +802,7 @@ public enum ProjectTemplates {
               id + libraryLanguage + extras(privacy: false), "framework"),
         ]
         out += [
-            // ── iOS applications ─────────────────────────────────────────
+            
             d(ios, appSection, "Podcast Player", 60, "Podcast feed subscriptions, downloads and playback speed", "antenna.radiowaves.left.and.right",
               appFields + extras(entitlements: true), "app"),
             d(ios, appSection, "Audiobook Player", 61, "Chapter navigation, bookmarks and sleep timer", "headphones",
@@ -861,7 +861,7 @@ public enum ProjectTemplates {
               appFields + extras(), "app"),
         ]
         out += [
-            // ── iOS frameworks & libraries ───────────────────────────────
+            
             d(ios, lib, "ARKit Helpers", 60, "Plane detection, hit testing and session wrappers", "arkit",
               id + libraryLanguage + extras(privacy: false), "framework"),
             d(ios, lib, "MapKit Extensions", 61, "Annotations, routes and region helpers", "map.fill",
@@ -876,7 +876,7 @@ public enum ProjectTemplates {
               id + libraryLanguage + extras(privacy: false), "staticLibrary"),
         ]
         out += [
-            // ── macOS applications ───────────────────────────────────────
+            
             d(mac, appSection, "Window Manager", 60, "Window tiling, presets and keyboard-driven layouts", "macwindow.badge.plus",
               id + [TemplateFields.interface.with(choices: ["SwiftUI", "Storyboard", "XIB"]), TemplateFields.lifecycle, TemplateFields.appLanguage, TemplateFields.testing] + extras(entitlements: true), "app"),
             d(mac, appSection, "Clipboard Manager", 61, "Clipboard history, snippets and pasteboard sync", "doc.on.clipboard.fill",
@@ -941,7 +941,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.interface.with(choices: ["SwiftUI", "Storyboard", "XIB"]), TemplateFields.lifecycle, TemplateFields.appLanguage, TemplateFields.testing] + extras(), "app"),
         ]
         out += [
-            // ── macOS frameworks, libraries & plug-ins ──────────────────
+            
             d(mac, lib, "AppKit Extensions", 60, "NSView, NSWindow and responder-chain helpers", "macwindow",
               id + libraryLanguage + extras(privacy: false), "framework"),
             d(mac, lib, "SwiftUI Components", 61, "Reusable SwiftUI views, styles and modifiers", "square.on.square",
@@ -964,7 +964,7 @@ public enum ProjectTemplates {
               id + [TemplateOptionField(ID.bundleExtension, "Bundle Extension", .text, default: "keylayout")] + extras(privacy: false), "bundle"),
         ]
         out += [
-            // ── watchOS applications ─────────────────────────────────────
+            
             d(watch, appSection, "Sleep Tracker Watch", 60, "Sleep stages, bedtime goals and smart alarms", "bed.double.fill",
               id + [TemplateFields.swiftLanguage, TemplateFields.testing] + extras(), "watchApp"),
             d(watch, appSection, "Stand Reminder", 61, "Hourly stand and move reminders with streaks", "figure.stand",
@@ -987,7 +987,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.swiftLanguage, TemplateFields.testing] + extras(), "watchApp"),
         ]
         out += [
-            // ── watchOS frameworks & libraries ───────────────────────────
+            
             d(watch, lib, "HealthKit Sync", 60, "HealthKit queries, subscriptions and background delivery", "heart.fill",
               id + [TemplateFields.language, TemplateFields.unitTesting] + extras(privacy: false), "framework"),
             d(watch, lib, "WatchConnectivity Client", 61, "WCSession messaging, transfers and context sync", "applewatch",
@@ -998,7 +998,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.language, TemplateFields.unitTesting] + extras(privacy: false), "staticLibrary"),
         ]
         out += [
-            // ── tvOS applications ────────────────────────────────────────
+            
             d(tv, appSection, "Movie Night Tracker", 60, "Watchlist, ratings and streaming-service links", "film.stack.fill",
               appFields + extras(storeKit: true), "app"),
             d(tv, appSection, "Sports Scores", 61, "Live scores, schedules and league standings", "sportscourt",
@@ -1021,7 +1021,7 @@ public enum ProjectTemplates {
               appFields + extras(), "app"),
         ]
         out += [
-            // ── tvOS frameworks & libraries ──────────────────────────────
+            
             d(tv, lib, "TVML Components", 60, "TVML-style document builders and focus helpers", "appletv",
               id + libraryLanguage + extras(privacy: false), "framework"),
             d(tv, lib, "Top Shelf Kit", 61, "TVTopShelf sectioned content providers", "rectangle.stack.fill",
@@ -1032,7 +1032,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.language, TemplateFields.unitTesting] + extras(privacy: false), "staticLibrary"),
         ]
         out += [
-            // ── visionOS applications ────────────────────────────────────
+            
             d(vision, appSection, "Spatial Photo Viewer", 60, "Window-anchored photo gallery with depth", "photo.stack",
               id + [TemplateOptionField(ID.initialScene, "Initial Scene", .popUp(["Window", "Volume"]), default: "Window"), renderer, immersion, TemplateFields.swiftLanguage, TemplateFields.unitTesting] + extras(), "visionApp"),
             d(vision, appSection, "3D Model Viewer", 61, "RealityKit USDZ viewer with gestures and materials", "cube.transparent",
@@ -1059,7 +1059,7 @@ public enum ProjectTemplates {
               id + [TemplateOptionField(ID.initialScene, "Initial Scene", .popUp(["Window", "Volume"]), default: "Window"), renderer, immersion, TemplateFields.swiftLanguage, TemplateFields.unitTesting] + extras(), "visionApp"),
         ]
         out += [
-            // ── visionOS frameworks & libraries ──────────────────────────
+            
             d(vision, lib, "RealityKit Components", 60, "RealityKit components, systems and anchors", "shippingbox",
               id + libraryLanguage + extras(privacy: false), "framework"),
             d(vision, lib, "ARKit Spatial", 61, "World tracking, plane and mesh helpers", "arkit",
@@ -1070,7 +1070,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.language, TemplateFields.unitTesting] + extras(privacy: false), "staticLibrary"),
         ]
         out += [
-            // ── DriverKit drivers ────────────────────────────────────────
+            
             d(dk, "Driver", "USB Driver", nil, "A DriverKit driver for USB devices", "cable.connector",
               id, "driver"),
             d(dk, "Driver", "PCI Driver", nil, "A DriverKit driver for PCI devices", "pc",
@@ -1091,7 +1091,7 @@ public enum ProjectTemplates {
               id + [TemplateFields.language] + extras(privacy: false), "driverKitLibrary"),
         ]
         out += [
-            // ── Other tools, bundles & libraries ─────────────────────────
+            
             d("Other", "", "Code Signing Tool", nil, "CLI for signing, notarizing and verifying bundles", "checkmark.seal",
               id + [TemplateFields.language] + extras(editorConfig: true), "commandLineTool"),
             d("Other", "", "Release Notary Tool", nil, "CLI that submits builds to the notary service", "paperplane.fill",

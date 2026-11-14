@@ -32,9 +32,9 @@ public struct AppleSignInView: View {
         AppleSignInManager.shared
     }
 
-    /// True while the verification UI should be shown — including the
-    /// `.loading` states of "send code" / "verify", so the section does not
-    /// flicker back to the password form mid-request.
+    
+    
+    
     private var awaitingVerification: Bool {
         manager.sessionState == .verificationRequired
             || (manager.sessionState == .loading && manager.twoFactorContext != nil)
@@ -57,7 +57,7 @@ public struct AppleSignInView: View {
             }
             apiKeyPEM = contents
             apiKeyFileName = url.lastPathComponent
-            // AuthKey_XXXXXXXXXX.p8 embeds the Key ID in the filename.
+            
             if apiKeyID.isEmpty {
                 let base = url.deletingPathExtension().lastPathComponent
                 if base.hasPrefix("AuthKey_"), base.count > 8 {
@@ -464,8 +464,8 @@ public struct AppleSignInView: View {
         .frame(minWidth: 550, idealWidth: 600, maxWidth: 800, minHeight: 500, idealHeight: 700, maxHeight: 900)
     }
 
-    /// The two-factor / two-step verification step shown after Apple answers
-    /// the password request with HTTP 409.
+    
+    
     @ViewBuilder
     private var twoFactorSection: some View {
         VStack(alignment: .leading, spacing: 10) {

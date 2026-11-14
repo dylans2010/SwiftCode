@@ -1,12 +1,12 @@
 import Foundation
 
-/// One staged path's record: object id, mode, and filesystem stat cache used
-/// to skip re-hashing unchanged files.
+
+
 public struct IndexEntry: Codable, Hashable, Sendable {
     public var oid: ObjectID
     public var mode: FileMode
     public var size: Int64
-    public var mtime: Int64   // nanoseconds since 1970
+    public var mtime: Int64   
     public var ctime: Int64
     public var device: Int64
     public var inode: Int64
@@ -23,8 +23,8 @@ public struct IndexEntry: Codable, Hashable, Sendable {
     }
 }
 
-/// The staging index: `.spaces/index`. Versioned JSON mapping repo-relative
-/// paths to their staged object IDs.
+
+
 public struct Index: Codable, Sendable {
     public var version: Int
     public var entries: [String: IndexEntry]
@@ -61,9 +61,9 @@ public struct Index: Codable, Sendable {
         try FileManager.default.moveItem(at: temp, to: url)
     }
 
-    // MARK: - Stat helpers
+    
 
-    /// Builds an IndexEntry for a worktree file, hashing its contents.
+    
     public static func entry(forFileAt url: URL, oid: ObjectID, mode: FileMode,
                              objects: ObjectStore? = nil) throws -> IndexEntry {
         let attrs = try FileManager.default.attributesOfItem(atPath: url.path)
@@ -76,11 +76,11 @@ public struct Index: Codable, Sendable {
                           mtime: mtime, ctime: ctime, device: device, inode: inode)
     }
 
-    /// Builds an index entry for `url` whose recorded OID is `expectedOID`
-    /// (e.g. a HEAD tree entry during reset/rebuild-index). The file is hashed
-    /// once: when contents and mode match, the real stat cache is stored;
-    /// otherwise the stat cache is invalidated so status re-hashes the file
-    /// and reports the unstaged difference instead of a false clean.
+    
+    
+    
+    
+    
     public static func entry(fileAt url: URL, matchingOID expectedOID: ObjectID,
                              mode expectedMode: FileMode,
                              objects: ObjectStore) throws -> IndexEntry {
@@ -104,8 +104,8 @@ public struct Index: Codable, Sendable {
         return try entry(forFileAt: url, oid: expectedOID, mode: expectedMode)
     }
 
-    /// True when the file's stat data still matches the cached entry, meaning
-    /// the contents are very likely unchanged (mtime+size+inode match).
+    
+    
     public static func statMatches(_ entry: IndexEntry, fileAt url: URL) -> Bool {
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path) else { return false }
         let size = (attrs[.size] as? Int64) ?? -1
@@ -114,9 +114,9 @@ public struct Index: Codable, Sendable {
         return size == entry.size && mtime == entry.mtime && inode == entry.inode
     }
 
-    /// Modification time in nanoseconds. Second-granularity timestamps let a
-    /// same-size rewrite inside one second look unchanged; nanoseconds close
-    /// that window to filesystem timestamp resolution.
+    
+    
+    
     private static func mtimeNanos(of attrs: [FileAttributeKey: Any]) -> Int64 {
         guard let date = attrs[.modificationDate] as? Date else { return -1 }
         return Int64(date.timeIntervalSince1970 * 1_000_000_000)

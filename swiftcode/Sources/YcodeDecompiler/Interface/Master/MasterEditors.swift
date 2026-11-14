@@ -1,12 +1,12 @@
 import SwiftUI
 import AppKit
 
-// MARK: - Disassembly editor
 
-/// Function-scoped disassembly table: address, bytes, mnemonic, operands,
-/// comment and xref count. Jump-to-address and follow-branch navigation.
-/// Listings are produced per selected function via
-/// `session.disassembleFunction` — the listing is function-scoped.
+
+
+
+
+
 public struct DisassemblyEditor: View {
     @Bindable var state: DecompilerObservableState
     @State private var jumpAddress = ""
@@ -96,7 +96,7 @@ public struct DisassemblyEditor: View {
     private var instructionTable: some View {
         ScrollView([.horizontal, .vertical]) {
             LazyVStack(spacing: 0) {
-                // Column header
+                
                 HStack(spacing: 0) {
                     Text("Address").frame(width: 110, alignment: .trailing).padding(.trailing, 12)
                     Text("Bytes").frame(width: 120, alignment: .leading).padding(.trailing, 12)
@@ -225,11 +225,11 @@ public struct DisassemblyEditor: View {
     }
 }
 
-// MARK: - Pseudocode editor
 
-/// Pseudocode with simple syntax coloring (keywords, types, numbers,
-/// strings, comments), line numbers, and address gutter markers derived
-/// from the backend's address→line map.
+
+
+
+
 public struct PseudocodeEditor: View {
     @Bindable var state: DecompilerObservableState
     @State private var errorMessage: String?
@@ -311,13 +311,13 @@ public struct PseudocodeEditor: View {
 
     private func codeView(_ result: DecompilationResult) -> some View {
         let lines = result.pseudocode.components(separatedBy: .newlines)
-        // Invert addressLineMap: line number → addresses mapped to it.
+        
         var lineToAddrs: [Int: [UInt64]] = [:]
         for (addr, line) in result.addressLineMap {
             lineToAddrs[line, default: []].append(addr)
         }
         return HStack(spacing: 0) {
-            // Line numbers + address gutter
+            
             VStack(alignment: .trailing, spacing: 0) {
                 ForEach(lines.indices, id: \.self) { i in
                     let lineNo = i + 1
@@ -358,9 +358,9 @@ public struct PseudocodeEditor: View {
     }
 }
 
-/// Minimal C-like tokenizer producing an `AttributedString`. No regex:
-/// a hand-rolled scanner classifies keywords, type-looking identifiers,
-/// numbers, string/char literals and comments.
+
+
+
 enum Highlighting {
     static let keywords: Set<String> = [
         "auto", "break", "case", "char", "const", "continue", "default", "do",
@@ -402,7 +402,7 @@ enum Highlighting {
         while i < line.endIndex {
             let c = line[i]
 
-            // Line comment
+            
             if !inBlockComment && !inLineComment,
                c == "/", line.index(after: i) < line.endIndex,
                line[line.index(after: i)] == "/" {
@@ -440,7 +440,7 @@ enum Highlighting {
                 continue
             }
 
-            // String / char literal
+            
             if c == "\"" || c == "'" {
                 let quote = c
                 var j = line.index(after: i)
@@ -465,7 +465,7 @@ enum Highlighting {
                 continue
             }
 
-            // Number literal (hex, decimal, float)
+            
             if c.isNumber || (c == "-" || c == "+" || c == "&"),
                let next = line[line.index(after: i)...].first,
                next.isNumber || (next == "x" && c != "-" && c != "+") {
@@ -485,7 +485,7 @@ enum Highlighting {
                 continue
             }
 
-            // Identifier / keyword / type
+            
             if isIdentStart(c) {
                 var j = i
                 var text = ""
@@ -505,7 +505,7 @@ enum Highlighting {
                 continue
             }
 
-            // Punctuation / whitespace — plain
+            
             var seg = AttributedString(String(c))
             if c == "(" || c == ")" || c == "{" || c == "}" || c == "[" || c == "]" {
                 seg.foregroundColor = .secondary
@@ -517,11 +517,11 @@ enum Highlighting {
     }
 }
 
-// MARK: - Hex editor
 
-/// Classic hex dump over the imported file: offset | hex bytes | ASCII.
-/// Loads a bounded window of bytes around a go-to offset via the image's
-/// byte provider.
+
+
+
+
 public struct HexEditor: View {
     @Bindable var state: DecompilerObservableState
     @State private var bytes: Data = Data()
@@ -530,7 +530,7 @@ public struct HexEditor: View {
     @State private var errorMessage: String?
     @State private var selectedRange: ClosedRange<UInt64>?
 
-    private let windowSize = 0x8000 // 32 KB per load
+    private let windowSize = 0x8000 
 
     public init(state: DecompilerObservableState) { self.state = state }
 
@@ -620,7 +620,7 @@ public struct HexEditor: View {
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.secondary)
                 .frame(width: 90, alignment: .trailing)
-            // Hex bytes
+            
             HStack(spacing: 3) {
                 ForEach(0..<16, id: \.self) { col in
                     let idx = start + col
@@ -630,7 +630,7 @@ public struct HexEditor: View {
                         .background(byteSelected(idx) ? Color.accentColor.opacity(0.3) : Color.clear)
                 }
             }
-            // ASCII
+            
             Text(asciiString(start: start, end: end))
                 .font(.system(.caption, design: .monospaced))
                 .foregroundStyle(.secondary)
@@ -651,7 +651,7 @@ public struct HexEditor: View {
         }
     }
 
-    /// Printable ASCII for a row; non-printable and high bytes become '.'.
+    
     private static let asciiTable: [Character] = {
         var t = [Character](repeating: ".", count: 128)
         t[32] = " "
@@ -693,12 +693,12 @@ public struct HexEditor: View {
     }
 }
 
-// MARK: - Control-flow graph
 
-/// Renders the selected function's basic-block graph on a SwiftUI Canvas.
-/// Blocks are derived from the function's disassembly: leaders are the entry
-/// instruction, branch targets, and instructions following branches/returns.
-/// Rendered nodes are capped at 500; the UI notes truncation.
+
+
+
+
+
 public struct ControlFlowGraphView: View {
     @Bindable var state: DecompilerObservableState
     @State private var scale: CGFloat = 1.0
@@ -708,7 +708,7 @@ public struct ControlFlowGraphView: View {
 
     public init(state: DecompilerObservableState) { self.state = state }
 
-    /// A derived basic block used only for rendering.
+    
     private struct RenderBlock: Identifiable {
         let id: String
         let start: UInt64
@@ -724,7 +724,7 @@ public struct ControlFlowGraphView: View {
         let to: UInt64
     }
 
-    /// Build blocks + layering from the current disassembly listing.
+    
     private func buildGraph() -> (blocks: [RenderBlock], edges: [RenderEdge], truncated: Bool, totalBlocks: Int) {
         let ins = state.disassembly
         guard !ins.isEmpty else { return ([], [], false, 0) }
@@ -732,8 +732,8 @@ public struct ControlFlowGraphView: View {
         var addresses = Set<UInt64>()
         for i in ins { addresses.insert(i.address.value) }
 
-        // Leaders: first instruction, branch targets, instruction after
-        // any branch/call/return.
+        
+        
         var leaders = Set<UInt64>()
         leaders.insert(ins[0].address.value)
         for (idx, i) in ins.enumerated() {
@@ -748,7 +748,7 @@ public struct ControlFlowGraphView: View {
         }
         let sortedLeaders = leaders.sorted()
 
-        // Group instructions into blocks.
+        
         var blockStarts: [UInt64] = []
         var blockEnd: [UInt64: UInt64] = [:]
         var blockLastInsn: [UInt64: Instruction] = [:]
@@ -769,7 +769,7 @@ public struct ControlFlowGraphView: View {
         let used = Array(blockStarts.prefix(maxBlocks))
         let usedSet = Set(used)
 
-        // Edges: branch targets + fallthrough to next block.
+        
         var edges: [RenderEdge] = []
         var successors: [UInt64: [UInt64]] = [:]
         for (idx, start) in used.enumerated() {
@@ -788,7 +788,7 @@ public struct ControlFlowGraphView: View {
             }
         }
 
-        // Layer by longest-path depth from entry (bounded BFS).
+        
         var depth: [UInt64: Int] = [:]
         let entry = used.first ?? 0
         var queue: [(UInt64, Int)] = [(entry, 0)]
@@ -814,14 +814,14 @@ public struct ControlFlowGraphView: View {
         return (blocks, edges, truncated, blockStarts.count)
     }
 
-    /// Node size and grid metrics.
+    
     private let nodeW: CGFloat = 150
     private let nodeH: CGFloat = 44
     private let colGap: CGFloat = 60
     private let rowGap: CGFloat = 24
 
     private func layout(_ blocks: [RenderBlock]) -> [UInt64: CGPoint] {
-        // Group by depth → column; order within column by address.
+        
         var byDepth: [Int: [RenderBlock]] = [:]
         for b in blocks { byDepth[b.depth, default: []].append(b) }
         var positions: [UInt64: CGPoint] = [:]
@@ -895,7 +895,7 @@ public struct ControlFlowGraphView: View {
             ScrollView([.horizontal, .vertical]) {
                 ZStack {
                     Canvas { context, _ in
-                        // Edges first (under nodes)
+                        
                         for edge in edges {
                             guard let fromPos = positions[edge.from],
                                   let toPos = positions[edge.to] else { continue }
@@ -909,7 +909,7 @@ public struct ControlFlowGraphView: View {
                                           control2: CGPoint(x: midX, y: end.y))
                             context.stroke(path, with: .color(.secondary.opacity(0.6)),
                                            style: StrokeStyle(lineWidth: 1.5))
-                            // Arrowhead
+                            
                             let angle = atan2(end.y - start.y, end.x - start.x)
                             let head: CGFloat = 7
                             var arrow = Path()
@@ -925,7 +925,7 @@ public struct ControlFlowGraphView: View {
                     .frame(width: max(geo.size.width, maxX(positions) + nodeW + 40),
                            height: max(geo.size.height, maxY(positions) + nodeH + 40))
 
-                    // Nodes
+                    
                     ForEach(blocks) { block in
                         if let pos = positions[block.start] {
                             nodeView(block)

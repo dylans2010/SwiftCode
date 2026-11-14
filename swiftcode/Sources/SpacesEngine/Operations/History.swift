@@ -1,7 +1,7 @@
 import Foundation
 
-/// History traversal: log walking (first-parent/all/graph data), commit show,
-/// describe, ancestry, blame.
+
+
 public struct HistoryOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
@@ -14,14 +14,14 @@ public struct HistoryOps {
         public var message: String
         public var summary: String
         public var timestamp: Int64
-        /// Refs pointing at this commit (branches, tags, HEAD).
+        
         public var refs: [String]
         public var isMerge: Bool { parents.count > 1 }
     }
 
-    /// Walks history from `start` (default HEAD) following all parents (or
-    /// first-parent only). Yields commits in reverse chronological order
-    /// (commit timestamp desc, ties by insertion).
+    
+    
+    
     public func walk(start: ObjectID? = nil, firstParentOnly: Bool = false,
                      limit: Int = Int.max) throws -> [CommitInfo] {
         let startOID: ObjectID
@@ -33,7 +33,7 @@ public struct HistoryOps {
             return []
         }
 
-        // Collect ref tips for decoration.
+        
         var decorations: [ObjectID: [String]] = [:]
         for ref in try repo.refs.allRefs() {
             decorations[ref.oid, default: []].append(ref.shortName)
@@ -45,7 +45,7 @@ public struct HistoryOps {
 
         var result: [CommitInfo] = []
         var visited = Set<ObjectID>()
-        // Priority by committer timestamp.
+        
         var queue: [(oid: ObjectID, commit: CommitPayload)] = []
         func push(_ oid: ObjectID) throws {
             guard visited.insert(oid).inserted else { return }
@@ -55,7 +55,7 @@ public struct HistoryOps {
         try push(startOID)
 
         while !queue.isEmpty && result.count < limit {
-            // Pop max timestamp.
+            
             var best = 0
             for i in queue.indices where queue[i].1.committer.timestamp > queue[best].1.committer.timestamp {
                 best = i
@@ -72,11 +72,11 @@ public struct HistoryOps {
         return result
     }
 
-    /// `spaces log` entry point.
+    
     public func log(firstParentOnly: Bool = false, limit: Int = 100,
                     all: Bool = false, path: String? = nil) throws -> [CommitInfo] {
         if all {
-            // Walk from every ref tip.
+            
             var merged: [CommitInfo] = []
             var seen = Set<ObjectID>()
             for ref in try repo.refs.allRefs() where ref.kind == .branch || ref.kind == .tag {
@@ -90,7 +90,7 @@ public struct HistoryOps {
         return try walk(firstParentOnly: firstParentOnly, limit: limit)
     }
 
-    /// `spaces show <rev>` — commit metadata + diff stat vs first parent.
+    
     public struct ShowResult {
         public var info: CommitInfo
         public var diffStat: (added: Int, removed: Int, files: Int)
@@ -112,7 +112,7 @@ public struct HistoryOps {
                 added += d.added; removed += d.removed
             }
         } else {
-            // Root commit: everything added.
+            
             let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: commit.tree)
             files = flat.count
             for (path, e) in flat.sorted(by: { $0.key < $1.key }) {
@@ -145,12 +145,12 @@ public struct HistoryOps {
                           refs: decorations)
     }
 
-    /// `spaces describe` — nearest tag reachable from HEAD plus distance.
+    
     public func describe() throws -> String {
         guard let head = try repo.refs.headOID(objects: repo.objects) else {
             throw SpacesError.branchNotFound("HEAD")
         }
-        // Exact tag match?
+        
         for tag in try repo.refs.tags() {
             if tag.oid == head {
                 if let t = try? repo.tagObject(tag.oid), t.object == head {
@@ -159,7 +159,7 @@ public struct HistoryOps {
                 return tag.shortName
             }
         }
-        // Walk history for annotated tag targets.
+        
         let history = try walk(limit: 10_000)
         for (i, c) in history.enumerated() {
             for tag in try repo.refs.tags() {
@@ -173,10 +173,10 @@ public struct HistoryOps {
         return "\(String(head.hex.prefix(7))) (no tags)"
     }
 
-    /// `spaces ancestry <a> <b>` — merge base of two commits.
+    
     public func mergeBase(_ a: ObjectID, _ b: ObjectID) throws -> ObjectID? {
         let ancestorsA = try ancestorSet(a)
-        // BFS from b, first hit in ancestorsA.
+        
         var queue = [b]
         var visited = Set<ObjectID>()
         while !queue.isEmpty {
@@ -198,7 +198,7 @@ public struct HistoryOps {
         return seen
     }
 
-    /// `spaces blame <path> [rev]` — line-level authorship.
+    
     public struct BlameLine {
         public var line: String
         public var commit: ObjectID
@@ -212,8 +212,8 @@ public struct HistoryOps {
         return try preciseBlame(path: path, endOID: endOID)
     }
 
-    /// Builds the first-parent commit chain (newest→oldest) and delegates to
-    /// the forward attribution pass.
+    
+    
     private func preciseBlame(path: String, endOID: ObjectID) throws -> [BlameLine] {
         var commits: [(oid: ObjectID, payload: CommitPayload)] = []
         var current = endOID
@@ -226,9 +226,9 @@ public struct HistoryOps {
         return try blameForward(commits: commits, path: path, endOID: endOID)
     }
 
-    /// Forward blame: oldest→newest, each line carries (oid, author, ts).
-    /// Lines added by a commit get that commit's attribution; carried lines
-    /// keep theirs.
+    
+    
+    
     private func blameForward(commits: [(oid: ObjectID, payload: CommitPayload)],
                               path: String, endOID: ObjectID) throws -> [BlameLine] {
         func content(_ c: (oid: ObjectID, payload: CommitPayload)) throws -> (lines: [String], present: Bool) {
@@ -237,8 +237,8 @@ public struct HistoryOps {
             return (DiffEngine.splitLines(try repo.blobData(e.oid)), true)
         }
 
-        // Oldest commit first.
-        var ordered = commits.reversed() // oldest→newest
+        
+        var ordered = commits.reversed() 
         guard var current = ordered.first else { return [] }
         var (lines, present) = try content(current)
         guard present else { throw SpacesError.pathNotFound(path) }
@@ -248,9 +248,9 @@ public struct HistoryOps {
 
         for next in ordered.dropFirst() {
             let (newLines, newPresent) = try content(next)
-            guard newPresent else { break } // file deleted; stop
+            guard newPresent else { break } 
             let edits = DiffEngine.diff(lines, newLines)
-            // Edits carry absolute indices, so direct assignment works.
+            
             var newAttrs = Array(repeating: (oid: next.oid,
                                              author: next.payload.author.name,
                                              ts: next.payload.author.timestamp),
@@ -273,8 +273,8 @@ public struct HistoryOps {
                     break
                 }
             }
-            // Any line not covered by an edit keeps the newer commit's
-            // attribution (defensive; shouldn't happen with a correct diff).
+            
+            
             for i in newAttrs.indices where !seen[i] {
                 newAttrs[i] = (next.oid, next.payload.author.name, next.payload.author.timestamp)
             }

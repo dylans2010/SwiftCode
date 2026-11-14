@@ -1256,7 +1256,7 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         showCloneSimulatorSheet(sender)
     }
 
-    // MARK: - Location Simulation Actions
+    
 
     @objc public func simulateLocationApplePark(_ sender: Any? = nil) {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
@@ -1299,7 +1299,7 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         }
     }
 
-    // MARK: - Appearance & Accessibility Actions
+    
 
     @objc public func setSimulatorAppearanceLight(_ sender: Any? = nil) {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
@@ -1333,7 +1333,7 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         }
     }
 
-    // MARK: - Battery & Network Simulation Actions
+    
 
     @objc public func setSimulatorBattery100(_ sender: Any? = nil) {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
@@ -1391,7 +1391,7 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         }
     }
 
-    // MARK: - iPadOS Specific Actions
+    
 
     @objc public func toggleStageManagerChosen(_ sender: Any? = nil) {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }

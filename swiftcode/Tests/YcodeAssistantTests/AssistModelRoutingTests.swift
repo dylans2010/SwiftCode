@@ -165,8 +165,8 @@ import Testing
         #expect(withFailures.map(\.id) == ["anthropic/claude-haiku-4-5", "google/gemini-2.5-pro", "anthropic/claude-sonnet-4-5"])
     }
 
-    /// `candidates()`/`openRouterCandidates()` re-homed onto a local provider so
-    /// `hasCredentials` always passes during eligibility filtering.
+    
+    
     static func localCandidates() -> [AssistCandidateModel] {
         candidates().map { candidate in
             var copy = candidate
@@ -315,8 +315,8 @@ import Testing
         #expect(router.quarantinedModels.isEmpty)
     }
 
-    /// Candidates on a local provider so `hasCredentials` always passes in
-    /// tests; ranking still exercises priority/failure ordering.
+    
+    
     static func localFailoverCandidates() -> [AssistCandidateModel] {
         [
             AssistCandidateModel(id: "anthropic/claude-sonnet-4-5", displayName: "Claude Sonnet",
@@ -329,8 +329,8 @@ import Testing
         ]
     }
 
-    /// Points the shared discovery service at `models` and applies the
-    /// settings the failover path reads. Returns a restore closure.
+    
+    
     @MainActor
     static func useFailoverEnvironment(_ models: [AssistCandidateModel],
                                        autoSwitch: Bool) -> @MainActor () -> Void {

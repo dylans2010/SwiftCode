@@ -148,7 +148,7 @@ import Testing
         #expect(parts[2].first == "7")
         #expect(["8", "9", "a", "b"].contains(String(parts[3].first!)))
         #expect(MuseUUIDv7.generate() != id)
-        // The first 48 bits of a UUIDv7 are the Unix epoch milliseconds.
+        
         let hexPrefix = String(id.prefix(12))
         let ms = UInt64(hexPrefix, radix: 16)
         #expect(ms != nil)
@@ -380,7 +380,7 @@ import Testing
         let effort = manager.commands.first { $0.id == "effort" }!
         #expect(manager.executeCommand(effort, argument: "low") ==
             (text: "Meta reasoning effort set to 'low'.", effect: .setReasoningEffort("low")))
-        // A missing argument falls back to inserting the bare command name.
+        
         #expect(manager.executeCommand(effort, argument: nil) ==
             (text: "/effort", effect: .insertText("/effort")))
         let model = manager.commands.first { $0.id == "model" }!
@@ -573,8 +573,8 @@ import Testing
             hasCredentials: true,
             onEvent: { events.add($0) })
         #expect(events.text == "Hello world")
-        // approval/decide is sent asynchronously after turn/completed may
-        // already have resumed the turn, so poll the method log briefly.
+        
+        
         var logged = ""
         for _ in 0..<40 {
             logged = (try? String(contentsOf: log, encoding: .utf8)) ?? ""

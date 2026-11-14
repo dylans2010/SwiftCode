@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// Which inspector page is showing for the current selection.
+
 public enum InspectorItem: Hashable, Sendable {
     case none
     case function
@@ -10,16 +10,16 @@ public enum InspectorItem: Hashable, Sendable {
     case binary
 }
 
-/// One-shot commands a view can request (search field, go-to fields).
-/// The owning view observes `pendingCommand`, presents the matching UI,
-/// then clears it back to `nil`.
+
+
+
 public enum PendingCommand: Hashable, Sendable {
     case search
     case goToAddress
     case goToFunction
 }
 
-/// A line in the analysis console / status log.
+
 public struct ConsoleMessage: Identifiable, Hashable, Sendable {
     public enum Kind: String, Sendable { case info, warning, error, engine }
     public var id = UUID()
@@ -34,15 +34,15 @@ public struct ConsoleMessage: Identifiable, Hashable, Sendable {
     }
 }
 
-/// Main-actor observable facade over a `DecompilerSession` actor.
-/// Every view binds to this object; nothing in the UI talks to the actor
-/// directly. `refresh()` pulls a consistent-enough snapshot of the store.
+
+
+
 @MainActor
 @Observable
 public final class DecompilerObservableState {
     public let session: DecompilerSession
 
-    // MARK: - Snapshots (refreshed from AnalysisStore)
+    
     public private(set) var binary: BinaryImage?
     public private(set) var functions: [DecompilerFunction] = []
     public private(set) var symbols: [BinarySymbol] = []
@@ -60,33 +60,33 @@ public final class DecompilerObservableState {
     public private(set) var slices: [SliceDescriptor] = []
     public private(set) var isAnalyzing = false
 
-    /// Instructions for the function currently shown in the disassembly
-    /// editor. Populated by `loadDisassembly(for:)`.
+    
+    
     public private(set) var disassembly: [Instruction] = []
     public private(set) var disassemblyFunctionAddress: DecompilerAddress?
 
-    // MARK: - Selection
+    
     public var selectedFunctionAddress: DecompilerAddress?
     public var selectedAddress: DecompilerAddress?
     public var selectedInstructionRange: ClosedRange<UInt64>?
     public var inspectorItem: InspectorItem = .none
 
-    // MARK: - View preferences (mirrored into project manifest on save)
+    
     public var showInspector = true
     public var showConsole = false
     public var showAssist = true
-    /// Injected by the app layer: the Decompile Assist chat UI lives in the
-    /// AI module. The workspace reserves a real panel for it; when nil the
-    /// panel shows its header and session status only.
+    
+    
+    
     public var assistPanel: AnyView?
 
-    /// Set by DecompilerCommands; the relevant view presents UI then clears.
+    
     public var pendingCommand: PendingCommand?
 
-    /// Console/status log lines.
+    
     public private(set) var consoleMessages: [ConsoleMessage] = []
 
-    /// Engine descriptors for pickers (populated lazily).
+    
     public private(set) var engines: [EngineDescriptor] = []
     public private(set) var reconstructedProject: ReconstructedProject?
     public private(set) var lastAssembly: AssemblyResult?
@@ -98,9 +98,9 @@ public final class DecompilerObservableState {
         self.session = session
     }
 
-    // MARK: - Snapshot loading
+    
 
-    /// Pull the latest store state into observable properties.
+    
     public func refresh() async {
         let store = session.store
         binary = await store.binary
@@ -124,19 +124,19 @@ public final class DecompilerObservableState {
         }
         selectedBackendID = await session.selectedBackendID
         lastAssembly = await session.lastAssembly
-        // NOTE: `session.isAnalyzing` is not used — the session keeps its
-        // finished task referenced, so it never reports false again. This
-        // object tracks analysis-in-flight itself in `startAnalysis()`.
+        
+        
+        
     }
 
-    /// Full reload including slice list and engine descriptors.
+    
     public func reloadAll() async {
         await refresh()
         slices = (try? await session.availableSlices()) ?? []
         engines = await EngineRegistry.shared.descriptors()
     }
 
-    // MARK: - Console
+    
 
     public func log(_ text: String, kind: ConsoleMessage.Kind = .info) {
         consoleMessages.append(ConsoleMessage(text: text, kind: kind))
@@ -145,7 +145,7 @@ public final class DecompilerObservableState {
 
     public func clearConsole() { consoleMessages.removeAll() }
 
-    // MARK: - Binary & analysis actions
+    
 
     @discardableResult
     public func importBinary(at url: URL) async throws -> BinaryImage {
@@ -162,10 +162,10 @@ public final class DecompilerObservableState {
         }
     }
 
-    /// `session.importBinary`/`selectSlice` run auto-analysis inline before
-    /// returning, which can take minutes on large binaries. Mark the
-    /// workspace busy and poll the store so the status bar, progress text
-    /// and function list update while the import is in flight.
+    
+    
+    
+    
     private func withLiveProgress<T>(
         _ work: () async throws -> T,
         reload: (T) async -> Void,
@@ -201,8 +201,8 @@ public final class DecompilerObservableState {
         log("Switched architecture slice to \(index)")
     }
 
-    /// Kick off analysis in the background and keep refreshing while it runs
-    /// so progress UI stays live.
+    
+    
     public func startAnalysis() {
         guard !isAnalyzing else { return }
         isAnalyzing = true
@@ -223,8 +223,8 @@ public final class DecompilerObservableState {
             }
             await refresh()
         }
-        // Poll progress while the pipeline reports non-terminal stages.
-        // Bounded so a stuck backend cannot spin forever.
+        
+        
         Task { [weak self] in
             guard let self else { return }
             try? await Task.sleep(for: .milliseconds(300))
@@ -236,7 +236,7 @@ public final class DecompilerObservableState {
                 default:
                     break
                 }
-                // Stop early once the run task has finished.
+                
                 if !self.isAnalyzing { return }
                 try? await Task.sleep(for: .milliseconds(400))
             }
@@ -268,7 +268,7 @@ public final class DecompilerObservableState {
         await setMode(mode == .friendly ? .master : .friendly)
     }
 
-    // MARK: - Project
+    
 
     @discardableResult
     public func saveProject(to url: URL? = nil) async throws -> DecompilerProject? {
@@ -280,11 +280,11 @@ public final class DecompilerObservableState {
             return saved
         }
         guard let url else { return nil }
-        // url is the chosen .scdecomp bundle path.
+        
         let name = url.deletingPathExtension().lastPathComponent
         let project = try await manager.create(name: name, session: session)
-        // create() placed the bundle under Documents; if the user picked a
-        // different location, move it there.
+        
+        
         var final = project
         if project.bundleURL.standardizedFileURL != url.standardizedFileURL {
             let fm = FileManager.default
@@ -299,7 +299,7 @@ public final class DecompilerObservableState {
         return final
     }
 
-    // MARK: - Selection & navigation
+    
 
     public var selectedFunction: DecompilerFunction? {
         guard let addr = selectedFunctionAddress else { return nil }
@@ -350,9 +350,9 @@ public final class DecompilerObservableState {
             }
     }
 
-    // MARK: - On-demand analysis
+    
 
-    /// Disassemble the selected function and cache the listing.
+    
     @discardableResult
     public func loadDisassembly(for address: DecompilerAddress? = nil) async throws -> [Instruction] {
         let target = address ?? selectedFunctionAddress ?? selectedAddress
@@ -364,7 +364,7 @@ public final class DecompilerObservableState {
         return result
     }
 
-    /// Decompile the selected function; result lands in `pseudocode` after refresh.
+    
     @discardableResult
     public func decompileSelected() async throws -> DecompilationResult? {
         guard let address = selectedFunctionAddress else { return nil }
@@ -385,15 +385,15 @@ public final class DecompilerObservableState {
         pseudocode[function.address.value]
     }
 
-    /// Pseudocode for the current selection, decompiling on demand if needed.
+    
     public func pseudocodeForSelection() async throws -> DecompilationResult? {
         guard let fn = selectedFunction else { return nil }
         if let cached = pseudocode[fn.address.value] { return cached }
         return try await decompileSelected()
     }
 
-    /// Bulk reconstruction: decompile every function, generate the editable
-    /// source project, and remember it on the session for Assemble.
+    
+    
     public func decompileAsset() {
         guard !isDecompilingAsset else { return }
         guard binary != nil else {
@@ -421,7 +421,7 @@ public final class DecompilerObservableState {
         }
     }
 
-    /// Compile and link the reconstructed project into a new dynamic library.
+    
     public func assemble() {
         guard !isAssembling else { return }
         guard reconstructedProject != nil || binary != nil else {
@@ -458,7 +458,7 @@ public final class DecompilerObservableState {
         }
     }
 
-    /// Open the reconstructed project in SwiftCode's main editor.
+    
     public func openInMainEditor() {
         Task { [weak self] in
             guard let self else { return }
@@ -480,7 +480,7 @@ public final class DecompilerObservableState {
         }
     }
 
-    /// Jump from a binary address to its reconstructed source location.
+    
     public func openSourceLocation(for address: DecompilerAddress) {
         Task { [weak self] in
             guard let self else { return }
@@ -495,7 +495,7 @@ public final class DecompilerObservableState {
         }
     }
 
-    // MARK: - User metadata edits
+    
 
     public func renameSelectedFunction(to name: String) async {
         guard let addr = selectedFunctionAddress else { return }
@@ -519,9 +519,9 @@ public final class DecompilerObservableState {
         await refresh()
     }
 
-    // MARK: - Byte access for the hex editor
+    
 
-    /// Read `length` bytes at a file offset of the imported slice.
+    
     public func readBytes(fileOffset: UInt64, length: Int) async throws -> Data {
         guard let image = binary else { throw DecompilerError.invalidRequest("no binary loaded") }
         return try await Task.detached {
@@ -536,7 +536,7 @@ public final class DecompilerObservableState {
         }.value
     }
 
-    /// Overview counts derived from the store.
+    
     public var overviewCounts: (functions: Int, symbols: Int, imports: Int, exports: Int,
                                strings: Int, sections: Int) {
         (functions.count, symbols.count, binary?.imports.count ?? 0,

@@ -1,7 +1,7 @@
 import Foundation
 
-/// String extraction: ASCII / UTF-8 / UTF-16 sequences in non-executable
-/// sections, mapped back to virtual addresses.
+
+
 public enum StringAnalysis {
     public static let minLength = 4
 
@@ -67,7 +67,7 @@ public enum StringAnalysis {
 
     private static func extractUTF16(data: Data, section: BinarySectionInfo,
                                      image: BinaryImage, into out: inout [BinaryString]) {
-        // Scan for runs of (ASCII byte, 0x00) pairs — UTF-16LE strings.
+        
         var i = 0
         while i + 1 < data.count {
             if data[i + 1] == 0, data[i] >= 0x20, data[i] < 0x7F {

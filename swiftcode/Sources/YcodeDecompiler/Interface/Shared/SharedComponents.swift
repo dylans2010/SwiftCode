@@ -1,8 +1,8 @@
 import SwiftUI
 import AppKit
 
-/// Plain-language explanations of decompiler terminology, shown in info rows
-/// and tooltips throughout Friendly and Master modes.
+
+
 public enum Explainer {
     public static let function = "A function is a named block of code that performs one job. The decompiler recovers these from the symbol table and by spotting function prologues in the machine code."
     public static let symbol = "A symbol is a named address inside the binary — usually a function, global variable, or constant — recovered from the symbol table. Symbols give names to otherwise anonymous addresses."
@@ -21,8 +21,8 @@ public enum Explainer {
     public static let provenance = "Provenance records where a piece of analysis came from: the file format itself, the symbol table, an analysis engine, a heuristic, or a user edit. AI suggestions are never treated as verified facts."
 }
 
-/// Text field that accepts `0x…` (or plain hex/decimal) addresses and
-/// navigates on submit. Used by both workspaces.
+
+
 public struct AddressField: View {
     let placeholder: String
     let onNavigate: (DecompilerAddress) -> Void
@@ -59,7 +59,7 @@ public struct AddressField: View {
     }
 }
 
-/// Reusable search field with clear button.
+
 public struct SearchBar: View {
     @Binding var text: String
     let placeholder: String
@@ -91,7 +91,7 @@ public struct SearchBar: View {
     }
 }
 
-/// Bottom status bar: analysis stage, real fraction when known, message.
+
 public struct StatusBar: View {
     let progress: AnalysisProgress
     let isAnalyzing: Bool
@@ -158,7 +158,7 @@ public struct StatusBar: View {
     }
 }
 
-/// Centered empty-state placeholder with symbol, title and explanation.
+
 public struct EmptyStateView: View {
     let systemImage: String
     let title: String
@@ -201,7 +201,7 @@ public struct EmptyStateView: View {
     }
 }
 
-/// Right-side inspector container: titled section with a content closure.
+
 public struct InspectorPanel<Content: View>: View {
     let title: String
     var subtitle: String? = nil
@@ -231,7 +231,7 @@ public struct InspectorPanel<Content: View>: View {
     }
 }
 
-/// A labelled info row used across inspector/detail views.
+
 public struct InfoRow: View {
     let label: String
     let value: String
@@ -260,7 +260,7 @@ public struct InfoRow: View {
     }
 }
 
-/// Section header with an info button carrying a plain-language explanation.
+
 public struct ExplainedSection<Content: View>: View {
     let title: String
     var explanation: String? = nil
@@ -288,7 +288,7 @@ public struct ExplainedSection<Content: View>: View {
     }
 }
 
-/// Copy-to-pasteboard button.
+
 public struct CopyButton: View {
     let text: String
     var label: String = "Copy"

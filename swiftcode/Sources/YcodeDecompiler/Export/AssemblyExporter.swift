@@ -1,17 +1,17 @@
 import Foundation
 
-/// Exports decoded instructions as a plain-text assembly listing.
-/// Format per line: `address  hex-bytes  mnemonic operands  ; comment`.
+
+
 public enum AssemblyExporter {
-    /// Listing of instructions sorted by address.
-    /// - Parameter includeBytes: include the raw-bytes column.
-    /// - Parameter includeHeader: prepend a title/format header.
+    
+    
+    
     public static func export(instructions: [Instruction],
                               includeBytes: Bool = true,
                               includeHeader: Bool = true) -> String {
         let sorted = instructions.sorted { $0.address.value < $1.address.value }
 
-        // Pad the byte column to the widest instruction so mnemonics align.
+        
         let byteTexts: [String] = sorted.map {
             $0.rawBytes.map { String(format: "%02x", $0) }.joined(separator: " ")
         }
@@ -43,7 +43,7 @@ public enum AssemblyExporter {
         return out
     }
 
-    /// Listing scoped to one function's address range.
+    
     public static func export(instructions: [Instruction],
                               function: DecompilerFunction,
                               includeBytes: Bool = true) -> String {

@@ -1,12 +1,12 @@
 import Foundation
 
-/// Repository configuration stored in `.spaces/config.json`.
+
 public struct SpacesConfig: Codable, Sendable {
     public var version: Int
     public var core: Core
     public var user: User?
     public var remotes: [String: RemoteConfig]
-    public var branchTracking: [String: String] // branch -> remote/branch
+    public var branchTracking: [String: String] 
     public var lfs: LFSConfig
     public var extensions: [String: Bool]
 

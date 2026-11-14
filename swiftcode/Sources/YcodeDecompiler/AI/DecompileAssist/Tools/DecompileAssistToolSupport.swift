@@ -1,10 +1,10 @@
 import Foundation
 
-/// Shared helpers for Decompile Assist tools: argument extraction, JSON
-/// output, pagination, and dictionary encoders for core model types.
+
+
 enum DecompileAssistToolSupport {
 
-    // MARK: - Argument extraction
+    
 
     static func string(_ args: [String: Any], _ key: String) -> String? {
         guard let v = args[key] else { return nil }
@@ -28,8 +28,8 @@ enum DecompileAssistToolSupport {
         return def
     }
 
-    /// Parse an address argument ("address", "function_address", …). Accepts
-    /// hex (0x…) or decimal strings.
+    
+    
     static func address(_ args: [String: Any], keys: [String] = ["address"]) -> DecompilerAddress? {
         for key in keys {
             if let raw = string(args, key), let addr = DecompilerAddress.parse(raw) {
@@ -47,14 +47,14 @@ enum DecompileAssistToolSupport {
         return addr
     }
 
-    /// Pagination: `offset` (default 0) and `limit` (default 100, max 1000).
+    
     static func pagination(_ args: [String: Any], defaultLimit: Int = 100) -> (offset: Int, limit: Int) {
         let offset = max(0, int(args, "offset", fallback: 0) ?? 0)
         let limit = min(1_000, max(1, int(args, "limit", fallback: defaultLimit) ?? defaultLimit))
         return (offset, limit)
     }
 
-    // MARK: - Output
+    
 
     static func encode(_ object: Any) -> String {
         guard JSONSerialization.isValidJSONObject(object),
@@ -77,14 +77,14 @@ enum DecompileAssistToolSupport {
         return encode(obj)
     }
 
-    /// Box an optional value for `[String: Any]` dictionaries: `nil` becomes
-    /// `NSNull` so `JSONSerialization` never sees a bare `Optional`.
+    
+    
     static func opt<T>(_ value: T?) -> Any {
         if let value { return value }
         return NSNull()
     }
 
-    /// Structured error returned when a mutation tool lacks `approved: true`.
+    
     static func approvalRequired(_ tool: String) -> String {
         error("approval_required: \(tool) modifies analysis data and requires \"approved\": true in the arguments", code: "approval_required")
     }
@@ -93,7 +93,7 @@ enum DecompileAssistToolSupport {
         case missing(String)
     }
 
-    // MARK: - Dictionary encoders
+    
 
     static func functionDict(_ f: DecompilerFunction) -> [String: Any] {
         var d: [String: Any] = [

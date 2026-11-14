@@ -1,6 +1,6 @@
 import Foundation
 
-/// What an analysis/decompiler backend can do for a given slice.
+
 public struct DecompilerCapabilitiesSet: OptionSet, Sendable, Codable, Hashable {
     public let rawValue: Int
     public init(rawValue: Int) { self.rawValue = rawValue }
@@ -15,7 +15,7 @@ public struct DecompilerCapabilitiesSet: OptionSet, Sendable, Codable, Hashable 
     public static let disassemble = DecompilerCapabilitiesSet(rawValue: 1 << 8)
 }
 
-/// A registered analysis engine (decompiler/disassembler backend).
+
 public struct EngineDescriptor: Identifiable, Hashable, Sendable {
     public var id: String
     public var displayName: String
@@ -26,7 +26,7 @@ public struct EngineDescriptor: Identifiable, Hashable, Sendable {
     public var capabilities: DecompilerCapabilitiesSet
     public var isAvailable: Bool
     public var availabilityDetail: String
-    /// True for the primary recommended decompiler.
+    
     public var isPrimaryDecompiler: Bool
 
     public enum Kind: String, Sendable, Codable { case decompiler, disassembler, analyzer }
@@ -68,20 +68,20 @@ public struct DecompilationRequest: Sendable {
     }
 }
 
-/// Structured result of decompiling one function.
+
 public struct DecompilationResult: Sendable, Codable {
     public var functionAddress: DecompilerAddress
     public var functionName: String
-    /// C-like pseudocode text.
+    
     public var pseudocode: String
-    /// Backend-specific signature line.
+    
     public var signature: String?
     public var parameters: [String]
     public var returnType: String?
     public var localVariables: [String]
-    /// Address-to-line mapping: virtual address → pseudocode line number.
+    
     public var addressLineMap: [UInt64: Int]
-    /// Backend diagnostics / warnings.
+    
     public var warnings: [String]
     public var engineID: String
     public var engineVersion: String?

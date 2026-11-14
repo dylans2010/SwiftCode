@@ -1,8 +1,8 @@
 import XCTest
 @testable import YcodeDecompiler
 
-/// Signature-based format detection. Detection must never trust file
-/// extensions — every fixture is written with a misleading extension.
+
+
 final class DetectorTests: XCTestCase {
 
     private func writeTemp(_ name: String, _ data: Data) throws -> URL {
@@ -20,7 +20,7 @@ final class DetectorTests: XCTestCase {
     }
 
     func testDetectThinMachO() throws {
-        // MH_MAGIC_64 little-endian on disk: CF FA ED FE
+        
         let url = try writeTemp("fake.txt", padded([0xCF, 0xFA, 0xED, 0xFE]))
         let d = try BinaryDetector.detect(url: url)
         XCTAssertEqual(d.format, .machO)
@@ -29,14 +29,14 @@ final class DetectorTests: XCTestCase {
     }
 
     func testDetectMachO32() throws {
-        // MH_MAGIC (32-bit) LE: CE FA ED FE
+        
         let url = try writeTemp("fake.bin", padded([0xCE, 0xFA, 0xED, 0xFE]))
         let d = try BinaryDetector.detect(url: url)
         XCTAssertEqual(d.format, .machO)
     }
 
     func testDetectFatMachO() throws {
-        // FAT_MAGIC / FAT_CIGAM bytes: CA FE BA BE / CA FE BA BF
+        
         let magics: [[UInt8]] = [[0xCA, 0xFE, 0xBA, 0xBE], [0xCA, 0xFE, 0xBA, 0xBF]]
         for magic in magics {
             let url = try writeTemp("fat.bin", padded(magic))
@@ -55,19 +55,19 @@ final class DetectorTests: XCTestCase {
 
     func testDetectPEViaMZAndPEHeader() throws {
         var bytes = [UInt8](repeating: 0, count: 0x100)
-        bytes[0] = 0x4D; bytes[1] = 0x5A                 // "MZ"
-        // e_lfanew at 0x3C → 0x80
+        bytes[0] = 0x4D; bytes[1] = 0x5A                 
+        
         bytes[0x3C] = 0x80
         bytes[0x80] = 0x50; bytes[0x81] = 0x45
-        bytes[0x82] = 0x00; bytes[0x83] = 0x00          // "PE\0\0"
+        bytes[0x82] = 0x00; bytes[0x83] = 0x00          
         let url = try writeTemp("payload.bin", Data(bytes))
         let d = try BinaryDetector.detect(url: url)
         XCTAssertEqual(d.format, .pe)
     }
 
     func testDetectPEViaMZOnly() throws {
-        // MZ without a visible PE signature inside the first 4 KiB is still
-        // treated as a PE candidate.
+        
+        
         var bytes = [UInt8](repeating: 0, count: 0x100)
         bytes[0] = 0x4D; bytes[1] = 0x5A
         let url = try writeTemp("mz-only.bin", Data(bytes))

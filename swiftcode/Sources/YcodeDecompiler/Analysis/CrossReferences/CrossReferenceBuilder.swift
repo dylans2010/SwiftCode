@@ -1,7 +1,7 @@
 import Foundation
 
-/// Builds cross-references from decoded instructions: branches, calls,
-/// and data references to known symbols/strings.
+
+
 public enum CrossReferenceBuilder {
     public static func build(instructions: [Instruction], image: BinaryImage) -> [CrossReference] {
         let provenance = AnalysisSource(provenance: .engine, pass: "xrefs")
@@ -21,7 +21,7 @@ public enum CrossReferenceBuilder {
                                                provenance: provenance))
                 }
             case .normal, .returnInstruction, .invalid, .unknown, .data:
-                // Memory operands that resolve into the image become data xrefs.
+                
                 for op in ins.operands {
                     if case .address(let dest) = op,
                        image.fileOffset(forVirtualAddress: dest.value) != nil {

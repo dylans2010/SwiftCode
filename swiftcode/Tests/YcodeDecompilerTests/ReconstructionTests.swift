@@ -8,7 +8,7 @@ import Glibc
 
 final class ReconstructionTests: XCTestCase {
 
-    // MARK: - Utilities
+    
 
     func testSanitizedCIdentifier() {
         XCTAssertEqual(ReconstructionUtilities.sanitizedCIdentifier("hello-world"), "hello_world")
@@ -76,7 +76,7 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertEqual(LanguageIdentification.identifySymbol("plain_c_function"), .unknown)
     }
 
-    // MARK: - Diagnostics
+    
 
     func testParseCompilerOutput() throws {
         let root = URL(fileURLWithPath: "/proj")
@@ -103,7 +103,7 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertTrue(diags.contains { $0.symbol == "missing_fn" && $0.severity == .error })
     }
 
-    // MARK: - Equivalence
+    
 
     private func makeImage(exports: [String], format: BinaryFormat = .elf,
                            architecture: BinaryArchitecture = .x86_64,
@@ -155,7 +155,7 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertTrue(report.behavioralEquivalence.lowercased().contains("not"))
     }
 
-    // MARK: - Build configuration
+    
 
     func testBuildConfigurationInference() {
         let macho = makeImage(exports: [], format: .machO, architecture: .arm64)
@@ -186,7 +186,7 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertTrue(linkArgs.contains("-fPIC") || linkArgs.contains("-shared"))
     }
 
-    // MARK: - Source mapping
+    
 
     func testSourceMappingLookup() throws {
         let mapping = SourceMapping(
@@ -207,7 +207,7 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertEqual(decoded.entries.count, 2)
     }
 
-    // MARK: - Reconstruction from fabricated pseudocode
+    
 
     func testReconstructWithPseudocode() {
         let image = makeImage(exports: ["sc_add"], format: .elf, architecture: .x86_64)
@@ -255,10 +255,10 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertTrue(source.diagnostics.contains { $0.message.lowercased().contains("decompiler") })
     }
 
-    /// spotifyglass.dylib-style failure mode: symbol/function metadata
-    /// exists but the disassembler decoded nothing and no decompiler ran.
-    /// Reconstruction must keep every function unresolved and must not
-    /// emit source files that pretend to contain recovered implementations.
+    
+    
+    
+    
     func testMetadataOnlyPipelineNeverClaimsRecovery() {
         let image = makeImage(exports: ["sg_a", "sg_b"], format: .machO, architecture: .arm64)
         let fns = ["sg_a", "sg_b"].enumerated().map { index, name in
@@ -285,7 +285,7 @@ final class ReconstructionTests: XCTestCase {
         }, "diagnostics must report the missing disassembly honestly")
     }
 
-    // MARK: - Project generation
+    
 
     func testProjectGenerationLayout() throws {
         let image = makeImage(exports: ["sc_add"], format: .elf, architecture: .x86_64)
@@ -321,7 +321,7 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertFalse(mapping.entries.isEmpty)
     }
 
-    // MARK: - End-to-end rebuild (Linux gcc fixture; macOS clang when present)
+    
 
     private func run(_ path: String, _ args: [String]) throws -> (Int32, String) {
         let process = Process()
@@ -403,8 +403,8 @@ final class ReconstructionTests: XCTestCase {
         let loader = BinaryLoader()
         let container = try await loader.loadContainer(at: originalURL)
         let image = try await loader.parseSlice(container: container, sliceIndex: 0, sourceURL: originalURL)
-        // This test parses GNU `objdump -d` output, which only matches ELF
-        // fixtures; on macOS `cc -shared` produces a Mach-O dylib.
+        
+        
         guard image.format == .elf, image.architecture == .x86_64 else {
             throw XCTSkip("fixture is \(image.format.rawValue)/\(image.architecture.rawValue), not ELF/x86_64")
         }
@@ -481,10 +481,10 @@ final class ReconstructionTests: XCTestCase {
         XCTAssertEqual(String(cString: greeting()), "hello")
     }
 
-    /// End-to-end Mach-O arm64 (iOS) rebuild: parse → container-mode
-    /// llvm-objdump disassembly → assembly-preserving reconstruction →
-    /// platform-aware clang assemble → equivalence check. Guards on the
-    /// iPhoneOS SDK so it runs wherever Xcode CLT is installed.
+    
+    
+    
+    
     func testMachOArm64EndToEndRebuild() async throws {
         #if os(macOS)
         guard let clang = AssembleService.locateCompiler() else {

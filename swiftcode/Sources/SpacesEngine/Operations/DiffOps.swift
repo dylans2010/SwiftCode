@@ -1,7 +1,7 @@
 import Foundation
 
-/// Diff operations: worktree↔index, index↔HEAD, commit↔commit, tree↔tree,
-/// patch generation and application.
+
+
 public struct DiffOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
@@ -196,19 +196,19 @@ public struct DiffOps {
         return directories
     }
 
-    /// `spaces diff` (worktree vs index, or index vs HEAD with stagedOnly).
+    
     public func workingDiff(stagedOnly: Bool = false) throws -> [FileDiff] {
         let index = try repo.index()
         var indexFlat: [String: (oid: ObjectID, mode: FileMode)] = [:]
         for (p, e) in index.entries { indexFlat[p] = (e.oid, e.mode) }
 
         if stagedOnly {
-            // Index vs HEAD.
+            
             let headFlat = try headTreeFlat()
             return try diffFlats(headFlat, indexFlat)
         }
 
-        // Worktree vs index: build worktree flat for tracked + modified files.
+        
         var workFlat = indexFlat
         let scanner = WorktreeScanner(repo: repo)
         let files = try scanner.scan()
@@ -223,7 +223,7 @@ public struct DiffOps {
                 }
             }
         }
-        // Tracked-in-index but missing from worktree → treat as deletion.
+        
         let present = Set(files.map { $0.relativePath })
         for path in index.entries.keys where !present.contains(path) {
             workFlat.removeValue(forKey: path)
@@ -231,7 +231,7 @@ public struct DiffOps {
         return try diffFlats(indexFlat, workFlat)
     }
 
-    /// `spaces diff <commit> [commit]` — arbitrary revision diff.
+    
     public func commitDiff(_ from: String, _ to: String = "HEAD") throws -> [FileDiff] {
         let fromOID = try repo.resolveRevision(from)
         let toOID = try repo.resolveRevision(to)
@@ -244,9 +244,9 @@ public struct DiffOps {
         try commitDiff(from, to)
     }
 
-    /// Diff a single file between two revisions or worktree.
+    
     public func fileDiff(path: String, from: String? = nil, to: String? = nil) throws -> FileDiff? {
-        // Resolve flats.
+        
         var oldFlat: [String: (oid: ObjectID, mode: FileMode)] = [:]
         var newFlat: [String: (oid: ObjectID, mode: FileMode)] = [:]
         if let f = from {
@@ -254,7 +254,7 @@ public struct DiffOps {
             oldFlat = try TreeBuilder.flattenTree(repo: repo,
                                                   treeOID: repo.commitObject(oid).tree)
         } else {
-            // Worktree/index side handled by caller typically.
+            
         }
         if let t = to {
             let oid = try repo.resolveRevision(t)
@@ -265,36 +265,36 @@ public struct DiffOps {
         return diffs.first { $0.oldPath == path || $0.newPath == path }
     }
 
-    /// Renders diffs as a combined patch string.
+    
     public static func renderPatch(_ diffs: [FileDiff]) -> String {
         diffs.compactMap { $0.patch }.joined()
     }
 
-    /// Applies a unified patch (as produced by `unifiedPatch`) to file
-    /// contents. Returns new contents or nil if the patch doesn't apply.
-    /// Supports the subset Spaces emits: @@ hunks with context/add/del.
+    
+    
+    
     public static func applyPatch(to content: String, patch: String) -> String? {
         let patchLines = patch.components(separatedBy: "\n")
         let contentLines = DiffEngine.splitLines(Data(content.utf8))
         var result: [String] = []
-        var i = 0 // content index
-        var p = 0 // patch index
+        var i = 0 
+        var p = 0 
 
-        // Skip headers until first @@.
+        
         while p < patchLines.count && !patchLines[p].hasPrefix("@@") { p += 1 }
 
         while p < patchLines.count {
             guard patchLines[p].hasPrefix("@@") else { p += 1; continue }
-            // Parse @@ -a,b +c,d @@
+            
             let header = patchLines[p]
             guard let range = parseHunkHeader(header) else { return nil }
             p += 1
-            // Copy unchanged lines up to hunk start (aStart is 1-based).
+            
             let targetA = range.aStart - 1
             while i < targetA && i < contentLines.count {
                 result.append(contentLines[i]); i += 1
             }
-            // Apply hunk body.
+            
             var aSeen = 0
             while p < patchLines.count && !patchLines[p].hasPrefix("@@") {
                 let line = patchLines[p]
@@ -311,7 +311,7 @@ public struct DiffOps {
                 case "+":
                     result.append(text)
                 case "\\":
-                    break // "\ No newline at end of file"
+                    break 
                 default:
                     if line.isEmpty { result.append("") } else { return nil }
                 }
@@ -324,7 +324,7 @@ public struct DiffOps {
     }
 
     private static func parseHunkHeader(_ header: String) -> (aStart: Int, aCount: Int, bStart: Int, bCount: Int)? {
-        // @@ -l,c +l,c @@
+        
         guard let dash = header.firstIndex(of: "-"),
               let plus = header.firstIndex(of: "+") else { return nil }
         let aPart = header[header.index(after: dash)..<plus]

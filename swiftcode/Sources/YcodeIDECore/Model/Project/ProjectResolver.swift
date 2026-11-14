@@ -34,8 +34,8 @@ public enum ProjectResolver {
         }
         while true {
             if let metadata = metadata(at: current) { return metadata }
-            // NSURL-bridged file URLs never converge at the filesystem root:
-            // deletingLastPathComponent keeps producing "file:///../../..".
+            
+            
             guard current.path != "/" else { break }
             let parent = current.deletingLastPathComponent()
             guard parent != current, parent.path.hasPrefix("/") else { break }

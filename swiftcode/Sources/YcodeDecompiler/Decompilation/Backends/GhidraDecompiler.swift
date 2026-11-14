@@ -1,27 +1,27 @@
 import Foundation
 import YcodeSubprocess
 
-/// Decompilation backend that drives Ghidra's `analyzeHeadless`.
-///
-/// Workflow per binary:
-///  1. `ensureImported` runs `analyzeHeadless <projDir> <name> -import <file>`
-///     once; Ghidra's built-in auto-analysis populates functions, symbols and
-///     data. A marker file records success so later requests skip the import.
-///  2. `decompile` runs `analyzeHeadless <projDir> <name> -process <program>
-///     -noanalysis -postScript DecompileDump.py <out.json> <addrHex>`.
-///     `-noanalysis` reuses the imported analysis; the Jython script decompiles
-///     only the requested function and emits JSON lines that are mapped onto
-///     `DecompilationResult`.
-///
-/// Projects live under `NSTemporaryDirectory()/SwiftCodeDecompiler/
-/// ghidra-projects/<fnv1a(imagePath)>` and entries older than 7 days are
-/// pruned opportunistically.
-///
-/// Known limitation: Ghidra imports a fat/universal Mach-O as multiple
-/// programs. The `-process <programName>` call targets the program named
-/// after the file; if that fails the backend retries with `-process` (all
-/// programs) and the script's address filter still selects the right
-/// function.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public struct GhidraDecompiler: DecompilerProvider {
     public let id = "ghidra"
     public let displayName = "Ghidra"
@@ -33,7 +33,7 @@ public struct GhidraDecompiler: DecompilerProvider {
 
     public init() {}
 
-    // MARK: - Provider contract
+    
 
     public func isAvailable() async -> Bool {
         await Task.detached(priority: .utility) {
@@ -76,11 +76,11 @@ public struct GhidraDecompiler: DecompilerProvider {
         return try await decompileSingle(request, progress: progress, imported: &imported)
     }
 
-    /// Batch decompilation. Each request still gets its own headless
-    /// `-process` invocation (with `-noanalysis`, so only the decompiler runs);
-    /// the expensive `-import` + auto-analysis step is shared per image via
-    /// the `imported` cache. A single dump-all run would be faster for very
-    /// large batches but is not implemented.
+    
+    
+    
+    
+    
     public func decompileBatch(_ requests: [DecompilationRequest],
                                progress: (@Sendable (AnalysisProgress) -> Void)?) async throws -> [DecompilationResult] {
         var results: [DecompilationResult] = []
@@ -100,7 +100,7 @@ public struct GhidraDecompiler: DecompilerProvider {
         return results
     }
 
-    // MARK: - Internals
+    
 
     private struct ProjectPaths: Sendable {
         var dir: URL
@@ -139,8 +139,8 @@ public struct GhidraDecompiler: DecompilerProvider {
         do {
             try await runHeadless(args: args)
         } catch let error as DecompilerError {
-            // Retry across all programs in the project: fat Mach-O imports can
-            // produce program names that differ from the plain file name.
+            
+            
             guard case .engineFailure = error else { throw error }
             args = [paths.dir.path, paths.projectName,
                     "-process", "-noanalysis"] + scriptArgs
@@ -150,10 +150,10 @@ public struct GhidraDecompiler: DecompilerProvider {
         return try parseResult(outURL: outURL, request: request)
     }
 
-    // MARK: - Ghidra project management
+    
 
     private func projectPaths(for imagePath: String) throws -> ProjectPaths {
-        // FNV-1a 64-bit — stable, dependency-free hash for the project dir.
+        
         var hash: UInt64 = 14695981039346656037
         for byte in imagePath.utf8 {
             hash ^= UInt64(byte)
@@ -179,7 +179,7 @@ public struct GhidraDecompiler: DecompilerProvider {
         if fm.fileExists(atPath: marker.path), fm.fileExists(atPath: gpr.path) {
             return
         }
-        // Stale/partial project: start clean so `-import` cannot conflict.
+        
         if fm.fileExists(atPath: paths.dir.path) {
             try? fm.removeItem(at: paths.dir)
         }
@@ -193,7 +193,7 @@ public struct GhidraDecompiler: DecompilerProvider {
             stage: .importing,
             message: "Importing \(URL(fileURLWithPath: imagePath).lastPathComponent) into Ghidra"))
 
-        // -import runs Ghidra's full auto-analysis pipeline.
+        
         let args = [paths.dir.path, paths.projectName,
                     "-import", imagePath,
                     "-scriptPath", paths.scriptDir.path]
@@ -201,7 +201,7 @@ public struct GhidraDecompiler: DecompilerProvider {
         try Data().write(to: marker)
     }
 
-    /// Delete project dirs older than 7 days. Cheap, best-effort.
+    
     private static func pruneOldProjects(in base: URL) {
         let fm = FileManager.default
         guard let entries = try? fm.contentsOfDirectory(
@@ -215,7 +215,7 @@ public struct GhidraDecompiler: DecompilerProvider {
         }
     }
 
-    // MARK: - Headless invocation
+    
 
     private func runHeadless(args: [String]) async throws {
         guard let home = Self.state.ghidraHome() else {
@@ -224,7 +224,7 @@ public struct GhidraDecompiler: DecompilerProvider {
         let executable = home.appendingPathComponent("support/analyzeHeadless")
         let stream = StreamingSubprocess.lines(executable, args)
         do {
-            // Drain stdout; all real output goes to files.
+            
             for try await _ in stream { }
         } catch let error as StreamingSubprocess.ExitError {
             if error.wasInterrupted {
@@ -240,7 +240,7 @@ public struct GhidraDecompiler: DecompilerProvider {
         }
     }
 
-    // MARK: - Output parsing
+    
 
     private func parseResult(outURL: URL, request: DecompilationRequest) throws -> DecompilationResult {
         guard let data = try? Data(contentsOf: outURL), !data.isEmpty else {
@@ -287,7 +287,7 @@ public struct GhidraDecompiler: DecompilerProvider {
             rawBackendOutput: text.count > 1_048_576 ? nil : text)
     }
 
-    // MARK: - Script location
+    
 
     private func scriptURL() throws -> URL {
         var candidates: [URL] = []
@@ -304,16 +304,16 @@ public struct GhidraDecompiler: DecompilerProvider {
                 "Resources/EngineScripts/DecompileDump.py"))
             candidates.append(mainResources.appendingPathComponent(
                 "YcodeDecompiler/EngineScripts/DecompileDump.py"))
-            // XcodeGen flattens bundle resources into Contents/Resources.
+            
             candidates.append(mainResources.appendingPathComponent("DecompileDump.py"))
         }
-        // Source-relative fallback for unbundled development trees:
-        // …/Decompilation/Backends/<file> → …/YcodeDecompiler/Resources/…
+        
+        
         let sourceFile = URL(fileURLWithPath: #filePath)
         let decompilerRoot = sourceFile
-            .deletingLastPathComponent() // Backends
-            .deletingLastPathComponent() // Decompilation
-            .deletingLastPathComponent() // YcodeDecompiler
+            .deletingLastPathComponent() 
+            .deletingLastPathComponent() 
+            .deletingLastPathComponent() 
         candidates.append(decompilerRoot.appendingPathComponent(
             "Resources/EngineScripts/DecompileDump.py"))
 
@@ -325,10 +325,10 @@ public struct GhidraDecompiler: DecompilerProvider {
             "Ghidra bridge script DecompileDump.py not found in any bundle resource location")
     }
 
-    // MARK: - Ghidra installation discovery
+    
 
-    /// Locate a Ghidra install root (the directory containing
-    /// `support/analyzeHeadless`).
+    
+    
     static func locateGhidraHome() -> URL? {
         let fm = FileManager.default
 
@@ -336,7 +336,7 @@ public struct GhidraDecompiler: DecompilerProvider {
             fm.fileExists(atPath: url.appendingPathComponent("support/analyzeHeadless").path)
         }
 
-        /// Newest `ghidra*` child directory that is a valid install root.
+        
         func newestGhidraChild(of dir: URL) -> URL? {
             guard let items = try? fm.contentsOfDirectory(atPath: dir.path) else { return nil }
             for name in items.filter({ $0.lowercased().hasPrefix("ghidra") }).sorted(by: >) {
@@ -383,7 +383,7 @@ public struct GhidraDecompiler: DecompilerProvider {
         return nil
     }
 
-    /// Read `application.version` from Ghidra's application.properties, if present.
+    
     static func readVersion(home: URL) -> String? {
         for relative in ["Ghidra/application.properties", "application.properties"] {
             let url = home.appendingPathComponent(relative)
@@ -400,9 +400,9 @@ public struct GhidraDecompiler: DecompilerProvider {
         return nil
     }
 
-    // MARK: - Cached engine state
+    
 
-    /// Thread-safe cache for install discovery, Java detection and version.
+    
     private final class GhidraState: @unchecked Sendable {
         private let lock = NSLock()
         private var home: URL??
@@ -423,7 +423,7 @@ public struct GhidraDecompiler: DecompilerProvider {
             return found
         }
 
-        /// `java -version` via /usr/bin/env so PATH is honored.
+        
         func checkJava() -> Bool {
             lock.lock()
             if let cached = javaOK { lock.unlock(); return cached }

@@ -321,8 +321,8 @@ final class ReconstructionLanguageTests: XCTestCase {
         let loader = BinaryLoader()
         let container = try await loader.loadContainer(at: originalURL)
         var image = try await loader.parseSlice(container: container, sliceIndex: 0, sourceURL: originalURL)
-        // `cc -shared` emits ELF on Linux and Mach-O on macOS; the Swift
-        // backend configuration below targets ELF/x86_64.
+        
+        
         XCTAssertTrue(image.format == .elf || image.format == .machO,
                       "unexpected fixture format \(image.format.rawValue)")
         guard image.format == .elf else {
@@ -332,7 +332,7 @@ final class ReconstructionLanguageTests: XCTestCase {
                                           source: AnalysisSource(provenance: .symbolTable)))
 
         func baseExportName(_ name: String) -> String {
-            // Mach-O symbols carry a leading underscore; ELF names do not.
+            
             name.hasPrefix("_") ? String(name.dropFirst()) : name
         }
         let sortedExports = image.exports.sorted { $0.address.value < $1.address.value }
@@ -416,7 +416,7 @@ final class ReconstructionLanguageTests: XCTestCase {
         typealias AnswerFn = @convention(c) () -> Int32
         typealias GreetingFn = @convention(c) () -> UnsafePointer<CChar>
         func lookup(_ name: String) -> UnsafeMutableRawPointer? {
-            // Mach-O exports carry a leading underscore that dlsym requires.
+            
             dlsym(handle, name) ?? dlsym(handle, "_\(name)")
         }
         let add = unsafeBitCast(lookup("sc_add"), to: AddFn.self)
@@ -459,15 +459,15 @@ final class ReconstructionLanguageTests: XCTestCase {
         let loader = BinaryLoader()
         let container = try await loader.loadContainer(at: originalURL)
         var image = try await loader.parseSlice(container: container, sliceIndex: 0, sourceURL: originalURL)
-        // The Rust backend configuration targets ELF/x86_64; `cc -shared`
-        // produces Mach-O on macOS, which this fixture cannot exercise.
+        
+        
         guard image.format == .elf else {
             throw XCTSkip("fixture is \(image.format.rawValue), not ELF")
         }
         image.symbols.append(BinarySymbol(name: "_RNvC7fixture6sc_add", kind: .global,
                                           source: AnalysisSource(provenance: .symbolTable)))
         func baseExportName(_ name: String) -> String {
-            // Mach-O symbols carry a leading underscore; ELF names do not.
+            
             name.hasPrefix("_") ? String(name.dropFirst()) : name
         }
         let sortedExports = image.exports.sorted { $0.address.value < $1.address.value }
@@ -564,7 +564,7 @@ final class ReconstructionLanguageTests: XCTestCase {
         typealias AnswerFn = @convention(c) () -> Int32
         typealias GreetingFn = @convention(c) () -> UnsafePointer<CChar>
         func lookup(_ name: String) -> UnsafeMutableRawPointer? {
-            // Mach-O exports carry a leading underscore that dlsym requires.
+            
             dlsym(handle, name) ?? dlsym(handle, "_\(name)")
         }
         let addRs = unsafeBitCast(lookup("sc_add_rs"), to: AddFn.self)

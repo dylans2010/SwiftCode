@@ -1,16 +1,16 @@
 import Foundation
 
-/// Assistant analysis tools. These do NOT call the model — they compose
-/// deterministic, evidence-based analysis text from real store data
-/// (pseudocode, disassembly, xrefs, strings, symbols). Every result is
-/// explicitly labeled as assistant analysis with `provenance: "aiSuggestion"`
-/// semantics: helpful interpretation, never verified fact.
-///
-/// The model itself uses these to ground its own explanations in data it can
-/// cite, and users can invoke them for quick local analysis without a round
-/// trip to the LLM.
 
-/// Shared prologue: gather a function's evidence bundle.
+
+
+
+
+
+
+
+
+
+
 private func evidenceBundle(session: DecompilerSession, addr: DecompilerAddress) async -> (fn: DecompilerFunction?, pseudo: DecompilationResult?, instructions: [Instruction], xrefs: [CrossReference], strings: [BinaryString], symbols: [BinarySymbol], image: BinaryImage?) {
     let store = await session.analysisStore()
     let fn = await store.function(atOrContaining: addr.value)
@@ -65,7 +65,7 @@ public struct ExplainFunctionTool: DecompileAssistTool {
             lines.append("```")
             if !pseudo.warnings.isEmpty { lines.append("Warnings: \(pseudo.warnings.joined(separator: "; "))") }
         }
-        // Call summary from xrefs.
+        
         let callees = xrefs.filter { $0.kind == .call && $0.sourceFunction == fn?.address }
             .compactMap(\.destinationFunction)
         let callers = xrefs.filter { $0.kind == .call && $0.destinationFunction == fn?.address }
@@ -76,7 +76,7 @@ public struct ExplainFunctionTool: DecompileAssistTool {
         if !callers.isEmpty {
             lines.append("Called by (\(callers.count)): \(callers.prefix(20).map(\.hexString).joined(separator: ", "))")
         }
-        // String references inside the function.
+        
         if let fn, !strings.isEmpty {
             let fnEnd = fn.endAddress?.value ?? fn.address.value + max(fn.size, 1)
             let referenced = strings.filter { s in
@@ -89,7 +89,7 @@ public struct ExplainFunctionTool: DecompileAssistTool {
                 }
             }
         }
-        // Instruction-class histogram.
+        
         if !instructions.isEmpty {
             var hist: [String: Int] = [:]
             for i in instructions { hist[i.classification.rawValue, default: 0] += 1 }
@@ -138,7 +138,7 @@ public struct ExplainInstructionTool: DecompileAssistTool {
         }
         if let bt = ins.branchTarget { notes.append("branch target \(bt.hexString)") }
         if let label = ins.label { notes.append("label: \(label)") }
-        // Symbol at operand address.
+        
         if case .address(let target)? = ins.operands.first(where: {
             if case .address = $0 { return true }; return false
         }) {
@@ -146,7 +146,7 @@ public struct ExplainInstructionTool: DecompileAssistTool {
                 notes.append("references symbol \(sym.effectiveName)")
             }
         }
-        // String at branch/operand target.
+        
         let strings = await store.stringsList
         for operand in ins.operands {
             if case .address(let target) = operand,
@@ -189,12 +189,12 @@ public struct ExplainBinaryTool: DecompileAssistTool {
         if image.isEncrypted { lines.append("NOTE: binary is encrypted (FairPlay) — decrypted regions may be absent") }
         if image.isSigned { lines.append("Code signature present\(image.entitlements != nil ? " with entitlements" : "")") }
         if image.hasDebugInfo { lines.append("Debug info present") }
-        // Import library summary → purpose hints.
+        
         let libs = Set(image.imports.map(\.library)).sorted()
         if !libs.isEmpty {
             lines.append("Linked libraries (\(libs.count)): \(libs.prefix(20).joined(separator: ", "))\(libs.count > 20 ? " …" : "")")
         }
-        // Notable strings heuristic: paths, URLs, interesting keywords.
+        
         let interesting = image.strings.filter {
             let t = $0.text
             return t.contains("http") || t.contains(".app/") || t.contains("/usr/")
@@ -243,7 +243,7 @@ public struct SummarizeBinaryTool: DecompileAssistTool {
         let largest = functions.sorted { $0.size > $1.size }.prefix(n).map {
             ["address": $0.address.hexString, "name": $0.displayName, "size": $0.size] as [String: Any]
         }
-        // Most-referenced destinations.
+        
         let allSymbols = await store.symbols
         let allFunctions = await store.functions
         var refCounts: [UInt64: Int] = [:]
@@ -297,12 +297,12 @@ public struct SuggestFunctionNameTool: DecompileAssistTool {
         guard let fn = await store.function(atOrContaining: addr.value) else {
             return DecompileAssistToolSupport.error("no function at \(addr.hexString)")
         }
-        // Gather evidence.
+        
         let xrefs = await store.crossReferences
         let fnEnd = fn.endAddress?.value ?? fn.address.value + max(fn.size, 1)
         let calls = xrefs.filter { $0.kind == .call && $0.sourceFunction == fn.address }
             .compactMap(\.destination).prefix(20)
-        // Strings referenced inside the function.
+        
         let strings = await store.stringsList
         var referencedStrings: [String] = []
         for s in strings {
@@ -312,7 +312,7 @@ public struct SuggestFunctionNameTool: DecompileAssistTool {
             if hit { referencedStrings.append(s.text) }
             if referencedStrings.count >= 10 { break }
         }
-        // Imports called.
+        
         let allSymbols = await store.symbols
         var calledImports: [String] = []
         for target in calls {
@@ -324,7 +324,7 @@ public struct SuggestFunctionNameTool: DecompileAssistTool {
                 calledImports.append(callee.displayName)
             }
         }
-        // Heuristic name synthesis.
+        
         var suggestions: [String] = []
         if !referencedStrings.isEmpty {
             let hint = referencedStrings[0]
@@ -382,7 +382,7 @@ public struct SuggestVariableNamesTool: DecompileAssistTool {
             return DecompileAssistToolSupport.error("no function at \(addr.hexString)")
         }
         var suggestions: [[String: Any]] = []
-        // Merge decompiled names when available.
+        
         if let pseudo = await store.pseudocode(forFunctionAt: fn.address.value) {
             for (i, p) in pseudo.parameters.enumerated() {
                 suggestions.append(["slot": "param_\(i)", "current": p, "suggestion": p,
@@ -437,7 +437,7 @@ public struct IdentifyFunctionPurposeTool: DecompileAssistTool {
         var evidence: [String] = []
         var hypothesis: [String] = []
 
-        // API usage → purpose keywords.
+        
         let keywordMap: [(String, [String])] = [
             ("file", ["open", "read", "write", "close", "fopen", "NSFile", "FileManager"]),
             ("network", ["socket", "connect", "http", "URL", "NSURL", "send", "recv", "curl"]),
@@ -466,7 +466,7 @@ public struct IdentifyFunctionPurposeTool: DecompileAssistTool {
             evidence.append("API usage suggests: \(matchedKeywords.sorted().joined(separator: ", "))")
             hypothesis.append("Likely \(matchedKeywords.sorted().joined(separator: "/"))-related routine")
         }
-        // Strings.
+        
         let fnEnd = fn?.endAddress?.value ?? (fn?.address.value ?? 0) + (fn?.size ?? 0)
         let fnStart = fn?.address.value ?? 0
         let referenced = strings.filter { s in
@@ -475,7 +475,7 @@ public struct IdentifyFunctionPurposeTool: DecompileAssistTool {
         if !referenced.isEmpty {
             evidence.append("Strings: \(referenced.map { "\"\($0.text.prefix(60))\"" }.joined(separator: ", "))")
         }
-        // Caller context: entry points / thunks.
+        
         if fn?.kind == .entryPoint { hypothesis.append("Entry-point routine (startup path)") }
         if fn?.kind == .thunk { hypothesis.append("Thunk/wrapper — likely forwards to another implementation") }
         if hypothesis.isEmpty {
@@ -611,7 +611,7 @@ public struct AnalyzeSuspiciousPatternsTool: DecompileAssistTool {
         }
         var findings: [[String: Any]] = []
 
-        // Binary-wide checks.
+        
         if image.isEncrypted {
             findings.append(["pattern": "encrypted_binary", "severity": "info",
                              "detail": "FairPlay-encrypted content; static analysis may be incomplete"])
@@ -621,7 +621,7 @@ public struct AnalyzeSuspiciousPatternsTool: DecompileAssistTool {
                              "detail": "Segment \(seg.name) is both executable and writable"])
         }
 
-        // Function-scoped checks when an address is provided.
+        
         if let addr = DecompileAssistToolSupport.address(arguments) {
             if let fn = await store.function(containing: addr.value) {
                 let xrefs = await store.crossReferences

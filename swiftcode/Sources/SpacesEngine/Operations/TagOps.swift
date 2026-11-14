@@ -1,15 +1,15 @@
 import Crypto
 import Foundation
 
-/// Tag operations: lightweight and annotated (optionally signed) tags.
+
 public struct TagOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
 
     public struct TagInfo: Sendable, Encodable {
         public var name: String
-        public var oid: ObjectID          // ref target
-        public var peeled: ObjectID?      // commit for annotated tags
+        public var oid: ObjectID          
+        public var peeled: ObjectID?      
         public var isAnnotated: Bool
         public var tagger: Signature?
         public var message: String
@@ -36,7 +36,7 @@ public struct TagOps {
         return result.sorted { $0.name < $1.name }
     }
 
-    /// `spaces tag <name> [rev]` — lightweight; `spaces tag-create -a` annotated.
+    
     @discardableResult
     public func create(_ name: String, at rev: String = "HEAD",
                        annotated: Bool = false, message: String = "",
@@ -68,7 +68,7 @@ public struct TagOps {
     public func delete(_ name: String) throws { return try repo.withLock {
         let full = "refs/tags/\(name)"
         guard try repo.refs.readRef(full) != nil else { throw SpacesError.refNotFound(name) }
-        // Recoverable: archive like branches.
+        
         if let oid = try repo.refs.readRef(full) {
             let stamp = Int64(Date().timeIntervalSince1970)
             _ = try repo.refs.updateRef("refs/archive/tags/\(name)-\(stamp)", to: oid)
@@ -77,8 +77,8 @@ public struct TagOps {
         }
     }
 
-    /// `spaces tag-verify` — verifies an annotated tag's signature if present.
-    /// Signature scheme: HMAC-SHA256 with the repo's signing key (see Signing).
+    
+    
     public func verify(_ name: String) throws -> Bool {
         guard let ref = try repo.refs.tags().first(where: { $0.shortName == name }) else {
             throw SpacesError.refNotFound(name)
@@ -94,27 +94,27 @@ public struct TagOps {
                                                  signature: sig)
     }
 
-    /// Signs arbitrary content with the repository signing key.
+    
     func signPayload(type: ObjectType, object: String) throws -> String {
         try SigningOps(repo: repo).sign(type: type, object: object)
     }
 }
 
-/// Signing: HMAC-SHA256 based detached signatures using a per-repo key stored
-/// in `.spaces/signing.key` (created on demand, mode 0600). This is a real,
-/// verifiable signature scheme; it is symmetric (repo-local) rather than
-/// asymmetric — suitable for integrity attestation. Asymmetric signing can be
-/// layered via `extensions` later.
+
+
+
+
+
 public struct SigningOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
 
     private var keyURL: URL { repo.metaURL.appendingPathComponent("signing.key") }
 
-    /// Returns the repo signing key, generating one if absent.
+    
     public func signingKey() throws -> Data { return try repo.withLock {
         if let data = try? Data(contentsOf: keyURL), data.count >= 32 { return data }
-        // Generate via Crypto's CSPRNG-backed SymmetricKey (portable).
+        
         let symmetric = SymmetricKey(size: .bits256)
         let data = symmetric.withUnsafeBytes { Data($0) }
         try data.write(to: keyURL, options: .atomic)
@@ -123,8 +123,8 @@ public struct SigningOps {
         }
     }
 
-    /// Produces a detached signature: hex HMAC-SHA256 over
-    /// "spaces-sign-v1\n<type>\n<object>".
+    
+    
     public func sign(type: ObjectType, object: String) throws -> String {
         let key = try signingKey()
         let symmetricKey = SymmetricKey(data: key)

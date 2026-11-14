@@ -1,23 +1,23 @@
 import Foundation
 
-/// Line-based diff engine: Myers O(ND) shortest-edit script, unified/hunk
-/// rendering, word-level intra-line diff, binary detection, stats.
+
+
 public enum DiffEngine {
 
     public struct Line: Hashable, Sendable {
         public var text: String
-        /// True for the artificial trailing empty line handling; we keep
-        /// "\n" attached semantics simple: lines do NOT include the newline.
+        
+        
     }
 
     public enum Edit: Sendable {
-        case equal(Int, Int)      // a-index, b-index
-        case delete(Int)          // a-index
-        case insert(Int)          // b-index
+        case equal(Int, Int)      
+        case delete(Int)          
+        case insert(Int)          
     }
 
-    /// Splits data into lines (without terminators). A trailing newline does
-    /// not produce an extra empty element.
+    
+    
     public static func splitLines(_ data: Data) -> [String] {
         let text = String(decoding: data, as: UTF8.self)
         if text.isEmpty { return [] }
@@ -27,22 +27,22 @@ public enum DiffEngine {
     }
 
     public static func isBinary(_ data: Data) -> Bool {
-        // NUL byte in first 8000 bytes → binary (same heuristic class as git).
+        
         let sample = data.prefix(8000)
         return sample.contains(0)
     }
 
-    // MARK: - Myers diff
+    
 
-    /// Computes the edit script between two line arrays using the Myers
-    /// O(ND) algorithm with linear space refinement (simple recursive version
-    /// is avoided; we use the standard V-array trace approach).
+    
+    
+    
     public static func diff(_ a: [String], _ b: [String]) -> [Edit] {
         let n = a.count, m = b.count
         if n == 0 { return b.indices.map { .insert($0) } }
         if m == 0 { return a.indices.map { .delete($0) } }
 
-        // Strip common prefix/suffix to reduce problem size.
+        
         var start = 0
         while start < n && start < m && a[start] == b[start] { start += 1 }
         var endA = n, endB = m
@@ -61,8 +61,8 @@ public enum DiffEngine {
         return edits
     }
 
-    /// Myers O(ND) shortest-edit script with linear-space trace backtracking.
-    /// V maps k-line → furthest x reached; trace[d] is the V after d edits.
+    
+    
     private static func myersCore(_ a: [String], _ b: [String],
                                   offsetA: Int, offsetB: Int) -> [Edit] {
         let n = a.count, m = b.count
@@ -99,10 +99,10 @@ public enum DiffEngine {
             return a.indices.map { .delete(offsetA + $0) } + b.indices.map { .insert(offsetB + $0) }
         }
 
-        // Backtrack through the trace.
+        
         var edits: [Edit] = []
         var x = n, y = m
-        if trace.count > foundD { /* trace has foundD+1 entries */ }
+        if trace.count > foundD {   }
         for d in stride(from: foundD, through: 1, by: -1) {
             let vPrev = trace[d - 1]
             let k = x - y
@@ -114,22 +114,22 @@ public enum DiffEngine {
             }
             let prevX = vPrev[prevK] ?? 0
             let prevY = prevX - prevK
-            // Snake backwards (equal lines).
+            
             while x > prevX && y > prevY {
                 x -= 1; y -= 1
                 edits.append(.equal(offsetA + x, offsetB + y))
             }
             if x == prevX {
-                // Down move: insertion from b.
+                
                 edits.append(.insert(offsetB + (y - 1)))
                 y -= 1
             } else {
-                // Right move: deletion from a.
+                
                 edits.append(.delete(offsetA + (x - 1)))
                 x -= 1
             }
         }
-        // d = 0 snake.
+        
         while x > 0 && y > 0 {
             x -= 1; y -= 1
             edits.append(.equal(offsetA + x, offsetB + y))
@@ -138,12 +138,12 @@ public enum DiffEngine {
         return edits
     }
 
-    // MARK: - Hunks
+    
 
     public struct Hunk: Sendable {
-        public var aStart: Int   // 1-based line number of first a-line in hunk
+        public var aStart: Int   
         public var aCount: Int
-        public var bStart: Int   // 1-based line number of first b-line in hunk
+        public var bStart: Int   
         public var bCount: Int
         public var lines: [HunkLine]
     }
@@ -154,17 +154,17 @@ public enum DiffEngine {
         case deletion(String)
     }
 
-    /// One rendered operation in diff order.
+    
     private enum DiffOp {
         case equal(a: Int, b: Int)
         case delete(a: Int)
         case insert(b: Int)
     }
 
-    /// Groups edits into hunks with `context` lines of surrounding context.
+    
     public static func hunks(edits: [Edit], a: [String], b: [String],
                              context: Int = 3) -> [Hunk] {
-        // Materialize ops with absolute indices.
+        
         var ops: [DiffOp] = edits.map { e in
             switch e {
             case .equal(let x, let y): return .equal(a: x, b: y)
@@ -172,15 +172,15 @@ public enum DiffEngine {
             case .insert(let y): return .insert(b: y)
             }
         }
-        // Indices of ops that are changes (not equal).
+        
         let changeIdx = ops.indices.filter {
             if case .equal = ops[$0] { return false }
             return true
         }
         guard !changeIdx.isEmpty else { return [] }
 
-        // Group change indices: new hunk when the equal-run between two
-        // changes exceeds 2*context.
+        
+        
         var groups: [[Int]] = [[changeIdx[0]]]
         for idx in changeIdx.dropFirst() {
             let prev = groups[groups.count - 1].last!
@@ -199,7 +199,7 @@ public enum DiffEngine {
                                   a: [String], b: [String],
                                   context: Int) -> Hunk {
         let firstChange = group.first!, lastChange = group.last!
-        // Expand window by `context` equal ops on each side.
+        
         var lo = firstChange
         var eqBefore = 0
         var i = firstChange - 1
@@ -235,14 +235,14 @@ public enum DiffEngine {
                     bStart: max(1, bStart), bCount: bCount, lines: lines)
     }
 
-    /// For a hunk whose first op is an insertion at op-index `idx`, find the
-    /// 1-based a-line number it sits before.
+    
+    
     private static func nextA(ops: [DiffOp], before idx: Int, a: [String]) -> Int {
-        // Walk back to last equal/delete to get a-coordinate.
+        
         var i = idx - 1
         while i >= 0 {
             switch ops[i] {
-            case .equal(let x, _): return x + 2 // line after x
+            case .equal(let x, _): return x + 2 
             case .delete(let x): return x + 2
             case .insert: i -= 1
             }
@@ -262,9 +262,9 @@ public enum DiffEngine {
         return 1
     }
 
-    // MARK: - Patch rendering
+    
 
-    /// Renders hunks as a unified diff body (without file headers).
+    
     public static func unifiedPatch(hunks: [Hunk], aPath: String, bPath: String) -> String {
         var out = "--- a/\(aPath)\n+++ b/\(bPath)\n"
         for h in hunks {
@@ -280,7 +280,7 @@ public enum DiffEngine {
         return out
     }
 
-    /// Diff statistics: added/removed line counts.
+    
     public static func stats(hunks: [Hunk]) -> (added: Int, removed: Int) {
         var added = 0, removed = 0
         for h in hunks {
@@ -295,11 +295,11 @@ public enum DiffEngine {
         return (added, removed)
     }
 
-    /// Word-level diff within a changed line pair (simple token diff).
+    
     public static func wordDiff(_ a: String, _ b: String) -> [(String, Bool)] {
         let aw = a.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
         let bw = b.split(separator: " ", omittingEmptySubsequences: false).map(String.init)
-        // LCS on words.
+        
         let n = aw.count, m = bw.count
         var dp = Array(repeating: Array(repeating: 0, count: m + 1), count: n + 1)
         for i in stride(from: n - 1, through: 0, by: -1) {

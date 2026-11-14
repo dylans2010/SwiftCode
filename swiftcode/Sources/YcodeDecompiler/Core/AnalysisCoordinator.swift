@@ -1,8 +1,8 @@
 import Foundation
 
-/// Orchestrates the analysis pipeline for a session: parse → discover
-/// functions → symbols → strings → disassembly → references → persist.
-/// Every stage reports honest progress; failures preserve completed results.
+
+
+
 public struct AnalysisCoordinator: Sendable {
     public let session: DecompilerSession
     public let registry: EngineRegistry
@@ -16,20 +16,20 @@ public struct AnalysisCoordinator: Sendable {
         let store = await session.analysisStore()
         let provenance = AnalysisSource(provenance: .formatParser, pass: "parse")
 
-        // 1. Symbols from format symbol tables.
+        
         await store.setProgress(.init(stage: .buildingSymbols, message: "Importing symbols"))
         await store.upsertSymbols(image.symbols)
         await store.recordHistory(AnalysisHistoryEntry(
             operation: "symbols", detail: "\(image.symbols.count) symbols imported"))
 
-        // 2. Functions: entry point + function starts + symbols + discovered.
+        
         await store.setProgress(.init(stage: .discoveringFunctions, message: "Discovering functions"))
         var functions = FunctionDiscovery.discover(image: image, provenance: provenance)
         await store.upsertFunctions(functions)
         await store.recordHistory(AnalysisHistoryEntry(
             operation: "functions", detail: "\(functions.count) functions discovered"))
 
-        // 3. Strings.
+        
         if configuration.extractStrings {
             await store.setProgress(.init(stage: .buildingSymbols, message: "Extracting strings"))
             let strings = StringAnalysis.extract(image: image)
@@ -38,7 +38,7 @@ public struct AnalysisCoordinator: Sendable {
                 operation: "strings", detail: "\(strings.count) strings extracted"))
         }
 
-        // 4. Disassembly of executable sections (bounded).
+        
         if let disassembler = await registry.resolveDisassembler(for: image,
                                                                   preferredID: configuration.preferredDisassemblerID) {
             await store.setProgress(.init(stage: .disassembling, message: "Disassembling \(disassembler.displayName)"))
@@ -52,9 +52,9 @@ public struct AnalysisCoordinator: Sendable {
                 try Task.checkCancellation()
                 let start = section.address
                 let end = DecompilerAddress(virtual: section.address.value + section.size)
-                // The backend reports progress synchronously; buffer the
-                // latest value and flush it to the store on a timer so the
-                // UI sees live counts during long decodes.
+                
+                
+                
                 let progressBox = LatestProgress()
                 let priorCount = allInstructions.count
                 let flush = Task {
@@ -109,7 +109,7 @@ public struct AnalysisCoordinator: Sendable {
                     provenance: .engine))
             }
 
-            // 5. Cross-references from decoded control flow.
+            
             if configuration.buildReferences {
                 await store.setProgress(.init(stage: .buildingReferences, message: "Building references"))
                 let xrefs = CrossReferenceBuilder.build(instructions: allInstructions, image: image)
@@ -118,8 +118,8 @@ public struct AnalysisCoordinator: Sendable {
                     operation: "references", detail: "\(xrefs.count) cross-references built"))
             }
 
-            // 6. Refine function boundaries from discovered prologues/returns
-            //    where the backend gave us real instructions.
+            
+            
             functions = FunctionDiscovery.refine(image: image, instructions: allInstructions,
                                                   existing: await store.functions)
             await store.upsertFunctions(functions)
@@ -131,7 +131,7 @@ public struct AnalysisCoordinator: Sendable {
                                                            detail: "no compatible disassembler"))
         }
 
-        // 7. Types from metadata (best-effort, marked as recovered).
+        
         let recoveredTypes = TypeRecovery.recover(image: image)
         await store.upsertTypes(recoveredTypes)
 
@@ -142,8 +142,8 @@ public struct AnalysisCoordinator: Sendable {
                                                        detail: "\(functions.count) functions, \(image.symbols.count) symbols"))
     }
 
-    /// Thread-safe holder for the latest backend-reported progress so a
-    /// synchronous `@Sendable` callback can feed an async store flush.
+    
+    
     private final class LatestProgress: @unchecked Sendable {
         private let lock = NSLock()
         private var value: AnalysisProgress?

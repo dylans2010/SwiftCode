@@ -1,9 +1,9 @@
 import Foundation
 
-/// Spaces worktrees: additional working directories sharing the same object
-/// database and refs, each with its own HEAD, index, and worktree files.
-/// Layout: `<repo>/.spaces/worktrees/<name>/` holds per-worktree metadata
-/// (HEAD, index); the actual files live at the worktree path.
+
+
+
+
 public struct WorktreeOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
@@ -11,7 +11,7 @@ public struct WorktreeOps {
     public struct WorktreeInfo: Sendable {
         public var name: String
         public var path: String
-        public var head: String // branch name or oid
+        public var head: String 
         public var isMain: Bool
     }
 
@@ -19,7 +19,7 @@ public struct WorktreeOps {
         repo.metaURL.appendingPathComponent("worktrees")
     }
 
-    /// Lists worktrees: the main worktree plus linked ones.
+    
     public func list() throws -> [WorktreeInfo] {
         var result = [WorktreeInfo(name: "main", path: repo.worktreeURL.path,
                                    head: try repo.refs.currentBranch() ?? "(detached)",
@@ -42,8 +42,8 @@ public struct WorktreeOps {
         return result
     }
 
-    /// `spaces worktree-add <path> [branch]` — creates a linked worktree.
-    /// The new worktree gets its own index/HEAD under `.spaces/worktrees/`.
+    
+    
     @discardableResult
     public func add(path: String, branch: String? = nil,
                     newBranch: String? = nil) throws -> WorktreeInfo { return try repo.withLock {
@@ -53,7 +53,7 @@ public struct WorktreeOps {
                 throw SpacesError.invalidArgument("worktree path not empty: \(path)")
             }
         }
-        // Determine commit to check out.
+        
         let oid: ObjectID
         let branchName: String
         if let nb = newBranch {
@@ -72,13 +72,13 @@ public struct WorktreeOps {
             throw SpacesError.branchNotFound("HEAD (unborn)")
         }
 
-        // Per-worktree metadata dir.
+        
         let name = target.lastPathComponent
         let metaDir = worktreesMetaDir.appendingPathComponent(name)
         try FileManager.default.createDirectory(at: metaDir, withIntermediateDirectories: true)
         try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
 
-        // Write worktree's own HEAD + a pointer back to the main repo.
+        
         try Data("ref: refs/heads/\(branchName)\n".utf8)
             .write(to: metaDir.appendingPathComponent("HEAD"))
         try Data(repo.metaURL.path.utf8)
@@ -86,10 +86,10 @@ public struct WorktreeOps {
         try Data(target.path.utf8)
             .write(to: metaDir.appendingPathComponent("gitdir"))
 
-        // Branch ref is shared (refs/heads/* lives in common dir) — for a
-        // linked worktree git would forbid checking out the same branch
-        // twice; we allow it but record per-worktree HEAD separately.
-        // Materialize tree into the linked worktree directory.
+        
+        
+        
+        
         let commit = try repo.commitObject(oid)
         try checkoutInto(target, treeOID: commit.tree)
 
@@ -97,8 +97,8 @@ public struct WorktreeOps {
         }
     }
 
-    /// Materializes a tree into an arbitrary directory (used for linked
-    /// worktrees that don't share the main worktree path).
+    
+    
     private func checkoutInto(_ dir: URL, treeOID: ObjectID) throws {
         let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: treeOID)
         let fm = FileManager.default
@@ -117,7 +117,7 @@ public struct WorktreeOps {
         }
     }
 
-    /// `spaces worktree-remove <name|path>`.
+    
     public func remove(_ nameOrPath: String) throws { return try repo.withLock {
         let worktrees = try list()
         guard let wt = worktrees.first(where: {
@@ -126,8 +126,8 @@ public struct WorktreeOps {
         guard !wt.isMain else {
             throw SpacesError.invalidArgument("cannot remove the main worktree")
         }
-        // Safety: refuse if worktree has uncommitted changes? For v1 we
-        // require --force semantics via clean check: scan target dir.
+        
+        
         let target = URL(fileURLWithPath: wt.path)
         try? FileManager.default.removeItem(at: target)
         try? FileManager.default.removeItem(

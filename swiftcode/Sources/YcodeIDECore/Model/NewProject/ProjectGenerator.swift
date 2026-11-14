@@ -410,11 +410,11 @@ extension ProjectGenerator {
         return GeneratedProject(folderName: c.n, files: files, project: project, projectName: c.n, entryFile: entry)
     }
 
-    /// Applies the template's Version and Build options to every build
-    /// configuration. GENERATE_INFOPLIST_FILE turns MARKETING_VERSION and
-    /// CURRENT_PROJECT_VERSION into CFBundleShortVersionString and
-    /// CFBundleVersion, so writing them here versions every generated target,
-    /// including test bundles.
+    
+    
+    
+    
+    
     static func applyVersions(_ proj: inout PBXProj, _ c: GenContext) {
         let version = c.f.field(TemplateOptionID.marketingVersion) == nil ? nil
             : c.f.value(TemplateOptionID.marketingVersion).trimmingCharacters(in: .whitespaces)
@@ -439,10 +439,10 @@ extension ProjectGenerator {
         }
     }
 
-    /// Optional project-support files (README, LICENSE, CHANGELOG, .gitignore,
-    /// privacy manifest, entitlements, StoreKit configuration, CONTRIBUTING,
-    /// .editorconfig) emitted for templates that expose the matching "Extras"
-    /// options.
+    
+    
+    
+    
     static func extraFiles(_ c: GenContext) -> [(String, String)] {
         let ID = TemplateOptionID.self
         var out: [(String, String)] = []

@@ -3,9 +3,9 @@ import Observation
 import YcodeIDECore
 import SwiftCodeSDK
 
-/// View model for the source-control navigator. Routes every operation to
-/// either the Git service or the native Spaces service depending on the
-/// persistent "Source Control System" preference (Settings → Source Control).
+
+
+
 @Observable
 @MainActor
 public class GitViewModel {
@@ -16,7 +16,7 @@ public class GitViewModel {
     public var isGitInstalled = false
     public var repositoryURL: URL?
 
-    /// True when the Spaces source-control system is selected or when the repository has a .spaces metadata folder.
+    
     public var usesSpaces: Bool {
         if Preferences.shared.usesSpacesSourceControl { return true }
         if let url = repositoryURL {

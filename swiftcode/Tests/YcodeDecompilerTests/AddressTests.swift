@@ -1,11 +1,11 @@
 import XCTest
 @testable import YcodeDecompiler
 
-/// Tests for `DecompilerAddress` parsing/formatting and the
-/// virtual-address → file-offset translation on `BinaryImage`.
+
+
 final class AddressTests: XCTestCase {
 
-    // MARK: - DecompilerAddress
+    
 
     func testParseHexWithPrefix() {
         let a = DecompilerAddress.parse("0x1A2B")
@@ -44,11 +44,11 @@ final class AddressTests: XCTestCase {
         let v2 = DecompilerAddress(virtual: 2)
         let f1 = DecompilerAddress(fileOffset: 1)
         XCTAssertTrue(v1 < v2)
-        XCTAssertFalse(v1 < f1) // different kinds never compare less
+        XCTAssertFalse(v1 < f1) 
         XCTAssertFalse(f1 < v1)
     }
 
-    // MARK: - fileOffset(forVirtualAddress:)
+    
 
     private func makeImage() -> BinaryImage {
         let identity = BinaryIdentity(
@@ -72,7 +72,7 @@ final class AddressTests: XCTestCase {
 
     func testVirtualAddressInsideSegmentMapsToFileOffset() {
         let image = makeImage()
-        // vmAddress 0x400000 ↔ fileOffset 0x200, so VA 0x400010 → 0x210.
+        
         XCTAssertEqual(image.fileOffset(forVirtualAddress: 0x400010), 0x210)
         XCTAssertEqual(image.fileOffset(forVirtualAddress: 0x400000), 0x200)
     }
@@ -84,8 +84,8 @@ final class AddressTests: XCTestCase {
 
     func testVirtualAddressBeyondFileSizeIsNil() {
         let image = makeImage()
-        // Inside vmSize (0x400000+0x800 = 0x400800 ok) but past fileSize:
-        // fileSize is 0x800 so delta 0x900 is unmapped.
+        
+        
         XCTAssertNil(image.fileOffset(forVirtualAddress: 0x400900))
     }
 

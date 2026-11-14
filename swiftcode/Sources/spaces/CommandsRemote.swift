@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 import SpacesEngine
 
-// MARK: - Tags
+
 
 struct Tag: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Tag operations",
@@ -79,7 +79,7 @@ struct VerifyTag: ParsableCommand {
     }
 }
 
-// MARK: - Stashes
+
 
 struct Stash: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Stash operations",
@@ -190,7 +190,7 @@ struct StashBranch: ParsableCommand {
     }
 }
 
-// MARK: - Remotes
+
 
 struct Remote: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Remote operations",
@@ -295,7 +295,7 @@ struct Push: ParsableCommand {
     func run() throws {
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         var spec = refspec
-        // Default: push current branch to same-named remote branch.
+        
         if refspec == "HEAD", let branch = try repo.refs.currentBranch() {
             spec = "refs/heads/\(branch):refs/heads/\(branch)"
             if setUpstream {
@@ -345,9 +345,9 @@ struct Unpublish: ParsableCommand {
     @Argument var branch: String
     func run() throws {
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
-        // Push deletion via empty ref update — implement as refspec with zero oid.
-        // Our protocol doesn't support deletes yet; remove tracking ref and
-        // report honestly.
+        
+        
+        
         let track = "refs/remotes/\(remote)/\(branch)"
         if try repo.refs.readRef(track) != nil {
             try repo.refs.deleteRef(track)
@@ -390,7 +390,7 @@ struct Transfer: ParsableCommand {
     }
 }
 
-// MARK: - Snapshots & recovery
+
 
 struct Snapshot: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Snapshot operations",
@@ -519,7 +519,7 @@ struct RecoveryPrune: ParsableCommand {
     }
 }
 
-// MARK: - Search
+
 
 struct Search: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Search the repository",
@@ -616,7 +616,7 @@ struct FindHistory: ParsableCommand {
     }
 }
 
-// MARK: - Maintenance
+
 
 struct Fsck: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Verify repository integrity")
@@ -827,7 +827,7 @@ struct Maintenance: ParsableCommand {
     }
 }
 
-// MARK: - Object inspection
+
 
 struct LsFiles: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "ls-files", abstract: "List tracked files")
@@ -1016,7 +1016,7 @@ struct Events: ParsableCommand {
     }
 }
 
-// MARK: - Security
+
 
 struct Security: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Security tools",
@@ -1031,7 +1031,7 @@ struct Scan: ParsableCommand {
     @Flag(name: .long) var staged: Bool = false
     func run() throws {
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
-        // Real secret patterns.
+        
         let patterns: [(String, String)] = [
             ("aws-access-key", #"AKIA[0-9A-Z]{16}"#),
             ("private-key", #"-----BEGIN [A-Z ]*PRIVATE KEY-----"#),
@@ -1226,7 +1226,7 @@ struct Audit: ParsableCommand {
     }
 }
 
-// MARK: - Migration
+
 
 struct ImportGit: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "import-git", abstract: "Import a Git repository")
@@ -1289,13 +1289,13 @@ struct ExportGitCmd: ParsableCommand {
     }
 }
 
-// MARK: - Bundles & archive
 
-/// Bundle format: `.spacesbundle` file =
-///   magic "SPBD" | uint32 version | uint64 headerLen | header JSON |
-///   concatenated stored objects (each: uint64 len | stored bytes) |
-///   refs JSON
-/// Header JSON: {"refs": {name: oid}, "objects": [oid,...], "created": ts}
+
+
+
+
+
+
 struct BundleCreate: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "create", abstract: "Create a bundle file")
     @Option(name: .long) var repo: String?
@@ -1350,7 +1350,7 @@ struct Archive: ParsableCommand {
     }
 }
 
-// MARK: - Worktrees
+
 
 struct Worktree: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Worktree operations",

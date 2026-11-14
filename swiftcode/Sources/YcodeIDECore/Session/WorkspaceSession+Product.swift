@@ -28,9 +28,9 @@ extension WorkspaceSession {
         return model.loadSchemes().first { $0.name == name }
     }
 
-    /// The build configuration the selected scheme's LaunchAction uses —
-    /// "Debug" when no scheme resolves one. Shown by inspectors that present
-    /// per-configuration build settings.
+    
+    
+    
     public var launchConfiguration: String { configuration(for: "LaunchAction") }
 
     package func configuration(for schemeAction: String) -> String {

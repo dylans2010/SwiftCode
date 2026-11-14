@@ -7,10 +7,10 @@ public final class NewProjectSheetController: TemplateChooserController {
     public private(set) var flow: NewProjectFlowModel
     let defaults: UserDefaults
     public var onFinish: ((ProjectTemplateDescriptor, TemplateOptionsForm, String) -> Void)?
-    /// Called whenever the sheet is dismissed for any reason — the Cancel
-    /// button, Escape, a window close, or a programmatic dismiss — not just
-    /// when creation was committed. `NewProjectFlow` uses it to tear down the
-    /// transient host window when the user abandons the flow.
+    
+    
+    
+    
     public var onDismiss: (() -> Void)?
     public let captionLabel = NSTextField(wrappingLabelWithString: "")
     private(set) var grid: TemplateGridView?
@@ -429,13 +429,13 @@ enum NewProjectFlow {
         if let row, let id = NewProjectPicker.templateID(forRow: row) { sheet.jump(to: id) }
         var host: NSWindow?
         var hostController: WorkspaceWindowController?
-        // Tear down the transient host window on EVERY dismissal path, not
-        // only the Cancel button: closing the sheet window or the host window
-        // ends the sheet without invoking `cancelClicked`, which would
-        // otherwise leave an untitled workspace window (and its editor)
-        // open even though no project was created. The cleanup is idempotent
-        // with the `done` closure below, which closes the same window after
-        // a confirmed creation.
+        
+        
+        
+        
+        
+        
+        
         let dismissHost = { host?.close(); hostController = nil }
         sheet.onCancel = dismissHost
         sheet.onDismiss = dismissHost

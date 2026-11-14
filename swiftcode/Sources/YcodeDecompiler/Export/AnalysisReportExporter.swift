@@ -1,11 +1,11 @@
 import Foundation
 
-/// Produces a Markdown analysis report covering binary metadata,
-/// entity counts, engines used and recorded findings.
+
+
 public enum AnalysisReportExporter {
-    /// Render a complete Markdown report.
-    /// All parameters are plain data snapshots — callers gather them
-    /// from `AnalysisStore` beforehand.
+    
+    
+    
     public static func export(image: BinaryImage?,
                               functions: [DecompilerFunction],
                               symbols: [BinarySymbol],
@@ -19,7 +19,7 @@ public enum AnalysisReportExporter {
         var out = "# Decompiler Analysis Report\n\n"
         out += "Generated: \(ISO8601DateFormatter().string(from: generatedAt))\n\n"
 
-        // MARK: Binary metadata
+        
         out += "## Binary\n\n"
         if let image {
             out += "| Property | Value |\n|---|---|\n"
@@ -47,7 +47,7 @@ public enum AnalysisReportExporter {
             out += "_No binary loaded._\n\n"
         }
 
-        // MARK: Counts
+        
         out += "## Contents\n\n"
         out += "| Entity | Count |\n|---|---|\n"
         out += "| Functions | \(functions.count) |\n"
@@ -58,7 +58,7 @@ public enum AnalysisReportExporter {
         out += "| Findings | \(findings.count) |\n"
         out += "| History entries | \(history.count) |\n\n"
 
-        // MARK: Engines used
+        
         out += "## Engines\n\n"
         var usedIDs = Set(history.compactMap(\.engineID))
         for e in engines { usedIDs.insert(e.id) }
@@ -77,7 +77,7 @@ public enum AnalysisReportExporter {
             out += "\n"
         }
 
-        // MARK: Findings
+        
         out += "## Findings\n\n"
         if findings.isEmpty {
             out += "_No findings recorded._\n\n"
@@ -92,7 +92,7 @@ public enum AnalysisReportExporter {
             }
         }
 
-        // MARK: History
+        
         out += "## Analysis History\n\n"
         if history.isEmpty {
             out += "_No analysis operations recorded._\n"

@@ -310,9 +310,9 @@ public final class WelcomeWindowController: NSWindowController, NSTableViewDataS
         return cell
     }
 
-    /// The icon for a recent-project row: the app icon from the project's
-    /// asset catalog when one exists, otherwise the icon the user assigned to
-    /// the project document/folder, and finally a generic project glyph.
+    
+    
+    
     public static func rowIcon(_ url: URL) -> NSImage {
         let container = RecentProjects.containerURL(url)
         let ext = container.pathExtension.lowercased()

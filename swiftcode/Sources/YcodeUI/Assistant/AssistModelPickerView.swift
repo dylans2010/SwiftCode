@@ -1,9 +1,9 @@
 import SwiftUI
 import YcodeAssistant
 
-/// Grouped, searchable model picker for Assist. Shows every provider as a
-/// section with its discovered models, a state hint when the provider is not
-/// ready, and footer actions to re-check availability or open Assist settings.
+
+
+
 public struct AssistModelPickerView: View {
     public struct ProviderSection: Identifiable {
         public var id: String { provider.rawValue }

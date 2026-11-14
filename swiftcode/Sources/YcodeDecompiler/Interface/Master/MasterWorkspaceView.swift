@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Left-sidebar categories in Master mode.
+
 public enum MasterSidebarItem: String, CaseIterable, Identifiable, Sendable {
     case functions, symbols, imports, exports, strings, sections, references
 
@@ -29,7 +29,7 @@ public enum MasterSidebarItem: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// Center editor tabs in Master mode.
+
 public enum MasterEditorTab: String, CaseIterable, Identifiable, Sendable {
     case disassembly, pseudocode, hex, controlFlow
 
@@ -52,8 +52,8 @@ public enum MasterEditorTab: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// Master mode workspace: dense multi-pane layout — navigator sidebar,
-/// tabbed editors in the center, inspector on the right, console below.
+
+
 public struct MasterWorkspaceView: View {
     @Bindable var state: DecompilerObservableState
     @State private var sidebarItem: MasterSidebarItem = .functions
@@ -66,7 +66,7 @@ public struct MasterWorkspaceView: View {
 
     public var body: some View {
         HSplitView {
-            // Left: navigator
+            
             VStack(spacing: 0) {
                 Picker("Pane", selection: $sidebarItem) {
                     ForEach(MasterSidebarItem.allCases) { item in
@@ -82,7 +82,7 @@ public struct MasterWorkspaceView: View {
             }
             .frame(minWidth: 240, idealWidth: 300, maxWidth: 420)
 
-            // Center: tabbed editors
+            
             VStack(spacing: 0) {
                 Picker("Editor", selection: $editorTab) {
                     ForEach(MasterEditorTab.allCases) { tab in
@@ -96,21 +96,21 @@ public struct MasterWorkspaceView: View {
                 editorContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                // Decompile Assist slot: the AI module injects its chat UI
-                // via `state.assistPanel`; same chrome as Friendly mode.
+                
+                
                 if state.showAssist {
                     assistPanel
                 }
             }
             .frame(minWidth: 420)
 
-            // Right: inspector
+            
             if state.showInspector {
                 MasterInspectorView(state: state)
                     .frame(minWidth: 240, idealWidth: 300, maxWidth: 460)
             }
         }
-        // Bottom: console, collapsible
+        
         .safeAreaInset(edge: .bottom) {
             if state.showConsole {
                 AnalysisConsole(state: state)
@@ -178,8 +178,8 @@ public struct MasterWorkspaceView: View {
         }
     }
 
-    /// Bottom Decompile Assist panel chrome — mirrors the Friendly-mode panel:
-    /// header with session status, close button, then the injected chat view.
+    
+    
     private var assistPanel: some View {
         VStack(spacing: 0) {
             Divider()

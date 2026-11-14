@@ -1,8 +1,8 @@
 import Foundation
 
-/// Central in-memory store for all analysis results of one session.
-/// Both UI modes and Decompile Assist read through this — views never own
-/// copies of analysis data.
+
+
+
 public actor AnalysisStore {
     public private(set) var binary: BinaryImage?
     public private(set) var progress = AnalysisProgress.idle
@@ -11,24 +11,24 @@ public actor AnalysisStore {
     public private(set) var stringsList: [BinaryString] = []
     public private(set) var crossReferences: [CrossReference] = []
     public private(set) var types: [TypeInfo] = []
-    /// Virtual address → decoded instruction (bounded by analysis scope).
+    
     public private(set) var instructions: [UInt64: Instruction] = [:]
-    /// Function entry address → pseudocode result.
+    
     public private(set) var pseudocode: [UInt64: DecompilationResult] = [:]
-    /// User comments keyed by address hex string.
+    
     public private(set) var comments: [String: String] = [:]
-    /// User-created labels keyed by address hex string.
+    
     public private(set) var userLabels: [String: String] = [:]
-    /// AI findings saved by the user (verified=false unless user confirms).
+    
     public private(set) var findings: [AnalysisFinding] = []
-    /// Analysis history entries (what ran, when, by which engine).
+    
     public private(set) var history: [AnalysisHistoryEntry] = []
-    /// Pinned function addresses.
+    
     public private(set) var pinnedFunctions: Set<UInt64> = []
 
     public init() {}
 
-    // MARK: - Mutation (called by AnalysisCoordinator / tools / UI commands)
+    
 
     public func setBinary(_ image: BinaryImage?) { binary = image }
 
@@ -44,12 +44,12 @@ public actor AnalysisStore {
         functions.first { $0.address.value == address }
     }
 
-    /// Exact match first, then the function whose range contains the address.
+    
     public func function(atOrContaining address: UInt64) -> DecompilerFunction? {
         function(containing: address)
     }
 
-    /// Function containing a virtual address (by known end or next function start).
+    
     public func function(containing address: UInt64) -> DecompilerFunction? {
         if let exact = function(at: address) { return exact }
         var best: DecompilerFunction?
@@ -118,7 +118,7 @@ public actor AnalysisStore {
 
     public func comment(at address: DecompilerAddress) -> String? { comments[address.hexString] }
 
-    /// Rename a symbol/function. Preserves originalName — reversible.
+    
     @discardableResult
     public func renameFunction(at address: UInt64, to newName: String) -> Bool {
         guard var f = function(at: address) else { return false }
@@ -159,7 +159,7 @@ public actor AnalysisStore {
         history.append(entry)
     }
 
-    /// Derived counts for the overview screen.
+    
     public var overviewCounts: (functions: Int, symbols: Int, imports: Int, exports: Int,
                                 strings: Int, sections: Int) {
         (functions.count, symbols.count, binary?.imports.count ?? 0,
@@ -174,7 +174,7 @@ public struct AnalysisFinding: Identifiable, Hashable, Sendable, Codable {
     public var detail: String
     public var address: DecompilerAddress?
     public var functionAddress: DecompilerAddress?
-    /// Whether the user confirmed this finding; AI output starts unconfirmed.
+    
     public var userConfirmed: Bool
     public var provenance: AnalysisProvenance
     public var createdAt: Date

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Sidebar destinations in Friendly mode.
+
 public enum FriendlySection: String, CaseIterable, Identifiable, Sendable {
     case overview, functions, code, strings, dependencies, symbols, binaryInfo, history
 
@@ -33,8 +33,8 @@ public enum FriendlySection: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-/// Friendly mode workspace: guided, section-based navigation over the same
-/// session data Master mode exposes as raw panes.
+
+
 public struct FriendlyWorkspaceView: View {
     @Bindable var state: DecompilerObservableState
     @State private var section: FriendlySection? = .overview
@@ -136,9 +136,9 @@ public struct FriendlyWorkspaceView: View {
                     .frame(maxHeight: 320)
             }
 
-            // Decompile Assist slot: the AI module injects its chat UI via
-            // `state.assistPanel`. The panel chrome (header + status) is real
-            // even before the chat content is attached.
+            
+            
+            
             if state.showAssist {
                 assistPanel
             }
@@ -240,7 +240,7 @@ public struct FriendlyWorkspaceView: View {
     }
 }
 
-/// Root view: picks Friendly or Master workspace from session mode.
+
 public struct DecompilerRootView: View {
     @Bindable var state: DecompilerObservableState
 

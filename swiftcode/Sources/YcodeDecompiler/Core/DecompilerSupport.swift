@@ -36,8 +36,8 @@ public enum DecompilerError: Error, LocalizedError, Sendable {
     }
 }
 
-/// Honest progress reporting. `fraction` is nil when the backend cannot
-/// provide a real percentage — the UI shows stage text instead.
+
+
 public struct AnalysisProgress: Sendable {
     public enum Stage: String, Sendable, Codable, CaseIterable {
         case idle, importing, parsing, detectingArchitecture
@@ -47,7 +47,7 @@ public struct AnalysisProgress: Sendable {
     }
 
     public var stage: Stage
-    /// Real completion fraction in [0,1]; nil = indeterminate.
+    
     public var fraction: Double?
     public var message: String
     public var itemsProcessed: Int
@@ -66,27 +66,27 @@ public struct AnalysisProgress: Sendable {
 }
 
 public struct AnalysisConfiguration: Sendable, Codable {
-    /// Whether to run the full static-analysis pipeline after parsing.
+    
     public var autoAnalyze: Bool = true
-    /// Maximum functions to decompile during bulk decompilation (0 = unlimited).
+    
     public var maxBulkDecompileFunctions: Int = 0
-    /// Whether to extract strings during analysis.
+    
     public var extractStrings: Bool = true
-    /// Whether to build cross-references.
+    
     public var buildReferences: Bool = true
-    /// Preferred decompiler backend id; nil = automatic capability resolution.
+    
     public var preferredDecompilerID: String?
-    /// Preferred disassembler backend id; nil = automatic.
+    
     public var preferredDisassemblerID: String?
-    /// Analysis timeout per engine request, seconds.
+    
     public var engineTimeoutSeconds: Int = 600
-    /// Working directory for engine temp files.
+    
     public var engineTempDirectory: String?
 
     public init() {}
 }
 
-/// Static capability declarations for the Decompiler subsystem.
+
 public enum DecompilerCapabilities {
     public static let subsystemName = "Decompiler"
     public static let assistantName = "Decompile Assist"

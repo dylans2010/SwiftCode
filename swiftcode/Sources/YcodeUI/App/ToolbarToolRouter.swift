@@ -1,8 +1,8 @@
 import AppKit
 import YcodeIDECore
 
-/// Routes `.toolbarToolActivated` notifications (posted by the Workspace Hub
-/// tool grid, toolbar items, and Build toolbar) to the real tool windows.
+
+
 @MainActor
 public enum ToolbarToolRouter {
     private static var installed = false

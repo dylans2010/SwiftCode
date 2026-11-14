@@ -12,9 +12,9 @@ public struct FileInspectorInfo: Equatable {
     public var buildSettings: [String: [String: String]]
     public var activeBuildConfiguration: String?
 
-    /// Build-setting keys the file inspector offers. Providers filter the
-    /// target's configuration settings to this list so the inspector only
-    /// carries the values it can show.
+    
+    
+    
     public static let buildSettingKeys: Set<String> = [
         "SDKROOT", "PLATFORM_NAME",
         "PRODUCT_BUNDLE_IDENTIFIER", "PRODUCT_NAME", "PRODUCT_MODULE_NAME",

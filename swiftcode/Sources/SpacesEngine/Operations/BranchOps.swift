@@ -1,6 +1,6 @@
 import Foundation
 
-/// Branch and checkout operations.
+
 public struct BranchOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
@@ -52,7 +52,7 @@ public struct BranchOps {
         return result.sorted { $0.name < $1.name }
     }
 
-    /// `spaces branch create <name> [start]`.
+    
     @discardableResult
     public func create(_ name: String, at startPoint: String = "HEAD") throws -> ObjectID { return try repo.withLock {
         guard RefDatabase.isValidRefName("refs/heads/" + name) else {
@@ -68,9 +68,9 @@ public struct BranchOps {
         }
     }
 
-    /// `spaces branch delete <name>` — recoverable: the ref is moved to
-    /// `refs/archive/branches/<name>-<timestamp>` instead of destroyed, and
-    /// recorded in the reflog.
+    
+    
+    
     public func delete(_ name: String, force: Bool = false) throws { return try repo.withLock {
         let full = "refs/heads/\(name)"
         guard let oid = try repo.refs.readRef(full) else {
@@ -79,7 +79,7 @@ public struct BranchOps {
         if name == (try repo.refs.currentBranch() ?? "\0") && !force {
             throw SpacesError.invalidArgument("cannot delete the current branch; switch first")
         }
-        // Safety: refuse if branch is unmerged into HEAD unless forced.
+        
         if !force, let head = try repo.refs.headOID(objects: repo.objects) {
             let merged = try isAncestor(oid, of: head)
             if !merged {
@@ -87,7 +87,7 @@ public struct BranchOps {
                     "branch '\(name)' is not merged into HEAD (use --force to delete anyway)")
             }
         }
-        // Recoverable deletion: archive the ref.
+        
         let stamp = Int64(Date().timeIntervalSince1970)
         let archiveName = "refs/archive/branches/\(name)-\(stamp)"
         _ = try repo.refs.updateRef(archiveName, to: oid)
@@ -113,15 +113,15 @@ public struct BranchOps {
         }
     }
 
-    /// `spaces switch <branch>` / `spaces checkout <branch|commit>`.
-    /// Updates HEAD, index, and worktree. Refuses on dirty tree unless forced.
+    
+    
     public func switchTo(_ target: String, force: Bool = false,
                          create: Bool = false) throws {
         try repo.performTransaction(steps: ["switch:\(target)"]) {
             if repo.inMerge() || repo.inRebase() || repo.inCherryPick() {
                 throw SpacesError.invalidArgument("cannot switch during an in-progress operation")
             }
-            // Branch switch vs detached checkout.
+            
             let isBranch = (try? repo.refs.readRef("refs/heads/\(target)")) != nil || create
             let targetOID: ObjectID
             if create {
@@ -135,7 +135,7 @@ public struct BranchOps {
                 targetOID = try repo.resolveRevision(target)
             }
 
-            // Dirty check.
+            
             if !force {
                 let status = try WorktreeScanner(repo: repo).status()
                 let dirty = status.entries.filter {
@@ -147,9 +147,9 @@ public struct BranchOps {
             }
 
             let commit = try repo.commitObject(targetOID)
-            // Write target tree to worktree.
+            
             _ = try TreeBuilder.checkout(repo: repo, treeOID: commit.tree)
-            // Rebuild index from tree.
+            
             let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: commit.tree)
             var index = Index()
             for (path, e) in flat {
@@ -166,12 +166,12 @@ public struct BranchOps {
             }
             try repo.appendReflog(refName: "HEAD", old: oldHEAD, new: targetOID,
                                   message: "checkout: moving to \(target)")
-            // post-checkout hook.
+            
             _ = try StagingOps(repo: repo).runHook(.postCheckout, input: "\(oldHEAD?.hex ?? "") \(targetOID.hex)\n")
         }
     }
 
-    /// `spaces reset --soft|--mixed|--hard <rev>`.
+    
     public enum ResetMode { case soft, mixed, hard }
 
     public func reset(to rev: String, mode: ResetMode) throws {
@@ -180,7 +180,7 @@ public struct BranchOps {
             let oldHEAD = try repo.refs.headOID(objects: repo.objects)
             let commit = try repo.commitObject(oid)
 
-            // Safety checkpoint: snapshot before hard reset.
+            
             if mode == .hard {
                 _ = try SnapshotOps(repo: repo).create(
                     message: "pre-reset checkpoint", kind: .preOperation, operation: "reset --hard")
@@ -188,14 +188,14 @@ public struct BranchOps {
 
             switch mode {
             case .soft:
-                // Move HEAD only; index and worktree untouched.
+                
                 if let sym = try repo.refs.symbolicHEAD() {
                     _ = try repo.refs.updateRef(sym, to: oid)
                 } else {
                     try repo.refs.setHEAD(oid: oid)
                 }
             case .mixed:
-                // Move HEAD; reset index to target tree; worktree untouched.
+                
                 if let sym = try repo.refs.symbolicHEAD() {
                     _ = try repo.refs.updateRef(sym, to: oid)
                 } else {
@@ -216,7 +216,7 @@ public struct BranchOps {
                 }
                 try repo.saveIndex(index)
             case .hard:
-                // Move HEAD; index and worktree = target tree.
+                
                 if let sym = try repo.refs.symbolicHEAD() {
                     _ = try repo.refs.updateRef(sym, to: oid)
                 } else {
@@ -236,12 +236,12 @@ public struct BranchOps {
         }
     }
 
-    /// `spaces reflog [ref]`.
+    
     public func reflog(refName: String = "HEAD", limit: Int = 50) throws -> [ReflogEntry] {
         try repo.readReflog(refName: refName, limit: limit)
     }
 
-    /// `spaces graph` — commit graph data for rendering.
+    
     public struct GraphNode: Sendable {
         public var oid: ObjectID
         public var parents: [ObjectID]
@@ -253,7 +253,7 @@ public struct BranchOps {
 
     public func graph(limit: Int = 200, all: Bool = false) throws -> [GraphNode] {
         let commits = try HistoryOps(repo: repo).log(limit: limit, all: all)
-        // Assign lanes oldest→newest so parents are colored before children.
+        
         var laneOf: [ObjectID: Int] = [:]
         var usedLanes = Set<Int>()
         var nodes: [GraphNode] = []
@@ -273,12 +273,12 @@ public struct BranchOps {
         return nodes.reversed()
     }
 
-    /// `spaces branch recovery` — list archived (recoverable-deleted) branches.
+    
     public func archivedBranches() throws -> [Ref] {
         try repo.refs.allRefs().filter { $0.name.hasPrefix("refs/archive/branches/") }
     }
 
-    /// Restores an archived branch to refs/heads/.
+    
     public func restoreArchived(_ archiveName: String, as name: String? = nil) throws { return try repo.withLock {
         guard let ref = try repo.refs.allRefs().first(where: { $0.name == archiveName || $0.name.hasSuffix("/\(archiveName)") }) else {
             throw SpacesError.refNotFound(archiveName)
@@ -289,7 +289,7 @@ public struct BranchOps {
     }
 
     private func isAncestor(_ ancestor: ObjectID, of descendant: ObjectID) throws -> Bool {
-        // BFS from descendant.
+        
         var visited = Set<ObjectID>()
         var queue = [descendant]
         while !queue.isEmpty {

@@ -6,8 +6,8 @@ import SwiftCodeCloud
 import SwiftCodeGitHub
 import YcodeIDECore
 
-/// Hosts `AppleSignInView` inside an AppKit sheet. `onClose` fires when the
-/// sheet's content disappears so the accounts list can refresh.
+
+
 struct AppleAccountSignInSheet: View {
     var onClose: () -> Void
 
@@ -662,8 +662,8 @@ extension AccountsSettingsPane {
         view.heightAnchor.constraint(equalToConstant: 440).isActive = true
     }
 
-    /// Rows shown in the accounts list: App Store Connect API keys plus every
-    /// Apple Account / Developer Team stored by `AppleSignInManager`.
+    
+    
     func accountRows() -> [AccountsPage.Row] {
         var rows = AccountsPage.rows(from: keyStore)
         for account in AppleSignInManager.shared.developerAccounts {
@@ -673,8 +673,8 @@ extension AccountsSettingsPane {
         return rows
     }
 
-    /// Presents the Apple Account sign-in flow (Apple ID, password, optional
-    /// API key fields, and the six-digit verification step) as a sheet.
+    
+    
     func showAppleAccountSheet() {
         appleAccountHosting?.view.removeFromSuperview()
         appleAccountHosting?.removeFromParent()

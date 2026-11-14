@@ -1,7 +1,7 @@
 import Foundation
 
-/// Repository search: filenames, paths, content (worktree + history),
-/// commit messages/authors/dates, refs, and object lookup.
+
+
 public struct SearchOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
@@ -37,7 +37,7 @@ public struct SearchOps {
         }
     }
 
-    /// Unified search across filenames, commit messages, and content.
+    
     public func search(_ query: Query) throws -> [Result] {
         var results: [Result] = []
         let needle = query.caseSensitive ? query.text : query.text.lowercased()
@@ -46,7 +46,7 @@ public struct SearchOps {
             query.caseSensitive ? haystack.contains(needle) : haystack.lowercased().contains(needle)
         }
 
-        // File/path search in worktree.
+        
         if query.kinds.contains(.file) {
             let scanner = WorktreeScanner(repo: repo)
             if let files = try? scanner.scan() {
@@ -58,7 +58,7 @@ public struct SearchOps {
             }
         }
 
-        // Content search in tracked worktree files.
+        
         if query.kinds.contains(.content) {
             let index = try repo.index()
             for (path, entry) in index.entries.sorted(by: { $0.key < $1.key }) {
@@ -77,7 +77,7 @@ public struct SearchOps {
             }
         }
 
-        // Commit search: message, author, hash prefix.
+        
         if query.kinds.contains(.commit) {
             for c in try HistoryOps(repo: repo).log(limit: 5000) {
                 if matches(c.message) || matches(c.author.name) || matches(c.author.email)
@@ -90,7 +90,7 @@ public struct SearchOps {
             }
         }
 
-        // Ref search.
+        
         if query.kinds.contains(.branch) {
             for ref in try repo.refs.allRefs() where matches(ref.shortName) {
                 results.append(Result(kind: ref.kind == .tag ? .tag : .branch,
@@ -100,7 +100,7 @@ public struct SearchOps {
             }
         }
 
-        // Object ID lookup.
+        
         if query.kinds.contains(.object), query.text.count >= 4 {
             if let oid = try? ObjectID.resolve(query.text, in: repo.objects) {
                 let stored = try? repo.objects.read(oid)
@@ -113,7 +113,7 @@ public struct SearchOps {
         return results
     }
 
-    /// `spaces find-file <pattern>` — glob over tracked paths.
+    
     public func findFiles(pattern: String) throws -> [String] {
         let index = try repo.index()
         let regex = try? NSRegularExpression(
@@ -128,15 +128,15 @@ public struct SearchOps {
         }.sorted()
     }
 
-    /// `spaces find-history <path>` — commits touching a path.
+    
     public func historyOf(path: String, limit: Int = 100) throws -> [HistoryOps.CommitInfo] {
         var result: [HistoryOps.CommitInfo] = []
         for c in try HistoryOps(repo: repo).log(limit: 10_000) {
             let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: cInfoTree(c))
             _ = flat
-            // Compare with first parent's tree.
+            
             guard let parent = c.parents.first else {
-                // Root: file present = touched.
+                
                 let tree = try repo.commitObject(c.oid).tree
                 let f = try TreeBuilder.flattenTree(repo: repo, treeOID: tree)
                 if f[path] != nil { result.append(try HistoryOps(repo: repo).commitInfo(c.oid)) }
@@ -154,7 +154,7 @@ public struct SearchOps {
     }
 
     private func cInfoTree(_ c: HistoryOps.CommitInfo) -> ObjectID {
-        // Helper unused; kept for clarity.
+        
         c.oid
     }
 }

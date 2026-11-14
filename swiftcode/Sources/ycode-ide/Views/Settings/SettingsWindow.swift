@@ -348,8 +348,8 @@ extension View {
 }
 
 struct ShellAppearanceModifier: ViewModifier {
-    /// The stored "SwiftCode Accent Color" preference as a SwiftUI tint.
-    /// `nil` leaves the system accent in place.
+    
+    
     static var accentTint: Color? {
         guard let c = ThemeColor(hex: Preferences.shared.appAccentColor) else { return nil }
         return c.color

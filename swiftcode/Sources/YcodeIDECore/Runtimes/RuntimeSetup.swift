@@ -358,9 +358,9 @@ public enum RuntimeCommands {
             + " && rm -rf \(dest.shellQuoted) && mv \(incoming.shellQuoted) \(dest.shellQuoted)"
     }
 
-    /// `xcrun simctl runtime delete <image UUID>` removes a runtime disk
-    /// image (or bundle) from CoreSimulator's secure storage. simctl shuts
-    /// down booted simulators on that runtime first.
+    
+    
+    
     public static func deleteRuntime(image: String) -> [String] {
         ["xcrun", "simctl", "runtime", "delete", image]
     }

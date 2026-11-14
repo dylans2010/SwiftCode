@@ -1,9 +1,9 @@
 import Foundation
 
-/// Exports symbol tables as CSV or JSON.
+
 public enum SymbolExporter {
-    /// CSV with a header row. Fields containing commas, quotes or
-    /// newlines are quoted per RFC 4180.
+    
+    
     public static func exportCSV(symbols: [BinarySymbol]) -> String {
         let header = ["name", "demangled_name", "effective_name", "address",
                       "size", "kind", "library", "user_name", "provenance"]
@@ -28,7 +28,7 @@ public enum SymbolExporter {
         return lines.joined(separator: "\n") + "\n"
     }
 
-    /// JSON array of symbol records using the standard decompiler encoder.
+    
     public static func exportJSON(symbols: [BinarySymbol]) throws -> Data {
         let sorted = symbols.sorted {
             ($0.address?.value ?? UInt64.max) < ($1.address?.value ?? UInt64.max)
@@ -36,7 +36,7 @@ public enum SymbolExporter {
         return try JSONEncoder.decompiler.encode(sorted)
     }
 
-    /// JSON string variant of `exportJSON`.
+    
     public static func exportJSONText(symbols: [BinarySymbol]) throws -> String {
         let data = try exportJSON(symbols: symbols)
         return String(decoding: data, as: UTF8.self)

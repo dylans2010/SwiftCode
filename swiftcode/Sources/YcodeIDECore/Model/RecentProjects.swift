@@ -1,9 +1,9 @@
 import Foundation
 import YcodeProject
 
-/// Extensions that mark a file package as a project container. Only these
-/// are stripped for display; a folder that merely contains a dot keeps its
-/// full last path component.
+
+
+
 private let recentProjectContainerExtensions: Set<String> = ["xcodeproj", "xcworkspace", "swiftpm", "scproj"]
 
 @MainActor
@@ -75,27 +75,27 @@ public final class RecentProjects {
         #endif
     }
 
-    /// The URL of the project container a path belongs to. Recent entries can
-    /// point at a package's `Package.swift` or at files inside an
-    /// `.xcodeproj`/`.xcworkspace` bundle; this unwraps them to the container
-    /// itself so names and icons describe the project, not an inner file.
+    
+    
+    
+    
     public nonisolated static func containerURL(_ url: URL) -> URL {
         var u = url.standardizedFileURL
         while u.lastPathComponent == "Package.swift" {
             u = u.deletingLastPathComponent()
         }
-        // Only absolute file URLs have a filesystem root to walk up to. For a
-        // relative URL, deletingLastPathComponent keeps producing "./", "../",
-        // "../../", … and the loop below would never terminate.
+        
+        
+        
         guard u.isFileURL, u.path.hasPrefix("/") else { return u }
-        // Truncate at the outermost project container bundle so that any file
-        // inside a .xcodeproj/.xcworkspace (project.pbxproj, xcschemes,
-        // xcuserdata, …) resolves to the bundle itself.
+        
+        
+        
         var container = u
         var cursor = u
-        // NSURL-bridged file URLs (what AppKit vends) do not converge at the
-        // filesystem root: deletingLastPathComponent keeps producing
-        // "file:///../../.." forever. Stop once the path reaches "/".
+        
+        
+        
         while cursor.path != "/" {
             let parent = cursor.deletingLastPathComponent()
             if parent == cursor || !parent.path.hasPrefix("/") { break }
@@ -131,12 +131,12 @@ public final class RecentProjects {
         return ([volume] + parts.dropFirst()).joined(separator: "/")
     }
 
-    /// The app version of the project at `url`, read live from the
-    /// `.xcodeproj` build settings (`MARKETING_VERSION`, falling back to
-    /// `CURRENT_PROJECT_VERSION`) at call time. App targets are preferred over
-    /// other targets, and the project-level configuration is the last resort.
-    /// Either field is nil when the project has no readable `.xcodeproj`
-    /// settings (plain folders, SwiftPM packages, unreadable files).
+    
+    
+    
+    
+    
+    
     public nonisolated static func projectVersionInfo(at url: URL) -> (marketing: String?, build: String?) {
         let root = containerURL(url)
         let project: URL

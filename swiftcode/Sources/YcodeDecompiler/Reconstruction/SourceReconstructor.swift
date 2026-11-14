@@ -181,10 +181,10 @@ public enum SourceReconstructor {
         let asmText: String? = repaired.isEmpty ? nil : AssemblyFallback.emitAssemblyFile(
             functions: repaired, format: image.format, architecture: image.architecture)
 
-        // Human-readable decoded listing next to the byte-exact .s fallback:
-        // address, mnemonic and operands for every preserved instruction so
-        // reviewers can read the original disassembly without re-running a
-        // disassembler.
+        
+        
+        
+        
         let disassemblyText: String? = asmFunctions.isEmpty ? nil : {
             var lines: [String] = []
             var emittedInstructions = 0
@@ -301,17 +301,17 @@ public enum SourceReconstructor {
 
     private static func groupInstructions(_ instructions: [Instruction],
                                           functions: [DecompilerFunction]) -> [UInt64: [Instruction]] {
-        // Binary search for the owning function — a linear scan per
-        // instruction is O(instructions × functions) and does not scale to
-        // real binaries (millions of instructions, tens of thousands of
-        // functions).
+        
+        
+        
+        
         let sortedFunctions = functions
             .filter { $0.kind != .importedSymbol }
             .sorted { $0.address.value < $1.address.value }
         let addresses = sortedFunctions.map(\.address.value)
         var out: [UInt64: [Instruction]] = [:]
         for ins in instructions {
-            // Last function with address <= instruction address.
+            
             var lo = 0, hi = addresses.count
             while lo < hi {
                 let mid = (lo + hi) / 2
@@ -330,9 +330,9 @@ public enum SourceReconstructor {
         return "\(returnType) \(name)(\(parameters.joined(separator: ", ")))"
     }
 
-    /// Normalize engine-specific signature spellings before Ghidra-style
-    /// mapping. angr emits `<ret> <fqname>(<args>) -> <realret>(<params>)`;
-    /// only the leading prototype is usable for C generation.
+    
+    
+    
     private static func normalizeEngineSignature(_ signature: String) -> String {
         var sig = signature.trimmingCharacters(in: .whitespacesAndNewlines)
         if let arrow = sig.range(of: " -> ", options: .backwards) {
@@ -395,7 +395,7 @@ public enum SourceReconstructor {
                 functionAddress: functionAddress))
             return nil
         }
-        // angr names unknown call targets `sub_<hexaddr>`.
+        
         out = rewritePattern(out, pattern: "\\bsub_([0-9a-fA-F]{4,})\\b") { hex in
             guard let addr = UInt64(hex, radix: 16),
                   let name = nameByAddress[addr] else {

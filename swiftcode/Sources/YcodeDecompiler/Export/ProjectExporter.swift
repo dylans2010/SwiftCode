@@ -1,17 +1,17 @@
 import Foundation
 
-/// Copies `.scdecomp` project bundles to export destinations.
-/// Uses `FileManager` copy semantics, preserving the full bundle
-/// structure (manifest, analysis store, binaries, cache, exports).
+
+
+
 public enum ProjectExporter {
-    /// Copy a `.scdecomp` bundle to `destination`.
-    ///
-    /// - Parameters:
-    ///   - source: existing project bundle URL.
-    ///   - destination: target URL. Must not already exist as a file;
-    ///     an existing empty directory is replaced, a non-empty one
-    ///     raises `invalidRequest` to avoid clobbering user data.
-    /// - Returns: the destination URL of the copied bundle.
+    
+    
+    
+    
+    
+    
+    
+    
     @discardableResult
     public static func copyBundle(from source: URL, to destination: URL) throws -> URL {
         let fm = FileManager.default
@@ -42,15 +42,15 @@ public enum ProjectExporter {
         return destination
     }
 
-    /// Export a live project (after syncing its manifest) to a destination.
-    /// Convenience wrapper: validates the bundle then copies it.
+    
+    
     @discardableResult
     public static func export(project: DecompilerProject, to destination: URL) throws -> URL {
         try copyBundle(from: project.bundleURL, to: destination)
     }
 
-    /// Verify a URL looks like a valid `.scdecomp` bundle.
-    /// Returns a list of problems; empty means valid.
+    
+    
     public static func validateBundle(at url: URL) -> [String] {
         let fm = FileManager.default
         var problems: [String] = []

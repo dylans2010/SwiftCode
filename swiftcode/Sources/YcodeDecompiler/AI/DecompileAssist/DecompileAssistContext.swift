@@ -1,15 +1,15 @@
 import Foundation
 
-/// What part of the analysis the user is currently looking at. All fields are
-/// optional; the builder gathers whatever context is available.
+
+
 public struct DecompileAssistFocus: Sendable {
-    /// Virtual address (hex string or plain) of a function entry.
+    
     public var functionAddress: String?
-    /// Virtual address of the current cursor / selection.
+    
     public var address: String?
-    /// Inclusive instruction range "start-end" (hex strings), or start only.
+    
     public var instructionRange: String?
-    /// Free-text query the user typed alongside the context.
+    
     public var query: String?
 
     public init(functionAddress: String? = nil, address: String? = nil,
@@ -21,9 +21,9 @@ public struct DecompileAssistFocus: Sendable {
     }
 }
 
-/// A bounded, JSON-serializable snapshot of the analysis state sent to the
-/// model alongside each user message. Everything here is real store/session
-/// data — nothing is fabricated.
+
+
+
 public struct DecompileAssistContext: Sendable, Codable {
     public var binaryName: String
     public var format: String
@@ -51,12 +51,12 @@ public struct DecompileAssistContext: Sendable, Codable {
     public var activeFunction: ActiveFunction?
 
     public var activeAddress: String?
-    /// Disassembly text for the focused instructions, bounded.
+    
     public var selectedInstructions: String?
 
     public var analysis: AnalysisSummary
     public var mode: String
-    /// User annotations near the focus (address → comment/label), bounded.
+    
     public var annotations: [String: String]
 
     public struct AnalysisSummary: Sendable, Codable {
@@ -69,7 +69,7 @@ public struct DecompileAssistContext: Sendable, Codable {
         public var typeCount: Int
         public var decompiledCount: Int
         public var instructionCount: Int
-        /// Small samples so the model has concrete anchors.
+        
         public var sampleSymbols: [String]
         public var sampleStrings: [String]
         public var sampleXrefs: [String]
@@ -128,7 +128,7 @@ public struct DecompileAssistContext: Sendable, Codable {
             annotations: [:]
         )
 
-        // Resolve focus addresses.
+        
         var focusAddress: DecompilerAddress? = nil
         if let raw = focus.address, let parsed = DecompilerAddress.parse(raw) {
             focusAddress = parsed
@@ -159,7 +159,7 @@ public struct DecompileAssistContext: Sendable, Codable {
             ctx.activeAddress = ctx.activeAddress ?? fn.address.hexString
         }
 
-        // Selected instructions within the requested range (bounded).
+        
         if let rangeText = focus.instructionRange {
             let parts = rangeText.split(separator: "-").map { String($0) }
             if let start = DecompilerAddress.parse(parts[0]) {
@@ -175,7 +175,7 @@ public struct DecompileAssistContext: Sendable, Codable {
             }
         }
 
-        // Annotations: comments + user labels, bounded to those near focus or first 50.
+        
         var annotations: [String: String] = [:]
         for (addr, text) in comments { annotations["comment@\(addr)"] = text }
         for (addr, name) in labels { annotations["label@\(addr)"] = name }
@@ -188,7 +188,7 @@ public struct DecompileAssistContext: Sendable, Codable {
         return ctx
     }
 
-    /// Serialize the context as a JSON block for the prompt.
+    
     public func jsonBlock() -> String {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]

@@ -1,10 +1,10 @@
 import Foundation
 
-/// Loads binaries: detection → slice enumeration → canonical BinaryImage.
+
 public struct BinaryLoader: Sendable {
     public let registry: EngineRegistry
 
-    /// Registered format parsers, in priority order.
+    
     public static let parsers: [any BinaryParser] = [
         MachOParser(), ELFBinaryParser(), PEBinaryParser()
     ]
@@ -17,7 +17,7 @@ public struct BinaryLoader: Sendable {
         public var slices: [SliceDescriptor]
     }
 
-    /// Detect format and enumerate slices without fully parsing.
+    
     public func loadContainer(at url: URL) async throws -> LoadedContainer {
         let detection = try BinaryDetector.detect(url: url)
         var parser = Self.parsers.first { $0.format == detection.format }
@@ -36,7 +36,7 @@ public struct BinaryLoader: Sendable {
         return container.slices
     }
 
-    /// Parse one slice into a canonical image.
+    
     public func parseSlice(container: LoadedContainer, sliceIndex: Int, sourceURL: URL) async throws -> BinaryImage {
         guard let slice = container.slices.first(where: { $0.index == sliceIndex })
                 ?? container.slices.first else {
@@ -64,7 +64,7 @@ public struct BinaryLoader: Sendable {
         return try h.read(upToCount: 64) ?? Data()
     }
 
-    /// Random-access byte provider backed by FileHandle (bounded memory use).
+    
     public func makeByteProvider(url: URL) -> @Sendable (UInt64, UInt64) throws -> Data {
         let path = url.path
         return { offset, length in

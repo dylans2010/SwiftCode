@@ -34,8 +34,8 @@ public struct NewProjectFlowModel: Equatable, Sendable {
     private var perTab: [String: String] = [:]
     public private(set) var sharedValues: [String: String]
     public var team = "None"
-    /// When set, the organization identifier typed in the options step is
-    /// remembered in `SavedOrganizations` for later projects.
+    
+    
     public var saveOrganization = false
 
     var catalog: TemplateChooserCatalog { chooser == .project ? ProjectTemplates.projects : ProjectTemplates.packages }

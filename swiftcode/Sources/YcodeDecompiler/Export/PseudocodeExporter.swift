@@ -1,11 +1,11 @@
 import Foundation
 
-/// Exports decompilation results as a plain-text, C-like listing.
-/// Pure functions over model values — no session or store access.
+
+
 public enum PseudocodeExporter {
-    /// Render decompilation results into a single text document.
-    /// Results are emitted sorted by function address. When `functions`
-    /// is provided, entries are annotated with kind/size metadata.
+    
+    
+    
     public static func export(results: [DecompilationResult],
                               functions: [DecompilerFunction] = []) -> String {
         let byAddress = Dictionary(uniqueKeysWithValues: functions.map { ($0.address.value, $0) })
@@ -48,7 +48,7 @@ public enum PseudocodeExporter {
         return out
     }
 
-    /// Export a single result.
+    
     public static func export(result: DecompilationResult,
                               function: DecompilerFunction? = nil) -> String {
         export(results: [result], functions: function.map { [$0] } ?? [])

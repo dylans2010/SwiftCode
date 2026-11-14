@@ -1,25 +1,25 @@
 import Foundation
 import YcodeAssistant
 
-/// Provider policy for Decompile Assist.
-///
-/// Decompile Assist runs exclusively on the Antigravity provider: OAuth via
-/// the signed-in Google account (`executionMode == "antigravity"`) or a
-/// Gemini API key (`executionMode == "api_key"`). There is deliberately no
-/// fallback to any other provider — analysis results are only as trustworthy
-/// as the model that produced them, and mixing providers silently would make
-/// output quality unpredictable.
+
+
+
+
+
+
+
+
 public enum DecompileAssistProviderPolicy {
 
-    /// Resolve a `GoogleCloudSDKConfiguration` for the Antigravity provider.
-    ///
-    /// - OAuth path: `GoogleAccountAuthService` yields a valid access token →
-    ///   `oauthToken` + `executionMode = "antigravity"`.
-    /// - API-key path: a configured Gemini/Google API key → `apiKey` +
-    ///   `executionMode = "api_key"`.
-    /// - Otherwise throws `DecompilerError.engineUnavailable`.
+    
+    
+    
+    
+    
+    
+    
     public static func resolveConfiguration(objective: String = "") async throws -> GoogleCloudSDKConfiguration {
-        // 1. Google OAuth / Antigravity.
+        
         if let token = await GoogleAccountAuthService.shared.getValidAccessToken(),
            !token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             var config = await baseConfiguration(objective: objective)
@@ -31,7 +31,7 @@ public enum DecompileAssistProviderPolicy {
             return config
         }
 
-        // 2. Gemini API key (Assist Settings / keychain).
+        
         var apiKey = await AssistModelRouter.shared.resolveAPIKey(for: "google")
         if apiKey?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true {
             apiKey = await APIKeyManager.shared.retrieveKey(service: .google)
@@ -51,8 +51,8 @@ public enum DecompileAssistProviderPolicy {
         )
     }
 
-    /// Reject any configuration that is not routed to the Antigravity /
-    /// Google-Gemini provider.
+    
+    
     public static func validate(_ config: GoogleCloudSDKConfiguration) throws {
         let provider = (config.provider ?? "").lowercased()
         let executionMode = (config.executionMode ?? "").lowercased()
@@ -70,7 +70,7 @@ public enum DecompileAssistProviderPolicy {
         }
     }
 
-    // MARK: - Private
+    
 
     private static func baseConfiguration(objective: String) async -> GoogleCloudSDKConfiguration {
         let model = await preferredModel()
@@ -111,9 +111,9 @@ public enum DecompileAssistProviderPolicy {
         )
     }
 
-    /// Pick the model: the user's override when it is a gemini-* id, otherwise
-    /// the first gemini model from the Antigravity catalog, else the SDK
-    /// default.
+    
+    
+    
     private static func preferredModel() async -> String {
         let configured = await DecompileAssistConfiguration.shared.modelOverride
         let override = configured?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

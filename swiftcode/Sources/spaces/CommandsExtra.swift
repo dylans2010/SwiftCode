@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 import SpacesEngine
 
-// MARK: - Hooks
+
 
 struct Hooks: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Repository hooks",
@@ -95,7 +95,7 @@ struct HookRemoveCmd: ParsableCommand {
     }
 }
 
-// MARK: - LFS (local tracking + object store; remote LFS needs a server)
+
 
 struct Lfs: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Large File Storage",
@@ -202,7 +202,7 @@ struct LfsPrune: ParsableCommand {
     }
 }
 
-// MARK: - Notes & annotations
+
 
 struct Notes: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Commit notes",
@@ -265,7 +265,7 @@ struct Annotate: ParsableCommand {
     }
 }
 
-// MARK: - Extensions (registry)
+
 
 struct Extensions: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Extension management",
@@ -308,7 +308,7 @@ struct ExtensionRemove: ParsableCommand {
     }
 }
 
-// MARK: - Misc top-level aliases
+
 
 struct MergeStrategyList: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "merge-strategies", abstract: "List merge strategies")

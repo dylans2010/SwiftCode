@@ -17,9 +17,9 @@ extension WorkspaceWindowController {
         inspector.onSearchDocumentation = { [weak self] in self?.searchDocumentationForSelection(nil) }
     }
 
-    /// Document symbols for the file inspector's Symbols section. Reads the
-    /// file itself so it works for files that are not open in the editor;
-    /// the inspector caches results per modification date.
+    
+    
+    
     func fileSymbols(_ url: URL) -> [SymbolScanner.Symbol] {
         guard let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
               let size = attrs[.size] as? NSNumber, size.int64Value <= 1_048_576,
@@ -69,17 +69,17 @@ extension WorkspaceWindowController {
         return info
     }
 
-    /// Git status of a file from the source-control snapshot, keyed by the
-    /// absolute paths `GitRepository.status()` reports. Returns nil when the
-    /// file is unmodified or source control has not scanned it yet.
+    
+    
+    
     func sourceControlFileStatus(for path: String) -> GitRepository.FileStatus? {
         if let s = sourceControl.lastStatus[path] { return s }
         return sourceControl.snapshot.changes.first { $0.path == path }?.status
     }
 
-    /// The target's per-configuration build settings from the project file,
-    /// filtered to the keys the inspector shows. Values keep build variables
-    /// unresolved, exactly as written in the project.
+    
+    
+    
     func targetBuildSettings(proj: PBXProj, targetID: String) -> (name: String, configurations: [String], settings: [String: [String: String]])? {
         guard let target = proj[targetID] else { return nil }
         let name = target.string("name") ?? targetID

@@ -243,14 +243,14 @@ public struct OpenAIProvider: AssistantProvider {
         if d.isEmpty || d == "[DONE]" { return [] }
         guard let o = JSON.object(d) else { throw AssistantError.malformed("OpenAI sent an event that is not JSON.") }
         
-        // Check for error payload in SSE event
+        
         if let errObj = o["error"] as? [String: Any] {
             let msg = (errObj["message"] as? String) ?? "The request failed."
             let code = errObj["code"] as? String
             throw mapCode(code, message: msg, status: nil, plan: plan)
         }
 
-        // Standard OpenAI chat/completions format: choices[0].delta
+        
         if let choices = o["choices"] as? [[String: Any]] {
             var events: [ChatEvent] = []
             if let first = choices.first {
@@ -278,7 +278,7 @@ public struct OpenAIProvider: AssistantProvider {
             if !events.isEmpty { return events }
         }
 
-        // OpenAI Responses format
+        
         switch o["type"] as? String {
         case "response.output_text.delta":
             if let t = o["delta"] as? String, !t.isEmpty { return [.text(t)] }

@@ -1,28 +1,28 @@
 import Foundation
 import YcodeSubprocess
 
-/// Decompilation backend that drives the `angr` Python framework through a
-/// bundled bridge script (`Resources/EngineScripts/AngrDecompile.py`).
-///
-/// Unlike `GhidraDecompiler` (which needs a full Ghidra install), this
-/// backend only requires a CPython interpreter with `angr` importable. The
-/// interpreter is discovered at runtime:
-///
-///   1. `SWIFTCODE_ANGR_PYTHON` environment override (checked first)
-///   2. `~/.swiftcode-engines/angr-venv/bin/python`
-///   3. `python3`, `python3.12`, `python3.13`, `python3.14` on PATH plus the
-///      usual Homebrew locations — each probed with
-///      `python -c "import angr; print(angr.__version__)"`.
-///
-/// Workflow: `AngrDecompile.py <binary> <out.json> [--arch=NAME] <addrHex>…`
-/// loads the binary once with angr/cle (`auto_load_libs=False`), builds a
-/// single CFGFast model, then runs angr's `Decompiler` on every requested
-/// function address, writing one JSON record per line in the same schema
-/// `DecompileDump.py` uses. `decompileBatch` therefore pays the CFG cost
-/// once for the whole batch instead of once per function.
-///
-/// The angr arch hint is passed via `--arch` so fat/universal Mach-O slices
-/// resolve to the same architecture `BinaryImage` describes.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public struct AngrDecompiler: DecompilerProvider {
     public let id = "angr"
     public let displayName = "angr"
@@ -34,7 +34,7 @@ public struct AngrDecompiler: DecompilerProvider {
 
     public init() {}
 
-    // MARK: - Provider contract
+    
 
     public func isAvailable() async -> Bool {
         await Task.detached(priority: .utility) {
@@ -69,15 +69,15 @@ public struct AngrDecompiler: DecompilerProvider {
         return results.removeFirst()
     }
 
-    /// Batch decompilation through a single angr process: one project load
-    /// and one CFGFast pass cover every requested function.
+    
+    
     public func decompileBatch(_ requests: [DecompilationRequest],
                                progress: (@Sendable (AnalysisProgress) -> Void)?) async throws -> [DecompilationResult] {
         guard !requests.isEmpty else { return [] }
         return try await runBatch(requests, progress: progress)
     }
 
-    // MARK: - Internals
+    
 
     private func runBatch(_ requests: [DecompilationRequest],
                           progress: (@Sendable (AnalysisProgress) -> Void)?) async throws -> [DecompilationResult] {
@@ -98,9 +98,9 @@ public struct AngrDecompiler: DecompilerProvider {
         if let arch = Self.angrArch(for: first.architecture) {
             args.append("--arch=\(arch)")
         }
-        // "0xADDR" or "0xADDR:0xEND" — the end bound lets the bridge script
-        // run a region-limited CFGFast per function when the whole-binary
-        // CFG does not finish in time.
+        
+        
+        
         args.append(contentsOf: requests.map { request in
             var arg = request.functionAddress.hexString
             if let end = request.options["endAddress"], !end.isEmpty {
@@ -114,10 +114,10 @@ public struct AngrDecompiler: DecompilerProvider {
             message: "Decompiling \(requests.count) function(s) with angr"))
 
         let pythonURL = URL(fileURLWithPath: python)
-        // CFGFast on multi-megabyte binaries can run for a very long time.
-        // Bound the batch so the pipeline cannot hang forever; the bridge
-        // script streams records as they are produced, so whatever completed
-        // before the deadline is still returned.
+        
+        
+        
+        
         let timeout = Self.batchTimeout
         var timedOut = false
         let consumer = Task {
@@ -160,8 +160,8 @@ public struct AngrDecompiler: DecompilerProvider {
         return results
     }
 
-    /// Wall-clock limit for one angr batch. `SWIFTCODE_ANGR_TIMEOUT_SECONDS`
-    /// overrides it; non-positive values disable the limit.
+    
+    
     static var batchTimeout: TimeInterval {
         if let raw = ProcessInfo.processInfo.environment["SWIFTCODE_ANGR_TIMEOUT_SECONDS"],
            let value = TimeInterval(raw), value > 0 {
@@ -170,10 +170,10 @@ public struct AngrDecompiler: DecompilerProvider {
         return 20 * 60
     }
 
-    // MARK: - Output parsing
+    
 
-    /// Records are keyed by entry-point address; requests may repeat an
-    /// address, so each request consumes one matching record in order.
+    
+    
     private func parseResults(outURL: URL, requests: [DecompilationRequest]) throws -> [DecompilationResult] {
         guard let data = try? Data(contentsOf: outURL), !data.isEmpty else {
             throw DecompilerError.engineFailure(
@@ -253,7 +253,7 @@ public struct AngrDecompiler: DecompilerProvider {
         return UInt64(t, radix: 16)
     }
 
-    // MARK: - angr architecture names (archinfo/cle)
+    
 
     static func angrArch(for architecture: BinaryArchitecture) -> String? {
         switch architecture {
@@ -270,7 +270,7 @@ public struct AngrDecompiler: DecompilerProvider {
         }
     }
 
-    // MARK: - Script location
+    
 
     private func scriptURL() throws -> URL {
         var candidates: [URL] = []
@@ -291,9 +291,9 @@ public struct AngrDecompiler: DecompilerProvider {
         }
         let sourceFile = URL(fileURLWithPath: #filePath)
         let decompilerRoot = sourceFile
-            .deletingLastPathComponent() // Backends
-            .deletingLastPathComponent() // Decompilation
-            .deletingLastPathComponent() // YcodeDecompiler
+            .deletingLastPathComponent() 
+            .deletingLastPathComponent() 
+            .deletingLastPathComponent() 
         candidates.append(decompilerRoot.appendingPathComponent(
             "Resources/EngineScripts/AngrDecompile.py"))
 
@@ -305,9 +305,9 @@ public struct AngrDecompiler: DecompilerProvider {
             "angr bridge script AngrDecompile.py not found in any bundle resource location")
     }
 
-    // MARK: - Python interpreter discovery
+    
 
-    /// Ordered candidates for a Python that can `import angr`.
+    
     static func pythonCandidates() -> [String] {
         var candidates: [String] = []
         if let override = ProcessInfo.processInfo.environment["SWIFTCODE_ANGR_PYTHON"],
@@ -318,7 +318,7 @@ public struct AngrDecompiler: DecompilerProvider {
         candidates.append(home.appendingPathComponent(
             ".swiftcode-engines/angr-venv/bin/python").path)
 
-        // PATH-style names resolved through `which`.
+        
         for which in ["/usr/bin/which", "/bin/which"]
         where FileManager.default.isExecutableFile(atPath: which) {
             for name in ["python3", "python3.12", "python3.13", "python3.14"] {
@@ -332,7 +332,7 @@ public struct AngrDecompiler: DecompilerProvider {
             }
             break
         }
-        // Well-known absolute locations.
+        
         candidates.append(contentsOf: [
             "/opt/homebrew/bin/python3.12", "/opt/homebrew/bin/python3.13",
             "/opt/homebrew/bin/python3.14", "/opt/homebrew/bin/python3",
@@ -341,7 +341,7 @@ public struct AngrDecompiler: DecompilerProvider {
         return candidates
     }
 
-    /// Probe `python -c "import angr; print(angr.__version__)"`.
+    
     static func probe(_ path: String) -> (ok: Bool, version: String?) {
         guard FileManager.default.isExecutableFile(atPath: path) else { return (false, nil) }
         guard let out = try? Subprocess.run(
@@ -355,13 +355,13 @@ public struct AngrDecompiler: DecompilerProvider {
         return (true, version)
     }
 
-    /// Thread-safe cache for interpreter discovery.
+    
     private final class AngrState: @unchecked Sendable {
         private let lock = NSLock()
         private var resolved: String??
         private(set) var version: String?
 
-        /// Returns the python path that can import angr, or nil.
+        
         func resolve() -> String? {
             lock.lock()
             if let cached = resolved { lock.unlock(); return cached }

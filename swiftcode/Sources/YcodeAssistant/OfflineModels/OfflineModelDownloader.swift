@@ -216,8 +216,8 @@ public final class OfflineModelDownloader {
     }
 
     private func downloadFile(file: OfflineModelFile, modelDirectory: URL) async throws {
-        // Stream straight to disk: model files are routinely several GB, so
-        // buffering the whole response in memory is not viable.
+        
+        
         let (tempURL, response) = try await URLSession.shared.download(from: file.downloadURL)
         defer { try? FileManager.default.removeItem(at: tempURL) }
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {

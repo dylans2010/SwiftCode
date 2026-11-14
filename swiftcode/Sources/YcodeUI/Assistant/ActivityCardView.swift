@@ -102,7 +102,7 @@ final class ActivityCardView: NSView {
         row.spacing = 6
         row.alignment = .centerY
 
-        // Check if there is diff badge text like +44 or -12
+        
         if text.contains("+") || text.contains("-") {
             let parts = text.components(separatedBy: " ")
             if let badgePart = parts.first(where: { $0.hasPrefix("+") || $0.hasPrefix("-") }) {

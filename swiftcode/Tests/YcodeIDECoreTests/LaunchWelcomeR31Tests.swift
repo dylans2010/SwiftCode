@@ -54,9 +54,9 @@ import YcodeProject
     }
 
     @Test func containerURLTerminatesForBridgedAndRelativeURLs() {
-        // NSURL-bridged file URLs are what AppKit vends to
-        // noteNewRecentDocumentURL; deletingLastPathComponent on them produces
-        // "file:///../../.." at the filesystem root instead of converging.
+        
+        
+        
         let bridged = NSURL(fileURLWithPath: "/tmp/swiftcode-container-test") as URL
         #expect(RecentProjects.containerURL(bridged).path == "/tmp/swiftcode-container-test")
         #expect(RecentProjects.containerURL(URL(string: "relative/path")!).path == "relative/path")

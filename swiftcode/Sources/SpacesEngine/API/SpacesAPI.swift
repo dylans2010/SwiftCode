@@ -1,8 +1,8 @@
 import Crypto
 import Foundation
 
-/// Public API surface for Spaces. Typed, async, cancellable. The CLI and the
-/// SwiftCode app both go through this layer — there is exactly one engine.
+
+
 public final class SpacesAPI: @unchecked Sendable {
     public let repo: Repository
 
@@ -15,7 +15,7 @@ public final class SpacesAPI: @unchecked Sendable {
         return SpacesAPI(repo: try Repository.open(at: url))
     }
 
-    // MARK: - Repository
+    
 
     public func info() throws -> RepoInfo {
         let status = try WorktreeScanner(repo: repo).status()
@@ -53,7 +53,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try MaintenanceOps(repo: repo).healthScore()
     }
 
-    // MARK: - Status & staging
+    
 
     public func status() throws -> WorktreeScanner.StatusReport {
         try WorktreeScanner(repo: repo).status()
@@ -90,7 +90,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try StagingOps(repo: repo).clean(dryRun: dryRun)
     }
 
-    // MARK: - Commits
+    
 
     @discardableResult
     public func commit(message: String, amend: Bool = false,
@@ -118,7 +118,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try repo.readReflog(refName: refName, limit: limit)
     }
 
-    // MARK: - Branches
+    
 
     public func branches() throws -> [BranchOps.BranchInfo] {
         try BranchOps(repo: repo).list()
@@ -151,7 +151,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try BranchOps(repo: repo).reset(to: rev, mode: mode)
     }
 
-    // MARK: - Merge & history ops
+    
 
     @discardableResult
     public func merge(_ target: String) throws -> MergeEngine.MergeOutcome {
@@ -213,7 +213,7 @@ public final class SpacesAPI: @unchecked Sendable {
             repo.resolveRevision(a), repo.resolveRevision(b))
     }
 
-    // MARK: - Tags
+    
 
     public func tags() throws -> [TagOps.TagInfo] { try TagOps(repo: repo).list() }
 
@@ -233,7 +233,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try TagOps(repo: repo).verify(name)
     }
 
-    // MARK: - Stashes
+    
 
     public func stashes() throws -> [StashOps.StashEntry] {
         try StashOps(repo: repo).list()
@@ -252,7 +252,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try StashOps(repo: repo).drop(id)
     }
 
-    // MARK: - Snapshots & timeline
+    
 
     @discardableResult
     public func snapshot(message: String, kind: SnapshotOps.Kind = .manual) throws -> ObjectID {
@@ -271,7 +271,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try SnapshotOps(repo: repo).restore(rev)
     }
 
-    // MARK: - Remotes
+    
 
     public func remotes() -> [RemoteOps.RemoteInfo] {
         RemoteOps(repo: repo).list()
@@ -301,7 +301,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try RemoteOps(repo: repo).push(remote, refspec: refspec, force: force)
     }
 
-    // MARK: - Diff
+    
 
     public func diff(stagedOnly: Bool = false) throws -> [DiffOps.FileDiff] {
         try DiffOps(repo: repo).workingDiff(stagedOnly: stagedOnly)
@@ -311,13 +311,13 @@ public final class SpacesAPI: @unchecked Sendable {
         try DiffOps(repo: repo).commitDiff(from, to)
     }
 
-    // MARK: - Search
+    
 
     public func search(_ query: SearchOps.Query) throws -> [SearchOps.Result] {
         try SearchOps(repo: repo).search(query)
     }
 
-    // MARK: - Maintenance
+    
 
     public func fsck() throws -> [MaintenanceOps.FSCKIssue] {
         try MaintenanceOps(repo: repo).fsck()
@@ -347,7 +347,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try MaintenanceOps(repo: repo).rebuildIndex()
     }
 
-    // MARK: - Migration
+    
 
     @discardableResult
     public func importGit(at path: String) throws -> GitMigration.ImportReport {
@@ -359,7 +359,7 @@ public final class SpacesAPI: @unchecked Sendable {
         try GitMigration(repo: repo).exportGit(to: path)
     }
 
-    // MARK: - Worktrees
+    
 
     public func worktrees() throws -> [WorktreeOps.WorktreeInfo] {
         try WorktreeOps(repo: repo).list()
@@ -373,11 +373,11 @@ public final class SpacesAPI: @unchecked Sendable {
         try WorktreeOps(repo: repo).remove(name)
     }
 
-    // MARK: - Events
+    
 
-    /// Repository event stream for UI/CLI observers. Emits on every mutation
-    /// performed against this repository, from any `SpacesAPI` instance or
-    /// direct `Repository`/ops-layer call.
+    
+    
+    
     public func events() -> AsyncStream<SpacesEvent> {
         SpacesEventHub.shared.subscribe(worktree: repo.worktreeURL)
     }
@@ -710,8 +710,8 @@ extension SpacesAPI {
     }
 }
 
-/// Fan-out hub for repository mutation events, keyed by worktree path so
-/// every observer of the same `.spaces/` repository is notified.
+
+
 final class SpacesEventHub: @unchecked Sendable {
     static let shared = SpacesEventHub()
     private let lock = NSLock()

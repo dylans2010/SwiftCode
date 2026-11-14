@@ -18,7 +18,7 @@ import Testing
     }
 
     @Test func localRemoteCloneFetchPushPull() throws {
-        // "Remote" is another local .spaces repo.
+        
         let remoteDir = try SpacesTestSupport.tempDir("remote")
         let remoteRepo = try Repository.create(
             at: remoteDir, user: SpacesConfig.User(name: "R", email: "r@e"))
@@ -26,7 +26,7 @@ import Testing
         _ = try SpacesTestSupport.commitFiles(remoteAPI, ["f": "v1"], message: "r1")
         let remoteURL = remoteDir.appendingPathComponent(".spaces").path
 
-        // Clone.
+        
         let cloneDir = try SpacesTestSupport.tempDir("clone")
         let cloned = try CloneOps.clone(url: remoteURL, into: cloneDir)
         let cloneAPI = SpacesAPI(repo: cloned)
@@ -34,13 +34,13 @@ import Testing
         #expect(try FileManager.default.fileExists(
             atPath: cloneDir.appendingPathComponent("f").path))
 
-        // Push a new commit back.
+        
         _ = try SpacesTestSupport.commitFiles(cloneAPI, ["g": "new"], message: "c2")
         let pushReport = try cloneAPI.push("origin", refspec: "refs/heads/main")
         #expect(pushReport.objectsSent >= 0)
 
-        // The push above fast-forwarded the remote to c2; a second clone
-        // must see the full pushed history.
+        
+        
         #expect(try remoteAPI.log().count == 2)
         let clone2Dir = try SpacesTestSupport.tempDir("clone2")
         let cloned2 = try CloneOps.clone(url: remoteURL, into: clone2Dir)
@@ -56,7 +56,7 @@ import Testing
         #expect(issues.isEmpty)
         let result = try api.gc()
         #expect(result.reachable > 0)
-        // Repository still fully functional after gc.
+        
         #expect(try api.log().count == 3)
         #expect(try api.status().isClean)
     }
@@ -76,7 +76,7 @@ import Testing
         let (_, api, _) = try SpacesTestSupport.makeRepo()
         _ = try SpacesTestSupport.commitFiles(api, ["f": "1"], message: "c")
         let diags = try api.diagnose()
-        _ = diags // may be empty on a healthy repo
+        _ = diags 
         let health = try api.health()
         #expect(health.score >= 0)
         let repairs = try api.repair()
@@ -125,16 +125,16 @@ import Testing
     @Test func journalRecordsAndRecovers() throws {
         let (repo, api, _) = try SpacesTestSupport.makeRepo()
         _ = try SpacesTestSupport.commitFiles(api, ["f": "1"], message: "c")
-        // Journal exists and has entries.
+        
         let journalURL = repo.metaURL.appendingPathComponent("journal")
         #expect(FileManager.default.fileExists(atPath: journalURL.path))
-        // Simulate recovery path on reopen.
+        
         let reopened = try Repository.open(at: repo.worktreeURL)
         #expect(try reopened.recoverIfNeeded().isEmpty == false || true)
     }
 
     @Test func gitImportExportRoundTrip() throws {
-        // Build a real git repo, import into spaces, export back, compare.
+        
         let gitDir = try SpacesTestSupport.tempDir("gitrepo")
         let sh = { (args: [String]) throws -> String in
             let p = Process()
@@ -166,7 +166,7 @@ import Testing
         #expect(report.tags.contains("v1"))
         #expect(try api.log().count == 2)
 
-        // Export back to git and verify with git itself.
+        
         let exportDir = try SpacesTestSupport.tempDir("exportrepo")
         _ = try api.exportGit(to: exportDir.path)
         let log = try sh(["-C", exportDir.path, "log", "--format=%s", "--all"])

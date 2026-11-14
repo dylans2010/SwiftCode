@@ -1,20 +1,20 @@
 import Foundation
 
-/// Builds nested tree objects from a flat path→entry map, and materializes a
-/// tree back into the worktree.
+
+
 public enum TreeBuilder {
 
-    /// Builds (and stores) tree objects for the given flat listing.
-    /// `entries`: repo-relative path → (oid, mode). Returns the root tree OID.
-    /// An empty listing produces the canonical empty tree.
+    
+    
+    
     @discardableResult
     public static func writeTree(entries listing: [String: (oid: ObjectID, mode: FileMode)],
                                  objects: ObjectStore) throws -> ObjectID {
         func sortKey(_ e: TreeEntry) -> String { e.mode.isDirectory ? e.name + "/" : e.name }
 
-        /// Emits the tree object for one directory level and returns its
-        /// entries. `items` maps names to either a blob entry or a subtree
-        /// described by the paths beneath it.
+        
+        
+        
         func emitLevel(_ items: [String: (oid: ObjectID, mode: FileMode)],
                        subdirs: [String: [String: (oid: ObjectID, mode: FileMode)]]) throws -> [TreeEntry] {
             var out: [TreeEntry] = []
@@ -22,7 +22,7 @@ public enum TreeBuilder {
                 out.append(TreeEntry(name: name, mode: file.mode, oid: file.oid))
             }
             for (name, sub) in subdirs {
-                // Split subpaths into files-at-this-level and deeper dirs.
+                
                 var files: [String: (oid: ObjectID, mode: FileMode)] = [:]
                 var deeper: [String: [String: (oid: ObjectID, mode: FileMode)]] = [:]
                 for (rel, entry) in sub {
@@ -57,14 +57,14 @@ public enum TreeBuilder {
         return try objects.write(.tree, value: TreePayload(entries: top))
     }
 
-    /// Empty-tree OID for an empty listing (canonical, deterministic).
+    
     public static func emptyTree(objects: ObjectStore) throws -> ObjectID {
         try objects.write(.tree, value: TreePayload(entries: []))
     }
 
-    /// Materializes a tree into the worktree: writes blobs, creates dirs,
-    /// removes files not present in the tree. Returns list of written paths.
-    /// Caller must hold the repo lock.
+    
+    
+    
     @discardableResult
     public static func checkout(repo: Repository, treeOID: ObjectID,
                                 removeUntracked: Bool = false) throws -> [String] {
@@ -72,7 +72,7 @@ public enum TreeBuilder {
         var written: [String] = []
         let fm = FileManager.default
 
-        // Remove tracked files absent from target tree.
+        
         let index = try repo.index()
         for path in index.entries.keys where flat[path] == nil {
             let url = try repo.worktreeURL(forRelativePath: path)

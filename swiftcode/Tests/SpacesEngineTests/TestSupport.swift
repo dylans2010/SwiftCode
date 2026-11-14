@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import SpacesEngine
 
-/// Shared helpers for SpacesEngine tests: throwaway repositories in temp dirs.
+
 enum SpacesTestSupport {
     static func tempDir(_ name: String = UUID().uuidString) throws -> URL {
         let url = FileManager.default.temporaryDirectory
@@ -26,7 +26,7 @@ enum SpacesTestSupport {
         try Data(text.utf8).write(to: url)
     }
 
-    /// Commits `files` (relative path → contents) on the current branch.
+    
     @discardableResult
     static func commitFiles(_ api: SpacesAPI, _ files: [String: String],
                             message: String) throws -> ObjectID {

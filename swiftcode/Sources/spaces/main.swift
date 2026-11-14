@@ -59,7 +59,7 @@ struct SpacesCLI: AsyncParsableCommand {
     }
 }
 
-// MARK: - Shared helpers
+
 
 struct RepoOptions: ParsableArguments {
     @Option(name: .long, help: "Repository path (default: discover upward)")
@@ -137,7 +137,7 @@ func printStatus(_ report: WorktreeScanner.StatusReport, json: Bool) {
     let unstaged = report.unstaged
     let untracked = report.untrackedFiles
     if staged.isEmpty && unstaged.isEmpty && untracked.isEmpty && !report.isClean {
-        // only unmerged
+        
     }
     if !staged.isEmpty {
         print("Changes to be committed:")

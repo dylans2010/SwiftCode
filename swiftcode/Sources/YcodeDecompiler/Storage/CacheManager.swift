@@ -1,23 +1,23 @@
 import Foundation
 
-/// Content-addressed on-disk cache for expensive analysis results
-/// (disassembly listings, pseudocode, control-flow graphs).
-///
-/// Cache identity always includes the binary content hash, so results
-/// produced for one binary are never reused for a different binary even
-/// when backend id/version and configuration match.
-///
-/// Layout under `<project cacheDir>`:
-///   Disassembly/<key>.bin     — JSON-encoded `[Instruction]` payload
-///   Decompilation/<key>.json  — JSON-encoded pseudocode entries
-///   Graphs/<key>.json         — JSON-encoded basic-block graph payloads
-///
-/// Hashing uses FNV-1a (64-bit) over the identity material. This is a
-/// cache key, not a security digest — collisions only cost a cache miss
-/// recomputation at worst, and the binary hash prefix is stored verbatim
-/// in the key so `invalidate(binaryHash:)` can find every entry.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public actor CacheManager {
-    /// Which cache bucket a key belongs to.
+    
     public enum CacheKind: String, Sendable, CaseIterable {
         case disassembly, decompilation, graphs
 
@@ -39,32 +39,32 @@ public actor CacheManager {
     private let root: URL
     private let fileManager = FileManager.default
 
-    /// Create a cache rooted at an arbitrary directory.
+    
     public init(cacheDirectory: URL) {
         self.root = cacheDirectory
     }
 
-    /// Create a cache rooted at a `.scdecomp` project's `Cache/` directory.
+    
     public init(project: DecompilerProject) {
         self.init(cacheDirectory: project.cacheDir)
     }
 
-    // MARK: - Key derivation
+    
 
-    /// Deterministic cache key. `binaryHash` MUST be the content hash of
-    /// the binary (e.g. `BinaryIdentity.sha256`) so stale results are
-    /// never served after the binary changes.
+    
+    
+    
     public static func cacheKey(binaryHash: String, sliceIndex: Int,
                                backendID: String, backendVersion: String?,
                                configFingerprint: String) -> String {
         let material = "\(binaryHash)|\(sliceIndex)|\(backendID)|\(backendVersion ?? "")|\(configFingerprint)"
         let digest = fnv1a64(material)
-        // The binary-hash prefix is embedded verbatim so invalidation can
-        // locate every entry produced for that binary without an index.
+        
+        
         return "\(binaryHash.prefix(16))-\(digest)"
     }
 
-    /// FNV-1a 64-bit hash, rendered as 16 lowercase hex characters.
+    
     public static func fnv1a64(_ string: String) -> String {
         var hash: UInt64 = 0xcbf2_9ce4_8422_2325
         for byte in string.utf8 {
@@ -75,7 +75,7 @@ public actor CacheManager {
             .leftPad(toLength: 16, withPad: "0")
     }
 
-    /// Convenience fingerprint for an analysis configuration.
+    
     public static func configFingerprint(_ configuration: AnalysisConfiguration) -> String {
         let material = "\(configuration.autoAnalyze)|\(configuration.maxBulkDecompileFunctions)|" +
             "\(configuration.extractStrings)|\(configuration.buildReferences)|" +
@@ -84,7 +84,7 @@ public actor CacheManager {
         return fnv1a64(material)
     }
 
-    // MARK: - Disassembly cache
+    
 
     public func cachedDisassembly(key: String) -> [Instruction]? {
         read(kind: .disassembly, key: key, as: [Instruction].self)
@@ -94,9 +94,9 @@ public actor CacheManager {
         try write(kind: .disassembly, key: key, value: instructions)
     }
 
-    // MARK: - Pseudocode cache
+    
 
-    /// Returns cached decompilation results keyed by function address.
+    
     public func cachedPseudocode(key: String) -> [DecompilationResult]? {
         guard let entries: [PseudocodeCacheEntry] = read(kind: .decompilation, key: key,
                                                        as: [PseudocodeCacheEntry].self) else { return nil }
@@ -111,12 +111,12 @@ public actor CacheManager {
                   value: results.map(PseudocodeCacheEntry.init))
     }
 
-    /// Store a single pseudocode result under `key` (replaces prior content).
+    
     public func storePseudocode(_ result: DecompilationResult, key: String) throws {
         try storePseudocode([result], key: key)
     }
 
-    // MARK: - Graph cache
+    
 
     public func cachedGraphData(key: String) -> [GraphCachePayload]? {
         read(kind: .graphs, key: key, as: [GraphCachePayload].self)
@@ -126,16 +126,16 @@ public actor CacheManager {
         try write(kind: .graphs, key: key, value: payloads)
     }
 
-    /// Store one function's basic-block graph.
+    
     public func storeGraphData(functionAddress: DecompilerAddress,
                                blocks: [BasicBlock], key: String) throws {
         try storeGraphData([GraphCachePayload(functionAddress: functionAddress, blocks: blocks)], key: key)
     }
 
-    // MARK: - Invalidation & pruning
+    
 
-    /// Remove every cache entry produced for `binaryHash` (any slice,
-    /// backend, version or configuration). Safe to call repeatedly.
+    
+    
     @discardableResult
     public func invalidate(binaryHash: String) -> Int {
         let prefix = "\(binaryHash.prefix(16))-"
@@ -151,7 +151,7 @@ public actor CacheManager {
         return removed
     }
 
-    /// Remove all cache entries (e.g. on project close or cache reset).
+    
     @discardableResult
     public func invalidateAll() -> Int {
         var removed = 0
@@ -167,7 +167,7 @@ public actor CacheManager {
         return removed
     }
 
-    /// Total on-disk size of the cache, in bytes.
+    
     public func totalSize() -> Int64 {
         var total: Int64 = 0
         for kind in CacheKind.allCases {
@@ -183,8 +183,8 @@ public actor CacheManager {
         return total
     }
 
-    /// Delete oldest entries (by modification date) until the cache is at
-    /// or below `maxBytes`. Returns the number of files removed.
+    
+    
     @discardableResult
     public func prune(maxBytes: Int64) -> Int {
         struct Entry { let url: URL; let modified: Date; let size: Int64 }
@@ -217,7 +217,7 @@ public actor CacheManager {
         return removed
     }
 
-    // MARK: - Internals
+    
 
     private func directory(for kind: CacheKind) -> URL {
         let dir = root.appendingPathComponent(kind.directoryName, isDirectory: true)
@@ -241,7 +241,7 @@ public actor CacheManager {
     }
 }
 
-/// One function's cached basic-block graph.
+
 public struct GraphCachePayload: Codable, Sendable, Hashable {
     public var functionAddress: DecompilerAddress
     public var blocks: [BasicBlock]
@@ -252,9 +252,9 @@ public struct GraphCachePayload: Codable, Sendable, Hashable {
     }
 }
 
-/// Codable mirror of `DecompilationResult` (which is Sendable but not
-/// Codable) used only for cache serialization. `addressLineMap` keys are
-/// stored as hex strings and converted back on read.
+
+
+
 struct PseudocodeCacheEntry: Codable, Sendable {
     var functionAddress: DecompilerAddress
     var functionName: String

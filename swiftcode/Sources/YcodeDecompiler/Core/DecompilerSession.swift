@@ -1,8 +1,8 @@
 import Foundation
 
-/// One independent analysis session: a binary plus its analysis state.
-/// Both Friendly and Master modes read the same session; switching modes
-/// never re-runs analysis.
+
+
+
 public actor DecompilerSession {
     public enum Mode: String, Sendable, Codable, CaseIterable {
         case friendly, master
@@ -13,14 +13,14 @@ public actor DecompilerSession {
     public var configuration = AnalysisConfiguration()
     public private(set) var mode: Mode = .friendly
     public private(set) var selectedSliceIndex: Int = 0
-    /// File URL of the imported binary (may be inside a .scdecomp bundle).
+    
     public private(set) var sourceURL: URL?
-    /// The .scdecomp project this session belongs to, if any.
+    
     public private(set) var project: DecompilerProject?
-    /// Navigation history for Go Back / Go Forward.
+    
     public private(set) var navigationHistory: [DecompilerAddress] = []
     public private(set) var navigationIndex: Int = -1
-    /// Bookmarks.
+    
     public private(set) var bookmarks: [DecompilerAddress] = []
 
     private let registry: EngineRegistry
@@ -46,10 +46,10 @@ public actor DecompilerSession {
         self.registry = registry
     }
 
-    // MARK: - Binary import
+    
 
-    /// Import a binary file. Detects format, enumerates slices, parses the
-    /// selected slice and populates the store.
+    
+    
     @discardableResult
     public func importBinary(at url: URL, sliceIndex: Int? = nil) async throws -> BinaryImage {
         try await AnalysisSecurityPolicy.validateImport(url: url)
@@ -78,21 +78,21 @@ public actor DecompilerSession {
         return image
     }
 
-    /// Re-parse a different slice of the same universal binary.
+    
     public func selectSlice(_ index: Int) async throws {
         guard let url = sourceURL else { throw DecompilerError.invalidRequest("no binary loaded") }
         _ = try await importBinary(at: url, sliceIndex: index)
     }
 
-    /// Slice descriptors for the current binary (for the architecture picker).
+    
     public func availableSlices() async throws -> [SliceDescriptor] {
         guard let url = sourceURL else { return [] }
         return try await BinaryLoader(registry: registry).detectSlices(at: url)
     }
 
-    // MARK: - Analysis
+    
 
-    /// Run (or re-run) the static analysis pipeline.
+    
     public func runAnalysis() async throws {
         guard let image = await store.binary else {
             throw DecompilerError.invalidRequest("no binary loaded")
@@ -123,7 +123,7 @@ public actor DecompilerSession {
 
     public var isAnalyzing: Bool { analysisTask != nil }
 
-    // MARK: - Queries used by UI and tools
+    
 
     public func binary() async -> BinaryImage? { await store.binary }
     public func functions() async -> [DecompilerFunction] { await store.functions }
@@ -135,7 +135,7 @@ public actor DecompilerSession {
     public func progress() async -> AnalysisProgress { await store.progress }
     public func analysisStore() -> AnalysisStore { store }
 
-    /// Disassemble a function on demand (cached in the store).
+    
     public func disassembleFunction(at address: DecompilerAddress) async throws -> [Instruction] {
         guard let image = await store.binary else { throw DecompilerError.invalidRequest("no binary loaded") }
         guard let fn = await store.function(at: address.value) else {
@@ -152,7 +152,7 @@ public actor DecompilerSession {
         throw DecompilerError.engineUnavailable("no disassembler supports \(image.format.displayName)/\(image.architecture.displayName)")
     }
 
-    /// Decompile one function through the resolved backend.
+    
     public func decompileFunction(at address: DecompilerAddress) async throws -> DecompilationResult {
         guard let image = await store.binary else { throw DecompilerError.invalidRequest("no binary loaded") }
         guard let fn = await store.function(at: address.value) else {
@@ -176,11 +176,11 @@ public actor DecompilerSession {
         return result
     }
 
-    /// Decompile every discovered function through the resolved backend.
-    /// Exported functions go first so the public interface is covered even
-    /// when `maxBulkDecompileFunctions` bounds the run. Throws when no
-    /// decompiler backend supports this binary; callers fall back to the
-    /// assembly-preservation path instead of failing the whole pipeline.
+    
+    
+    
+    
+    
     public func decompileAllFunctions() async throws -> [UInt64: DecompilationResult] {
         guard let image = await store.binary else {
             throw DecompilerError.invalidRequest("no binary loaded")
@@ -222,7 +222,7 @@ public actor DecompilerSession {
         return await store.pseudocode
     }
 
-    // MARK: - User metadata edits (never touch the original binary)
+    
 
     @discardableResult
     public func renameFunction(at address: DecompilerAddress, to name: String) async -> Bool {
@@ -246,7 +246,7 @@ public actor DecompilerSession {
         await store.togglePinned(address.value)
     }
 
-    // MARK: - Navigation
+    
 
     public func navigate(to address: DecompilerAddress) {
         if navigationIndex >= 0, navigationIndex < navigationHistory.count - 1 {
@@ -271,11 +271,11 @@ public actor DecompilerSession {
     public func addBookmark(_ address: DecompilerAddress) { bookmarks.append(address) }
     public func removeBookmark(_ address: DecompilerAddress) { bookmarks.removeAll { $0 == address } }
 
-    // MARK: - Mode & project
+    
 
     public func setMode(_ newMode: Mode) { mode = newMode }
 
-    /// Mutate the analysis configuration (e.g. decompile limits, engine picks).
+    
     public func updateConfiguration(_ transform: (inout AnalysisConfiguration) -> Void) {
         transform(&configuration)
     }

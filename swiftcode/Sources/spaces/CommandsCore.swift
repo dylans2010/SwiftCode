@@ -2,7 +2,7 @@ import ArgumentParser
 import Foundation
 import SpacesEngine
 
-// MARK: - Repository commands
+
 
 struct Init: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Create a new Spaces repository")
@@ -131,7 +131,7 @@ struct Config: ParsableCommand {
             return
         }
         guard let key else { throw SpacesError.invalidArgument("key required") }
-        // Simple key paths.
+        
         let parts = key.split(separator: ".").map(String.init)
         if parts.count == 2, parts[0] == "remote", let remote = repo.config.remotes[parts[1]] {
             print(remote.url); return
@@ -181,7 +181,7 @@ struct Info: ParsableCommand {
     }
 }
 
-// MARK: - Status & changes
+
 
 struct Status: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Show working tree status")
@@ -285,7 +285,7 @@ struct Restore: ParsableCommand {
         let ops = StagingOps(repo: repo)
         for p in paths {
             if let src = source {
-                // Restore from a revision: write blob to worktree.
+                
                 let oid = try repo.resolveRevision(src)
                 let commit = try repo.commitObject(oid)
                 let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: commit.tree)
@@ -343,7 +343,7 @@ struct Stage: ParsableCommand {
     }
 }
 
-// MARK: - Commits
+
 
 struct Commit: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Create a commit")
@@ -360,7 +360,7 @@ struct Commit: ParsableCommand {
         var msg = message
         if let f = file { msg = try String(contentsOfFile: f, encoding: .utf8) }
         if msg == nil {
-            // Interactive: read from stdin if piped, else error.
+            
             if isatty(STDIN_FILENO) == 0 {
                 msg = String(data: FileHandle.standardInput.readDataToEndOfFile(), encoding: .utf8)
             }
@@ -534,7 +534,7 @@ struct Patch: ParsableCommand {
     }
 }
 
-// MARK: - Branches
+
 
 struct Branch: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Branch operations",
@@ -631,7 +631,7 @@ struct Checkout: ParsableCommand {
     }
 }
 
-// MARK: - Merge family
+
 
 struct Merge: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Merge a branch into HEAD")
@@ -657,7 +657,7 @@ struct Merge: ParsableCommand {
             throw SpacesError.invalidArgument("merge requires a target (or --continue/--abort)")
         }
         if preview {
-            // Compute what merge would do without committing.
+            
             guard let head = try repo.refs.headOID(objects: repo.objects) else {
                 throw SpacesError.branchNotFound("HEAD")
             }
@@ -723,7 +723,7 @@ struct MergeStrategy: ParsableCommand {
     func run() throws { print("ort (default); recursive available via --strategy") }
 }
 
-// MARK: - Rebase / cherry-pick / revert
+
 
 struct Rebase: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Rebase current branch onto a target",

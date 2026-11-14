@@ -1,12 +1,12 @@
 import Foundation
 
-/// Annotation tools: rename symbols/functions, add comments, labels, and save
-/// analysis findings. All of these MUTATE the analysis store (never the
-/// binary on disk) and therefore require explicit user approval: the caller
-/// must pass `"approved": true`. The registry additionally enforces
-/// `requiresApproval` before dispatch.
 
-/// Shared approval gate for mutation tools.
+
+
+
+
+
+
 func decompileAssistCheckApproval(_ arguments: [String: Any], tool: String) -> String? {
     DecompileAssistToolSupport.bool(arguments, "approved")
         ? nil

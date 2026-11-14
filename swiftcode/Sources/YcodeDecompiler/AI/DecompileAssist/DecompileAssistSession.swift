@@ -2,7 +2,7 @@ import Foundation
 import Observation
 import YcodeAssistant
 
-/// A chat message in a Decompile Assist conversation.
+
 public struct DecompileAssistMessage: Identifiable, Sendable {
     public enum Role: String, Sendable {
         case user, assistant, system
@@ -20,7 +20,7 @@ public struct DecompileAssistMessage: Identifiable, Sendable {
     }
 }
 
-/// A tool invocation observed while the assistant works.
+
 public struct DecompileAssistToolEvent: Identifiable, Sendable {
     public enum State: String, Sendable {
         case started, completed, failed
@@ -41,16 +41,16 @@ public struct DecompileAssistToolEvent: Identifiable, Sendable {
     }
 }
 
-/// Decompile Assist session: owns the conversation, the Antigravity SDK
-/// session, the system prompt assembled from bundled assets, and the tool
-/// dispatcher that routes the model's tool calls into `YcodeDecompiler`'s
-/// analysis store.
+
+
+
+
 @MainActor
 @Observable
 public final class DecompileAssistSession {
 
-    /// SDK session id — carries the `decompile-assist-` prefix so the shared
-    /// runtime's tool dispatcher can route requests to this session.
+    
+    
     public let sdkSessionId: String
     public let decompilerSession: DecompilerSession
 
@@ -75,11 +75,11 @@ public final class DecompileAssistSession {
             : DecompileAssistIdentity.sessionIDPrefix + id
     }
 
-    // MARK: - Sending
+    
 
-    /// Send a user message. `context` is the current analysis snapshot; it is
-    /// serialized as JSON and prepended to the outbound text so every turn
-    /// carries fresh focus information.
+    
+    
+    
     public func send(_ text: String, context: DecompileAssistContext) async {
         guard !isProcessing else {
             lastError = "Decompile Assist is already processing a request."
@@ -92,7 +92,7 @@ public final class DecompileAssistSession {
         lastError = nil
         conversation.append(DecompileAssistMessage(role: .user, content: trimmed))
 
-        // Placeholder assistant message filled in by stream events.
+        
         let assistantIndex = conversation.count
         conversation.append(DecompileAssistMessage(role: .assistant, content: ""))
 
@@ -117,15 +117,15 @@ public final class DecompileAssistSession {
         }
     }
 
-    /// Ensure the Antigravity SDK session exists, with the system prompt and
-    /// tool declarations installed, and the tool dispatcher chained.
+    
+    
     private func ensureSDKSession(context: DecompileAssistContext) async throws {
         if currentSDKSession != nil { return }
 
         let runtime = GoogleCloudSDKRuntime.shared
         try await runtime.ensureStarted()
 
-        // Provider policy: Antigravity only — OAuth or Gemini API key.
+        
         var config = try await DecompileAssistProviderPolicy.resolveConfiguration(objective: "decompile")
 
         let mode = await decompilerSession.mode
@@ -143,17 +143,17 @@ public final class DecompileAssistSession {
         startEventSubscription(for: session)
     }
 
-    // MARK: - Tool dispatch
+    
 
-    /// Chain into the shared runtime's tool-execution handler.
-    ///
-    /// `GoogleCloudSDKRuntime.toolExecutionHandler` is a single global slot.
-    /// We capture whatever handler was installed before us; requests whose
-    /// `sessionId` is not ours are forwarded to it unchanged. Our own requests
-    /// (matched by the `decompile-assist-` session id) run through the
-    /// Decompile Assist registry against this session's `DecompilerSession`.
-    /// The chained handler is intentionally left installed — it is a no-op
-    /// for other session ids and preserves any previously registered handler.
+    
+    
+    
+    
+    
+    
+    
+    
+    
     private func installToolDispatcherIfNeeded() async {
         guard !installedDispatcher else { return }
         installedDispatcher = true
@@ -176,7 +176,7 @@ public final class DecompileAssistSession {
                 arguments: request.arguments,
                 session: decompilerSession
             )
-            // Determine success by parsing the structured payload.
+            
             if let data = result.data(using: .utf8),
                let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let ok = obj["ok"] as? Bool {
@@ -189,7 +189,7 @@ public final class DecompileAssistSession {
         await runtime.setToolExecutionHandler(handler)
     }
 
-    // MARK: - Events
+    
 
     private func startEventSubscription(for session: GoogleCloudSDKSession) {
         eventTask?.cancel()
@@ -216,7 +216,7 @@ public final class DecompileAssistSession {
             if !response.isEmpty,
                let idx = conversation.indices.last, conversation[idx].role == .assistant,
                conversation[idx].content.isEmpty {
-                // Stream produced nothing — use the authoritative final text.
+                
                 conversation[idx].content = response
             }
             isProcessing = false
@@ -266,23 +266,23 @@ public final class DecompileAssistSession {
         }
     }
 
-    // MARK: - Controls
+    
 
-    /// Clear the displayed error without touching the conversation. The next
-    /// `send` also clears `lastError`.
+    
+    
     public func dismissError() {
         lastError = nil
     }
 
-    /// Cancel the in-flight agent turn.
+    
     public func cancel() async {
         guard let sdk = currentSDKSession else { return }
         try? await sdk.cancel()
         isProcessing = false
     }
 
-    /// Clear the conversation and tool events, and close the SDK session so
-    /// the next message starts with fresh context.
+    
+    
     public func clear() async {
         eventTask?.cancel()
         eventTask = nil

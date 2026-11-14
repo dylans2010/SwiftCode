@@ -1,8 +1,8 @@
 import Foundation
 
-/// Analysis tools: control-flow graph, call graph, cross-references,
-/// variables, types, raw byte-pattern search, navigation, memory regions.
-/// Everything derives from real store/session data.
+
+
+
 
 public struct GetControlFlowGraphTool: DecompileAssistTool {
     public init() {}
@@ -38,8 +38,8 @@ public struct GetControlFlowGraphTool: DecompileAssistTool {
             return DecompileAssistToolSupport.error("no instructions decoded for \(fn.address.hexString)")
         }
 
-        // Basic-block leaders: function entry, branch targets, and the
-        // instruction following any branch/call/return.
+        
+        
         var leaders = Set<UInt64>([instructions[0].address.value])
         for ins in instructions {
             if let target = ins.branchTarget { leaders.insert(target.value) }
@@ -69,7 +69,7 @@ public struct GetControlFlowGraphTool: DecompileAssistTool {
             case .returnInstruction:
                 branchKind = "return"
             default:
-                // Could be conditional branch (branchTarget set) or fallthrough.
+                
                 if let t = last.branchTarget {
                     branchKind = "conditional"
                     successors.append(t.value)
@@ -152,7 +152,7 @@ public struct GetCallGraphTool: DecompileAssistTool {
             guard let center = await store.function(containing: addr.value) else {
                 return DecompileAssistToolSupport.error("no function at \(addr.hexString)")
             }
-            // BFS over edges.
+            
             var frontier: Set<UInt64> = [center.address.value]
             var visited: Set<UInt64> = [center.address.value]
             var neighborhood: [[String: Any]] = []
@@ -347,7 +347,7 @@ public struct SearchBinaryTool: DecompileAssistTool {
         }
         let maxResults = min(1_000, max(1, DecompileAssistToolSupport.int(arguments, "max_results", fallback: 100) ?? 100))
         let patternData = Data(pattern)
-        // Bound total bytes scanned.
+        
         let maxScan = 64 * 1024 * 1024
         var scanned = 0
         var results: [[String: Any]] = []
@@ -364,7 +364,7 @@ public struct SearchBinaryTool: DecompileAssistTool {
             while results.count < maxResults,
                   let range = data.range(of: patternData, in: searchFrom..<data.endIndex) {
                 let fileOffset = sec.fileOffset + UInt64(range.lowerBound - data.startIndex)
-                // Translate file offset back to a virtual address.
+                
                 var va: UInt64? = nil
                 for seg in image.segments where fileOffset >= seg.fileOffset && fileOffset < seg.fileOffset + seg.fileSize {
                     va = seg.vmAddress + (fileOffset - seg.fileOffset)
@@ -388,7 +388,7 @@ public struct SearchBinaryTool: DecompileAssistTool {
         ])
     }
 
-    /// Interpret the pattern as hex when it looks like hex, else UTF-8 text.
+    
     private static func parsePattern(_ text: String) -> [UInt8] {
         let cleaned = text.replacingOccurrences(of: " ", with: "")
         let isHex = cleaned.count >= 2 && cleaned.count % 2 == 0

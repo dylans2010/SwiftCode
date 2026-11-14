@@ -6,14 +6,14 @@ public struct BinarySymbol: Identifiable, Hashable, Sendable, Codable {
     }
 
     public var id: String { "sym-\(address?.hexString ?? name)-\(name)" }
-    public var name: String                // original (possibly mangled) name
+    public var name: String                
     public var demangledName: String?
     public var address: DecompilerAddress?
     public var size: UInt64
     public var kind: Kind
-    /// User-assigned display name; nil means use demangled/original.
+    
     public var userName: String?
-    /// Original name is preserved even when userName is set (rename is reversible).
+    
     public var library: String?
     public var source: AnalysisSource
 
@@ -33,7 +33,7 @@ public struct BinarySymbol: Identifiable, Hashable, Sendable, Codable {
     public var effectiveName: String { userName ?? demangledName ?? name }
 }
 
-/// A cross-reference between two addresses.
+
 public struct CrossReference: Identifiable, Hashable, Sendable, Codable {
     public enum Kind: String, Sendable, Codable {
         case call, jump, branch, data, string, symbol, section, memory
@@ -60,7 +60,7 @@ public struct CrossReference: Identifiable, Hashable, Sendable, Codable {
     }
 }
 
-/// Recovered type information with provenance preserved.
+
 public struct TypeInfo: Identifiable, Hashable, Sendable, Codable {
     public enum Kind: String, Sendable, Codable {
         case primitive, pointer, array, structure, union, enumeration, function, typeDef, unknown, backendSpecific
@@ -72,7 +72,7 @@ public struct TypeInfo: Identifiable, Hashable, Sendable, Codable {
     public var size: UInt64?
     public var fields: [Field]
     public var underlyingType: String?
-    /// Original inferred spelling, kept when the user overrides the name.
+    
     public var originalInferred: String?
     public var userEdited: Bool
     public var provenance: AnalysisSource

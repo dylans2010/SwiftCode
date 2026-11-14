@@ -1,18 +1,18 @@
 import Foundation
 
-/// Validation for user- and tool-supplied strings before they reach the
-/// model, persistence layer or UI. All failures throw
-/// `DecompilerError.invalidRequest`.
+
+
+
 public enum InputValidation {
-    /// Maximum length of a symbol/function name.
+    
     public static let maxSymbolNameLength = 256
-    /// Maximum length of a project name.
+    
     public static let maxProjectNameLength = 128
 
-    /// Validate and normalize a symbol or function name.
-    /// Rejects empty results, names over 256 characters, and any name
-    /// containing control characters (including newlines).
-    /// Returns the trimmed name.
+    
+    
+    
+    
     public static func validateSymbolName(_ name: String) throws -> String {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -28,8 +28,8 @@ public enum InputValidation {
         return trimmed
     }
 
-    /// Validate an address string ("0x1234", hex or decimal) and return
-    /// the parsed `DecompilerAddress` (virtual kind by default).
+    
+    
     public static func validateAddressString(_ text: String,
                                              defaultKind: DecompilerAddress.Kind = .virtual)
         throws -> DecompilerAddress {
@@ -43,9 +43,9 @@ public enum InputValidation {
         return address
     }
 
-    /// Validate a project name: non-empty, bounded length, no path
-    /// separators or traversal components (the name becomes a bundle
-    /// directory name).
+    
+    
+    
     public static func validateProjectName(_ name: String) throws -> String {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -67,8 +67,8 @@ public enum InputValidation {
         return trimmed
     }
 
-    /// Strip control characters and collapse runs of whitespace for safe
-    /// display in UI labels, logs and reports.
+    
+    
     public static func sanitizeForDisplay(_ text: String) -> String {
         var result = ""
         result.reserveCapacity(text.count)
@@ -85,8 +85,8 @@ public enum InputValidation {
         return result.trimmingCharacters(in: .whitespaces)
     }
 
-    /// True when the string contains C0/C1 control characters or
-    /// bidirectional/format controls that could spoof display.
+    
+    
     public static func containsControlCharacters(_ text: String) -> Bool {
         text.unicodeScalars.contains { scalar in
             CharacterSet.controlCharacters.contains(scalar)

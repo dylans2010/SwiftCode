@@ -1,18 +1,18 @@
 import Foundation
 
-/// Symbol demangling. Uses `xcrun swift-demangle` for Swift symbols and strips
-/// the Mach-O leading underscore for C symbols. Falls back to the raw name.
+
+
 public enum SymbolDemangler {
-    /// Demangle a symbol name. Returns the best available spelling.
+    
     public static func demangle(_ name: String) -> String {
         if name.hasPrefix("_$s") || name.hasPrefix("$s") {
             if let out = swiftDemangle(name) { return out }
         }
         if name.hasPrefix("__Z") || name.hasPrefix("_Z") {
-            // Itanium C++ mangling — swift-demangle doesn't handle it; try c++filt.
+            
             if let out = cxxfiltDemangle(name) { return out }
         }
-        // Mach-O prepends '_' to C symbols.
+        
         if name.hasPrefix("_") && !name.hasPrefix("__") {
             return String(name.dropFirst())
         }
@@ -20,7 +20,7 @@ public enum SymbolDemangler {
     }
 
     private static func swiftDemangle(_ name: String) -> String? {
-        // Compact mode: "symbol ---> demangled"
+        
         guard let out = runTool("/usr/bin/xcrun", ["swift-demangle", name]) else { return nil }
         for line in out.split(separator: "\n") {
             if let arrow = line.range(of: "--->") {
@@ -47,7 +47,7 @@ public enum SymbolDemangler {
         do {
             try process.run()
         } catch { return nil }
-        // Read with a short timeout to avoid hanging on weird input.
+        
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
         guard process.terminationStatus == 0 else { return nil }

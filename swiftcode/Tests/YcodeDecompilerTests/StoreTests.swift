@@ -1,8 +1,8 @@
 import XCTest
 @testable import YcodeDecompiler
 
-/// Exercises `AnalysisStore`: function/symbol upserts, address-containment
-/// lookup, and reversible renames.
+
+
 final class StoreTests: XCTestCase {
 
     private func source(_ p: AnalysisProvenance = .heuristic) -> AnalysisSource {
@@ -60,11 +60,11 @@ final class StoreTests: XCTestCase {
         ])
         let inside = await store.function(containing: 0x1050)
         XCTAssertEqual(inside?.name, "a")
-        // Past a's end but before b's start: falls back to nearest preceding
-        // function bounded by the next function's entry.
+        
+        
         let gap = await store.function(containing: 0x1500)
         XCTAssertEqual(gap?.name, "a")
-        // Beyond the last known function: no container.
+        
         let beyond = await store.function(containing: 0x2500)
         XCTAssertNil(beyond)
     }
@@ -73,7 +73,7 @@ final class StoreTests: XCTestCase {
         let store = AnalysisStore()
         await store.upsertSymbols([symbol("zeta", addr: 0x3000),
                                    symbol("alpha", addr: 0x1000)])
-        await store.upsertSymbols([symbol("alpha", addr: 0x1000)])  // dup key
+        await store.upsertSymbols([symbol("alpha", addr: 0x1000)])  
         let syms = await store.symbols
         XCTAssertEqual(syms.count, 2)
         XCTAssertEqual(syms.first?.name, "alpha")
@@ -89,10 +89,10 @@ final class StoreTests: XCTestCase {
 
         let renamed = await store.function(at: 0x1000)
         XCTAssertEqual(renamed?.name, "myRenamed")
-        // The binary's original name is preserved for reversibility.
+        
         XCTAssertEqual(renamed?.originalName, "_original")
 
-        // Rename back restores the effective name.
+        
         _ = await store.renameFunction(at: 0x1000, to: "_original")
         let restored = await store.function(at: 0x1000)
         XCTAssertEqual(restored?.name, "_original")
@@ -111,7 +111,7 @@ final class StoreTests: XCTestCase {
         _ = await store.renameFunction(at: 0x1000, to: "renamed")
         let syms = await store.symbols
         XCTAssertEqual(syms.first?.userName, "renamed")
-        XCTAssertEqual(syms.first?.name, "_f")   // original preserved
+        XCTAssertEqual(syms.first?.name, "_f")   
         XCTAssertEqual(syms.first?.effectiveName, "renamed")
     }
 

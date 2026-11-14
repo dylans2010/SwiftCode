@@ -1,26 +1,26 @@
 import Foundation
 
-/// Spaces networking: a versioned wire protocol (`spaces-proto/1`) carried
-/// over pluggable transports. The local transport (filesystem path or
-/// file:// URL) is fully implemented — it performs real object transfer and
-/// ref negotiation between two repository object stores. The HTTP transport
-/// implements the client side of the protocol; it requires a Spaces server,
-/// which is documented as server-dependent infrastructure.
-///
-/// Protocol (newline-delimited JSON messages):
-///   C→S  {"v":1,"op":"hello","caps":[...]}
-///   S→C  {"v":1,"op":"hello","caps":[...],"repo":"<id>"}
-///   C→S  {"v":1,"op":"advertise-refs"}
-///   S→C  {"v":1,"op":"refs","refs":[{"name","oid"}]}
-///   C→S  {"v":1,"op":"want","oids":[...],"haves":[...]}
-///   S→C  {"v":1,"op":"pack","objects":[{"id","type","data(b64)"}]}
-///   C→S  {"v":1,"op":"have","oids":[...]}
-///   S→C  {"v":1,"op":"ack","oids":[...]}
-///   C→S  {"v":1,"op":"update-refs","refs":[{"name","oid","old"?}]}
-///   S→C  {"v":1,"op":"ok"|"error","message"?}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 public protocol SpacesTransport: Sendable {
-    /// Opens a connection to the remote repository.
+    
     func connect() throws -> TransportConnection
 }
 
@@ -30,9 +30,9 @@ public protocol TransportConnection: Sendable {
     func close()
 }
 
-/// Local transport: connects to another repository on the filesystem.
-/// "Networking" over this transport is real — objects are copied between
-/// object stores with full integrity verification.
+
+
+
 public struct LocalTransport: SpacesTransport {
     public let path: String
     public init(path: String) { self.path = path }
@@ -40,7 +40,7 @@ public struct LocalTransport: SpacesTransport {
     public func resolve() throws -> URL {
         var url = URL(fileURLWithPath: path)
         if url.scheme == "file" { url = URL(fileURLWithPath: url.path) }
-        // Accept paths to either the worktree or the .spaces dir.
+        
         var candidate = url
         if candidate.lastPathComponent == RepositoryFormat.metadataDirectoryName {
             candidate = candidate.deletingLastPathComponent()
@@ -53,13 +53,13 @@ public struct LocalTransport: SpacesTransport {
     }
 
     public func connect() throws -> TransportConnection {
-        // For the local transport the "wire" is a direct in-process bridge;
-        // we return a connection that delegates to the remote Repository.
+        
+        
         return LocalConnection(remote: try resolve())
     }
 }
 
-/// In-process connection implementing the protocol against a local repo.
+
 final class LocalConnection: TransportConnection, @unchecked Sendable {
     let remoteWorktree: URL
     var closed = false
@@ -84,8 +84,8 @@ final class LocalConnection: TransportConnection, @unchecked Sendable {
             let refs = try repo.refs.allRefs().map {
                 ["name": $0.name, "oid": $0.oid.hex] as [String: Any]
             }
-            // Local transport doesn't need receive(); ops are synchronous.
-            // We stash the response for receive().
+            
+            
             pending = ["v": 1, "op": "refs", "refs": refs]
         case "want":
             let oids = (message["oids"] as? [String]) ?? []
@@ -110,7 +110,7 @@ final class LocalConnection: TransportConnection, @unchecked Sendable {
             }
             pending = ["v": 1, "op": "ack", "oids": present]
         case "store":
-            // Push path: client sends objects the remote lacks.
+            
             let objects = (message["objects"] as? [[String: Any]]) ?? []
             for o in objects {
                 guard let hex = o["id"] as? String,
@@ -119,7 +119,7 @@ final class LocalConnection: TransportConnection, @unchecked Sendable {
                       let b64 = o["data"] as? String,
                       let payload = Data(base64Encoded: b64),
                       let oid = try? ObjectID(validating: hex) else { continue }
-                // Verify before storing — never trust remote metadata.
+                
                 guard ObjectID.compute(type: type, payload: payload) == oid else { continue }
                 _ = try repo.objects.write(type: type, payload: payload)
             }
@@ -139,8 +139,8 @@ final class LocalConnection: TransportConnection, @unchecked Sendable {
 
     func close() { closed = true }
 
-    /// Produces the objects the remote should send: all objects reachable
-    /// from `wants` but not from `haves`.
+    
+    
     private func producePack(repo: Repository, wants: [String], haves: [String]) throws -> [[String: Any]] {
         var wantIDs: [ObjectID] = []
         for w in wants { if let o = try? ObjectID(validating: w) { wantIDs.append(o) } }
@@ -152,8 +152,8 @@ final class LocalConnection: TransportConnection, @unchecked Sendable {
         let toSend = wantReach.subtracting(haveReach)
 
         var result: [[String: Any]] = []
-        // Send commits/trees/tags before blobs isn't required (receiver
-        // stores all); order by type for readability.
+        
+        
         for id in toSend.sorted() {
             guard let stored = try? repo.objects.read(id) else { continue }
             result.append([
@@ -166,9 +166,9 @@ final class LocalConnection: TransportConnection, @unchecked Sendable {
     }
 }
 
-/// HTTP transport client for `spaces://`/`https://` remotes.
-/// Implements protocol framing over HTTP POST; requires a Spaces server
-/// implementing the same protocol (server is separate infrastructure).
+
+
+
 public struct HTTPTransport: SpacesTransport {
     public let url: URL
     public let credentials: Credentials?
@@ -179,7 +179,7 @@ public struct HTTPTransport: SpacesTransport {
     }
 
     public func connect() throws -> TransportConnection {
-        // Probe the endpoint; a Spaces server responds to GET /info/refs.
+        
         var request = URLRequest(url: url.appendingPathComponent("info/refs"))
         request.httpMethod = "GET"
         request.timeoutInterval = 15
@@ -217,7 +217,7 @@ final class HTTPConnection: TransportConnection, @unchecked Sendable {
     }
 
     func send(_ message: [String: Any]) throws {
-        // Each message is a POST to /rpc/<op>; response retrieved via receive().
+        
         guard let op = message["op"] as? String else {
             throw SpacesError.protocolError("missing op")
         }
@@ -264,13 +264,13 @@ final class HTTPConnection: TransportConnection, @unchecked Sendable {
     func close() {}
 }
 
-/// Credential storage abstraction. The default Keychain store is used on
-/// macOS; a file-based fallback exists for headless/Linux use. Tokens are
-/// never logged.
+
+
+
 public struct Credentials: Codable, Sendable {
     public var token: String?
     public var username: String?
-    public var kind: String // "token" | "basic" | "ssh-agent"
+    public var kind: String 
 
     public init(token: String? = nil, username: String? = nil, kind: String = "token") {
         self.token = token
@@ -285,9 +285,9 @@ public protocol CredentialStore: Sendable {
     func delete(host: String) throws
 }
 
-/// File-based credential store at `~/.config/spaces/credentials.json`
-/// (mode 0600). On macOS the Keychain-backed store is preferred; see
-/// `KeychainCredentialStore`.
+
+
+
 public final class FileCredentialStore: CredentialStore, @unchecked Sendable {
     public let url: URL
     public init(url: URL? = nil) {
@@ -323,7 +323,7 @@ public final class FileCredentialStore: CredentialStore, @unchecked Sendable {
 #if os(macOS)
 import Security
 
-/// macOS Keychain-backed credential store (service "dev.swiftcode.spaces").
+
 public struct KeychainCredentialStore: CredentialStore {
     public init() {}
     private let service = "dev.swiftcode.spaces"

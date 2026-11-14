@@ -1,35 +1,35 @@
 import Foundation
 
-/// Mach-O / fat (universal) binary parser.
-///
-/// Original implementation written against the published Mach-O file format
-/// documentation (Apple "OS X ABI Mach-O File Format Reference" and the
-/// `mach-o/loader.h` constant values, which are interop identifiers).
-///
-/// File-offset convention: `BinaryImage.byteProvider` reads absolute file
-/// offsets. For fat binaries the slice may start at a non-zero offset, so
-/// every `fileOffset` stored on segments/sections is the ABSOLUTE offset
-/// (`slice.offset +` the on-disk offset). Virtual addresses are stored
-/// unchanged.
+
+
+
+
+
+
+
+
+
+
+
 public struct MachOParser: BinaryParser {
     public init() {}
 
     public var format: BinaryFormat { .machO }
 
-    // MARK: - Magic values (read as raw UInt32)
+    
 
     private enum Magic {
-        static let mhMagic: UInt32    = 0xFEED_FACE   // 32-bit, native order
-        static let mhCigam: UInt32    = 0xCEFA_EDFE   // 32-bit, swapped
-        static let mhMagic64: UInt32  = 0xFEED_FACF   // 64-bit, native order
-        static let mhCigam64: UInt32  = 0xCFFA_EDFE   // 64-bit, swapped
-        static let fatMagic: UInt32   = 0xCAFE_BABE   // fat, big-endian fields
-        static let fatCigam: UInt32   = 0xBEBA_FECA   // fat, little-endian fields
-        static let fatMagic64: UInt32 = 0xCAFE_BABF   // fat 64-bit arch entries
+        static let mhMagic: UInt32    = 0xFEED_FACE   
+        static let mhCigam: UInt32    = 0xCEFA_EDFE   
+        static let mhMagic64: UInt32  = 0xFEED_FACF   
+        static let mhCigam64: UInt32  = 0xCFFA_EDFE   
+        static let fatMagic: UInt32   = 0xCAFE_BABE   
+        static let fatCigam: UInt32   = 0xBEBA_FECA   
+        static let fatMagic64: UInt32 = 0xCAFE_BABF   
         static let fatCigam64: UInt32 = 0xBFBA_FECA
     }
 
-    // MARK: - Load command constants (interop identifiers)
+    
 
     private enum LC {
         static let segment: UInt32        = 0x01
@@ -62,7 +62,7 @@ public struct MachOParser: BinaryParser {
         static let dyldChainedFixups: UInt32  = 0x34 | 0x8000_0000
     }
 
-    // nlist type bits
+    
     private enum NList {
         static let typeMask: UInt8 = 0x0E
         static let ext: UInt8      = 0x01
@@ -70,10 +70,10 @@ public struct MachOParser: BinaryParser {
         static let undef: UInt8    = 0x00
         static let abs_: UInt8     = 0x02
         static let sect: UInt8     = 0x0E
-        static let weakRefDesc: UInt16 = 0x0040 // N_WEAK_REF in n_desc
+        static let weakRefDesc: UInt16 = 0x0040 
     }
 
-    // Section attribute bits
+    
     private enum SAttr {
         static let pureInstructions: UInt32 = 0x8000_0000
         static let someInstructions: UInt32 = 0x0000_0400
@@ -89,21 +89,21 @@ public struct MachOParser: BinaryParser {
         "__gcc_except_tab", "__eh_frame", "__unwind_info", "__objc_const",
     ]
 
-    private static let maxSliceBytes: UInt64 = 2 << 30 // 2 GiB guard
+    private static let maxSliceBytes: UInt64 = 2 << 30 
 
-    // MARK: - BinaryParser
+    
 
     public func matches(header: Data) -> Bool {
         guard header.count >= 4 else { return false }
         let b = [UInt8](header.prefix(4))
-        // Thin magics: read little-endian; the CIGAM spellings cover big-endian files.
+        
         let le = UInt32(b[0]) | UInt32(b[1]) << 8 | UInt32(b[2]) << 16 | UInt32(b[3]) << 24
         switch le {
         case Magic.mhMagic, Magic.mhMagic64, Magic.mhCigam, Magic.mhCigam64:
             return true
         default: break
         }
-        // Fat magics are stored big-endian on disk.
+        
         let be = UInt32(b[0]) << 24 | UInt32(b[1]) << 16 | UInt32(b[2]) << 8 | UInt32(b[3])
         switch be {
         case Magic.fatMagic, Magic.fatMagic64, Magic.fatCigam, Magic.fatCigam64:
@@ -120,7 +120,7 @@ public struct MachOParser: BinaryParser {
         let be = head.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self).bigEndian }
         let le = head.withUnsafeBytes { $0.loadUnaligned(as: UInt32.self).littleEndian }
 
-        // Fat container?
+        
         var fatOrder: FormatByteOrder? = nil
         var fatIs64 = false
         switch be {
@@ -130,7 +130,7 @@ public struct MachOParser: BinaryParser {
         }
         if fatOrder == nil {
             switch le {
-            case Magic.fatMagic, Magic.fatMagic64: // stored little-endian (CIGAM)
+            case Magic.fatMagic, Magic.fatMagic64: 
                 fatOrder = .little
                 fatIs64 = (le == Magic.fatMagic64)
             default: break
@@ -140,11 +140,11 @@ public struct MachOParser: BinaryParser {
             return try detectFatSlices(head: head, url: url, order: order, is64: fatIs64)
         }
 
-        // Thin: one slice. Read enough of the header for cpu fields.
+        
         guard head.count >= 28 else {
             throw DecompilerError.malformedBinary("truncated Mach-O header")
         }
-        // Determine endianness/class from the first word.
+        
         let magicLE = head.prefix(4).withUnsafeBytes { $0.loadUnaligned(as: UInt32.self).littleEndian }
         let order: FormatByteOrder
         switch magicLE {
@@ -172,7 +172,7 @@ public struct MachOParser: BinaryParser {
         }
         let entrySize = is64 ? 32 : 20
         guard head.count >= 8 + nfat * entrySize else {
-            // Header truncated; read the full fat header from disk.
+            
             let need = UInt64(8 + nfat * entrySize)
             let full = try readFileRegion(url: url, offset: 0, length: need)
             return try detectFatSlices(head: full, url: url, order: order, is64: is64)
@@ -188,7 +188,7 @@ public struct MachOParser: BinaryParser {
                 offset = try cur.u64()
                 size = try cur.u64()
                 align = try cur.u32()
-                _ = try cur.u32() // reserved
+                _ = try cur.u32() 
             } else {
                 offset = UInt64(try cur.u32())
                 size = UInt64(try cur.u32())
@@ -205,7 +205,7 @@ public struct MachOParser: BinaryParser {
         return out
     }
 
-    // MARK: - Full slice parse
+    
 
     public func parse(url: URL, sliceIndex: Int, identity: BinaryIdentity,
                       byteProvider: @escaping @Sendable (UInt64, UInt64) throws -> Data) throws -> BinaryImage {
@@ -217,11 +217,11 @@ public struct MachOParser: BinaryParser {
             throw DecompilerError.resourceLimitExceeded(
                 "Mach-O slice is \(slice.size) bytes (limit \(Self.maxSliceBytes))")
         }
-        // Read the whole slice once. All load-command offsets are relative to
-        // the slice start; stored fileOffsets get slice.offset added back.
+        
+        
         let sliceData = try byteProvider(slice.offset, slice.size)
 
-        // --- Header ---
+        
         guard sliceData.count >= 28 else {
             throw DecompilerError.malformedBinary("truncated Mach-O header in slice")
         }
@@ -241,11 +241,11 @@ public struct MachOParser: BinaryParser {
         let cpuSubtype = try cur.u32()
         let fileTypeRaw = try cur.u32()
         let ncmds = Int(try cur.u32())
-        _ = try cur.u32() // sizeofcmds
-        _ = try cur.u32() // flags
-        if is64 { _ = try cur.u32() } // reserved
+        _ = try cur.u32() 
+        _ = try cur.u32() 
+        if is64 { _ = try cur.u32() } 
 
-        // --- Accumulators ---
+        
         var segments: [BinarySegmentInfo] = []
         var symtab: (symoff: UInt64, nsyms: UInt32, stroff: UInt64, strsize: UInt32)? = nil
         var dependencies: [BinaryDependency] = []
@@ -275,8 +275,8 @@ public struct MachOParser: BinaryParser {
             guard cmdsize >= 8, cmdStart + cmdsize <= sliceData.count else {
                 throw DecompilerError.malformedBinary("bad cmdsize \(cmdsize) for cmd \(cmd)")
             }
-            // On leaving this iteration the cursor is repositioned at the next
-            // load command regardless of how much of this one we consumed.
+            
+            
             defer { cur.offset = cmdStart + cmdsize }
 
             switch cmd {
@@ -294,15 +294,15 @@ public struct MachOParser: BinaryParser {
                 symtab = (symoff, nsyms, stroff, strsize)
 
             case LC.dysymtab:
-                // Two-level-namespace indirect-symbol resolution is not needed
-                // for import discovery (undefined nlist entries suffice), but
-                // the command must still be consumed — cmdsize handles that.
+                
+                
+                
                 break
 
             case LC.loadDylib, LC.loadWeakDylib, LC.reexportDylib,
                  LC.lazyLoadDylib, LC.loadUpwardDylib:
                 let nameOff = Int(try cur.u32())
-                _ = try cur.u32() // timestamp
+                _ = try cur.u32() 
                 let curVer = try cur.u32()
                 let compatVer = try cur.u32()
                 let name = try stringAt(cmdStart: cmdStart, nameOffset: nameOff,
@@ -340,14 +340,14 @@ public struct MachOParser: BinaryParser {
                 uuidBytes = try cur.bytes(16)
 
             case LC.encryptionInfo, LC.encryptionInfo64:
-                _ = try cur.u32() // cryptoff
-                _ = try cur.u32() // cryptsize
+                _ = try cur.u32() 
+                _ = try cur.u32() 
                 let cryptid = try cur.u32()
                 isEncrypted = cryptid != 0
 
             case LC.main:
                 entryOffset = try cur.u64()
-                _ = try cur.u64() // stacksize
+                _ = try cur.u64() 
 
             case LC.codeSignature, LC.functionStarts, LC.dataInCode,
                  LC.dyldExportsTrie, LC.dyldChainedFixups:
@@ -368,8 +368,8 @@ public struct MachOParser: BinaryParser {
                 }
 
             case LC.dyldInfo, LC.dyldInfoOnly:
-                // rebase/bind/lazy-bind offsets skipped; capture export trie.
-                for _ in 0..<8 { _ = try cur.u32() } // 4 offset/size pairs
+                
+                for _ in 0..<8 { _ = try cur.u32() } 
                 let eoff = UInt64(try cur.u32())
                 let esize = UInt64(try cur.u32())
                 if esize > 0 { exportTrieInfo = (eoff, esize) }
@@ -378,14 +378,14 @@ public struct MachOParser: BinaryParser {
                 let platform = try cur.u32()
                 let minos = try cur.u32()
                 let sdk = try cur.u32()
-                _ = try cur.u32() // ntools
+                _ = try cur.u32() 
                 minOSVersion = unpackVersion(minos)
                 targetPlatform = platformID(platform)
                 buildVersion = "platform \(platformName(platform)), minOS \(unpackVersion(minos)), SDK \(unpackVersion(sdk))"
 
             case LC.versionMinMacOSX, LC.versionMinIPhoneOS, LC.versionMinTVOS, LC.versionMinWatchOS:
                 let v = try cur.u32()
-                _ = try cur.u32() // sdk version
+                _ = try cur.u32() 
                 minOSVersion = unpackVersion(v)
                 targetPlatform = switch cmd {
                 case LC.versionMinMacOSX: "macos"
@@ -396,10 +396,10 @@ public struct MachOParser: BinaryParser {
                 }
 
             default:
-                break // unknown command: skipped via cmdsize
+                break 
             }
         }
-        // --- Symbols ---
+        
         var symbols: [BinarySymbol] = []
         var imports: [BinaryImport] = []
         if let st = symtab {
@@ -410,39 +410,39 @@ public struct MachOParser: BinaryParser {
             if result.hasLocalDefined { hasLocalDefinedSymbol = true }
         }
 
-        // --- Image base: vmaddr of __TEXT, else lowest segment vmaddr ---
+        
         let imageBase: UInt64 = {
             if let t = segments.first(where: { $0.name == "__TEXT" }) { return t.vmAddress }
             return segments.map(\.vmAddress).min() ?? 0
         }()
 
-        // --- Entry point (LC_MAIN: file offset from image base) ---
+        
         let entryPoint: DecompilerAddress? = entryOffset.map {
             DecompilerAddress(virtual: imageBase &+ $0)
         }
 
-        // --- Function starts (ULEB128 deltas, image-relative offsets) ---
+        
         var functionStarts: [DecompilerAddress] = []
         if let fs = functionStartsInfo, fs.size > 0 {
             functionStarts = try parseFunctionStarts(sliceData: sliceData, info: fs,
                                                      imageBase: imageBase, order: order)
         }
 
-        // --- Exports trie ---
+        
         var exports: [BinaryExport] = []
         if let et = exportTrieInfo, et.size > 0 {
             exports = try parseExportsTrie(sliceData: sliceData, info: et,
                                            imageBase: imageBase, order: order)
         }
 
-        // --- Identity enrichment ---
+        
         var ident = identity
         ident.binaryUUID = uuidBytes?.hexDashedUUID()
         ident.architecture = ArchitectureResolver.resolve(
             format: .machO, identifier: .machO(cpuType: cpuType, cpuSubtype: cpuSubtype))
         let cpuID = "\(cpuType)/\(cpuSubtype)"
 
-        // --- Code signature / misc notes ---
+        
         var notes = signatureNotes
         if let name = installName { notes.append("install name: \(name)") }
         if let d = dylinker { notes.append("dyld: \(d)") }
@@ -474,11 +474,11 @@ public struct MachOParser: BinaryParser {
         return image
     }
 
-    // MARK: - Segment / section parsing
+    
 
-    /// Parse LC_SEGMENT / LC_SEGMENT_64 body (cursor positioned after cmdsize).
-    /// `fileOffset` values are absolute (slice.offset added) so they index
-    /// correctly through `BinaryImage.byteProvider`.
+    
+    
+    
     private func parseSegment(cur: inout ByteCursor, is64: Bool,
                               sliceBase: UInt64) throws -> BinarySegmentInfo {
         let segnameBytes = try cur.bytes(16)
@@ -489,15 +489,15 @@ public struct MachOParser: BinaryParser {
             vmaddr = try cur.u64(); vmsize = try cur.u64()
             fileoff = try cur.u64(); filesize = try cur.u64()
             maxprot = try cur.u32(); initprot = try cur.u32()
-            nsects = try cur.u32(); _ = try cur.u32() // flags
+            nsects = try cur.u32(); _ = try cur.u32() 
         } else {
             vmaddr = UInt64(try cur.u32()); vmsize = UInt64(try cur.u32())
             fileoff = UInt64(try cur.u32()); filesize = UInt64(try cur.u32())
             maxprot = try cur.u32(); initprot = try cur.u32()
             nsects = try cur.u32(); _ = try cur.u32()
         }
-        let writable = (maxprot | initprot) & 2 != 0 // VM_PROT_WRITE
-        // Bound section parsing to what remains inside this load command.
+        let writable = (maxprot | initprot) & 2 != 0 
+        
         let sectBytes = is64 ? 80 : 68
         guard Int(nsects) <= cur.remaining / sectBytes else {
             throw DecompilerError.malformedBinary("segment section table overruns command")
@@ -506,22 +506,22 @@ public struct MachOParser: BinaryParser {
         for _ in 0..<nsects {
             let snameBytes = try cur.bytes(16)
             let sname = ByteCursor.fixedString(snameBytes)
-            _ = try cur.bytes(16) // section segname (redundant with segment)
+            _ = try cur.bytes(16) 
             let addr: UInt64, size: UInt64
             let offset: UInt32, flags: UInt32
             if is64 {
                 addr = try cur.u64(); size = try cur.u64()
-                offset = try cur.u32(); _ = try cur.u32() // align
-                _ = try cur.u32() // reloff
-                _ = try cur.u32() // nreloc
+                offset = try cur.u32(); _ = try cur.u32() 
+                _ = try cur.u32() 
+                _ = try cur.u32() 
                 flags = try cur.u32()
-                _ = try cur.u32(); _ = try cur.u32(); _ = try cur.u32() // res1-3
+                _ = try cur.u32(); _ = try cur.u32(); _ = try cur.u32() 
             } else {
                 addr = UInt64(try cur.u32()); size = UInt64(try cur.u32())
-                offset = try cur.u32(); _ = try cur.u32() // align
-                _ = try cur.u32(); _ = try cur.u32() // reloff, nreloc
+                offset = try cur.u32(); _ = try cur.u32() 
+                _ = try cur.u32(); _ = try cur.u32() 
                 flags = try cur.u32()
-                _ = try cur.u32(); _ = try cur.u32() // res1, res2
+                _ = try cur.u32(); _ = try cur.u32() 
             }
             let executable = (flags & (SAttr.pureInstructions | SAttr.someInstructions)) != 0
             let isStringSection = Self.sectionStringNames.contains(sname)
@@ -529,20 +529,20 @@ public struct MachOParser: BinaryParser {
             sections.append(BinarySectionInfo(
                 name: sname, segment: segName,
                 address: DecompilerAddress(virtual: addr), size: size,
-                // Absolute file offset: slice base + on-disk offset.
+                
                 fileOffset: sliceBase + UInt64(offset),
                 flags: flags, isExecutable: executable,
                 isWritable: writable, containsStrings: isStringSection))
         }
         return BinarySegmentInfo(
             name: segName, vmAddress: vmaddr, vmSize: vmsize,
-            // Absolute file offsets, matching section.fileOffset.
+            
             fileOffset: sliceBase + fileoff, fileSize: filesize,
             maxProtection: Int(maxprot), initialProtection: Int(initprot),
             sections: sections)
     }
 
-    // MARK: - Symtab
+    
 
     private struct SymtabResult {
         var symbols: [BinarySymbol]
@@ -556,7 +556,7 @@ public struct MachOParser: BinaryParser {
         let entrySize = is64 ? 16 : 12
         let nsyms = Int(symtab.nsyms)
         let empty = SymtabResult(symbols: [], imports: [], hasLocalDefined: false)
-        // Out-of-range tables are treated as absent rather than fatal.
+        
         guard nsyms > 0,
               symtab.symoff + UInt64(nsyms) * UInt64(entrySize) <= UInt64(sliceData.count),
               symtab.stroff + UInt64(symtab.strsize) <= UInt64(sliceData.count) else {
@@ -593,9 +593,9 @@ public struct MachOParser: BinaryParser {
             let isExt = (ntype & NList.ext) != 0 || (ntype & NList.pext) != 0
             let isUndef = type == NList.undef
 
-            // Demangling: only the trivial C-symbol leading-underscore strip is
-            // safe without invoking an external demangler. Swift-mangled names
-            // (starting with _$s, _Tt, __Tt etc.) are left untouched.
+            
+            
+            
             var demangled: String? = nil
             if rawName.hasPrefix("_") && !rawName.hasPrefix("__")
                 && !rawName.hasPrefix("_$s") && !rawName.hasPrefix("_$S")
@@ -631,7 +631,7 @@ public struct MachOParser: BinaryParser {
                             hasLocalDefined: hasLocalDefined)
     }
 
-    // MARK: - Function starts (ULEB128 deltas)
+    
 
     private func parseFunctionStarts(sliceData: Data,
                                      info: (off: UInt64, size: UInt64),
@@ -652,10 +652,10 @@ public struct MachOParser: BinaryParser {
         return out
     }
 
-    // MARK: - Export trie
+    
 
-    /// Walk the dyld export trie. Node offsets are relative to the start of
-    /// the export-info blob (trie + string pool).
+    
+    
     private func parseExportsTrie(sliceData: Data, info: (off: UInt64, size: UInt64),
                                   imageBase: UInt64,
                                   order: FormatByteOrder) throws -> [BinaryExport] {
@@ -666,7 +666,7 @@ public struct MachOParser: BinaryParser {
         var out: [BinaryExport] = []
         var visited = Set<Int>()
 
-        // Iterative stack to avoid deep recursion on hostile inputs.
+        
         var stack: [(nodeOffset: Int, prefix: String)] = [(0, "")]
         while let (nodeOff, prefix) = stack.popLast() {
             guard nodeOff >= 0, nodeOff < blob.count, visited.insert(nodeOff).inserted else { continue }
@@ -676,15 +676,15 @@ public struct MachOParser: BinaryParser {
             var name = prefix
             if terminalSize > 0 {
                 guard let flags = try? cur.uleb128() else { continue }
-                let isReexport = (flags & 0x10) != 0       // EXPORT_SYMBOL_FLAGS_REEXPORT
-                let hasStubResolver = (flags & 0x08) != 0  // EXPORT_SYMBOL_FLAGS_STUB_AND_RESOLVER
+                let isReexport = (flags & 0x10) != 0       
+                let hasStubResolver = (flags & 0x08) != 0  
                 var addr: UInt64? = nil
                 if !isReexport {
                     addr = try? cur.uleb128()
                 }
                 if hasStubResolver {
-                    _ = try? cur.uleb128() // stub offset
-                    _ = try? cur.uleb128() // resolver offset
+                    _ = try? cur.uleb128() 
+                    _ = try? cur.uleb128() 
                 }
                 if let nameOff = try? cur.uleb128(), nameOff < UInt64(blob.count) {
                     var nc = ByteCursor(blob, order: order, offset: Int(nameOff))
@@ -697,7 +697,7 @@ public struct MachOParser: BinaryParser {
                 }
             }
             guard let childCount = try? cur.uleb128() else { continue }
-            guard childCount < 4096 else { continue } // sanity bound
+            guard childCount < 4096 else { continue } 
             for _ in 0..<Int(childCount) {
                 guard let label = try? cur.cstring() else { break }
                 guard let childRel = try? cur.uleb128() else { break }
@@ -707,10 +707,10 @@ public struct MachOParser: BinaryParser {
         return out
     }
 
-    // MARK: - Small helpers
+    
 
-    /// Read a `lc_str`-style name: offset relative to the start of the load
-    /// command, NUL-terminated, within the slice data.
+    
+    
     private func stringAt(cmdStart: Int, nameOffset: Int, data: Data,
                           order: FormatByteOrder) throws -> String {
         let pos = cmdStart + nameOffset
@@ -723,8 +723,8 @@ public struct MachOParser: BinaryParser {
         packed == 0 ? nil : unpackVersion(packed)
     }
 
-    /// Canonical platform identifier for `BinaryImage.targetPlatform`,
-    /// derived from the LC_BUILD_VERSION platform constant.
+    
+    
     private func platformID(_ p: UInt32) -> String? {
         switch p {
         case 1: return "macos"

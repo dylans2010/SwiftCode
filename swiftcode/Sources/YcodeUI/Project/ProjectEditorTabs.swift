@@ -384,11 +384,11 @@ extension ProjectEditorController {
         }
     }
 
-    /// "Entitlements" project tab. Hosts the same Entitlements editor used
-    /// when opening a `.entitlements` file, resolved from the target's
-    /// CODE_SIGN_ENTITLEMENTS setting (signing configuration first, then the
-    /// selected configuration). With no entitlements file the editor offers
-    /// to create one for the active project.
+    
+    
+    
+    
+    
     func entitlementsView(_ t: String) -> NSView {
         let url = model.entitlementsURL(target: t, configuration: signingConfiguration)
             ?? model.entitlementsURL(target: t, configuration: configuration)

@@ -185,8 +185,8 @@ public enum ReconstructedProjectGenerator {
         if !cSources.isEmpty {
             lines.append("        .target(")
             lines.append("            name: \"\(libraryName)\",")
-            // Sources live in the project-root Sources/ and Assembly/
-            // directories, so the target path is the package root.
+            
+            
             lines.append("            path: \".\",")
             lines.append("            sources: [\(cSources.map { "\"\($0.relativePath)\"" }.joined(separator: ", "))],")
             lines.append("            publicHeadersPath: \"Headers\",")

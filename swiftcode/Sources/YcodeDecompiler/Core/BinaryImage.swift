@@ -1,6 +1,6 @@
 import Foundation
 
-/// Stable identity of an imported binary, keyed by content hash.
+
 public struct BinaryIdentity: Hashable, Sendable, Codable {
     public var sha256: String
     public var originalFileName: String
@@ -8,10 +8,10 @@ public struct BinaryIdentity: Hashable, Sendable, Codable {
     public var fileSize: Int64
     public var format: BinaryFormat
     public var architecture: BinaryArchitecture
-    /// Slice index inside a universal container (0 for thin binaries).
+    
     public var sliceIndex: Int
     public var sliceName: String
-    /// Mach-O UUID, ELF build ID, PE debug GUID — whichever the format offers.
+    
     public var binaryUUID: String?
     public var importedAt: Date
     public var parserVersion: String
@@ -34,18 +34,18 @@ public struct BinaryIdentity: Hashable, Sendable, Codable {
         self.parserVersion = parserVersion
     }
 
-    /// Content-derived stable identifier used by caches and the database.
+    
     public var stableID: String { "\(sha256.prefix(16))-s\(sliceIndex)" }
 }
 
 public struct BinarySectionInfo: Hashable, Sendable, Codable {
     public var name: String
     public var segment: String
-    public var address: DecompilerAddress   // virtual
+    public var address: DecompilerAddress   
     public var size: UInt64
     public var fileOffset: UInt64
     public var flags: UInt32
-    /// Whether the section holds executable code.
+    
     public var isExecutable: Bool
     public var isWritable: Bool
     public var containsStrings: Bool
@@ -79,12 +79,12 @@ public struct BinaryExport: Hashable, Sendable, Codable {
 
 public struct BinaryDependency: Hashable, Sendable, Codable {
     public var path: String
-    public var kind: String   // load, weak, reexport, upward, lazy
+    public var kind: String   
     public var currentVersion: String?
     public var compatibilityVersion: String?
 }
 
-/// Canonical, backend-independent representation of one parsed slice.
+
 public struct BinaryImage: Sendable {
     public var identity: BinaryIdentity
     public var format: BinaryFormat
@@ -107,19 +107,19 @@ public struct BinaryImage: Sendable {
     public var runpaths: [String] = []
     public var buildVersion: String?
     public var minOSVersion: String?
-    /// Target platform for Apple binaries: "macos", "ios",
-    /// "ios-simulator", "tvos", "tvos-simulator", "watchos",
-    /// "watchos-simulator", "bridgeos", "mac-catalyst", "driverkit",
-    /// "xros", "xros-simulator". nil for non-Apple formats.
+    
+    
+    
+    
     public var targetPlatform: String?
-    /// Absolute file offset where this slice begins inside a fat/universal
-    /// container; 0 for thin files. `byteProvider` uses absolute offsets,
-    /// so slice bytes are read at `containerOffset ..< containerOffset +
-    /// byteCount`.
+    
+    
+    
+    
     public var containerOffset: UInt64
     public var hasDebugInfo: Bool
-    /// Raw bytes of the slice (bounded by file size; used for hex view & string scans).
-    /// Stored lazily through `byteProvider` for large files.
+    
+    
     public var byteCount: Int64
     public var byteProvider: @Sendable (UInt64, UInt64) throws -> Data
 
@@ -160,14 +160,14 @@ public struct BinaryImage: Sendable {
         self.byteProvider = byteProvider
     }
 
-    /// All executable sections in address order.
+    
     public var executableSections: [BinarySectionInfo] {
         segments.flatMap(\.sections).filter(\.isExecutable).sorted {
             $0.address.value < $1.address.value
         }
     }
 
-    /// Translate a virtual address to a file offset, or nil if unmapped.
+    
     public func fileOffset(forVirtualAddress address: UInt64) -> UInt64? {
         for seg in segments {
             guard address >= seg.vmAddress, address < seg.vmAddress + seg.vmSize else { continue }
@@ -178,7 +178,7 @@ public struct BinaryImage: Sendable {
         return nil
     }
 
-    /// Read `length` bytes at a virtual address.
+    
     public func bytes(virtualAddress: UInt64, length: Int) throws -> Data {
         guard let off = fileOffset(forVirtualAddress: virtualAddress) else {
             throw DecompilerError.unmappedAddress(String(format: "0x%llx", virtualAddress))
@@ -186,7 +186,7 @@ public struct BinaryImage: Sendable {
         return try byteProvider(off, UInt64(length))
     }
 
-    /// Read `length` bytes at a file offset.
+    
     public func bytes(fileOffset: UInt64, length: Int) throws -> Data {
         try byteProvider(fileOffset, UInt64(length))
     }
@@ -194,7 +194,7 @@ public struct BinaryImage: Sendable {
 
 public struct BinaryString: Hashable, Sendable, Codable {
     public var text: String
-    public var address: DecompilerAddress   // virtual address of first byte
+    public var address: DecompilerAddress   
     public var fileOffset: UInt64
     public var encoding: EncodingKind
     public var isReferenced: Bool

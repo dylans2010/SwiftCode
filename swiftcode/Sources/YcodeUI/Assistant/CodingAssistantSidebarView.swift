@@ -30,6 +30,6 @@ public struct CodingAssistantRepresentable: NSViewControllerRepresentable {
     }
 
     public func updateNSViewController(_ nsViewController: CodingAssistantViewController, context: Context) {
-        // Model handles live updates via observation
+        
     }
 }

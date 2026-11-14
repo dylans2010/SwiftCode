@@ -1,14 +1,14 @@
 import Foundation
 
-/// Staging-area operations: add, remove, move/rename, stage-all, unstage,
-/// partial (hunk-level) staging, and commit creation.
+
+
 public struct StagingOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
 
     private let scanner = WorktreeScanner.self
 
-    /// Hashes a worktree file and upserts its index entry. Returns the OID.
+    
     @discardableResult
     public func hashWorktreeFile(_ path: String) throws -> ObjectID {
         let url = try repo.worktreeURL(forRelativePath: path)
@@ -41,8 +41,8 @@ public struct StagingOps {
         return oid
     }
 
-    /// Marks a path resolved in `.spaces/conflicts.json` (called when the
-    /// user stages a conflicted file).
+    
+    
     func markConflictResolved(_ path: String) {
         let url = repo.metaURL.appendingPathComponent("conflicts.json")
         guard let data = try? Data(contentsOf: url),
@@ -59,16 +59,16 @@ public struct StagingOps {
         try? encoder.encode(records).write(to: url)
     }
 
-    /// `spaces add <path>` — stages a file, directory (recursively), or glob.
-    /// Untracked files become index entries; modified tracked files are
-    /// re-hashed; deletions are recorded.
+    
+    
+    
     @discardableResult
     public func add(_ pathSpec: String, all: Bool = false) throws -> [String] { return try repo.withLock {
         let index = try repo.index()
         var staged: [String] = []
 
         if all {
-            // Stage every non-ignored worktree file plus record deletions.
+            
             let scanner = WorktreeScanner(repo: repo)
             let files = try scanner.scan()
             var present = Set<String>()
@@ -80,7 +80,7 @@ public struct StagingOps {
                     staged.append(f.relativePath)
                 }
             }
-            // Reload: hashWorktreeFile persisted entries incrementally.
+            
             var newIndex = try repo.index()
             for path in newIndex.entries.keys where !present.contains(path) {
                 newIndex.entries.removeValue(forKey: path)
@@ -90,13 +90,13 @@ public struct StagingOps {
             return staged.sorted()
         }
 
-        // Expand pathSpec: file, directory prefix, or trailing glob.
+        
         let fm = FileManager.default
         let base = repo.worktreeURL.appendingPathComponent(pathSpec)
         var isDir: ObjCBool = false
         if fm.fileExists(atPath: base.path, isDirectory: &isDir) {
             if isDir.boolValue {
-                // Stage all files under the directory.
+                
                 let scanner = WorktreeScanner(repo: repo)
                 let all = try scanner.scan()
                 for f in all where f.relativePath == pathSpec || f.relativePath.hasPrefix(pathSpec + "/") {
@@ -108,7 +108,7 @@ public struct StagingOps {
                 staged.append(pathSpec)
             }
         } else {
-            // Treat as deletion if tracked, else error.
+            
             var idx = try repo.index()
             if idx.entries[pathSpec] != nil {
                 idx.entries.removeValue(forKey: pathSpec)
@@ -123,7 +123,7 @@ public struct StagingOps {
         }
     }
 
-    /// `spaces remove <path>` / `spaces rm` — removes from index and worktree.
+    
     public func remove(_ path: String, cachedOnly: Bool = false) throws { return try repo.withLock {
         var index = try repo.index()
         guard index.entries[path] != nil else { throw SpacesError.pathNotFound(path) }
@@ -137,7 +137,7 @@ public struct StagingOps {
         }
     }
 
-    /// `spaces move <old> <new>` — index rename + filesystem rename.
+    
     public func move(_ old: String, _ new: String) throws { return try repo.withLock {
         var index = try repo.index()
         guard let entry = index.entries[old] else { throw SpacesError.pathNotFound(old) }
@@ -152,13 +152,13 @@ public struct StagingOps {
         }
     }
 
-    /// `spaces unstage <path>` — resets index entry to HEAD state.
+    
     public func unstage(_ path: String) throws { return try repo.withLock {
         var index = try repo.index()
         guard index.entries[path] != nil else { throw SpacesError.pathNotFound(path) }
         let headTree = try headFlattened()
         if let h = headTree[path] {
-            // Restore index entry to HEAD oid with fresh stat.
+            
             let url = try repo.worktreeURL(forRelativePath: path)
             if FileManager.default.fileExists(atPath: url.path) {
                 index.entries[path] = try Index.entry(forFileAt: url, oid: h.oid, mode: h.mode)
@@ -172,8 +172,8 @@ public struct StagingOps {
         }
     }
 
-    /// `spaces restore --staged <path>` alias of unstage; and
-    /// `spaces restore <path>` restores worktree file from index.
+    
+    
     public func restoreWorktree(_ path: String) throws { return try repo.withLock {
         let index = try repo.index()
         guard let entry = index.entries[path] else { throw SpacesError.pathNotFound(path) }
@@ -195,7 +195,7 @@ public struct StagingOps {
         }
     }
 
-    /// `spaces clean` — removes untracked files. Returns removed paths.
+    
     @discardableResult
     public func clean(dryRun: Bool = false, directories: Bool = true) throws -> [String] { return try repo.withLock {
         let status = try WorktreeScanner(repo: repo).status()
@@ -215,9 +215,9 @@ public struct StagingOps {
         }
     }
 
-    // MARK: - Commit
+    
 
-    /// Builds a tree object from the current index.
+    
     public func writeIndexTree() throws -> ObjectID {
         var listing: [String: (oid: ObjectID, mode: FileMode)] = [:]
         let index = try repo.index()
@@ -336,7 +336,7 @@ public struct StagingOps {
         }
     }
 
-    /// `spaces amend` convenience.
+    
     @discardableResult
     public func amend(message: String? = nil, stageAll: Bool = true) throws -> CommitResult {
         var msg = message
@@ -346,14 +346,14 @@ public struct StagingOps {
         return try commit(message: msg ?? "", stageAll: stageAll, amend: true)
     }
 
-    // MARK: - Helpers
+    
 
     func headFlattened() throws -> [String: (oid: ObjectID, mode: FileMode)] {
         guard let head = try repo.headCommit() else { return [:] }
         return try TreeBuilder.flattenTree(repo: repo, treeOID: head.tree)
     }
 
-    // MARK: - Hooks
+    
 
     public enum HookEvent: String, Sendable {
         case preCommit = "pre-commit"
@@ -367,8 +367,8 @@ public struct StagingOps {
         case postRewrite = "post-rewrite"
     }
 
-    /// Runs `.spaces/hooks/<event>` if present and executable. Hook stdin
-    /// receives `input`; stdout/stderr are captured for errors.
+    
+    
     @discardableResult
     public func runHook(_ event: HookEvent, input: String = "") throws -> (code: Int32, output: String)? {
         let hookURL = repo.metaURL.appendingPathComponent("hooks").appendingPathComponent(event.rawValue)

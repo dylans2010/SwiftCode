@@ -1,8 +1,8 @@
 import Crypto
 import Foundation
 
-/// A content-addressed object identifier: the lowercase hex SHA-256 of the
-/// object's canonical stored form. Interop identifier: 64 hex characters.
+
+
 public struct ObjectID: Hashable, Comparable, Codable, Sendable, CustomStringConvertible {
     public let hex: String
 
@@ -10,9 +10,9 @@ public struct ObjectID: Hashable, Comparable, Codable, Sendable, CustomStringCon
         self.hex = hex.lowercased()
     }
 
-    /// Computes the object ID for raw object content of the given type.
-    /// The digest covers a domain-separated canonical header plus payload so
-    /// that blob/tree/commit/tag namespaces can never collide.
+    
+    
+    
     public static func compute(type: ObjectType, payload: Data) -> ObjectID {
         var hasher = SHA256()
         hasher.update(data: Data("spaces-object-v1\n".utf8))
@@ -22,12 +22,12 @@ public struct ObjectID: Hashable, Comparable, Codable, Sendable, CustomStringCon
         return ObjectID(hex: hasher.finalize().map { String(format: "%02x", $0) }.joined())
     }
 
-    /// Computes the ID for blob content (file bytes).
+    
     public static func blob(_ data: Data) -> ObjectID {
         compute(type: .blob, payload: data)
     }
 
-    /// Path layout inside `.spaces/objects/`: `objects/ab/cdef...`
+    
     public var objectPathComponents: (String, String) {
         let prefix = String(hex.prefix(2))
         let rest = String(hex.dropFirst(2))
@@ -38,8 +38,8 @@ public struct ObjectID: Hashable, Comparable, Codable, Sendable, CustomStringCon
 
     public static func < (lhs: ObjectID, rhs: ObjectID) -> Bool { lhs.hex < rhs.hex }
 
-    /// Parses a (possibly abbreviated) object ID against the set of objects in
-    /// the store. Returns nil when the abbreviation is ambiguous or unknown.
+    
+    
     public static func resolve(_ text: String, in store: ObjectStore) throws -> ObjectID {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.count == 64, let id = try? ObjectID(validating: trimmed) { return id }

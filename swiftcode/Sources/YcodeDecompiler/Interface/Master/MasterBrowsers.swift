@@ -1,12 +1,12 @@
 import SwiftUI
 import AppKit
 
-/// Spec-named aliases for the Master-mode browsers.
+
 public typealias FunctionBrowser = MasterFunctionBrowser
 public typealias SymbolBrowser = MasterSymbolBrowser
 public typealias MemoryMapView = SectionsBrowser
 
-// MARK: - Shared list chrome for master browsers
+
 
 private struct BrowserHeader: View {
     @Binding var searchText: String
@@ -21,7 +21,7 @@ private struct BrowserHeader: View {
     }
 }
 
-// MARK: - Function browser
+
 
 public struct MasterFunctionBrowser: View {
     @Bindable var state: DecompilerObservableState
@@ -86,7 +86,7 @@ public struct MasterFunctionBrowser: View {
     }
 }
 
-// MARK: - Symbol browser
+
 
 public struct MasterSymbolBrowser: View {
     @Bindable var state: DecompilerObservableState
@@ -141,7 +141,7 @@ public struct MasterSymbolBrowser: View {
     }
 }
 
-// MARK: - Import / export browsers
+
 
 public struct MasterImportBrowser: View {
     let state: DecompilerObservableState
@@ -184,7 +184,7 @@ public struct MasterExportBrowser: View {
     }
 }
 
-// MARK: - Strings browser (master)
+
 
 public struct MasterStringsBrowser: View {
     @Bindable var state: DecompilerObservableState
@@ -224,9 +224,9 @@ public struct MasterStringsBrowser: View {
     }
 }
 
-// MARK: - Sections / memory map
 
-/// Segment/section table with protection flags — the memory map.
+
+
 public struct SectionsBrowser: View {
     let state: DecompilerObservableState
     public init(state: DecompilerObservableState) { self.state = state }
@@ -276,13 +276,13 @@ public struct SectionsBrowser: View {
     }
 }
 
-// MARK: - Cross references
+
 
 public struct ReferenceBrowser: View {
     let state: DecompilerObservableState
     public init(state: DecompilerObservableState) { self.state = state }
 
-    /// Xrefs touching the current selection first, then the rest.
+    
     private var relevant: [CrossReference] {
         guard let sel = state.selectedAddress?.value else { return state.crossReferences }
         return state.crossReferences.filter {
@@ -333,9 +333,9 @@ public struct ReferenceBrowser: View {
     }
 }
 
-// MARK: - Analysis console
 
-/// Bottom console: progress, console log lines, and analysis history.
+
+
 public struct AnalysisConsole: View {
     @Bindable var state: DecompilerObservableState
     @State private var showHistory = false
@@ -413,7 +413,7 @@ public struct AnalysisConsole: View {
     }
 }
 
-// MARK: - Master inspector
+
 
 public struct MasterInspectorView: View {
     @Bindable var state: DecompilerObservableState

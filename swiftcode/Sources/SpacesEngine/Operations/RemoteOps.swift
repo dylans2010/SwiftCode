@@ -1,9 +1,9 @@
 import Foundation
 
-/// Remote operations: clone, fetch, push, pull, remote management.
-/// Uses the Spaces wire protocol over pluggable transports. The local
-/// transport performs real object transfer between repositories; HTTP
-/// remotes require a Spaces server (documented limitation).
+
+
+
+
 public struct RemoteOps {
     public let repo: Repository
     public var cancelRequested = false
@@ -180,7 +180,7 @@ public struct RemoteOps {
     public func remove(_ name: String) throws { return try repo.withLock {
         guard repo.config.remotes[name] != nil else { throw SpacesError.remoteNotFound(name) }
         repo.config.remotes.removeValue(forKey: name)
-        // Remove remote-tracking refs.
+        
         for ref in try repo.refs.allRefs() where ref.name.hasPrefix("refs/remotes/\(name)/") {
             try repo.refs.deleteRef(ref.name)
         }
@@ -195,7 +195,7 @@ public struct RemoteOps {
         }
     }
 
-    // MARK: - Transport resolution
+    
 
     public func transport(for remote: String) throws -> SpacesTransport {
         guard let cfg = repo.config.remotes[remote] else {
@@ -220,11 +220,11 @@ public struct RemoteOps {
             let creds = try? store.load(host: host)
             return HTTPTransport(url: urlObj, credentials: creds)
         }
-        // Local path or file:// URL.
+        
         return LocalTransport(path: url)
     }
 
-    // MARK: - Fetch
+    
 
     public struct FetchReport: Sendable, Encodable {
         public var remote: String
@@ -333,7 +333,7 @@ public struct RemoteOps {
             } else if r.name == "HEAD" {
                 continue
             } else {
-                localName = r.name // tags go to refs/tags/
+                localName = r.name 
             }
             let old = try repo.refs.readRef(localName)
             if old != r.oid {
@@ -347,12 +347,12 @@ public struct RemoteOps {
                            updatedRefs: updated, remoteRefs: remoteRefs)
     }
 
-    /// `spaces pull <remote> <branch>` — fetch + merge into current branch.
+    
     @discardableResult
     public func pull(_ remote: String, branch: String? = nil) throws -> MergeEngine.MergeOutcome? { return try repo.withLock {
         _ = try fetch(remote)
-        // Determine what to merge: the remote-tracking ref for the given
-        // branch, the configured upstream, or the remote's default branch.
+        
+        
         var target: String? = nil
         if let b = branch {
             let tracking = "refs/remotes/\(remote)/\(b)"
@@ -365,7 +365,7 @@ public struct RemoteOps {
             if parts.count == 2 { target = "refs/remotes/\(parts[0])/\(parts[1])" }
         }
         if target == nil {
-            // Fall back to the remote's main/master tracking ref.
+            
             for cand in ["refs/remotes/\(remote)/main", "refs/remotes/\(remote)/master"] {
                 if try repo.refs.readRef(cand) != nil { target = cand; break }
             }
@@ -377,7 +377,7 @@ public struct RemoteOps {
         }
     }
 
-    // MARK: - Push
+    
 
     public struct PushReport: Sendable, Encodable {
         public var remote: String
@@ -523,7 +523,7 @@ public struct RemoteOps {
         return false
     }
 
-    /// `spaces sync <remote>` — fetch then push current branch.
+    
     public func sync(_ remote: String) throws -> (fetch: FetchReport, push: PushReport?) { return try repo.withLock {
         let f = try fetch(remote)
         var p: PushReport? = nil
@@ -536,11 +536,11 @@ public struct RemoteOps {
     }
 }
 
-/// `spaces clone <url> [dir]` — creates a new repository and fetches.
+
 public enum CloneOps {
     public static func clone(url: String, into dest: URL? = nil,
                              repo: Repository? = nil) throws -> Repository {
-        // Determine destination.
+        
         let target: URL
         if let d = dest {
             target = d
@@ -557,11 +557,11 @@ public enum CloneOps {
             throw SpacesError.invalidArgument("destination not empty: \(target.path)")
         }
         let newRepo = try Repository.create(at: target)
-        // Add remote and fetch.
+        
         let remoteName = "origin"
         try RemoteOps(repo: newRepo).add(remoteName, url: url)
         _ = try RemoteOps(repo: newRepo).fetch(remoteName)
-        // Check out default branch: prefer remote HEAD → main/master.
+        
         let remoteRefs = try newRepo.refs.allRefs()
             .filter { $0.name.hasPrefix("refs/remotes/origin/") }
         let preferred = ["main", "master"]

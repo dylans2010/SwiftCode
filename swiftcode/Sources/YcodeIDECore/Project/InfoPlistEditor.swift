@@ -610,12 +610,12 @@ public final class InfoPlistEditor: Sendable {
         return regex?.firstMatch(in: resolved, options: [], range: range) != nil
     }
 
-    /// Build-setting references such as `$(PRODUCT_BUNDLE_IDENTIFIER)` or
-    /// `$(PRODUCT_NAME:rfc1034identifier)` resolve at build time, so they
-    /// stand in for a value that is only known when Xcode builds the target.
-    /// Substitute each reference with a placeholder of the right shape before
-    /// validating, so the literal parts are still checked and a bare
-    /// reference is accepted instead of flagged as malformed.
+    
+    
+    
+    
+    
+    
     private func substitutingBuildSettingReferences(_ value: String, placeholder: String) -> String {
         guard let regex = try? NSRegularExpression(pattern: #"\$\([^)]*\)"#) else { return value }
         let range = NSRange(location: 0, length: value.utf16.count)

@@ -1,13 +1,13 @@
 import Foundation
 
-/// ELF binary parser (32/64-bit, little and big endian).
-///
-/// Original implementation written against the public ELF specification
-/// (Tool Interface Standard / Oracle "ELF-64-bit LSB/ MSB" docs) and the
-/// `elf.h` constant values, which are interop identifiers.
-///
-/// ELF files are never sliced in this loader, so all stored file offsets are
-/// the natural on-disk offsets read through `byteProvider`.
+
+
+
+
+
+
+
+
 public struct ELFBinaryParser: BinaryParser {
     public init() {}
 
@@ -15,11 +15,11 @@ public struct ELFBinaryParser: BinaryParser {
 
     private static let maxFileBytes: UInt64 = 2 << 30
 
-    // ELF header offsets (after the 16-byte e_ident).
-    // e_type u16 @16, e_machine u16 @18, e_version u32 @20, e_entry @24(64)/@24(32)…
-    // We parse structurally instead of by fixed offsets.
+    
+    
+    
 
-    // Section header types
+    
     private enum SHT {
         static let null: UInt32 = 0
         static let progBits: UInt32 = 1
@@ -64,7 +64,7 @@ public struct ELFBinaryParser: BinaryParser {
     private static let maxSections = 4096
     private static let maxSegments = 1024
 
-    // MARK: - BinaryParser
+    
 
     public func matches(header: Data) -> Bool {
         header.count >= 4 && header[0] == 0x7F && header[1] == 0x45
@@ -79,13 +79,13 @@ public struct ELFBinaryParser: BinaryParser {
         guard head[0] == 0x7F, head[1] == 0x45, head[2] == 0x4C, head[3] == 0x46 else {
             throw DecompilerError.malformedBinary("not an ELF file")
         }
-        let klass = head[4]      // EI_CLASS: 1 = 32, 2 = 64
-        let dataEnc = head[5]    // EI_DATA: 1 = LE, 2 = BE
+        let klass = head[4]      
+        let dataEnc = head[5]    
         guard klass == 1 || klass == 2, dataEnc == 1 || dataEnc == 2 else {
             throw DecompilerError.malformedBinary("unsupported ELF class/data encoding")
         }
         let order: FormatByteOrder = dataEnc == 1 ? .little : .big
-        // e_machine at offset 18.
+        
         let machine = UInt16(head[18]) | UInt16(head[19]) << 8
         let machineVal = order == .big ? machine.byteSwapped : machine
         let arch = ArchitectureResolver.resolve(format: .elf,
@@ -98,7 +98,7 @@ public struct ELFBinaryParser: BinaryParser {
 
     public func parse(url: URL, sliceIndex: Int, identity: BinaryIdentity,
                       byteProvider: @escaping @Sendable (UInt64, UInt64) throws -> Data) throws -> BinaryImage {
-        _ = sliceIndex // ELF has exactly one slice
+        _ = sliceIndex 
         let size = try fileSize(url: url)
         guard size <= Self.maxFileBytes else {
             throw DecompilerError.resourceLimitExceeded(
@@ -109,7 +109,7 @@ public struct ELFBinaryParser: BinaryParser {
         }
         let data = try byteProvider(0, size)
 
-        // --- e_ident ---
+        
         guard data.count >= 16, data[0] == 0x7F, data[1] == 0x45,
               data[2] == 0x4C, data[3] == 0x46 else {
             throw DecompilerError.malformedBinary("bad ELF magic")
@@ -123,12 +123,12 @@ public struct ELFBinaryParser: BinaryParser {
         var hdr = ByteCursor(data, order: order, offset: 16)
         let eType = try hdr.u16()
         let eMachine = try hdr.u16()
-        _ = try hdr.u32() // e_version
+        _ = try hdr.u32() 
         let eEntry = is64 ? try hdr.u64() : UInt64(try hdr.u32())
         let ePhoff = is64 ? try hdr.u64() : UInt64(try hdr.u32())
         let eShoff = is64 ? try hdr.u64() : UInt64(try hdr.u32())
-        _ = try hdr.u32() // e_flags
-        _ = try hdr.u16() // e_ehsize
+        _ = try hdr.u32() 
+        _ = try hdr.u16() 
         let ePhentsize = Int(try hdr.u16())
         let ePhnum = Int(try hdr.u16())
         let eShentsize = Int(try hdr.u16())
@@ -137,7 +137,7 @@ public struct ELFBinaryParser: BinaryParser {
 
         let arch = ArchitectureResolver.resolve(format: .elf, identifier: .elfMachine(eMachine))
 
-        // --- Program headers ---
+        
         struct Phdr {
             var type: UInt32
             var offset: UInt64
@@ -158,21 +158,21 @@ public struct ELFBinaryParser: BinaryParser {
             if is64 {
                 pFlags = try p.u32()
                 pOffset = try p.u64(); pVaddr = try p.u64()
-                _ = try p.u64() // p_paddr
+                _ = try p.u64() 
                 pFilesz = try p.u64(); pMemsz = try p.u64()
-                _ = try p.u64() // p_align
+                _ = try p.u64() 
             } else {
                 pOffset = UInt64(try p.u32()); pVaddr = UInt64(try p.u32())
-                _ = try p.u32() // p_paddr
+                _ = try p.u32() 
                 pFilesz = UInt64(try p.u32()); pMemsz = UInt64(try p.u32())
                 pFlags = try p.u32()
-                _ = try p.u32() // p_align
+                _ = try p.u32() 
             }
             phdrs.append(Phdr(type: pType, offset: pOffset, vaddr: pVaddr,
                               filesz: pFilesz, memsz: pMemsz, flags: pFlags))
         }
 
-        // --- Section headers ---
+        
         struct Shdr {
             var name: String
             var type: UInt32
@@ -187,16 +187,16 @@ public struct ELFBinaryParser: BinaryParser {
         var shdrs: [Shdr] = []
         var shnum = eShnum
         var shstrndx = eShstrndx
-        // Extended numbering: real values live in section header 0.
+        
         if (eShnum == 0 || eShstrndx == 0) && eShoff != 0 {
             var z = ByteCursor(data, order: order, offset: Int(eShoff))
-            _ = try z.u32() // name
-            _ = try z.u32() // type
-            _ = is64 ? try z.u64() : UInt64(try z.u32()) // flags
-            _ = is64 ? try z.u64() : UInt64(try z.u32()) // addr
-            _ = is64 ? try z.u64() : UInt64(try z.u32()) // offset
+            _ = try z.u32() 
+            _ = try z.u32() 
+            _ = is64 ? try z.u64() : UInt64(try z.u32()) 
+            _ = is64 ? try z.u64() : UInt64(try z.u32()) 
+            _ = is64 ? try z.u64() : UInt64(try z.u32()) 
             let zSize = is64 ? try z.u64() : UInt64(try z.u32())
-            _ = try z.u32() // link
+            _ = try z.u32() 
             let zInfo = try z.u32()
             if eShnum == 0 { shnum = Int(zSize) }
             if eShstrndx == 0 { shstrndx = Int(zInfo) }
@@ -204,15 +204,15 @@ public struct ELFBinaryParser: BinaryParser {
         guard shnum <= Self.maxSections else {
             throw DecompilerError.malformedBinary("too many section headers")
         }
-        // Section name string table.
+        
         var shstrData = Data()
         if shstrndx >= 0 && shstrndx < shnum && eShoff != 0 {
             var s = ByteCursor(data, order: order,
                                offset: Int(eShoff) + shstrndx * eShentsize)
-            _ = try s.u32() // name
-            _ = try s.u32() // type
-            _ = is64 ? try s.u64() : UInt64(try s.u32()) // flags
-            _ = is64 ? try s.u64() : UInt64(try s.u32()) // addr
+            _ = try s.u32() 
+            _ = try s.u32() 
+            _ = is64 ? try s.u64() : UInt64(try s.u32()) 
+            _ = is64 ? try s.u64() : UInt64(try s.u32()) 
             let stroff = is64 ? try s.u64() : UInt64(try s.u32())
             let strsize = is64 ? try s.u64() : UInt64(try s.u32())
             let o = Int(stroff), n = Int(strsize)
@@ -241,7 +241,7 @@ public struct ELFBinaryParser: BinaryParser {
                 let sSize = is64 ? try s.u64() : UInt64(try s.u32())
                 let sLink = try s.u32()
                 let sInfo = try s.u32()
-                if is64 { _ = try s.u64() } else { _ = try s.u32() } // addralign
+                if is64 { _ = try s.u64() } else { _ = try s.u32() } 
                 let sEntsize = is64 ? try s.u64() : UInt64(try s.u32())
                 shdrs.append(Shdr(name: shName(nameOff), type: sType, flags: sFlags,
                                   addr: sAddr, offset: sOffset, size: sSize,
@@ -262,16 +262,16 @@ public struct ELFBinaryParser: BinaryParser {
                 containsStrings: sh.name.contains("str") || sh.name.contains("rodata"))
         }
 
-        // --- Build segments from PT_LOAD ---
-        // Each alloc section is claimed by the first PT_LOAD whose virtual
-        // range contains its start address; leftovers go to "__NON_ALLOC".
+        
+        
+        
         let loadPhdrs = phdrs.enumerated().filter { $0.element.type == PT.load }
         var sectionOwner = [Int?](repeating: nil, count: shdrs.count)
         var segments: [BinarySegmentInfo] = []
         var interpPath: String? = nil
         for (segIdx, pair) in loadPhdrs.enumerated() {
             let ph = pair.element
-            let writable = (ph.flags & 2) != 0       // PF_W
+            let writable = (ph.flags & 2) != 0       
             let span = max(ph.memsz, ph.filesz)
             var secs: [BinarySectionInfo] = []
             for (si, sh) in shdrs.enumerated()
@@ -286,8 +286,8 @@ public struct ELFBinaryParser: BinaryParser {
                 maxProtection: Int(ph.flags), initialProtection: Int(ph.flags),
                 sections: secs))
         }
-        // Non-alloc / unclaimed sections go to a bookkeeping segment with no
-        // virtual mapping (vmSize 0 keeps fileOffset(forVirtualAddress:) nil).
+        
+        
         var others: [BinarySectionInfo] = []
         for (si, sh) in shdrs.enumerated() where sh.size > 0 && sectionOwner[si] == nil {
             others.append(makeSection(sh, segName: "__NON_ALLOC",
@@ -300,7 +300,7 @@ public struct ELFBinaryParser: BinaryParser {
                 maxProtection: 0, initialProtection: 0, sections: others))
         }
 
-        // PT_INTERP → interpreter note.
+        
         for ph in phdrs where ph.type == PT.interp {
             let o = Int(ph.offset), n = Int(ph.filesz)
             if o >= 0, n > 0, o + n <= data.count {
@@ -308,7 +308,7 @@ public struct ELFBinaryParser: BinaryParser {
             }
         }
 
-        // --- Symbols: .symtab and .dynsym ---
+        
         var symbols: [BinarySymbol] = []
         var imports: [BinaryImport] = []
         var exportsList: [BinaryExport] = []
@@ -343,7 +343,7 @@ public struct ELFBinaryParser: BinaryParser {
                 let stSize: UInt64
                 if is64 {
                     stInfo = try cur.u8()
-                    _ = try cur.u8() // st_other
+                    _ = try cur.u8() 
                     stShndx = try cur.u16()
                     stValue = try cur.u64()
                     stSize = try cur.u64()
@@ -356,8 +356,8 @@ public struct ELFBinaryParser: BinaryParser {
                 }
                 let bind = stInfo >> 4
                 let name = elfString(stName)
-                guard !name.isEmpty else { continue } // skips the null symbol too
-                let isUndef = stShndx == 0 // SHN_UNDEF
+                guard !name.isEmpty else { continue } 
+                let isUndef = stShndx == 0 
                 let kind: BinarySymbol.Kind
                 if isUndef {
                     kind = .undefined
@@ -384,11 +384,11 @@ public struct ELFBinaryParser: BinaryParser {
             }
         }
 
-        // A symbol may appear in both .dynsym and .symtab; keep imports unique.
+        
         var seenImports = Set<String>()
         imports = imports.filter { seenImports.insert($0.name).inserted }
 
-        // --- .dynamic: DT_NEEDED dependencies ---
+        
         var dependencies: [BinaryDependency] = []
         for sh in shdrs where sh.type == SHT.dynamic {
             let count = Int(sh.size / (is64 ? 16 : 8))
@@ -401,7 +401,7 @@ public struct ELFBinaryParser: BinaryParser {
                 if tag == DT.strTab { strtabAddr = val }
                 if tag == DT.needed { neededOffsets.append(val) }
             }
-            // d_val for STRTAB is a virtual address → translate to file offset.
+            
             func vaddrToOffset(_ va: UInt64) -> UInt64? {
                 for ph in phdrs where ph.type == PT.load {
                     if va >= ph.vaddr && va < ph.vaddr + ph.filesz {
@@ -422,7 +422,7 @@ public struct ELFBinaryParser: BinaryParser {
             }
         }
 
-        // --- Build ID note (NT_GNU_BUILD_ID = 3) ---
+        
         var buildID: String? = nil
         for sh in shdrs where sh.type == SHT.note {
             var cur = ByteCursor(data, order: order, offset: Int(sh.offset))
@@ -431,19 +431,19 @@ public struct ELFBinaryParser: BinaryParser {
                 let namesz = Int(try cur.u32())
                 let descsz = Int(try cur.u32())
                 let ntype = try cur.u32()
-                // name and desc are each padded to a 4-byte boundary.
+                
                 _ = try? cur.bytes(namesz)
                 _ = try? cur.skip((4 - (namesz % 4)) % 4)
                 let desc = (try? cur.bytes(descsz)) ?? Data()
                 _ = try? cur.skip((4 - (descsz % 4)) % 4)
-                if ntype == 3, descsz > 0 { // NT_GNU_BUILD_ID
+                if ntype == 3, descsz > 0 { 
                     buildID = desc.map { String(format: "%02x", $0) }.joined()
                     break
                 }
             }
         }
 
-        // --- Entry point ---
+        
         let entryPoint: DecompilerAddress? = eEntry != 0
             ? DecompilerAddress(virtual: eEntry) : nil
 

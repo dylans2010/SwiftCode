@@ -79,13 +79,13 @@ public final class AppleSignInManager: Sendable {
     public var sessionState: SessionState = .signedOut
     public var lastError: String?
 
-    /// Set while Apple is waiting for the user to type a two-factor /
-    /// two-step verification code.
+    
+    
     public private(set) var twoFactorContext: AppleTwoFactorContext?
-    /// Which destination the verification code should go to / come from.
+    
     public private(set) var twoFactorDelivery: AppleTwoFactorDelivery = .trustedDevice
-    /// True once Apple has actually been asked to send a code to the chosen
-    /// phone/device (avoids requesting the SMS twice).
+    
+    
     public private(set) var twoFactorCodeRequested = false
 
     private var authClient: AppleIDAuthClient?
@@ -110,11 +110,11 @@ public final class AppleSignInManager: Sendable {
     }
 
     public struct AppleDeveloperAccount: Identifiable, Sendable, Codable {
-        /// Unique per (account, team) pair so one Apple Account can own
-        /// several developer teams.
+        
+        
         public var id: String { "\(appleID)#\(teamID)" }
-        /// The Apple ID for Apple-Account sign-ins, or the user-supplied
-        /// label for App Store Connect API key accounts.
+        
+        
         public let appleID: String
         public let teamName: String
         public let teamID: String
@@ -122,7 +122,7 @@ public final class AppleSignInManager: Sendable {
         public let keyID: String?
         public let issuerID: String?
         public let certificates: [CertificateInfo]?
-        /// "appleID" or "appStoreConnectAPIKey".
+        
         public let authMethod: String?
 
         public init(
@@ -150,7 +150,7 @@ public final class AppleSignInManager: Sendable {
         loadAccounts()
     }
 
-    // MARK: - App Store Connect API
+    
 
     public func fetchCertificates(jwt: String) async throws -> [CertificateInfo] {
         guard let url = URL(string: "https://api.appstoreconnect.apple.com/v1/certificates") else {
@@ -224,8 +224,8 @@ public final class AppleSignInManager: Sendable {
         }
     }
 
-    /// `GET /v1/apps?limit=1` — used to prove an API key works even when its
-    /// role cannot list certificates.
+    
+    
     private func fetchAppCount(jwt: String) async throws -> Int {
         guard let url = URL(string: "https://api.appstoreconnect.apple.com/v1/apps?limit=1") else {
             throw NSError(domain: "AppleSignInManager", code: 2,
@@ -245,10 +245,10 @@ public final class AppleSignInManager: Sendable {
         return (try? JSONDecoder().decode(AppsResponse.self, from: data))?.data.count ?? 0
     }
 
-    /// Adds an App Store Connect API key (.p8 + Key ID + Issuer ID) after
-    /// validating it against the real App Store Connect API. This is the
-    /// supported, documented authentication mechanism for App Store Connect —
-    /// no Apple ID password is involved.
+    
+    
+    
+    
     public func addAppStoreConnectAPIKey(
         label: String,
         keyID: String,
@@ -277,8 +277,8 @@ public final class AppleSignInManager: Sendable {
                 privateKeyPEM: trimmedKey
             )
 
-            // Validate the key against the real API. Keys with limited roles
-            // may not be allowed to list certificates, so fall back to /v1/apps.
+            
+            
             var certificates: [CertificateInfo]?
             var keyValidated = false
             do {
@@ -329,10 +329,10 @@ public final class AppleSignInManager: Sendable {
         }
     }
 
-    /// Pulls the real team ID / team name out of the certificate Apple
-    /// returned: the certificate subject's OU is the team ID and O is the
-    /// organization (team) name. Falls back to the "(TEAMID)" suffix Apple
-    /// puts in certificate display names.
+    
+    
+    
+    
     private static func teamIdentity(from certificate: CertificateInfo?) -> (teamID: String, teamName: String) {
         guard let certificate, !certificate.content.isEmpty,
               let der = Data(base64Encoded: certificate.content) else {
@@ -342,14 +342,14 @@ public final class AppleSignInManager: Sendable {
         var teamID = ""
         var teamName = ""
 
-        if let ou = derStringValue(in: der, oid: [0x55, 0x04, 0x0B]) { // organizationalUnitName
+        if let ou = derStringValue(in: der, oid: [0x55, 0x04, 0x0B]) { 
             teamID = ou
         }
-        if let org = derStringValue(in: der, oid: [0x55, 0x04, 0x0A]) { // organizationName
+        if let org = derStringValue(in: der, oid: [0x55, 0x04, 0x0A]) { 
             teamName = org
         }
         if teamID.isEmpty {
-            // Apple certificate names look like "Apple Development: Jane Doe (AB12CD34EF)".
+            
             if let open = certificate.name.lastIndex(of: "("),
                certificate.name.hasSuffix(")") {
                 let candidate = String(certificate.name[certificate.name.index(after: open)..<certificate.name.index(before: certificate.name.endIndex)])
@@ -364,9 +364,9 @@ public final class AppleSignInManager: Sendable {
         return (teamID, teamName)
     }
 
-    /// Minimal DER reader: finds `OID` (content bytes only, e.g. 55 04 0B for
-    /// organizationalUnitName) and returns the UTF-8/PrintableString value
-    /// encoded immediately after it.
+    
+    
+    
     private static func derStringValue(in data: Data, oid: [UInt8]) -> String? {
         let bytes = [UInt8](data)
         guard !bytes.isEmpty, oid.count <= bytes.count else { return nil }
@@ -381,9 +381,9 @@ public final class AppleSignInManager: Sendable {
                 position += 1
                 continue
             }
-            // Require the OID tag (0x06) and short-form length (0x03) right
-            // before the content so coincidental byte sequences inside other
-            // fields are not mistaken for the attribute OID.
+            
+            
+            
             guard position >= 2, bytes[position - 2] == 0x06, bytes[position - 1] == 0x03 else {
                 position += 1
                 continue
@@ -405,8 +405,8 @@ public final class AppleSignInManager: Sendable {
                 }
             }
             guard length > 0, index + length <= bytes.count else { return nil }
-            // String types: UTF8String (0x0C), PrintableString (0x13),
-            // IA5String (0x16), BMPString (0x1E, best-effort UTF-8).
+            
+            
             if [0x0C, 0x13, 0x16, 0x1E].contains(tag) {
                 let value = Data(bytes[index..<index+length])
                 if let string = String(data: value, encoding: .utf8), !string.isEmpty {
@@ -418,13 +418,13 @@ public final class AppleSignInManager: Sendable {
         return nil
     }
 
-    // MARK: - Apple Account (Apple ID + password + 2FA)
+    
 
-    /// Real Apple ID sign-in: password step against idmsa.apple.com, then —
-    /// when the account has two-factor / two-step verification — the
-    /// verification UI collects the code and `verifyTwoFactorCode` finishes.
-    /// On success every team the account belongs to is fetched from Apple's
-    /// own endpoints and stored as developer accounts.
+    
+    
+    
+    
+    
     public func signInWithAppleID(appleID: String, password: String) async {
         sessionState = .loading
         lastError = nil
@@ -453,8 +453,8 @@ public final class AppleSignInManager: Sendable {
                 if context.smsFallbackOnly, let phone = context.phones.first {
                     twoFactorDelivery = .phone(phone.id)
                 } else if context.phones.isEmpty, let device = context.devices.first {
-                    // Legacy two-step verification has no automatic push; the
-                    // code must be requested on a specific trusted device.
+                    
+                    
                     twoFactorDelivery = .device(device.id)
                 } else {
                     twoFactorDelivery = .trustedDevice
@@ -469,8 +469,8 @@ public final class AppleSignInManager: Sendable {
         }
     }
 
-    /// Cancels an in-progress Apple ID sign-in and returns the UI to the
-    /// credential form.
+    
+    
     public func cancelPendingSignIn() {
         twoFactorContext = nil
         twoFactorCodeRequested = false
@@ -480,14 +480,14 @@ public final class AppleSignInManager: Sendable {
         lastError = nil
     }
 
-    /// Picks which trusted destination receives / provides the code.
+    
     public func selectTwoFactorDelivery(_ delivery: AppleTwoFactorDelivery) {
         guard twoFactorContext != nil else { return }
         twoFactorDelivery = delivery
         twoFactorCodeRequested = false
     }
 
-    /// Asks Apple to send the verification code to the selected destination.
+    
     public func requestTwoFactorCode() async {
         guard sessionState == .verificationRequired,
               let context = twoFactorContext,
@@ -505,8 +505,8 @@ public final class AppleSignInManager: Sendable {
         }
     }
 
-    /// Submits the verification code and, on success, fetches the account's
-    /// real developer teams.
+    
+    
     public func verifyTwoFactorCode(_ code: String) async {
         guard sessionState == .verificationRequired,
               let context = twoFactorContext,
@@ -515,17 +515,17 @@ public final class AppleSignInManager: Sendable {
         lastError = nil
 
         do {
-            // Make sure a code was actually requested for phone/device
-            // deliveries; for the trusted-device push Apple already sent it
-            // with the 409 response (and `requestTwoFactorCode` is a no-op
-            // for modern two-factor authentication).
+            
+            
+            
+            
             if !twoFactorCodeRequested {
                 try? await client.requestTwoFactorCode(delivery: twoFactorDelivery, context: context)
             }
             try await client.verifyTwoFactorCode(code, delivery: twoFactorDelivery, context: context)
-            // Only clear the pending verification once the teams were
-            // actually fetched — a failure here keeps the UI on the code
-            // step so the user can go Back instead of being stranded.
+            
+            
+            
             try await completeAppleIDSignIn()
             twoFactorContext = nil
             twoFactorCodeRequested = false
@@ -537,8 +537,8 @@ public final class AppleSignInManager: Sendable {
         }
     }
 
-    /// Fetches the signed-in account's teams and stores one developer
-    /// account row per team.
+    
+    
     private func completeAppleIDSignIn() async throws {
         guard let client = authClient else {
             throw AppleIDAuthError.malformedResponse("missing auth client")
@@ -645,7 +645,7 @@ public final class AppleSignInManager: Sendable {
         if !pem.contains("-----BEGIN PRIVATE KEY-----") {
             pem = "-----BEGIN PRIVATE KEY-----\n\(pem)\n-----END PRIVATE KEY-----\n"
         }
-        // The PEM body (everything between the armor lines) must be non-empty.
+        
         let pemBody = pem
             .replacingOccurrences(of: "-----BEGIN PRIVATE KEY-----", with: "")
             .replacingOccurrences(of: "-----END PRIVATE KEY-----", with: "")
@@ -659,8 +659,8 @@ public final class AppleSignInManager: Sendable {
         try keyData.write(to: keyURL)
 
         if certContentBase64.isEmpty {
-            // No certificate content was ever retrieved for this account —
-            // fail honestly instead of minting a self-signed stand-in.
+            
+            
             throw NSError(domain: "AppleSignInManager", code: -3, userInfo: [NSLocalizedDescriptionKey: "No signing certificate is associated with this account. Certificates are only available for accounts added with an App Store Connect API key whose role permits certificate access."])
         }
 

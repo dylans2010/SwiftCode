@@ -75,9 +75,9 @@ public struct SimRuntimeRecord: Sendable, Equatable, Hashable, Identifiable, Cod
     public var imageUUID: String?
     public var isAvailable: Bool?
     public var availabilityError: String?
-    /// Whether `simctl runtime delete` accepts this image, as reported by
-    /// `simctl runtime list -j`. nil when simctl did not say (e.g. runtimes
-    /// listed only through `simctl list runtimes`).
+    
+    
+    
     public var isDeletable: Bool?
 
     public init(platform: SimPlatform, version: String, build: String, identifier: String? = nil, sizeBytes: Int64? = nil,
@@ -110,9 +110,9 @@ public struct SimRuntimeRecord: Sendable, Equatable, Hashable, Identifiable, Cod
 
     public var isRemovable: Bool {
         if case .swiftcode = owner { return true }
-        // A CoreSimulator image on this Mac can be deleted through
-        // `xcrun simctl runtime delete <image UUID>` when simctl marks it
-        // deletable. Runtimes on a host or without an image UUID stay put.
+        
+        
+        
         if owner == .coreSimulator, location == .thisMachine, isDeletable == true, imageUUID != nil { return true }
         return false
     }

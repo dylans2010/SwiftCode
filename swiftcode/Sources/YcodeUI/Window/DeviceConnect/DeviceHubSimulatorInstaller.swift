@@ -5,7 +5,7 @@ import YcodeDeviceModel
 import YcodeIDECore
 import YcodeSubprocess
 
-/// Supported platforms in the unified Device Hub workspace.
+
 public enum DeviceHubPlatform: String, Sendable, CaseIterable, Identifiable {
     case iOS = "iOS"
     case iPadOS = "iPadOS"
@@ -36,8 +36,8 @@ public enum DeviceHubPlatform: String, Sendable, CaseIterable, Identifiable {
         }
     }
 
-    /// The token passed to `xcodebuild -downloadPlatform <platform>`.
-    /// Note: iPadOS simulators are distributed within the iOS simulator runtime bundle.
+    
+    
     public var downloadName: String {
         switch self {
         case .iOS, .iPadOS: return "iOS"
@@ -75,7 +75,7 @@ public enum DeviceHubPlatform: String, Sendable, CaseIterable, Identifiable {
     }
 }
 
-/// Information about platform availability on the local machine.
+
 public struct PlatformStatus: Identifiable, Sendable {
     public var id: String { platform.rawValue }
     public let platform: DeviceHubPlatform
@@ -102,7 +102,7 @@ public struct PlatformStatus: Identifiable, Sendable {
     }
 }
 
-/// Represents an available simulator device type parsed from `simctl`.
+
 public struct DeviceTypeRecord: Identifiable, Sendable, Hashable {
     public var id: String { identifier }
     public let name: String
@@ -142,7 +142,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         }
     }
 
-    // MARK: - Querying Platforms & Devices
+    
 
     public func fetchAvailableTypesAndRuntimes() {
         Task {
@@ -177,7 +177,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
                 results[p] = PlatformStatus(platform: p)
             }
 
-            // 1. Inspect installed SDKs via xcodebuild
+            
             let (sdkStatus, sdkOutput) = await runXcrunProcess(["xcodebuild", "-showsdks", "-json"], timeout: 15)
             if sdkStatus == 0, let data = sdkOutput.data(using: .utf8),
                let list = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
@@ -216,7 +216,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
                 }
             }
 
-            // 2. Inspect runtimes via simctl
+            
             let (simStatus, simOutput) = await runXcrunProcess(["simctl", "list", "-j", "runtimes"], timeout: 15)
             if simStatus == 0, let data = simOutput.data(using: .utf8),
                let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -309,7 +309,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         }.value
     }
 
-    // MARK: - Installing Platforms
+    
 
     public func installPlatform(_ hubPlatform: DeviceHubPlatform, onFinished: (@MainActor (Bool) -> Void)? = nil) {
         guard !isRunning else { return }
@@ -471,7 +471,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         currentRun?.cancel()
     }
 
-    // MARK: - Process Execution Helper
+    
 
     @discardableResult
     public static func runXcrunProcess(_ args: [String], timeout: TimeInterval = 60) async -> (status: Int32, output: String) {
@@ -496,7 +496,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         }.value
     }
 
-    // MARK: - Simulator Management & Advanced Controls
+    
 
     public static func createSimulator(name: String, deviceTypeID: String, runtimeID: String) async throws -> String {
         try await Task.detached {
@@ -561,7 +561,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         }
     }
 
-    // MARK: - Device Configuration Controls
+    
 
     public static func setAppearance(udid: String, appearance: String) async throws {
         let (status, output) = await runXcrunProcess(["simctl", "ui", udid, "appearance", appearance])
@@ -598,7 +598,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         }
     }
 
-    // MARK: - Location Simulation
+    
 
     public static func setLocation(udid: String, latitude: Double, longitude: Double) async throws {
         let (status, output) = await runXcrunProcess(["simctl", "location", udid, "set", "\(latitude),\(longitude)"])
@@ -621,7 +621,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         }
     }
 
-    // MARK: - Status Bar, Battery & Network Simulation
+    
 
     public static func overrideStatusBar(
         udid: String,
@@ -656,7 +656,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         }
     }
 
-    // MARK: - iPadOS Specific Tablet Simulation
+    
 
     public static func setStageManager(udid: String, enabled: Bool) async throws {
         _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.springboard", "SBStageManagerEnabled", "-bool", enabled ? "true" : "false"])
@@ -675,7 +675,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
     }
 }
 
-// MARK: - Sheets & Views
+
 
 public struct InstallSimulatorSheet: View {
     @Environment(\.dismiss) private var dismiss
@@ -689,7 +689,7 @@ public struct InstallSimulatorSheet: View {
 
     public var body: some View {
         VStack(spacing: 16) {
-            // Header
+            
             HStack(spacing: 12) {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 32))
@@ -713,7 +713,7 @@ public struct InstallSimulatorSheet: View {
 
             Divider()
 
-            // Platform Selection
+            
             VStack(alignment: .leading, spacing: 12) {
                 Text("Select Platform")
                     .font(.subheadline)
@@ -763,7 +763,7 @@ public struct InstallSimulatorSheet: View {
                     .padding(.vertical, 2)
                 }
 
-                // Description card
+                
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
@@ -785,7 +785,7 @@ public struct InstallSimulatorSheet: View {
             }
             .padding(.horizontal)
 
-            // Progress Section
+            
             if installer.isRunning || installer.progressFraction != nil {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
@@ -828,7 +828,7 @@ public struct InstallSimulatorSheet: View {
                 .padding(.horizontal)
             }
 
-            // Output Logs
+            
             if !installer.logLines.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Execution Output")
@@ -854,7 +854,7 @@ public struct InstallSimulatorSheet: View {
 
             Spacer()
 
-            // Action Buttons
+            
             HStack {
                 if installer.isRunning {
                     Button("Cancel") {
@@ -926,7 +926,7 @@ public struct CreateSimulatorSheet: View {
     @State private var isCreating = false
     @State private var errorMessage: String?
 
-    // iPadOS tablet configuration presets
+    
     @State private var enableStageManager = true
     @State private var enableApplePencil = true
 
@@ -956,7 +956,7 @@ public struct CreateSimulatorSheet: View {
 
     public var body: some View {
         VStack(spacing: 14) {
-            // Header
+            
             HStack(spacing: 12) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 32))
@@ -976,7 +976,7 @@ public struct CreateSimulatorSheet: View {
             Divider()
 
             VStack(alignment: .leading, spacing: 12) {
-                // Platform Segmented Control
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Platform")
                         .font(.subheadline)
@@ -992,7 +992,7 @@ public struct CreateSimulatorSheet: View {
                     }
                 }
 
-                // Simulator Name
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Simulator Name")
                         .font(.subheadline)
@@ -1001,7 +1001,7 @@ public struct CreateSimulatorSheet: View {
                         .textFieldStyle(.roundedBorder)
                 }
 
-                // Device Type
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Device Type")
                         .font(.subheadline)
@@ -1020,7 +1020,7 @@ public struct CreateSimulatorSheet: View {
                     }
                 }
 
-                // Runtime
+                
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Runtime")
                         .font(.subheadline)
@@ -1036,7 +1036,7 @@ public struct CreateSimulatorSheet: View {
                     .pickerStyle(.menu)
                 }
 
-                // Tablet Specific Options
+                
                 if selectedPlatform == .iPadOS {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("iPadOS Tablet Features")
@@ -1066,7 +1066,7 @@ public struct CreateSimulatorSheet: View {
 
             Spacer()
 
-            // Footer
+            
             HStack {
                 Button("Cancel") {
                     dismiss()
@@ -1122,7 +1122,7 @@ public struct CreateSimulatorSheet: View {
             do {
                 let udid = try await DeviceHubSimulatorInstaller.createSimulator(name: simulatorName, deviceTypeID: typeID, runtimeID: runID)
 
-                // Apply iPadOS configurations if chosen
+                
                 if selectedPlatform == .iPadOS {
                     if enableStageManager {
                         try? await DeviceHubSimulatorInstaller.setStageManager(udid: udid, enabled: true)
@@ -1147,7 +1147,7 @@ public struct CreateSimulatorSheet: View {
     }
 }
 
-/// Sheet for cloning an existing simulator device.
+
 public struct CloneSimulatorSheet: View {
     @Environment(\.dismiss) private var dismiss
     let sourceUDID: String

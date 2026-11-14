@@ -52,7 +52,7 @@ public struct GitPanelView: View {
                                     onMerge: { branch in Task { try? await viewModel.merge(branch: branch.name) } },
                                     onDelete: { branch in viewModel.deleteBranch(branch) },
                                     onNewBranch: {
-                                        // create quick branch
+                                        
                                     }
                                 )
                             default:

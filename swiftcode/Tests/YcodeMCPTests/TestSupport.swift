@@ -43,8 +43,8 @@ extension AnyJSON {
     var structured: AnyJSON? { self["structuredContent"] }
 }
 
-// Convenience comparisons between JSON subscript results (AnyJSON?) and
-// plain Swift literals/values, for concise test assertions.
+
+
 func == (lhs: AnyJSON?, rhs: String) -> Bool { lhs?.string == rhs }
 func == (lhs: String, rhs: AnyJSON?) -> Bool { rhs?.string == lhs }
 func == (lhs: AnyJSON?, rhs: Int) -> Bool { lhs?.int == rhs }

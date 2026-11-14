@@ -1,7 +1,7 @@
 import Foundation
 
-/// Object payload models. All payloads are JSON documents so the format stays
-/// inspectable and version-tolerant; unknown keys are ignored on decode.
+
+
 public struct TreeEntry: Codable, Hashable, Sendable {
     public var name: String
     public var mode: FileMode
@@ -24,18 +24,18 @@ public enum FileMode: String, Codable, Sendable {
     public var isSymlink: Bool { self == .symlink }
 }
 
-/// A tree object payload: sorted entries by name (directories sort as "name/").
+
 public struct TreePayload: Codable, Sendable {
     public var entries: [TreeEntry]
 
     public init(entries: [TreeEntry]) { self.entries = entries }
 }
 
-/// Identity attached to commits and tags.
+
 public struct Signature: Codable, Hashable, Sendable {
     public var name: String
     public var email: String
-    public var timestamp: Int64 // seconds since 1970
+    public var timestamp: Int64 
 
     public init(name: String, email: String, timestamp: Int64 = Int64(Date().timeIntervalSince1970)) {
         self.name = name
@@ -43,19 +43,19 @@ public struct Signature: Codable, Hashable, Sendable {
         self.timestamp = timestamp
     }
 
-    /// Parses `"Name <email> timestamp"` used in commit messages' trailers.
+    
     public static func parse(_ line: String) -> Signature? {
-        // Not used for header fields; kept for trailer parsing helpers.
+        
         nil
     }
 }
 
-/// Structured key/value metadata attached to commits (trailers, categories).
+
 public struct CommitMetadata: Codable, Hashable, Sendable {
     public var trailers: [String: String]
     public var category: String?
     public var annotations: [String]
-    public var signature: String? // detached signature payload, base64, if signed
+    public var signature: String? 
 
     public init(trailers: [String: String] = [:], category: String? = nil,
                 annotations: [String] = [], signature: String? = nil) {
@@ -85,7 +85,7 @@ public struct CommitPayload: Codable, Sendable {
         self.metadata = metadata
     }
 
-    /// First line of the message — the summary used by logs.
+    
     public var summary: String {
         message.split(separator: "\n", omittingEmptySubsequences: false)
             .first.map(String.init) ?? ""
@@ -112,19 +112,19 @@ public struct TagPayload: Codable, Sendable {
     }
 }
 
-/// Snapshot payload: a recovery/checkpoint object. Snapshots are commits of
-/// the working tree that additionally record the index state and the reason
-/// the snapshot was taken, so they can be browsed on the repository timeline
-/// independently of commit history.
+
+
+
+
 public struct SnapshotPayload: Codable, Sendable {
-    public var tree: ObjectID        // working-tree contents
-    public var indexTree: ObjectID?  // staged state at snapshot time
+    public var tree: ObjectID        
+    public var indexTree: ObjectID?  
     public var parents: [ObjectID]
     public var author: Signature
     public var timestamp: Int64
     public var message: String
-    public var kind: String          // manual | automatic | pre-operation | scheduled | workspace
-    public var operation: String?    // e.g. "merge", "rebase", "reset" for checkpoints
+    public var kind: String          
+    public var operation: String?    
     public var metadata: [String: String]
 
     public init(tree: ObjectID, indexTree: ObjectID? = nil, parents: [ObjectID] = [],

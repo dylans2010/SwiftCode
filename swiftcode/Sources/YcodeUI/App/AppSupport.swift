@@ -428,8 +428,8 @@ public final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValid
         if LayoutProbe.startIfRequested() { return }
         AlertSoundPlayer.installBuildSoundHook()
         ToolbarToolRouter.install()
-        // Decompiler subsystem: register analysis engines once and inject the
-        // Decompile Assist chat panel into every decompiler workspace window.
+        
+        
         DecompilerLifecycle.installDefaultEngines()
         DecompilerLifecycle.setAssistPanel { state in
             AnyView(DecompileAssistView(state: state))

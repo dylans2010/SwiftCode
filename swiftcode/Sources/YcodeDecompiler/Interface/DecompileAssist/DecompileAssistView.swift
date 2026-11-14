@@ -1,12 +1,12 @@
 import Foundation
 import SwiftUI
 
-/// Decompile Assist chat panel: a native SwiftUI conversation UI bound to one
-/// `DecompilerObservableState` (and therefore to exactly one decompiler
-/// window/session). The panel owns a `DecompileAssistSession` bound to
-/// `state.session`; every outbound message carries a fresh
-/// `DecompileAssistContext` snapshot built from the current selection and
-/// analysis store.
+
+
+
+
+
+
 public struct DecompileAssistView: View {
     private let state: DecompilerObservableState
     private let assistSession: DecompileAssistSession
@@ -14,9 +14,9 @@ public struct DecompileAssistView: View {
     @State private var input = ""
     @State private var showToolEvents = false
 
-    /// `state` must be the observable state of the window this panel belongs
-    /// to — the assist session is bound to `state.session`, never to a
-    /// global. Called on the main actor by `DecompilerLifecycle.setAssistPanel`.
+    
+    
+    
     @MainActor
     public init(state: DecompilerObservableState) {
         self.state = state
@@ -37,7 +37,7 @@ public struct DecompileAssistView: View {
         .background(.regularMaterial)
     }
 
-    // MARK: - Messages
+    
 
     private var messageList: some View {
         ScrollViewReader { proxy in
@@ -160,13 +160,13 @@ public struct DecompileAssistView: View {
         .padding(.vertical, 6)
     }
 
-    // MARK: - Tool events
+    
 
     private var toolEventBar: some View {
         DisclosureGroup(isExpanded: $showToolEvents) {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 3) {
-                    // Most recent last; show the tail so long sessions stay readable.
+                    
                     ForEach(assistSession.toolEvents.suffix(50)) { event in
                         ToolEventRow(event: event)
                     }
@@ -194,7 +194,7 @@ public struct DecompileAssistView: View {
         .padding(.top, 2)
     }
 
-    // MARK: - Error
+    
 
     private func errorRow(_ message: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -230,7 +230,7 @@ public struct DecompileAssistView: View {
         .background(.orange.opacity(0.08))
     }
 
-    // MARK: - Input
+    
 
     private var inputBar: some View {
         HStack(alignment: .bottom, spacing: 8) {
@@ -275,10 +275,10 @@ public struct DecompileAssistView: View {
             && !assistSession.isProcessing
     }
 
-    // MARK: - Sending
+    
 
-    /// Build a fresh analysis-context snapshot from the current selection and
-    /// hand the message to the assist session.
+    
+    
     private func send(_ explicit: String? = nil) {
         let text = (explicit ?? input).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !assistSession.isProcessing else { return }
@@ -298,10 +298,10 @@ public struct DecompileAssistView: View {
     }
 }
 
-// MARK: - Subviews
 
-/// One chat bubble: user messages right-aligned, assistant left-aligned,
-/// system messages centered and de-emphasized.
+
+
+
 private struct MessageBubble: View {
     let message: DecompileAssistMessage
 
@@ -341,7 +341,7 @@ private struct MessageBubble: View {
     }
 }
 
-/// Compact row for one observed tool invocation.
+
 private struct ToolEventRow: View {
     let event: DecompileAssistToolEvent
 

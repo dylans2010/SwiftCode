@@ -1,14 +1,14 @@
 import Foundation
 
-/// Append-only operation journal used for crash recovery. Every mutation that
-/// spans multiple steps records its intent before performing it; on open,
-/// `Repository.recoverIfNeeded()` finishes or rolls back incomplete entries.
-///
-/// Journal line format (JSON per line):
-///   {"op":"begin","tx":"<uuid>","steps":[...],"time":...}
-///   {"op":"step","tx":"<uuid>","index":n}
-///   {"op":"commit","tx":"<uuid>"}
-///   {"op":"abort","tx":"<uuid>"}
+
+
+
+
+
+
+
+
+
 public final class Journal: @unchecked Sendable {
     public struct Entry: Codable, Sendable {
         public var op: String
@@ -51,9 +51,9 @@ public final class Journal: @unchecked Sendable {
                          time: Int64(Date().timeIntervalSince1970)))
     }
 
-    /// Returns the steps that were recorded but never committed, for the most
-    /// recent unfinished transaction. Steps are opaque strings the operation
-    /// interprets (e.g. "ref:refs/heads/main=<oid>").
+    
+    
+    
     public func unfinishedSteps() -> [String] {
         guard let lines = try? readLines() else { return [] }
         var open: [String: [String]] = [:]
@@ -68,8 +68,8 @@ public final class Journal: @unchecked Sendable {
         return open.values.flatMap { $0 }
     }
 
-    /// Truncates the journal after all transactions are finished. Called by
-    /// maintenance (`spaces gc`) — never automatic, to preserve auditability.
+    
+    
     public func compact() throws {
         guard let lines = try? readLines() else { return }
         var keep: [String] = []

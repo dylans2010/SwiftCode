@@ -1,17 +1,17 @@
 import Foundation
 
-/// Manifest stored as Project.json inside a `.scdecomp` bundle.
+
 public struct ProjectManifest: Codable, Sendable {
     public var projectUUID: String
     public var name: String
     public var schemaVersion: Int
     public var createdAt: Date
     public var modifiedAt: Date
-    /// Identity of each binary in the project (content-hash keyed).
+    
     public var binaries: [BinaryIdentity]
-    /// Selected slice index per binary stable id.
+    
     public var selectedSlices: [String: Int]
-    /// Active binary stable id.
+    
     public var activeBinaryID: String?
     public var analysisConfiguration: AnalysisConfiguration
     public var engineVersions: [String: String]
@@ -50,9 +50,9 @@ public struct ProjectManifest: Codable, Sendable {
     }
 }
 
-/// A `.scdecomp` project: a bundle directory with manifest + analysis store.
+
 public struct DecompilerProject: Sendable {
-    /// The bundle directory URL (path has `.scdecomp` extension).
+    
     public var bundleURL: URL
     public var manifest: ProjectManifest
 
@@ -68,7 +68,7 @@ public struct DecompilerProject: Sendable {
     public var cacheDir: URL { bundleURL.appendingPathComponent("Cache", isDirectory: true) }
     public var exportsDir: URL { bundleURL.appendingPathComponent("Exports", isDirectory: true) }
 
-    /// The binary file inside the bundle, if we copied it in.
+    
     public var bundledBinaryURL: URL? {
         guard let id = manifest.activeBinaryID else { return nil }
         let name = id + ".bin"
@@ -76,7 +76,7 @@ public struct DecompilerProject: Sendable {
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
 
-    /// Best available binary URL: bundled copy, else original location.
+    
     public var binaryURL: URL? {
         if let bundled = bundledBinaryURL { return bundled }
         guard let identity = manifest.binaries.first(where: { $0.stableID == manifest.activeBinaryID }) else { return nil }

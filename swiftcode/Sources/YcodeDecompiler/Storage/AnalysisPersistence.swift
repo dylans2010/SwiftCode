@@ -3,9 +3,9 @@ import Foundation
 import CSQLite
 #endif
 
-/// Persists analysis results into a `.scdecomp` project.
-/// Uses SQLite when the CSQLite module is available (SwiftPM builds);
-/// otherwise a JSON snapshot (xcodeproj builds) — same data either way.
+
+
+
 public enum AnalysisPersistence {
     public static func save(store: AnalysisStore, project: DecompilerProject,
                             image: BinaryImage?) async throws {
@@ -29,11 +29,11 @@ public enum AnalysisPersistence {
     }
 }
 
-/// Codable snapshot of everything the store persists.
+
 struct AnalysisSnapshot: Codable {
     var schemaVersion: Int = DecompilerCapabilities.databaseSchemaVersion
-    /// Identity of the analyzed binary (content hash); the image itself is
-    /// re-imported on project open, not serialized.
+    
+    
     var binaryIdentity: BinaryIdentity?
     var functions: [DecompilerFunction]
     var symbols: [BinarySymbol]
@@ -44,7 +44,7 @@ struct AnalysisSnapshot: Codable {
     var userLabels: [String: String]
     var findings: [AnalysisFinding]
     var history: [AnalysisHistoryEntry]
-    var pseudocode: [String: DecompilationResult]  // keyed by address hex
+    var pseudocode: [String: DecompilationResult]  
     var savedAt: Date
 }
 
@@ -103,8 +103,8 @@ enum JSONBackend {
 
 #if canImport(CSQLite)
 enum SQLiteBackend {
-    /// Minimal SQLite persistence: one table per entity kind, JSON payloads.
-    /// Versioned via PRAGMA user_version = databaseSchemaVersion.
+    
+    
     static func save(store: AnalysisStore, project: DecompilerProject,
                      image: BinaryImage?) async throws {
         let snap = await JSONBackend.snapshot(store: store, image: image)

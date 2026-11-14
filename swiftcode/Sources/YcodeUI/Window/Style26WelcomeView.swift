@@ -85,7 +85,7 @@ public struct Style26WelcomeView: View {
             .help("Close")
 
             VStack(spacing: 0) {
-                // App Icon (user picked)
+                
                 Group {
                     if let img = iconManager.currentIconImage ?? NSApp.applicationIconImage {
                         Image(nsImage: img)
@@ -100,19 +100,19 @@ public struct Style26WelcomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
                 .shadow(color: .black.opacity(0.35), radius: 14, x: 0, y: 7)
 
-                // App Name
+                
                 Text("SwiftCode")
                     .font(.system(size: 32, weight: .bold, design: .default))
                     .foregroundStyle(.primary)
                     .padding(.top, 14)
 
-                // Version line pulled from CFBundleVersion
+                
                 Text(versionText)
                     .font(.system(size: 13, weight: .regular))
                     .foregroundStyle(.secondary)
                     .padding(.top, 4)
 
-                // Action buttons
+                
                 VStack(spacing: 8) {
                     actionButton(title: "Create New File...", icon: "plus.square", action: onCreateNewFile)
                     actionButton(title: "Clone Git Repository...", icon: "arrow.down.to.line.compact", action: onCloneGitRepo)

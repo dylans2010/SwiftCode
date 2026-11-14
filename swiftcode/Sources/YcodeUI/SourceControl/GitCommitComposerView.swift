@@ -280,7 +280,7 @@ struct GitCommitComposerView: View {
                 \(diffText.prefix(2500))
                 """
 
-                // Strictly enforce Foundation Models only
+                
                 FoundationModels.shared.isEnabled = true
                 let response = try await FoundationModels.shared.generatePrivateResponse(
                     prompt: prompt,

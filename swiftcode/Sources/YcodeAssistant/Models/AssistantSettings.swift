@@ -160,9 +160,9 @@ public struct AssistantBackends: Sendable {
         }
     }
 
-    /// Reads an API key from the Assist secret store first, then falls back to
-    /// the shared keychain keys used by the API Keys manager and Assist
-    /// settings, so a key saved in either place reaches every provider.
+    
+    
+    
     static func apiKey(_ store: SecretStore, _ account: String, keychainKeys: [String]) -> String? {
         if let value = store.readString(account)?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
             return value

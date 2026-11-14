@@ -53,11 +53,11 @@ import Testing
         #expect(!outcome.conflicts.isEmpty)
         #expect(try api.repo.inMerge())
 
-        // Conflict markers written to worktree.
+        
         let conflicted = try String(contentsOf: url.appendingPathComponent("f"), encoding: .utf8)
         #expect(conflicted.contains("<<<<<<<"))
 
-        // Resolve and continue.
+        
         try SpacesTestSupport.write("resolved\n", to: url.appendingPathComponent("f"))
         _ = try api.add("f")
         let oid = try api.mergeContinue()
@@ -126,11 +126,11 @@ import Testing
         try api.stashApply(stashID)
         #expect(try !api.status().isClean)
 
-        // Re-stash, then pop applies and drops.
+        
         _ = try api.stash(message: "wip2")
         let stashID2 = try #require(try api.stashes().first?.id)
         try api.stashDrop(stashID2)
-        // The first stash was applied (not popped), so it remains.
+        
         #expect(try api.stashes().map(\.id) == [stashID])
     }
 
@@ -169,7 +169,7 @@ import Testing
         try api.switchTo("main")
         _ = try SpacesTestSupport.commitFiles(api, ["m": "main"], message: "main work")
 
-        // Rebase topic onto main.
+        
         try api.switchTo("topic")
         _ = try api.rebase(onto: "main")
         #expect(try !api.repo.inRebase())

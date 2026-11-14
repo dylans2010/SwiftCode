@@ -1,21 +1,21 @@
 import Foundation
 import YcodeSubprocess
 
-/// Disassembly backend built on LLVM's `llvm-objdump`.
-///
-/// The tool is located via `xcrun -f llvm-objdump` (Apple toolchains), then
-/// `which llvm-objdump` on PATH, then the `SWIFTCODE_LLVM_OBJDUMP`
-/// environment override (checked first).
-///
-/// Preferred path is whole-container disassembly: the image's slice bytes
-/// are written to a temp file and `llvm-objdump -d` decodes every
-/// instruction-bearing section natively (Mach-O `__text`/`__stubs`/
-/// `__objc_stubs`, ELF `.text`, COFF `.text`). A per-section raw-bytes
-/// fallback is retained for images llvm-objdump cannot parse as a
-/// container. This works uniformly for Mach-O, ELF and PE payloads on
-/// every architecture LLVM knows (AArch64, x86/x86_64, ARM, RISC-V,
-/// PowerPC, MIPS). Bytes LLVM cannot decode surface as `.byte`/`(bad)`
-/// and are classified `.invalid`.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 public struct ObjDumpDisassembler: DisassemblerProvider {
     public let id = "llvm-objdump"
     public let displayName = "LLVM objdump"
@@ -26,7 +26,7 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
 
     public init() {}
 
-    // MARK: - Provider contract
+    
 
     public func isAvailable() async -> Bool {
         await Task.detached(priority: .utility) { Self.cache.resolve() }.value
@@ -72,11 +72,11 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
                 String(format: "0x%llx-0x%llx", lo, hi))
         }
 
-        // Preferred path: `llvm-objdump` understands Mach-O, ELF and COFF
-        // containers natively, so the whole slice is written to a temp file
-        // and disassembled in one pass. This covers every instruction-bearing
-        // section — including `__stubs`/`__objc_stubs`, which per-section
-        // extraction and `otool -x` both miss.
+        
+        
+        
+        
+        
         let listing: [ListingEntry]?
         do {
             listing = try await Self.containerListing(tool: tool, image: image, progress: progress)
@@ -128,9 +128,9 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
                 itemsProcessed: index,
                 itemsTotal: sections.count))
 
-            // Whole-section extraction keeps instruction alignment; llvm-objdump
-            // still limits output via --start-address/--stop-address, and the
-            // parser filters by address regardless.
+            
+            
+            
             guard let fileStart = image.fileOffset(forVirtualAddress: section.address.value) else {
                 continue
             }
@@ -145,7 +145,7 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
             do {
                 bytes = try image.bytes(fileOffset: fileStart, length: length)
             } catch {
-                continue // unreadable tail padding; skip this section
+                continue 
             }
             guard !bytes.isEmpty else { continue }
 
@@ -170,8 +170,8 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
                     if parsed.address >= hi { break }
                 }
             } catch let error as StreamingSubprocess.ExitError {
-                // llvm-objdump exits non-zero on some malformed trailing bytes;
-                // tolerate it when we already recovered instructions.
+                
+                
                 if instructions.isEmpty {
                     let tail = error.stderrTail
                         .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -185,9 +185,9 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         return instructions.sorted { $0.address.value < $1.address.value }
     }
 
-    // MARK: - Container mode
+    
 
-    /// Parsed instruction line retained for range filtering.
+    
     private struct ListingEntry {
         var address: UInt64
         var hexDigits: String
@@ -195,8 +195,8 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         var operandText: String
     }
 
-    /// Cache of whole-container `llvm-objdump -d` output, keyed by the
-    /// slice's identity so fat slices and re-imports do not collide.
+    
+    
     private final class ListingCache: @unchecked Sendable {
         static let shared = ListingCache()
         private let lock = NSLock()
@@ -218,9 +218,9 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         }
     }
 
-    /// Extract the image's slice bytes, write them to a temp file and run
-    /// `llvm-objdump -d` once. Returns nil (caller falls back to per-section
-    /// extraction) when the image cannot be materialised or objdump fails.
+    
+    
+    
     private static func containerListing(tool: String, image: BinaryImage,
                                          progress: (@Sendable (AnalysisProgress) -> Void)? = nil) async throws -> [ListingEntry]? {
         let key = "\(image.identity.originalLocation)|\(image.containerOffset)|\(image.byteCount)|\(image.architecture.rawValue)"
@@ -264,10 +264,10 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         return entries
     }
 
-    /// Parse `llvm-objdump -d` output lines:
-    /// `    <hexaddr>: <hex bytes>  \t<mnemonic>\t<operands>`
-    /// Section headers (`Disassembly of section …`), symbol headers
-    /// (`<addr> <name>:`) and data dumps return nil.
+    
+    
+    
+    
     private static func parseContainerLine(_ raw: String) -> ListingEntry? {
         var line = raw
         if line.hasSuffix("\r") { line.removeLast() }
@@ -285,8 +285,8 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         }
         guard index + 1 < fields.count else { return nil }
 
-        // First tab field after the colon holds the byte-hex column
-        // (space separated for some targets); the mnemonic follows.
+        
+        
         let hexField = fields[index]
         let hexDigits = hexField.filter(\.isHexDigit)
         guard hexDigits.count >= 2, hexDigits.count % 2 == 0 else { return nil }
@@ -302,9 +302,9 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
                             mnemonic: mnemonic, operandText: operandText)
     }
 
-    /// Convert the objdump hex column to raw instruction bytes. AArch64
-    /// prints the 32-bit instruction word (stored little-endian in the
-    /// file); other targets print bytes in memory order.
+    
+    
+    
     private static func decodeContainerBytes(hexDigits: String,
                                              architecture: BinaryArchitecture) -> Data {
         switch architecture {
@@ -334,7 +334,7 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         return bytes
     }
 
-    // MARK: - Parsing
+    
 
     private struct ParsedLine {
         var address: UInt64
@@ -343,8 +343,8 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         var operandText: String
     }
 
-    /// Parse one `llvm-objdump -D -b binary` line:
-    /// `  <hexaddr>:\t<hex bytes>\t<mnemonic>\t<operands>`
+    
+    
     private static func parseLine(_ raw: String) -> ParsedLine? {
         var line = raw
         if line.hasSuffix("\r") { line.removeLast() }
@@ -362,8 +362,8 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         }
         guard index + 1 < fields.count else { return nil }
 
-        // Field `index` holds the raw-byte hex column; `index + 1` the mnemonic;
-        // the remainder (joined) the operand text.
+        
+        
         let hexDigits = fields[index].filter(\.isHexDigit)
         var bytes = Data()
         bytes.reserveCapacity(hexDigits.count / 2)
@@ -407,7 +407,7 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
                 pass: "disassemble"))
     }
 
-    // MARK: - Classification
+    
 
     private static let returnMnemonics: Set<String> = [
         "ret", "retq", "retl", "retf", "retn", "retab",
@@ -421,42 +421,42 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
     ]
 
     private static let branchMnemonics: Set<String> = [
-        // ARM / AArch64
+        
         "b", "br", "bra", "bx", "bxj", "brx",
         "cbz", "cbnz", "tbz", "tbnz",
-        // x86 unconditional + Jcc
+        
         "jmp", "jmpq", "je", "jne", "jz", "jnz",
         "ja", "jae", "jb", "jbe", "jg", "jge", "jl", "jle",
         "jo", "jno", "js", "jns", "jp", "jnp",
         "jc", "jnc", "jpe", "jpo",
         "jrcxz", "jecxz", "jcxz",
         "loop", "loope", "loopne", "loopnz",
-        // MIPS
+        
         "j", "jr", "beq", "bne", "blez", "bgtz", "bltz", "bgez",
         "beqz", "bnez", "bgezal", "bltzal",
-        // PowerPC
+        
         "bc", "bcctr", "bctr", "bdnz", "bdz", "beq", "bne",
         "blt", "bgt", "ble", "bge", "bso", "bns", "bun",
     ]
 
-    /// Shared with `OtoolDisassembler`, which reuses the same mnemonic
-    /// classification tables for Mach-O output.
+    
+    
     static func classify(mnemonic: String,
                          operandText: String) -> (Instruction.Classification, DecompilerAddress?) {
         let lower = mnemonic.lowercased()
 
         let isReturn = returnMnemonics.contains(lower)
-            || lower.hasPrefix("ret")      // retq/retaa/retab variants
+            || lower.hasPrefix("ret")      
             || lower.hasPrefix("iret")
             || lower.hasPrefix("eret")
         let isCall = callMnemonics.contains(lower) || lower.hasPrefix("call")
         let isBranch = branchMnemonics.contains(lower)
-            || lower.hasPrefix("b.")        // ARM condition codes: b.eq, b.ne, ...
-            || lower.hasPrefix("c.b")       // AArch64 compressed branches
+            || lower.hasPrefix("b.")        
+            || lower.hasPrefix("c.b")       
 
-        // Note: there is deliberately no generic "bl" prefix rule — "blt",
-        // "ble", "bgez" etc. are branches, and the exact call set above
-        // already enumerates every branch-and-link mnemonic.
+        
+        
+        
 
         let classification: Instruction.Classification
         if isReturn {
@@ -479,8 +479,8 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         return (classification, branchTarget(in: operandText))
     }
 
-    /// Extract the first absolute address operand from disassembly text.
-    /// Comments (`# ...`) and symbolic annotations (`<name>`) are ignored.
+    
+    
     private static func branchTarget(in operandText: String) -> DecompilerAddress? {
         for rawToken in operandText.split(whereSeparator: {
             $0 == " " || $0 == "\t" || $0 == "," || $0 == ";"
@@ -499,8 +499,8 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
             } else if token.count >= 4,
                       token.allSatisfy(\.isHexDigit),
                       token.contains(where: { $0.isHexDigit && !$0.isNumber }) {
-                // Bare hex (no 0x prefix) that contains a-f letters — avoids
-                // mistaking decimal immediates for addresses.
+                
+                
                 value = UInt64(token, radix: 16)
             }
             if let value, value != 0 {
@@ -510,9 +510,9 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         return nil
     }
 
-    // MARK: - Tool location
+    
 
-    /// LLVM target triple per architecture, or nil when unsupported.
+    
     static func triple(for architecture: BinaryArchitecture) -> String? {
         switch architecture {
         case .arm64: return "aarch64-linux-gnu"
@@ -529,17 +529,17 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         }
     }
 
-    /// Ordered candidates for the llvm-objdump executable path.
+    
     static func locateToolPath() -> String? {
         var candidates: [String] = []
 
-        // Explicit override first.
+        
         if let override = ProcessInfo.processInfo.environment["SWIFTCODE_LLVM_OBJDUMP"],
            !override.isEmpty {
             candidates.append(override)
         }
 
-        // Apple toolchain lookup.
+        
         for xcrun in ["/usr/bin/xcrun", "/bin/xcrun"]
         where FileManager.default.isExecutableFile(atPath: xcrun) {
             if let out = try? Subprocess.run(xcrun, ["-f", "llvm-objdump"],
@@ -551,7 +551,7 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
             }
         }
 
-        // PATH lookup via `which`.
+        
         for which in ["/usr/bin/which", "/bin/which"]
         where FileManager.default.isExecutableFile(atPath: which) {
             if let out = try? Subprocess.run(which, ["llvm-objdump"],
@@ -574,7 +574,7 @@ public struct ObjDumpDisassembler: DisassemblerProvider {
         return nil
     }
 
-    /// Lazily resolved, thread-safe cache for tool path and version.
+    
     private final class ToolCache: @unchecked Sendable {
         private let lock = NSLock()
         private var didResolve = false

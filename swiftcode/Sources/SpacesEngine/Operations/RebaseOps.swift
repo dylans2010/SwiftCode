@@ -1,13 +1,13 @@
 import Foundation
 
-/// Rebase engine. Replays commits from the current branch onto a target
-/// using cherry-pick semantics, with a journaled todo list supporting
-/// pick/drop/squash/fixup/reword/edit, plus continue/abort/skip.
+
+
+
 public struct RebaseOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
 
-    /// State persisted in `.spaces/rebase-merge/`.
+    
     public struct RebaseState: Codable {
         public var onto: String
         public var ontoOID: ObjectID
@@ -21,7 +21,7 @@ public struct RebaseOps {
     }
 
     public struct TodoItem: Codable {
-        public var action: String   // pick, drop, squash, fixup, reword, edit
+        public var action: String   
         public var oid: ObjectID
         public var message: String
         public var done: Bool = false
@@ -52,8 +52,8 @@ public struct RebaseOps {
         try Data(s.origHead.hex.utf8).write(to: origHeadURL)
     }
 
-    /// `spaces rebase <onto> [branch]` — starts a rebase. `interactive` todo
-    /// edits are applied when provided (list of action+rev strings).
+    
+    
     @discardableResult
     public func start(onto: String, branch: String? = nil,
                       todo: [String]? = nil) throws -> RebaseState? {
@@ -61,17 +61,17 @@ public struct RebaseOps {
             if repo.inMerge() || repo.inCherryPick() || inProgress() {
                 throw SpacesError.invalidArgument("another operation is in progress")
             }
-            // Resolve onto.
+            
             let ontoOID = try repo.resolveRevision(onto)
             guard let origHead = try repo.refs.headOID(objects: repo.objects) else {
                 throw SpacesError.branchNotFound("HEAD")
             }
-            // Commits to replay: reachable from origHead, not from ontoOID,
-            // in reverse-chronological (oldest first) order.
+            
+            
             let history = try HistoryOps(repo: repo).walk(start: origHead, limit: 100_000)
             let ontoAncestors = try ancestorSet(ontoOID)
             var commits = history.filter { !ontoAncestors.contains($0.oid) }
-            commits.reverse() // oldest first
+            commits.reverse() 
 
             var items: [TodoItem] = commits.map {
                 TodoItem(action: "pick", oid: $0.oid, message: $0.summary)
@@ -80,11 +80,11 @@ public struct RebaseOps {
                 items = try applyTodoSpec(items, spec: todoSpec)
             }
             guard !items.isEmpty else {
-                // Nothing to do — already up to date.
+                
                 return nil
             }
 
-            // Detach HEAD at onto.
+            
             let ontoCommit = try repo.commitObject(ontoOID)
             try MergeEngine(repo: repo).checkoutTree(ontoCommit.tree, overlay: [:])
             try repo.refs.setHEAD(oid: ontoOID)
@@ -95,15 +95,15 @@ public struct RebaseOps {
                                     todo: items, done: 0, step: nil,
                                     squashMessage: nil, conflicts: [])
             try saveState(state)
-            // Run first step.
+            
             return try advance(&state)
         }
     }
 
-    /// Applies a todo specification like ["pick abc123", "drop def456",
-    /// "squash ...", "reword ..."] to the default pick list.
+    
+    
     private func applyTodoSpec(_ items: [TodoItem], spec: [String]) throws -> [TodoItem] {
-        // spec entries: "<action> <rev-prefix-or-index>"
+        
         var result: [TodoItem] = []
         var remaining = items
         for line in spec {
@@ -111,7 +111,7 @@ public struct RebaseOps {
             guard parts.count >= 2 else { continue }
             let action = parts[0]
             let ref = parts[1]
-            // Match by index (1-based) or oid prefix.
+            
             var idx: Int? = Int(ref).map { $0 - 1 }
             if idx == nil {
                 idx = remaining.firstIndex { $0.oid.hex.hasPrefix(ref) }
@@ -126,16 +126,16 @@ public struct RebaseOps {
             }
             result.append(item)
         }
-        // Any unmentioned commits are dropped (interactive semantics).
+        
         return result
     }
 
-    /// `spaces rebase-continue` / internal advance.
+    
     @discardableResult
     public func continueRebase() throws -> RebaseState? {
         try repo.performTransaction(steps: ["rebase-continue"]) {
             var state = try loadState()
-            // If conflicts were pending, stage resolutions and commit them.
+            
             let unresolved = try WorktreeScanner(repo: repo).conflictedPaths()
             guard unresolved.isEmpty else { throw SpacesError.conflictsRemain(unresolved) }
             if state.step == "conflict" {
@@ -145,9 +145,9 @@ public struct RebaseOps {
         }
     }
 
-    /// Advances the rebase: picks next todo item, or finishes.
+    
     private func advance(_ state: inout RebaseState) throws -> RebaseState? {
-        // Skip done items.
+        
         while state.done < state.todo.count && state.todo[state.done].done {
             state.done += 1
         }
@@ -164,13 +164,13 @@ public struct RebaseOps {
             try saveState(state)
             return try advance(&state)
         case "edit":
-            // Stop for user edit: mark step and return state.
+            
             state.step = "edit"
             state.todo[state.done] = item
             try saveState(state)
             return state
         default:
-            // pick / squash / fixup / reword — attempt cherry-pick.
+            
             do {
                 try applyPick(item, state: &state)
                 state.todo[state.done].done = true
@@ -190,11 +190,11 @@ public struct RebaseOps {
         }
     }
 
-    /// Applies one pick: 3-way merge commit.parents.first → item.oid onto HEAD.
+    
     private func applyPick(_ item: TodoItem, state: inout RebaseState) throws {
         let commit = try repo.commitObject(item.oid)
         guard let parent = commit.parents.first else {
-            // Root commit: merge against empty tree.
+            
             try pickRoot(item, state: &state)
             return
         }
@@ -215,13 +215,13 @@ public struct RebaseOps {
             try repo.writeState("CHERRY_PICK_HEAD", contents: item.oid.hex + "\n")
             throw SpacesError.conflictsRemain(merged.conflicts.map(\.path))
         }
-        // Build the new commit.
+        
         let ident = repo.identity()
         var message = item.message
         let isSquash = item.action == "squash" || item.action == "fixup"
         if isSquash {
-            // Fold into the previous (already-rebased) commit: the new
-            // commit takes HEAD's parents and combined message.
+            
+            
             if let prevMsg = state.squashMessage {
                 message = item.action == "squash" ? prevMsg + "\n\n" + item.message : prevMsg
             } else {
@@ -231,7 +231,7 @@ public struct RebaseOps {
         } else {
             state.squashMessage = nil
         }
-        if item.action == "reword" { /* message already set from todo */ }
+        if item.action == "reword" {   }
 
         let headCommit = try repo.commitObject(headOID)
         let parents = isSquash ? headCommit.parents : [headOID]
@@ -251,11 +251,11 @@ public struct RebaseOps {
         guard let headOID = try repo.refs.headOID(objects: repo.objects) else {
             throw SpacesError.branchNotFound("HEAD")
         }
-        // Apply the root commit's tree additions onto HEAD's tree.
+        
         let headTree = try repo.commitObject(headOID).tree
-        // Use tree-level merge by faking commits is complex; simplest: apply
-        // the root commit's tree additions via checkout of merged result.
-        // Recompute with base=nil path is not supported; do a manual merge:
+        
+        
+        
         let baseFlat: [String: (oid: ObjectID, mode: FileMode)] = [:]
         let oursFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: headTree)
         let theirsFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: commit.tree)
@@ -280,7 +280,7 @@ public struct RebaseOps {
                               message: "rebase: pick \(String(item.oid.hex.prefix(7)))")
     }
 
-    /// Commits pending conflict resolutions as the current step's commit.
+    
     private func commitStep(_ state: inout RebaseState) throws {
         guard state.done < state.todo.count else { return }
         let item = state.todo[state.done]
@@ -307,11 +307,11 @@ public struct RebaseOps {
         try saveState(state)
     }
 
-    /// `spaces rebase-skip` — drops the conflicting commit and continues.
+    
     public func skip() throws -> RebaseState? {
         try repo.performTransaction(steps: ["rebase-skip"]) {
             var state = try loadState()
-            // Abort current pick: reset worktree to HEAD (the rebase tip).
+            
             if let headOID = try repo.refs.headOID(objects: repo.objects),
                let headCommit = try? repo.commitObject(headOID) {
                 try MergeEngine(repo: repo).checkoutTree(headCommit.tree, overlay: [:])
@@ -327,12 +327,12 @@ public struct RebaseOps {
         }
     }
 
-    /// `spaces rebase-abort` — returns to origHead and branch.
+    
     public func abort() throws {
         try repo.performTransaction(steps: ["rebase-abort"]) {
             guard inProgress() else { throw SpacesError.invalidArgument("no rebase in progress") }
             let state = try loadState()
-            // Restore orig branch ref.
+            
             if let branch = state.origBranch {
                 _ = try repo.refs.updateRef("refs/heads/\(branch)", to: state.origHead)
                 try repo.refs.setHEAD(ref: "refs/heads/\(branch)")
@@ -348,7 +348,7 @@ public struct RebaseOps {
         }
     }
 
-    /// Finishes the rebase: points the original branch at the new tip.
+    
     private func finish(_ state: RebaseState) throws {
         guard let newHead = try repo.refs.headOID(objects: repo.objects) else {
             throw SpacesError.branchNotFound("HEAD")

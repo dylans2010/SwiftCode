@@ -179,16 +179,16 @@ struct CenterToolbar: View {
         HStack(spacing: 10) {
             Spacer(minLength: 4)
 
-            // Run and Stop buttons
+            
             GlassSegments(segments: [
                 .init(symbol: rs.symbols[0], help: rs.toolTips[0], isEnabled: model.isEnabled(.run), target: "tb run") { model.perform(.run) },
                 .init(symbol: rs.symbols[1], help: rs.toolTips[1], isEnabled: model.isEnabled(.stop), target: "tb stop") { model.perform(.stop) },
             ], segmentWidth: 34)
 
-            // Scheme & Destination capsule
+            
             SchemeCapsule(model: model, app: app)
 
-            // Build status message to the right of the center capsule
+            
             ToolbarBuildStatusView(model: model)
 
             Spacer(minLength: 4)

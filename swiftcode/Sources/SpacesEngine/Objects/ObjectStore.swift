@@ -1,13 +1,13 @@
 import Foundation
 
-/// Content-addressed object database rooted at `.spaces/objects/`.
-///
-/// Layout: `objects/<first-2-hex>/<remaining-hex>`. Writes are atomic
-/// (temp file + rename) and deduplicated (an existing object is never
-/// rewritten). Reads always re-verify the payload hash, so corrupt objects
-/// are detected at lookup time rather than trusted blindly.
+
+
+
+
+
+
 public final class ObjectStore: @unchecked Sendable {
-    public let root: URL // .spaces/objects
+    public let root: URL 
 
     public init(root: URL) {
         self.root = root
@@ -22,7 +22,7 @@ public final class ObjectStore: @unchecked Sendable {
         FileManager.default.fileExists(atPath: url(for: id).path)
     }
 
-    /// Writes an object if absent. Returns its ID. Idempotent and atomic.
+    
     @discardableResult
     public func write(type: ObjectType, payload: Data) throws -> ObjectID {
         let id = ObjectID.compute(type: type, payload: payload)
@@ -38,7 +38,7 @@ public final class ObjectStore: @unchecked Sendable {
         return id
     }
 
-    /// Convenience: encode a Codable payload and store it.
+    
     @discardableResult
     public func write<T: Encodable>(_ type: ObjectType, value: T) throws -> ObjectID {
         let encoder = JSONEncoder()
@@ -46,8 +46,8 @@ public final class ObjectStore: @unchecked Sendable {
         return try write(type: type, payload: encoder.encode(value))
     }
 
-    /// Reads and fully validates an object: framing, declared type, and the
-    /// cryptographic ID must match the requested ID.
+    
+    
     public func read(_ id: ObjectID, expectedType: ObjectType? = nil) throws -> StoredObject {
         let file = url(for: id)
         guard FileManager.default.fileExists(atPath: file.path) else {
@@ -75,8 +75,8 @@ public final class ObjectStore: @unchecked Sendable {
         catch { throw SpacesError.invalidObject("cannot decode \(id.hex) as \(T.self): \(error.localizedDescription)") }
     }
 
-    /// Lists IDs of stored objects whose hex begins with `prefix`.
-    /// Used for abbreviated-ID resolution.
+    
+    
     public func existingIDs(matchingPrefix prefix: String) throws -> [ObjectID] {
         guard !prefix.isEmpty else { return [] }
         var results: [ObjectID] = []
@@ -99,7 +99,7 @@ public final class ObjectStore: @unchecked Sendable {
         return results
     }
 
-    /// All object IDs in the store (used by gc, fsck, count-objects).
+    
     public func allIDs() throws -> [ObjectID] {
         guard let top = try? FileManager.default.contentsOfDirectory(atPath: root.path) else { return [] }
         var ids: [ObjectID] = []
@@ -113,7 +113,7 @@ public final class ObjectStore: @unchecked Sendable {
         return ids
     }
 
-    /// Total bytes used by the object directory.
+    
     public func diskUsage() throws -> Int64 {
         var total: Int64 = 0
         guard let enumerator = FileManager.default.enumerator(atPath: root.path) else { return 0 }
@@ -127,8 +127,8 @@ public final class ObjectStore: @unchecked Sendable {
         return total
     }
 
-    /// Reachability walk: given seed object IDs, returns every object reachable
-    /// through tree/commit/tag/snapshot payloads.
+    
+    
     public func reachable(from seeds: [ObjectID]) throws -> Set<ObjectID> {
         var seen = Set<ObjectID>()
         var stack = seeds
@@ -162,8 +162,8 @@ public final class ObjectStore: @unchecked Sendable {
         return seen
     }
 
-    /// Removes objects not in `keep`. Returns number removed. Caller is
-    /// responsible for ensuring `keep` is correct (see Repository.gc).
+    
+    
     @discardableResult
     public func prune(unreachable keep: Set<ObjectID>) throws -> Int {
         let all = try allIDs()

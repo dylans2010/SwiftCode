@@ -1,6 +1,6 @@
 import Foundation
 
-/// A decoded machine-code instruction.
+
 public struct Instruction: Identifiable, Hashable, Sendable, Codable {
     public enum Classification: String, Sendable, Codable {
         case normal, branch, call, returnInstruction, invalid, unknown, data
@@ -16,9 +16,9 @@ public struct Instruction: Identifiable, Hashable, Sendable, Codable {
     public var comment: String?
     public var classification: Classification
     public var branchTarget: DecompilerAddress?
-    /// Symbol/label name at this address, if any.
+    
     public var label: String?
-    /// Number of incoming references (for xref gutters).
+    
     public var referenceCount: Int
     public var source: AnalysisSource
 
@@ -41,7 +41,7 @@ public struct Instruction: Identifiable, Hashable, Sendable, Codable {
         self.source = source
     }
 
-    /// "mnemonic operands" display form.
+    
     public var text: String {
         operandText.isEmpty ? mnemonic : "\(mnemonic) \(operandText)"
     }
@@ -72,19 +72,19 @@ public enum InstructionOperand: Hashable, Sendable, Codable {
     }
 }
 
-/// One basic block of a function's control-flow graph.
+
 public struct BasicBlock: Identifiable, Hashable, Sendable, Codable {
     public var id: String { "bb-\(startAddress.hexString)" }
     public var startAddress: DecompilerAddress
     public var endAddress: DecompilerAddress
     public var instructions: [DecompilerAddress]
-    /// Successor block start addresses; empty for exit blocks.
+    
     public var successors: [DecompilerAddress]
-    /// Predecessor block start addresses.
+    
     public var predecessors: [DecompilerAddress]
     public var isEntry: Bool
     public var isExit: Bool
-    /// Conditional branch kind when the block ends in a conditional branch.
+    
     public var branchKind: BranchKind?
 
     public enum BranchKind: String, Sendable, Codable { case conditional, unconditional, return_, indirect }

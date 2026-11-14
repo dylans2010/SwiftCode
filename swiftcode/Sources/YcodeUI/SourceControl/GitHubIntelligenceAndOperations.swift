@@ -565,7 +565,7 @@ public struct RepositoryKnowledgeGraphView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            // Top Toolbar: Search, Filters, Depth, Layout, Zoom controls
+            
             HStack(spacing: 10) {
                 HStack(spacing: 6) {
                     Image(systemName: "magnifyingglass")
@@ -626,7 +626,7 @@ public struct RepositoryKnowledgeGraphView: View {
 
                 Spacer()
 
-                // Zoom & Canvas Controls
+                
                 HStack(spacing: 4) {
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -675,7 +675,7 @@ public struct RepositoryKnowledgeGraphView: View {
                 Divider()
                     .frame(height: 18)
 
-                // Toggle Metrics & Inspector
+                
                 Button {
                     withAnimation { showMetricsPanel.toggle() }
                 } label: {
@@ -711,27 +711,27 @@ public struct RepositoryKnowledgeGraphView: View {
 
             Divider()
 
-            // Connectivity & Metrics Panel
+            
             if showMetricsPanel {
                 metricsBar
                     .transition(.move(edge: .top).combined(with: .opacity))
                 Divider()
             }
 
-            // Main Canvas & Inspector Area
+            
             HStack(spacing: 0) {
                 GeometryReader { geo in
                     ZStack {
-                        // Background dot grid
+                        
                         gridPattern
                             .background(Color(NSColor.windowBackgroundColor))
 
-                        // Edges Canvas
+                        
                         Canvas { context, size in
                             drawEdges(context: context, size: size)
                         }
 
-                        // Nodes
+                        
                         let visible = visibleNodes()
                         ForEach(visible) { node in
                             nodeView(for: node)
@@ -766,7 +766,7 @@ public struct RepositoryKnowledgeGraphView: View {
                                 )
                         }
 
-                        // Floating search results & stats indicator
+                        
                         VStack {
                             Spacer()
                             HStack {
@@ -822,7 +822,7 @@ public struct RepositoryKnowledgeGraphView: View {
                     )
                 }
 
-                // Node Details & Inspection Side Panel
+                
                 if showInspector {
                     Divider()
                     inspectorPanel
@@ -836,7 +836,7 @@ public struct RepositoryKnowledgeGraphView: View {
         }
     }
 
-    // MARK: - Dot Grid Background
+    
     private var gridPattern: some View {
         Canvas { context, size in
             let spacing: CGFloat = 28.0 * scale
@@ -857,7 +857,7 @@ public struct RepositoryKnowledgeGraphView: View {
         }
     }
 
-    // MARK: - Edge Canvas Drawing
+    
     private func drawEdges(context: GraphicsContext, size: CGSize) {
         let centerOffset = CGPoint(
             x: totalOffset.width + (size.width / 2.0) - (450 * scale),
@@ -886,7 +886,7 @@ public struct RepositoryKnowledgeGraphView: View {
             var path = Path()
             path.move(to: start)
 
-            // Smooth cubic Bezier curve
+            
             let midX = (start.x + end.x) / 2.0
             let midY = (start.y + end.y) / 2.0
             let dx = end.x - start.x
@@ -901,10 +901,10 @@ public struct RepositoryKnowledgeGraphView: View {
             path.addCurve(to: end, control1: cp1, control2: cp2)
 
             if isIncidentToSelected {
-                // Highlighted with system accent color
+                
                 context.stroke(path, with: .color(Color.accentColor), lineWidth: 2.5)
 
-                // Directional arrow near midpoint
+                
                 let arrowPath = Path { p in
                     p.move(to: CGPoint(x: midX - 4, y: midY - 4))
                     p.addLine(to: CGPoint(x: midX + 4, y: midY))
@@ -912,10 +912,10 @@ public struct RepositoryKnowledgeGraphView: View {
                 }
                 context.stroke(arrowPath, with: .color(Color.accentColor), lineWidth: 2.0)
             } else if hasSelection {
-                // Dimmed background connection
+                
                 context.stroke(path, with: .color(Color.secondary.opacity(0.12)), lineWidth: 1.0)
             } else {
-                // Standard clean connection with optional weight
+                
                 let width: CGFloat = rel.type == .coChangesWith ? 2.0 : 1.2
                 let opacity: Double = rel.type == .coChangesWith ? 0.45 : 0.28
                 context.stroke(path, with: .color(Color.secondary.opacity(opacity)), lineWidth: width)
@@ -923,7 +923,7 @@ public struct RepositoryKnowledgeGraphView: View {
         }
     }
 
-    // MARK: - Node View Rendering
+    
     @ViewBuilder
     private func nodeView(for node: KnowledgeNode) -> some View {
         let isSelected = selectedNode?.id == node.id
@@ -937,14 +937,14 @@ public struct RepositoryKnowledgeGraphView: View {
 
         VStack(spacing: 4) {
             ZStack {
-                // Halo for selected node
+                
                 if isSelected {
                     Circle()
                         .stroke(Color.accentColor.opacity(0.4), lineWidth: 6)
                         .frame(width: 36 * scale, height: 36 * scale)
                 }
 
-                // Main circular node
+                
                 Circle()
                     .fill(isSelected ? Color.accentColor : colorForType(node.type))
                     .frame(width: 26 * scale, height: 26 * scale)
@@ -958,7 +958,7 @@ public struct RepositoryKnowledgeGraphView: View {
                     .foregroundStyle(.white)
                     .font(.system(size: 11 * scale, weight: .semibold))
 
-                // High Churn / Hub File indicator badge
+                
                 if node.isHubFile == true {
                     VStack {
                         HStack {
@@ -974,7 +974,7 @@ public struct RepositoryKnowledgeGraphView: View {
                 }
             }
 
-            // Node Name / Badge
+            
             HStack(spacing: 3) {
                 if node.type == .branch && node.isCurrentBranch == true {
                     Text("HEAD")
@@ -1019,10 +1019,10 @@ public struct RepositoryKnowledgeGraphView: View {
         .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isSelected)
     }
 
-    // MARK: - Repository Connectivity Metrics Bar
+    
     private var metricsBar: some View {
         HStack(spacing: 16) {
-            // Summary Counters
+            
             HStack(spacing: 12) {
                 metricCounter(label: "Nodes", value: "\(nodes.count)", icon: "circle.grid.cross")
                 metricCounter(label: "Edges", value: "\(relationships.count)", icon: "arrow.triangle.swap")
@@ -1033,7 +1033,7 @@ public struct RepositoryKnowledgeGraphView: View {
             Divider()
                 .frame(height: 24)
 
-            // Hub Files (Highest Churn)
+            
             HStack(spacing: 6) {
                 Label("Hub Files:", systemImage: "flame")
                     .font(.system(size: 11, weight: .semibold))
@@ -1074,7 +1074,7 @@ public struct RepositoryKnowledgeGraphView: View {
             Divider()
                 .frame(height: 24)
 
-            // Top Co-Changing Files
+            
             HStack(spacing: 6) {
                 Label("Co-Changing:", systemImage: "link")
                     .font(.system(size: 11, weight: .semibold))
@@ -1138,10 +1138,10 @@ public struct RepositoryKnowledgeGraphView: View {
         }
     }
 
-    // MARK: - Node Details Inspector Panel
+    
     private var inspectorPanel: some View {
         VStack(spacing: 0) {
-            // Inspector Header
+            
             HStack {
                 Text("Node Inspector")
                     .font(.system(size: 12, weight: .semibold))
@@ -1164,7 +1164,7 @@ public struct RepositoryKnowledgeGraphView: View {
             if let node = selectedNode {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 14) {
-                        // Title card
+                        
                         HStack(spacing: 10) {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 8)
@@ -1199,7 +1199,7 @@ public struct RepositoryKnowledgeGraphView: View {
                         .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
                         .cornerRadius(8)
 
-                        // Quick Actions
+                        
                         HStack(spacing: 6) {
                             Button {
                                 selectAndFocus(node)
@@ -1245,7 +1245,7 @@ public struct RepositoryKnowledgeGraphView: View {
 
                         Divider()
 
-                        // Metadata by Node Type
+                        
                         switch node.type {
                         case .commit:
                             commitMetadataView(for: node)
@@ -1261,7 +1261,7 @@ public struct RepositoryKnowledgeGraphView: View {
                             genericMetadataView(for: node)
                         }
 
-                        // Connected Relationships List
+                        
                         connectedRelationshipsSection(for: node)
                     }
                     .padding(12)
@@ -1288,7 +1288,7 @@ public struct RepositoryKnowledgeGraphView: View {
         .background(Color(NSColor.windowBackgroundColor))
     }
 
-    // MARK: - Inspector Metadata Views
+    
     @ViewBuilder
     private func commitMetadataView(for node: KnowledgeNode) -> some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -1477,7 +1477,7 @@ public struct RepositoryKnowledgeGraphView: View {
         }
     }
 
-    // MARK: - Filtering & Topology Logic
+    
     private func visibleNodes() -> [KnowledgeNode] {
         let searched = nodes.filter { node in
             if let type = selectedNodeType, node.type != type { return false }
@@ -1500,7 +1500,7 @@ public struct RepositoryKnowledgeGraphView: View {
             return true
         }
 
-        // Neighborhood Depth Isolation
+        
         switch topologyDepth {
         case .full:
             return searched
@@ -1548,7 +1548,7 @@ public struct RepositoryKnowledgeGraphView: View {
         return relationships.contains { ($0.from == sel && $0.to == nodeID) || ($0.to == sel && $0.from == nodeID) }
     }
 
-    // MARK: - Navigation & Layout Helpers
+    
     private func selectAndFocus(_ node: KnowledgeNode) {
         selectedNode = node
         showInspector = true
@@ -1623,12 +1623,12 @@ public struct RepositoryKnowledgeGraphView: View {
         let centerX: CGFloat = 450
         let centerY: CGFloat = 350
 
-        // Root at center
+        
         if let idx = nodes.firstIndex(where: { $0.id == "root" }) {
             nodes[idx].position = CGPoint(x: centerX, y: centerY)
         }
 
-        // Branches in inner ring (radius 160)
+        
         let branches = nodes.enumerated().filter { $0.element.type == .branch }
         for (i, item) in branches.enumerated() {
             let angle = (Double(i) / Double(max(branches.count, 1))) * 2.0 * .pi
@@ -1637,7 +1637,7 @@ public struct RepositoryKnowledgeGraphView: View {
             nodes[item.offset].position = CGPoint(x: x, y: y)
         }
 
-        // Commits in middle ring (radius 320)
+        
         let commits = nodes.enumerated().filter { $0.element.type == .commit }
         for (i, item) in commits.enumerated() {
             let angle = (Double(i) / Double(max(commits.count, 1))) * 2.0 * .pi - (.pi / 2.0)
@@ -1646,7 +1646,7 @@ public struct RepositoryKnowledgeGraphView: View {
             nodes[item.offset].position = CGPoint(x: x, y: y)
         }
 
-        // Files in outer ring (radius 490)
+        
         let files = nodes.enumerated().filter { $0.element.type == .file }
         for (i, item) in files.enumerated() {
             let angle = (Double(i) / Double(max(files.count, 1))) * 2.0 * .pi
@@ -1655,7 +1655,7 @@ public struct RepositoryKnowledgeGraphView: View {
             nodes[item.offset].position = CGPoint(x: x, y: y)
         }
 
-        // Contributors in periphery clusters (radius 640)
+        
         let authors = nodes.enumerated().filter { $0.element.type == .contributor }
         for (i, item) in authors.enumerated() {
             let angle = (Double(i) / Double(max(authors.count, 1))) * 2.0 * .pi + (.pi / 4.0)
@@ -1666,7 +1666,7 @@ public struct RepositoryKnowledgeGraphView: View {
     }
 
     private func layoutHierarchical() {
-        // Branches at top row (y: 100)
+        
         let branches = nodes.enumerated().filter { $0.element.type == .branch }
         let bSpacing: CGFloat = 160
         let bStart = 450 - (CGFloat(branches.count - 1) * bSpacing / 2.0)
@@ -1674,12 +1674,12 @@ public struct RepositoryKnowledgeGraphView: View {
             nodes[item.offset].position = CGPoint(x: bStart + CGFloat(i) * bSpacing, y: 100)
         }
 
-        // Root in middle top
+        
         if let idx = nodes.firstIndex(where: { $0.id == "root" }) {
             nodes[idx].position = CGPoint(x: 450, y: 180)
         }
 
-        // Commits row (y: 300)
+        
         let commits = nodes.enumerated().filter { $0.element.type == .commit }
         let cSpacing: CGFloat = 140
         let cStart = 450 - (CGFloat(commits.count - 1) * cSpacing / 2.0)
@@ -1687,7 +1687,7 @@ public struct RepositoryKnowledgeGraphView: View {
             nodes[item.offset].position = CGPoint(x: cStart + CGFloat(i) * cSpacing, y: 300)
         }
 
-        // Files row (y: 520)
+        
         let files = nodes.enumerated().filter { $0.element.type == .file }
         let fSpacing: CGFloat = 130
         let fStart = 450 - (CGFloat(files.count - 1) * fSpacing / 2.0)
@@ -1696,7 +1696,7 @@ public struct RepositoryKnowledgeGraphView: View {
             nodes[item.offset].position = CGPoint(x: fStart + CGFloat(i) * fSpacing, y: 520 + rowOffset)
         }
 
-        // Contributors row (y: 720)
+        
         let authors = nodes.enumerated().filter { $0.element.type == .contributor }
         let aSpacing: CGFloat = 160
         let aStart = 450 - (CGFloat(authors.count - 1) * aSpacing / 2.0)
@@ -1706,7 +1706,7 @@ public struct RepositoryKnowledgeGraphView: View {
     }
 
     private func layoutClustered() {
-        // Group files by top-level subsystem directory, and commits near their authors
+        
         let centerX: CGFloat = 450
         let centerY: CGFloat = 350
 
@@ -1714,7 +1714,7 @@ public struct RepositoryKnowledgeGraphView: View {
             nodes[idx].position = CGPoint(x: centerX, y: centerY)
         }
 
-        // Distribute contributors in 4 quadrants
+        
         let authors = nodes.enumerated().filter { $0.element.type == .contributor }
         for (i, item) in authors.enumerated() {
             let angle = (Double(i) / Double(max(authors.count, 1))) * 2.0 * .pi
@@ -1723,7 +1723,7 @@ public struct RepositoryKnowledgeGraphView: View {
             nodes[item.offset].position = CGPoint(x: x, y: y)
         }
 
-        // Files clustered near center
+        
         let files = nodes.enumerated().filter { $0.element.type == .file }
         for (i, item) in files.enumerated() {
             let angle = (Double(i) / Double(max(files.count, 1))) * 2.0 * .pi + 0.3
@@ -1733,7 +1733,7 @@ public struct RepositoryKnowledgeGraphView: View {
             nodes[item.offset].position = CGPoint(x: x, y: y)
         }
 
-        // Commits clustered around branches and authors
+        
         let commits = nodes.enumerated().filter { $0.element.type == .commit }
         for (i, item) in commits.enumerated() {
             let angle = (Double(i) / Double(max(commits.count, 1))) * 2.0 * .pi - 0.5
@@ -1751,7 +1751,7 @@ public struct RepositoryKnowledgeGraphView: View {
         }
     }
 
-    // MARK: - Styling & Icons
+    
     private func colorForType(_ type: KnowledgeNode.NodeType) -> Color {
         switch type {
         case .file: return Color.accentColor
@@ -1778,13 +1778,13 @@ public struct RepositoryKnowledgeGraphView: View {
         }
     }
 
-    // MARK: - Full Knowledge Graph Generation
+    
     private func generateKnowledgeGraph() async {
         isRefreshing = true
         var tempNodes: [KnowledgeNode] = []
         var tempRels: [KnowledgeRelationship] = []
 
-        // Root Node
+        
         let rootNode = KnowledgeNode(
             id: "root",
             name: "Repository Root",
@@ -1794,7 +1794,7 @@ public struct RepositoryKnowledgeGraphView: View {
         )
         tempNodes.append(rootNode)
 
-        // 1. Branches from ViewModel
+        
         for (bIdx, branch) in gitViewModel.branches.enumerated() {
             let bId = "branch_\(branch.name)"
             let bNode = KnowledgeNode(
@@ -1810,7 +1810,7 @@ public struct RepositoryKnowledgeGraphView: View {
             tempRels.append(KnowledgeRelationship(from: bId, to: "root", type: .contains))
         }
 
-        // 2. Commit & File Churn Extraction
+        
         var parsedCommits: [KnowledgeNode] = []
         var fileChurnMap: [String: Int] = [:]
         var fileAuthorsMap: [String: Set<String>] = [:]
@@ -1838,7 +1838,7 @@ public struct RepositoryKnowledgeGraphView: View {
                             finalized.changedFilesCount = currentCommitFiles.count
                             parsedCommits.append(finalized)
 
-                            // Track co-changing pairs
+                            
                             let uniqueFiles = Array(Set(currentCommitFiles))
                             if uniqueFiles.count > 1 && uniqueFiles.count <= 15 {
                                 for i in 0..<uniqueFiles.count {
@@ -1917,7 +1917,7 @@ public struct RepositoryKnowledgeGraphView: View {
             }
         }
 
-        // Fallback to gitViewModel.history if subprocess didn't produce commits
+        
         if parsedCommits.isEmpty {
             for commit in gitViewModel.history.prefix(25) {
                 let cId = "commit_\(commit.sha)"
@@ -1939,17 +1939,17 @@ public struct RepositoryKnowledgeGraphView: View {
             }
         }
 
-        // Add commit nodes & connect to root / parents
+        
         for commitNode in parsedCommits {
             tempNodes.append(commitNode)
             tempRels.append(KnowledgeRelationship(from: commitNode.id, to: "root", type: .references))
         }
 
-        // 3. File Nodes from Churn Data
+        
         let sortedChurn = fileChurnMap.sorted(by: { $0.value > $1.value })
         self.topChurnFiles = sortedChurn.prefix(8).map { ChurnItem(filename: $0.key, modifications: $0.value) }
 
-        // Top 20 most active files added as nodes
+        
         for (fIdx, entry) in sortedChurn.prefix(20).enumerated() {
             let fileName = (entry.key as NSString).lastPathComponent
             let fId = "file_\(entry.key)"
@@ -1970,7 +1970,7 @@ public struct RepositoryKnowledgeGraphView: View {
             tempNodes.append(fNode)
             tempRels.append(KnowledgeRelationship(from: fId, to: "root", type: .contains))
 
-            // Connect file to its commits
+            
             for cId in (fileLinkedCommitsMap[entry.key] ?? []).prefix(3) {
                 if tempNodes.contains(where: { $0.id == cId }) {
                     tempRels.append(KnowledgeRelationship(from: fId, to: cId, type: .modifiedBy))
@@ -1978,7 +1978,7 @@ public struct RepositoryKnowledgeGraphView: View {
             }
         }
 
-        // 4. Co-Changing File Relationships
+        
         var coChangeList: [CoChangingPair] = []
         for (f1, map) in coChangeCounts {
             for (f2, count) in map where count >= 2 {
@@ -2000,7 +2000,7 @@ public struct RepositoryKnowledgeGraphView: View {
         }
         self.topCoChangingPairs = coChangeList.sorted(by: { $0.coCommitCount > $1.coCommitCount })
 
-        // 5. Contributors / Authors
+        
         var authorsList: [(name: String, count: Int)] = []
         for (author, count) in authorCommitCounts.sorted(by: { $0.value > $1.value }).prefix(8) {
             authorsList.append((name: author, count: count))
@@ -2016,7 +2016,7 @@ public struct RepositoryKnowledgeGraphView: View {
             )
             tempNodes.append(aNode)
 
-            // Connect author to their commits
+            
             for c in parsedCommits.filter({ $0.author == author }).prefix(4) {
                 tempRels.append(KnowledgeRelationship(from: aId, to: c.id, type: .authored))
             }
@@ -2026,7 +2026,7 @@ public struct RepositoryKnowledgeGraphView: View {
         self.nodes = tempNodes
         self.relationships = tempRels
 
-        // Apply initial layout
+        
         applyLayout(layoutMode)
         isRefreshing = false
     }

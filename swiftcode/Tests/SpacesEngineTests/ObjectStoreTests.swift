@@ -61,7 +61,7 @@ import Testing
         let result = try api.commit(message: "nested")
         let commit = try repo.commitObject(result.oid)
         let reachable = try repo.objects.reachable(from: [commit.tree])
-        // Root tree + d tree + e tree + blob must all be reachable.
+        
         #expect(reachable.count >= 4)
     }
 }

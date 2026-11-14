@@ -767,8 +767,8 @@ public struct InfoPlistView: View {
         let keys: [String]
     }
 
-    /// Buckets every top-level key into its template category so the "All
-    /// Keys" browser reads as collapsible groups instead of one flat list.
+    
+    
     private var allKeysGroups: [KeyGroup] {
         let templateByKey = Dictionary(
             InfoPlistTemplateCatalog.all.map { ($0.key, $0) },
@@ -1055,10 +1055,10 @@ public struct InfoPlistView: View {
     }
 }
 
-/// "Entitlements" section of the Info.plist viewer. Resolves the project's
-/// `.entitlements` file (CODE_SIGN_ENTITLEMENTS build setting first, then
-/// conventional locations), opens it in the Entitlements editor, or creates
-/// a new entitlements file when none exists.
+
+
+
+
 struct EntitlementsPlistSectionView: View {
     @State private var entitlementsURL: URL?
     @State private var didResolve = false

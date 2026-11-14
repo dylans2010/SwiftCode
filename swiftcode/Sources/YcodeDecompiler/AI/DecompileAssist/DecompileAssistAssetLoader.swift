@@ -1,20 +1,20 @@
 import Foundation
 
-/// Loads Decompile Assist system assets (prompt documents) bundled inside the
-/// `YcodeDecompiler` module under `Resources/SystemAssets/DecompileAssist/`.
-///
-/// Search order:
-///  1. `Bundle.module.resourceURL/SystemAssets/DecompileAssist`
-///  2. `Bundle.main.resourceURL` subpaths `SystemAssets/DecompileAssist`,
-///     `Decompiler/SystemAssets/DecompileAssist`
-///  3. Source-relative fallbacks derived from `#filePath` (development trees
-///     where resources were not copied into a bundle).
+
+
+
+
+
+
+
+
+
 public struct DecompileAssistAssetLoader: Sendable {
 
-    /// Approximate character budget for the assembled core prompt.
+    
     public static let promptBudget = 12_000
 
-    /// Assets that must exist; missing any of them is a hard error.
+    
     private static let requiredAssets = ["IDENTITY", "SOUL", "SYSTEM", "MEMORY", "SECURITY"]
 
     private let directories: [URL]
@@ -28,17 +28,17 @@ public struct DecompileAssistAssetLoader: Sendable {
         if let mainResources = Bundle.main.resourceURL {
             dirs.append(mainResources.appendingPathComponent("SystemAssets/DecompileAssist", isDirectory: true))
             dirs.append(mainResources.appendingPathComponent("Decompiler/SystemAssets/DecompileAssist", isDirectory: true))
-            // XcodeGen flattens bundle resources: assets may sit at the
-            // Resources root with no enclosing directory.
+            
+            
             dirs.append(mainResources)
         }
-        // Source-relative fallback: …/Sources/YcodeDecompiler/AI/DecompileAssist/<file>
-        // → …/Sources/YcodeDecompiler/Resources/SystemAssets/DecompileAssist
+        
+        
         let sourceFile = URL(fileURLWithPath: #filePath)
         let decompilerRoot = sourceFile
-            .deletingLastPathComponent() // DecompileAssist
-            .deletingLastPathComponent() // AI
-            .deletingLastPathComponent() // YcodeDecompiler
+            .deletingLastPathComponent() 
+            .deletingLastPathComponent() 
+            .deletingLastPathComponent() 
         dirs.append(decompilerRoot.appendingPathComponent("Resources/SystemAssets/DecompileAssist", isDirectory: true))
 
         var seen = Set<String>()
@@ -50,7 +50,7 @@ public struct DecompileAssistAssetLoader: Sendable {
         }
     }
 
-    /// Load an asset by base name (without `.md`). Returns nil when missing.
+    
     public func asset(named name: String) -> String? {
         for dir in directories {
             let url = dir.appendingPathComponent("\(name).md")
@@ -62,13 +62,13 @@ public struct DecompileAssistAssetLoader: Sendable {
         return nil
     }
 
-    /// Assemble the core system prompt for a session.
-    ///
-    /// Required assets (IDENTITY, SOUL, SYSTEM, MEMORY, SECURITY) are always
-    /// included and never truncated. Optional documents (mode guide,
-    /// format/architecture references, tool and output conventions) are added
-    /// in priority order and truncated first when the total exceeds the
-    /// ~12k character budget.
+    
+    
+    
+    
+    
+    
+    
     public func corePrompt(
         mode: DecompilerSession.Mode,
         architecture: BinaryArchitecture?,
@@ -89,7 +89,7 @@ public struct DecompileAssistAssetLoader: Sendable {
             )
         }
 
-        // Optional documents in priority order; later ones are truncated first.
+        
         var optional: [(String, String)] = []
         func addOptional(_ name: String) {
             if let text = asset(named: name) {
@@ -128,10 +128,10 @@ public struct DecompileAssistAssetLoader: Sendable {
         var body = render(required)
         var keptOptional: [(String, String)] = []
 
-        // Greedily include optional docs in priority order. The first doc that
-        // does not fit is truncated to the remaining budget (when the
-        // remainder is meaningful); everything after it is dropped. Required
-        // docs are never touched.
+        
+        
+        
+        
         for doc in optional {
             if totalLength(keptOptional + [doc]) <= Self.promptBudget {
                 keptOptional.append(doc)

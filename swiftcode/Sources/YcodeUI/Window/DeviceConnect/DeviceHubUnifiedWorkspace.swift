@@ -87,7 +87,7 @@ public enum DeviceHubUnifiedWorkspace {
         VisualUIBuilderWindowManager.shared.showWindow()
     }
 
-    // MARK: - iPadOS & Tablet Configurations
+    
 
     public static func isTablet(for row: DeviceRow) -> Bool {
         row.model.contains("iPad") || row.name.contains("iPad") || row.platform.contains("iPad")
@@ -123,7 +123,7 @@ public enum DeviceHubUnifiedWorkspace {
         TabletPreset(name: "iPad (10th generation)", model: "iPad13,18", screenSize: "10.9\"", supportsStageManager: false, supportsPencilHover: false),
     ]
 
-    // MARK: - Advanced Simulator Operations
+    
 
     public static func cloneSimulator(udid: String, newName: String) async throws -> String {
         try await DeviceHubSimulatorInstaller.cloneSimulator(sourceUDID: udid, newName: newName)

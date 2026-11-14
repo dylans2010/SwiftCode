@@ -1,8 +1,8 @@
 import Foundation
 
-/// Call-graph view over cross-references and function boundaries.
+
 public enum CallGraphAnalyzer {
-    /// Direct callers/callees of a function from xref data.
+    
     public static func callers(of functionAddress: UInt64,
                                functions: [DecompilerFunction],
                                xrefs: [CrossReference]) -> [DecompilerAddress] {
@@ -14,15 +14,15 @@ public enum CallGraphAnalyzer {
                                xrefs: [CrossReference]) -> [DecompilerAddress] {
         xrefs.filter { $0.kind == .call }
             .filter { ref in
-                // source inside the function's range
-                true // refined by caller using function bounds
+                
+                true 
             }
             .map(\.destination)
     }
 
-    /// All call edges (caller function → callee function), unresolved
-    /// indirect calls excluded by construction (only .call xrefs with
-    /// resolved destinations are present).
+    
+    
+    
     public static func edges(functions: [DecompilerFunction],
                              xrefs: [CrossReference]) -> [(DecompilerAddress, DecompilerAddress)] {
         var out: [(DecompilerAddress, DecompilerAddress)] = []

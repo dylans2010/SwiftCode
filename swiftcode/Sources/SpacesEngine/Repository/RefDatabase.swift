@@ -1,8 +1,8 @@
 import Foundation
 
-/// A reference (branch, tag, remote-tracking, snapshot) resolved to an object.
+
 public struct Ref: Hashable, Sendable, Encodable {
-    public let name: String   // e.g. "refs/heads/main"
+    public let name: String   
     public let oid: ObjectID
     public var shortName: String {
         for prefix in ["refs/heads/", "refs/tags/", "refs/remotes/", "refs/snapshots/"] {
@@ -21,7 +21,7 @@ public struct Ref: Hashable, Sendable, Encodable {
 
 public enum RefKind: Sendable { case branch, tag, remote, snapshot, other }
 
-/// Manages `.spaces/HEAD`, loose refs, and packed-refs.
+
 public final class RefDatabase: @unchecked Sendable {
     public let metaURL: URL
 
@@ -40,7 +40,7 @@ public final class RefDatabase: @unchecked Sendable {
         return name.allSatisfy { !$0.isNewline }
     }
 
-    // MARK: - HEAD
+    
 
     public func readHEAD() throws -> String {
         let url = metaURL.appendingPathComponent("HEAD")
@@ -50,7 +50,7 @@ public final class RefDatabase: @unchecked Sendable {
         return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    /// Returns the ref HEAD points at ("refs/heads/main") or nil when detached.
+    
     public func symbolicHEAD() throws -> String? {
         let head = try readHEAD()
         if head.hasPrefix("ref: ") { return String(head.dropFirst(5)) }
@@ -70,14 +70,14 @@ public final class RefDatabase: @unchecked Sendable {
     public func headOID(objects: ObjectStore) throws -> ObjectID? {
         let head = try readHEAD()
         if head.hasPrefix("ref: ") {
-            // Unborn branch (ref doesn't exist yet) → nil.
+            
             if let oid = try readRef(String(head.dropFirst(5))) { return oid }
             return nil
         }
         return try? ObjectID(validating: head)
     }
 
-    // MARK: - Loose refs
+    
 
     @discardableResult
     public func updateRef(_ name: String, to oid: ObjectID) throws -> ObjectID? {
@@ -95,7 +95,7 @@ public final class RefDatabase: @unchecked Sendable {
         if FileManager.default.fileExists(atPath: url.path) {
             try FileManager.default.removeItem(at: url)
         }
-        // Remove from packed-refs if present.
+        
         if FileManager.default.fileExists(atPath: packedRefsURL.path) {
             let lines = (try? String(contentsOf: packedRefsURL, encoding: .utf8))?
                 .components(separatedBy: "\n") ?? []
@@ -107,13 +107,13 @@ public final class RefDatabase: @unchecked Sendable {
     }
 
     public func readRef(_ name: String) throws -> ObjectID? {
-        // Loose first.
+        
         let url = refURL(name)
         if let text = try? String(contentsOf: url, encoding: .utf8),
            let hex = text.trimmingCharacters(in: .whitespacesAndNewlines).split(separator: "\n").first {
             return try? ObjectID(validating: String(hex))
         }
-        // Then packed-refs.
+        
         if let packed = try? String(contentsOf: packedRefsURL, encoding: .utf8) {
             for line in packed.components(separatedBy: "\n") {
                 let parts = line.split(separator: " ")
@@ -127,19 +127,19 @@ public final class RefDatabase: @unchecked Sendable {
 
     public func resolve(_ name: String, objects: ObjectStore) throws -> ObjectID {
         if let oid = try readRef(name) { return oid }
-        // Allow short names like "main" -> refs/heads/main.
+        
         for candidate in ["refs/\(name)", "refs/heads/\(name)", "refs/tags/\(name)",
                           "refs/remotes/\(name)"] {
             if let oid = try readRef(candidate) { return oid }
         }
-        // Try object ID abbreviation.
+        
         return try ObjectID.resolve(name, in: objects)
     }
 
     public func allRefs() throws -> [Ref] {
         var result: [Ref] = []
         let fm = FileManager.default
-        // Loose refs under refs/.
+        
         let refsRoot = metaURL.appendingPathComponent("refs")
         if let enumerator = fm.enumerator(atPath: refsRoot.path) {
             for case let rel as String in enumerator {
@@ -152,7 +152,7 @@ public final class RefDatabase: @unchecked Sendable {
                 }
             }
         }
-        // packed-refs (dedupe by name, loose wins).
+        
         if let packed = try? String(contentsOf: packedRefsURL, encoding: .utf8) {
             for line in packed.components(separatedBy: "\n") {
                 guard !line.hasPrefix("#"), !line.hasPrefix("^") else { continue }
@@ -175,14 +175,14 @@ public final class RefDatabase: @unchecked Sendable {
         try allRefs().filter { $0.kind == .tag }
     }
 
-    /// Current branch name, or nil when HEAD is detached or unborn.
+    
     public func currentBranch() throws -> String? {
         guard let sym = try symbolicHEAD() else { return nil }
         guard sym.hasPrefix("refs/heads/") else { return nil }
         return String(sym.dropFirst("refs/heads/".count))
     }
 
-    // MARK: - Helpers
+    
 
     func atomicWrite(_ url: URL, contents: Data) throws {
         let temp = url.appendingPathExtension("tmp-\(UUID().uuidString)")

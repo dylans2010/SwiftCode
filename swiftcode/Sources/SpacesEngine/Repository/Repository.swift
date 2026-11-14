@@ -1,11 +1,11 @@
 import Foundation
 
-/// A Spaces repository: the worktree plus its `.spaces/` metadata.
-///
-/// Thread-safety: `Repository` is a reference type usable from any queue;
-/// individual operations are serialized internally where required. For
-/// multi-process safety, mutating entry points should be wrapped in
-/// `withLock`/`performTransaction` — the CLI and API do this for you.
+
+
+
+
+
+
 public final class Repository: @unchecked Sendable {
     public let worktreeURL: URL
     public let metaURL: URL
@@ -25,10 +25,10 @@ public final class Repository: @unchecked Sendable {
         try loadConfig()
     }
 
-    // MARK: - Lifecycle
+    
 
-    /// Creates a new Spaces repository at `url` (which may be a directory that
-    /// does not exist yet, or an existing empty directory).
+    
+    
     @discardableResult
     public static func create(at url: URL, defaultBranch: String = "main",
                               user: SpacesConfig.User? = nil) throws -> Repository {
@@ -49,13 +49,13 @@ public final class Repository: @unchecked Sendable {
         let repo = try Repository(worktree: worktree)
         try repo.saveConfig(config)
         try repo.refs.setHEAD(ref: "refs/heads/\(defaultBranch)")
-        // Reflog birth entry.
+        
         try repo.appendReflog(refName: "HEAD", old: nil, new: nil,
                               message: "repository initialized")
         return repo
     }
 
-    /// Opens a repository by discovering `.spaces/` upward from `url`.
+    
     public static func open(at url: URL? = nil) throws -> Repository {
         let start = (url ?? URL(fileURLWithPath: FileManager.default.currentDirectoryPath))
             .standardizedFileURL
@@ -67,16 +67,16 @@ public final class Repository: @unchecked Sendable {
         return repo
     }
 
-    /// Non-throwing discovery check.
+    
     public static func isRepository(at url: URL) -> Bool {
         RepositoryFormat.discover(from: url) != nil
     }
 
-    /// Classifies the directory at `url` (no upward search) as a Spaces
-    /// repository, an invalid Spaces directory, a Git repository, an empty
-    /// directory, or a repository whose format version is newer than this
-    /// build supports. A `.spaces/` directory that fails validation is
-    /// reported as invalid with the concrete reason, never as Git.
+    
+    
+    
+    
+    
     public static func detect(at url: URL) -> RepositoryDetection {
         let worktree = url.standardizedFileURL
         let meta = RepositoryFormat.metadataURL(for: worktree)
@@ -117,9 +117,9 @@ public final class Repository: @unchecked Sendable {
         return .spaces(valid: true)
     }
 
-    /// Validates repository structure: required directories, config parses,
-    /// HEAD readable, object store reachable. Returns a list of problems —
-    /// empty means healthy.
+    
+    
+    
     public func validate() -> [String] {
         var problems: [String] = []
         let required = ["objects", "refs", "config.json"]
@@ -133,27 +133,27 @@ public final class Repository: @unchecked Sendable {
         return problems
     }
 
-    /// Runs crash recovery: detects an interrupted journal and surfaces it.
-    /// Object writes are atomic and ref updates are atomic renames, so the
-    /// worst case is a ref pointing at a missing object, which `repair`
-    /// handles. Here we simply report unfinished transactions.
+    
+    
+    
+    
     @discardableResult
     public func recoverIfNeeded() throws -> [String] {
         var notes: [String] = []
         if journal.hasUnfinishedTransactions {
             notes.append("unfinished transaction detected in journal")
         }
-        // Verify HEAD target exists.
+        
         if let sym = try? refs.symbolicHEAD() {
             if try refs.readRef(sym) == nil {
-                // Unborn branch is fine (no commits yet).
+                
                 notes.append("HEAD points at unborn ref \(sym)")
             }
         }
         return notes
     }
 
-    // MARK: - Config
+    
 
     public func loadConfig() throws {
         let url = metaURL.appendingPathComponent("config.json")
@@ -177,7 +177,7 @@ public final class Repository: @unchecked Sendable {
         config = value
     }
 
-    /// Effective commit identity: repo config → environment → placeholder.
+    
     public func identity() -> Signature {
         if let u = config.user, !u.name.isEmpty {
             return Signature(name: u.name, email: u.email)
@@ -191,16 +191,16 @@ public final class Repository: @unchecked Sendable {
         return Signature(name: name, email: email)
     }
 
-    // MARK: - Locking
+    
 
     private var lockURL: URL { metaURL.appendingPathComponent("lock") }
 
     private var lockDepth = 0
 
-    /// Acquires the repository lock (O_EXCL create). Reentrant within this
-    /// process instance: nested `performTransaction`/`withLock` calls share
-    /// the outermost lock. Throws `repositoryLocked` if another live process
-    /// holds it; steals the lock if the recorded PID is dead.
+    
+    
+    
+    
     public func acquireLock() throws {
         ioLock.lock()
         if lockDepth > 0 {
@@ -215,7 +215,7 @@ public final class Repository: @unchecked Sendable {
                     ioLock.unlock()
                     throw SpacesError.repositoryLocked("pid \(pid)")
                 }
-                // Stale lock — owner is gone.
+                
                 try? fm.removeItem(at: lockURL)
             } else {
                 try? fm.removeItem(at: lockURL)
@@ -240,14 +240,14 @@ public final class Repository: @unchecked Sendable {
         }
     }
 
-    /// Runs `body` under the repository lock.
+    
     public func withLock<T>(_ body: () throws -> T) throws -> T {
         try acquireLock()
         defer { releaseLock() }
         return try body()
     }
 
-    /// Convenience: lock + journal a multi-step mutation.
+    
     @discardableResult
     public func performTransaction<T>(steps: [String] = [],
                                       _ body: () throws -> T) throws -> T {
@@ -270,7 +270,7 @@ public final class Repository: @unchecked Sendable {
         }
     }
 
-    // MARK: - Reflog
+    
 
     public func appendReflog(refName: String, old: ObjectID?, new: ObjectID?,
                              message: String) throws {
@@ -316,7 +316,7 @@ public final class Repository: @unchecked Sendable {
         return entries
     }
 
-    // MARK: - Operation state files
+    
 
     public var mergeHeadURL: URL { metaURL.appendingPathComponent("MERGE_HEAD") }
     public var mergeMessageURL: URL { metaURL.appendingPathComponent("MERGE_MSG") }
@@ -348,7 +348,7 @@ public final class Repository: @unchecked Sendable {
         for n in names { try? FileManager.default.removeItem(at: metaURL.appendingPathComponent(n)) }
     }
 
-    // MARK: - Index
+    
 
     private var indexCache: Index?
     private var indexDirty = false
@@ -369,25 +369,25 @@ public final class Repository: @unchecked Sendable {
 
     public func markIndexDirty() { indexDirty = true }
 
-    // MARK: - HEAD commit helpers
+    
 
-    /// The commit OID HEAD points to, or nil for an unborn branch.
+    
     public func headCommit() throws -> CommitPayload? {
         guard let oid = try refs.headOID(objects: objects) else { return nil }
         return try commitObject(oid)
     }
 
-    /// Resolves any revision expression: full/short OID, ref name, HEAD,
-    /// HEAD~n, HEAD^n, branch names. Returns the commit OID.
+    
+    
     public func resolveRevision(_ text: String) throws -> ObjectID {
         var spec = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !spec.isEmpty else { throw SpacesError.ambiguousRevision(text) }
 
-        // Suffix operators: ^n (nth parent) and ~n (nth first-parent ancestor).
+        
         var base = spec
         var caretSteps = 0
         var tildeSteps = 0
-        // Peel off trailing ^<n> / ~<n> groups (digits optional, default 1).
+        
         while true {
             guard let m = base.range(of: #"[\^~][0-9]*$"#, options: .regularExpression) else { break }
             let suffix = String(base[m])
@@ -400,7 +400,7 @@ public final class Repository: @unchecked Sendable {
         if base.isEmpty && (caretSteps > 0 || tildeSteps > 0) { base = "HEAD" }
 
         var oid = try resolveBase(base)
-        // Apply ~ (first-parent n times) then ^ (n-th parent).
+        
         for _ in 0..<tildeSteps {
             oid = try firstParent(of: oid)
         }
@@ -451,10 +451,10 @@ public final class Repository: @unchecked Sendable {
         try objects.read(oid, expectedType: .blob).payload
     }
 
-    // MARK: - Path helpers
+    
 
-    /// Converts a repo-relative path ("/" separated) to a worktree URL,
-    /// rejecting escapes.
+    
+    
     public func worktreeURL(forRelativePath path: String) throws -> URL {
         let normalized = path.replacingOccurrences(of: "\\", with: "/")
         guard !normalized.hasPrefix("/"), !normalized.contains("..") else {
@@ -472,7 +472,7 @@ public final class Repository: @unchecked Sendable {
         return rel
     }
 
-    /// Enumerates tracked files in the index.
+    
     public func trackedPaths() throws -> [String] {
         try index().entries.keys.sorted()
     }

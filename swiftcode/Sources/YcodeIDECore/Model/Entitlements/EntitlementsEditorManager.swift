@@ -3,9 +3,9 @@ import os
 
 private let logger = Logger(subsystem: "com.swiftcode.app", category: "EntitlementsEditorManager")
 
-/// Standard contents and conventional location for a new `.entitlements` file.
+
 public enum EntitlementsFileTemplate {
-    /// Default document written when a project has no entitlements file yet.
+    
     public static let defaultDocument = """
     <?xml version="1.0" encoding="UTF-8"?>
     <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -19,13 +19,13 @@ public enum EntitlementsFileTemplate {
     </plist>
     """
 
-    /// Conventional location for a new entitlements file at the project root:
-    /// `<ProjectName>.entitlements` inside the project directory.
+    
+    
     public static func defaultURL(in directory: URL, projectName: String) -> URL {
         directory.appendingPathComponent("\(projectName).entitlements")
     }
 
-    /// Writes `defaultDocument` to `url`, creating intermediate directories.
+    
     public static func writeDefaultEntitlements(to url: URL) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try defaultDocument.write(to: url, atomically: true, encoding: .utf8)

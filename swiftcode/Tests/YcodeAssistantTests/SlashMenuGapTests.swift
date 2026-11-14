@@ -169,8 +169,8 @@ struct SlashMenuGapTests {
             error: E(message: "quota exceeded"),
             completedTurnContent: "", executedToolsCount: 0,
             objective: "")
-        // Every candidate shares the failed model's provider, so a quota
-        // failure leaves nothing eligible.
+        
+        
         #expect(result == nil)
     }
 

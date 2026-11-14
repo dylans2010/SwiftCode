@@ -2,10 +2,10 @@ import SwiftUI
 import SpacesEngine
 import SwiftCodeSDK
 
-/// Native Spaces source-control workspace. Talks directly to `SpacesEngine`
-/// (the same engine behind the `spaces` CLI) — no git subprocess involved.
-/// Shown in the Source Control navigator when "Spaces (native)" is selected
-/// in Settings → Source Control, or when opening the Spaces Workspace.
+
+
+
+
 @Observable
 @MainActor
 final class SpacesWorkspaceModel {
@@ -32,20 +32,20 @@ final class SpacesWorkspaceModel {
     var error: String?
     var notice: String?
 
-    // Status
+    
     var status: WorktreeScanner.StatusReport?
     var commitMessage = ""
     var isAmending = false
     var selectedFilePath: String?
     var fileDiffLines: [String] = []
 
-    // History
+    
     var commits: [HistoryOps.CommitInfo] = []
     var graphNodes: [BranchOps.GraphNode] = []
     var selectedCommit: HistoryOps.CommitInfo?
     var selectedCommitPatch: String = ""
 
-    // Branches / tags
+    
     var branches: [BranchOps.BranchInfo] = []
     var tags: [TagOps.TagInfo] = []
     var newBranchName = ""
@@ -53,27 +53,27 @@ final class SpacesWorkspaceModel {
     var rebaseOnto = ""
     var cherryPickRev = ""
 
-    // Stash / snapshots
+    
     var stashes: [StashOps.StashEntry] = []
     var snapshots: [SnapshotOps.SnapshotInfo] = []
     var timeline: [SnapshotOps.TimelineEntry] = []
 
-    // Remotes
+    
     var remotes: [RemoteOps.RemoteInfo] = []
     var remoteName = "origin"
     var remoteURL = ""
 
-    // Maintenance
+    
     var fsckIssues: [MaintenanceOps.FSCKIssue] = []
     var objectCounts: (blobs: Int, trees: Int, commits: Int, tags: Int, snapshots: Int, total: Int)?
     var healthScore: Int?
     var diagnostics: [String] = []
 
-    // Migration
+    
     var gitPath = ""
     var exportPath = ""
 
-    // Console
+    
     var consoleInput = ""
     var consoleOutput = "Spaces Native Source Control Console ready.\nType a command or click a preset below.\n"
     var isExecutingConsole = false
@@ -95,7 +95,7 @@ final class SpacesWorkspaceModel {
         } catch _ {
             repo = nil
             api = nil
-            // Normal uninitialized project state - do not pop an alert
+            
             self.error = nil
         }
     }
@@ -194,7 +194,7 @@ final class SpacesWorkspaceModel {
         })
     }
 
-    // MARK: - Actions
+    
 
     func stage(_ path: String) { run("stage") { _ = try $0.add(path) } }
     func unstage(_ path: String) { run("unstage") { try $0.unstage(path) } }
@@ -486,7 +486,7 @@ struct SpacesWorkspaceView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    // MARK: - Sections
+    
 
     private var overview: some View {
         ScrollView {
@@ -591,7 +591,7 @@ struct SpacesWorkspaceView: View {
             }
             .frame(minWidth: 320)
 
-            // File Diff Inspector
+            
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Label(model.selectedFilePath ?? "File Diff Inspector", systemImage: "doc.text.magnifyingglass")

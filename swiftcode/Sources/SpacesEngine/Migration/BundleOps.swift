@@ -1,17 +1,17 @@
 import Crypto
 import Foundation
 
-/// Spaces bundle: a single-file, self-contained repository transfer format.
-///
-/// Layout:
-///   magic "SPBD" (4B) | version u32 BE | headerLen u64 BE | header JSON |
-///   object records: u64 len BE | stored-object bytes (SPCO framed) |
-///   refs JSON appended inside header
-///
-/// Header JSON:
-///   {"refs": {"refs/heads/main": "<oid>", ...},
-///    "objects": ["<oid>", ...],
-///    "created": <epoch>, "message": "..."}
+
+
+
+
+
+
+
+
+
+
+
 public enum BundleOps {
 
     public struct BundleReport: Sendable, Encodable {
@@ -20,11 +20,11 @@ public enum BundleOps {
         public var created: Int64
     }
 
-    /// Creates a bundle containing all objects reachable from `refNames`
-    /// (empty = all refs).
+    
+    
     public static func create(repo: Repository, output: String,
                               refNames: [String] = []) throws {
-        // Resolve seed refs.
+        
         var seeds: [ObjectID] = []
         var refs: [String: String] = [:]
         if refNames.isEmpty {
@@ -56,14 +56,14 @@ public enum BundleOps {
         let headerData = try encoder.encode(header)
 
         var out = Data()
-        out.append(contentsOf: [0x53, 0x50, 0x42, 0x44]) // "SPBD"
+        out.append(contentsOf: [0x53, 0x50, 0x42, 0x44]) 
         var version: UInt32 = 1
         withUnsafeBytes(of: version.bigEndian) { out.append(contentsOf: $0) }
         var headerLen = UInt64(headerData.count).bigEndian
         withUnsafeBytes(of: &headerLen) { out.append(contentsOf: $0) }
         out.append(headerData)
 
-        // Write each reachable object in stored (SPCO) form.
+        
         for id in reachable.sorted() {
             let stored = try repo.objects.read(id)
             let encoded = ObjectCoding.encode(StoredObject(type: stored.type, payload: stored.payload))
@@ -74,14 +74,14 @@ public enum BundleOps {
         try out.write(to: URL(fileURLWithPath: output), options: .atomic)
     }
 
-    /// Parses a bundle file without a repository.
+    
     public static func inspect(path: String) throws -> BundleReport {
         let (header, _) = try readBundle(path: path)
         return BundleReport(objectCount: header.objects.count,
                             refs: header.refs, created: header.created)
     }
 
-    /// Verifies bundle integrity: framing, object hashes, ref targets exist.
+    
     public static func verify(path: String) throws -> BundleReport {
         let (header, objects) = try readBundle(path: path)
         var seen = Set<String>()
@@ -92,7 +92,7 @@ public enum BundleOps {
                 throw SpacesError.objectCorrupt(idHex)
             }
         }
-        // Every ref target must be present.
+        
         for (_, oidHex) in header.refs where !seen.contains(oidHex) {
             throw SpacesError.objectNotFound(oidHex)
         }
@@ -100,7 +100,7 @@ public enum BundleOps {
                             refs: header.refs, created: header.created)
     }
 
-    /// Imports a bundle into a repository: writes all objects, creates refs.
+    
     @discardableResult
     public static func importBundle(into repo: Repository, path: String) throws -> BundleReport {
         let (header, objects) = try readBundle(path: path)
@@ -121,7 +121,7 @@ public enum BundleOps {
                             created: header.created)
     }
 
-    // MARK: - Internals
+    
 
     struct BundleHeader: Codable {
         var refs: [String: String]
@@ -145,7 +145,7 @@ public enum BundleOps {
         guard headerEnd <= data.count else { throw SpacesError.invalidObject("truncated bundle header") }
         let header = try JSONDecoder().decode(BundleHeader.self,
                                               from: data.subdata(in: headerStart..<headerEnd))
-        // Parse object records.
+        
         var objects: [(String, StoredObject)] = []
         var pos = headerEnd
         while pos + 8 <= data.count {
@@ -163,7 +163,7 @@ public enum BundleOps {
     }
 }
 
-/// Minimal ustar writer for `spaces archive`.
+
 public enum ArchiveOps {
     public static func create(repo: Repository, rev: String, output: String) throws {
         let oid = try repo.resolveRevision(rev)
@@ -173,7 +173,7 @@ public enum ArchiveOps {
         var tar = Data()
         for (path, entry) in flat.sorted(by: { $0.key < $1.key }) {
             let data: Data
-            var typeflag: UInt8 = 0 // regular file
+            var typeflag: UInt8 = 0 
             var linkname = ""
             if entry.mode.isSymlink {
                 data = try repo.blobData(entry.oid)
@@ -186,11 +186,11 @@ public enum ArchiveOps {
                                                  mode: entry.mode == .executable ? 0o755 : 0o644,
                                                  typeflag: typeflag, linkname: linkname))
             tar.append(data)
-            // Pad to 512.
+            
             let pad = (512 - (data.count % 512)) % 512
             tar.append(Data(repeating: 0, count: pad))
         }
-        // Two zero blocks end the archive.
+        
         tar.append(Data(repeating: 0, count: 1024))
         try tar.write(to: URL(fileURLWithPath: output), options: .atomic)
     }
@@ -209,17 +209,17 @@ public enum ArchiveOps {
         }
         put(name, at: 0, len: 100)
         putOctal(Int64(mode), at: 100, len: 8)
-        putOctal(0, at: 108, len: 8)   // uid
-        putOctal(0, at: 116, len: 8)   // gid
+        putOctal(0, at: 108, len: 8)   
+        putOctal(0, at: 116, len: 8)   
         putOctal(size, at: 124, len: 12)
         putOctal(Int64(Date().timeIntervalSince1970), at: 136, len: 12)
-        // checksum placeholder: spaces then compute.
+        
         for i in 148..<156 { header[i] = 0x20 }
         header[156] = typeflag
         put(linkname, at: 157, len: 100)
         put("ustar", at: 257, len: 6)
         put("00", at: 263, len: 2)
-        // Checksum.
+        
         var sum = 0
         for b in header { sum += Int(b) }
         let sumStr = String(format: "%06o", sum)
