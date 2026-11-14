@@ -72,6 +72,51 @@ public final class Repository: @unchecked Sendable {
         RepositoryFormat.discover(from: url) != nil
     }
 
+    /// Classifies the directory at `url` (no upward search) as a Spaces
+    /// repository, an invalid Spaces directory, a Git repository, an empty
+    /// directory, or a repository whose format version is newer than this
+    /// build supports. A `.spaces/` directory that fails validation is
+    /// reported as invalid with the concrete reason, never as Git.
+    public static func detect(at url: URL) -> RepositoryDetection {
+        let worktree = url.standardizedFileURL
+        let meta = RepositoryFormat.metadataURL(for: worktree)
+        var isMetaDir: ObjCBool = false
+        let metaExists = FileManager.default.fileExists(atPath: meta.path, isDirectory: &isMetaDir)
+        if metaExists, !isMetaDir.boolValue {
+            return .spacesInvalid(reason: ".spaces exists but is not a directory")
+        }
+        if !metaExists {
+            var isGitDir: ObjCBool = false
+            let gitURL = worktree.appendingPathComponent(".git")
+            if FileManager.default.fileExists(atPath: gitURL.path, isDirectory: &isGitDir), isGitDir.boolValue {
+                return .git
+            }
+            return .empty
+        }
+        let configURL = meta.appendingPathComponent("config.json")
+        guard FileManager.default.fileExists(atPath: configURL.path) else {
+            return .spacesInvalid(reason: ".spaces/config.json is missing")
+        }
+        let config: SpacesConfig
+        do {
+            config = try JSONDecoder().decode(SpacesConfig.self, from: Data(contentsOf: configURL))
+        } catch {
+            return .spacesInvalid(reason: ".spaces/config.json cannot be parsed: \(error.localizedDescription)")
+        }
+        if config.version > RepositoryFormat.formatVersion {
+            return .unsupportedVersion(version: config.version)
+        }
+        var isObjectsDir: ObjCBool = false
+        if !FileManager.default.fileExists(atPath: meta.appendingPathComponent("objects").path, isDirectory: &isObjectsDir) || !isObjectsDir.boolValue {
+            return .spacesInvalid(reason: ".spaces/objects directory is missing")
+        }
+        var isRefsDir: ObjCBool = false
+        if !FileManager.default.fileExists(atPath: meta.appendingPathComponent("refs").path, isDirectory: &isRefsDir) || !isRefsDir.boolValue {
+            return .spacesInvalid(reason: ".spaces/refs directory is missing")
+        }
+        return .spaces(valid: true)
+    }
+
     /// Validates repository structure: required directories, config parses,
     /// HEAD readable, object store reachable. Returns a list of problems —
     /// empty means healthy.
@@ -439,4 +484,18 @@ public struct ReflogEntry: Sendable {
     public var ident: String
     public var timestamp: Int64
     public var message: String
+}
+
+public enum RepositoryDetection: Sendable, Equatable {
+    case spaces(valid: Bool)
+    case spacesInvalid(reason: String)
+    case git
+    case empty
+    case unsupportedVersion(version: Int)
+}
+
+extension SpacesAPI {
+    public static func detectRepository(at url: URL) -> RepositoryDetection {
+        Repository.detect(at: url)
+    }
 }

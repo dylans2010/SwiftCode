@@ -17,6 +17,10 @@ final class SpacesWorkspaceModel {
         case operations = "Operations"
         case remotes = "Remotes"
         case maintenance = "Maintenance"
+        case intelligence = "Intelligence"
+        case reviews = "Reviews"
+        case security = "Security"
+        case storage = "Storage"
         case migration = "Migration"
         case console = "Console (CLI)"
         var id: String { rawValue }
@@ -373,7 +377,7 @@ final class SpacesWorkspaceModel {
                     let removed = try api.clean()
                     output = "Cleaned \(removed.count) untracked items:\n" + removed.joined(separator: "\n") + "\n"
                 default:
-                    output = "Command '\(cmd)' executed via SpacesAPI.\n"
+                    output = "spaces: unknown command '\(cmd)'\n"
                 }
             } catch {
                 output = "spaces: error: \(error.localizedDescription)\n"
@@ -458,6 +462,10 @@ struct SpacesWorkspaceView: View {
                 case .operations: operations
                 case .remotes: remotes
                 case .maintenance: maintenance
+                case .intelligence: SpacesIntelligenceView(workspace: model)
+                case .reviews: SpacesReviewsView(workspace: model)
+                case .security: SpacesSecurityView(workspace: model)
+                case .storage: SpacesStorageView(workspace: model)
                 case .migration: migration
                 case .console: consoleView
                 }

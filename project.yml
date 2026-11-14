@@ -79,6 +79,9 @@ packages:
   SwiftCrypto:
     url: https://github.com/apple/swift-crypto.git
     exactVersion: 4.5.2
+  SwiftArgumentParser:
+    url: https://github.com/apple/swift-argument-parser.git
+    from: 1.5.0
   SwiftSyntax:
     url: https://github.com/swiftlang/swift-syntax.git
     exactVersion: 604.0.0
@@ -534,6 +537,7 @@ targets:
       - target: YcodeAssistant
       - target: YcodeBuild
       - target: YcodeIDECore
+      - target: SpacesEngine
       - package: SwiftCrypto
         product: Crypto
 
@@ -639,6 +643,7 @@ targets:
       - target: SwiftCodeConnect
       - target: SwiftCodeCollaboration
       - target: YcodeDecompiler
+      - target: SpacesEngine
 
   CQuickJS:
     type: library.static
@@ -691,6 +696,41 @@ targets:
         product: SwiftParser
       - package: SwiftSyntax
         product: SwiftParserDiagnostics
+
+  SpacesEngine:
+    type: library.static
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: swiftcode/Sources/SpacesEngine
+    dependencies:
+      - package: SwiftCrypto
+        product: Crypto
+
+  spaces:
+    type: tool
+    platform: macOS
+    deploymentTarget: "15.0"
+    settings:
+      base:
+        PRODUCT_NAME: spaces
+        SWIFT_VERSION: "6.0"
+        MACOSX_DEPLOYMENT_TARGET: "15.0"
+    sources:
+      - path: swiftcode/Sources/spaces
+    dependencies:
+      - target: SpacesEngine
+      - package: SwiftArgumentParser
+        product: ArgumentParser
+
+  SpacesEngineTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "15.0"
+    sources:
+      - path: swiftcode/Tests/SpacesEngineTests
+    dependencies:
+      - target: SpacesEngine
 
   SwiftCode:
     type: application
