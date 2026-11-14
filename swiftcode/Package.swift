@@ -43,9 +43,13 @@ let package = Package(
         .executable(name: "documentation-indexer", targets: ["SwiftCodeSDKDocumentationIndexer"]),
         .library(name: "SwiftCodeConnect", targets: ["SwiftCodeConnect"]),
         .library(name: "SwiftCodeCollaboration", targets: ["SwiftCodeCollaboration"]),
+        // Spaces: SwiftCode's native source control engine, CLI and API
+        .library(name: "SpacesEngine", targets: ["SpacesEngine"]),
+        .executable(name: "spaces", targets: ["spaces"]),
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-crypto.git", "3.0.0"..<"5.0.0"),
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.5.0"),
     ],
     targets: [
         .target(name: "YcodePlist"),
@@ -111,8 +115,12 @@ let package = Package(
         .testTarget(name: "SwiftCodeConnectTests", dependencies: ["SwiftCodeConnect"]),
         .target(name: "SwiftCodeCollaboration"),
         .testTarget(name: "SwiftCodeCollaborationTests", dependencies: ["SwiftCodeCollaboration"]),
+        // Spaces engine + CLI
+        .target(name: "SpacesEngine", dependencies: [.product(name: "Crypto", package: "swift-crypto")]),
+        .executableTarget(name: "spaces", dependencies: ["SpacesEngine", .product(name: "ArgumentParser", package: "swift-argument-parser")]),
+        .testTarget(name: "SpacesEngineTests", dependencies: ["SpacesEngine"]),
         .testTarget(name: "SwiftCodeGoogleAuthTests", dependencies: ["YcodeAssistant", "SwiftCodeCloud"]),
-        .target(name: "SwiftCodeSDK", dependencies: ["SwiftCodeExtensions", "YcodeSubprocess", "YcodeAssistant", "YcodeBuild", "YcodeIDECore",
+        .target(name: "SwiftCodeSDK", dependencies: ["SwiftCodeExtensions", "YcodeSubprocess", "YcodeAssistant", "YcodeBuild", "YcodeIDECore", "SpacesEngine",
                                                  .product(name: "Crypto", package: "swift-crypto")],
                 resources: [.copy("Resources/SwiftCodeSDK.json")]),
         .target(name: "SwiftCodeSDKStudio", dependencies: ["SwiftCodeSDK", "SwiftCodeExtensions"]),
@@ -154,7 +162,7 @@ let package = Package(
         .testTarget(name: "YcodeReleaseTests", dependencies: ["YcodeRelease"]),
         .target(name: "YcodeTestAgent", dependencies: ["YcodeRelease"]),
         .target(name: "CYcodeTestAgentLoader", dependencies: ["YcodeTestAgent"]),
-        .target(name: "YcodeDeviceUI", dependencies: ["YcodeDeviceModel"]),
+        .target(name: "YcodeDeviceUI", dependencies: ["YcodeDeviceModel", "YcodeDisplayStream", "YcodeSimFeatures"]),
         .testTarget(name: "YcodeDeviceUITests", dependencies: ["YcodeDeviceUI", "YcodeDeviceModel"]),
     ]
 )
@@ -173,7 +181,7 @@ package.products += [.library(name: "YcodeUI", targets: ["YcodeUI"]),
                      .executable(name: "YcodeApp", targets: ["YcodeApp"])]
 package.targets += [
     .target(name: "YcodeUI", dependencies: ["YcodeMCP", "YcodeIDECore", "YcodeCompletion", "YcodePreviews", "YcodeProject", "YcodeWorkspace", "YcodeSettings", "YcodeBuild", "YcodeDebug", "YcodeLanguage", "YcodeXcodebuild", "YcodeSubprocess", "YcodeAssistant", "SwiftCodeGitHub", "SwiftCodeExtensions", "YcodeSimFeatures", "YcodeDeviceModel", "YcodeDeviceUI", "YcodeProfiler", "SwiftCodeCloud", "SwiftCodePaywall", "SwiftCodeSDK", "SwiftCodeSDKStudio", "YcodeHealthStore", "YcodeIDEShell", "YcodeSigning",
-                                            "SwiftCodeConnect", "SwiftCodeCollaboration", "YcodeIcon", "YcodeDecompiler",
+                                            "SwiftCodeConnect", "SwiftCodeCollaboration", "YcodeIcon", "YcodeDecompiler", "SpacesEngine",
                                             .product(name: "Markdown", package: "swift-markdown")]),
     .executableTarget(name: "YcodeApp", dependencies: ["YcodeRelease", "YcodeUI"]),
     .testTarget(name: "YcodeUITests", dependencies: ["YcodeMCP", "YcodeUI", "YcodeIDECore", "YcodeCompletion", "YcodePreviews", "YcodeDisplayStream", "YcodeSimFeatures", "YcodeDeviceModel", "YcodeDeviceUI", "YcodeBuild", "YcodeDebug", "YcodeLanguage", "YcodeXcodebuild", "YcodeSubprocess", "YcodeAssistant", "SwiftCodeExtensions", "YcodeProfiler", "YcodeBuildServer", "YcodeIDEShell", "SwiftCodeCloud", "SwiftCodeSDK", "YcodeIcon"]),

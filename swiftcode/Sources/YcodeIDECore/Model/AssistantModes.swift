@@ -62,9 +62,13 @@ public enum AssistantMode: String, CaseIterable, Sendable {
 
     static func firstDeclaredType(_ text: String) -> String? {
         for line in text.split(separator: "\n") {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("//") || trimmed.hasPrefix("/*") || trimmed.hasPrefix("*") { continue }
             let words = line.split(whereSeparator: { " \t:{(<".contains($0) }).map(String.init)
             for (i, w) in words.enumerated() where ["class", "struct", "enum", "actor", "@interface", "@implementation"].contains(w) && i + 1 < words.count {
-                return words[i + 1]
+                let candidate = words[i + 1]
+                if ["func", "var", "let", "subscript", "override", "final"].contains(candidate) { continue }
+                return candidate
             }
         }
         return nil

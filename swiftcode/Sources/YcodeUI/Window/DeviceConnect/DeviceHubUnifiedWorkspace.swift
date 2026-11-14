@@ -86,4 +86,123 @@ public enum DeviceHubUnifiedWorkspace {
         }
         VisualUIBuilderWindowManager.shared.showWindow()
     }
+
+    // MARK: - iPadOS & Tablet Configurations
+
+    public static func isTablet(for row: DeviceRow) -> Bool {
+        row.model.contains("iPad") || row.name.contains("iPad") || row.platform.contains("iPad")
+    }
+
+    public static func isIPad(for row: DeviceRow) -> Bool {
+        isTablet(for: row)
+    }
+
+    public struct TabletPreset: Identifiable, Sendable {
+        public var id: String { name }
+        public let name: String
+        public let model: String
+        public let screenSize: String
+        public let supportsStageManager: Bool
+        public let supportsPencilHover: Bool
+
+        public init(name: String, model: String, screenSize: String, supportsStageManager: Bool, supportsPencilHover: Bool) {
+            self.name = name
+            self.model = model
+            self.screenSize = screenSize
+            self.supportsStageManager = supportsStageManager
+            self.supportsPencilHover = supportsPencilHover
+        }
+    }
+
+    public static let iPadPresets: [TabletPreset] = [
+        TabletPreset(name: "iPad Pro 13-inch (M4)", model: "iPad16,5", screenSize: "13\"", supportsStageManager: true, supportsPencilHover: true),
+        TabletPreset(name: "iPad Pro 11-inch (M4)", model: "iPad16,3", screenSize: "11\"", supportsStageManager: true, supportsPencilHover: true),
+        TabletPreset(name: "iPad Air 13-inch (M2)", model: "iPad14,10", screenSize: "13\"", supportsStageManager: true, supportsPencilHover: true),
+        TabletPreset(name: "iPad Air 11-inch (M2)", model: "iPad14,8", screenSize: "11\"", supportsStageManager: true, supportsPencilHover: true),
+        TabletPreset(name: "iPad mini (A17 Pro)", model: "iPad16,1", screenSize: "8.3\"", supportsStageManager: false, supportsPencilHover: true),
+        TabletPreset(name: "iPad (10th generation)", model: "iPad13,18", screenSize: "10.9\"", supportsStageManager: false, supportsPencilHover: false),
+    ]
+
+    // MARK: - Advanced Simulator Operations
+
+    public static func cloneSimulator(udid: String, newName: String) async throws -> String {
+        try await DeviceHubSimulatorInstaller.cloneSimulator(sourceUDID: udid, newName: newName)
+    }
+
+    public static func eraseSimulator(udid: String) async throws {
+        try await DeviceHubSimulatorInstaller.eraseSimulator(udid: udid)
+    }
+
+    public static func eraseAllSimulators() async throws {
+        try await DeviceHubSimulatorInstaller.eraseAllSimulators()
+    }
+
+    public static func bootSimulator(udid: String) async throws {
+        try await DeviceHubSimulatorInstaller.bootSimulator(udid: udid)
+    }
+
+    public static func shutdownSimulator(udid: String) async throws {
+        try await DeviceHubSimulatorInstaller.shutdownSimulator(udid: udid)
+    }
+
+    public static func shutdownAllSimulators() async throws {
+        try await DeviceHubSimulatorInstaller.shutdownAllSimulators()
+    }
+
+    public static func setAppearance(udid: String, isDark: Bool) async throws {
+        try await DeviceHubSimulatorInstaller.setAppearance(udid: udid, appearance: isDark ? "dark" : "light")
+    }
+
+    public static func setContentSize(udid: String, size: String) async throws {
+        try await DeviceHubSimulatorInstaller.setContentSize(udid: udid, size: size)
+    }
+
+    public static func setAccessibility(udid: String, increaseContrast: Bool? = nil, reduceMotion: Bool? = nil) async throws {
+        if let increaseContrast {
+            try await DeviceHubSimulatorInstaller.setIncreaseContrast(udid: udid, enabled: increaseContrast)
+        }
+        if let reduceMotion {
+            try await DeviceHubSimulatorInstaller.setReduceMotion(udid: udid, enabled: reduceMotion)
+        }
+    }
+
+    public static func setLocation(udid: String, latitude: Double, longitude: Double) async throws {
+        try await DeviceHubSimulatorInstaller.setLocation(udid: udid, latitude: latitude, longitude: longitude)
+    }
+
+    public static func runLocationScenario(udid: String, scenario: String) async throws {
+        try await DeviceHubSimulatorInstaller.runLocationScenario(udid: udid, scenario: scenario)
+    }
+
+    public static func clearLocation(udid: String) async throws {
+        try await DeviceHubSimulatorInstaller.clearLocation(udid: udid)
+    }
+
+    public static func setBattery(udid: String, level: Int, state: String = "charged") async throws {
+        try await DeviceHubSimulatorInstaller.overrideStatusBar(udid: udid, batteryLevel: level, batteryState: state)
+    }
+
+    public static func setNetworkCondition(udid: String, dataNetwork: String, wifiBars: Int = 3, cellularBars: Int = 4, operatorName: String = "SwiftCode Net") async throws {
+        try await DeviceHubSimulatorInstaller.overrideStatusBar(
+            udid: udid,
+            dataNetwork: dataNetwork,
+            wifiMode: "active",
+            wifiBars: wifiBars,
+            cellularMode: "active",
+            cellularBars: cellularBars,
+            operatorName: operatorName
+        )
+    }
+
+    public static func resetStatusBar(udid: String) async throws {
+        try await DeviceHubSimulatorInstaller.clearStatusBar(udid: udid)
+    }
+
+    public static func setStageManager(udid: String, enabled: Bool) async throws {
+        try await DeviceHubSimulatorInstaller.setStageManager(udid: udid, enabled: enabled)
+    }
+
+    public static func simulateApplePencil(udid: String, action: String) async throws {
+        try await DeviceHubSimulatorInstaller.simulateApplePencilAction(udid: udid, action: action)
+    }
 }

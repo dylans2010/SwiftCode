@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-import YcodeAssistant
+@testable import YcodeAssistant
 
 @MainActor
 struct GoogleAccountAuthServiceTests {

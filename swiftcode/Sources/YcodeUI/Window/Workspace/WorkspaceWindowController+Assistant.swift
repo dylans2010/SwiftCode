@@ -5,6 +5,7 @@ import YcodeLanguage
 @MainActor public final class AssistantExtraState {
     public internal(set) var customMode: String?
     public internal(set) var task: Task<Void, Never>?
+    public internal(set) var isUpdating = false
     var counterpartRing: [String]?
 }
 
@@ -80,11 +81,23 @@ extension WorkspaceWindowController {
                 showFiles(found)
             }
         case "Generated Interface":
-            let text = read(current).map(AssistantModeCatalog.generatedInterface) ?? ""
-            a.showText(text.isEmpty ? "No Editor" : text, title: URL(fileURLWithPath: current).lastPathComponent + " (Interface)")
+            assistantExtra.task = Task { [weak a] in
+                let title = URL(fileURLWithPath: current).lastPathComponent + " (Interface)"
+                let text = await Task.detached(priority: .userInitiated) {
+                    read(current).map(AssistantModeCatalog.generatedInterface) ?? ""
+                }.value
+                guard !Task.isCancelled, let a else { return }
+                a.showText(text.isEmpty ? "No Editor" : text, title: title)
+            }
         case "Documentation Preview":
-            let text = read(current).map(AssistantModeCatalog.documentationPreview) ?? ""
-            a.showText(text.isEmpty ? "No Editor" : text, title: URL(fileURLWithPath: current).lastPathComponent + " (Documentation)")
+            assistantExtra.task = Task { [weak a] in
+                let title = URL(fileURLWithPath: current).lastPathComponent + " (Documentation)"
+                let text = await Task.detached(priority: .userInitiated) {
+                    read(current).map(AssistantModeCatalog.documentationPreview) ?? ""
+                }.value
+                guard !Task.isCancelled, let a else { return }
+                a.showText(text.isEmpty ? "No Editor" : text, title: title)
+            }
         case "Callers", "Callees":
             let e = editor
             guard let language = session.language, let url = e.fileURL else { a.showText("No Editor", title: "No Editor"); return }

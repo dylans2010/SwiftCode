@@ -779,6 +779,59 @@ struct BranchesView: View {
     private func executeGitOperation(arguments: [String]) {
         guard let proj = project else { return }
         isExecutingGitCmd = true
+
+        if gitViewModel.usesSpaces {
+            commandLog = "Executing Spaces: \(arguments.joined(separator: " "))"
+            Task {
+                do {
+                    let op = arguments.first ?? ""
+                    switch op {
+                    case "branch":
+                        if arguments.contains("-m") && arguments.count >= 4 {
+                            let old = arguments[2], new = arguments[3]
+                            try await SpacesService.shared.renameBranch(old, to: new, repositoryURL: proj.directoryURL)
+                            commandLog = "Success! Renamed branch \(old) to \(new)"
+                        } else if arguments.contains("-d") {
+                            for b in arguments.dropFirst(2) {
+                                try await SpacesService.shared.deleteBranch(name: b, repositoryURL: proj.directoryURL)
+                            }
+                            commandLog = "Success! Deleted branches: \(arguments.dropFirst(2).joined(separator: ", "))"
+                        }
+                    case "merge":
+                        if arguments.count >= 2 {
+                            let target = arguments[1]
+                            try await SpacesService.shared.merge(target, repositoryURL: proj.directoryURL)
+                            commandLog = "Success! Merged \(target)"
+                        }
+                    case "rebase":
+                        if arguments.count >= 2 {
+                            let target = arguments[1]
+                            try await SpacesService.shared.rebase(onto: target, repositoryURL: proj.directoryURL)
+                            commandLog = "Success! Rebased onto \(target)"
+                        }
+                    case "reset":
+                        if arguments.count >= 3 {
+                            let target = arguments[2]
+                            try await SpacesService.shared.rollback(to: target, repositoryURL: proj.directoryURL)
+                            commandLog = "Success! Reset to \(target)"
+                        }
+                    case "diff":
+                        if arguments.count >= 2 {
+                            let diff = try await SpacesService.shared.getDiff(repositoryURL: proj.directoryURL)
+                            commandLog = diff.map { $0.header + "\n" + $0.lines.joined(separator: "\n") }.joined(separator: "\n")
+                        }
+                    default:
+                        commandLog = "Spaces operation executed."
+                    }
+                } catch {
+                    commandLog = "Execution failed:\n\(error.localizedDescription)"
+                }
+                await gitViewModel.refreshStatus()
+                isExecutingGitCmd = false
+            }
+            return
+        }
+
         commandLog = "Executing: git \(arguments.joined(separator: " "))"
 
         Task {

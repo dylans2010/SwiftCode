@@ -1,6 +1,5 @@
 import Foundation
-import YcodeMCP
-import YcodeAssistant
+@testable import YcodeAssistant
 import os
 
 @MainActor

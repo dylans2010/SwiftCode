@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import YcodeSimFeatures
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 @Suite(.serialized) struct PairingDeviceDirectoryTests {
     func makeSet() throws -> String {

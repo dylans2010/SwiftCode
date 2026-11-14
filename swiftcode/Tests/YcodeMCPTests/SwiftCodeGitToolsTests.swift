@@ -412,13 +412,13 @@ import YcodeAssistant
         #expect(noURL.isToolError && noURL.firstText.contains("requires 'url'"), "\(noURL.firstText)")
     }
 
-    static let gitHubRepoJSON = """
+    nonisolated static let gitHubRepoJSON = """
         {"name":"Hello-World","full_name":"octocat/Hello-World","owner":{"login":"octocat"},"description":"My first repo","private":false,"html_url":"https://github.com/octocat/Hello-World","default_branch":"main","stargazers_count":42,"forks_count":7,"language":"Swift","created_at":"2024-01-15T10:30:00Z","updated_at":"2024-02-01T12:00:00Z","pushed_at":"2024-02-01T12:00:00Z"}
         """
-    static let gitHubTreeJSON = """
+    nonisolated static let gitHubTreeJSON = """
         {"sha":"mainsha","url":"https://api.github.com/repos/octocat/Hello-World/git/trees/main","tree":[{"path":"README.md","mode":"100644","type":"blob","sha":"aaa","size":14},{"path":"Package.swift","mode":"100644","type":"blob","sha":"bbb","size":91},{"path":"Sources","mode":"040000","type":"tree","sha":"ccc"},{"path":"Sources/main.swift","mode":"100644","type":"blob","sha":"ddd","size":19},{"path":"logo.png","mode":"100644","type":"blob","sha":"eee","size":1024},{"path":"node_modules/dep/index.js","mode":"100644","type":"blob","sha":"fff","size":10}],"truncated":false}
         """
-    static let gitHubSearchCodeJSON = """
+    nonisolated static let gitHubSearchCodeJSON = """
         {"total_count":1,"incomplete_results":false,"items":[{"name":"main.swift","path":"Sources/main.swift","repository":{"full_name":"octocat/Hello-World"}}]}
         """
 

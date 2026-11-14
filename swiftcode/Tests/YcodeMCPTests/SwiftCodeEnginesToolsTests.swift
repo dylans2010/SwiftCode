@@ -328,12 +328,12 @@ import YcodeAssistant
           "seeAlsoSections": [{"identifiers": ["doc://x"]}]
         }
         """
-        let page = EnginesDocs.parseDocCJSON(
+        let parsed = EnginesDocs.parseDocCJSON(
             data: Data(json.utf8),
             canonicalURL: URL(string: "https://developer.apple.com/documentation/swiftui/view")!,
             finalJSONURL: URL(string: "https://developer.apple.com/tutorials/data/documentation/swiftui/view.json")!,
             language: "swift", includeExamples: true)
-        let page = try #require(page)
+        let page = try #require(parsed)
         #expect(page.title == "View")
         #expect(page.abstract == "A SwiftUI view.")
         #expect(page.declarations == ["protocol View"])

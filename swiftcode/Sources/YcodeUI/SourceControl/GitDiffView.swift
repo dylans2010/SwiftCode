@@ -62,7 +62,7 @@ struct GitDiffView: View {
         for line in hunk.lines {
             if line.hasPrefix("+++ b/") {
                 return String(line.dropFirst(6))
-            } else if line.hasPrefix("diff --git ") {
+            } else if line.hasPrefix("diff --git ") || line.hasPrefix("diff --spaces ") {
                 let parts = line.components(separatedBy: " ")
                 if parts.count >= 4 {
                     var p = parts[3]

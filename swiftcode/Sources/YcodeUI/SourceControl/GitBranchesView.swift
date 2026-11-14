@@ -4,9 +4,23 @@ import SwiftCodeSDK
 @MainActor
 public struct GitBranchesView: View {
     public let branches: [GitBranch]
+    public var onCheckout: ((GitBranch) -> Void)?
+    public var onMerge: ((GitBranch) -> Void)?
+    public var onDelete: ((GitBranch) -> Void)?
+    public var onNewBranch: (() -> Void)?
 
-    public init(branches: [GitBranch]) {
+    public init(
+        branches: [GitBranch],
+        onCheckout: ((GitBranch) -> Void)? = nil,
+        onMerge: ((GitBranch) -> Void)? = nil,
+        onDelete: ((GitBranch) -> Void)? = nil,
+        onNewBranch: (() -> Void)? = nil
+    ) {
         self.branches = branches
+        self.onCheckout = onCheckout
+        self.onMerge = onMerge
+        self.onDelete = onDelete
+        self.onNewBranch = onNewBranch
     }
 
     public var body: some View {
@@ -16,7 +30,7 @@ public struct GitBranchesView: View {
                     .font(.headline)
                     .foregroundStyle(.primary)
                 Spacer()
-                Button(action: {}) {
+                Button(action: { onNewBranch?() }) {
                     Label("New Branch", systemImage: "plus")
                 }
                 .buttonStyle(.bordered)
@@ -60,10 +74,10 @@ public struct GitBranchesView: View {
                                         .background(branch.isCurrent ? Color.accentColor.opacity(0.08) : Color.secondary.opacity(0.04))
                                         .cornerRadius(6)
                                         .contextMenu {
-                                            Button("Checkout") {  }
-                                            Button("Merge into current") {  }
+                                            Button("Checkout") { onCheckout?(branch) }
+                                            Button("Merge into current") { onMerge?(branch) }
                                             Divider()
-                                            Button("Delete", role: .destructive) {  }
+                                            Button("Delete", role: .destructive) { onDelete?(branch) }
                                         }
                                     }
                                 }

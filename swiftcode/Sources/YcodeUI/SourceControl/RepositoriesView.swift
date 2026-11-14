@@ -195,20 +195,24 @@ struct RepositoriesView: View {
 
     private var noGitRepoPlaceholder: some View {
         GitHubEmptyStateView(
-            title: "Git Repository Not Initialized",
-            description: "Initialize local Git history tracking in this workspace to record, branch, stage, and sync changes.",
-            systemImage: "folder.badge.plus",
+            title: gitViewModel.usesSpaces ? "Spaces Repository Not Initialized" : "Repository Not Initialized",
+            description: gitViewModel.usesSpaces ? "Initialize native Spaces (.spaces/) source control tracking in this workspace to record, branch, stage, and sync changes." : "Initialize local repository history tracking in this workspace to record, branch, stage, and sync changes.",
+            systemImage: "externaldrive.badge.plus",
             accentColor: Color.accentColor,
-            actionTitle: "Initialize Repository"
+            actionTitle: gitViewModel.usesSpaces ? "Initialize Spaces Repository" : "Initialize Repository"
         ) {
             guard let project = project else { return }
             Task {
-                let gitBinary = URL(fileURLWithPath: AppSettings.shared.gitPath.isEmpty ? "/usr/bin/git" : AppSettings.shared.gitPath)
-                _ = try? await ProcessRunnerTool.shared.run(
-                    executableURL: gitBinary,
-                    arguments: ["init"],
-                    workingDirectory: project.directoryURL
-                )
+                if gitViewModel.usesSpaces {
+                    try? await SpacesService.shared.initialize(at: project.directoryURL)
+                } else {
+                    let gitBinary = URL(fileURLWithPath: AppSettings.shared.gitPath.isEmpty ? "/usr/bin/git" : AppSettings.shared.gitPath)
+                    _ = try? await ProcessRunnerTool.shared.run(
+                        executableURL: gitBinary,
+                        arguments: ["init"],
+                        workingDirectory: project.directoryURL
+                    )
+                }
                 await gitViewModel.refreshStatus()
             }
         }

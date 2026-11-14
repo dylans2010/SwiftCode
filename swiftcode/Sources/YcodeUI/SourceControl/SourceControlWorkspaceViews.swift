@@ -1,17 +1,20 @@
 import YcodeIDECore
 import SwiftUI
+import SwiftCodeSDK
 
 @MainActor
 public struct ConflictResolverWorkspaceView: View {
-    public var repository: GitRepository
+    public var repository: GitRepository?
+    public var projectDirectoryURL: URL?
     public var onResolveFile: (String) -> Void
 
     @State private var conflictedFiles: [String] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
 
-    public init(repository: GitRepository, onResolveFile: @escaping (String) -> Void) {
+    public init(repository: GitRepository? = nil, projectDirectoryURL: URL? = nil, onResolveFile: @escaping (String) -> Void) {
         self.repository = repository
+        self.projectDirectoryURL = projectDirectoryURL ?? repository?.root
         self.onResolveFile = onResolveFile
     }
 
@@ -96,27 +99,44 @@ public struct ConflictResolverWorkspaceView: View {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-        let repository = repository
-        do {
-            let status = try await Task.detached { try repository.status() }.value
-            conflictedFiles = status
-                .filter { $0.value == .conflicted }
-                .map(\.key)
-                .sorted()
-        } catch {
-            errorMessage = error.localizedDescription
+        if let repository = repository {
+            do {
+                let status = try await Task.detached { try repository.status() }.value
+                conflictedFiles = status
+                    .filter { $0.value == .conflicted }
+                    .map(\.key)
+                    .sorted()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        } else if let url = projectDirectoryURL {
+            do {
+                let status = try await SpacesService.shared.getStatus(for: url)
+                conflictedFiles = status.files
+                    .filter { $0.status == .conflicted }
+                    .map(\.path)
+                    .sorted()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }
 
 @MainActor
 public struct UnifiedDiffView: View {
-    public var repository: GitRepository
+    public var repository: GitRepository?
+    public var projectDirectoryURL: URL?
 
     @State private var hunks: [DiffHunk] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var collapsedFiles: Set<String> = []
+
+    public init(repository: GitRepository? = nil, projectDirectoryURL: URL? = nil) {
+        self.repository = repository
+        self.projectDirectoryURL = projectDirectoryURL ?? repository?.root
+    }
 
     public struct FileGroup: Identifiable {
         public let id: String
@@ -322,11 +342,47 @@ public struct UnifiedDiffView: View {
         isLoading = true
         errorMessage = nil
         defer { isLoading = false }
-        let repository = repository
-        do {
-            hunks = try await Task.detached { try repository.diffHunks() }.value
-        } catch {
-            errorMessage = error.localizedDescription
+        if let repository = repository {
+            do {
+                hunks = try await Task.detached { try repository.diffHunks() }.value
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        } else if let url = projectDirectoryURL {
+            do {
+                let gitHunks = try await SpacesService.shared.getDiff(repositoryURL: url)
+                hunks = gitHunks.map { gh in
+                    let (oldStart, oldCount, newStart, newCount) = Self.parseHeader(gh.header)
+                    return DiffHunk(
+                        filePath: gh.filePath,
+                        oldStart: oldStart,
+                        oldCount: oldCount,
+                        newStart: newStart,
+                        newCount: newCount,
+                        lines: gh.lines
+                    )
+                }
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
+    }
+
+    private static func parseHeader(_ header: String) -> (Int, Int, Int, Int) {
+        let trimmed = header.trimmingCharacters(in: CharacterSet(charactersIn: "@ "))
+        let parts = trimmed.split(separator: " ")
+        var oldStart = 1, oldCount = 1, newStart = 1, newCount = 1
+        for part in parts {
+            if part.hasPrefix("-") {
+                let nums = part.dropFirst().split(separator: ",")
+                oldStart = Int(nums.first ?? "1") ?? 1
+                oldCount = nums.count > 1 ? (Int(nums[1]) ?? 1) : 1
+            } else if part.hasPrefix("+") {
+                let nums = part.dropFirst().split(separator: ",")
+                newStart = Int(nums.first ?? "1") ?? 1
+                newCount = nums.count > 1 ? (Int(nums[1]) ?? 1) : 1
+            }
+        }
+        return (oldStart, oldCount, newStart, newCount)
     }
 }

@@ -2,6 +2,7 @@ import SwiftUI
 import YcodeAssistant
 import SwiftCodeGitHub
 import SwiftCodeSDK
+import SpacesEngine
 import YcodeIDECore
 import YcodeIDEShell
 import AppKit
@@ -194,6 +195,7 @@ public enum SourceControlSelection: String, CaseIterable, Identifiable, Codable 
     case workspaceAutomation = "Workspace Automation"
     case githubDiscovery = "GitHub Discovery"
     case aiAssistant = "AI Repository Assistant"
+    case spacesWorkspace = "Spaces Workspace"
 
     public var id: String { rawValue }
 
@@ -241,6 +243,7 @@ public enum SourceControlSelection: String, CaseIterable, Identifiable, Codable 
         case .githubInspector: return "info.circle.fill"
         case .conflictResolver: return "arrow.triangle.merge"
         case .gists: return "doc.on.doc.fill"
+        case .spacesWorkspace: return "externaldrive.badge.checkmark"
         }
     }
 }
@@ -556,6 +559,16 @@ func buildSourceControlSidebarNodes() -> [SourceControlSidebarNode] {
     ]
     nodes.append(github)
 
+    let spaces = SourceControlSidebarNode(title: "SPACES (NATIVE SOURCE CONTROL)", isGroup: true)
+    spaces.children = [
+        SourceControlSidebarNode(title: "Spaces Workspace", icon: "externaldrive.badge.checkmark", selection: .spacesWorkspace),
+        SourceControlSidebarNode(title: "Changes", icon: "doc.badge.plus", selection: .changes),
+        SourceControlSidebarNode(title: "Branches", icon: "arrow.triangle.branch", selection: .branches),
+        SourceControlSidebarNode(title: "Commit History", icon: "clock.arrow.circlepath", selection: .commitHistory),
+        SourceControlSidebarNode(title: "Tags", icon: "tag.fill", selection: .tags)
+    ]
+    nodes.append(spaces)
+
     let intel = SourceControlSidebarNode(title: "REPOSITORY INTELLIGENCE", isGroup: true)
     intel.children = [
         SourceControlSidebarNode(title: "Intelligence", icon: "chart.bar.doc.horizontal", selection: .repositoryIntelligence),
@@ -594,8 +607,8 @@ struct SourceControlMainWrapper: View {
     @State private var conflictResolverFile: GitFileStatus?
 
     var isSourceControlOff: Bool {
-        let token = KeychainService.shared.get(forKey: KeychainService.githubToken) ?? ""
-        return token.isEmpty
+        guard Preferences.shared.sourceControlEnabled else { return true }
+        return false
     }
 
     var body: some View {
@@ -686,12 +699,13 @@ struct SourceControlMainWrapper: View {
                 case .gitBlame:
                     GitBlameViewer(gitViewModel: gitViewModel)
                 case .diffViewer:
-                    repositoryOrFallback { repository in
-                        UnifiedDiffView(repository: repository)
-                    }
+                    UnifiedDiffView(repository: gitRepository, projectDirectoryURL: project.directoryURL)
                 case .cli:
                     repositoryOrFallback { repository in
-                        GitCLIView(repository: repository)
+                        GitCLIView(repository: repository, aiCommandGenerator: { query in
+                            let prompt = "You are a Git CLI command assistant. The user wants to: \(query). Respond ONLY with the single exact git command, nothing else."
+                            return try await LLMService.shared.generateResponse(prompt: prompt, useContext: false)
+                        })
                     }
                 case .repositoryExplorer:
                     RepositoryExplorerView(gitViewModel: gitViewModel, project: project)
@@ -706,14 +720,12 @@ struct SourceControlMainWrapper: View {
                 case .githubInspector:
                     GitHubInspector(project: project, gitViewModel: gitViewModel)
                 case .conflictResolver:
-                    repositoryOrFallback { repository in
-                        ConflictResolverWorkspaceView(repository: repository) { path in
-                            if let file = gitViewModel.status?.files.first(where: { $0.path == path }) {
-                                conflictResolverFile = file
-                                showConflictResolver = true
-                            } else {
-                                NSWorkspace.shared.open(URL(fileURLWithPath: path))
-                            }
+                    ConflictResolverWorkspaceView(repository: gitRepository, projectDirectoryURL: project.directoryURL) { path in
+                        if let file = gitViewModel.status?.files.first(where: { $0.path == path }) {
+                            conflictResolverFile = file
+                            showConflictResolver = true
+                        } else {
+                            NSWorkspace.shared.open(URL(fileURLWithPath: path))
                         }
                     }
                 case .repositoryIntelligence:
@@ -746,6 +758,8 @@ struct SourceControlMainWrapper: View {
                     GitHubDiscoveryView()
                 case .aiAssistant:
                     AIRepositoryAssistantView()
+                case .spacesWorkspace:
+                    SpacesWorkspaceView(project: project)
                 }
             }
         }
@@ -791,6 +805,8 @@ private extension SourceControlMainWrapper {
     func repositoryOrFallback<Content: View>(@ViewBuilder content: (GitRepository) -> Content) -> some View {
         if let repository = gitRepository {
             content(repository)
+        } else if Preferences.shared.usesSpacesSourceControl || (try? Repository.open(at: project.directoryURL)) != nil {
+            SpacesWorkspaceView(project: project)
         } else {
             GitNotInstalledView()
         }

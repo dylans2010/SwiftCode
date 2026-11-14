@@ -4,20 +4,20 @@ import XCTest
 final class SDKRedactionTests: XCTestCase {
     func testRedactsDeveloperAPIKey() {
         let text = "failed with key sc_dev_live_abc123.def456"
-        let redacted = SDKLogRedaction.redactSecrets(text)
+        let redacted = SDKLogRedaction.redactSecrets(in: text)
         XCTAssertFalse(redacted.contains("sc_dev_live_"))
         XCTAssertTrue(redacted.contains("<redacted-api-key>"))
     }
 
     func testRedactsGitHubToken() {
-        let redacted = SDKLogRedaction.redactSecrets("token ghp_abcdefghij1234567890")
+        let redacted = SDKLogRedaction.redactSecrets(in: "token ghp_abcdefghij1234567890")
         XCTAssertFalse(redacted.contains("ghp_"))
         XCTAssertTrue(redacted.contains("<redacted-token>"))
     }
 
     func testRedactsPEMBlock() {
         let pem = "-----BEGIN " + "PRIVATE KEY-----\nMIIEvQIBADANBg==\n-----END " + "PRIVATE KEY-----"
-        XCTAssertEqual(SDKLogRedaction.redactSecrets(pem), "<redacted-pem>")
+        XCTAssertEqual(SDKLogRedaction.redactSecrets(in: pem), "<redacted-pem>")
     }
 
     func testSanitizeCollapsesPathsAndAddresses() {

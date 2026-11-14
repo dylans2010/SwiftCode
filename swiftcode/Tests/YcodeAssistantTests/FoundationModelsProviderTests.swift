@@ -37,6 +37,8 @@ import Testing
             Issue.record("expected send to fail without the framework")
         } catch let error as AssistantError {
             #expect(error.errorDescription?.contains("Apple Foundation Models") == true)
+        } catch {
+            Issue.record("unexpected error: \(error)")
         }
     }
 
@@ -47,6 +49,8 @@ import Testing
             Issue.record("expected send to fail on an empty request")
         } catch let error as AssistantError {
             #expect(error == .failed("There is no message to send."))
+        } catch {
+            Issue.record("unexpected error: \(error)")
         }
     }
 

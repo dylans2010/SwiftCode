@@ -52,7 +52,7 @@ import YcodeAssistant
     }
 
     @Test func virtualizationRegistryRealDiskScan() throws {
-        let registry = VirtualMachineRegistry.shared
+        let registry = KVMVirtualMachineRegistry.shared
         let dir = registry.directory
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         

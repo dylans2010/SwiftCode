@@ -514,7 +514,12 @@ final class JumpBar: NSView {
         return l
     }
 
-    @objc private func modeChosen(_ p: NSPopUpButton) { if let t = p.titleOfSelectedItem { onPickMode?(t) } }
+    @objc private func modeChosen(_ p: NSPopUpButton) {
+        guard let t = p.titleOfSelectedItem else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.onPickMode?(t)
+        }
+    }
     @objc private func relatedItemsClicked() { onRelatedItems?() }
     @objc func closeClicked() { onClose?() }
 
@@ -522,7 +527,7 @@ final class JumpBar: NSView {
         (stack.arrangedSubviews + issueStack.arrangedSubviews).compactMap { v -> String? in
             switch v {
             case let p as NSPopUpButton:
-                p.pullsDown ? (p.itemArray.first?.title.isEmpty == false ? p.itemArray.first!.title : (p.accessibilityLabel() ?? ""))
+                p.pullsDown ? (p.itemArray.first?.title.isEmpty == false ? (p.itemArray.first?.title ?? "") : (p.accessibilityLabel() ?? ""))
                     : (p.titleOfSelectedItem ?? "")
             case let b as NSButton: b.toolTip ?? b.title
             case let t as NSTextField: t.stringValue
@@ -584,7 +589,10 @@ final class JumpBar: NSView {
     @objc private func nextIssueClicked() { onNextIssue?() }
     @objc private func issuePicked(_ item: NSMenuItem) { onPickIssue?(item.tag) }
     @objc private func counterpartChosen(_ p: NSPopUpButton) {
-        if let path = p.selectedItem?.representedObject as? String { onPickCounterpart?(path) }
+        guard let path = p.selectedItem?.representedObject as? String else { return }
+        DispatchQueue.main.async { [weak self] in
+            self?.onPickCounterpart?(path)
+        }
     }
 
     func iconButton(_ symbol: String, _ name: String) -> NSButton {

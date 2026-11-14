@@ -69,12 +69,14 @@ import Testing
         #expect(SCCloudProvider.provisionFingerprint() != f)
     }
 
-    @Test func rateLimiterGatesAfterTheLimit() {
-        let limiter = SCCloudRateLimiter(limit: 2, window: 60)
+    @Test func rateLimiterGatesAfterTheLimit() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("sccloud-limiter-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let limiter = SCCloudRateLimiter(storeURL: dir.appendingPathComponent("usage.json"))
         #expect(limiter.checkGate().allowed)
-        limiter.recordRequest()
-        #expect(limiter.checkGate().remaining == 1)
-        limiter.recordRequest()
+        for _ in 0..<SCCloudConfiguration.dailyRequestLimit { limiter.recordRequest() }
         let gate = limiter.checkGate()
         #expect(!gate.allowed)
         #expect(gate.remaining == 0)
@@ -117,7 +119,7 @@ import Testing
         #expect(body["stream"] as? Bool == false)
         let messages = try #require(body["messages"] as? [[String: String]])
         #expect(messages.map { $0["role"]! } == ["system", "user"])
-        #expect(messages.first?["content"]?.string == "Be brief.")
+        #expect(messages.first?["content"] == "Be brief.")
     }
 
     @Test func legacyInternalIDIsUnwrappedOnSend() async throws {
@@ -162,8 +164,12 @@ import Testing
     }
 
     @Test func localQuotaBlocksBeforeNetwork() async throws {
-        let limiter = SCCloudRateLimiter(limit: 1, window: 60)
-        limiter.recordRequest()
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("sccloud-quota-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let limiter = SCCloudRateLimiter(storeURL: dir.appendingPathComponent("usage.json"))
+        for _ in 0..<SCCloudConfiguration.dailyRequestLimit { limiter.recordRequest() }
         let server = try LoopbackServer { _ in .json(["choices": [["message": ["role": "assistant", "content": "nope"]]]]) }
         await #expect(throws: AssistantError.self) {
             _ = try await collect(SCCloudProvider(baseURL: server.baseURL, fingerprint: Self.fakeFingerprint, limiter: limiter)

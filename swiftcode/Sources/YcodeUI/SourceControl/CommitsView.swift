@@ -619,6 +619,18 @@ struct CommitsView: View {
         }
         isLoadingChangedFiles = true
         changedFilesError = nil
+
+        if gitViewModel.usesSpaces {
+            do {
+                let stats = try await SpacesService.shared.getCommitFileStats(sha: sha, repositoryURL: repo)
+                changedFiles = stats.map { ChangedFileStat(path: $0.path, additions: $0.added, deletions: $0.removed) }
+            } catch {
+                changedFilesError = error.localizedDescription
+            }
+            isLoadingChangedFiles = false
+            return
+        }
+
         let gitPath = AppSettings.shared.gitPath.isEmpty ? "/usr/bin/git" : AppSettings.shared.gitPath
         let parent = commit.parentHashes.first
         let outcome = await Task.detached(priority: .userInitiated) { () -> (files: [ChangedFileStat], error: String?) in
@@ -656,6 +668,22 @@ struct CommitsView: View {
     private func executeRangeCompare() {
         isGeneratingDiff = true
         generatedDiffOutput = "Diffing \(compareStartSHA)..\(compareEndSHA)..."
+
+        if gitViewModel.usesSpaces {
+            Task {
+                guard let proj = gitViewModel.repositoryURL else {
+                    isGeneratingDiff = false
+                    return
+                }
+                do {
+                    generatedDiffOutput = try await SpacesService.shared.getDiffBetween(from: compareStartSHA, to: compareEndSHA, repositoryURL: proj)
+                } catch {
+                    generatedDiffOutput = "Error: \(error.localizedDescription)"
+                }
+                isGeneratingDiff = false
+            }
+            return
+        }
 
         Task {
             guard let proj = gitViewModel.repositoryURL else {

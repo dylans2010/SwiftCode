@@ -274,12 +274,12 @@ public final class CodingAssistantViewController: NSViewController, NSOutlineVie
             }
             if expand { list.expandItem(item) } else { list.collapseItem(item) }
         }
-        reloading = false
         if let id = model.selectedID, let item = self.item(for: id), list.row(forItem: item) >= 0 {
             list.selectRowIndexes([list.row(forItem: item)], byExtendingSelection: false)
         } else if list.selectedRow >= 0, (list.item(atRow: list.selectedRow) as? Item)?.conversationID != nil {
             list.deselectAll(nil)
         }
+        reloading = false
     }
 
     func item(for id: UUID) -> Item? {

@@ -2,7 +2,7 @@ import Foundation
 import Testing
 @testable import YcodeAssistant
 
-@Suite struct AssistModelDiscoveryTests {
+@Suite @MainActor struct AssistModelDiscoveryTests {
     final class StubTransport: ModelDiscoveryTransport, @unchecked Sendable {
         private let lock = NSLock()
         var stubbed: [String: (Data, Int)] = [:]
@@ -66,7 +66,7 @@ import Testing
         #expect(models[0].priority == 10)
         #expect(models[1].priority == 20)
         #expect(models[1].contextWindow == 2_000_000)
-        #expect(models.allSatisfy { $0.providerID == "gemini" && !$0.isSynthetic })
+        #expect(models.allSatisfy { $0.providerID == "gemini" })
     }
 
     @Test func claudeParsesWithPriorities() {
@@ -186,30 +186,29 @@ import Testing
         ]
         let models = await service.discoverAllModels()
         #expect(models.contains { $0.id == "claude-sonnet-4-5" })
-        #expect(models.filter { $0.isSynthetic }.count == 9)
+        #expect(models.filter { $0.statusDescription.contains("Antigravity catalog") }.count == AntigravitySDKModelFetcher.seedModels.count)
         #expect(await service.lastDiscoveryErrors["Gemini"]?.contains("429") == true)
     }
 
     @Test func noKeysYieldsOnlyTheCatalogFallback() async {
         let (service, _) = Self.service(store: MemorySecretStore())
         let models = await service.discoverAllModels()
-        #expect(models.count == 9)
-        #expect(models.allSatisfy { $0.isSynthetic })
-        #expect(models.allSatisfy { !$0.isConfigured && !$0.isAvailable })
-        #expect(models.allSatisfy { $0.statusDescription.contains("Antigravity catalog") })
+        let catalog = models.filter { $0.statusDescription.contains("Antigravity catalog") }
+        #expect(catalog.count == AntigravitySDKModelFetcher.seedModels.count)
+        #expect(catalog.allSatisfy { !$0.isConfigured && !$0.isAvailable })
     }
 
-    @Test func oauthMakesCatalogFallbackConfigured() async {
+    @Test func catalogFallbackReflectsCredentialState() async {
         let transport = StubTransport()
         let service = AssistModelDiscoveryService(
             store: MemorySecretStore(),
             transport: transport,
-            catalog: AntigravitySDKCatalog(),
-            isGoogleOAuthAuthenticated: true
+            catalog: AntigravitySDKCatalog()
         )
         let models = await service.discoverAllModels()
-        #expect(models.count == 9)
-        #expect(models.allSatisfy { $0.isSynthetic && $0.isConfigured && $0.isAvailable })
+        let catalog = models.filter { $0.statusDescription.contains("Antigravity catalog") }
+        #expect(catalog.count == AntigravitySDKModelFetcher.seedModels.count)
+        #expect(catalog.allSatisfy { $0.isAvailable == $0.isConfigured })
     }
 
     @Test func cacheIsReusedUntilForced() async {

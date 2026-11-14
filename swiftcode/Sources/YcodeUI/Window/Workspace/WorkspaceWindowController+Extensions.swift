@@ -51,7 +51,7 @@ extension WorkspaceWindowController {
     
     public func presentExtensionRun(extensionId: String) {
         let host = NSHostingController(rootView: ExtensionRunView(extensionId: extensionId))
-        if let presenter = contentViewController, window?.isVisible == true {
+        if let window = window, window.isVisible, window.attachedSheet == nil, let presenter = contentViewController {
             presenter.presentAsSheet(host)
         } else {
             ExtensionsWindowManager.shared.show()

@@ -791,28 +791,66 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
     func updateCounterparts() {
         let e = editor
         guard e !== editorArea.tab.assistant else { return }
-        let current = e.fileURL?.path ?? e.history.current
-        let list = current.map { Counterparts.of($0, in: workspaceFiles) } ?? []
-        let modeList = current.map { assistantMode.files(for: $0, in: workspaceFiles) } ?? []
-        if let a = editorArea.tab.assistant, let current {
+        guard !assistantExtra.isUpdating else { return }
+        guard let current = e.fileURL?.path ?? e.history.current else { return }
+        let a = editorArea.tab.assistant
+        if let a {
             let modes = AssistantMode.available(for: current)
-            if !modes.contains(assistantMode) { assistantMode = .counterparts }
+            if !modes.contains(assistantMode) && assistantExtra.customMode == nil { assistantMode = .counterparts }
             configureAssistantModes(a, current: current)
+            if assistantExtra.customMode != nil {
+                showCustomAssistantMode(a, current: current)
+                return
+            }
+        }
+        assistantExtra.task?.cancel()
+        let mode = assistantMode
+        let files = workspaceFiles
+        var dirtyBuffers: [String: String] = [:]
+        for ed in editorArea.allEditors where ed.isDirty {
+            if let path = ed.fileURL?.path {
+                dirtyBuffers[path] = ed.textView.string
+            }
+        }
+        let capturedBuffers = dirtyBuffers
+        assistantExtra.isUpdating = true
+        assistantExtra.task = Task { [weak self, weak a, weak e] in
+            defer {
+                Task { @MainActor [weak self] in
+                    self?.assistantExtra.isUpdating = false
+                }
+            }
+            let (list, modeList) = await Task.detached(priority: .userInitiated) {
+                let readFile: @Sendable (String) -> String? = { p in
+                    if let dirty = capturedBuffers[p] { return dirty }
+                    return try? String(contentsOfFile: p, encoding: .utf8)
+                }
+                let l = Counterparts.of(current, in: files, readFile: readFile)
+                let ml = mode.files(for: current, in: files, readFile: readFile)
+                return (l, ml)
+            }.value
+
+            guard !Task.isCancelled, let self else { return }
+
+            e?.setCounterparts(list.map { (URL(fileURLWithPath: $0).lastPathComponent, $0) }) { [weak self, weak e] path in
+                guard let self else { return }
+                if let a = self.editorArea.tab.assistant { self.open(path: path, line: nil, in: a) }
+                else if let e { self.open(path: path, line: nil, in: e) }
+            }
+
+            guard let a = self.editorArea.tab.assistant else { return }
+            guard self.assistantExtra.customMode == nil else { return }
+
             a.setCounterparts(modeList.map { (URL(fileURLWithPath: $0).lastPathComponent, $0) }) { [weak self, weak a] path in
                 if let self, let a { self.open(path: path, line: nil, in: a) }
             }
-        }
-        e.setCounterparts(list.map { (URL(fileURLWithPath: $0).lastPathComponent, $0) }) { [weak self, weak e] path in
-            guard let self else { return }
-            if let a = self.editorArea.tab.assistant { self.open(path: path, line: nil, in: a) } else if let e { self.open(path: path, line: nil, in: e) }
-        }
-        if let a = editorArea.tab.assistant, let current, assistantExtra.customMode != nil {
-            showCustomAssistantMode(a, current: current)
-        } else if let a = editorArea.tab.assistant, assistantMode != .manual {
-            if let first = (assistantMode == .counterparts ? list : modeList).first {
-                if a.fileURL?.path != first { open(path: first, line: nil, in: a) }
-            } else {
-                a.showText("No Editor", title: "No Editor")
+
+            if mode != .manual {
+                if let first = (mode == .counterparts ? list : modeList).first {
+                    if a.fileURL?.path != first { self.open(path: first, line: nil, in: a) }
+                } else {
+                    a.showText("No Editor", title: "No Editor")
+                }
             }
         }
     }

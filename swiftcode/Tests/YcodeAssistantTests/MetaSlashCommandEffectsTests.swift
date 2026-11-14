@@ -67,7 +67,7 @@ import Testing
         #expect(AssistantSettings().metaTurnTimeoutSeconds == 300)
     }
 
-    @Test func turnTimeoutClassifiesAsTimeout() {
+    @Test @MainActor func turnTimeoutClassifiesAsTimeout() {
         let error = MuseCodeCLIError.turnTimeout(300)
         #expect(error.localizedDescription.contains("timed out"))
         #expect(AssistModelRouter.classify(error: error) == .timeout)
@@ -109,7 +109,7 @@ import Testing
         return dir
     }
 
-    @Test func hangingTurnTimesOutAndStopsTheHost() async throws {
+    @Test @MainActor func hangingTurnTimesOutAndStopsTheHost() async throws {
         guard MetaAssistBridgeTests.pythonAvailable() else { return }
         let dir = try Self.installHangingMuse()
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -124,7 +124,11 @@ import Testing
                 turnTimeoutSeconds: 1, onEvent: { _ in })
             Issue.record("expected the hanging turn to time out")
         } catch let error as MuseCodeCLIError {
-            #expect(error == .turnTimeout(1))
+            guard case .turnTimeout(let seconds) = error else {
+                Issue.record("expected .turnTimeout, got \(error)")
+                return
+            }
+            #expect(seconds == 1)
             #expect(error.localizedDescription.contains("timed out after 1 seconds"))
         }
         #expect(Date().timeIntervalSince(started) < 30)
@@ -132,7 +136,7 @@ import Testing
         #expect(await executor.activeSessionID == nil)
     }
 
-    @Test func fastTurnStillCompletesWithTimeoutArmed() async throws {
+    @Test @MainActor func fastTurnStillCompletesWithTimeoutArmed() async throws {
         guard MetaAssistBridgeTests.pythonAvailable() else { return }
         let (dir, _, locator) = try MetaAssistBridgeTests.installFakeMuse()
         defer {

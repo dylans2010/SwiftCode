@@ -31,6 +31,8 @@ swiftcode/Samples/**/.swiftcode-build/
 swiftcode/Samples/**/xcuserdata/
 # SwiftPM scratch at the repository root
 /.build/
+build/
+frameworks/*/build/
 *.profraw
 
 # Flatpak build folders

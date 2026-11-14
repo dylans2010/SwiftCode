@@ -21,7 +21,7 @@ import Testing
         #expect(ProviderKind(rawValue: "openCode") == .openCode)
     }
 
-    @Test func sdkConfigForExplicitClaudeAndGPTNeverUsesGemini() async {
+    @Test @MainActor func sdkConfigForExplicitClaudeAndGPTNeverUsesGemini() async {
         let router = AssistModelRouter()
         let claude = await router.selectModelForSDK(
             preferredID: "anthropic/claude-sonnet-4-5",
@@ -44,30 +44,51 @@ import Testing
         #expect(!gpt.config.model.contains("gemini"))
     }
 
-    @Test func failoverNeverSilentlyFallsBackToGemini() async throws {
+    @Test @MainActor func failoverNeverSilentlyFallsBackToGemini() async throws {
         struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
         let candidates = [
             AssistCandidateModel(id: "anthropic/claude-sonnet-4-5", displayName: "Claude Sonnet",
-                                 provider: .openRouter, priority: 5, source: .provider),
+                                 provider: .ollama, priority: 5, source: .provider),
             AssistCandidateModel(id: "anthropic/claude-haiku-4-5", displayName: "Claude Haiku",
-                                 provider: .openRouter, priority: 5, source: .provider),
+                                 provider: .ollama, priority: 5, source: .provider),
             AssistCandidateModel(id: "google/gemini-2.5-pro", displayName: "Gemini Pro",
-                                 provider: .openRouter, contextWindow: 1_000_000, priority: 10,
+                                 provider: .ollama, contextWindow: 1_000_000, priority: 10,
                                  source: .provider),
         ]
+        let discovery = AssistModelDiscoveryService.shared
+        let settings = AppSettings.shared
+        let savedModels = discovery.discoveredModels
+        let savedDate = discovery.lastDiscoveryDate
+        let savedStrategy = settings.assistModelRoutingStrategy
+        let savedSwitch = settings.assistAutomaticallySwitchModels
+        let savedCloud = settings.useSwiftCodeCloudModel
+        discovery.discoveredModels = candidates.map { AssistAvailableModel(candidate: $0) }
+        discovery.lastDiscoveryDate = Date()
+        settings.assistModelRoutingStrategy = "app_models"
+        settings.assistAutomaticallySwitchModels = true
+        settings.useSwiftCodeCloudModel = false
+        defer {
+            discovery.discoveredModels = savedModels
+            discovery.lastDiscoveryDate = savedDate
+            settings.assistModelRoutingStrategy = savedStrategy
+            settings.assistAutomaticallySwitchModels = savedSwitch
+            settings.useSwiftCodeCloudModel = savedCloud
+        }
+        let router = AssistModelRouter()
         let failed = candidates[0]
-        let result = await AssistSDKModelSelection.handleTurnFailure(
+        let result = await router.handleTurnFailureWithKeyRotation(
             failedModel: failed, error: E(message: "boom"), completedTurnContent: "half the fix",
             executedToolsCount: 2, objective: "Fix the bug", automaticallySwitchModels: true,
-            eligibleCandidates: candidates)
+            eligibleCandidates: candidates, keyRotation: nil, alternativeKeysEnabled: false,
+            isGoogleOAuthAuthenticated: false)
         let next = try #require(result)
         #expect(next.nextModel.id == "anthropic/claude-haiku-4-5")
         #expect(!next.nextModel.id.contains("gemini"))
-        let event = await AssistModelRouter.shared.lastFailoverEvent
-        #expect(event?.failedModelID == failed.id)
+        let event = router.lastFailoverEvent
+        #expect(event?.failedModelID == failed.modelIdentifier)
         #expect(event?.failedModelID.contains("claude") == true)
         #expect(event?.newModelID == "anthropic/claude-haiku-4-5")
         #expect(event?.newModelID.contains("gemini") == false)
-        #expect(await AssistModelRouter.shared.failoverHistory.count >= 1)
+        #expect(router.failoverHistory.count >= 1)
     }
 }

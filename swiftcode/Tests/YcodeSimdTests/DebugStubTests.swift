@@ -2,7 +2,7 @@
 import Foundation
 import Testing
 import YcodeDebug
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 @Suite struct DebugStubTests {
     func control(lsc: UInt64, bas: UInt64, mask: UInt64 = 0) -> UInt64 { 1 | (0b10 << 1) | (lsc << 3) | (bas << 5) | (mask << 24) }

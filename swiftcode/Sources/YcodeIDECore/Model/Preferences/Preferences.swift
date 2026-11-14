@@ -320,6 +320,9 @@ public final class Preferences {
     }
 
     public var sourceControlEnabled: Bool { get { get("sourceControl", true) } set { set("sourceControl", newValue) } }
+    /// Source control system: "git" (default) or "spaces" (native Spaces engine).
+    public var sourceControlSystem: String { get { get("sourceControlSystem", "git") } set { set("sourceControlSystem", newValue) } }
+    public var usesSpacesSourceControl: Bool { sourceControlSystem == "spaces" }
 
     public var showRegisters: Bool { get { get("showRegisters", false) } set { set("showRegisters", newValue) } }
 

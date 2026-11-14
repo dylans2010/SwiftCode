@@ -154,7 +154,7 @@ import YcodeIDECore
         #expect(report.structured?["totalBytes"] == totalBytes(under: sample.url))
         #expect(report.resultText.hasPrefix("Directory sizes under .:"))
         #expect(report.resultText.contains("- Package.swift — 537 bytes (0.00 MB)"))
-        let lines = text.components(separatedBy: "\n")
+        let lines = report.resultText.components(separatedBy: "\n")
         let packageLine = try #require(lines.firstIndex { $0.hasPrefix("- Package.swift") })
         let sourcesLine = try #require(lines.firstIndex { $0.hasPrefix("- Sources/") })
         #expect(packageLine < sourcesLine)

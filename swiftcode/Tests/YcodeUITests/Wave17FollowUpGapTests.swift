@@ -87,22 +87,22 @@ struct Wave17FollowUpGapTests {
     }
 
     @Suite("Virtual machine registry")
-    struct VirtualMachineRegistryTests {
+    struct KVMVirtualMachineRegistryTests {
         @Test("An unknown id has no record")
         func unknownIDHasNoRecord() {
-            let registry = VirtualMachineRegistry()
+            let registry = KVMVirtualMachineRegistry()
             #expect(registry.record(id: UUID()) == nil)
         }
 
         @Test("Create, find, and delete round-trips through the store")
         func createFindDeleteRoundTrip() throws {
-            let registry = VirtualMachineRegistry()
+            let registry = KVMVirtualMachineRegistry()
             let record = try registry.create(name: "Wave17GapTest VM", osType: "macOS", version: "26.0")
             defer { try? registry.delete(id: record.id) }
             #expect(registry.record(id: record.id)?.name == "Wave17GapTest VM")
             #expect(registry.record(id: record.id)?.status == "Stopped")
 
-            let reloaded = VirtualMachineRegistry()
+            let reloaded = KVMVirtualMachineRegistry()
             #expect(reloaded.record(id: record.id)?.name == "Wave17GapTest VM")
 
             try registry.delete(id: record.id)
@@ -111,18 +111,18 @@ struct Wave17FollowUpGapTests {
 
         @Test("Creating with a missing disk image fails honestly")
         func createWithMissingImageFails() {
-            let registry = VirtualMachineRegistry()
-            #expect(throws: VirtualMachineRegistryError.self) {
+            let registry = KVMVirtualMachineRegistry()
+            #expect(throws: KVMVirtualMachineRegistryError.self) {
                 try registry.create(name: "Wave17GapTest VM", osType: "macOS", imagePath: "/definitely/not/a/vm.img")
             }
         }
     }
 
     @Suite("Virtual machine host probe")
-    struct VirtualMachineHostProbeTests {
+    struct KVMVirtualMachineHostProbeTests {
         @Test("The probe reports the host honestly")
         func probeReportsHost() {
-            let probe = VirtualMachineHostProbe.probe()
+            let probe = KVMVirtualMachineHostProbeRunner.probe()
             #if os(macOS)
             #expect(probe.hypervisorAvailable == false)
             #expect(probe.error?.contains("KVM") == true)
@@ -255,9 +255,9 @@ struct Wave17FollowUpGapTests {
                 try? FileManager.default.removeItem(at: folder)
             }
             let controller = ArtboardWindowController(workspaceFolder: folder)
-            #expect(controller.document.artboards.isEmpty)
+            #expect(controller.artboardDocument.artboards.isEmpty)
             let first = controller.addArtboard(name: "Home")
-            #expect(controller.document.artboards.count == 1)
+            #expect(controller.artboardDocument.artboards.count == 1)
             #expect(controller.activeArtboard?.id == first.id)
             #expect(first.rootNode.name == "Home Root")
             let second = controller.addArtboard(name: "Settings", deviceFrame: "iPad Pro")
@@ -265,10 +265,10 @@ struct Wave17FollowUpGapTests {
             controller.selectArtboard(id: first.id)
             #expect(controller.activeArtboard?.id == first.id)
             controller.deleteArtboard(id: second.id)
-            #expect(controller.document.artboards.count == 1)
+            #expect(controller.artboardDocument.artboards.count == 1)
             #expect(controller.activeArtboard?.id == first.id)
             controller.deleteArtboard(id: first.id)
-            #expect(controller.document.artboards.isEmpty)
+            #expect(controller.artboardDocument.artboards.isEmpty)
             #expect(controller.activeArtboard == nil)
         }
 

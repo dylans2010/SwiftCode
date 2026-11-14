@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import YcodeSimFeatures
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 @Suite(.serialized) struct SimSettingsTests {
     final class FakeAgent: SettingsAgentLink, @unchecked Sendable {

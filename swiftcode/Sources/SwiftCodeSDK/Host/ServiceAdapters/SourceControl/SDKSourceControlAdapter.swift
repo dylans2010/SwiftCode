@@ -10,6 +10,10 @@ public actor SDKSourceControlAdapter {
     private init() {}
 
     public func isRepository(projectRoot: String) async -> Bool {
+        let rootURL = URL(fileURLWithPath: projectRoot)
+        if await SpacesService.shared.isSpacesRepository(at: rootURL) {
+            return true
+        }
         guard let git = Self.resolveGitExecutable() else { return false }
         do {
             let result = try await runGit(git, arguments: ["rev-parse", "--is-inside-work-tree"], workingDirectory: projectRoot, timeout: 10)
@@ -21,6 +25,33 @@ public actor SDKSourceControlAdapter {
 
     public func getStatus(caller: SDKCallerIdentity) async throws -> SDKRepositoryStatus {
         try await SDKCapabilityBroker.authorize(.sourceControlRead, for: caller)
+        let rootURL = URL(fileURLWithPath: caller.projectRootPath)
+        if await SpacesService.shared.isSpacesRepository(at: rootURL) {
+            let snapshot = try await SpacesService.shared.getStatus(for: rootURL)
+            let files = snapshot.files.map { file -> SDKFileChangeSummary in
+                let status: SDKFileChangeStatus
+                switch file.status {
+                case .added: status = .added
+                case .deleted: status = .deleted
+                case .modified: status = .modified
+                case .renamed: status = .renamed
+                case .untracked: status = .untracked
+                case .conflicted: status = .conflicted
+                case .copied, .ignored: status = .modified
+                }
+                return SDKFileChangeSummary(path: file.path, status: status, isStaged: file.isStaged)
+            }
+            return SDKRepositoryStatus(
+                isRepository: true,
+                branchName: snapshot.branchName,
+                ahead: snapshot.ahead,
+                behind: snapshot.behind,
+                stagedCount: snapshot.stagedFiles.count,
+                unstagedCount: snapshot.unstagedFiles.count,
+                untrackedCount: snapshot.files.filter { $0.status == .untracked }.count,
+                files: files
+            )
+        }
         guard let git = Self.resolveGitExecutable() else {
             throw SDKError(code: .serviceUnavailable, message: "Git is not available on this machine.")
         }
@@ -44,6 +75,18 @@ public actor SDKSourceControlAdapter {
     public func getDiff(caller: SDKCallerIdentity, options: SDKDiffOptions) async throws -> SDKRepositoryDiff {
         try await SDKCapabilityBroker.authorize(.sourceControlRead, for: caller)
         try validateDiffOptions(options)
+        let rootURL = URL(fileURLWithPath: caller.projectRootPath)
+        if await SpacesService.shared.isSpacesRepository(at: rootURL) {
+            let hunks = try await SpacesService.shared.getDiff(repositoryURL: rootURL)
+            var filesByName: [String: [String]] = [:]
+            for hunk in hunks {
+                let p = hunk.filePath ?? "Changes"
+                filesByName[p, default: []].append(hunk.header + "\n" + hunk.lines.joined(separator: "\n"))
+            }
+            let fileDiffs = filesByName.map { SDKFileDiff(path: $0.key, hunks: $0.value) }
+            let totalBytes = fileDiffs.reduce(0) { $0 + $1.hunks.reduce(0) { $0 + $1.utf8.count } }
+            return SDKRepositoryDiff(files: fileDiffs, truncated: totalBytes > options.maxBytes, totalBytes: totalBytes, byteLimit: options.maxBytes)
+        }
         guard let git = Self.resolveGitExecutable() else {
             throw SDKError(code: .serviceUnavailable, message: "Git is not available on this machine.")
         }

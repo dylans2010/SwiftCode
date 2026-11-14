@@ -125,6 +125,8 @@ final class SwiftCodeSDKViewHostTests: XCTestCase {
         } catch let error as SDKError {
             XCTAssertEqual(error.code, .projectNotOpen)
             XCTAssertEqual(error.message, "No project is open.")
+        } catch {
+            XCTFail("Unexpected error type: \(error)")
         }
         XCTAssertEqual(actions.calls, ["openInterfaceBuilder"])
     }

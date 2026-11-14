@@ -71,7 +71,7 @@ import Testing
         #expect(config.executionMode == "api_key")
     }
 
-    @Test func selectModelForSDKCloudShortCircuit() async {
+    @Test @MainActor func selectModelForSDKCloudShortCircuit() async {
         let router = AssistModelRouter()
         let result = await router.selectModelForSDK(
             preferredID: "swiftcode-cloud",
@@ -86,7 +86,7 @@ import Testing
         #expect(result.config.provider == .scCloud)
     }
 
-    @Test func selectModelForSDKDefaultRestrictsToCatalog() async {
+    @Test @MainActor func selectModelForSDKDefaultRestrictsToCatalog() async {
         let router = AssistModelRouter()
         let candidates = [
             Self.candidate("gemini-3.8-flash"),
@@ -105,7 +105,7 @@ import Testing
         #expect(result.config.model == "gemini-3.8-flash-high")
     }
 
-    @Test func selectModelForSDKDefaultHonoursCatalogSelection() async {
+    @Test @MainActor func selectModelForSDKDefaultHonoursCatalogSelection() async {
         let router = AssistModelRouter()
         let candidates = [Self.candidate("gemini-3.8-flash")]
         let result = await router.selectModelForSDK(
@@ -120,7 +120,7 @@ import Testing
         #expect(result.model.displayName == "Gemini 3.8 Flash")
     }
 
-    @Test func selectModelForSDKDefaultHonoursExplicitThirdPartyID() async {
+    @Test @MainActor func selectModelForSDKDefaultHonoursExplicitThirdPartyID() async {
         let router = AssistModelRouter()
         let result = await router.selectModelForSDK(
             preferredID: "anthropic/claude-sonnet-4-5",
@@ -133,7 +133,7 @@ import Testing
         #expect(result.model.isSynthetic == true)
     }
 
-    @Test func selectModelForSDKAppModelsUsesDiscoveredSet() async {
+    @Test @MainActor func selectModelForSDKAppModelsUsesDiscoveredSet() async {
         let router = AssistModelRouter()
         let candidates = [
             Self.candidate("anthropic/claude-sonnet-4-5", priority: 5),
@@ -162,7 +162,7 @@ import Testing
         "AI" + "za" + tag + String(repeating: "7", count: 28)
     }
 
-    @Test func failoverRotatesKeyInsteadOfModel() async {
+    @Test @MainActor func failoverRotatesKeyInsteadOfModel() async {
         let router = AssistModelRouter()
         let rotation = GeminiKeyRotationManager(store: MemorySecretStore())
         _ = await rotation.importKeys(Self.fakeKey("alpha") + "," + Self.fakeKey("beta"))
@@ -188,7 +188,7 @@ import Testing
         #expect(await rotation.keys.first { $0.maskedValue.hasSuffix("7777") && $0.state == .rateLimited } != nil)
     }
 
-    @Test func failoverFallsThroughWhenNoOtherKey() async {
+    @Test @MainActor func failoverFallsThroughWhenNoOtherKey() async {
         let router = AssistModelRouter()
         let rotation = GeminiKeyRotationManager(store: MemorySecretStore())
         _ = await rotation.importKeys(Self.fakeKey("solo"))
@@ -208,7 +208,7 @@ import Testing
         #expect(result?.keyRotated == false)
     }
 
-    @Test func failoverReturnsNilWhenAutoSwitchOffAndNoRotation() async {
+    @Test @MainActor func failoverReturnsNilWhenAutoSwitchOffAndNoRotation() async {
         let router = AssistModelRouter()
         let failed = Self.candidate("google/gemini-2.5-flash")
         let next = Self.candidate("anthropic/claude-sonnet-4-5")
@@ -225,7 +225,7 @@ import Testing
         #expect(result == nil)
     }
 
-    @Test func failoverDoesNotRotateForNonRateLimitErrors() async {
+    @Test @MainActor func failoverDoesNotRotateForNonRateLimitErrors() async {
         let router = AssistModelRouter()
         let rotation = GeminiKeyRotationManager(store: MemorySecretStore())
         _ = await rotation.importKeys(Self.fakeKey("alpha") + "," + Self.fakeKey("beta"))

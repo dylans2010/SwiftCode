@@ -480,25 +480,25 @@ import YcodeAssistant
         #expect(SwiftCodeMCPHost.agenticNetworkRemovePackage(named: "b", from: &manifest) == false)
     }
 
-    static let gitHubIssueJSON = """
+    nonisolated static let gitHubIssueJSON = """
         {"number":42,"title":"Fix the crash","body":"Steps to reproduce","state":"open","user":{"login":"octocat"},"labels":[],"created_at":"2024-01-15T10:30:00Z","updated_at":"2024-01-16T10:30:00Z","html_url":"https://github.com/octocat/Hello-World/issues/42"}
         """
-    static let gitHubIssueListJSON = """
+    nonisolated static let gitHubIssueListJSON = """
         [{"number":1,"title":"Found a bug","body":"Steps to reproduce","state":"open","user":{"login":"octocat"},"labels":[{"name":"bug"}],"created_at":"2024-01-15T10:30:00Z","updated_at":"2024-01-16T10:30:00Z","html_url":"https://github.com/octocat/Hello-World/issues/1"},
          {"number":2,"title":"Fix the bug","body":null,"state":"open","user":{"login":"hubot"},"labels":[],"created_at":"2024-01-17T10:30:00Z","updated_at":"2024-01-17T10:30:00Z","html_url":"https://github.com/octocat/Hello-World/pull/2","pull_request":{"url":"https://api.github.com/repos/octocat/Hello-World/pulls/2"}}]
         """
-    static let gitHubPullRequestJSON = """
+    nonisolated static let gitHubPullRequestJSON = """
         {"number":2,"title":"Fix the bug","body":"This fixes it","state":"open","head":{"ref":"fix-bug","sha":"abc123"},"base":{"ref":"main","sha":"def456"},"user":{"login":"hubot"},"draft":false,"merged":false,"html_url":"https://github.com/octocat/Hello-World/pull/2","created_at":"2024-01-17T10:30:00Z","updated_at":"2024-01-18T10:30:00Z"}
         """
-    static let gitHubPullRequestFilesJSON = """
+    nonisolated static let gitHubPullRequestFilesJSON = """
         [{"filename":"Sources/main.swift","status":"modified","additions":10,"deletions":2,"changes":12},
          {"filename":"README.md","status":"modified","additions":1,"deletions":0,"changes":1}]
         """
-    static let gitHubPullRequestReviewsJSON = """
+    nonisolated static let gitHubPullRequestReviewsJSON = """
         [{"id":1,"user":{"login":"octocat"},"state":"APPROVED","body":"Looks good","submitted_at":"2024-01-18T10:30:00Z"},
          {"id":2,"user":{"login":"hubot"},"state":"COMMENTED","body":"One nit","submitted_at":"2024-01-18T11:00:00Z"}]
         """
-    static let gitHubSearchIssuesJSON = """
+    nonisolated static let gitHubSearchIssuesJSON = """
         {"total_count":1,"incomplete_results":false,"items":[{"number":1,"title":"Found a bug","body":"Steps","state":"open","user":{"login":"octocat"},"labels":[],"created_at":"2024-01-15T10:30:00Z","updated_at":"2024-01-16T10:30:00Z","html_url":"https://github.com/octocat/Hello-World/issues/1"}]}
         """
 

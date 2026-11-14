@@ -159,7 +159,7 @@ import YcodeIDECore
         #expect(parsed?["name"]?.string == "Greeter")
         #expect(parsed?["count"]?.int == 3)
         #expect(parsed?["enabled"]?.bool == true)
-        #expect(parsed?["ratio"]?.int == 1.5)
+        #expect(parsed?["ratio"]?.double == 1.5)
         #expect(parsed?["nothing"]?.isNull == true)
         #expect(parsed?["tags"]?[1] == "b")
         #expect(parsed?["items"]?[0] == "one")

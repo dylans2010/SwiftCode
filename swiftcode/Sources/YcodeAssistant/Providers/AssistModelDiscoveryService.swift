@@ -609,14 +609,9 @@ public final class AssistModelDiscoveryService: Sendable {
         guard let url = URL(string: "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000&key=\(trimmedKey)") else {
             return await fallbackAntigravityModels()
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.timeoutInterval = 2.0
-
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                let status = (response as? HTTPURLResponse).map { String($0.statusCode) } ?? "unknown"
+            let (data, status) = try await transport.get(url: url, headers: [:], timeout: 2.0)
+            guard status == 200 else {
                 logger.warning("Gemini model discovery returned HTTP \(status)")
                 lastDiscoveryErrors["Gemini"] = "Live discovery failed (HTTP \(status)). Showing bundled catalog."
                 return await fallbackAntigravityModels()
@@ -749,15 +744,12 @@ public final class AssistModelDiscoveryService: Sendable {
         guard let url = URL(string: "https://api.anthropic.com/v1/models?limit=1000") else {
             return []
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue(trimmedKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
-        request.timeoutInterval = 2.0
-
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            let (data, status) = try await transport.get(url: url, headers: [
+                "x-api-key": trimmedKey,
+                "anthropic-version": "2023-06-01",
+            ], timeout: 2.0)
+            guard status == 200 else {
                 return []
             }
 
@@ -819,14 +811,11 @@ public final class AssistModelDiscoveryService: Sendable {
         guard let url = URL(string: "https://api.openai.com/v1/models") else {
             return []
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(trimmedKey)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 2.0
-
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            let (data, status) = try await transport.get(url: url, headers: [
+                "Authorization": "Bearer \(trimmedKey)",
+            ], timeout: 2.0)
+            guard status == 200 else {
                 return []
             }
 
@@ -905,14 +894,11 @@ public final class AssistModelDiscoveryService: Sendable {
         guard let url = URL(string: "https://api.mistral.ai/v1/models") else {
             return []
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(trimmedKey)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 2.0
-
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            let (data, status) = try await transport.get(url: url, headers: [
+                "Authorization": "Bearer \(trimmedKey)",
+            ], timeout: 2.0)
+            guard status == 200 else {
                 return []
             }
 
@@ -973,14 +959,11 @@ public final class AssistModelDiscoveryService: Sendable {
         guard let url = URL(string: "https://dashscope.aliyuncs.com/compatible-mode/v1/models") else {
             return []
         }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("Bearer \(trimmedKey)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 2.0
-
         do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            let (data, status) = try await transport.get(url: url, headers: [
+                "Authorization": "Bearer \(trimmedKey)",
+            ], timeout: 2.0)
+            guard status == 200 else {
                 return []
             }
 
@@ -1163,23 +1146,20 @@ public final class AssistModelDiscoveryService: Sendable {
         }
 
         for url in candidateURLs {
-            var request = URLRequest(url: url)
-            request.httpMethod = "GET"
-            request.timeoutInterval = 2.0
-
+            var headers: [String: String] = [:]
             if !endpoint.isLocal && !endpoint.apiKey.isEmpty {
-                request.setValue("Bearer \(endpoint.apiKey)", forHTTPHeaderField: "Authorization")
+                headers["Authorization"] = "Bearer \(endpoint.apiKey)"
             }
             for header in endpoint.headers {
                 let k = header.key.trimmingCharacters(in: .whitespacesAndNewlines)
                 let v = header.value.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !k.isEmpty && !v.isEmpty {
-                    request.setValue(v, forHTTPHeaderField: k)
+                    headers[k] = v
                 }
             }
 
-            guard let (data, response) = try? await URLSession.shared.data(for: request),
-                  let httpResp = response as? HTTPURLResponse, httpResp.statusCode == 200 else {
+            guard let (data, status) = try? await transport.get(url: url, headers: headers, timeout: 2.0),
+                  status == 200 else {
                 continue
             }
 

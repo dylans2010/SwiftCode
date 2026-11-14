@@ -5,46 +5,329 @@ import YcodeDeviceModel
 import YcodeIDECore
 import YcodeSubprocess
 
+/// Supported platforms in the unified Device Hub workspace.
+public enum DeviceHubPlatform: String, Sendable, CaseIterable, Identifiable {
+    case iOS = "iOS"
+    case iPadOS = "iPadOS"
+    case watchOS = "watchOS"
+    case tvOS = "tvOS"
+    case visionOS = "visionOS"
+
+    public var id: String { rawValue }
+    public var title: String { rawValue }
+
+    public var subtitle: String {
+        switch self {
+        case .iOS: return "iPhone simulator runtimes & mobile environments"
+        case .iPadOS: return "iPad simulator runtimes & tablet multitasking presets"
+        case .watchOS: return "Apple Watch simulator runtimes & accessory environments"
+        case .tvOS: return "Apple TV simulator runtimes & living room display configurations"
+        case .visionOS: return "Apple Vision Pro spatial computing simulator runtimes"
+        }
+    }
+
+    public var iconName: String {
+        switch self {
+        case .iOS: return "iphone"
+        case .iPadOS: return "ipad"
+        case .watchOS: return "applewatch"
+        case .tvOS: return "appletv"
+        case .visionOS: return "visionpro"
+        }
+    }
+
+    /// The token passed to `xcodebuild -downloadPlatform <platform>`.
+    /// Note: iPadOS simulators are distributed within the iOS simulator runtime bundle.
+    public var downloadName: String {
+        switch self {
+        case .iOS, .iPadOS: return "iOS"
+        case .watchOS: return "watchOS"
+        case .tvOS: return "tvOS"
+        case .visionOS: return "visionOS"
+        }
+    }
+
+    public var simPlatform: SimPlatform {
+        switch self {
+        case .iOS, .iPadOS: return .iOS
+        case .watchOS: return .watchOS
+        case .tvOS: return .tvOS
+        case .visionOS: return .visionOS
+        }
+    }
+
+    public var productFamily: String {
+        switch self {
+        case .iOS: return "iPhone"
+        case .iPadOS: return "iPad"
+        case .watchOS: return "Apple Watch"
+        case .tvOS: return "Apple TV"
+        case .visionOS: return "Apple Vision"
+        }
+    }
+
+    public var typicalSize: String {
+        switch self {
+        case .iOS, .iPadOS: return "~8 GB"
+        case .watchOS, .tvOS: return "~4 GB"
+        case .visionOS: return "~7 GB"
+        }
+    }
+}
+
+/// Information about platform availability on the local machine.
+public struct PlatformStatus: Identifiable, Sendable {
+    public var id: String { platform.rawValue }
+    public let platform: DeviceHubPlatform
+    public var isInstalled: Bool
+    public var installedVersion: String?
+    public var installedBuild: String?
+    public var isDownloading: Bool = false
+    public var sdkDisplayName: String?
+
+    public init(
+        platform: DeviceHubPlatform,
+        isInstalled: Bool = false,
+        installedVersion: String? = nil,
+        installedBuild: String? = nil,
+        isDownloading: Bool = false,
+        sdkDisplayName: String? = nil
+    ) {
+        self.platform = platform
+        self.isInstalled = isInstalled
+        self.installedVersion = installedVersion
+        self.installedBuild = installedBuild
+        self.isDownloading = isDownloading
+        self.sdkDisplayName = sdkDisplayName
+    }
+}
+
+/// Represents an available simulator device type parsed from `simctl`.
+public struct DeviceTypeRecord: Identifiable, Sendable, Hashable {
+    public var id: String { identifier }
+    public let name: String
+    public let identifier: String
+    public let productFamily: String
+
+    public init(name: String, identifier: String, productFamily: String) {
+        self.name = name
+        self.identifier = identifier
+        self.productFamily = productFamily
+    }
+}
+
 @MainActor
 public final class DeviceHubSimulatorInstaller: ObservableObject {
     public static let shared = DeviceHubSimulatorInstaller()
 
     @Published public var isRunning = false
     @Published public var currentPlatform: SimPlatform = .iOS
+    @Published public var currentHubPlatform: DeviceHubPlatform = .iOS
     @Published public var progressFraction: Double?
     @Published public var progressStage: String = "Idle"
     @Published public var progressLine: String = ""
     @Published public var logLines: [String] = []
     @Published public var errorMessage: String?
     @Published public var availableDeviceTypes: [(name: String, identifier: String)] = []
+    @Published public var deviceTypeRecords: [DeviceTypeRecord] = []
     @Published public var availableRuntimes: [(name: String, identifier: String)] = []
+    @Published public var platformStatuses: [DeviceHubPlatform: PlatformStatus] = [:]
+    @Published public var isQueryingPlatforms: Bool = false
 
     private var currentRun: XcodebuildDownloadRun?
 
-    public init() {}
+    public init() {
+        for p in DeviceHubPlatform.allCases {
+            platformStatuses[p] = PlatformStatus(platform: p)
+        }
+    }
+
+    // MARK: - Querying Platforms & Devices
 
     public func fetchAvailableTypesAndRuntimes() {
         Task {
-            let types = await Self.fetchDeviceTypes()
+            let records = await Self.fetchDeviceTypeRecords()
             let runtimes = await Self.fetchRuntimes()
             await MainActor.run {
-                self.availableDeviceTypes = types
+                self.deviceTypeRecords = records
+                self.availableDeviceTypes = records.map { (name: $0.name, identifier: $0.identifier) }
                 self.availableRuntimes = runtimes
             }
         }
     }
 
-    public func installPlatform(_ platform: SimPlatform, onFinished: (@MainActor (Bool) -> Void)? = nil) {
+    public func queryPlatformStatuses() {
+        guard !isQueryingPlatforms else { return }
+        isQueryingPlatforms = true
+        Task {
+            let statuses = await Self.detectPlatformStatuses()
+            await MainActor.run {
+                for s in statuses {
+                    self.platformStatuses[s.platform] = s
+                }
+                self.isQueryingPlatforms = false
+            }
+        }
+    }
+
+    public static func detectPlatformStatuses() async -> [PlatformStatus] {
+        await Task.detached {
+            var results: [DeviceHubPlatform: PlatformStatus] = [:]
+            for p in DeviceHubPlatform.allCases {
+                results[p] = PlatformStatus(platform: p)
+            }
+
+            // 1. Inspect installed SDKs via xcodebuild
+            let (sdkStatus, sdkOutput) = await runXcrunProcess(["xcodebuild", "-showsdks", "-json"], timeout: 15)
+            if sdkStatus == 0, let data = sdkOutput.data(using: .utf8),
+               let list = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
+                for sdk in list {
+                    let canon = (sdk["canonicalName"] as? String ?? "").lowercased()
+                    let displayName = sdk["displayName"] as? String ?? ""
+                    let version = sdk["sdkVersion"] as? String
+                    let build = sdk["productBuildVersion"] as? String
+
+                    if canon.contains("iphonesimulator") {
+                        results[.iOS]?.isInstalled = true
+                        results[.iOS]?.installedVersion = version
+                        results[.iOS]?.installedBuild = build
+                        results[.iOS]?.sdkDisplayName = displayName
+
+                        results[.iPadOS]?.isInstalled = true
+                        results[.iPadOS]?.installedVersion = version
+                        results[.iPadOS]?.installedBuild = build
+                        results[.iPadOS]?.sdkDisplayName = displayName.replacingOccurrences(of: "iOS", with: "iPadOS")
+                    } else if canon.contains("watchsimulator") {
+                        results[.watchOS]?.isInstalled = true
+                        results[.watchOS]?.installedVersion = version
+                        results[.watchOS]?.installedBuild = build
+                        results[.watchOS]?.sdkDisplayName = displayName
+                    } else if canon.contains("appletvsimulator") {
+                        results[.tvOS]?.isInstalled = true
+                        results[.tvOS]?.installedVersion = version
+                        results[.tvOS]?.installedBuild = build
+                        results[.tvOS]?.sdkDisplayName = displayName
+                    } else if canon.contains("xrsimulator") {
+                        results[.visionOS]?.isInstalled = true
+                        results[.visionOS]?.installedVersion = version
+                        results[.visionOS]?.installedBuild = build
+                        results[.visionOS]?.sdkDisplayName = displayName
+                    }
+                }
+            }
+
+            // 2. Inspect runtimes via simctl
+            let (simStatus, simOutput) = await runXcrunProcess(["simctl", "list", "-j", "runtimes"], timeout: 15)
+            if simStatus == 0, let data = simOutput.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let runtimes = json["runtimes"] as? [[String: Any]] {
+                for r in runtimes {
+                    let name = (r["name"] as? String ?? "").lowercased()
+                    let id = (r["identifier"] as? String ?? "").lowercased()
+                    let ver = r["version"] as? String
+                    let build = r["buildversion"] as? String
+                    let avail = (r["isAvailable"] as? Bool) ?? true
+                    guard avail else { continue }
+
+                    func updateStatus(for platform: DeviceHubPlatform) {
+                        guard var item = results[platform] else { return }
+                        item.isInstalled = true
+                        if let ver { item.installedVersion = ver }
+                        if let build { item.installedBuild = build }
+                        results[platform] = item
+                    }
+
+                    if id.contains("ios") || name.contains("ios") {
+                        updateStatus(for: .iOS)
+                        updateStatus(for: .iPadOS)
+                    } else if id.contains("watchos") || name.contains("watch") {
+                        updateStatus(for: .watchOS)
+                    } else if id.contains("tvos") || name.contains("tv") {
+                        updateStatus(for: .tvOS)
+                    } else if id.contains("xros") || id.contains("vision") || name.contains("vision") {
+                        updateStatus(for: .visionOS)
+                    }
+                }
+            }
+
+            return Array(results.values)
+        }.value
+    }
+
+    public static func fetchDeviceTypeRecords() async -> [DeviceTypeRecord] {
+        await Task.detached {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+            p.arguments = ["simctl", "list", "-j", "devicetypes"]
+            let pipe = Pipe()
+            p.standardOutput = pipe
+            p.standardError = FileHandle.nullDevice
+            guard (try? p.run()) != nil else { return [] }
+            p.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let list = json["devicetypes"] as? [[String: Any]] else { return [] }
+            return list.compactMap { dict in
+                guard let name = dict["name"] as? String,
+                      let id = dict["identifier"] as? String else { return nil }
+                let family = (dict["productFamily"] as? String) ?? {
+                    if name.contains("iPad") { return "iPad" }
+                    if name.contains("iPhone") { return "iPhone" }
+                    if name.contains("Watch") { return "Apple Watch" }
+                    if name.contains("TV") { return "Apple TV" }
+                    if name.contains("Vision") { return "Apple Vision" }
+                    return "iPhone"
+                }()
+                return DeviceTypeRecord(name: name, identifier: id, productFamily: family)
+            }
+        }.value
+    }
+
+    public static func fetchDeviceTypes() async -> [(name: String, identifier: String)] {
+        let records = await fetchDeviceTypeRecords()
+        return records.map { ($0.name, $0.identifier) }
+    }
+
+    public static func fetchRuntimes() async -> [(name: String, identifier: String)] {
+        await Task.detached {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+            p.arguments = ["simctl", "list", "-j", "runtimes"]
+            let pipe = Pipe()
+            p.standardOutput = pipe
+            p.standardError = FileHandle.nullDevice
+            guard (try? p.run()) != nil else { return [] }
+            p.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let list = json["runtimes"] as? [[String: Any]] else { return [] }
+            return list.compactMap { dict in
+                guard let name = dict["name"] as? String,
+                      let id = dict["identifier"] as? String else { return nil }
+                return (name: name, identifier: id)
+            }
+        }.value
+    }
+
+    // MARK: - Installing Platforms
+
+    public func installPlatform(_ hubPlatform: DeviceHubPlatform, onFinished: (@MainActor (Bool) -> Void)? = nil) {
         guard !isRunning else { return }
         isRunning = true
-        currentPlatform = platform
+        currentHubPlatform = hubPlatform
+        currentPlatform = hubPlatform.simPlatform
         progressFraction = nil
-        progressStage = "Starting download for \(platform.title)…"
-        progressLine = "Initializing Xcode tools…"
+        progressStage = "Starting download for \(hubPlatform.title)…"
+        progressLine = "Initializing Xcode tooling for \(hubPlatform.title)…"
         logLines.removeAll()
         errorMessage = nil
 
-        let download = XcodebuildDownload(platform: platform)
+        if hubPlatform == .iPadOS {
+            logLines.append("Note: iPadOS simulators run on Apple's iOS Simulator Runtime bundle.")
+            logLines.append("Executing `xcodebuild -downloadPlatform iOS` with iPadOS tablet profile configurations…")
+        }
+
+        let download = XcodebuildDownload(platform: hubPlatform.simPlatform)
         let run = XcodebuildDownloadRun(download)
         currentRun = run
 
@@ -72,11 +355,12 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
                 self.currentRun = nil
                 switch outcome {
                 case .finished:
-                    self.progressStage = "Completed successfully!"
+                    self.progressStage = "\(hubPlatform.title) installation completed successfully!"
                     self.progressFraction = 1.0
+                    self.queryPlatformStatuses()
                     onFinished?(true)
                 case .cancelled:
-                    self.progressStage = "Cancelled"
+                    self.progressStage = "Installation cancelled"
                     onFinished?(false)
                 case .failed(let code, let err):
                     self.progressStage = "Failed (Exit code \(code))"
@@ -87,51 +371,132 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         }
     }
 
+    public func installPlatform(_ platform: SimPlatform, onFinished: (@MainActor (Bool) -> Void)? = nil) {
+        let hub = DeviceHubPlatform(rawValue: platform.rawValue) ?? .iOS
+        installPlatform(hub, onFinished: onFinished)
+    }
+
+    public func installAllPlatforms(onFinished: (@MainActor (Bool) -> Void)? = nil) {
+        guard !isRunning else { return }
+        isRunning = true
+        progressFraction = nil
+        progressStage = "Downloading all available Apple simulator platforms…"
+        progressLine = "Executing `xcodebuild -downloadAllPlatforms` via background process…"
+        logLines.removeAll()
+        errorMessage = nil
+
+        Task.detached {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcodebuild")
+            p.arguments = ["-downloadAllPlatforms"]
+            let pipe = Pipe()
+            p.standardOutput = pipe
+            p.standardError = pipe
+            p.standardInput = FileHandle.nullDevice
+
+            do {
+                try p.run()
+            } catch {
+                await MainActor.run {
+                    self.isRunning = false
+                    self.progressStage = "Failed to launch xcodebuild"
+                    self.errorMessage = error.localizedDescription
+                    onFinished?(false)
+                }
+                return
+            }
+
+            let fileHandle = pipe.fileHandleForReading
+            while p.isRunning {
+                let data = fileHandle.availableData
+                if !data.isEmpty {
+                    let chunk = String(decoding: data, as: UTF8.self)
+                    await MainActor.run {
+                        self.logLines.append(chunk)
+                        if let progress = XcodebuildProgress.parse(chunk) {
+                            if let f = progress.fraction { self.progressFraction = f }
+                            if let s = progress.stage { self.progressStage = s }
+                            self.progressLine = progress.line
+                        }
+                    }
+                }
+            }
+            p.waitUntilExit()
+
+            let exitCode = p.terminationStatus
+            await MainActor.run {
+                self.isRunning = false
+                if exitCode == 0 {
+                    self.progressStage = "All platforms downloaded and installed successfully!"
+                    self.progressFraction = 1.0
+                    self.queryPlatformStatuses()
+                    onFinished?(true)
+                } else {
+                    self.progressStage = "Download all platforms failed (Exit code \(exitCode))"
+                    onFinished?(false)
+                }
+            }
+        }
+    }
+
+    public func importRuntimeDiskImage(at url: URL, onFinished: (@MainActor (Bool) -> Void)? = nil) {
+        guard !isRunning else { return }
+        isRunning = true
+        progressFraction = nil
+        progressStage = "Importing Simulator Runtime Disk Image…"
+        progressLine = "Mounting and registering \(url.lastPathComponent)…"
+        logLines.removeAll()
+        errorMessage = nil
+
+        Task.detached {
+            let (status, output) = await Self.runXcrunProcess(["simctl", "runtime", "add", url.path], timeout: 180)
+            await MainActor.run {
+                self.isRunning = false
+                self.logLines.append(output)
+                if status == 0 {
+                    self.progressStage = "Runtime successfully imported and verified!"
+                    self.progressFraction = 1.0
+                    self.queryPlatformStatuses()
+                    onFinished?(true)
+                } else {
+                    self.progressStage = "Failed to import runtime (Exit code \(status))"
+                    self.errorMessage = output.isEmpty ? "simctl runtime add failed" : output
+                    onFinished?(false)
+                }
+            }
+        }
+    }
+
     public func cancel() {
         currentRun?.cancel()
     }
 
-    public static func fetchDeviceTypes() async -> [(name: String, identifier: String)] {
+    // MARK: - Process Execution Helper
+
+    @discardableResult
+    public static func runXcrunProcess(_ args: [String], timeout: TimeInterval = 60) async -> (status: Int32, output: String) {
         await Task.detached {
             let p = Process()
             p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-            p.arguments = ["simctl", "list", "-j", "devicetypes"]
+            p.arguments = args
             let pipe = Pipe()
             p.standardOutput = pipe
-            p.standardError = FileHandle.nullDevice
-            guard (try? p.run()) != nil else { return [] }
-            p.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let list = json["devicetypes"] as? [[String: Any]] else { return [] }
-            return list.compactMap { dict in
-                guard let name = dict["name"] as? String,
-                      let id = dict["identifier"] as? String else { return nil }
-                return (name: name, identifier: id)
+            p.standardError = pipe
+            p.standardInput = FileHandle.nullDevice
+            guard (try? p.run()) != nil else { return (-1, "Failed to launch xcrun \(args.first ?? "")") }
+            
+            let watchdog = Task {
+                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
+                if p.isRunning { p.terminate() }
             }
+            p.waitUntilExit()
+            watchdog.cancel()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            return (p.terminationStatus, String(decoding: data, as: UTF8.self))
         }.value
     }
 
-    public static func fetchRuntimes() async -> [(name: String, identifier: String)] {
-        await Task.detached {
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-            p.arguments = ["simctl", "list", "-j", "runtimes"]
-            let pipe = Pipe()
-            p.standardOutput = pipe
-            p.standardError = FileHandle.nullDevice
-            guard (try? p.run()) != nil else { return [] }
-            p.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let list = json["runtimes"] as? [[String: Any]] else { return [] }
-            return list.compactMap { dict in
-                guard let name = dict["name"] as? String,
-                      let id = dict["identifier"] as? String else { return nil }
-                return (name: name, identifier: id)
-            }
-        }.value
-    }
+    // MARK: - Simulator Management & Advanced Controls
 
     public static func createSimulator(name: String, deviceTypeID: String, runtimeID: String) async throws -> String {
         try await Task.detached {
@@ -152,12 +517,170 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
             return outStr
         }.value
     }
+
+    public static func cloneSimulator(sourceUDID: String, newName: String) async throws -> String {
+        let (status, output) = await runXcrunProcess(["simctl", "clone", sourceUDID, newName])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    public static func eraseSimulator(udid: String) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "erase", udid])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
+    }
+
+    public static func eraseAllSimulators() async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "erase", "all"])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
+    }
+
+    public static func bootSimulator(udid: String) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "boot", udid])
+        if status != 0 && !output.contains("current state: Booted") {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
+    }
+
+    public static func shutdownSimulator(udid: String) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "shutdown", udid])
+        if status != 0 && !output.contains("current state: Shutdown") {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
+    }
+
+    public static func shutdownAllSimulators() async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "shutdown", "all"])
+        if status != 0 && !output.isEmpty {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
+    }
+
+    // MARK: - Device Configuration Controls
+
+    public static func setAppearance(udid: String, appearance: String) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "ui", udid, "appearance", appearance])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output])
+        }
+    }
+
+    public static func setContentSize(udid: String, size: String) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "ui", udid, "content_size", size])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output])
+        }
+    }
+
+    public static func setIncreaseContrast(udid: String, enabled: Bool) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "ui", udid, "increase_contrast", enabled ? "enabled" : "disabled"])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output])
+        }
+    }
+
+    public static func setReduceMotion(udid: String, enabled: Bool) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.Accessibility", "ReduceMotionEnabled", "-int", enabled ? "1" : "0"])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output])
+        }
+    }
+
+    public static func setLanguageAndLocale(udid: String, languageCode: String, localeCode: String? = nil) async throws {
+        _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "Apple Global Domain", "AppleLanguages", "-array", languageCode])
+        if let localeCode {
+            _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "Apple Global Domain", "AppleLocale", localeCode])
+        }
+    }
+
+    // MARK: - Location Simulation
+
+    public static func setLocation(udid: String, latitude: Double, longitude: Double) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "location", udid, "set", "\(latitude),\(longitude)"])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output])
+        }
+    }
+
+    public static func runLocationScenario(udid: String, scenario: String) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "location", udid, "run", scenario])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output])
+        }
+    }
+
+    public static func clearLocation(udid: String) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "location", udid, "clear"])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output])
+        }
+    }
+
+    // MARK: - Status Bar, Battery & Network Simulation
+
+    public static func overrideStatusBar(
+        udid: String,
+        batteryLevel: Int? = nil,
+        batteryState: String? = nil,
+        dataNetwork: String? = nil,
+        wifiMode: String? = nil,
+        wifiBars: Int? = nil,
+        cellularMode: String? = nil,
+        cellularBars: Int? = nil,
+        operatorName: String? = nil,
+        time: String? = nil
+    ) async throws {
+        var args = ["simctl", "status_bar", udid, "override"]
+        if let time, !time.isEmpty { args += ["--time", time] }
+        if let batteryLevel { args += ["--batteryLevel", String(batteryLevel), "--batteryState", batteryState ?? "charged"] }
+        if let dataNetwork, !dataNetwork.isEmpty { args += ["--dataNetwork", dataNetwork] }
+        if let wifiBars { args += ["--wifiBars", String(wifiBars), "--wifiMode", wifiMode ?? "active"] }
+        if let cellularBars { args += ["--cellularBars", String(cellularBars), "--cellularMode", cellularMode ?? "active"] }
+        if let operatorName, !operatorName.isEmpty { args += ["--operatorName", operatorName] }
+
+        let (status, output) = await runXcrunProcess(args)
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output])
+        }
+    }
+
+    public static func clearStatusBar(udid: String) async throws {
+        let (status, output) = await runXcrunProcess(["simctl", "status_bar", udid, "clear"])
+        if status != 0 {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output])
+        }
+    }
+
+    // MARK: - iPadOS Specific Tablet Simulation
+
+    public static func setStageManager(udid: String, enabled: Bool) async throws {
+        _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.springboard", "SBStageManagerEnabled", "-bool", enabled ? "true" : "false"])
+        _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.springboard", "SBChamoisHideDock", "-bool", "false"])
+    }
+
+    public static func simulateApplePencilAction(udid: String, action: String) async throws {
+        switch action {
+        case "doubleTap":
+            _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.Pencil", "DoubleTapAction", "-int", "1"])
+        case "squeeze":
+            _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.Pencil", "SqueezeAction", "-int", "1"])
+        default:
+            break
+        }
+    }
 }
+
+// MARK: - Sheets & Views
 
 public struct InstallSimulatorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var installer = DeviceHubSimulatorInstaller.shared
-    @State private var selectedPlatform: SimPlatform = .iOS
+    @State private var selectedPlatform: DeviceHubPlatform = .iOS
     let onCompletion: (() -> Void)?
 
     public init(onCompletion: (() -> Void)? = nil) {
@@ -166,49 +689,105 @@ public struct InstallSimulatorSheet: View {
 
     public var body: some View {
         VStack(spacing: 16) {
+            // Header
             HStack(spacing: 12) {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.system(size: 32))
                     .foregroundStyle(.tint)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Install Simulator Runtimes")
+                    Text("Simulator Platform Runtimes")
                         .font(.headline)
-                    Text("Download and install official Apple Simulator platforms via Xcode tooling")
+                    Text("Download, install, and manage Apple Simulator platforms (iOS, iPadOS, watchOS, tvOS, visionOS)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
+                Button("Refresh") {
+                    installer.queryPlatformStatuses()
+                }
+                .buttonStyle(.borderless)
+                .disabled(installer.isRunning || installer.isQueryingPlatforms)
             }
             .padding(.horizontal)
             .padding(.top)
 
             Divider()
 
+            // Platform Selection
             VStack(alignment: .leading, spacing: 12) {
                 Text("Select Platform")
                     .font(.subheadline)
                     .fontWeight(.medium)
 
-                Picker("Platform", selection: $selectedPlatform) {
-                    ForEach(SimPlatform.allCases, id: \.self) { platform in
-                        Text(platform.title).tag(platform)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(DeviceHubPlatform.allCases) { platform in
+                            let status = installer.platformStatuses[platform]
+                            let isSelected = selectedPlatform == platform
+                            Button {
+                                selectedPlatform = platform
+                            } label: {
+                                VStack(spacing: 6) {
+                                    Image(systemName: platform.iconName)
+                                        .font(.system(size: 24))
+                                        .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                                    Text(platform.title)
+                                        .font(.subheadline)
+                                        .fontWeight(isSelected ? .bold : .medium)
+                                    if let s = status, s.isInstalled {
+                                        Text("Installed")
+                                            .font(.system(size: 9, weight: .semibold))
+                                            .foregroundStyle(.green)
+                                            .padding(.horizontal, 4)
+                                            .padding(.vertical, 1)
+                                            .background(Color.green.opacity(0.12))
+                                            .cornerRadius(4)
+                                    } else {
+                                        Text("Available (\(platform.typicalSize))")
+                                            .font(.system(size: 9))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .frame(width: 95, height: 85)
+                                .background(isSelected ? Color.accentColor.opacity(0.12) : Color(NSColor.controlBackgroundColor))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(isSelected ? Color.accentColor : Color.gray.opacity(0.2), lineWidth: isSelected ? 2 : 1)
+                                )
+                                .cornerRadius(8)
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(installer.isRunning)
+                        }
                     }
+                    .padding(.vertical, 2)
                 }
-                .pickerStyle(.segmented)
-                .disabled(installer.isRunning)
 
-                HStack(spacing: 8) {
+                // Description card
+                HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "info.circle")
                         .foregroundStyle(.secondary)
-                    Text("Invokes `xcodebuild -downloadPlatform \(selectedPlatform.downloadName)` directly with background Process execution.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .padding(.top, 1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(selectedPlatform.subtitle)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                        Text(selectedPlatform == .iPadOS
+                             ? "iPadOS simulator devices run on the iOS simulator runtime bundle using tablet profiles."
+                             : "Invokes `xcodebuild -downloadPlatform \(selectedPlatform.downloadName)` via background Process.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .padding(8)
+                .background(Color(NSColor.textBackgroundColor).opacity(0.5))
+                .cornerRadius(6)
             }
             .padding(.horizontal)
 
+            // Progress Section
             if installer.isRunning || installer.progressFraction != nil {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text(installer.progressStage)
                             .font(.subheadline)
@@ -249,6 +828,7 @@ public struct InstallSimulatorSheet: View {
                 .padding(.horizontal)
             }
 
+            // Output Logs
             if !installer.logLines.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Execution Output")
@@ -257,7 +837,7 @@ public struct InstallSimulatorSheet: View {
 
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 2) {
-                            ForEach(Array(installer.logLines.suffix(20).enumerated()), id: \.offset) { _, line in
+                            ForEach(Array(installer.logLines.suffix(30).enumerated()), id: \.offset) { _, line in
                                 Text(line)
                                     .font(.system(size: 10, design: .monospaced))
                                     .foregroundStyle(.secondary)
@@ -265,7 +845,7 @@ public struct InstallSimulatorSheet: View {
                         }
                         .padding(6)
                     }
-                    .frame(height: 100)
+                    .frame(height: 90)
                     .background(Color(NSColor.textBackgroundColor))
                     .cornerRadius(6)
                 }
@@ -274,6 +854,7 @@ public struct InstallSimulatorSheet: View {
 
             Spacer()
 
+            // Action Buttons
             HStack {
                 if installer.isRunning {
                     Button("Cancel") {
@@ -283,11 +864,25 @@ public struct InstallSimulatorSheet: View {
                     Button("Close") {
                         dismiss()
                     }
+
+                    Button("Import DMG…") {
+                        importDiskImage()
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(installer.isRunning)
+
+                    Button("Download All Platforms") {
+                        installer.installAllPlatforms { success in
+                            if success { onCompletion?() }
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(installer.isRunning)
                 }
 
                 Spacer()
 
-                Button(installer.isRunning ? "Downloading…" : "Install Runtime") {
+                Button(installer.isRunning ? "Downloading…" : "Install \(selectedPlatform.title)") {
                     installer.installPlatform(selectedPlatform) { success in
                         if success {
                             onCompletion?()
@@ -300,26 +895,68 @@ public struct InstallSimulatorSheet: View {
             .padding(.horizontal)
             .padding(.bottom)
         }
-        .frame(width: 520, height: 420)
+        .frame(width: 560, height: 460)
+        .onAppear {
+            installer.queryPlatformStatuses()
+        }
+    }
+
+    private func importDiskImage() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.init(filenameExtension: "dmg") ?? .data]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.message = "Select an Apple Simulator Runtime Disk Image (.dmg) to install"
+        if panel.runModal() == .OK, let url = panel.url {
+            installer.importRuntimeDiskImage(at: url) { success in
+                if success { onCompletion?() }
+            }
+        }
     }
 }
 
 public struct CreateSimulatorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var installer = DeviceHubSimulatorInstaller.shared
+    @State public var selectedPlatform: DeviceHubPlatform = .iOS
     @State private var simulatorName = ""
     @State private var selectedDeviceType = ""
     @State private var selectedRuntime = ""
     @State private var isCreating = false
     @State private var errorMessage: String?
+
+    // iPadOS tablet configuration presets
+    @State private var enableStageManager = true
+    @State private var enableApplePencil = true
+
     let onCreated: ((String) -> Void)?
 
-    public init(onCreated: ((String) -> Void)? = nil) {
+    public init(initialPlatform: DeviceHubPlatform = .iOS, onCreated: ((String) -> Void)? = nil) {
+        _selectedPlatform = State(initialValue: initialPlatform)
         self.onCreated = onCreated
     }
 
+    private var filteredDeviceTypes: [DeviceTypeRecord] {
+        installer.deviceTypeRecords.filter { record in
+            switch selectedPlatform {
+            case .iOS:
+                return record.productFamily == "iPhone" || record.name.contains("iPhone")
+            case .iPadOS:
+                return record.productFamily == "iPad" || record.name.contains("iPad")
+            case .watchOS:
+                return record.productFamily == "Apple Watch" || record.name.contains("Watch")
+            case .tvOS:
+                return record.productFamily == "Apple TV" || record.name.contains("TV")
+            case .visionOS:
+                return record.productFamily == "Apple Vision" || record.name.contains("Vision")
+            }
+        }
+    }
+
     public var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 14) {
+            // Header
             HStack(spacing: 12) {
                 Image(systemName: "plus.circle.fill")
                     .font(.system(size: 32))
@@ -327,7 +964,7 @@ public struct CreateSimulatorSheet: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Create Simulator")
                         .font(.headline)
-                    Text("Create a new simulator instance with Apple's `simctl` tool")
+                    Text("Configure and provision a new simulator instance with Apple's `simctl` tool")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -338,30 +975,52 @@ public struct CreateSimulatorSheet: View {
 
             Divider()
 
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 12) {
+                // Platform Segmented Control
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Platform")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    Picker("Platform", selection: $selectedPlatform) {
+                        ForEach(DeviceHubPlatform.allCases) { p in
+                            Text(p.title).tag(p)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: selectedPlatform) { _ in
+                        updateSelectionForPlatform()
+                    }
+                }
+
+                // Simulator Name
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Simulator Name")
                         .font(.subheadline)
                         .fontWeight(.medium)
-                    TextField("e.g. iPhone 17 Pro Max (Development)", text: $simulatorName)
+                    TextField("Simulator Name", text: $simulatorName)
                         .textFieldStyle(.roundedBorder)
                 }
 
+                // Device Type
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Device Type")
                         .font(.subheadline)
                         .fontWeight(.medium)
                     Picker("", selection: $selectedDeviceType) {
-                        if installer.availableDeviceTypes.isEmpty {
+                        if filteredDeviceTypes.isEmpty {
                             Text("Loading device types…").tag("")
                         }
-                        ForEach(installer.availableDeviceTypes, id: \.identifier) { dt in
+                        ForEach(filteredDeviceTypes) { dt in
                             Text(dt.name).tag(dt.identifier)
                         }
                     }
                     .pickerStyle(.menu)
+                    .onChange(of: selectedDeviceType) { _ in
+                        updateDefaultName()
+                    }
                 }
 
+                // Runtime
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Runtime")
                         .font(.subheadline)
@@ -377,6 +1036,26 @@ public struct CreateSimulatorSheet: View {
                     .pickerStyle(.menu)
                 }
 
+                // Tablet Specific Options
+                if selectedPlatform == .iPadOS {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("iPadOS Tablet Features")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.secondary)
+
+                        HStack(spacing: 16) {
+                            Toggle("Enable Stage Manager", isOn: $enableStageManager)
+                                .font(.caption)
+                            Toggle("Enable Apple Pencil Simulation", isOn: $enableApplePencil)
+                                .font(.caption)
+                        }
+                    }
+                    .padding(8)
+                    .background(Color(NSColor.textBackgroundColor).opacity(0.5))
+                    .cornerRadius(6)
+                }
+
                 if let err = errorMessage {
                     Text(err)
                         .font(.caption)
@@ -387,6 +1066,7 @@ public struct CreateSimulatorSheet: View {
 
             Spacer()
 
+            // Footer
             HStack {
                 Button("Cancel") {
                     dismiss()
@@ -403,17 +1083,30 @@ public struct CreateSimulatorSheet: View {
             .padding(.horizontal)
             .padding(.bottom)
         }
-        .frame(width: 480, height: 350)
+        .frame(width: 500, height: selectedPlatform == .iPadOS ? 430 : 380)
         .onAppear {
             installer.fetchAvailableTypesAndRuntimes()
-            if let firstType = installer.availableDeviceTypes.first?.identifier {
-                selectedDeviceType = firstType
-            }
+            updateSelectionForPlatform()
         }
-        .onChange(of: installer.availableDeviceTypes.count) { _ in
-            if selectedDeviceType.isEmpty, let first = installer.availableDeviceTypes.first?.identifier {
-                selectedDeviceType = first
-            }
+        .onChange(of: installer.deviceTypeRecords.count) { _ in
+            updateSelectionForPlatform()
+        }
+    }
+
+    private func updateSelectionForPlatform() {
+        if let first = filteredDeviceTypes.first?.identifier {
+            selectedDeviceType = first
+        }
+        updateDefaultName()
+    }
+
+    private func updateDefaultName() {
+        if let chosen = filteredDeviceTypes.first(where: { $0.identifier == selectedDeviceType }) {
+            simulatorName = "\(chosen.name) (\(selectedPlatform.title))"
+        } else if selectedPlatform == .iPadOS {
+            simulatorName = "iPad Pro 13-inch (iPadOS)"
+        } else {
+            simulatorName = "iPhone 16 Pro (iOS)"
         }
     }
 
@@ -422,12 +1115,23 @@ public struct CreateSimulatorSheet: View {
         isCreating = true
         errorMessage = nil
 
-        let typeID = selectedDeviceType.isEmpty ? (installer.availableDeviceTypes.first?.identifier ?? "iPhone 17") : selectedDeviceType
+        let typeID = selectedDeviceType.isEmpty ? (filteredDeviceTypes.first?.identifier ?? "iPhone 16 Pro") : selectedDeviceType
         let runID = selectedRuntime.isEmpty ? (installer.availableRuntimes.first?.identifier ?? "iOS") : selectedRuntime
 
         Task {
             do {
                 let udid = try await DeviceHubSimulatorInstaller.createSimulator(name: simulatorName, deviceTypeID: typeID, runtimeID: runID)
+
+                // Apply iPadOS configurations if chosen
+                if selectedPlatform == .iPadOS {
+                    if enableStageManager {
+                        try? await DeviceHubSimulatorInstaller.setStageManager(udid: udid, enabled: true)
+                    }
+                    if enableApplePencil {
+                        try? await DeviceHubSimulatorInstaller.simulateApplePencilAction(udid: udid, action: "doubleTap")
+                    }
+                }
+
                 await MainActor.run {
                     self.isCreating = false
                     self.onCreated?(udid)
@@ -436,6 +1140,108 @@ public struct CreateSimulatorSheet: View {
             } catch {
                 await MainActor.run {
                     self.isCreating = false
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
+}
+
+/// Sheet for cloning an existing simulator device.
+public struct CloneSimulatorSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let sourceUDID: String
+    let sourceName: String
+    @State private var cloneName: String
+    @State private var isCloning = false
+    @State private var errorMessage: String?
+    let onCloned: ((String) -> Void)?
+
+    public init(sourceUDID: String, sourceName: String, onCloned: ((String) -> Void)? = nil) {
+        self.sourceUDID = sourceUDID
+        self.sourceName = sourceName
+        _cloneName = State(initialValue: "\(sourceName) (Clone)")
+        self.onCloned = onCloned
+    }
+
+    public var body: some View {
+        VStack(spacing: 16) {
+            HStack(spacing: 12) {
+                Image(systemName: "square.on.square.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(.tint)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Clone Simulator")
+                        .font(.headline)
+                    Text("Duplicate “\(sourceName)” with all installed data and settings via `simctl clone`")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.top)
+
+            Divider()
+
+            VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("New Simulator Name")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    TextField("Name", text: $cloneName)
+                        .textFieldStyle(.roundedBorder)
+                }
+
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(.secondary)
+                    Text("Cloning duplicates application sandbox containers, cookies, and UserDefaults preferences.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                if let err = errorMessage {
+                    Text(err)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+            .padding(.horizontal)
+
+            Spacer()
+
+            HStack {
+                Button("Cancel") { dismiss() }
+                Spacer()
+                Button(isCloning ? "Cloning…" : "Clone Simulator") {
+                    clone()
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(cloneName.trimmingCharacters(in: .whitespaces).isEmpty || isCloning)
+            }
+            .padding(.horizontal)
+            .padding(.bottom)
+        }
+        .frame(width: 460, height: 260)
+    }
+
+    private func clone() {
+        guard !cloneName.isEmpty else { return }
+        isCloning = true
+        errorMessage = nil
+
+        Task {
+            do {
+                let newUDID = try await DeviceHubSimulatorInstaller.cloneSimulator(sourceUDID: sourceUDID, newName: cloneName)
+                await MainActor.run {
+                    self.isCloning = false
+                    self.onCloned?(newUDID)
+                    self.dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    self.isCloning = false
                     self.errorMessage = error.localizedDescription
                 }
             }

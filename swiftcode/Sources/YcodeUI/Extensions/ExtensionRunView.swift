@@ -168,6 +168,11 @@ public struct ExtV2RestrictedWebView: NSViewRepresentable {
     public func updateNSView(_ nsView: WKWebView, context: Context) {
     }
 
+    public static func dismantleNSView(_ nsView: WKWebView, coordinator: Coordinator) {
+        nsView.configuration.userContentController.removeScriptMessageHandler(forName: "swiftcode")
+        nsView.stopLoading()
+    }
+
     public final class Coordinator: NSObject, WKScriptMessageHandler {
         private let extensionId: String
 

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/dylans2010/SwiftCode-Mac/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dylans2010/SwiftCode-Mac/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/dylans2010/SwiftCode/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/dylans2010/SwiftCode/actions/workflows/ci.yml/badge.svg?branch=main"></a>
   <a href="https://github.com/dylans2010/SwiftCode-Mac/releases"><img alt="Latest release" src="https://img.shields.io/github/v/release/MarcoDotIO/SwiftCode?include_prereleases&label=release"></a>
   <a href="LICENSE"><img alt="MIT licence" src="https://img.shields.io/badge/licence-MIT-blue"></a>
   <img alt="Platforms: macOS, Linux x86-64 and arm64" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20x86--64%20%7C%20Linux%20arm64-lightgrey">

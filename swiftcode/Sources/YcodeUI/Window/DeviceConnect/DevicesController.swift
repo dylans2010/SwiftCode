@@ -1159,9 +1159,25 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         window.beginSheet(sheetWindow)
     }
 
+    @objc public func newIPhoneChosen(_ sender: Any?) {
+        showCreateSimulatorSheet(initialPlatform: .iOS)
+    }
+
+    @objc public func newIPadChosen(_ sender: Any?) {
+        showCreateSimulatorSheet(initialPlatform: .iPadOS)
+    }
+
+    @objc public func newTVChosen(_ sender: Any?) {
+        showCreateSimulatorSheet(initialPlatform: .tvOS)
+    }
+
     @objc public func showCreateSimulatorSheet(_ sender: Any? = nil) {
+        showCreateSimulatorSheet(initialPlatform: .iOS)
+    }
+
+    public func showCreateSimulatorSheet(initialPlatform: DeviceHubPlatform) {
         guard let window = view.window else { return }
-        let sheet = CreateSimulatorSheet { [weak self] udid in
+        let sheet = CreateSimulatorSheet(initialPlatform: initialPlatform) { [weak self] udid in
             self?.refreshLocalRows()
             Task { @MainActor [weak self] in
                 try? await Task.sleep(nanoseconds: 500_000_000)
@@ -1173,6 +1189,232 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         sheetWindow.styleMask = [.titled, .closable]
         sheetWindow.title = "Create Simulator"
         window.beginSheet(sheetWindow)
+    }
+
+    @objc public func showCloneSimulatorSheet(_ sender: Any? = nil) {
+        guard let window = view.window, let r = selected else { return }
+        let sheet = CloneSimulatorSheet(sourceUDID: r.identifier, sourceName: r.name) { [weak self] newUDID in
+            self?.canvas.showBanner("Cloned \(r.name)", seconds: 3)
+            self?.refreshLocalRows()
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                self?.refreshLocalRows()
+            }
+        }
+        let hosting = NSHostingController(rootView: sheet)
+        let sheetWindow = NSWindow(contentViewController: hosting)
+        sheetWindow.styleMask = [.titled, .closable]
+        sheetWindow.title = "Clone Simulator"
+        window.beginSheet(sheetWindow)
+    }
+
+    @objc public func quickBootAllSimulators(_ sender: Any? = nil) {
+        let targets = rows.filter { isLocalSimulator($0) && $0.state != "Booted" }
+        canvas.showBanner("Booting \(targets.count) simulators…", seconds: 2)
+        Task { [weak self] in
+            for target in targets {
+                _ = try? await DeviceHubSimulatorInstaller.bootSimulator(udid: target.identifier)
+            }
+            await MainActor.run {
+                self?.refreshLocalRows()
+                self?.canvas.showBanner("Simulators booted", seconds: 2)
+            }
+        }
+    }
+
+    @objc public func shutDownAllSimulators(_ sender: Any? = nil) {
+        canvas.showBanner("Shutting down all simulators…", seconds: 2)
+        Task { [weak self] in
+            _ = try? await DeviceHubSimulatorInstaller.shutdownAllSimulators()
+            await MainActor.run {
+                self?.refreshLocalRows()
+                self?.canvas.showBanner("All simulators shut down", seconds: 2)
+            }
+        }
+    }
+
+    @objc public func eraseAllSimulatorsChosen(_ sender: Any? = nil) {
+        let alert = NSAlert()
+        alert.messageText = "Erase All Simulators?"
+        alert.informativeText = "This will erase all content and settings on every local simulator. This action cannot be undone."
+        alert.addButton(withTitle: "Erase All")
+        alert.addButton(withTitle: "Cancel")
+        alert.alertStyle = .critical
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        canvas.showBanner("Erasing all simulators…", seconds: 3)
+        Task { [weak self] in
+            _ = try? await DeviceHubSimulatorInstaller.eraseAllSimulators()
+            await MainActor.run {
+                self?.refreshLocalRows()
+                self?.canvas.showBanner("All simulators erased", seconds: 3)
+            }
+        }
+    }
+
+    @objc public func cloneSelectedSimulator(_ sender: Any? = nil) {
+        showCloneSimulatorSheet(sender)
+    }
+
+    // MARK: - Location Simulation Actions
+
+    @objc public func simulateLocationApplePark(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 37.3346, longitude: -122.0090)
+            await MainActor.run { self?.canvas.showBanner("Location: Apple Park", seconds: 2) }
+        }
+    }
+
+    @objc public func simulateLocationCityRun(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "City Run")
+            await MainActor.run { self?.canvas.showBanner("Location Scenario: City Run", seconds: 2) }
+        }
+    }
+
+    @objc public func simulateLocationFreewayDrive(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "Freeway Drive")
+            await MainActor.run { self?.canvas.showBanner("Location Scenario: Freeway Drive", seconds: 2) }
+        }
+    }
+
+    @objc public func simulateLocationCustom(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        guard let coord = Self.askCustomCoordinates() else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: coord.latitude, longitude: coord.longitude)
+            await MainActor.run { self?.canvas.showBanner("Location: \(coord)", seconds: 2) }
+        }
+    }
+
+    @objc public func clearSimulatedLocation(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.clearLocation(udid: r.identifier)
+            await MainActor.run { self?.canvas.showBanner("Location simulation cleared", seconds: 2) }
+        }
+    }
+
+    // MARK: - Appearance & Accessibility Actions
+
+    @objc public func setSimulatorAppearanceLight(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: "light")
+            await MainActor.run { self?.canvas.showBanner("Appearance: Light", seconds: 2) }
+        }
+    }
+
+    @objc public func setSimulatorAppearanceDark(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: "dark")
+            await MainActor.run { self?.canvas.showBanner("Appearance: Dark", seconds: 2) }
+        }
+    }
+
+    @objc public func toggleSimulatorIncreaseContrast(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setIncreaseContrast(udid: r.identifier, enabled: true)
+            await MainActor.run { self?.canvas.showBanner("Increase Contrast: Enabled", seconds: 2) }
+        }
+    }
+
+    @objc public func toggleSimulatorReduceMotion(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setReduceMotion(udid: r.identifier, enabled: true)
+            await MainActor.run { self?.canvas.showBanner("Reduce Motion: Enabled", seconds: 2) }
+        }
+    }
+
+    // MARK: - Battery & Network Simulation Actions
+
+    @objc public func setSimulatorBattery100(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: 100, batteryState: "charged")
+            await MainActor.run { self?.canvas.showBanner("Battery: 100% (Charged)", seconds: 2) }
+        }
+    }
+
+    @objc public func setSimulatorBattery50(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: 50, batteryState: "discharging")
+            await MainActor.run { self?.canvas.showBanner("Battery: 50% (Discharging)", seconds: 2) }
+        }
+    }
+
+    @objc public func setSimulatorBattery20(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: 20, batteryState: "discharging")
+            await MainActor.run { self?.canvas.showBanner("Battery: 20% (Low Power)", seconds: 2) }
+        }
+    }
+
+    @objc public func setSimulatorNetwork5G(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: "5g", cellularMode: "active", cellularBars: 4, operatorName: "5G Ultra")
+            await MainActor.run { self?.canvas.showBanner("Network: 5G Active", seconds: 2) }
+        }
+    }
+
+    @objc public func setSimulatorNetworkWiFi(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: "wifi", wifiMode: "active", wifiBars: 3, operatorName: "Wi-Fi")
+            await MainActor.run { self?.canvas.showBanner("Network: Wi-Fi Active", seconds: 2) }
+        }
+    }
+
+    @objc public func setSimulatorNetworkOffline(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: "hide", wifiMode: "searching", wifiBars: 0, cellularMode: "searching", cellularBars: 0)
+            await MainActor.run { self?.canvas.showBanner("Network: Offline / Searching", seconds: 2) }
+        }
+    }
+
+    @objc public func clearSimulatorNetworkOverrides(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.clearStatusBar(udid: r.identifier)
+            await MainActor.run { self?.canvas.showBanner("Status bar overrides cleared", seconds: 2) }
+        }
+    }
+
+    // MARK: - iPadOS Specific Actions
+
+    @objc public func toggleStageManagerChosen(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setStageManager(udid: r.identifier, enabled: true)
+            await MainActor.run { self?.canvas.showBanner("Stage Manager toggled", seconds: 2) }
+        }
+    }
+
+    @objc public func simulatePencilDoubleTapChosen(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.simulateApplePencilAction(udid: r.identifier, action: "doubleTap")
+            await MainActor.run { self?.canvas.showBanner("Apple Pencil: Double-Tap Simulated", seconds: 2) }
+        }
+    }
+
+    @objc public func simulatePencilSqueezeChosen(_ sender: Any? = nil) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.simulateApplePencilAction(udid: r.identifier, action: "squeeze")
+            await MainActor.run { self?.canvas.showBanner("Apple Pencil: Squeeze Simulated", seconds: 2) }
+        }
     }
 
     func performWithoutDisplay(_ c: DeviceCommand) -> Bool {

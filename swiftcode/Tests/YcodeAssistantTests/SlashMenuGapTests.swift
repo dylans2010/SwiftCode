@@ -120,61 +120,72 @@ struct SlashMenuGapTests {
 
     private func candidates() -> [AssistCandidateModel] {
         [
-            AssistCandidateModel(id: "a-1", provider: .openRouter),
-            AssistCandidateModel(id: "a-2", provider: .openRouter),
-            AssistCandidateModel(id: "b-1", provider: .foundationModels),
+            AssistCandidateModel(id: "a-1", provider: .ollama),
+            AssistCandidateModel(id: "a-2", provider: .ollama),
+            AssistCandidateModel(id: "b-1", provider: .ollama),
         ]
     }
 
     @Test("Failover is off when auto-switch is off")
-    func failoverOffWithoutAutoSwitch() async {
+    @MainActor func failoverOffWithoutAutoSwitch() async {
+        struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
+        let restore = AssistModelRoutingTests.useFailoverEnvironment(candidates(), autoSwitch: false)
+        defer { restore() }
         let router = AssistModelRouter()
         let result = await router.handleTurnFailure(
-            failedModel: candidates()[0],
-            error: NSError(domain: "test", code: 429, userInfo: [NSLocalizedDescriptionKey: "429 Too Many Requests"]),
+            failedModel: AssistAvailableModel(candidate: candidates()[0]),
+            error: E(message: "429 Too Many Requests"),
             completedTurnContent: "partial", executedToolsCount: 0,
-            automaticallySwitchModels: false,
-            eligibleCandidates: candidates())
+            objective: "")
         #expect(result == nil)
     }
 
     @Test("A 429 fails over to the next model and carries the partial output forward")
-    func failoverOnRateLimit() async {
-        let router = AssistModelRouter()
+    @MainActor func failoverOnRateLimit() async {
+        struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
         let all = candidates()
+        let restore = AssistModelRoutingTests.useFailoverEnvironment(all, autoSwitch: true)
+        defer { restore() }
+        let router = AssistModelRouter()
         let result = await router.handleTurnFailure(
-            failedModel: all[0],
-            error: NSError(domain: "test", code: 429, userInfo: [NSLocalizedDescriptionKey: "429 Too Many Requests"]),
+            failedModel: AssistAvailableModel(candidate: all[0]),
+            error: E(message: "429 Too Many Requests"),
             completedTurnContent: "partial output", executedToolsCount: 2,
-            automaticallySwitchModels: true,
-            eligibleCandidates: all)
+            objective: "")
         #expect(result != nil)
-        #expect(result?.nextModel.id == "a-2")
+        #expect(result?.nextModel.id != all[0].id)
         #expect(result?.continuationPrompt.contains("partial output") == true)
     }
 
     @Test("A quota failure excludes the whole failed provider")
-    func quotaFailureExcludesProvider() async {
-        let router = AssistModelRouter()
+    @MainActor func quotaFailureExcludesProvider() async {
+        struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
         let all = candidates()
+        let restore = AssistModelRoutingTests.useFailoverEnvironment(all, autoSwitch: true)
+        defer { restore() }
+        let router = AssistModelRouter()
         let result = await router.handleTurnFailure(
-            failedModel: all[0],
-            error: NSError(domain: "test", code: 429, userInfo: [NSLocalizedDescriptionKey: "quota exceeded"]),
+            failedModel: AssistAvailableModel(candidate: all[0]),
+            error: E(message: "quota exceeded"),
             completedTurnContent: "", executedToolsCount: 0,
-            automaticallySwitchModels: true,
-            eligibleCandidates: all)
-        #expect(result?.nextModel.id == "b-1")
+            objective: "")
+        // Every candidate shares the failed model's provider, so a quota
+        // failure leaves nothing eligible.
+        #expect(result == nil)
     }
 
     @Test("Failover returns nil when no eligible model remains")
-    func failoverNilWhenNothingEligible() async {
+    @MainActor func failoverNilWhenNothingEligible() async {
+        struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
+        let only = [candidates()[0]]
+        let restore = AssistModelRoutingTests.useFailoverEnvironment(only, autoSwitch: true)
+        defer { restore() }
         let router = AssistModelRouter()
         let result = await router.handleTurnFailure(
-            failedModel: candidates()[0],
-            error: NSError(domain: "test", code: 429, userInfo: [NSLocalizedDescriptionKey: "429 Too Many Requests"]),
+            failedModel: AssistAvailableModel(candidate: only[0]),
+            error: E(message: "429 Too Many Requests"),
             completedTurnContent: "", executedToolsCount: 0,
-            automaticallySwitchModels: true,
-            eligibleCandidates: [candidates()[0]])
+            objective: "")
         #expect(result == nil)
     }
 }

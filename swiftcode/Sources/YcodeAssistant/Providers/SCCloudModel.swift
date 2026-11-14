@@ -544,15 +544,18 @@ public final class SCCloudRateLimiter: @unchecked Sendable {
 
     private let lock = NSLock()
     private var cachedTimestamps: [Date]?
+    private let storeURL: URL
 
-    private init() {}
-
-    private var storeURL: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        let dir = base.appendingPathComponent("com.swiftcode.app", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        return dir.appendingPathComponent("sccloud-usage.json")
+    init(storeURL: URL? = nil) {
+        if let storeURL {
+            self.storeURL = storeURL
+        } else {
+            let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+                ?? FileManager.default.temporaryDirectory
+            let dir = base.appendingPathComponent("com.swiftcode.app", isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            self.storeURL = dir.appendingPathComponent("sccloud-usage.json")
+        }
     }
 
     public func checkGate() -> Gate {

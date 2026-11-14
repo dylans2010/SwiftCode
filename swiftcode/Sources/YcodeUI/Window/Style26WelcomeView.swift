@@ -5,7 +5,7 @@ import YcodeRelease
 import YcodeAssistant
 
 public struct Style26WelcomeView: View {
-    public static let windowSize = NSSize(width: 800, height: 490)
+    public static let windowSize = NSSize(width: 800, height: 480)
 
     public var onOpenSelected: (URL) -> Void
     public var onCreateNewFile: () -> Void
@@ -18,6 +18,7 @@ public struct Style26WelcomeView: View {
     @State private var recentURLs: [URL] = []
     @State private var selectedURL: URL?
     @State private var hoveredURL: URL?
+    @State private var isCloseHovered = false
 
     public init(
         onOpenSelected: @escaping (URL) -> Void = { _ in },
@@ -48,6 +49,11 @@ public struct Style26WelcomeView: View {
         }
         .frame(width: Self.windowSize.width, height: Self.windowSize.height)
         .background(.clear)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.primary.opacity(0.10), lineWidth: 1)
+        )
         .onAppear {
             reloadRecents()
             NotificationCenter.default.addObserver(forName: RecentProjects.didChange, object: nil, queue: .main) { _ in
@@ -65,20 +71,20 @@ public struct Style26WelcomeView: View {
             Button(action: onClose) {
                 ZStack {
                     Circle()
-                        .fill(.primary.opacity(0.10))
+                        .fill(.primary.opacity(isCloseHovered ? 0.16 : 0.10))
                         .frame(width: 24, height: 24)
                     Image(systemName: "xmark")
                         .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(isCloseHovered ? .primary : .secondary)
                 }
             }
             .buttonStyle(.plain)
-            .padding(16)
+            .onHover { isCloseHovered = $0 }
+            .padding(.leading, 18)
+            .padding(.top, 24)
             .help("Close")
 
             VStack(spacing: 0) {
-                Spacer().frame(height: 38)
-
                 // App Icon (user picked)
                 Group {
                     if let img = iconManager.currentIconImage ?? NSApp.applicationIconImage {
@@ -90,15 +96,15 @@ public struct Style26WelcomeView: View {
                     }
                 }
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 124, height: 124)
+                .frame(width: 120, height: 120)
                 .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
                 .shadow(color: .black.opacity(0.35), radius: 14, x: 0, y: 7)
 
                 // App Name
                 Text("SwiftCode")
-                    .font(.system(size: 34, weight: .bold, design: .default))
+                    .font(.system(size: 32, weight: .bold, design: .default))
                     .foregroundStyle(.primary)
-                    .padding(.top, 16)
+                    .padding(.top, 14)
 
                 // Version line pulled from CFBundleVersion
                 Text(versionText)
@@ -107,18 +113,17 @@ public struct Style26WelcomeView: View {
                     .padding(.top, 4)
 
                 // Action buttons
-                VStack(spacing: 10) {
+                VStack(spacing: 8) {
                     actionButton(title: "Create New File...", icon: "plus.square", action: onCreateNewFile)
                     actionButton(title: "Clone Git Repository...", icon: "arrow.down.to.line.compact", action: onCloneGitRepo)
                     actionButton(title: "Choose From Template...", icon: "square.grid.2x2", action: onChooseTemplate)
                     actionButton(title: "Open File or Folder...", icon: "folder", action: onOpenFileOrFolder)
                 }
-                .padding(.horizontal, 36)
-                .padding(.top, 24)
-
-                Spacer(minLength: 16)
+                .padding(.horizontal, 32)
+                .padding(.top, 18)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(.vertical, 22)
         }
     }
 
@@ -173,7 +178,7 @@ public struct Style26WelcomeView: View {
                             )
                         }
                     }
-                    .padding(12)
+                    .padding(10)
                 }
             }
         }
@@ -212,17 +217,17 @@ private struct Style26ButtonCard: View {
             Spacer()
         }
         .padding(.horizontal, 16)
-        .frame(height: 42)
+        .frame(height: 40)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(.primary.opacity(isHovered ? 0.12 : 0.06))
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .stroke(Color.primary.opacity(isHovered ? 0.14 : 0.07), lineWidth: 1)
         )
-        .contentShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onHover { isHovered = $0 }
     }
 }
@@ -260,7 +265,7 @@ private struct Style26RecentItemRow: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 8)
+            .padding(.vertical, 7)
             .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                     .fill(isSelected ? Color.accentColor.opacity(0.9) : (isHovered ? Color.primary.opacity(0.07) : Color.clear))

@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 struct DeviceRelocationTests {
     private func scratch() throws -> String {

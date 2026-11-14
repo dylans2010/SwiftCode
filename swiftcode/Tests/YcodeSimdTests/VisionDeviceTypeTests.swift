@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 struct VisionDeviceTypeTests {
     static func runtimeRoot(_ path: String, productName: String?, version: String, build: String) throws {

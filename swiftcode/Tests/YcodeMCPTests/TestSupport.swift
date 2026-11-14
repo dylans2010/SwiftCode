@@ -43,6 +43,21 @@ extension AnyJSON {
     var structured: AnyJSON? { self["structuredContent"] }
 }
 
+// Convenience comparisons between JSON subscript results (AnyJSON?) and
+// plain Swift literals/values, for concise test assertions.
+func == (lhs: AnyJSON?, rhs: String) -> Bool { lhs?.string == rhs }
+func == (lhs: String, rhs: AnyJSON?) -> Bool { rhs?.string == lhs }
+func == (lhs: AnyJSON?, rhs: Int) -> Bool { lhs?.int == rhs }
+func == (lhs: Int, rhs: AnyJSON?) -> Bool { rhs?.int == lhs }
+func == (lhs: AnyJSON?, rhs: Double) -> Bool { lhs?.double == rhs }
+func == (lhs: Double, rhs: AnyJSON?) -> Bool { rhs?.double == lhs }
+func == (lhs: AnyJSON?, rhs: Bool) -> Bool { lhs?.bool == rhs }
+func == (lhs: Bool, rhs: AnyJSON?) -> Bool { rhs?.bool == lhs }
+
+extension Optional where Wrapped == AnyJSON {
+    var stringValue: String? { self?.string }
+}
+
 final class ProgressLog: @unchecked Sendable {
     private let lock = NSLock()
     private var items: [(Double, Double?, String?)] = []
@@ -135,4 +150,5 @@ func requestQueryItems(of request: URLRequest) -> [String: String] {
 func requestJSONBody(of request: URLRequest) -> [String: Any] {
     guard let data = request.httpBody,
           let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return [:] }
+    return object
 }

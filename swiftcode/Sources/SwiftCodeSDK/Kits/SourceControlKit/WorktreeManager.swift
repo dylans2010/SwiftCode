@@ -49,6 +49,31 @@ public final class WorktreeManager {
         isRefreshing = true
         lastError = nil
 
+        if await SpacesService.shared.isSpacesRepository(at: repositoryURL) {
+            do {
+                let infos = try await SpacesService.shared.worktrees(repositoryURL: repositoryURL)
+                var list: [GitWorktree] = []
+                for info in infos {
+                    var wt = GitWorktree(
+                        path: info.path,
+                        headSHA: info.head,
+                        branch: info.head,
+                        isMain: info.isMain,
+                        repositoryName: repositoryURL.lastPathComponent
+                    )
+                    wt.isFavorite = UserDefaults.standard.bool(forKey: "wt_fav_\(wt.path)")
+                    wt.isPinned = UserDefaults.standard.bool(forKey: "wt_pin_\(wt.path)")
+                    list.append(wt)
+                }
+                self.worktrees = list
+            } catch {
+                logger.error("Failed to query Spaces worktrees: \(error.localizedDescription)")
+                self.lastError = error.localizedDescription
+            }
+            isRefreshing = false
+            return
+        }
+
         do {
             let listOutput = try await executeGit(args: ["worktree", "list", "--porcelain"], workingDirectory: repositoryURL)
             let parsedWorktrees = try await parsePorcelainWorktrees(listOutput, repositoryURL: repositoryURL)
@@ -113,6 +138,14 @@ public final class WorktreeManager {
     public func createWorktree(at path: String, branch: String, fromExisting: Bool, isNewBranch: Bool, repositoryURL: URL) async throws {
         appendLogStream("Initializing Worktree creation request...\nPath: \(path)\nBranch: \(branch)\n")
 
+        if await SpacesService.shared.isSpacesRepository(at: repositoryURL) {
+            appendLogStream("Creating native Spaces worktree at \(path)...\n")
+            _ = try await SpacesService.shared.addWorktree(path: path, branch: branch.isEmpty ? nil : branch, repositoryURL: repositoryURL)
+            appendLogStream("✓ Spaces worktree successfully created.\n")
+            await refresh(repositoryURL: repositoryURL)
+            return
+        }
+
         var args = ["worktree", "add"]
         if isNewBranch {
             args.append("-b")
@@ -156,6 +189,17 @@ public final class WorktreeManager {
 
     public func removeWorktree(worktreePath: String, force: Bool, repositoryURL: URL) async throws {
         appendLogStream("Removing worktree at \(worktreePath) (Force: \(force))...\n")
+
+        if await SpacesService.shared.isSpacesRepository(at: repositoryURL) {
+            try await SpacesService.shared.removeWorktree(worktreePath, repositoryURL: repositoryURL)
+            appendLogStream("✓ Spaces worktree removed.\n")
+            UserDefaults.standard.removeObject(forKey: "wt_fav_\(worktreePath)")
+            UserDefaults.standard.removeObject(forKey: "wt_pin_\(worktreePath)")
+            UserDefaults.standard.removeObject(forKey: "wt_opened_\(worktreePath)")
+            await refresh(repositoryURL: repositoryURL)
+            return
+        }
+
         var args = ["worktree", "remove", worktreePath]
         if force { args.append("--force") }
         _ = try await executeGitStreaming(args: args, workingDirectory: repositoryURL)

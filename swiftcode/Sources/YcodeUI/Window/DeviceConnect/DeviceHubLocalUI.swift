@@ -448,25 +448,99 @@ extension DevicesController {
             s.setAccessibilityLabel(title)
             return InspectorCard.Row(symbol: symbol, title: title, control: s)
         }
+        func popup(_ titles: [String], selectedIndex: Int, sel: Selector) -> NSPopUpButton {
+            let p = NSPopUpButton(frame: .zero, pullsDown: false)
+            p.addItems(withTitles: titles)
+            p.selectItem(at: selectedIndex)
+            p.target = self
+            p.action = sel
+            p.isBordered = false
+            p.controlSize = .small
+            p.isEnabled = booted
+            return p
+        }
 
-        var rows: [InspectorCard.Row] = [
+        var cards: [NSView] = []
+
+        // 1. Appearance & Accessibility Card
+        let appearancePop = popup(["Light", "Dark"], selectedIndex: 0, sel: #selector(localAppearancePopupChanged(_:)))
+        let contrastSwitch = toggle("Increase Contrast", #selector(localIncreaseContrastToggled(_:)), symbol: "circle.righthalf.filled", on: false)
+        let motionSwitch = toggle("Reduce Motion", #selector(localReduceMotionToggled(_:)), symbol: "circle.dotted.and.circle", on: false)
+        let textSlider = NSSlider(value: 3, minValue: 0, maxValue: 11, target: self, action: #selector(localContentSizeChanged(_:)))
+        textSlider.numberOfTickMarks = 12
+        textSlider.allowsTickMarkValuesOnly = true
+        textSlider.isContinuous = false
+        textSlider.controlSize = .small
+        textSlider.isEnabled = booted
+        let appearanceRows: [InspectorCard.Row] = [
+            InspectorCard.Row(symbol: "circle.lefthalf.filled", title: "Appearance", control: appearancePop),
+            InspectorCard.Row(symbol: "textformat.size", title: "Dynamic Type", control: textSlider),
+            contrastSwitch,
+            motionSwitch
+        ]
+        cards.append(InspectorCard(rows: appearanceRows, identifier: "settings-local-appearance"))
+
+        // 2. Location Simulation Card
+        let locationChoices = [
+            "None (Clear)",
+            "Apple Park",
+            "City Run",
+            "Freeway Drive",
+            "San Francisco",
+            "New York City",
+            "Custom Coordinates…"
+        ]
+        let locPop = popup(locationChoices, selectedIndex: 0, sel: #selector(localLocationPopupChanged(_:)))
+        let locRows: [InspectorCard.Row] = [
+            InspectorCard.Row(symbol: "location", title: "Location", control: locPop)
+        ]
+        cards.append(InspectorCard(rows: locRows, identifier: "settings-local-location"))
+
+        // 3. Battery & Network Simulation Card
+        let batterySlider = NSSlider(value: 100, minValue: 0, maxValue: 100, target: self, action: #selector(localBatterySliderChanged(_:)))
+        batterySlider.isContinuous = false
+        batterySlider.controlSize = .small
+        batterySlider.isEnabled = booted
+        let netPop = popup(["Wi-Fi", "5G", "5G+", "LTE", "3G", "Reset"], selectedIndex: 0, sel: #selector(localNetworkPopupChanged(_:)))
+        let powerRows: [InspectorCard.Row] = [
+            InspectorCard.Row(symbol: "battery.100", title: "Battery Level", control: batterySlider),
+            InspectorCard.Row(symbol: "antenna.radiowaves.left.and.right", title: "Network", control: netPop),
+            control("Status Bar Overrides…", #selector(statusBarChosen(_:)), symbol: "gearshape")
+        ]
+        cards.append(InspectorCard(rows: powerRows, identifier: "settings-local-power"))
+
+        // 4. iPad Specific Capabilities
+        if let r, DeviceHubUnifiedWorkspace.isIPad(for: r) {
+            let stageSwitch = toggle("Stage Manager", #selector(localStageManagerToggled(_:)), symbol: "square.split.2x2", on: false)
+            let iPadRows: [InspectorCard.Row] = [
+                stageSwitch,
+                control("Pencil Double-Tap", #selector(simulatePencilDoubleTapChosen(_:)), symbol: "applepencil"),
+                control("Pencil Squeeze", #selector(simulatePencilSqueezeChosen(_:)), symbol: "hand.tap")
+            ]
+            cards.append(InspectorCard(rows: iPadRows, identifier: "settings-local-ipad"))
+        }
+
+        // 5. Lifecycle & Quick Actions Card
+        var quickRows: [InspectorCard.Row] = [
+            control("Clone Simulator…", #selector(showCloneSimulatorSheet(_:)), symbol: "square.on.square"),
             control("Shake Device", #selector(shakeChosen(_:)), symbol: "iphone.radiowaves.left.and.right"),
             control("Memory Warning", #selector(memoryPressureChosen(_:)), symbol: "memorychip"),
             toggle("Slow Animations", #selector(slowAnimationsChosen(_:)), symbol: "tortoise", on: isSlowAnimationsEnabled),
             toggle("Standby Mode", #selector(standbyChosen(_:)), symbol: "moon.zzz", on: isStandbyModeEnabled),
         ]
         if let r, isLocalSimulator(r) {
-            rows += [
+            quickRows += [
                 toggle("Live View", #selector(localLiveSwitchToggled(_:)), symbol: "eye", on: localLiveViewEnabled),
                 control(recording ? "Stop Recording" : "Record Video", #selector(recordVideoChosen(_:)), symbol: "record.circle"),
                 control("View Logs", #selector(viewLogsChosen(_:)), symbol: "text.alignleft"),
-                control("Status Bar Overrides…", #selector(statusBarChosen(_:)), symbol: "gearshape"),
                 control("Install App…", #selector(installAppChosen(_:)), symbol: "square.and.arrow.down"),
                 control("Launch App…", #selector(launchAppChosen(_:)), symbol: "play"),
                 control("Terminate App…", #selector(terminateAppChosen(_:)), symbol: "stop"),
             ]
         }
-        let stack = NSStackView(views: [InspectorCard(rows: rows, identifier: "settings-local-sim")])
+        cards.append(InspectorCard(rows: quickRows, identifier: "settings-local-actions"))
+
+        let stack = NSStackView(views: cards)
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = Self.cardSpacing
@@ -480,6 +554,111 @@ extension DevicesController {
             stack.addArrangedSubview(l)
         }
         return stack
+    }
+
+    @objc func localAppearancePopupChanged(_ sender: NSPopUpButton) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        let isDark = sender.indexOfSelectedItem == 1
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: isDark ? "dark" : "light")
+            await MainActor.run { self?.canvas.showBanner("Appearance: \(isDark ? "Dark" : "Light")", seconds: 2) }
+        }
+    }
+
+    @objc func localLocationPopupChanged(_ sender: NSPopUpButton) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        let title = sender.titleOfSelectedItem ?? ""
+        Task { [weak self] in
+            switch title {
+            case "Apple Park":
+                try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 37.3346, longitude: -122.0090)
+                await MainActor.run { self?.canvas.showBanner("Location: Apple Park", seconds: 2) }
+            case "City Run":
+                try? await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "City Run")
+                await MainActor.run { self?.canvas.showBanner("Scenario: City Run", seconds: 2) }
+            case "Freeway Drive":
+                try? await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "Freeway Drive")
+                await MainActor.run { self?.canvas.showBanner("Scenario: Freeway Drive", seconds: 2) }
+            case "San Francisco":
+                try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 37.7749, longitude: -122.4194)
+                await MainActor.run { self?.canvas.showBanner("Location: San Francisco", seconds: 2) }
+            case "New York City":
+                try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 40.7128, longitude: -74.0060)
+                await MainActor.run { self?.canvas.showBanner("Location: New York City", seconds: 2) }
+            case "Custom Coordinates…":
+                await MainActor.run { self?.simulateLocationCustom(sender) }
+            default:
+                try? await DeviceHubSimulatorInstaller.clearLocation(udid: r.identifier)
+                await MainActor.run { self?.canvas.showBanner("Location cleared", seconds: 2) }
+            }
+        }
+    }
+
+    @objc func localContentSizeChanged(_ sender: NSSlider) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        let sizes = [
+            "extra-small", "small", "medium", "large", "extra-large",
+            "extra-extra-large", "extra-extra-extra-large",
+            "accessibility-medium", "accessibility-large",
+            "accessibility-extra-large", "accessibility-extra-extra-large",
+            "accessibility-extra-extra-extra-large"
+        ]
+        let idx = min(sizes.count - 1, max(0, sender.integerValue))
+        let size = sizes[idx]
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setContentSize(udid: r.identifier, size: size)
+            await MainActor.run { self?.canvas.showBanner("Text Size: \(size)", seconds: 2) }
+        }
+    }
+
+    @objc func localBatterySliderChanged(_ sender: NSSlider) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        let level = sender.integerValue
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: level, batteryState: "discharging")
+            await MainActor.run { self?.canvas.showBanner("Battery: \(level)%", seconds: 2) }
+        }
+    }
+
+    @objc func localNetworkPopupChanged(_ sender: NSPopUpButton) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        let type = sender.titleOfSelectedItem?.lowercased() ?? "wifi"
+        Task { [weak self] in
+            if type == "reset" {
+                try? await DeviceHubSimulatorInstaller.clearStatusBar(udid: r.identifier)
+                await MainActor.run { self?.canvas.showBanner("Status bar overrides reset", seconds: 2) }
+            } else {
+                try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: type, wifiMode: "active", wifiBars: 3, cellularMode: "active", cellularBars: 4)
+                await MainActor.run { self?.canvas.showBanner("Network: \(type.uppercased())", seconds: 2) }
+            }
+        }
+    }
+
+    @objc func localIncreaseContrastToggled(_ sender: NSSwitch) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        let enabled = sender.state == .on
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setIncreaseContrast(udid: r.identifier, enabled: enabled)
+            await MainActor.run { self?.canvas.showBanner("Increase Contrast: \(enabled ? "On" : "Off")", seconds: 2) }
+        }
+    }
+
+    @objc func localReduceMotionToggled(_ sender: NSSwitch) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        let enabled = sender.state == .on
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setReduceMotion(udid: r.identifier, enabled: enabled)
+            await MainActor.run { self?.canvas.showBanner("Reduce Motion: \(enabled ? "On" : "Off")", seconds: 2) }
+        }
+    }
+
+    @objc func localStageManagerToggled(_ sender: NSSwitch) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        let enabled = sender.state == .on
+        Task { [weak self] in
+            try? await DeviceHubSimulatorInstaller.setStageManager(udid: r.identifier, enabled: enabled)
+            await MainActor.run { self?.canvas.showBanner("Stage Manager: \(enabled ? "Enabled" : "Disabled")", seconds: 2) }
+        }
     }
 
     

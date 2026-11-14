@@ -1,7 +1,7 @@
 import Testing
 import YcodeDarwinABI
 import YcodeHypervisor
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 @Suite struct VCPUSlotLayoutTests {
     @Test func slotsCoverDarwinsWorkqueueThreadLimit() {

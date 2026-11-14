@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 @Suite struct VisionHomeGuardTests {
     @Test func pressesOnlyWhenTheHomeViewWasNotLaunched() {

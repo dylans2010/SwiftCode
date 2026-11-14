@@ -46,7 +46,15 @@ public struct GitPanelView: View {
                             case 1:
                                 GitHistoryView(commits: viewModel.history)
                             case 2:
-                                GitBranchesView(branches: viewModel.branches)
+                                GitBranchesView(
+                                    branches: viewModel.branches,
+                                    onCheckout: { branch in viewModel.checkout(branch) },
+                                    onMerge: { branch in Task { try? await viewModel.merge(branch: branch.name) } },
+                                    onDelete: { branch in viewModel.deleteBranch(branch) },
+                                    onNewBranch: {
+                                        // create quick branch
+                                    }
+                                )
                             default:
                                 EmptyView()
                             }

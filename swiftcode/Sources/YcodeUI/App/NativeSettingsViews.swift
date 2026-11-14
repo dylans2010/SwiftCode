@@ -516,6 +516,13 @@ public struct NativeSourceControlSettingsView: View {
         Form {
             Section("General Source Control") {
                 Toggle("Enable Source Control", isOn: pref(\.sourceControlEnabled))
+                Picker("Source Control System", selection: pref(\.sourceControlSystem)) {
+                    Text("Git").tag("git")
+                    Text("Spaces (native)").tag("spaces")
+                }
+                Text("Spaces uses SwiftCode's built-in repository engine (.spaces/) — no git executable required. Git remains the default.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Git Executable") {

@@ -301,18 +301,25 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
         var out: [NSMenuItem] = []
         let watches = hub?.canCreateWatches ?? false
         let visions = hub?.canCreateVisionDevices ?? false
-        for (title, on) in [("iPhone…", true), ("iPad…", true), ("Apple Watch…", watches), ("Apple Vision Pro…", visions), ("Apple TV…", false)] {
-            let watch = title == "Apple Watch…", vision = title == "Apple Vision Pro…"
-            let action = watch ? #selector(DevicesController.newWatchChosen(_:))
-                : vision ? #selector(DevicesController.newVisionDeviceChosen(_:)) : #selector(addSimulator(_:))
-            let i = NSMenuItem(title: title, action: on ? action : nil, keyEquivalent: "")
-            i.target = watch || vision ? hub : target
-            i.isEnabled = on
+        for (title, on) in [("iPhone…", true), ("iPad…", true), ("Apple Watch…", true), ("Apple Vision Pro…", true), ("Apple TV…", true)] {
+            let action: Selector? = {
+                switch title {
+                case "iPhone…": return #selector(DevicesController.newIPhoneChosen(_:))
+                case "iPad…": return #selector(DevicesController.newIPadChosen(_:))
+                case "Apple Watch…": return watches ? #selector(DevicesController.newWatchChosen(_:)) : #selector(DevicesController.showCreateSimulatorSheet(_:))
+                case "Apple Vision Pro…": return visions ? #selector(DevicesController.newVisionDeviceChosen(_:)) : #selector(DevicesController.showCreateSimulatorSheet(_:))
+                case "Apple TV…": return #selector(DevicesController.newTVChosen(_:))
+                default: return nil
+                }
+            }()
+            let i = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            i.target = hub
+            i.isEnabled = on && hub != nil
             out.append(i)
-            if watch {
-                let p = NSMenuItem(title: "iPhone with Paired Watch…", action: on ? #selector(DevicesController.newPairedPhoneChosen(_:)) : nil, keyEquivalent: "")
+            if title == "Apple Watch…" && watches {
+                let p = NSMenuItem(title: "iPhone with Paired Watch…", action: #selector(DevicesController.newPairedPhoneChosen(_:)), keyEquivalent: "")
                 p.target = hub
-                p.isEnabled = on
+                p.isEnabled = true
                 out.append(p)
             }
         }
@@ -326,6 +333,12 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
         newSim.target = hub
         newSim.isEnabled = hub != nil
         out.append(newSim)
+
+        if let selected = hub?.selected, (hub?.isLocalSimulator(selected) == true || selected.isSwiftCodeRemote) {
+            let clone = NSMenuItem(title: "Clone Selected Simulator…", action: #selector(DevicesController.showCloneSimulatorSheet(_:)), keyEquivalent: "")
+            clone.target = hub
+            out.append(clone)
+        }
 
         let pair = NSMenuItem(title: "Pair Nearby Device…", action: #selector(DevicesController.pairNearbyChosen(_:)), keyEquivalent: "")
         pair.target = hub
@@ -380,6 +393,32 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
         stats.target = self
         stats.state = owner.canvas.showsStatistics ? .on : .off
         out += [bezels, stats]
+
+        let isSim = owner.isLocalSimulator(r) || r.isSwiftCodeRemote
+        if isSim {
+            out.append(.separator())
+            out.append(configurationSubmenu(for: r))
+            out.append(locationSubmenu(for: r))
+            out.append(batteryAndNetworkSubmenu(for: r))
+
+            if DeviceHubUnifiedWorkspace.isIPad(for: r) {
+                out.append(iPadCapabilitiesSubmenu(for: r))
+            }
+
+            out.append(.separator())
+            let clone = NSMenuItem(title: "Clone Simulator…", action: #selector(DevicesController.showCloneSimulatorSheet(_:)), keyEquivalent: "")
+            clone.target = owner
+            out.append(clone)
+
+            let bootAll = NSMenuItem(title: "Quick Boot All Simulators", action: #selector(DevicesController.quickBootAllSimulators(_:)), keyEquivalent: "")
+            bootAll.target = owner
+            out.append(bootAll)
+
+            let shutdownAll = NSMenuItem(title: "Shut Down All Simulators", action: #selector(DevicesController.shutDownAllSimulators(_:)), keyEquivalent: "")
+            shutdownAll.target = owner
+            out.append(shutdownAll)
+        }
+
         if owner.isLocalSimulator(r) {
             out.append(.separator())
             out += owner.localMenuItems(for: r)
@@ -400,15 +439,113 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
             forget.representedObject = r.identifier
             out.append(forget)
         }
-        if let i = owner.rows.firstIndex(where: { $0.identifier == r.identifier }),
-           r.isSwiftCodeRemote || owner.isLocalSimulator(r) {
+        if let i = owner.rows.firstIndex(where: { $0.identifier == r.identifier }), isSim {
             out.append(.separator())
             let erase = NSMenuItem(title: DevicesController.eraseTitle, action: #selector(DevicesController.eraseChosen(_:)), keyEquivalent: "")
             erase.target = owner
             erase.tag = i
             out.append(erase)
+
+            let eraseAll = NSMenuItem(title: "Erase All Simulators…", action: #selector(DevicesController.eraseAllSimulatorsChosen(_:)), keyEquivalent: "")
+            eraseAll.target = owner
+            out.append(eraseAll)
         }
         return out
+    }
+
+    private func configurationSubmenu(for r: DeviceRow) -> NSMenuItem {
+        let menu = NSMenu(title: "Device Configuration")
+        let light = NSMenuItem(title: "Appearance: Light Mode", action: #selector(DevicesController.setSimulatorAppearanceLight(_:)), keyEquivalent: "")
+        light.target = owner
+        let dark = NSMenuItem(title: "Appearance: Dark Mode", action: #selector(DevicesController.setSimulatorAppearanceDark(_:)), keyEquivalent: "")
+        dark.target = owner
+        menu.addItem(light)
+        menu.addItem(dark)
+        menu.addItem(.separator())
+        let contrast = NSMenuItem(title: "Increase Contrast (Accessibility)", action: #selector(DevicesController.toggleSimulatorIncreaseContrast(_:)), keyEquivalent: "")
+        contrast.target = owner
+        let motion = NSMenuItem(title: "Reduce Motion (Accessibility)", action: #selector(DevicesController.toggleSimulatorReduceMotion(_:)), keyEquivalent: "")
+        motion.target = owner
+        menu.addItem(contrast)
+        menu.addItem(motion)
+
+        let item = NSMenuItem(title: "Device Configuration", action: nil, keyEquivalent: "")
+        item.submenu = menu
+        return item
+    }
+
+    private func locationSubmenu(for r: DeviceRow) -> NSMenuItem {
+        let menu = NSMenu(title: "Simulate Location")
+        let applePark = NSMenuItem(title: "Apple Park (Cupertino)", action: #selector(DevicesController.simulateLocationApplePark(_:)), keyEquivalent: "")
+        applePark.target = owner
+        let cityRun = NSMenuItem(title: "City Run (Scenario)", action: #selector(DevicesController.simulateLocationCityRun(_:)), keyEquivalent: "")
+        cityRun.target = owner
+        let freeway = NSMenuItem(title: "Freeway Drive (Scenario)", action: #selector(DevicesController.simulateLocationFreewayDrive(_:)), keyEquivalent: "")
+        freeway.target = owner
+        let custom = NSMenuItem(title: "Custom Coordinates…", action: #selector(DevicesController.simulateLocationCustom(_:)), keyEquivalent: "")
+        custom.target = owner
+        let clear = NSMenuItem(title: "Clear Location", action: #selector(DevicesController.clearSimulatedLocation(_:)), keyEquivalent: "")
+        clear.target = owner
+
+        menu.addItem(applePark)
+        menu.addItem(cityRun)
+        menu.addItem(freeway)
+        menu.addItem(.separator())
+        menu.addItem(custom)
+        menu.addItem(clear)
+
+        let item = NSMenuItem(title: "Simulate Location", action: nil, keyEquivalent: "")
+        item.submenu = menu
+        return item
+    }
+
+    private func batteryAndNetworkSubmenu(for r: DeviceRow) -> NSMenuItem {
+        let menu = NSMenu(title: "Simulate Battery & Network")
+        let b100 = NSMenuItem(title: "Battery: 100% (Charged)", action: #selector(DevicesController.setSimulatorBattery100(_:)), keyEquivalent: "")
+        b100.target = owner
+        let b50 = NSMenuItem(title: "Battery: 50% (Discharging)", action: #selector(DevicesController.setSimulatorBattery50(_:)), keyEquivalent: "")
+        b50.target = owner
+        let b20 = NSMenuItem(title: "Battery: 20% (Low Power)", action: #selector(DevicesController.setSimulatorBattery20(_:)), keyEquivalent: "")
+        b20.target = owner
+        menu.addItem(b100)
+        menu.addItem(b50)
+        menu.addItem(b20)
+        menu.addItem(.separator())
+        let n5g = NSMenuItem(title: "Network: 5G Active", action: #selector(DevicesController.setSimulatorNetwork5G(_:)), keyEquivalent: "")
+        n5g.target = owner
+        let nWifi = NSMenuItem(title: "Network: Wi-Fi Active", action: #selector(DevicesController.setSimulatorNetworkWiFi(_:)), keyEquivalent: "")
+        nWifi.target = owner
+        let nOff = NSMenuItem(title: "Network: Offline (Searching)", action: #selector(DevicesController.setSimulatorNetworkOffline(_:)), keyEquivalent: "")
+        nOff.target = owner
+        let nClear = NSMenuItem(title: "Reset Status Bar Overrides", action: #selector(DevicesController.clearSimulatorNetworkOverrides(_:)), keyEquivalent: "")
+        nClear.target = owner
+        menu.addItem(n5g)
+        menu.addItem(nWifi)
+        menu.addItem(nOff)
+        menu.addItem(.separator())
+        menu.addItem(nClear)
+
+        let item = NSMenuItem(title: "Simulate Battery & Network", action: nil, keyEquivalent: "")
+        item.submenu = menu
+        return item
+    }
+
+    private func iPadCapabilitiesSubmenu(for r: DeviceRow) -> NSMenuItem {
+        let menu = NSMenu(title: "iPadOS Tablet Capabilities")
+        let stage = NSMenuItem(title: "Toggle Stage Manager", action: #selector(DevicesController.toggleStageManagerChosen(_:)), keyEquivalent: "")
+        stage.target = owner
+        let pDouble = NSMenuItem(title: "Simulate Apple Pencil Double-Tap", action: #selector(DevicesController.simulatePencilDoubleTapChosen(_:)), keyEquivalent: "")
+        pDouble.target = owner
+        let pSqueeze = NSMenuItem(title: "Simulate Apple Pencil Squeeze", action: #selector(DevicesController.simulatePencilSqueezeChosen(_:)), keyEquivalent: "")
+        pSqueeze.target = owner
+        menu.addItem(stage)
+        menu.addItem(.separator())
+        menu.addItem(pDouble)
+        menu.addItem(pSqueeze)
+
+        let item = NSMenuItem(title: "iPadOS Tablet Capabilities", action: nil, keyEquivalent: "")
+        item.submenu = menu
+        return item
     }
 
     @objc func toggleBezels(_ sender: Any?) {

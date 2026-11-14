@@ -2,7 +2,7 @@
 import Foundation
 import Testing
 import YcodeMachO
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 @Suite(.serialized) struct MacOSModeTests {
     @Test func platformGateFollowsTheMode() {

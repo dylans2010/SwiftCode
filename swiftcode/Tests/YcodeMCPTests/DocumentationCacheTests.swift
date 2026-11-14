@@ -108,7 +108,7 @@ import Testing
     }
 
     @Test("DocC JSON converts to a DocSymbol: kind, platforms, relationships, fenced sample, see-also")
-    func symbolConversionFromDocCJSON() {
+    func symbolConversionFromDocCJSON() throws {
         let symbol = try #require(DocumentationCache.symbol(from: Data(vstackFixture.utf8), topic: vstackTopic()))
         #expect(symbol.name == "VStack")
         #expect(symbol.kind == "struct")

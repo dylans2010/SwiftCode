@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 import YcodeDisplayStream
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 struct DisplayTilesTests {
     @Test func frameRecord() {

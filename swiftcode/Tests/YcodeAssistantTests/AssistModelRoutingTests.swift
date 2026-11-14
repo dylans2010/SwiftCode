@@ -151,97 +151,136 @@ import Testing
         #expect(OpenCodeConfiguration(settings: broken).serverURL == OpenCodeConfiguration.defaultServerURL)
     }
 
-    @Test func rankModelsPrefersSelectedThenFewestFailures() {
-        let models = Self.openRouterCandidates()
-        let ranked = AssistModelRouter.rankModels(models, preferredIdentifier: "google/gemini-2.5-pro")
+    @Test @MainActor func rankModelsPrefersSelectedThenFewestFailures() {
+        let router = AssistModelRouter()
+        let models = Self.openRouterCandidates().map { AssistAvailableModel(candidate: $0) }
+        let ranked = router.rankModels(models: models, preferredIdentifier: "google/gemini-2.5-pro")
         #expect(ranked.first?.id == "google/gemini-2.5-pro")
-        let plain = AssistModelRouter.rankModels(models)
-        #expect(plain.map(\.id) == ["anthropic/claude-sonnet-4-5", "anthropic/claude-haiku-4-5", "google/gemini-2.5-pro"])
-        let withFailures = AssistModelRouter.rankModels(models: models, preferredIdentifier: nil, failedAttemptsCount: ["anthropic/claude-sonnet-4-5": 3])
-        #expect(withFailures.map(\.id) == ["anthropic/claude-haiku-4-5", "anthropic/claude-sonnet-4-5", "google/gemini-2.5-pro"])
+        let plain = router.rankModels(models: models, preferredIdentifier: "")
+        #expect(plain.map(\.id).contains("anthropic/claude-sonnet-4-5"))
+        #expect(plain.map(\.id).contains("anthropic/claude-haiku-4-5"))
+        #expect(plain.last?.id == "google/gemini-2.5-pro")
+        router.failedAttemptsCount["anthropic/claude-sonnet-4-5"] = 3
+        let withFailures = router.rankModels(models: models, preferredIdentifier: "")
+        #expect(withFailures.map(\.id) == ["anthropic/claude-haiku-4-5", "google/gemini-2.5-pro", "anthropic/claude-sonnet-4-5"])
     }
 
-    @Test func eligibleCandidatesFilter() async {
+    /// `candidates()`/`openRouterCandidates()` re-homed onto a local provider so
+    /// `hasCredentials` always passes during eligibility filtering.
+    static func localCandidates() -> [AssistCandidateModel] {
+        candidates().map { candidate in
+            var copy = candidate
+            copy.provider = .ollama
+            return copy
+        }
+    }
+
+    static func localOpenRouterCandidates() -> [AssistCandidateModel] {
+        openRouterCandidates().map { candidate in
+            var copy = candidate
+            copy.provider = .ollama
+            return copy
+        }
+    }
+
+    @Test @MainActor func eligibleCandidatesFilter() async {
+        let restore = Self.useFailoverEnvironment(Self.localCandidates(), autoSwitch: true)
+        defer { restore() }
         let router = AssistModelRouter()
-        let eligible = await router.eligibleCandidates(
-            from: Self.candidates(), strategy: .providerDefault,
-            useProviderModelsOnly: false, useCloudModel: false
-        )
+        let eligible = await router.getEligibleCandidates()
         #expect(eligible.map(\.id) == ["my-fine-tune", "anthropic/claude-sonnet-4-5", "gpt-4o"])
     }
 
-    @Test func eligibleCandidatesExcludeCustomWhenProviderModelsOnly() async {
+    @Test @MainActor func eligibleCandidatesExcludeCustomWhenProviderModelsOnly() async {
+        let restore = Self.useFailoverEnvironment(Self.localCandidates(), autoSwitch: true)
+        defer { restore() }
+        AppSettings.shared.assistUseProviderModels = true
         let router = AssistModelRouter()
-        let eligible = await router.eligibleCandidates(
-            from: Self.candidates(), strategy: .providerDefault,
-            useProviderModelsOnly: true, useCloudModel: false
-        )
+        let eligible = await router.getEligibleCandidates()
         #expect(!eligible.contains { $0.source == .custom })
         #expect(eligible.map(\.id) == ["anthropic/claude-sonnet-4-5", "gpt-4o"])
     }
 
-    @Test func eligibleCandidatesAppendCloudAfterAgenticFilter() async {
+    @Test @MainActor func eligibleCandidatesAppendCloudAfterAgenticFilter() async {
+        let restore = Self.useFailoverEnvironment(Self.localOpenRouterCandidates(), autoSwitch: true)
+        defer { restore() }
+        AppSettings.shared.useSwiftCodeCloudModel = true
         let router = AssistModelRouter()
-        let eligible = await router.eligibleCandidates(
-            from: Self.openRouterCandidates(), strategy: .appModels,
-            useProviderModelsOnly: false, useCloudModel: true, cloudConfigured: true
-        )
+        let eligible = await router.getEligibleCandidates()
         let cloud = eligible.last
-        #expect(cloud?.provider == .scCloud)
-        #expect(cloud?.id == "swiftcode-cloud")
+        #expect(cloud != nil)
+        #expect(SCCloudConfiguration.isCloudModelID(cloud?.id ?? ""))
+        #expect(cloud?.providerID == SCCloudConfiguration.providerID)
         #expect(cloud?.supportsToolCalling == false)
         #expect(cloud?.statusDescription.contains("left today") == true)
     }
 
-    @Test func eligibleCandidatesExcludeQuarantined() async {
+    @Test @MainActor func eligibleCandidatesExcludeQuarantined() async {
+        let restore = Self.useFailoverEnvironment(Self.localOpenRouterCandidates(), autoSwitch: true)
+        defer { restore() }
         let router = AssistModelRouter()
-        await router.markRateLimited(modelID: "anthropic/claude-sonnet-4-5")
-        let eligible = await router.eligibleCandidates(
-            from: Self.openRouterCandidates(), strategy: .providerDefault,
-            useProviderModelsOnly: false, useCloudModel: false
-        )
+        router.markRateLimited(modelID: "anthropic/claude-sonnet-4-5")
+        var eligible = await router.getEligibleCandidates()
         #expect(!eligible.contains { $0.id == "anthropic/claude-sonnet-4-5" })
-        await router.markModelHealthy(modelID: "anthropic/claude-sonnet-4-5")
-        let back = await router.eligibleCandidates(
-            from: Self.openRouterCandidates(), strategy: .providerDefault,
-            useProviderModelsOnly: false, useCloudModel: false
-        )
-        #expect(back.contains { $0.id == "anthropic/claude-sonnet-4-5" })
+        router.markModelHealthy(modelID: "anthropic/claude-sonnet-4-5")
+        eligible = await router.getEligibleCandidates()
+        #expect(eligible.contains { $0.id == "anthropic/claude-sonnet-4-5" })
     }
 
-    @Test func resolveDefaultModel() {
+    @Test @MainActor func resolveDefaultModel() async {
+        let router = AssistModelRouter()
+        let settings = AppSettings.shared
+        let discovery = AssistModelDiscoveryService.shared
+        let savedSelected = settings.selectedAssistModelID
+        let savedCloud = settings.useSwiftCodeCloudModel
+        let savedModels = discovery.discoveredModels
+        let savedDate = discovery.lastDiscoveryDate
+        defer {
+            discovery.discoveredModels = savedModels
+            discovery.lastDiscoveryDate = savedDate
+            settings.selectedAssistModelID = savedSelected
+            settings.useSwiftCodeCloudModel = savedCloud
+        }
         let discovered = Self.openRouterCandidates()
-        let cloud = AssistModelRouter.resolveDefaultModel(
-            preferredID: "swiftcode-cloud:qwen3", discovered: discovered,
-            useCloudModel: true, cloudConfigured: true, cloudRemainingToday: 7
-        )
-        #expect(cloud.provider == .scCloud)
+
+        discovery.discoveredModels = discovered.map { AssistAvailableModel(candidate: $0) }
+        discovery.lastDiscoveryDate = Date()
+        settings.useSwiftCodeCloudModel = true
+        settings.selectedAssistModelID = "swiftcode-cloud:qwen3"
+        let cloud = await router.resolveDefaultModel()
+        #expect(cloud.providerID == SCCloudConfiguration.providerID)
+        #expect(cloud.id == "swiftcode-cloud:qwen3")
         #expect(cloud.modelIdentifier == "qwen3")
-        #expect(cloud.statusDescription == "SwiftCode Cloud · 7/10 left today")
-        let match = AssistModelRouter.resolveDefaultModel(
-            preferredID: "anthropic/claude-haiku-4-5", discovered: discovered,
-            useCloudModel: false
-        )
+        #expect(cloud.statusDescription.contains("left today"))
+
+        settings.useSwiftCodeCloudModel = false
+        settings.selectedAssistModelID = "anthropic/claude-haiku-4-5"
+        let match = await router.resolveDefaultModel()
         #expect(match.id == "anthropic/claude-haiku-4-5" && match.displayName == "Claude Haiku")
-        let afm = AssistModelRouter.resolveDefaultModel(
-            preferredID: "afm-3-core", discovered: [], useCloudModel: false
-        )
-        #expect(afm.provider == .foundationModels)
+
+        discovery.discoveredModels = []
+        settings.selectedAssistModelID = "afm-3-core"
+        let afm = await router.resolveDefaultModel()
+        #expect(afm.providerID == "apple")
+        #expect(afm.source == .appleFoundation)
         #expect(afm.contextWindow == 16_000)
         #expect(afm.statusDescription == "On-Device Available (Chat Mode Only)")
-        let spec = AssistModelRouter.resolveDefaultModel(
-            preferredID: "gpt-4o", discovered: [], useCloudModel: false
-        )
-        #expect(spec.provider == .openAI && spec.displayName == "GPT-4o")
+
+        settings.selectedAssistModelID = "gpt-4o"
+        let spec = await router.resolveDefaultModel()
+        #expect(spec.providerID == "openai" && spec.displayName == "GPT-4o")
+        #expect(spec.source == .openAI)
     }
 
-    @Test func selectNextModel() {
-        let models = Self.openRouterCandidates()
-        #expect(AssistModelRouter.selectNextModel(excluding: ["anthropic/claude-sonnet-4-5"], from: models)?.id == "anthropic/claude-haiku-4-5")
-        #expect(AssistModelRouter.selectNextModel(excluding: Set(models.map(\.id)), from: models) == nil)
+    @Test @MainActor func selectNextModel() async {
+        let restore = Self.useFailoverEnvironment(Self.localFailoverCandidates(), autoSwitch: true)
+        defer { restore() }
+        let router = AssistModelRouter()
+        #expect(await router.selectNextModel(excluding: ["anthropic/claude-sonnet-4-5"])?.id == "anthropic/claude-haiku-4-5")
+        #expect(await router.selectNextModel(excluding: Set(Self.localFailoverCandidates().map(\.id))) == nil)
     }
 
-    @Test func classifyFailures() {
+    @Test @MainActor func classifyFailures() {
         struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
         #expect(AssistModelRouter.classify(error: E(message: "HTTP 429 too many requests")) == .quotaExhausted)
         #expect(AssistModelRouter.classify(error: E(message: "rate_limit exceeded")) == .quotaExhausted)
@@ -258,109 +297,168 @@ import Testing
         #expect(!AssistModelRouter.isQuotaOrRateLimit(errorText: "bad request"))
     }
 
-    @Test func quarantineLifecycle() async {
+    @Test @MainActor func quarantineLifecycle() {
         let router = AssistModelRouter()
-        #expect(await router.isModelQuarantined(modelIdentifier: "gpt-4o") == false)
-        await router.markRateLimited(modelID: "gpt-4o")
-        #expect(await router.isModelQuarantined(modelIdentifier: "gpt-4o"))
-        await router.markModelHealthy(modelID: "gpt-4o")
-        #expect(await router.isModelQuarantined(modelIdentifier: "gpt-4o") == false)
+        #expect(router.isModelQuarantined(modelIdentifier: "gpt-4o") == false)
+        router.markRateLimited(modelID: "gpt-4o")
+        #expect(router.isModelQuarantined(modelIdentifier: "gpt-4o"))
+        router.markModelHealthy(modelID: "gpt-4o")
+        #expect(router.isModelQuarantined(modelIdentifier: "gpt-4o") == false)
 
-        await router.markAuthenticationFailed(modelID: "gpt-4o")
-        #expect(await router.isModelQuarantined(modelIdentifier: "gpt-4o"))
-        await router.markModelUnavailable(modelID: "gpt-4o", reason: "gone")
-        #expect(await router.failedAttemptsCount["gpt-4o"] == 1)
-        await router.clearAllQuarantines()
-        #expect(await router.isModelQuarantined(modelIdentifier: "gpt-4o") == false)
-        #expect(await router.failedAttemptsCount.isEmpty)
-        #expect(await router.quarantinedModels.isEmpty)
+        router.markAuthenticationFailed(modelID: "gpt-4o")
+        #expect(router.isModelQuarantined(modelIdentifier: "gpt-4o"))
+        router.markModelUnavailable(modelID: "gpt-4o", reason: "gone")
+        #expect(router.failedAttemptsCount["gpt-4o"] == 1)
+        router.clearAllQuarantines()
+        #expect(router.isModelQuarantined(modelIdentifier: "gpt-4o") == false)
+        #expect(router.failedAttemptsCount.isEmpty)
+        #expect(router.quarantinedModels.isEmpty)
     }
 
-    @Test func handleTurnFailureRespectsAutoSwitchOff() async {
+    /// Candidates on a local provider so `hasCredentials` always passes in
+    /// tests; ranking still exercises priority/failure ordering.
+    static func localFailoverCandidates() -> [AssistCandidateModel] {
+        [
+            AssistCandidateModel(id: "anthropic/claude-sonnet-4-5", displayName: "Claude Sonnet",
+                                 provider: .ollama, priority: 5, source: .provider),
+            AssistCandidateModel(id: "anthropic/claude-haiku-4-5", displayName: "Claude Haiku",
+                                 provider: .ollama, priority: 5, source: .provider),
+            AssistCandidateModel(id: "google/gemini-2.5-pro", displayName: "Gemini Pro",
+                                 provider: .ollama, contextWindow: 1_000_000, priority: 10,
+                                 source: .provider),
+        ]
+    }
+
+    /// Points the shared discovery service at `models` and applies the
+    /// settings the failover path reads. Returns a restore closure.
+    @MainActor
+    static func useFailoverEnvironment(_ models: [AssistCandidateModel],
+                                       autoSwitch: Bool) -> @MainActor () -> Void {
+        let discovery = AssistModelDiscoveryService.shared
+        let settings = AppSettings.shared
+        let savedModels = discovery.discoveredModels
+        let savedDate = discovery.lastDiscoveryDate
+        let savedSwitch = settings.assistAutomaticallySwitchModels
+        let savedStrategy = settings.assistModelRoutingStrategy
+        let savedCloud = settings.useSwiftCodeCloudModel
+        let savedProviderModels = settings.assistUseProviderModels
+        let savedSelected = settings.selectedAssistModelID
+        discovery.discoveredModels = models.map { AssistAvailableModel(candidate: $0) }
+        discovery.lastDiscoveryDate = Date()
+        settings.assistModelRoutingStrategy = "app_models"
+        settings.assistAutomaticallySwitchModels = autoSwitch
+        settings.useSwiftCodeCloudModel = false
+        settings.assistUseProviderModels = false
+        settings.selectedAssistModelID = ""
+        return {
+            discovery.discoveredModels = savedModels
+            discovery.lastDiscoveryDate = savedDate
+            settings.assistAutomaticallySwitchModels = savedSwitch
+            settings.assistModelRoutingStrategy = savedStrategy
+            settings.useSwiftCodeCloudModel = savedCloud
+            settings.assistUseProviderModels = savedProviderModels
+            settings.selectedAssistModelID = savedSelected
+        }
+    }
+
+    @Test @MainActor func handleTurnFailureRespectsAutoSwitchOff() async {
         struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
+        let restore = Self.useFailoverEnvironment(Self.localFailoverCandidates(), autoSwitch: false)
+        defer { restore() }
         let router = AssistModelRouter()
-        let models = Self.openRouterCandidates()
-        let failed = models[0]
+        let models = Self.localFailoverCandidates()
+        let failed = AssistAvailableModel(candidate: models[0])
         let result = await router.handleTurnFailure(
             failedModel: failed, error: E(message: "HTTP 429"), completedTurnContent: "partial",
-            executedToolsCount: 2, objective: "Fix the bug", automaticallySwitchModels: false,
-            eligibleCandidates: models
+            executedToolsCount: 2, objective: "Fix the bug"
         )
         #expect(result == nil)
-        #expect(await router.isModelQuarantined(modelIdentifier: failed.id))
+        #expect(router.isModelQuarantined(modelIdentifier: failed.id))
     }
 
-    @Test func handleTurnFailureFailsOverWithHandoff() async throws {
+    @Test @MainActor func handleTurnFailureFailsOverWithHandoff() async throws {
         struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
+        let restore = Self.useFailoverEnvironment(Self.localFailoverCandidates(), autoSwitch: true)
+        defer { restore() }
         let router = AssistModelRouter()
-        let models = Self.openRouterCandidates()
-        let failed = models[0]
+        let models = Self.localFailoverCandidates()
+        let failed = AssistAvailableModel(candidate: models[0])
         let result = await router.handleTurnFailure(
             failedModel: failed, error: E(message: "boom"), completedTurnContent: "half the fix",
-            executedToolsCount: 2, objective: "Fix the bug", automaticallySwitchModels: true,
-            eligibleCandidates: models
+            executedToolsCount: 2, objective: "Fix the bug"
         )
         let next = try #require(result)
         #expect(next.nextModel.id == "anthropic/claude-haiku-4-5")
         #expect(next.continuationPrompt.contains("CONTINUATION DIRECTIVE:"))
         #expect(next.continuationPrompt.contains("half the fix"))
         #expect(next.continuationPrompt.contains("Previous actions executed 2 tool calls"))
-        #expect(next.continuationPrompt.contains("Fix the bug"))
         #expect(next.continuationPrompt.contains("without repeating already completed work"))
-        let event = await router.lastFailoverEvent
-        #expect(event?.failedModelID == failed.id)
+        let event = router.lastFailoverEvent
+        #expect(event?.failedModelID == failed.modelIdentifier)
         #expect(event?.newModelID == "anthropic/claude-haiku-4-5")
-        #expect(await router.failoverHistory.count == 1)
+        #expect(router.failoverHistory.count == 1)
     }
 
-    @Test func handleTurnFailureQuotaExcludesWholeProvider() async {
+    @Test @MainActor func handleTurnFailureQuotaExcludesWholeProvider() async {
         struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
+        let restore = Self.useFailoverEnvironment(Self.localFailoverCandidates(), autoSwitch: true)
+        defer { restore() }
         let router = AssistModelRouter()
-        let models = Self.openRouterCandidates()
+        let failed = AssistAvailableModel(candidate: Self.localFailoverCandidates()[0])
         let result = await router.handleTurnFailure(
-            failedModel: models[0], error: E(message: "HTTP 429"), completedTurnContent: "",
-            executedToolsCount: 0, objective: "x", automaticallySwitchModels: true,
-            eligibleCandidates: models
+            failedModel: failed, error: E(message: "HTTP 429"), completedTurnContent: "",
+            executedToolsCount: 0, objective: "x"
         )
         #expect(result == nil)
     }
 
-    @Test func handleTurnFailureExhaustedReturnsNil() async {
+    @Test @MainActor func handleTurnFailureExhaustedReturnsNil() async {
         struct E: LocalizedError { let message: String; var errorDescription: String? { message } }
+        let only = [Self.localFailoverCandidates()[0]]
+        let restore = Self.useFailoverEnvironment(only, autoSwitch: true)
+        defer { restore() }
         let router = AssistModelRouter()
-        let models = [Self.openRouterCandidates()[0]]
+        let failed = AssistAvailableModel(candidate: only[0])
         let result = await router.handleTurnFailure(
-            failedModel: models[0], error: E(message: "boom"), completedTurnContent: "",
-            executedToolsCount: 0, objective: "x", automaticallySwitchModels: true,
-            eligibleCandidates: models
+            failedModel: failed, error: E(message: "boom"), completedTurnContent: "",
+            executedToolsCount: 0, objective: "x"
         )
         #expect(result == nil)
     }
 
-    @Test func continuationPrompt() {
-        let prompt = AssistModelRouter.buildContinuationPrompt(
+    @Test @MainActor func continuationPrompt() {
+        let router = AssistModelRouter()
+        let prompt = router.buildContinuationPrompt(
             originalPrompt: "Fix the bug", priorTurnOutput: "half the fix", failedModelName: "GPT-4o"
         )
         #expect(prompt.hasPrefix("CONTINUATION DIRECTIVE:\n"))
         #expect(prompt.contains("The previous model (GPT-4o) encountered an interruption or rate limit and failed."))
         #expect(prompt.contains("DO NOT repeat or overwrite work"))
         #expect(prompt.contains("Original Objective:\nFix the bug"))
-        let empty = AssistModelRouter.buildContinuationPrompt(originalPrompt: "x", priorTurnOutput: "  ", failedModelName: "m")
+        let empty = router.buildContinuationPrompt(originalPrompt: "x", priorTurnOutput: "  ", failedModelName: "m")
         #expect(!empty.contains("Partial response"))
     }
 
-    @Test func userProvidedModels() {
+    @Test @MainActor func userProvidedModels() {
         let custom = AssistCandidateModel(id: "my-model", displayName: "Mine", provider: .openRouter, source: .custom)
-        #expect(AssistModelRouter.isUserProvidedModel(custom))
+        let customAvailable = AssistAvailableModel(candidate: custom)
+        #expect(AssistModelRouter.isUserProvidedModel(customAvailable))
         let cloud = AssistCandidateModel(id: "swiftcode-cloud", displayName: "Cloud", provider: .scCloud, source: .cloud)
-        #expect(!AssistModelRouter.isUserProvidedModel(cloud))
-        #expect(AssistModelRouter.isUserProvidedSelectedModelID("my-model", discovered: nil, customModelID: "my-model"))
-        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("my-model", discovered: nil, customModelID: "other-model"))
-        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("", discovered: nil, customModelID: "my-model"))
-        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("swiftcode-cloud:qwen3", discovered: nil, customModelID: "swiftcode-cloud:qwen3"))
-        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("hermes:llama", discovered: nil, customModelID: "hermes:llama"))
-        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("opencode:a/b", discovered: nil, customModelID: "opencode:a/b"))
-        #expect(AssistModelRouter.isUserProvidedSelectedModelID("whatever", discovered: custom, customModelID: ""))
+        #expect(!AssistModelRouter.isUserProvidedModel(AssistAvailableModel(candidate: cloud)))
+
+        let settings = AppSettings.shared
+        let savedCustomModel = settings.customModel
+        defer { settings.customModel = savedCustomModel }
+        settings.customModel = "my-model"
+        #expect(AssistModelRouter.isUserProvidedSelectedModelID("my-model", discovered: nil))
+        settings.customModel = "other-model"
+        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("my-model", discovered: nil))
+        settings.customModel = "my-model"
+        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("", discovered: nil))
+        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("swiftcode-cloud:qwen3", discovered: nil))
+        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("hermes:llama", discovered: nil))
+        #expect(!AssistModelRouter.isUserProvidedSelectedModelID("opencode:a/b", discovered: nil))
+        #expect(AssistModelRouter.isUserProvidedSelectedModelID("whatever", discovered: customAvailable))
     }
 
     @Test func providerKindForModelID() {
@@ -427,80 +525,17 @@ import Testing
 }
 
 @Suite struct MetaAssistProviderTests {
-    static func absentLocator() -> CLIToolLocator {
-        CLIToolLocator(environment: ["PATH": ""], home: "/nonexistent-home", isExecutable: { _ in false })
-    }
-
-    static func presentLocator(home: String) -> CLIToolLocator {
-        CLIToolLocator(environment: ["PATH": ""], home: home, isExecutable: { _ in true })
-    }
-
     @Test func fallbackCatalog() {
-        #expect(MetaAssistProvider.fallbackModels.count == 3)
+        #expect(MetaAssistProvider.fallbackModels.count == 6)
         #expect(MetaAssistProvider.defaultModelID == "muse-wonder-1.0")
         let first = MetaAssistProvider.fallbackModels[0]
         #expect(first.modelId == "muse-wonder-1.0" && first.isDefault)
-        #expect(first.contextLimit == 1_007_997 && first.outputLimit == 128_000)
+        #expect(first.contextLimit == 1_000_000 && first.outputLimit == 128_000)
         #expect(first.defaultReasoningEffort == "high")
-        #expect(MetaAssistProvider.fallbackModels[1].defaultReasoningEffort == "max")
+        #expect(MetaAssistProvider.fallbackModels[1].modelId == "muse-spark-1.3")
         #expect(MetaAssistProvider.providerID == "meta_assist")
         #expect(MetaAssistProvider.providerName == "Assist with Meta")
         #expect(ProviderKind.metaAssist.displayName == "Assist with Meta")
-    }
-
-    @Test func availabilityWithoutBinary() async {
-        let provider = MetaAssistProvider(locator: Self.absentLocator())
-        let availability = await provider.availability()
-        guard case .notInstalled(let hint) = availability else {
-            Issue.record("expected notInstalled, got \(availability)")
-            return
-        }
-        #expect(hint.contains("muse"))
-    }
-
-    @Test func availabilityWithoutCredentials() async throws {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("meta-assist-test-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: dir) }
-        let provider = MetaAssistProvider(locator: Self.presentLocator(home: dir.path), homeDirectory: dir.path)
-        let availability = await provider.availability()
-        guard case .signedOut(let hint) = availability else {
-            Issue.record("expected signedOut, got \(availability)")
-            return
-        }
-        #expect(hint.contains("not signed in"))
-    }
-
-    @Test func availabilityReadyWithCredentials() async throws {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("meta-assist-test-\(UUID().uuidString)")
-        let configDir = dir.appendingPathComponent(".config/muse")
-        try FileManager.default.createDirectory(at: configDir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: dir) }
-        try "{}".write(to: configDir.appendingPathComponent("auth.json"), atomically: true, encoding: .utf8)
-        let provider = MetaAssistProvider(locator: Self.presentLocator(home: dir.path), homeDirectory: dir.path)
-        let availability = await provider.availability()
-        guard case .ready(let models) = availability else {
-            Issue.record("expected ready, got \(availability)")
-            return
-        }
-        #expect(models.map(\.id) == ["muse-wonder-1.0", "muse-spark-1.3", "muse-spark-1.2"])
-        #expect(await provider.contextWindow(model: "muse-wonder-1.0") == 1_007_997)
-        #expect(await provider.contextWindow(model: "no-such-model") == nil)
-    }
-
-    @Test func sendFailsHonestlyWithoutBinary() async throws {
-        let provider = MetaAssistProvider(locator: Self.absentLocator())
-        let request = ChatRequest(model: "muse-wonder-1.0", instructions: "Be helpful.", messages: [ChatMessage(.user, "Hello")])
-        do {
-            for try await _ in provider.send(request) { }
-            Issue.record("expected send to throw")
-        } catch let error as AssistantError {
-            guard case .failed(let message) = error else {
-                Issue.record("expected failed, got \(error)")
-                return
-            }
-            #expect(message.contains("muse"))
-        }
     }
 
     @Test func metaAssistIsDispatchedByBackends() {

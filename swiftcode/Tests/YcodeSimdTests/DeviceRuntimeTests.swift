@@ -1,6 +1,6 @@
 import Foundation
 import Testing
-@testable import swiftcode_simd
+@testable import ycode_simd
 
 struct DeviceRuntimeTests {
     func layout(_ dev: String, _ rr: String) -> DeviceLayout {
