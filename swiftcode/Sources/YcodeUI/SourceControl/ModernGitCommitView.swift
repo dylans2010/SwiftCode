@@ -30,15 +30,15 @@ public struct ModernGitCommitView: View {
     }
 
     private let conventionalTypes: [(key: String, title: String, color: Color, desc: String)] = [
-        ("feat", "feat", .blue, "New feature"),
-        ("fix", "fix", .red, "Bug fix"),
-        ("docs", "docs", .purple, "Documentation only"),
-        ("style", "style", .pink, "Formatting, whitespace"),
-        ("refactor", "refactor", .orange, "Code restructuring"),
-        ("perf", "perf", .green, "Performance improvement"),
-        ("test", "test", .yellow, "Adding or fixing tests"),
+        ("feat", "feat", Color.accentColor, "New feature"),
+        ("fix", "fix", Color.accentColor, "Bug fix"),
+        ("docs", "docs", Color.accentColor, "Documentation only"),
+        ("style", "style", Color.accentColor, "Formatting, whitespace"),
+        ("refactor", "refactor", Color.accentColor, "Code restructuring"),
+        ("perf", "perf", Color.accentColor, "Performance improvement"),
+        ("test", "test", Color.accentColor, "Adding or fixing tests"),
         ("chore", "chore", .secondary, "Build tasks, tooling"),
-        ("ci", "ci", .teal, "CI/CD configurations")
+        ("ci", "ci", Color.accentColor, "CI/CD configurations")
     ]
 
     public init(
@@ -57,7 +57,7 @@ public struct ModernGitCommitView: View {
             HStack {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Source Control: Commit")
                         .font(.headline.bold())
@@ -96,7 +96,7 @@ public struct ModernGitCommitView: View {
                         }
                         .buttonStyle(.plain)
                         .font(.caption2)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color.accentColor)
 
                         Text("•").foregroundStyle(.tertiary)
 
@@ -273,13 +273,13 @@ public struct ModernGitCommitView: View {
                     if let err = errorMessage {
                         Text(err)
                             .font(.caption)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.secondary)
                     }
 
                     if let succ = successMessage {
                         Text(succ)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     Spacer()
@@ -307,16 +307,9 @@ public struct ModernGitCommitView: View {
                             }
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color.green, Color.teal],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .background(Color.accentColor)
                             .foregroundColor(.white)
                             .cornerRadius(8)
-                            .shadow(color: Color.green.opacity(0.6), radius: 8, x: 0, y: 2)
                         }
                         .buttonStyle(.plain)
                         .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || stagedCount == 0 || isCommitting)
@@ -434,20 +427,13 @@ public struct ModernGitCommitView: View {
     }
 
     private func statusColor(_ s: GitRepository.FileStatus) -> Color {
-        switch s {
-        case .added: return .green
-        case .modified: return .blue
-        case .deleted: return .red
-        case .conflicted: return .purple
-        case .untracked: return .orange
-        case .renamed: return .blue
-        }
+        return .secondary
     }
 
     private func diffLineColor(_ line: String) -> Color {
-        if line.hasPrefix("+") { return .green }
-        if line.hasPrefix("-") { return .red }
-        if line.hasPrefix("@") { return .cyan }
+        if line.hasPrefix("+") && !line.hasPrefix("+++") { return .green.opacity(0.9) }
+        if line.hasPrefix("-") && !line.hasPrefix("---") { return .red.opacity(0.9) }
+        if line.hasPrefix("@") { return .secondary }
         return .primary
     }
 }

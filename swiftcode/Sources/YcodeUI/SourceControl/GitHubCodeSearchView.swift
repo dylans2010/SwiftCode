@@ -96,7 +96,7 @@ struct GitHubCodeSearchView: View {
                     Text("Search")
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.orange)
+                .tint(Color.accentColor)
                 .disabled(isLocalSearching || localQuery.isEmpty)
             }
             .padding()
@@ -111,13 +111,13 @@ struct GitHubCodeSearchView: View {
                     title: "Code Search",
                     description: "Search local codebase files for pattern matching or variable declarations.",
                     systemImage: "doc.text.magnifyingglass",
-                    accentColor: .orange
+                    accentColor: Color.accentColor
                 )
             } else {
                 List(localResults, id: \.self) { result in
                     HStack {
                         Image(systemName: "doc.text")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Color.accentColor)
                         Text(result)
                             .font(.system(.body, design: .monospaced))
                             .lineLimit(1)
@@ -239,7 +239,7 @@ struct GitHubCodeSearchView: View {
                         Text("Search")
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.orange)
+                    .tint(Color.accentColor)
                     .disabled(isDiscoverSearching || discoverQuery.isEmpty)
                 }
                 .padding()
@@ -254,7 +254,7 @@ struct GitHubCodeSearchView: View {
                         title: "Discover GitHub",
                         description: "Find repositories, users, or topics live from GitHub API.",
                         systemImage: "globe",
-                        accentColor: .orange
+                        accentColor: Color.accentColor
                     )
                 } else {
                     List(discoverResults) { item in
@@ -407,7 +407,7 @@ struct DiscoverResultRow: View {
         } label: {
             HStack(spacing: 12) {
                 Image(systemName: item.iconName)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.accentColor)
                     .font(.title3)
                     .frame(width: 24)
 

@@ -68,14 +68,22 @@ public enum LLMError: LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .invalidKey: return "invalid_key"
-        case .rateLimited: return "rate_limited"
-        case .networkError(let desc): return "network_error: \(desc)"
-        case .modelNotFound: return "model_not_found"
-        case .unknown(let desc): return desc
-        case .missingOfflineDefaultModel: return "No default offline model selected. Download and set a default offline model in Settings."
-        case .offlineFallbackUnavailable: return "Server unavailable and no default offline model configured. Add an API key or download an offline model."
-        case .swiftCloudLimitReached(let desc): return desc
+        case .invalidKey:
+            return "Authentication failed or API key missing/invalid. Please check your API key in Settings ▸ Assist or set the appropriate environment variable."
+        case .rateLimited:
+            return "Rate limit exceeded. The provider has temporarily throttled requests. Please wait a moment before trying again."
+        case .networkError(let desc):
+            return "Network connection error: \(desc). Please check your internet connection."
+        case .modelNotFound:
+            return "The requested model was not found or is unavailable for your account. Please check your model configuration."
+        case .unknown(let desc):
+            return desc
+        case .missingOfflineDefaultModel:
+            return "No default offline model selected. Download and set a default offline model in Settings."
+        case .offlineFallbackUnavailable:
+            return "Server unavailable and no default offline model configured. Add an API key or download an offline model."
+        case .swiftCloudLimitReached(let desc):
+            return desc
         }
     }
 }

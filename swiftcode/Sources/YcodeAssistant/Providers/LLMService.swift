@@ -144,7 +144,8 @@ public final class LLMService: Sendable {
         }
 
         if provider == .openRouter {
-            return OpenRouterClient.resolveOpenRouterAPIKey()
+            let orKey = OpenRouterClient.resolveOpenRouterAPIKey()
+            if !orKey.isEmpty { return orKey }
         }
 
         var key = ""
@@ -157,6 +158,28 @@ public final class LLMService: Sendable {
             if let keychainKey = KeychainService.shared.get(forKey: provider.keychainKey),
                !keychainKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 key = keychainKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+
+        if key.isEmpty {
+            let env = ProcessInfo.processInfo.environment
+            switch provider {
+            case .openai:
+                key = env["OPENAI_API_KEY"] ?? ""
+            case .anthropic:
+                key = env["ANTHROPIC_API_KEY"] ?? ""
+            case .google:
+                key = env["GEMINI_API_KEY"] ?? env["GOOGLE_API_KEY"] ?? env["ANTIGRAVITY_API_KEY"] ?? ""
+            case .openRouter:
+                key = env["OPENROUTER_API_KEY"] ?? ""
+            case .mistral:
+                key = env["MISTRAL_API_KEY"] ?? ""
+            case .qwen:
+                key = env["QWEN_API_KEY"] ?? env["DASHSCOPE_API_KEY"] ?? ""
+            case .codex:
+                key = env["CODEX_API_KEY"] ?? ""
+            case .offline:
+                break
             }
         }
 

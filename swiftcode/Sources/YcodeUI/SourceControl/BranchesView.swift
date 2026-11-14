@@ -97,7 +97,7 @@ struct BranchesView: View {
             HStack(spacing: 12) {
                 Label("Branch Directory", systemImage: "arrow.triangle.branch")
                     .font(.headline)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.accentColor)
 
                 Spacer()
 
@@ -137,7 +137,7 @@ struct BranchesView: View {
                     Label("New Branch", systemImage: "plus")
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.orange)
+                .tint(Color.accentColor)
             }
             .padding()
             .liquidGlass(style: .subtle, cornerRadius: 10)
@@ -203,7 +203,7 @@ struct BranchesView: View {
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .tint(.purple)
+                .tint(Color.accentColor)
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
@@ -238,7 +238,7 @@ struct BranchesView: View {
                     title: "No Branches Found",
                     description: "No local or remote branches found matching your search and filter options.",
                     systemImage: "arrow.triangle.branch",
-                    accentColor: .orange,
+                    accentColor: Color.accentColor,
                     actionTitle: "Create New Branch"
                 ) {
                     showCreateBranchSheet = true
@@ -256,12 +256,12 @@ struct BranchesView: View {
                                     }
                                 } label: {
                                     Image(systemName: selectedBranches.contains(branch.name) ? "checkmark.square.fill" : "square")
-                                        .foregroundStyle(selectedBranches.contains(branch.name) ? .orange : .secondary)
+                                        .foregroundStyle(selectedBranches.contains(branch.name) ? Color.accentColor : .secondary)
                                 }
                                 .buttonStyle(.plain)
 
                                 Image(systemName: "arrow.triangle.branch")
-                                    .foregroundStyle(branch.isCurrent ? .orange : .secondary)
+                                    .foregroundStyle(branch.isCurrent ? Color.accentColor : .secondary)
                                     .font(.title3)
 
                                 VStack(alignment: .leading, spacing: 4) {
@@ -275,8 +275,8 @@ struct BranchesView: View {
                                                 .font(.system(size: 8, weight: .bold))
                                                 .padding(.horizontal, 6)
                                                 .padding(.vertical, 2)
-                                                .background(Color.orange.opacity(0.12))
-                                                .foregroundStyle(.orange)
+                                                .background(Color.accentColor.opacity(0.12))
+                                                .foregroundStyle(Color.accentColor)
                                                 .cornerRadius(4)
                                         }
 
@@ -285,8 +285,8 @@ struct BranchesView: View {
                                                 .font(.system(size: 8, weight: .bold))
                                                 .padding(.horizontal, 6)
                                                 .padding(.vertical, 2)
-                                                .background(Color.green.opacity(0.12))
-                                                .foregroundStyle(.green)
+                                                .background(Color.secondary.opacity(0.12))
+                                                .foregroundStyle(.secondary)
                                                 .cornerRadius(4)
                                         }
 
@@ -295,8 +295,8 @@ struct BranchesView: View {
                                                 .font(.system(size: 8, weight: .bold))
                                                 .padding(.horizontal, 6)
                                                 .padding(.vertical, 2)
-                                                .background(Color.red.opacity(0.12))
-                                                .foregroundStyle(.red)
+                                                .background(Color.secondary.opacity(0.12))
+                                                .foregroundStyle(.secondary)
                                                 .cornerRadius(4)
                                         }
                                     }
@@ -331,7 +331,7 @@ struct BranchesView: View {
                                         }
                                         .buttonStyle(.bordered)
                                         .controlSize(.small)
-                                        .foregroundColor(.red)
+                                        .foregroundColor(.secondary)
                                     }
                                 }
                             }
@@ -351,7 +351,7 @@ struct BranchesView: View {
                                     Label("Delete Selected", systemImage: "trash.fill")
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .tint(.red)
+                                .tint(.secondary)
                             }
                         }
                     }
@@ -380,11 +380,11 @@ struct BranchesView: View {
             if branch.name == "main" || branch.name == "master" {
                 Label("Healthy", systemImage: "checkmark.shield")
                     .font(.caption)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(.secondary)
             } else {
                 Label("No conflict risk", systemImage: "checkmark.circle")
                     .font(.caption)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(.secondary)
             }
         }
         .padding(.horizontal, 8)
@@ -395,7 +395,7 @@ struct BranchesView: View {
             HStack {
                 Label("Create New Branch", systemImage: "arrow.triangle.branch")
                     .font(.headline)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
                 Button("Cancel") { showCreateBranchSheet = false }
                     .buttonStyle(.bordered)
@@ -418,7 +418,7 @@ struct BranchesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
             .disabled(newBranchName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         .padding(24)
@@ -430,7 +430,7 @@ struct BranchesView: View {
             HStack {
                 Label("Rename Branch", systemImage: "pencil")
                     .font(.headline)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
                 Button("Cancel") { showRenameBranchSheet = false }
                     .buttonStyle(.bordered)
@@ -454,7 +454,7 @@ struct BranchesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
             .disabled(renameBranchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         .padding(24)
@@ -493,7 +493,7 @@ struct BranchesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
         }
         .padding(24)
         .frame(width: 400)
@@ -534,7 +534,7 @@ struct BranchesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
         }
         .padding(24)
         .frame(width: 400)
@@ -571,7 +571,7 @@ struct BranchesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
             .disabled(sourceBranch.isEmpty)
         }
         .padding(24)
@@ -614,7 +614,7 @@ struct BranchesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
             .disabled(targetBranch.isEmpty)
         }
         .padding(24)
@@ -662,7 +662,7 @@ struct BranchesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
             .disabled(sourceBranch.isEmpty || targetBranch.isEmpty)
         }
         .padding(24)
@@ -722,7 +722,7 @@ struct BranchesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
         }
         .padding(24)
         .frame(width: 520)
@@ -769,7 +769,7 @@ struct BranchesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.purple)
+            .tint(Color.accentColor)
             .disabled(isGeneratingAICleanup)
         }
         .padding(24)

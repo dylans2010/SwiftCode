@@ -34,7 +34,7 @@ public struct NSCommitView: View {
                     HStack {
                         Label("Git Commit (⌥⌘C)", systemImage: "checkmark.circle.fill")
                             .font(.headline)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                         Spacer()
                         if !authorInfo.isEmpty {
                             Text(authorInfo)
@@ -86,7 +86,7 @@ public struct NSCommitView: View {
                         }
                         .buttonStyle(.plain)
                         .font(.caption2)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color.accentColor)
                     }
 
                     if isLoading {
@@ -98,7 +98,7 @@ public struct NSCommitView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption2)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {
@@ -116,16 +116,9 @@ public struct NSCommitView: View {
                             Spacer()
                         }
                         .padding(.vertical, 6)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.green, Color.teal],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                        .background(Color.accentColor)
                         .foregroundColor(.white)
                         .cornerRadius(6)
-                        .shadow(color: Color.green.opacity(0.4), radius: 6, x: 0, y: 1)
                     }
                     .buttonStyle(.plain)
                     .disabled(commitTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)

@@ -21,7 +21,7 @@ public struct ConflictResolverWorkspaceView: View {
                 Label("Merge Conflict Resolver", systemImage: "arrow.triangle.merge")
                     .font(.title)
                     .bold()
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.primary)
                     .padding(.top, 40)
 
                 Text("Analyze and resolve conflict markers in the current workspace files.")
@@ -37,7 +37,7 @@ public struct ConflictResolverWorkspaceView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "checkmark.shield.fill")
                             .font(.title)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                         Text("No Conflicts Detected")
                             .font(.headline)
                         Text("Your working directory is clean of any active merge conflicts.")
@@ -52,7 +52,7 @@ public struct ConflictResolverWorkspaceView: View {
                     List(conflictedFiles, id: \.self) { path in
                         HStack {
                             Image(systemName: "doc.text.fill")
-                                .foregroundStyle(.red)
+                                .foregroundStyle(.secondary)
                             VStack(alignment: .leading) {
                                 Text(URL(fileURLWithPath: path).lastPathComponent)
                                     .font(.headline)
@@ -65,7 +65,7 @@ public struct ConflictResolverWorkspaceView: View {
                                 onResolveFile(path)
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(.red)
+                            .tint(Color.accentColor)
                         }
                         .padding(.vertical, 6)
                     }
@@ -77,7 +77,7 @@ public struct ConflictResolverWorkspaceView: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.subheadline)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
                 }
 
                 Button("Refresh") {
@@ -116,48 +116,187 @@ public struct UnifiedDiffView: View {
     @State private var hunks: [DiffHunk] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var collapsedFiles: Set<String> = []
+
+    public struct FileGroup: Identifiable {
+        public let id: String
+        public let filePath: String
+        public let hunks: [DiffHunk]
+
+        public var addedCount: Int {
+            hunks.reduce(0) { total, hunk in
+                total + hunk.lines.filter { $0.hasPrefix("+") && !$0.hasPrefix("+++") }.count
+            }
+        }
+
+        public var removedCount: Int {
+            hunks.reduce(0) { total, hunk in
+                total + hunk.lines.filter { $0.hasPrefix("-") && !$0.hasPrefix("---") }.count
+            }
+        }
+    }
+
+    private var fileGroups: [FileGroup] {
+        var groups: [FileGroup] = []
+        var currentPath = ""
+        var currentHunks: [DiffHunk] = []
+
+        for hunk in hunks {
+            let path = hunk.filePath ?? "Changes"
+            if path == currentPath {
+                currentHunks.append(hunk)
+            } else {
+                if !currentHunks.isEmpty {
+                    groups.append(FileGroup(id: currentPath, filePath: currentPath, hunks: currentHunks))
+                }
+                currentPath = path
+                currentHunks = [hunk]
+            }
+        }
+        if !currentHunks.isEmpty {
+            groups.append(FileGroup(id: currentPath, filePath: currentPath, hunks: currentHunks))
+        }
+        return groups
+    }
 
     public init(repository: GitRepository) {
         self.repository = repository
     }
 
     public var body: some View {
-        VStack {
+        VStack(spacing: 0) {
             if isLoading {
                 ProgressView("Loading unified diff…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
-                    .foregroundStyle(.red)
-            } else if hunks.isEmpty {
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if fileGroups.isEmpty {
                 ContentUnavailableView(
                     "No Differences",
                     systemImage: "arrow.left.and.right",
                     description: Text("The working tree matches HEAD.")
                 )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                HStack {
+                    Label("Working Tree Diffs", systemImage: "doc.text.magnifyingglass")
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    HStack(spacing: 8) {
+                        Button("Expand All") {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                collapsedFiles.removeAll()
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+
+                        Button("Collapse All") {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                collapsedFiles = Set(fileGroups.map(\.filePath))
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) {
-                        ForEach(hunks) { hunk in
+                        ForEach(fileGroups) { group in
                             VStack(alignment: .leading, spacing: 0) {
-                                Text("@@ -\(hunk.oldStart),\(hunk.oldCount) +\(hunk.newStart),\(hunk.newCount) @@")
-                                    .font(.system(.caption, design: .monospaced).bold())
-                                    .foregroundStyle(.secondary)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 4)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color.secondary.opacity(0.12))
-                                ForEach(hunk.lines.indices, id: \.self) { index in
-                                    let line = hunk.lines[index]
-                                    Text(line)
-                                        .font(.system(.callout, design: .monospaced))
-                                        .foregroundStyle(diffColor(for: line))
-                                        .padding(.horizontal, 8)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(diffBackground(for: line))
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        if collapsedFiles.contains(group.filePath) {
+                                            collapsedFiles.remove(group.filePath)
+                                        } else {
+                                            collapsedFiles.insert(group.filePath)
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: collapsedFiles.contains(group.filePath) ? "chevron.right" : "chevron.down")
+                                            .font(.caption2.bold())
+                                            .foregroundStyle(.secondary)
+                                            .frame(width: 14)
+
+                                        Image(systemName: "doc.text")
+                                            .foregroundStyle(Color.accentColor)
+
+                                        Text(group.filePath)
+                                            .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                                            .foregroundStyle(.primary)
+                                            .lineLimit(1)
+
+                                        Spacer()
+
+                                        if group.addedCount > 0 {
+                                            Text("+\(group.addedCount)")
+                                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                                .foregroundStyle(.secondary)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.secondary.opacity(0.12))
+                                                .cornerRadius(4)
+                                        }
+
+                                        if group.removedCount > 0 {
+                                            Text("-\(group.removedCount)")
+                                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                                .foregroundStyle(.secondary)
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.secondary.opacity(0.12))
+                                                .cornerRadius(4)
+                                        }
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 8)
+                                    .background(Color.secondary.opacity(0.06))
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+
+                                if !collapsedFiles.contains(group.filePath) {
+                                    Divider()
+
+                                    VStack(alignment: .leading, spacing: 0) {
+                                        ForEach(group.hunks) { hunk in
+                                            Text("@@ -\(hunk.oldStart),\(hunk.oldCount) +\(hunk.newStart),\(hunk.newCount) @@")
+                                                .font(.system(.caption, design: .monospaced).bold())
+                                                .foregroundStyle(.secondary)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .frame(maxWidth: .infinity, alignment: .leading)
+                                                .background(Color.secondary.opacity(0.12))
+
+                                            ForEach(hunk.lines.indices, id: \.self) { index in
+                                                let line = hunk.lines[index]
+                                                Text(line)
+                                                    .font(.system(.callout, design: .monospaced))
+                                                    .foregroundStyle(diffColor(for: line))
+                                                    .padding(.horizontal, 8)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                                    .background(diffBackground(for: line))
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             .clipShape(RoundedRectangle(cornerRadius: 6))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.secondary.opacity(0.15), lineWidth: 1)
+                            )
                         }
                     }
                     .padding()
@@ -168,8 +307,8 @@ public struct UnifiedDiffView: View {
     }
 
     private func diffColor(for line: String) -> Color {
-        if line.hasPrefix("+") && !line.hasPrefix("+++") { return .green }
-        if line.hasPrefix("-") && !line.hasPrefix("---") { return .red }
+        if line.hasPrefix("+") && !line.hasPrefix("+++") { return .green.opacity(0.9) }
+        if line.hasPrefix("-") && !line.hasPrefix("---") { return .red.opacity(0.9) }
         return .primary
     }
 

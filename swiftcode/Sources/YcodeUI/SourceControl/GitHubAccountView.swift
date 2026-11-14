@@ -12,6 +12,9 @@ public struct GitHubAccountView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var showSignOutConfirm = false
+    @State private var isTokenVisible = false
+    @State private var isCopied = false
+    @State private var localIdentityMessage: String?
 
     public init(client: GitHubClient, store: SecretStore = defaultSecretStore(), onSignOut: @escaping () -> Void) {
         self.client = client
@@ -30,19 +33,47 @@ public struct GitHubAccountView: View {
                 profileDetails(user: user)
                 Divider()
                 statsGrid(user: user)
-                Spacer()
-                Button("Sign Out", role: .destructive) {
-                    showSignOutConfirm = true
+                tokenSection
+                if let msg = localIdentityMessage {
+                    Text(msg)
+                        .font(.caption)
+                        .foregroundStyle(Color.accentColor)
                 }
-                .buttonStyle(.bordered)
+                Spacer()
+                HStack(spacing: 12) {
+                    Button("Sign Out", role: .destructive) {
+                        showSignOutConfirm = true
+                    }
+                    .buttonStyle(.bordered)
+
+                    Button {
+                        useLocalIdentity()
+                    } label: {
+                        Label("Use Local Identity", systemImage: "person.crop.circle.badge.checkmark")
+                    }
+                    .buttonStyle(.bordered)
+                }
             } else if let errorMessage {
                 ContentUnavailableView(
                     "Could Not Load Account",
                     systemImage: "person.crop.circle.badge.exclamationmark",
                     description: Text(errorMessage)
                 )
-                Button("Try Again") { Task { await load() } }
-                    .buttonStyle(.borderedProminent)
+                if let msg = localIdentityMessage {
+                    Text(msg)
+                        .font(.caption)
+                        .foregroundStyle(Color.accentColor)
+                }
+                HStack(spacing: 12) {
+                    Button("Try Again") { Task { await load() } }
+                        .buttonStyle(.borderedProminent)
+                    Button {
+                        useLocalIdentity()
+                    } label: {
+                        Label("Use Local Identity", systemImage: "person.crop.circle.badge.checkmark")
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
         }
         .padding(20)
@@ -133,6 +164,60 @@ public struct GitHubAccountView: View {
             user = try await client.getAuthenticatedUser()
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+
+    private var tokenSection: some View {
+        let currentToken = store.readString(SecretAccount.githubToken) ?? KeychainService.shared.get(forKey: KeychainService.githubToken) ?? ""
+        return Group {
+            if !currentToken.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Personal Access Token")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+
+                    HStack(spacing: 8) {
+                        Text(isTokenVisible ? currentToken : String(repeating: "•", count: min(currentToken.count, 20)))
+                            .font(.system(.caption, design: .monospaced))
+                            .lineLimit(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 6)
+                            .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
+
+                        Button {
+                            isTokenVisible.toggle()
+                        } label: {
+                            Label(isTokenVisible ? "Hide" : "View", systemImage: isTokenVisible ? "eye.slash" : "eye")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+
+                        Button {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(currentToken, forType: .string)
+                            isCopied = true
+                            Task {
+                                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                                isCopied = false
+                            }
+                        } label: {
+                            Label(isCopied ? "Copied!" : "Copy", systemImage: isCopied ? "checkmark" : "doc.on.doc")
+                                .foregroundStyle(isCopied ? Color.accentColor : .primary)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+
+    private func useLocalIdentity() {
+        Task {
+            let identity = await GitHubTokenProvider.applyLocalIdentity()
+            localIdentityMessage = "Using local Git identity: \(identity.name) <\(identity.email)>"
         }
     }
 

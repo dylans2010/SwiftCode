@@ -38,12 +38,12 @@ public struct NSPushOptionsView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
             }
             if didPush {
                 Label("Push complete.", systemImage: "checkmark.circle.fill")
                     .font(.subheadline)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.accentColor)
             }
 
             HStack {

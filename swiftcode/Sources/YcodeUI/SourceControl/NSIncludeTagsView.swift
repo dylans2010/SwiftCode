@@ -15,7 +15,7 @@ public struct NSIncludeTagsView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Include Tags (⇧⌘G)", systemImage: "tag.fill")
                         .font(.headline)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.accentColor)
 
                     Toggle("Push tags alongside commits (--tags)", isOn: $includeTags)
                         .toggleStyle(.checkbox)
@@ -30,7 +30,7 @@ public struct NSIncludeTagsView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {

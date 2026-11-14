@@ -42,12 +42,23 @@ public actor AntigravitySDKCatalog {
         AntigravitySDKModel(id: "gemini-3-flash", displayName: "Gemini 3 Flash", thinkingLevel: "Medium", contextWindow: 1_048_576, category: "Google"),
     ]
 
-    public nonisolated static let agyBinaryCandidates: [String] = [
-        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".gemini/bin/agy").path,
-        FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".local/bin/agy").path,
-        "/usr/local/bin/agy",
-        "/opt/homebrew/bin/agy",
-    ]
+    public nonisolated static var agyBinaryCandidates: [String] {
+        var list: [String] = []
+        if let custom = ProcessInfo.processInfo.environment["AGY_PATH"], !custom.isEmpty {
+            list.append((custom as NSString).expandingTildeInPath)
+        }
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        list.append(contentsOf: [
+            home.appendingPathComponent(".gemini/bin/agy").path,
+            home.appendingPathComponent(".gemini/antigravity/bin/agy").path,
+            home.appendingPathComponent(".local/bin/agy").path,
+            home.appendingPathComponent("bin/agy").path,
+            "/opt/homebrew/bin/agy",
+            "/usr/local/bin/agy",
+            "/usr/bin/agy"
+        ])
+        return list
+    }
 
     public private(set) var models: [AntigravitySDKModel]
     public private(set) var lastFetchDate: Date?

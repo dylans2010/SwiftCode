@@ -4,9 +4,14 @@ import YcodeAssistant
 public struct AssistDiffView: View {
     let plan: AssistPlan
     @Environment(\.dismiss) private var dismiss
+    @State private var collapsedFiles: Set<String> = []
 
     public init(plan: AssistPlan) {
         self.plan = plan
+    }
+
+    private var allFilePaths: [String] {
+        plan.steps.flatMap { $0.actions.map(\.path) }
     }
 
     public var body: some View {
@@ -23,7 +28,19 @@ public struct AssistDiffView: View {
                                     .foregroundStyle(.white)
 
                                 ForEach(step.actions, id: \.path) { action in
-                                    DiffActionView(action: action)
+                                    DiffActionView(
+                                        action: action,
+                                        isCollapsed: collapsedFiles.contains(action.path),
+                                        onToggleCollapse: {
+                                            withAnimation(.easeInOut(duration: 0.2)) {
+                                                if collapsedFiles.contains(action.path) {
+                                                    collapsedFiles.remove(action.path)
+                                                } else {
+                                                    collapsedFiles.insert(action.path)
+                                                }
+                                            }
+                                        }
+                                    )
                                 }
                             }
                             .padding()
@@ -38,6 +55,28 @@ public struct AssistDiffView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Close") { dismiss() }
                 }
+
+                if !allFilePaths.isEmpty {
+                    ToolbarItem(placement: .primaryAction) {
+                        HStack(spacing: 8) {
+                            Button("Expand All") {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    collapsedFiles.removeAll()
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
+                            Button("Collapse All") {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    collapsedFiles = Set(allFilePaths)
+                                }
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                        }
+                    }
+                }
             }
         }
     }
@@ -45,25 +84,47 @@ public struct AssistDiffView: View {
 
 struct DiffActionView: View {
     let action: AssistAction
+    var isCollapsed: Bool = false
+    var onToggleCollapse: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                Image(systemName: iconForAction(action))
-                    .foregroundStyle(colorForAction(action))
-                Text(action.path)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.primary)
-                Spacer()
-                Text(typeForAction(action))
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(colorForAction(action))
-            }
+            Button {
+                onToggleCollapse?()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
+                        .font(.caption2.bold())
+                        .foregroundStyle(.secondary)
+                        .frame(width: 14)
 
-            if case .modifyFile(_, let patch) = action {
-                DiffHunkView(patch: patch)
-            } else if case .createFile(_, let content) = action {
-                DiffHunkView(patch: content)
+                    Image(systemName: iconForAction(action))
+                        .foregroundStyle(Color.accentColor)
+
+                    Text(action.path)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.primary)
+
+                    Spacer()
+
+                    Text(typeForAction(action))
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.12))
+                        .cornerRadius(4)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if !isCollapsed {
+                if case .modifyFile(_, let patch) = action {
+                    DiffHunkView(patch: patch)
+                } else if case .createFile(_, let content) = action {
+                    DiffHunkView(patch: content)
+                }
             }
         }
         .padding(.top, 4)
@@ -76,16 +137,6 @@ struct DiffActionView: View {
         case .deleteFile: return "trash.circle.fill"
         case .renameFile: return "arrow.right.circle.fill"
         case .runTest: return "play.circle.fill"
-        }
-    }
-
-    private func colorForAction(_ action: AssistAction) -> Color {
-        switch action {
-        case .createFile: return .green
-        case .modifyFile: return .blue
-        case .deleteFile: return .red
-        case .renameFile: return .purple
-        case .runTest: return .orange
         }
     }
 
@@ -109,9 +160,11 @@ struct DiffHunkView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(hunk.header)
                         .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.cyan)
+                        .foregroundStyle(.secondary)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.secondary.opacity(0.08))
 
                     ForEach(Array(hunk.lines.enumerated()), id: \.offset) { _, line in
                         DiffLineView(line: line)
@@ -180,14 +233,14 @@ struct DiffLineView: View {
     }
 
     private var prefixColor: Color {
-        if line.hasPrefix("+") { return .green }
-        if line.hasPrefix("-") { return .red }
+        if line.hasPrefix("+") { return .green.opacity(0.9) }
+        if line.hasPrefix("-") { return .red.opacity(0.9) }
         return .secondary
     }
 
     private var lineColor: Color {
-        if line.hasPrefix("+") { return .green }
-        if line.hasPrefix("-") { return .red }
+        if line.hasPrefix("+") { return .green.opacity(0.9) }
+        if line.hasPrefix("-") { return .red.opacity(0.9) }
         return .primary
     }
 

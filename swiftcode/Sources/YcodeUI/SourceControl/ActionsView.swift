@@ -63,7 +63,7 @@ struct ActionsView: View {
             HStack(spacing: 12) {
                 Label("GitHub Actions", systemImage: "play.circle.fill")
                     .font(.headline)
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
@@ -92,7 +92,7 @@ struct ActionsView: View {
                     title: "No Workflow Runs",
                     description: "No GitHub Actions workflows have been executed yet.",
                     systemImage: "play.circle",
-                    accentColor: .cyan
+                    accentColor: .accentColor
                 )
             } else {
                 List(runs) { run in
@@ -101,7 +101,7 @@ struct ActionsView: View {
                     } label: {
                         HStack(spacing: 16) {
                             Image(systemName: run.status == "completed" ? "checkmark.circle.fill" : "play.circle.fill")
-                                .foregroundStyle(run.status == "completed" ? .green : .orange)
+                                .foregroundStyle(run.status == "completed" ? Color.accentColor : .secondary)
                                 .font(.title3)
 
                             VStack(alignment: .leading, spacing: 4) {
@@ -119,8 +119,8 @@ struct ActionsView: View {
                                 .font(.system(size: 9, weight: .bold))
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .background(run.conclusion == "success" ? Color.green.opacity(0.12) : Color.orange.opacity(0.12))
-                                .foregroundStyle(run.conclusion == "success" ? .green : .orange)
+                                .background(Color.secondary.opacity(0.12))
+                                .foregroundStyle(.secondary)
                                 .cornerRadius(4)
                         }
                     }
@@ -136,7 +136,7 @@ struct ActionsView: View {
             title: "No Repository Associated",
             description: "A GitHub repository must first be associated with this project to view and manage Actions.",
             systemImage: "play.circle",
-            accentColor: .orange,
+            accentColor: .accentColor,
             actionTitle: "Configure Repository Association"
         ) {
             RepositoryContext.shared.showingSetRepoSheet = true

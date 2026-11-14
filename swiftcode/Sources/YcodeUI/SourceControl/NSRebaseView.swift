@@ -15,7 +15,7 @@ public struct NSRebaseView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Git Rebase (⇧⌘X)", systemImage: "arrow.triangle.branch")
                         .font(.headline)
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(Color.accentColor)
 
                     Text("Rebase current branch onto upstream.")
                         .font(.caption)
@@ -34,7 +34,7 @@ public struct NSRebaseView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {

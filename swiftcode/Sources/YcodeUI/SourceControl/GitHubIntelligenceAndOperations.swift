@@ -15,11 +15,50 @@ public struct ChurnItem: Identifiable, Sendable, Codable {
     public let modifications: Int
 }
 
-public struct KnowledgeNode: Identifiable, Sendable, Codable {
+public struct CoChangingPair: Identifiable, Sendable, Codable, Hashable {
+    public var id: String { "\(fileA)<->\(fileB)" }
+    public let fileA: String
+    public let fileB: String
+    public let coCommitCount: Int
+
+    public init(fileA: String, fileB: String, coCommitCount: Int) {
+        self.fileA = fileA
+        self.fileB = fileB
+        self.coCommitCount = coCommitCount
+    }
+}
+
+public struct KnowledgeNode: Identifiable, Sendable, Codable, Hashable {
     public let id: String
     public let name: String
     public let type: NodeType
     public var position: CGPoint
+
+    public var detail: String
+    public var commitHash: String?
+    public var shortHash: String?
+    public var author: String?
+    public var authorEmail: String?
+    public var date: Date?
+    public var message: String?
+    public var changedFilesCount: Int?
+    public var additions: Int?
+    public var deletions: Int?
+    public var parentHashes: [String]?
+
+    public var filePath: String?
+    public var modificationCount: Int?
+    public var topContributors: [String]?
+    public var linkedCommits: [String]?
+    public var isHubFile: Bool?
+
+    public var isCurrentBranch: Bool?
+    public var isRemoteBranch: Bool?
+    public var headCommitHash: String?
+
+    public var totalCommitsForAuthor: Int?
+    public var filesTouchedByAuthor: [String]?
+    public var lastActiveDate: Date?
 
     public enum NodeType: String, Sendable, Codable, CaseIterable {
         case file = "File"
@@ -31,20 +70,90 @@ public struct KnowledgeNode: Identifiable, Sendable, Codable {
         case contributor = "Contributor"
         case workflow = "Workflow"
     }
+
+    public init(
+        id: String,
+        name: String,
+        type: NodeType,
+        position: CGPoint,
+        detail: String = "",
+        commitHash: String? = nil,
+        shortHash: String? = nil,
+        author: String? = nil,
+        authorEmail: String? = nil,
+        date: Date? = nil,
+        message: String? = nil,
+        changedFilesCount: Int? = nil,
+        additions: Int? = nil,
+        deletions: Int? = nil,
+        parentHashes: [String]? = nil,
+        filePath: String? = nil,
+        modificationCount: Int? = nil,
+        topContributors: [String]? = nil,
+        linkedCommits: [String]? = nil,
+        isHubFile: Bool? = nil,
+        isCurrentBranch: Bool? = nil,
+        isRemoteBranch: Bool? = nil,
+        headCommitHash: String? = nil,
+        totalCommitsForAuthor: Int? = nil,
+        filesTouchedByAuthor: [String]? = nil,
+        lastActiveDate: Date? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.type = type
+        self.position = position
+        self.detail = detail
+        self.commitHash = commitHash
+        self.shortHash = shortHash
+        self.author = author
+        self.authorEmail = authorEmail
+        self.date = date
+        self.message = message
+        self.changedFilesCount = changedFilesCount
+        self.additions = additions
+        self.deletions = deletions
+        self.parentHashes = parentHashes
+        self.filePath = filePath
+        self.modificationCount = modificationCount
+        self.topContributors = topContributors
+        self.linkedCommits = linkedCommits
+        self.isHubFile = isHubFile
+        self.isCurrentBranch = isCurrentBranch
+        self.isRemoteBranch = isRemoteBranch
+        self.headCommitHash = headCommitHash
+        self.totalCommitsForAuthor = totalCommitsForAuthor
+        self.filesTouchedByAuthor = filesTouchedByAuthor
+        self.lastActiveDate = lastActiveDate
+    }
 }
 
-public struct KnowledgeRelationship: Identifiable, Sendable, Codable {
-    public var id: String { "\(from)->\(to)" }
+public struct KnowledgeRelationship: Identifiable, Sendable, Codable, Hashable {
+    public var id: String { "\(from)->\(to):\(type.rawValue)" }
     public let from: String
     public let to: String
     public let type: RelationshipType
+    public var label: String?
+    public var weight: Double?
 
-    public enum RelationshipType: String, Sendable, Codable {
+    public enum RelationshipType: String, Sendable, Codable, CaseIterable {
         case imports = "Imports"
         case owns = "Owns"
         case modifiedBy = "Modified By"
         case references = "References"
         case contains = "Contains"
+        case authored = "Authored"
+        case touches = "Touches"
+        case coChangesWith = "Co-Changes With"
+        case branchHead = "Branch Head"
+    }
+
+    public init(from: String, to: String, type: RelationshipType, label: String? = nil, weight: Double? = 1.0) {
+        self.from = from
+        self.to = to
+        self.type = type
+        self.label = label
+        self.weight = weight
     }
 }
 
@@ -182,7 +291,7 @@ public struct RepositoryIntelligenceView: View {
                                     .frame(width: 100, height: 100)
                                 Circle()
                                     .trim(from: 0.0, to: Double(healthScore) / 100.0)
-                                    .stroke(healthScore > 80 ? Color.green : Color.orange, lineWidth: 10)
+                                    .stroke(healthScore > 80 ? Color.accentColor : .secondary, lineWidth: 10)
                                     .frame(width: 100, height: 100)
                                     .rotationEffect(Angle(degrees: -90))
                                 Text("\(healthScore)%")
@@ -195,12 +304,12 @@ public struct RepositoryIntelligenceView: View {
                         .cornerRadius(8)
 
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-                            metricCard(title: "Technical Debt Indicators", value: "\(techDebtCount) Warnings", subtitle: "TODOs, FIXMEs, and deprecations", color: .orange)
-                            metricCard(title: "Documentation Coverage", value: String(format: "%.1f%%", docCoverage * 100), subtitle: "Comments to Code Ratio", color: .blue)
-                            metricCard(title: "CI Success Rate", value: "\(buildSuccessRate)%", subtitle: "Based on recent Actions runs", color: .green)
-                            metricCard(title: "Test Coverage", value: "\(testCoverage)%", subtitle: "XCResult files analyzed", color: .purple)
-                            metricCard(title: "Commit Count", value: "\(gitViewModel.history.count) Commits", subtitle: "In local Git log history", color: .teal)
-                            metricCard(title: "Branch Count", value: "\(gitViewModel.branches.count) Branches", subtitle: "Active in repository", color: .cyan)
+                            metricCard(title: "Technical Debt Indicators", value: "\(techDebtCount) Warnings", subtitle: "TODOs, FIXMEs, and deprecations", color: Color.accentColor)
+                            metricCard(title: "Documentation Coverage", value: String(format: "%.1f%%", docCoverage * 100), subtitle: "Comments to Code Ratio", color: Color.accentColor)
+                            metricCard(title: "CI Success Rate", value: "\(buildSuccessRate)%", subtitle: "Based on recent Actions runs", color: Color.accentColor)
+                            metricCard(title: "Test Coverage", value: "\(testCoverage)%", subtitle: "XCResult files analyzed", color: Color.accentColor)
+                            metricCard(title: "Commit Count", value: "\(gitViewModel.history.count) Commits", subtitle: "In local Git log history", color: Color.accentColor)
+                            metricCard(title: "Branch Count", value: "\(gitViewModel.branches.count) Branches", subtitle: "Active in repository", color: Color.accentColor)
                         }
                     }
 
@@ -221,7 +330,7 @@ public struct RepositoryIntelligenceView: View {
                                 ForEach(churnItems) { item in
                                     HStack {
                                         Image(systemName: "doc.text.fill")
-                                            .foregroundStyle(.blue)
+                                            .foregroundStyle(Color.accentColor)
                                         Text(item.filename)
                                             .font(.monospaced(.system(size: 11))())
                                         Spacer()
@@ -230,7 +339,7 @@ public struct RepositoryIntelligenceView: View {
                                             .font(.caption)
                                         Capsule()
                                             .frame(width: min(CGFloat(item.modifications) * 5, 100), height: 8)
-                                            .foregroundStyle(item.modifications > 15 ? Color.red : Color.orange)
+                                            .foregroundStyle(item.modifications > 15 ? Color.accentColor : .secondary)
                                     }
                                 }
                             }
@@ -251,7 +360,7 @@ public struct RepositoryIntelligenceView: View {
                                 ForEach(largeFiles, id: \.self) { file in
                                     HStack {
                                         Image(systemName: "exclamationmark.triangle")
-                                            .foregroundStyle(.orange)
+                                            .foregroundStyle(Color.accentColor)
                                         Text(file)
                                             .font(.caption)
                                     }
@@ -376,6 +485,52 @@ public struct RepositoryIntelligenceView: View {
     }
 }
 
+public enum DateFilterRange: String, CaseIterable, Identifiable, Sendable {
+    case allTime = "All Time"
+    case past24h = "Past 24h"
+    case past7Days = "Past 7 Days"
+    case past30Days = "Past 30 Days"
+    case past90Days = "Past 90 Days"
+
+    public var id: String { rawValue }
+
+    public func matches(date: Date?) -> Bool {
+        guard let date = date else { return true }
+        let now = Date()
+        let interval = now.timeIntervalSince(date)
+        switch self {
+        case .allTime: return true
+        case .past24h: return interval <= 86400
+        case .past7Days: return interval <= 7 * 86400
+        case .past30Days: return interval <= 30 * 86400
+        case .past90Days: return interval <= 90 * 86400
+        }
+    }
+}
+
+public enum GraphLayoutMode: String, CaseIterable, Identifiable, Sendable {
+    case organic = "Organic Orbit"
+    case hierarchical = "Hierarchical Flow"
+    case clustered = "Subsystem Clustered"
+
+    public var id: String { rawValue }
+}
+
+public enum TopologyDepth: String, CaseIterable, Identifiable, Sendable {
+    case full = "Full Topology"
+    case oneHop = "1-Hop Neighborhood"
+    case twoHops = "2-Hop Neighborhood"
+
+    public var id: String { rawValue }
+}
+
+private let graphDateFormatter: DateFormatter = {
+    let df = DateFormatter()
+    df.dateStyle = .medium
+    df.timeStyle = .short
+    return df
+}()
+
 @MainActor
 public struct RepositoryKnowledgeGraphView: View {
     var gitViewModel: GitViewModel
@@ -384,9 +539,21 @@ public struct RepositoryKnowledgeGraphView: View {
     @State private var accumulatedOffset: CGSize = .zero
     @State private var searchPattern = ""
     @State private var selectedNodeType: KnowledgeNode.NodeType? = nil
+    @State private var selectedDateRange: DateFilterRange = .allTime
+    @State private var topologyDepth: TopologyDepth = .full
+    @State private var layoutMode: GraphLayoutMode = .organic
     @State private var selectedNode: KnowledgeNode? = nil
+    @State private var hoveredNode: KnowledgeNode? = nil
+    @State private var draggingNodeID: String? = nil
+    @State private var showMetricsPanel: Bool = true
+    @State private var showInspector: Bool = true
+    @State private var isRefreshing: Bool = false
+
     @State private var nodes: [KnowledgeNode] = []
     @State private var relationships: [KnowledgeRelationship] = []
+    @State private var topChurnFiles: [ChurnItem] = []
+    @State private var topCoChangingPairs: [CoChangingPair] = []
+    @State private var activeContributors: [(name: String, count: Int)] = []
 
     public init(gitViewModel: GitViewModel) {
         self.gitViewModel = gitViewModel
@@ -398,168 +565,1203 @@ public struct RepositoryKnowledgeGraphView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                TextField("Search files, branches, commits...", text: $searchPattern)
-                    .textFieldStyle(.roundedBorder)
-                    .frame(width: 250)
-
-                Picker("Filter Nodes", selection: $selectedNodeType) {
-                    Text("All Nodes").tag(nil as KnowledgeNode.NodeType?)
-                    ForEach(KnowledgeNode.NodeType.allCases, id: \.self) { type in
-                        Text(type.rawValue).tag(type as KnowledgeNode.NodeType?)
+            // Top Toolbar: Search, Filters, Depth, Layout, Zoom controls
+            HStack(spacing: 10) {
+                HStack(spacing: 6) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 11))
+                    TextField("Search files, symbols, authors, commits...", text: $searchPattern)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 12))
+                    if !searchPattern.isEmpty {
+                        Button {
+                            searchPattern = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .font(.system(size: 11))
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .frame(width: 180)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 5)
+                .background(Color(NSColor.textBackgroundColor))
+                .cornerRadius(6)
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.secondary.opacity(0.2), lineWidth: 1))
+                .frame(width: 260)
 
-                Button("Reset Layout") {
-                    withAnimation {
-                        scale = 1.0
-                        dragOffset = .zero
-                        accumulatedOffset = .zero
+                Picker("Type", selection: $selectedNodeType) {
+                    Text("All Types").tag(nil as KnowledgeNode.NodeType?)
+                    ForEach(KnowledgeNode.NodeType.allCases, id: \.self) { type in
+                        Label(type.rawValue, systemImage: iconForType(type)).tag(type as KnowledgeNode.NodeType?)
                     }
+                }
+                .frame(width: 130)
+
+                Picker("Time", selection: $selectedDateRange) {
+                    ForEach(DateFilterRange.allCases) { range in
+                        Text(range.rawValue).tag(range)
+                    }
+                }
+                .frame(width: 110)
+
+                Picker("Depth", selection: $topologyDepth) {
+                    ForEach(TopologyDepth.allCases) { depth in
+                        Text(depth.rawValue).tag(depth)
+                    }
+                }
+                .frame(width: 140)
+
+                Picker("Layout", selection: $layoutMode) {
+                    ForEach(GraphLayoutMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .frame(width: 155)
+                .onChange(of: layoutMode) { _, newMode in
+                    applyLayout(newMode)
                 }
 
                 Spacer()
+
+                // Zoom & Canvas Controls
+                HStack(spacing: 4) {
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            scale = max(0.25, scale - 0.15)
+                        }
+                    } label: {
+                        Image(systemName: "minus.magnifyingglass")
+                    }
+                    .help("Zoom Out")
+
+                    Text("\(Int(scale * 100))%")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 40)
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            scale = min(3.0, scale + 0.15)
+                        }
+                    } label: {
+                        Image(systemName: "plus.magnifyingglass")
+                    }
+                    .help("Zoom In")
+
+                    Button {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            scale = 1.0
+                            dragOffset = .zero
+                            accumulatedOffset = .zero
+                        }
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                    }
+                    .help("Reset View (100% centered)")
+
+                    Button {
+                        fitToWindow()
+                    } label: {
+                        Image(systemName: "arrow.up.left.and.down.right.magnifyingglass")
+                    }
+                    .help("Fit to Window")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Divider()
+                    .frame(height: 18)
+
+                // Toggle Metrics & Inspector
+                Button {
+                    withAnimation { showMetricsPanel.toggle() }
+                } label: {
+                    Image(systemName: showMetricsPanel ? "chart.bar.xaxis.ascending" : "chart.bar.xaxis")
+                        .foregroundStyle(showMetricsPanel ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Toggle Repository Connectivity Metrics")
+
+                Button {
+                    withAnimation { showInspector.toggle() }
+                } label: {
+                    Image(systemName: "sidebar.trailing")
+                        .foregroundStyle(showInspector ? Color.accentColor : Color.secondary)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Toggle Details Inspector")
+
+                Button {
+                    Task { await generateKnowledgeGraph() }
+                } label: {
+                    Image(systemName: "arrow.clockwise")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Reload Knowledge Graph from Git")
             }
-            .padding()
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
             .background(Color(NSColor.controlBackgroundColor))
 
             Divider()
 
-            GeometryReader { geo in
-                ZStack {
-                    Canvas { context, size in
-                        for rel in filteredRelationships() {
-                            guard let fromNode = nodes.first(where: { $0.id == rel.from }),
-                                  let toNode = nodes.first(where: { $0.id == rel.to }) else { continue }
-
-                            let start = CGPoint(
-                                x: fromNode.position.x + totalOffset.width,
-                                y: fromNode.position.y + totalOffset.height
-                            )
-                            let end = CGPoint(
-                                x: toNode.position.x + totalOffset.width,
-                                y: toNode.position.y + totalOffset.height
-                            )
-
-                            var path = Path()
-                            path.move(to: start)
-                            path.addLine(to: end)
-
-                            context.stroke(path, with: .color(.secondary.opacity(0.4)), lineWidth: 1.5)
-                        }
-                    }
-
-                    ForEach(filteredNodes()) { node in
-                        VStack(spacing: 4) {
-                            ZStack {
-                                Circle()
-                                    .fill(colorForType(node.type))
-                                    .frame(width: 28, height: 28)
-                                    .shadow(radius: 2)
-
-                                Image(systemName: iconForType(node.type))
-                                    .foregroundStyle(.white)
-                                    .font(.system(size: 11))
-                            }
-
-                            Text(node.name)
-                                .font(.system(size: 10, weight: .semibold))
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color(NSColor.windowBackgroundColor).opacity(0.85))
-                                .cornerRadius(4)
-                        }
-                        .position(
-                            x: node.position.x + totalOffset.width,
-                            y: node.position.y + totalOffset.height
-                        )
-                        .scaleEffect(scale)
-                        .onTapGesture {
-                            selectedNode = node
-                        }
-                    }
-                }
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            dragOffset = value.translation
-                        }
-                        .onEnded { value in
-                            accumulatedOffset = accumulatedOffset + value.translation
-                            dragOffset = .zero
-                        }
-                )
-                .gesture(
-                    MagnificationGesture()
-                        .onChanged { val in
-                            scale = val
-                        }
-                )
+            // Connectivity & Metrics Panel
+            if showMetricsPanel {
+                metricsBar
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                Divider()
             }
-            .background(Color.black.opacity(0.05))
-            .sheet(item: $selectedNode) { node in
-                VStack(spacing: 16) {
-                    HStack {
-                        Image(systemName: iconForType(node.type))
-                            .foregroundStyle(colorForType(node.type))
-                            .font(.title)
-                        Text(node.name)
-                            .font(.title3)
-                            .bold()
-                        Spacer()
-                    }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Type: \(node.type.rawValue)")
-                        Text("Associations: Live Reference linkages found across current project.")
-                            .foregroundStyle(.secondary)
-                    }
-                    .font(.subheadline)
+            // Main Canvas & Inspector Area
+            HStack(spacing: 0) {
+                GeometryReader { geo in
+                    ZStack {
+                        // Background dot grid
+                        gridPattern
+                            .background(Color(NSColor.windowBackgroundColor))
 
-                    Divider()
-
-                    HStack {
-                        Button("Dismiss") {
-                            selectedNode = nil
+                        // Edges Canvas
+                        Canvas { context, size in
+                            drawEdges(context: context, size: size)
                         }
-                        Spacer()
+
+                        // Nodes
+                        let visible = visibleNodes()
+                        ForEach(visible) { node in
+                            nodeView(for: node)
+                                .position(
+                                    x: (node.position.x * scale) + totalOffset.width + (geo.size.width / 2.0) - (450 * scale),
+                                    y: (node.position.y * scale) + totalOffset.height + (geo.size.height / 2.0) - (350 * scale)
+                                )
+                                .onTapGesture {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        if selectedNode?.id == node.id {
+                                            selectedNode = nil
+                                        } else {
+                                            selectedNode = node
+                                            showInspector = true
+                                        }
+                                    }
+                                }
+                                .gesture(
+                                    DragGesture()
+                                        .onChanged { val in
+                                            draggingNodeID = node.id
+                                            if let idx = nodes.firstIndex(where: { $0.id == node.id }) {
+                                                nodes[idx].position = CGPoint(
+                                                    x: nodes[idx].position.x + (val.translation.width / scale),
+                                                    y: nodes[idx].position.y + (val.translation.height / scale)
+                                                )
+                                            }
+                                        }
+                                        .onEnded { _ in
+                                            draggingNodeID = nil
+                                        }
+                                )
+                        }
+
+                        // Floating search results & stats indicator
+                        VStack {
+                            Spacer()
+                            HStack {
+                                HStack(spacing: 8) {
+                                    Circle()
+                                        .fill(Color.accentColor)
+                                        .frame(width: 6, height: 6)
+                                    Text("\(visible.count) visible nodes · \(filteredRelationships().count) relationships")
+                                        .font(.system(size: 11, weight: .medium))
+                                        .foregroundStyle(.secondary)
+                                    if !searchPattern.isEmpty {
+                                        Text("· Match: \"\(searchPattern)\"")
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                    if topologyDepth != .full, let sel = selectedNode {
+                                        Text("· Filtered around \(sel.name)")
+                                            .font(.system(size: 11))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(.regularMaterial)
+                                .cornerRadius(16)
+                                .shadow(radius: 2, y: 1)
+
+                                Spacer()
+                            }
+                            .padding(12)
+                        }
                     }
+                    .clipped()
+                    .gesture(
+                        DragGesture()
+                            .onChanged { val in
+                                if draggingNodeID == nil {
+                                    dragOffset = val.translation
+                                }
+                            }
+                            .onEnded { val in
+                                if draggingNodeID == nil {
+                                    accumulatedOffset = accumulatedOffset + val.translation
+                                    dragOffset = .zero
+                                }
+                            }
+                    )
+                    .gesture(
+                        MagnificationGesture()
+                            .onChanged { val in
+                                scale = max(0.25, min(3.0, val))
+                            }
+                    )
                 }
-                .padding()
-                .frame(width: 380, height: 220)
+
+                // Node Details & Inspection Side Panel
+                if showInspector {
+                    Divider()
+                    inspectorPanel
+                        .frame(width: 330)
+                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                }
             }
         }
         .onAppear {
-            generateKnowledgeGraph()
+            Task { await generateKnowledgeGraph() }
         }
     }
 
-    private func filteredNodes() -> [KnowledgeNode] {
-        nodes.filter { node in
+    // MARK: - Dot Grid Background
+    private var gridPattern: some View {
+        Canvas { context, size in
+            let spacing: CGFloat = 28.0 * scale
+            guard spacing > 8 else { return }
+            let xOffset = totalOffset.width.truncatingRemainder(dividingBy: spacing)
+            let yOffset = totalOffset.height.truncatingRemainder(dividingBy: spacing)
+
+            var x = xOffset
+            while x < size.width {
+                var y = yOffset
+                while y < size.height {
+                    let rect = CGRect(x: x - 1, y: y - 1, width: 2, height: 2)
+                    context.fill(Path(ellipseIn: rect), with: .color(.secondary.opacity(0.18)))
+                    y += spacing
+                }
+                x += spacing
+            }
+        }
+    }
+
+    // MARK: - Edge Canvas Drawing
+    private func drawEdges(context: GraphicsContext, size: CGSize) {
+        let centerOffset = CGPoint(
+            x: totalOffset.width + (size.width / 2.0) - (450 * scale),
+            y: totalOffset.height + (size.height / 2.0) - (350 * scale)
+        )
+
+        let rels = filteredRelationships()
+        let selId = selectedNode?.id
+
+        for rel in rels {
+            guard let fromNode = nodes.first(where: { $0.id == rel.from }),
+                  let toNode = nodes.first(where: { $0.id == rel.to }) else { continue }
+
+            let start = CGPoint(
+                x: (fromNode.position.x * scale) + centerOffset.x,
+                y: (fromNode.position.y * scale) + centerOffset.y
+            )
+            let end = CGPoint(
+                x: (toNode.position.x * scale) + centerOffset.x,
+                y: (toNode.position.y * scale) + centerOffset.y
+            )
+
+            let isIncidentToSelected = selId != nil && (fromNode.id == selId || toNode.id == selId)
+            let hasSelection = selId != nil
+
+            var path = Path()
+            path.move(to: start)
+
+            // Smooth cubic Bezier curve
+            let midX = (start.x + end.x) / 2.0
+            let midY = (start.y + end.y) / 2.0
+            let dx = end.x - start.x
+            let dy = end.y - start.y
+            let dist = sqrt(dx * dx + dy * dy)
+            let curvature: CGFloat = min(dist * 0.12, 40.0)
+            let normalX = -dy / max(dist, 1)
+            let normalY = dx / max(dist, 1)
+
+            let cp1 = CGPoint(x: start.x + dx * 0.3 + normalX * curvature, y: start.y + dy * 0.3 + normalY * curvature)
+            let cp2 = CGPoint(x: start.x + dx * 0.7 + normalX * curvature, y: start.y + dy * 0.7 + normalY * curvature)
+            path.addCurve(to: end, control1: cp1, control2: cp2)
+
+            if isIncidentToSelected {
+                // Highlighted with system accent color
+                context.stroke(path, with: .color(Color.accentColor), lineWidth: 2.5)
+
+                // Directional arrow near midpoint
+                let arrowPath = Path { p in
+                    p.move(to: CGPoint(x: midX - 4, y: midY - 4))
+                    p.addLine(to: CGPoint(x: midX + 4, y: midY))
+                    p.addLine(to: CGPoint(x: midX - 4, y: midY + 4))
+                }
+                context.stroke(arrowPath, with: .color(Color.accentColor), lineWidth: 2.0)
+            } else if hasSelection {
+                // Dimmed background connection
+                context.stroke(path, with: .color(Color.secondary.opacity(0.12)), lineWidth: 1.0)
+            } else {
+                // Standard clean connection with optional weight
+                let width: CGFloat = rel.type == .coChangesWith ? 2.0 : 1.2
+                let opacity: Double = rel.type == .coChangesWith ? 0.45 : 0.28
+                context.stroke(path, with: .color(Color.secondary.opacity(opacity)), lineWidth: width)
+            }
+        }
+    }
+
+    // MARK: - Node View Rendering
+    @ViewBuilder
+    private func nodeView(for node: KnowledgeNode) -> some View {
+        let isSelected = selectedNode?.id == node.id
+        let isConnected = isNeighbor(node.id, to: selectedNode?.id)
+        let hasSelection = selectedNode != nil
+        let opacity: Double = {
+            if !hasSelection { return 1.0 }
+            if isSelected || isConnected { return 1.0 }
+            return 0.22
+        }()
+
+        VStack(spacing: 4) {
+            ZStack {
+                // Halo for selected node
+                if isSelected {
+                    Circle()
+                        .stroke(Color.accentColor.opacity(0.4), lineWidth: 6)
+                        .frame(width: 36 * scale, height: 36 * scale)
+                }
+
+                // Main circular node
+                Circle()
+                    .fill(isSelected ? Color.accentColor : colorForType(node.type))
+                    .frame(width: 26 * scale, height: 26 * scale)
+                    .overlay(
+                        Circle()
+                            .stroke(isSelected ? Color.white : (isConnected ? Color.accentColor : Color.white.opacity(0.4)), lineWidth: isSelected ? 2.5 : (isConnected ? 2 : 1))
+                    )
+                    .shadow(color: isSelected ? Color.accentColor.opacity(0.5) : Color.black.opacity(0.15), radius: isSelected ? 6 : 2)
+
+                Image(systemName: iconForType(node.type))
+                    .foregroundStyle(.white)
+                    .font(.system(size: 11 * scale, weight: .semibold))
+
+                // High Churn / Hub File indicator badge
+                if node.isHubFile == true {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Image(systemName: "flame.fill")
+                                .font(.system(size: 8 * scale))
+                                .foregroundStyle(Color.accentColor)
+                                .background(Circle().fill(Color(NSColor.windowBackgroundColor)).frame(width: 12 * scale, height: 12 * scale))
+                        }
+                        Spacer()
+                    }
+                    .frame(width: 32 * scale, height: 32 * scale)
+                }
+            }
+
+            // Node Name / Badge
+            HStack(spacing: 3) {
+                if node.type == .branch && node.isCurrentBranch == true {
+                    Text("HEAD")
+                        .font(.system(size: 8 * scale, weight: .bold))
+                        .padding(.horizontal, 3)
+                        .padding(.vertical, 1)
+                        .background(Color.accentColor)
+                        .foregroundStyle(.white)
+                        .cornerRadius(3)
+                }
+                Text(node.name)
+                    .font(.system(size: max(9, 10 * scale), weight: isSelected ? .bold : .medium))
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .foregroundStyle(isSelected ? Color.primary : Color.secondary)
+
+                if let mods = node.modificationCount, mods > 1 {
+                    Text("\(mods)")
+                        .font(.system(size: 8 * scale, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 3)
+                        .padding(.vertical, 1)
+                        .background(Color.secondary.opacity(0.15))
+                        .cornerRadius(3)
+                }
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(Color(NSColor.windowBackgroundColor).opacity(0.92))
+                    .shadow(color: Color.black.opacity(0.08), radius: 1, y: 1)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 5)
+                    .stroke(isSelected ? Color.accentColor : Color.secondary.opacity(0.2), lineWidth: isSelected ? 1.5 : 0.5)
+            )
+        }
+        .frame(width: 140 * scale)
+        .opacity(opacity)
+        .scaleEffect(isSelected ? 1.08 : 1.0)
+        .animation(.spring(response: 0.25, dampingFraction: 0.8), value: isSelected)
+    }
+
+    // MARK: - Repository Connectivity Metrics Bar
+    private var metricsBar: some View {
+        HStack(spacing: 16) {
+            // Summary Counters
+            HStack(spacing: 12) {
+                metricCounter(label: "Nodes", value: "\(nodes.count)", icon: "circle.grid.cross")
+                metricCounter(label: "Edges", value: "\(relationships.count)", icon: "arrow.triangle.swap")
+                let density = nodes.count > 1 ? Double(relationships.count) / Double(nodes.count * (nodes.count - 1) / 2) : 0
+                metricCounter(label: "Density", value: String(format: "%.2f", density), icon: "chart.pie")
+            }
+
+            Divider()
+                .frame(height: 24)
+
+            // Hub Files (Highest Churn)
+            HStack(spacing: 6) {
+                Label("Hub Files:", systemImage: "flame")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                if topChurnFiles.isEmpty {
+                    Text("No churn detected")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(topChurnFiles.prefix(4)) { item in
+                                Button {
+                                    if let n = nodes.first(where: { $0.filePath == item.filename || $0.name == item.filename }) {
+                                        selectAndFocus(n)
+                                    }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Text((item.filename as NSString).lastPathComponent)
+                                            .font(.system(size: 10, weight: .medium))
+                                        Text("(\(item.modifications)x)")
+                                            .font(.system(size: 9, design: .monospaced))
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 3)
+                                    .background(Color.accentColor.opacity(0.12))
+                                    .cornerRadius(4)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Divider()
+                .frame(height: 24)
+
+            // Top Co-Changing Files
+            HStack(spacing: 6) {
+                Label("Co-Changing:", systemImage: "link")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
+                if topCoChangingPairs.isEmpty {
+                    Text("None recorded")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                } else {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(topCoChangingPairs.prefix(3)) { pair in
+                                Button {
+                                    if let n = nodes.first(where: { $0.name == (pair.fileA as NSString).lastPathComponent || $0.filePath == pair.fileA }) {
+                                        selectAndFocus(n)
+                                    }
+                                } label: {
+                                    HStack(spacing: 3) {
+                                        Text((pair.fileA as NSString).lastPathComponent)
+                                        Image(systemName: "arrow.left.and.right")
+                                            .font(.system(size: 8))
+                                            .foregroundStyle(.secondary)
+                                        Text((pair.fileB as NSString).lastPathComponent)
+                                        Text("(\(pair.coCommitCount)x)")
+                                            .font(.system(size: 9, design: .monospaced))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                    .font(.system(size: 10, weight: .medium))
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 3)
+                                    .background(Color.accentColor.opacity(0.1))
+                                    .cornerRadius(4)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+        .background(Color(NSColor.controlBackgroundColor).opacity(0.7))
+    }
+
+    private func metricCounter(label: String, value: String, icon: String) -> some View {
+        HStack(spacing: 5) {
+            Image(systemName: icon)
+                .font(.system(size: 10))
+                .foregroundStyle(Color.accentColor)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(value)
+                    .font(.system(size: 11, weight: .bold, design: .monospaced))
+                Text(label)
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    // MARK: - Node Details Inspector Panel
+    private var inspectorPanel: some View {
+        VStack(spacing: 0) {
+            // Inspector Header
+            HStack {
+                Text("Node Inspector")
+                    .font(.system(size: 12, weight: .semibold))
+                Spacer()
+                Button {
+                    withAnimation { showInspector = false }
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(NSColor.controlBackgroundColor))
+
+            Divider()
+
+            if let node = selectedNode {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        // Title card
+                        HStack(spacing: 10) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(colorForType(node.type).opacity(0.15))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: iconForType(node.type))
+                                    .foregroundStyle(colorForType(node.type))
+                                    .font(.system(size: 16, weight: .semibold))
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(node.name)
+                                    .font(.system(size: 13, weight: .bold))
+                                    .lineLimit(2)
+                                HStack(spacing: 6) {
+                                    Text(node.type.rawValue)
+                                        .font(.system(size: 10, weight: .medium))
+                                        .padding(.horizontal, 5)
+                                        .padding(.vertical, 1)
+                                        .background(Color.secondary.opacity(0.15))
+                                        .cornerRadius(3)
+                                    if node.isHubFile == true {
+                                        Text("🔥 High Churn Hub")
+                                            .font(.system(size: 9, weight: .semibold))
+                                            .foregroundStyle(Color.accentColor)
+                                    }
+                                }
+                            }
+                            Spacer()
+                        }
+                        .padding(10)
+                        .background(Color(NSColor.controlBackgroundColor).opacity(0.5))
+                        .cornerRadius(8)
+
+                        // Quick Actions
+                        HStack(spacing: 6) {
+                            Button {
+                                selectAndFocus(node)
+                            } label: {
+                                Label("Focus", systemImage: "scope")
+                                    .font(.system(size: 10))
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
+                            Button {
+                                withAnimation {
+                                    topologyDepth = (topologyDepth == .oneHop) ? .full : .oneHop
+                                }
+                            } label: {
+                                Label(topologyDepth == .oneHop ? "Full Graph" : "1-Hop", systemImage: "circle.circle")
+                                    .font(.system(size: 10))
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
+                            Button {
+                                withAnimation {
+                                    topologyDepth = (topologyDepth == .twoHops) ? .full : .twoHops
+                                }
+                            } label: {
+                                Label(topologyDepth == .twoHops ? "Full Graph" : "2-Hops", systemImage: "circles.hexagonpath")
+                                    .font(.system(size: 10))
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+
+                            Button {
+                                copyNodeInfo(node)
+                            } label: {
+                                Image(systemName: "doc.on.doc")
+                                    .font(.system(size: 10))
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
+                            .help("Copy ID / Hash / Path")
+                        }
+
+                        Divider()
+
+                        // Metadata by Node Type
+                        switch node.type {
+                        case .commit:
+                            commitMetadataView(for: node)
+                        case .file:
+                            fileMetadataView(for: node)
+                        case .branch:
+                            branchMetadataView(for: node)
+                        case .contributor:
+                            contributorMetadataView(for: node)
+                        case .directory:
+                            directoryMetadataView(for: node)
+                        default:
+                            genericMetadataView(for: node)
+                        }
+
+                        // Connected Relationships List
+                        connectedRelationshipsSection(for: node)
+                    }
+                    .padding(12)
+                }
+            } else {
+                VStack(spacing: 12) {
+                    Spacer()
+                    Image(systemName: "cursorarrow.click.2")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.secondary.opacity(0.6))
+                    Text("Select a Node")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                    Text("Click any file, commit, branch, or contributor in the graph to inspect detailed associations and metrics.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .background(Color(NSColor.windowBackgroundColor))
+    }
+
+    // MARK: - Inspector Metadata Views
+    @ViewBuilder
+    private func commitMetadataView(for node: KnowledgeNode) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            metadataRow(label: "Commit SHA", value: node.commitHash ?? node.id)
+            if let short = node.shortHash {
+                metadataRow(label: "Short SHA", value: short)
+            }
+            if let author = node.author {
+                metadataRow(label: "Author", value: author)
+            }
+            if let email = node.authorEmail {
+                metadataRow(label: "Email", value: email)
+            }
+            if let date = node.date {
+                metadataRow(label: "Committed", value: graphDateFormatter.string(from: date))
+            }
+            if let adds = node.additions, let dels = node.deletions {
+                HStack {
+                    Text("Diff Size")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 80, alignment: .leading)
+                    HStack(spacing: 6) {
+                        Text("+\(adds)")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                        Text("-\(dels)")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            if let count = node.changedFilesCount {
+                metadataRow(label: "Files Changed", value: "\(count)")
+            }
+            if let msg = node.message, !msg.isEmpty {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Commit Message")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    Text(msg)
+                        .font(.system(size: 11, design: .monospaced))
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(NSColor.controlBackgroundColor))
+                        .cornerRadius(6)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func fileMetadataView(for node: KnowledgeNode) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let path = node.filePath {
+                metadataRow(label: "Relative Path", value: path)
+            }
+            if let churn = node.modificationCount {
+                metadataRow(label: "Churn Count", value: "\(churn) modifications")
+            }
+            if let topAuthors = node.topContributors, !topAuthors.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Top Contributors")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    ForEach(topAuthors.prefix(3), id: \.self) { author in
+                        Label(author, systemImage: "person.circle")
+                            .font(.system(size: 11))
+                    }
+                }
+            }
+            if let linked = node.linkedCommits, !linked.isEmpty {
+                metadataRow(label: "Linked Commits", value: "\(linked.count) commits")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func branchMetadataView(for node: KnowledgeNode) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            metadataRow(label: "Branch Name", value: node.name)
+            metadataRow(label: "Active HEAD", value: node.isCurrentBranch == true ? "Yes (Current)" : "No")
+            metadataRow(label: "Remote Tracking", value: node.isRemoteBranch == true ? "Remote" : "Local")
+            if let head = node.headCommitHash {
+                metadataRow(label: "Tip Commit", value: String(head.prefix(8)))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func contributorMetadataView(for node: KnowledgeNode) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            metadataRow(label: "Contributor", value: node.name)
+            if let count = node.totalCommitsForAuthor {
+                metadataRow(label: "Total Commits", value: "\(count)")
+            }
+            if let touched = node.filesTouchedByAuthor, !touched.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Top Files Touched (\(touched.count))")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                    ForEach(touched.prefix(4), id: \.self) { file in
+                        Text((file as NSString).lastPathComponent)
+                            .font(.system(size: 10, design: .monospaced))
+                            .lineLimit(1)
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func directoryMetadataView(for node: KnowledgeNode) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            metadataRow(label: "Directory", value: node.name)
+            if !node.detail.isEmpty {
+                metadataRow(label: "Overview", value: node.detail)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func genericMetadataView(for node: KnowledgeNode) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            metadataRow(label: "Identifier", value: node.id)
+            if !node.detail.isEmpty {
+                metadataRow(label: "Details", value: node.detail)
+            }
+        }
+    }
+
+    private func metadataRow(label: String, value: String) -> some View {
+        HStack(alignment: .top, spacing: 6) {
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+                .frame(width: 80, alignment: .leading)
+            Text(value)
+                .font(.system(size: 11, design: .monospaced))
+                .lineLimit(2)
+                .textSelection(.enabled)
+            Spacer()
+        }
+    }
+
+    @ViewBuilder
+    private func connectedRelationshipsSection(for node: KnowledgeNode) -> some View {
+        let connectedRels = relationships.filter { $0.from == node.id || $0.to == node.id }
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Associations (\(connectedRels.count))")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.secondary)
+
+            if connectedRels.isEmpty {
+                Text("No direct relationships recorded.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(connectedRels.prefix(8)) { rel in
+                    let otherId = (rel.from == node.id) ? rel.to : rel.from
+                    if let target = nodes.first(where: { $0.id == otherId }) {
+                        Button {
+                            selectAndFocus(target)
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: iconForType(target.type))
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(colorForType(target.type))
+                                Text(target.name)
+                                    .font(.system(size: 10))
+                                    .lineLimit(1)
+                                Spacer()
+                                Text(rel.type.rawValue)
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(NSColor.controlBackgroundColor))
+                            .cornerRadius(4)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Filtering & Topology Logic
+    private func visibleNodes() -> [KnowledgeNode] {
+        let searched = nodes.filter { node in
             if let type = selectedNodeType, node.type != type { return false }
             if !searchPattern.isEmpty {
-                return node.name.lowercased().contains(searchPattern.lowercased())
+                let term = searchPattern.lowercased()
+                let matchesName = node.name.lowercased().contains(term)
+                let matchesAuthor = node.author?.lowercased().contains(term) ?? false
+                let matchesMsg = node.message?.lowercased().contains(term) ?? false
+                let matchesHash = node.commitHash?.lowercased().contains(term) ?? false
+                let matchesPath = node.filePath?.lowercased().contains(term) ?? false
+                if !(matchesName || matchesAuthor || matchesMsg || matchesHash || matchesPath) {
+                    return false
+                }
+            }
+            if selectedDateRange != .allTime {
+                if let d = node.date, !selectedDateRange.matches(date: d) {
+                    return false
+                }
             }
             return true
+        }
+
+        // Neighborhood Depth Isolation
+        switch topologyDepth {
+        case .full:
+            return searched
+        case .oneHop:
+            guard let sel = selectedNode else { return searched }
+            let neighbors = neighborNodeIDs(for: sel.id, depth: 1)
+            return searched.filter { neighbors.contains($0.id) }
+        case .twoHops:
+            guard let sel = selectedNode else { return searched }
+            let neighbors = neighborNodeIDs(for: sel.id, depth: 2)
+            return searched.filter { neighbors.contains($0.id) }
         }
     }
 
     private func filteredRelationships() -> [KnowledgeRelationship] {
-        let fNodes = Set(filteredNodes().map { $0.id })
-        return relationships.filter { fNodes.contains($0.from) && fNodes.contains($0.to) }
+        let vIds = Set(visibleNodes().map { $0.id })
+        return relationships.filter { vIds.contains($0.from) && vIds.contains($0.to) }
     }
 
+    private func neighborNodeIDs(for nodeID: String, depth: Int) -> Set<String> {
+        var visited: Set<String> = [nodeID]
+        var frontier: Set<String> = [nodeID]
+
+        for _ in 0..<depth {
+            var nextFrontier: Set<String> = []
+            for id in frontier {
+                for r in relationships {
+                    if r.from == id && !visited.contains(r.to) {
+                        nextFrontier.insert(r.to)
+                        visited.insert(r.to)
+                    } else if r.to == id && !visited.contains(r.from) {
+                        nextFrontier.insert(r.from)
+                        visited.insert(r.from)
+                    }
+                }
+            }
+            frontier = nextFrontier
+        }
+        return visited
+    }
+
+    private func isNeighbor(_ nodeID: String, to selectedID: String?) -> Bool {
+        guard let sel = selectedID else { return false }
+        if nodeID == sel { return true }
+        return relationships.contains { ($0.from == sel && $0.to == nodeID) || ($0.to == sel && $0.from == nodeID) }
+    }
+
+    // MARK: - Navigation & Layout Helpers
+    private func selectAndFocus(_ node: KnowledgeNode) {
+        selectedNode = node
+        showInspector = true
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            scale = 1.2
+            dragOffset = .zero
+            accumulatedOffset = CGSize(
+                width: -(node.position.x - 450) * 1.2,
+                height: -(node.position.y - 350) * 1.2
+            )
+        }
+    }
+
+    private func fitToWindow() {
+        let visible = visibleNodes()
+        guard !visible.isEmpty else {
+            scale = 1.0
+            dragOffset = .zero
+            accumulatedOffset = .zero
+            return
+        }
+
+        var minX = visible[0].position.x
+        var maxX = visible[0].position.x
+        var minY = visible[0].position.y
+        var maxY = visible[0].position.y
+
+        for n in visible {
+            minX = min(minX, n.position.x)
+            maxX = max(maxX, n.position.x)
+            minY = min(minY, n.position.y)
+            maxY = max(maxY, n.position.y)
+        }
+
+        let width = max(maxX - minX + 160, 400)
+        let height = max(maxY - minY + 160, 400)
+        let centerX = (minX + maxX) / 2.0
+        let centerY = (minY + maxY) / 2.0
+
+        let targetScale = min(1.6, max(0.4, min(800 / width, 600 / height)))
+
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            scale = targetScale
+            dragOffset = .zero
+            accumulatedOffset = CGSize(
+                width: -(centerX - 450) * targetScale,
+                height: -(centerY - 350) * targetScale
+            )
+        }
+    }
+
+    private func copyNodeInfo(_ node: KnowledgeNode) {
+        let str = node.commitHash ?? node.filePath ?? node.name
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(str, forType: .string)
+    }
+
+    private func applyLayout(_ mode: GraphLayoutMode) {
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.8)) {
+            switch mode {
+            case .organic:
+                layoutConcentric()
+            case .hierarchical:
+                layoutHierarchical()
+            case .clustered:
+                layoutClustered()
+            }
+        }
+    }
+
+    private func layoutConcentric() {
+        let centerX: CGFloat = 450
+        let centerY: CGFloat = 350
+
+        // Root at center
+        if let idx = nodes.firstIndex(where: { $0.id == "root" }) {
+            nodes[idx].position = CGPoint(x: centerX, y: centerY)
+        }
+
+        // Branches in inner ring (radius 160)
+        let branches = nodes.enumerated().filter { $0.element.type == .branch }
+        for (i, item) in branches.enumerated() {
+            let angle = (Double(i) / Double(max(branches.count, 1))) * 2.0 * .pi
+            let x = centerX + CGFloat(cos(angle)) * 160
+            let y = centerY + CGFloat(sin(angle)) * 160
+            nodes[item.offset].position = CGPoint(x: x, y: y)
+        }
+
+        // Commits in middle ring (radius 320)
+        let commits = nodes.enumerated().filter { $0.element.type == .commit }
+        for (i, item) in commits.enumerated() {
+            let angle = (Double(i) / Double(max(commits.count, 1))) * 2.0 * .pi - (.pi / 2.0)
+            let x = centerX + CGFloat(cos(angle)) * 320
+            let y = centerY + CGFloat(sin(angle)) * 320
+            nodes[item.offset].position = CGPoint(x: x, y: y)
+        }
+
+        // Files in outer ring (radius 490)
+        let files = nodes.enumerated().filter { $0.element.type == .file }
+        for (i, item) in files.enumerated() {
+            let angle = (Double(i) / Double(max(files.count, 1))) * 2.0 * .pi
+            let x = centerX + CGFloat(cos(angle)) * 490
+            let y = centerY + CGFloat(sin(angle)) * 490
+            nodes[item.offset].position = CGPoint(x: x, y: y)
+        }
+
+        // Contributors in periphery clusters (radius 640)
+        let authors = nodes.enumerated().filter { $0.element.type == .contributor }
+        for (i, item) in authors.enumerated() {
+            let angle = (Double(i) / Double(max(authors.count, 1))) * 2.0 * .pi + (.pi / 4.0)
+            let x = centerX + CGFloat(cos(angle)) * 640
+            let y = centerY + CGFloat(sin(angle)) * 640
+            nodes[item.offset].position = CGPoint(x: x, y: y)
+        }
+    }
+
+    private func layoutHierarchical() {
+        // Branches at top row (y: 100)
+        let branches = nodes.enumerated().filter { $0.element.type == .branch }
+        let bSpacing: CGFloat = 160
+        let bStart = 450 - (CGFloat(branches.count - 1) * bSpacing / 2.0)
+        for (i, item) in branches.enumerated() {
+            nodes[item.offset].position = CGPoint(x: bStart + CGFloat(i) * bSpacing, y: 100)
+        }
+
+        // Root in middle top
+        if let idx = nodes.firstIndex(where: { $0.id == "root" }) {
+            nodes[idx].position = CGPoint(x: 450, y: 180)
+        }
+
+        // Commits row (y: 300)
+        let commits = nodes.enumerated().filter { $0.element.type == .commit }
+        let cSpacing: CGFloat = 140
+        let cStart = 450 - (CGFloat(commits.count - 1) * cSpacing / 2.0)
+        for (i, item) in commits.enumerated() {
+            nodes[item.offset].position = CGPoint(x: cStart + CGFloat(i) * cSpacing, y: 300)
+        }
+
+        // Files row (y: 520)
+        let files = nodes.enumerated().filter { $0.element.type == .file }
+        let fSpacing: CGFloat = 130
+        let fStart = 450 - (CGFloat(files.count - 1) * fSpacing / 2.0)
+        for (i, item) in files.enumerated() {
+            let rowOffset = (i % 2 == 0) ? CGFloat(0) : CGFloat(40)
+            nodes[item.offset].position = CGPoint(x: fStart + CGFloat(i) * fSpacing, y: 520 + rowOffset)
+        }
+
+        // Contributors row (y: 720)
+        let authors = nodes.enumerated().filter { $0.element.type == .contributor }
+        let aSpacing: CGFloat = 160
+        let aStart = 450 - (CGFloat(authors.count - 1) * aSpacing / 2.0)
+        for (i, item) in authors.enumerated() {
+            nodes[item.offset].position = CGPoint(x: aStart + CGFloat(i) * aSpacing, y: 720)
+        }
+    }
+
+    private func layoutClustered() {
+        // Group files by top-level subsystem directory, and commits near their authors
+        let centerX: CGFloat = 450
+        let centerY: CGFloat = 350
+
+        if let idx = nodes.firstIndex(where: { $0.id == "root" }) {
+            nodes[idx].position = CGPoint(x: centerX, y: centerY)
+        }
+
+        // Distribute contributors in 4 quadrants
+        let authors = nodes.enumerated().filter { $0.element.type == .contributor }
+        for (i, item) in authors.enumerated() {
+            let angle = (Double(i) / Double(max(authors.count, 1))) * 2.0 * .pi
+            let x = centerX + CGFloat(cos(angle)) * 480
+            let y = centerY + CGFloat(sin(angle)) * 480
+            nodes[item.offset].position = CGPoint(x: x, y: y)
+        }
+
+        // Files clustered near center
+        let files = nodes.enumerated().filter { $0.element.type == .file }
+        for (i, item) in files.enumerated() {
+            let angle = (Double(i) / Double(max(files.count, 1))) * 2.0 * .pi + 0.3
+            let r: CGFloat = (item.element.isHubFile == true) ? 220 : 340
+            let x = centerX + CGFloat(cos(angle)) * r
+            let y = centerY + CGFloat(sin(angle)) * r
+            nodes[item.offset].position = CGPoint(x: x, y: y)
+        }
+
+        // Commits clustered around branches and authors
+        let commits = nodes.enumerated().filter { $0.element.type == .commit }
+        for (i, item) in commits.enumerated() {
+            let angle = (Double(i) / Double(max(commits.count, 1))) * 2.0 * .pi - 0.5
+            let x = centerX + CGFloat(cos(angle)) * 260
+            let y = centerY + CGFloat(sin(angle)) * 260
+            nodes[item.offset].position = CGPoint(x: x, y: y)
+        }
+
+        let branches = nodes.enumerated().filter { $0.element.type == .branch }
+        for (i, item) in branches.enumerated() {
+            let angle = (Double(i) / Double(max(branches.count, 1))) * 2.0 * .pi + 1.2
+            let x = centerX + CGFloat(cos(angle)) * 150
+            let y = centerY + CGFloat(sin(angle)) * 150
+            nodes[item.offset].position = CGPoint(x: x, y: y)
+        }
+    }
+
+    // MARK: - Styling & Icons
     private func colorForType(_ type: KnowledgeNode.NodeType) -> Color {
         switch type {
-        case .file: return .blue
+        case .file: return Color.accentColor
         case .directory: return .secondary
-        case .commit: return .green
-        case .branch: return .cyan
-        case .pullRequest: return .pink
-        case .issue: return .red
-        case .contributor: return .indigo
-        case .workflow: return .mint
+        case .commit: return .secondary
+        case .branch: return Color.accentColor
+        case .pullRequest: return Color.accentColor
+        case .issue: return .secondary
+        case .contributor: return .secondary
+        case .workflow: return Color.accentColor
         }
     }
 
@@ -576,42 +1778,257 @@ public struct RepositoryKnowledgeGraphView: View {
         }
     }
 
-    private func generateKnowledgeGraph() {
+    // MARK: - Full Knowledge Graph Generation
+    private func generateKnowledgeGraph() async {
+        isRefreshing = true
         var tempNodes: [KnowledgeNode] = []
         var tempRels: [KnowledgeRelationship] = []
 
-        let rootNode = KnowledgeNode(id: "root", name: "Repository Root", type: .directory, position: CGPoint(x: 400, y: 300))
+        // Root Node
+        let rootNode = KnowledgeNode(
+            id: "root",
+            name: "Repository Root",
+            type: .directory,
+            position: CGPoint(x: 450, y: 350),
+            detail: "Primary repository workspace directory root."
+        )
         tempNodes.append(rootNode)
 
-        var idx = 0
-        for branch in gitViewModel.branches {
+        // 1. Branches from ViewModel
+        for (bIdx, branch) in gitViewModel.branches.enumerated() {
             let bId = "branch_\(branch.name)"
-            let bNode = KnowledgeNode(id: bId, name: branch.name, type: .branch, position: CGPoint(x: 150 + (idx * 180), y: 150))
+            let bNode = KnowledgeNode(
+                id: bId,
+                name: branch.name,
+                type: .branch,
+                position: CGPoint(x: 300 + (bIdx * 150), y: 150),
+                detail: branch.isCurrent ? "Active checkout branch" : "Branch reference",
+                isCurrentBranch: branch.isCurrent,
+                isRemoteBranch: branch.isRemote
+            )
             tempNodes.append(bNode)
             tempRels.append(KnowledgeRelationship(from: bId, to: "root", type: .contains))
-            idx += 1
         }
 
-        idx = 0
-        for commit in gitViewModel.history.prefix(5) {
-            let cId = "commit_\(commit.sha)"
-            let cNode = KnowledgeNode(id: cId, name: String(commit.message.prefix(25)), type: .commit, position: CGPoint(x: 200 + (idx * 120), y: 450))
-            tempNodes.append(cNode)
-            tempRels.append(KnowledgeRelationship(from: cId, to: "root", type: .references))
-            idx += 1
+        // 2. Commit & File Churn Extraction
+        var parsedCommits: [KnowledgeNode] = []
+        var fileChurnMap: [String: Int] = [:]
+        var fileAuthorsMap: [String: Set<String>] = [:]
+        var fileLinkedCommitsMap: [String: [String]] = [:]
+        var coChangeCounts: [String: [String: Int]] = [:]
+        var authorCommitCounts: [String: Int] = [:]
+        var authorFilesTouched: [String: Set<String>] = [:]
+
+        if let repoURL = gitViewModel.repositoryURL {
+            do {
+                let res = try await ProcessRunnerTool.shared.run(
+                    executableURL: getGitExecutableURL(),
+                    arguments: ["log", "-n", "35", "--numstat", "--pretty=format:COMMIT:%H|%an|%ae|%at|%s"],
+                    workingDirectory: repoURL
+                )
+
+                if res.exitCode == 0 {
+                    let lines = res.stdout.components(separatedBy: .newlines)
+                    var currentCommitNode: KnowledgeNode?
+                    var currentCommitFiles: [String] = []
+
+                    func flushCurrentCommit() {
+                        if let c = currentCommitNode {
+                            var finalized = c
+                            finalized.changedFilesCount = currentCommitFiles.count
+                            parsedCommits.append(finalized)
+
+                            // Track co-changing pairs
+                            let uniqueFiles = Array(Set(currentCommitFiles))
+                            if uniqueFiles.count > 1 && uniqueFiles.count <= 15 {
+                                for i in 0..<uniqueFiles.count {
+                                    for j in (i + 1)..<uniqueFiles.count {
+                                        let f1 = min(uniqueFiles[i], uniqueFiles[j])
+                                        let f2 = max(uniqueFiles[i], uniqueFiles[j])
+                                        coChangeCounts[f1, default: [:]][f2, default: 0] += 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    for line in lines {
+                        let trimmed = line.trimmingCharacters(in: .whitespaces)
+                        if trimmed.hasPrefix("COMMIT:") {
+                            flushCurrentCommit()
+                            currentCommitFiles = []
+
+                            let raw = String(trimmed.dropFirst(7))
+                            let parts = raw.components(separatedBy: "|")
+                            if parts.count >= 5 {
+                                let hash = parts[0]
+                                let author = parts[1]
+                                let email = parts[2]
+                                let timestamp = Double(parts[3]) ?? 0
+                                let subject = parts[4]
+                                let short = String(hash.prefix(7))
+                                let cDate = Date(timeIntervalSince1970: timestamp)
+
+                                currentCommitNode = KnowledgeNode(
+                                    id: "commit_\(hash)",
+                                    name: subject.isEmpty ? short : String(subject.prefix(30)),
+                                    type: .commit,
+                                    position: .zero,
+                                    detail: subject,
+                                    commitHash: hash,
+                                    shortHash: short,
+                                    author: author,
+                                    authorEmail: email,
+                                    date: cDate,
+                                    message: subject,
+                                    additions: 0,
+                                    deletions: 0
+                                )
+
+                                authorCommitCounts[author, default: 0] += 1
+                            }
+                        } else if !trimmed.isEmpty {
+                            let comps = trimmed.components(separatedBy: "\t")
+                            if comps.count >= 3 {
+                                let adds = Int(comps[0]) ?? 0
+                                let dels = Int(comps[1]) ?? 0
+                                let file = comps[2]
+
+                                currentCommitFiles.append(file)
+                                fileChurnMap[file, default: 0] += 1
+                                if let c = currentCommitNode {
+                                    fileLinkedCommitsMap[file, default: []].append(c.id)
+                                    if let a = c.author {
+                                        fileAuthorsMap[file, default: []].insert(a)
+                                        authorFilesTouched[a, default: []].insert(file)
+                                    }
+                                    var updated = c
+                                    updated.additions = (updated.additions ?? 0) + adds
+                                    updated.deletions = (updated.deletions ?? 0) + dels
+                                    currentCommitNode = updated
+                                }
+                            }
+                        }
+                    }
+                    flushCurrentCommit()
+                }
+            } catch {
+                logger.error("Git numstat parsing failed: \(error.localizedDescription)")
+            }
         }
 
-        let authors = Set(gitViewModel.history.map { $0.author })
-        idx = 0
-        for author in authors.prefix(3) {
-            let autId = "author_\(author)"
-            let autNode = KnowledgeNode(id: autId, name: author, type: .contributor, position: CGPoint(x: 650, y: 200 + (idx * 80)))
-            tempNodes.append(autNode)
-            idx += 1
+        // Fallback to gitViewModel.history if subprocess didn't produce commits
+        if parsedCommits.isEmpty {
+            for commit in gitViewModel.history.prefix(25) {
+                let cId = "commit_\(commit.sha)"
+                let cNode = KnowledgeNode(
+                    id: cId,
+                    name: String(commit.subject.prefix(28)),
+                    type: .commit,
+                    position: .zero,
+                    detail: commit.message,
+                    commitHash: commit.sha,
+                    shortHash: commit.shortHash,
+                    author: commit.author,
+                    authorEmail: commit.email,
+                    date: commit.date,
+                    message: commit.message
+                )
+                parsedCommits.append(cNode)
+                authorCommitCounts[commit.author, default: 0] += 1
+            }
         }
+
+        // Add commit nodes & connect to root / parents
+        for commitNode in parsedCommits {
+            tempNodes.append(commitNode)
+            tempRels.append(KnowledgeRelationship(from: commitNode.id, to: "root", type: .references))
+        }
+
+        // 3. File Nodes from Churn Data
+        let sortedChurn = fileChurnMap.sorted(by: { $0.value > $1.value })
+        self.topChurnFiles = sortedChurn.prefix(8).map { ChurnItem(filename: $0.key, modifications: $0.value) }
+
+        // Top 20 most active files added as nodes
+        for (fIdx, entry) in sortedChurn.prefix(20).enumerated() {
+            let fileName = (entry.key as NSString).lastPathComponent
+            let fId = "file_\(entry.key)"
+            let isHub = fIdx < 5
+
+            let fNode = KnowledgeNode(
+                id: fId,
+                name: fileName,
+                type: .file,
+                position: .zero,
+                detail: entry.key,
+                filePath: entry.key,
+                modificationCount: entry.value,
+                topContributors: Array(fileAuthorsMap[entry.key] ?? []),
+                linkedCommits: fileLinkedCommitsMap[entry.key] ?? [],
+                isHubFile: isHub
+            )
+            tempNodes.append(fNode)
+            tempRels.append(KnowledgeRelationship(from: fId, to: "root", type: .contains))
+
+            // Connect file to its commits
+            for cId in (fileLinkedCommitsMap[entry.key] ?? []).prefix(3) {
+                if tempNodes.contains(where: { $0.id == cId }) {
+                    tempRels.append(KnowledgeRelationship(from: fId, to: cId, type: .modifiedBy))
+                }
+            }
+        }
+
+        // 4. Co-Changing File Relationships
+        var coChangeList: [CoChangingPair] = []
+        for (f1, map) in coChangeCounts {
+            for (f2, count) in map where count >= 2 {
+                coChangeList.append(CoChangingPair(fileA: f1, fileB: f2, coCommitCount: count))
+                let f1Id = "file_\(f1)"
+                let f2Id = "file_\(f2)"
+                if tempNodes.contains(where: { $0.id == f1Id }) && tempNodes.contains(where: { $0.id == f2Id }) {
+                    tempRels.append(
+                        KnowledgeRelationship(
+                            from: f1Id,
+                            to: f2Id,
+                            type: .coChangesWith,
+                            label: "\(count)x",
+                            weight: Double(count)
+                        )
+                    )
+                }
+            }
+        }
+        self.topCoChangingPairs = coChangeList.sorted(by: { $0.coCommitCount > $1.coCommitCount })
+
+        // 5. Contributors / Authors
+        var authorsList: [(name: String, count: Int)] = []
+        for (author, count) in authorCommitCounts.sorted(by: { $0.value > $1.value }).prefix(8) {
+            authorsList.append((name: author, count: count))
+            let aId = "author_\(author)"
+            let aNode = KnowledgeNode(
+                id: aId,
+                name: author,
+                type: .contributor,
+                position: .zero,
+                detail: "\(count) commits in history",
+                totalCommitsForAuthor: count,
+                filesTouchedByAuthor: Array(authorFilesTouched[author] ?? [])
+            )
+            tempNodes.append(aNode)
+
+            // Connect author to their commits
+            for c in parsedCommits.filter({ $0.author == author }).prefix(4) {
+                tempRels.append(KnowledgeRelationship(from: aId, to: c.id, type: .authored))
+            }
+        }
+        self.activeContributors = authorsList
 
         self.nodes = tempNodes
         self.relationships = tempRels
+
+        // Apply initial layout
+        applyLayout(layoutMode)
+        isRefreshing = false
     }
 }
 
@@ -746,11 +2163,11 @@ public struct InteractiveRepositoryTimelineView: View {
 
     private func colorForEvent(_ type: TimelineEvent.EventType) -> Color {
         switch type {
-        case .commit: return .green
-        case .pr: return .blue
-        case .issue: return .red
-        case .release: return .purple
-        case .action: return .orange
+        case .commit: return .secondary
+        case .pr: return Color.accentColor
+        case .issue: return .secondary
+        case .release: return Color.accentColor
+        case .action: return .secondary
         }
     }
 
@@ -877,7 +2294,7 @@ public struct AdvancedGitOperationsCenterView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text(activeBisectState)
                                         .font(.system(size: 11, design: .monospaced))
-                                        .foregroundStyle(.yellow)
+                                        .foregroundStyle(.secondary)
                             HStack {
                                 Button("Start Bisect") {
                                     Task { await runGitCommand(args: ["bisect", "start"])
@@ -929,7 +2346,7 @@ public struct AdvancedGitOperationsCenterView: View {
                     ScrollView {
                         Text(logOutput)
                             .font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(.secondary)
                             .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
@@ -1033,7 +2450,7 @@ public struct AdvancedDiffCenterView: View {
                                         Text(line)
                                             .font(.system(size: 11, design: .monospaced))
                                             .frame(maxWidth: .infinity, alignment: .leading)
-                                            .background(line.hasPrefix("-") ? Color.red.opacity(0.15) : Color.clear)
+                                            .background(line.hasPrefix("-") ? Color.secondary.opacity(0.15) : Color.clear)
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1049,7 +2466,7 @@ public struct AdvancedDiffCenterView: View {
                                         Text(line)
                                             .font(.system(size: 11, design: .monospaced))
                                             .frame(maxWidth: .infinity, alignment: .leading)
-                                            .background(line.hasPrefix("+") ? Color.green.opacity(0.15) : Color.clear)
+                                            .background(line.hasPrefix("+") ? Color.secondary.opacity(0.15) : Color.clear)
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -1061,8 +2478,8 @@ public struct AdvancedDiffCenterView: View {
                                         .font(.system(size: 11, design: .monospaced))
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                         .background(
-                                            line.hasPrefix("+") ? Color.green.opacity(0.1) :
-                                            line.hasPrefix("-") ? Color.red.opacity(0.1) : Color.clear
+                                            line.hasPrefix("+") ? Color.secondary.opacity(0.1) :
+                                            line.hasPrefix("-") ? Color.secondary.opacity(0.1) : Color.clear
                                         )
                                 }
                             }
@@ -1287,7 +2704,7 @@ public struct CodeOwnershipWorkspaceView: View {
                 Text("Bus Factor Score: \(busFactor)")
                     .font(.title3)
                     .bold()
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(Color.accentColor)
             }
             .padding()
             .background(Color(NSColor.controlBackgroundColor))
@@ -1642,14 +3059,14 @@ public struct SecurityCenterView: View {
                     if secretFindings.isEmpty {
                         HStack {
                             Image(systemName: "checkmark.shield")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(.secondary)
                             Text("Zero high-risk secret tokens, AWS keys or SSH keys detected in source code files.")
                         }
                     } else {
                         ForEach(secretFindings, id: \.self) { finding in
                             HStack {
                                 Image(systemName: "exclamationmark.triangle")
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(.secondary)
                                 Text(finding)
                             }
                         }
@@ -1719,7 +3136,7 @@ public struct CollaborationCenterView: View {
                                 saveBookmarks()
                             } label: {
                                 Image(systemName: "trash")
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(.secondary)
                             }
                             .buttonStyle(.plain)
                             .help("Remove bookmark")

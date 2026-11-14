@@ -16,7 +16,7 @@ public struct NSSwitchBranchView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Switch Branch (⇧⌘S)", systemImage: "arrow.triangle.branch")
                         .font(.headline)
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(Color.accentColor)
 
                     Picker("Branch", selection: $selectedBranch) {
                         ForEach(branches, id: \.self) { branch in
@@ -35,7 +35,7 @@ public struct NSSwitchBranchView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {

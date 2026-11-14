@@ -63,7 +63,7 @@ struct PullRequestDetailView: View {
             HStack {
                 Label("PR #\(pr.number): \(pr.title)", systemImage: "arrow.triangle.pull")
                     .font(.headline)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(.secondary)
 
                 Spacer()
 
@@ -118,8 +118,8 @@ struct PullRequestDetailView: View {
                                 .font(.caption2.bold())
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(Color.green.opacity(0.12))
-                                .foregroundStyle(.green)
+                                .background(Color.secondary.opacity(0.12))
+                                .foregroundStyle(.secondary)
                                 .cornerRadius(4)
 
                             Text("opened by \(pr.userLogin) on \((pr.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? ""))")
@@ -187,7 +187,7 @@ struct PullRequestDetailView: View {
                             Label(isMerging ? "Merging..." : "Merge Pull Request", systemImage: "arrow.merge")
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(.green)
+                        .tint(Color.accentColor)
                         .disabled(isMerging)
 
                         Button {
@@ -209,7 +209,7 @@ struct PullRequestDetailView: View {
                     .padding(.top, 4)
                 }
                 .padding()
-                .background(Color.green.opacity(0.04))
+                .background(Color.secondary.opacity(0.04))
                 .cornerRadius(6)
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -260,7 +260,7 @@ struct PullRequestDetailView: View {
                                 HStack {
                                     Image(systemName: "bubble.left.fill")
                                         .font(.caption)
-                                        .foregroundStyle(.cyan)
+                                        .foregroundStyle(Color.accentColor)
                                     Text(comment.userLogin).bold().font(.caption)
                                     Spacer()
                                     if let created = comment.createdAt {
@@ -289,7 +289,7 @@ struct PullRequestDetailView: View {
                                 HStack {
                                     Image(systemName: "bubble.left.fill")
                                         .font(.caption)
-                                        .foregroundStyle(.cyan)
+                                        .foregroundStyle(Color.accentColor)
                                     Text(comment.author).bold().font(.caption)
                                     Spacer()
                                     Text(comment.date, style: .relative)
@@ -315,7 +315,7 @@ struct PullRequestDetailView: View {
                             executePostComment()
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(.green)
+                        .tint(Color.accentColor)
                         .disabled(replyText.trimmingCharacters(in: .whitespaces).isEmpty || isPostingComment)
                     }
                     .padding(.top, 10)
@@ -349,8 +349,8 @@ struct PullRequestDetailView: View {
                             Spacer()
 
                             HStack(spacing: 4) {
-                                Text("+\(file.additions)").foregroundStyle(.green).font(.caption.bold())
-                                Text("-\(file.deletions)").foregroundStyle(.red).font(.caption.bold())
+                                Text("+\(file.additions)").foregroundStyle(.secondary).font(.caption.bold())
+                                Text("-\(file.deletions)").foregroundStyle(.secondary).font(.caption.bold())
                             }
                         }
                         .padding(.vertical, 2)
@@ -454,7 +454,7 @@ struct PullRequestDetailView: View {
                     Label(isRunningAIReview ? "Conducting Code Audits..." : "Run AI Pull Request Review Audit", systemImage: "sparkles")
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.purple)
+                .tint(Color.accentColor)
                 .disabled(isRunningAIReview)
 
                 if isRunningAIReview {

@@ -12,7 +12,7 @@ struct GitHubInspector: View {
             VStack(alignment: .leading, spacing: 20) {
                 Label("Repository Info", systemImage: "info.circle.fill")
                     .font(.headline)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(.primary)
 
                 Divider()
 
@@ -27,9 +27,9 @@ struct GitHubInspector: View {
 
                         HStack(spacing: 12) {
                             Label("\(status.ahead)", systemImage: "arrow.up.circle.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(Color.accentColor)
                             Label("\(status.behind)", systemImage: "arrow.down.circle.fill")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.secondary)
                         }
                         .font(.caption)
                     }

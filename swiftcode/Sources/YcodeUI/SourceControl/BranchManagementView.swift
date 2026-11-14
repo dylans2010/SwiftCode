@@ -25,7 +25,7 @@ struct BranchManagementView: View {
             HStack {
                 Label("Branch Directory", systemImage: "arrow.triangle.branch")
                     .font(.headline)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
@@ -46,7 +46,7 @@ struct BranchManagementView: View {
                         Label("New Branch", systemImage: "plus")
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.orange)
+                    .tint(Color.accentColor)
                 }
             }
             .padding(.bottom, 16)
@@ -74,11 +74,11 @@ struct BranchManagementView: View {
                                 HStack {
                                     Label("Active Branch Status", systemImage: "checkmark.circle.fill")
                                         .font(.subheadline.bold())
-                                        .foregroundColor(.green)
+                                        .foregroundStyle(Color.accentColor)
                                     Spacer()
                                     Text(currentBranch)
                                         .font(.system(.body, design: .monospaced).bold())
-                                        .foregroundStyle(.green)
+                                        .foregroundStyle(Color.accentColor)
                                 }
                                 Text("Ensure you are on the correct branch before making edits, committing, or pushing changes. All local work is relative to the active branch.")
                                     .font(.caption)
@@ -148,7 +148,7 @@ struct BranchManagementView: View {
             HStack {
                 Label("Create New Branch", systemImage: "plus.circle.fill")
                     .font(.headline)
-                    .foregroundColor(.orange)
+                    .foregroundStyle(.primary)
                 Spacer()
             }
             .padding(.bottom, 8)
@@ -190,7 +190,7 @@ struct BranchManagementView: View {
                     Task { await createBranch() }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.orange)
+                .tint(Color.accentColor)
                 .disabled(newBranchName.trimmingCharacters(in: .whitespaces).isEmpty || isCreating)
             }
         }
@@ -203,7 +203,7 @@ struct BranchManagementView: View {
             VStack(spacing: 16) {
                 Image(systemName: "exclamationmark.triangle")
                     .font(.system(size: 36))
-                    .foregroundStyle(.red.opacity(0.8))
+                    .foregroundStyle(.secondary)
                 Text("Failed to Load Branches")
                     .font(.headline)
                 Text(error)
@@ -214,7 +214,7 @@ struct BranchManagementView: View {
                     Task { await loadBranches() }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.orange)
+                .tint(Color.accentColor)
             }
             .padding()
             .frame(maxWidth: .infinity)
@@ -225,7 +225,7 @@ struct BranchManagementView: View {
     private func notificationBanner(_ n: BranchNotification) -> some View {
         HStack(spacing: 10) {
             Image(systemName: n.isError ? "xmark.circle.fill" : "checkmark.circle.fill")
-                .foregroundStyle(n.isError ? .red : .green)
+                .foregroundStyle(n.isError ? .secondary : Color.accentColor)
             Text(n.message)
                 .font(.subheadline)
             Spacer()
@@ -235,7 +235,7 @@ struct BranchManagementView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(
-                    n.isError ? Color.red.opacity(0.4) : Color.green.opacity(0.4),
+                    Color.secondary.opacity(0.2),
                     lineWidth: 1
                 ))
         )
@@ -321,7 +321,7 @@ private struct BranchManagementRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: isActive ? "checkmark.circle.fill" : "arrow.triangle.branch")
-                .foregroundStyle(isActive ? .green : .secondary)
+                .foregroundStyle(isActive ? Color.accentColor : .secondary)
                 .font(.callout)
                 .frame(width: 24)
 
@@ -329,14 +329,14 @@ private struct BranchManagementRow: View {
                 HStack(spacing: 6) {
                     Text(branch.name)
                         .font(.callout.bold())
-                        .foregroundStyle(isActive ? .green : .primary)
+                        .foregroundStyle(isActive ? Color.accentColor : .primary)
                     if isActive {
                         Text("Active")
                             .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.green.opacity(0.15), in: Capsule())
+                            .background(Color.accentColor.opacity(0.12), in: Capsule())
                     }
                 }
             }

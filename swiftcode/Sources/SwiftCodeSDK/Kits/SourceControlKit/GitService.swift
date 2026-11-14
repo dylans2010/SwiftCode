@@ -229,13 +229,23 @@ public actor GitService {
     private func parseDiff(_ output: String) -> [GitDiffHunk] {
         var hunks: [GitDiffHunk] = []
         let lines = output.components(separatedBy: .newlines)
+        var currentFile: String?
         var currentHeader: String?
         var currentLines: [String] = []
 
         for line in lines {
-            if line.hasPrefix("@@ ") {
+            if line.hasPrefix("diff --git ") {
+                let parts = line.components(separatedBy: " ")
+                if parts.count >= 4 {
+                    var path = parts[3]
+                    if path.hasPrefix("b/") { path = String(path.dropFirst(2)) }
+                    currentFile = path
+                }
+            } else if line.hasPrefix("+++ b/") {
+                currentFile = String(line.dropFirst(6))
+            } else if line.hasPrefix("@@ ") {
                 if let header = currentHeader {
-                    hunks.append(GitDiffHunk(header: header, lines: currentLines))
+                    hunks.append(GitDiffHunk(filePath: currentFile, header: header, lines: currentLines))
                 }
                 currentHeader = line
                 currentLines = []
@@ -244,7 +254,7 @@ public actor GitService {
             }
         }
         if let header = currentHeader {
-            hunks.append(GitDiffHunk(header: header, lines: currentLines))
+            hunks.append(GitDiffHunk(filePath: currentFile, header: header, lines: currentLines))
         }
         return hunks
     }

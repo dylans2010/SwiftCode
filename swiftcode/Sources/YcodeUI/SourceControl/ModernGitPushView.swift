@@ -43,7 +43,7 @@ public struct ModernGitPushView: View {
             HStack {
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Source Control: Push")
                         .font(.headline.bold())
@@ -110,12 +110,12 @@ public struct ModernGitPushView: View {
                     ))
                     .toggleStyle(.checkbox)
                     .font(.caption)
-                    .foregroundStyle(forcePush ? .red : .primary)
+                    .foregroundStyle(forcePush ? .secondary : .primary)
 
                     if forcePush {
                         Text("⚠️ Overwrite remote history")
                             .font(.caption2.bold())
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -133,7 +133,7 @@ public struct ModernGitPushView: View {
                         } else if outgoingCommits.isEmpty {
                             Label("Already up to date with remote", systemImage: "checkmark.circle")
                                 .font(.caption.bold())
-                                .foregroundStyle(.green)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
 
@@ -141,7 +141,7 @@ public struct ModernGitPushView: View {
                         VStack(spacing: 8) {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.largeTitle)
-                                .foregroundStyle(.green.opacity(0.8))
+                                .foregroundStyle(Color.accentColor)
                             Text("No outgoing commits to push.")
                                 .font(.subheadline.bold())
                             Text("Your local branch '\(selectedBranch)' is already synchronized with '\(selectedRemote)/\(selectedBranch)'.")
@@ -159,8 +159,8 @@ public struct ModernGitPushView: View {
                                     .font(.system(.caption, design: .monospaced).bold())
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(Color.blue.opacity(0.15))
-                                    .foregroundStyle(.blue)
+                                    .background(Color.accentColor.opacity(0.12))
+                                    .foregroundStyle(Color.accentColor)
                                     .cornerRadius(4)
 
                                 VStack(alignment: .leading, spacing: 2) {
@@ -192,13 +192,13 @@ public struct ModernGitPushView: View {
                 if let err = errorMessage {
                     Text(err)
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let succ = successMessage {
                     Text(succ)
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Color.accentColor)
                 }
 
                 Spacer()
@@ -226,10 +226,9 @@ public struct ModernGitPushView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(forcePush ? Color.red : Color.blue)
+                        .background(Color.accentColor)
                         .foregroundColor(.white)
                         .cornerRadius(8)
-                        .shadow(color: (forcePush ? Color.red : Color.blue).opacity(0.5), radius: 6, x: 0, y: 2)
                     }
                     .buttonStyle(.plain)
                     .disabled(isPushing || (outgoingCommits.isEmpty && !forcePush))

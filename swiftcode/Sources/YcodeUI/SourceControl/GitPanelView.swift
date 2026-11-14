@@ -15,7 +15,7 @@ public struct GitPanelView: View {
             HStack {
                 Label("Git Workspace Navigation", systemImage: "arrow.triangle.branch")
                     .font(.headline)
-                    .foregroundColor(.orange)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
@@ -36,7 +36,7 @@ public struct GitPanelView: View {
                             HStack {
                                 Label(tabTitle(selectedTab), systemImage: tabIcon(selectedTab))
                                     .font(.headline)
-                                    .foregroundColor(.blue)
+                                    .foregroundStyle(.secondary)
                                 Spacer()
                             }
 

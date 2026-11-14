@@ -245,7 +245,7 @@ struct RepositoryAutomationBuilderView: View {
                         VStack(alignment: .leading, spacing: 4) {
                             HStack {
                                 Image(systemName: type.icon)
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(Color.accentColor)
                                 Text(type.rawValue)
                                     .bold()
                                 Spacer()
@@ -333,7 +333,7 @@ struct RepositoryAutomationBuilderView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .background(Color.black.opacity(0.85))
-                    .foregroundStyle(.green)
+                    .foregroundStyle(.secondary)
                 }
                 .frame(height: 220)
             }
@@ -351,7 +351,7 @@ struct RepositoryAutomationBuilderView: View {
                     .padding(.trailing, 4)
 
                 Image(systemName: step.type.icon)
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(Color.accentColor)
                     .font(.title2)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -386,7 +386,7 @@ struct RepositoryAutomationBuilderView: View {
                     store.steps.remove(at: index)
                 } label: {
                     Image(systemName: "trash")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .padding(.leading, 8)
@@ -404,7 +404,7 @@ struct RepositoryAutomationBuilderView: View {
         .cornerRadius(8)
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(isRunningStep ? Color.blue : Color.secondary.opacity(0.2), lineWidth: isRunningStep ? 2 : 1)
+                .stroke(isRunningStep ? Color.accentColor : Color.secondary.opacity(0.2), lineWidth: isRunningStep ? 2 : 1)
         )
         .padding(.vertical, 4)
     }

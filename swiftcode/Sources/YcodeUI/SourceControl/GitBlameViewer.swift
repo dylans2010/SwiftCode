@@ -192,7 +192,7 @@ public struct GitBlameViewer: View {
                                     } label: {
                                         Text(String(entry.sha.prefix(7)))
                                             .font(.system(size: 10, design: .monospaced))
-                                            .foregroundStyle(.orange)
+                                            .foregroundStyle(Color.accentColor)
                                             .frame(width: 55, alignment: .leading)
                                     }
                                     .buttonStyle(.plain)

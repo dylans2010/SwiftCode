@@ -18,7 +18,10 @@ public struct AnthropicProvider: AssistantProvider {
 
     private func resolvedKey() -> String? {
         if let apiKey, !apiKey.isEmpty { return apiKey }
-        return defaultSecretStore().readString(SecretAccount.anthropicKey)
+        if let stored = defaultSecretStore().readString(SecretAccount.anthropicKey), !stored.isEmpty { return stored }
+        if let envKey = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !envKey.isEmpty { return envKey }
+        if let kc = KeychainService.shared.get(forKey: "anthropic_api_key"), !kc.isEmpty { return kc }
+        return nil
     }
 
     public func availability() async -> ProviderAvailability {

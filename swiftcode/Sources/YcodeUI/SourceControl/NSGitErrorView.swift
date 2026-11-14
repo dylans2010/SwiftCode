@@ -11,7 +11,7 @@ public struct NSGitErrorView: View {
         HStack(alignment: .top, spacing: 8) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(.red)
+                .foregroundStyle(.secondary)
                 .padding(.top, 2)
 
             VStack(alignment: .leading, spacing: 4) {
@@ -31,13 +31,13 @@ public struct NSGitErrorView: View {
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.red.opacity(0.1))
+                .fill(Color.secondary.opacity(0.08))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.red.opacity(0.3), lineWidth: 1)
+                .stroke(Color.secondary.opacity(0.2), lineWidth: 1)
         )
         .padding(.vertical, 4)
-        .liquidGlass(style: .subtle, cornerRadius: 8, tint: .red)
+        .liquidGlass(style: .subtle, cornerRadius: 8)
     }
 }

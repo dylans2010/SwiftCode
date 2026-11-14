@@ -14,11 +14,11 @@ public struct NSDiscardAllChangesView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Discard ALL Changes (⇧⌘U)", systemImage: "trash.slash.fill")
                         .font(.headline)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
 
                     Text("WARNING: This will permanently destroy all unstaged, staged, and untracked changes.")
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
 
                     if isLoading {
                         ProgressView()
@@ -29,7 +29,7 @@ public struct NSDiscardAllChangesView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {
@@ -52,7 +52,7 @@ public struct NSDiscardAllChangesView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.red)
+                    .tint(Color.accentColor)
                     .controlSize(.small)
                     .disabled(isLoading)
                 }

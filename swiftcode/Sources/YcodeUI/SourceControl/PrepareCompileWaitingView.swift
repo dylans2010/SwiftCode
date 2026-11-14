@@ -60,7 +60,7 @@ struct PrepareCompileWaitingView: View {
                     } else {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 48))
-                            .foregroundStyle(.green)
+                            .foregroundStyle(.secondary)
                     }
 
                     VStack(spacing: 8) {
@@ -78,7 +78,7 @@ struct PrepareCompileWaitingView: View {
                             if let time = timeRemaining, isPreparing {
                                 Text("Time Remaining: \(time)")
                                     .font(.caption2)
-                                    .foregroundStyle(.orange)
+                                    .foregroundStyle(Color.accentColor)
                                     .padding(.top, 4)
                             }
 
@@ -92,7 +92,7 @@ struct PrepareCompileWaitingView: View {
                             if let error = errorMessage {
                                 Text(error)
                                     .font(.caption)
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(.secondary)
                                     .padding(.top, 8)
                             }
                         }

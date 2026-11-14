@@ -62,12 +62,12 @@ public struct NSCherryPickView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
             }
             if didApply {
                 Label("Cherry-picked \(selectedHash).", systemImage: "checkmark.circle.fill")
                     .font(.subheadline)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.accentColor)
             }
 
             HStack {

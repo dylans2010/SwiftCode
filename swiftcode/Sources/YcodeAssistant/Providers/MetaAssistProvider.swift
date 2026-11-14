@@ -45,8 +45,8 @@ public final class MetaAssistProvider: Sendable {
     nonisolated public static let providerID = "meta_assist"
     nonisolated public static let providerName = "Assist with Meta"
     nonisolated public static let defaultModelID = "muse-wonder-1.0"
-    nonisolated public static let notInstalledHint = "The muse CLI is not installed."
-    nonisolated public static let notSignedInHint = "Assist with Meta is installed but not signed in. Run `muse` once in Terminal and sign in, then try again."
+    nonisolated public static let notInstalledHint = "Muse CLI not found. Please install the Muse SDK or check your configuration."
+    nonisolated public static let notSignedInHint = "Authentication required for Muse. Run `muse login` in your terminal or configure `MUSE_API_KEY` in your environment or settings."
 
     public var knownToolIDs: [String] = []
     public var proxyBaseURL: String? = nil
@@ -55,6 +55,9 @@ public final class MetaAssistProvider: Sendable {
     nonisolated public static var fallbackModels: [MetaModelItem] {
         [
             MetaModelItem(modelId: "muse-wonder-1.0", displayLabel: "Muse Wonder 1.0", isDefault: true),
+            MetaModelItem(modelId: "muse-spark-1.3", displayLabel: "Muse Spark 1.3"),
+            MetaModelItem(modelId: "muse-spark-1.2", displayLabel: "Muse Spark 1.2"),
+            MetaModelItem(modelId: "muse-swift-2.0", displayLabel: "Muse Swift 2.0"),
             MetaModelItem(modelId: "muse-code-1.0", displayLabel: "Muse Code 1.0"),
             MetaModelItem(modelId: "muse-fast-1.0", displayLabel: "Muse Fast 1.0")
         ]
@@ -171,6 +174,39 @@ public final class MetaAssistProvider: Sendable {
                 isDefault: false,
                 variants: ["minimal", "low", "medium", "high", "xhigh"],
                 defaultReasoningEffort: "high"
+            ),
+            MetaModelItem(
+                modelId: "muse-swift-2.0",
+                displayLabel: "muse-swift-2.0",
+                releaseDate: "2026-11-01",
+                description: "Specialized Apple platforms and Swift 6 language reasoning model.",
+                contextLimit: 1_007_997,
+                outputLimit: 128_000,
+                isDefault: false,
+                variants: ["minimal", "low", "medium", "high", "xhigh", "max"],
+                defaultReasoningEffort: "high"
+            ),
+            MetaModelItem(
+                modelId: "muse-code-1.0",
+                displayLabel: "muse-code-1.0",
+                releaseDate: "2026-07-15",
+                description: "Precision code generation and refactoring model.",
+                contextLimit: 1_007_997,
+                outputLimit: 128_000,
+                isDefault: false,
+                variants: ["minimal", "low", "medium", "high"],
+                defaultReasoningEffort: "high"
+            ),
+            MetaModelItem(
+                modelId: "muse-fast-1.0",
+                displayLabel: "muse-fast-1.0",
+                releaseDate: "2026-06-20",
+                description: "Low-latency conversational and completion model.",
+                contextLimit: 1_007_997,
+                outputLimit: 128_000,
+                isDefault: false,
+                variants: ["minimal", "low", "medium"],
+                defaultReasoningEffort: "medium"
             )
         ]
     }
@@ -281,6 +317,8 @@ public final class MetaAssistProvider: Sendable {
                 )
                 return
             }
+            let notFoundMsg = "Muse CLI not found. Please install the Muse SDK or check your configuration."
+            onTextDelta(notFoundMsg)
             throw MuseCodeCLIError.executableNotFound
         }
 
@@ -289,7 +327,9 @@ public final class MetaAssistProvider: Sendable {
             do {
                 _ = try await MuseCodeCLIHelper.shared.runLoginFlow()
             } catch {
-                throw MuseCodeCLIError.executionFailed(exitCode: 2, stderr: "Authentication required for Assist with Meta. Please log in via CLI.")
+                let authMsg = "Authentication required for Muse. Run `muse login` in your terminal or configure `MUSE_API_KEY` in your environment or settings."
+                onTextDelta(authMsg)
+                throw MuseCodeCLIError.executionFailed(exitCode: 2, stderr: authMsg)
             }
         }
 
@@ -298,7 +338,15 @@ public final class MetaAssistProvider: Sendable {
 
         await SystemIndexService.shared.ensureReady()
         let baselinePrompt = SystemIndexService.shared.baselinePrompt()
-        let selectedModel = AppSettings.shared.metaAssistModelID.isEmpty ? Self.defaultModelID : AppSettings.shared.metaAssistModelID
+        let preferredModel = AppSettings.shared.selectedAssistModelID
+        let selectedModel: String
+        if preferredModel.hasPrefix("muse-") || preferredModel.lowercased().contains("muse") {
+            selectedModel = preferredModel
+        } else if !AppSettings.shared.metaAssistModelID.isEmpty {
+            selectedModel = AppSettings.shared.metaAssistModelID
+        } else {
+            selectedModel = Self.defaultModelID
+        }
         let instructionQuery = InstructionQueryContext(
             userText: prompt,
             taskCategory: SystemIndexService.classifyCategory(for: prompt),

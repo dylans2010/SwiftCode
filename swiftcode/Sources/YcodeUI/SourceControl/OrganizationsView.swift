@@ -12,7 +12,7 @@ struct OrganizationsView: View {
             HStack {
                 Label("GitHub Organizations", systemImage: "building.2.fill")
                     .font(.headline)
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(Color.accentColor)
 
                 Spacer()
 
@@ -31,7 +31,7 @@ struct OrganizationsView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal)
             }
 
@@ -42,13 +42,13 @@ struct OrganizationsView: View {
                     title: "No Organizations Found",
                     description: "No GitHub organizations were resolved for your account.",
                     systemImage: "building.2",
-                    accentColor: .purple
+                    accentColor: Color.accentColor
                 )
             } else {
                 List(organizations) { org in
                     HStack(spacing: 16) {
                         Image(systemName: "building.2.fill")
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(Color.accentColor)
                             .font(.title3)
 
                         VStack(alignment: .leading, spacing: 4) {

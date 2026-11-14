@@ -2491,7 +2491,19 @@ struct GitHubConfigView: View {
                                     .autocorrectionDisabled()
                             }
 
-                            Text("Used in commit messages across all repositories.")
+                            Button {
+                                Task {
+                                    let identity = await GitHubTokenProvider.applyLocalIdentity()
+                                    settings.gitUserName = identity.name
+                                    settings.gitUserEmail = identity.email
+                                    settings.useLocalGitIdentity = true
+                                }
+                            } label: {
+                                Label("Use Local Identity", systemImage: "person.crop.circle.badge.checkmark")
+                            }
+                            .buttonStyle(.bordered)
+
+                            Text("Used in commit messages across all repositories. 'Use Local Identity' retrieves system git configuration.")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

@@ -21,7 +21,7 @@ public struct NSCloneView: View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Git Clone (⇧⌘I)", systemImage: "plus.square.on.square")
                 .font(.headline)
-                .foregroundStyle(.green)
+                .foregroundStyle(Color.accentColor)
 
             Text("Clone a repository into your workspace. Cloning into an active project replaces its local code after confirmation.")
                 .font(.caption)
@@ -60,7 +60,7 @@ public struct NSCloneView: View {
             if !successMsg.isEmpty {
                 Text(successMsg)
                     .font(.caption)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.accentColor)
             }
 
             if !errorMsg.isEmpty {

@@ -32,7 +32,7 @@ struct IssueDetailView: View {
             HStack {
                 Label("Issue #\(issue.number): \(issue.title)", systemImage: "exclamationmark.circle.fill")
                     .font(.headline)
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
@@ -55,7 +55,7 @@ struct IssueDetailView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal)
             }
 
@@ -68,8 +68,8 @@ struct IssueDetailView: View {
                                     .font(.caption2.bold())
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(Color.cyan.opacity(0.12))
-                                    .foregroundStyle(.cyan)
+                                    .background(Color.secondary.opacity(0.12))
+                                    .foregroundStyle(.secondary)
                                     .cornerRadius(4)
 
                                 Text("opened by \(issue.userLogin) on \(issue.createdAt?.formatted(date: .abbreviated, time: .shortened) ?? "unknown date")")
@@ -102,8 +102,8 @@ struct IssueDetailView: View {
                                         .font(.caption)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
-                                        .background(Color.red.opacity(0.1))
-                                        .foregroundStyle(.red)
+                                        .background(Color.secondary.opacity(0.12))
+                                        .foregroundStyle(.secondary)
                                         .cornerRadius(4)
                                 }
                             }
@@ -180,7 +180,7 @@ struct IssueDetailView: View {
                                 executePostComment()
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(.cyan)
+                            .tint(Color.accentColor)
                             .disabled(commentText.trimmingCharacters(in: .whitespaces).isEmpty || isPostingComment)
                         }
                     }

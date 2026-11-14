@@ -15,6 +15,11 @@ struct GitHubSettingsView: View {
     let project: Project?
 
     @State private var token = ""
+    @State private var isTokenVisible = false
+    @State private var isCopied = false
+    @State private var isSavedToken = false
+    @State private var localIdentityStatus: String? = nil
+    @State private var isLoadingLocalIdentity = false
     @State private var gitName = ""
     @State private var gitEmail = ""
 
@@ -30,7 +35,7 @@ struct GitHubSettingsView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Label("Project Repository Association", systemImage: "link.badge.plus")
                                 .font(.headline)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(Color.accentColor)
 
                             Text("Manage the GitHub remote connection and Git history for the currently opened project.")
                                 .font(.subheadline)
@@ -46,23 +51,96 @@ struct GitHubSettingsView: View {
 
                     GroupBox {
                         VStack(alignment: .leading, spacing: 14) {
-                            Label("Personal Access Token (PAT)", systemImage: "key.fill")
-                                .font(.headline)
-                                .foregroundStyle(.green)
+                            HStack {
+                                Label("Personal Access Token (PAT)", systemImage: "key.fill")
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                if AppSettings.shared.useLocalGitIdentity {
+                                    Text("Local Identity Active")
+                                        .font(.caption.bold())
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(Color.accentColor.opacity(0.15))
+                                        .foregroundStyle(Color.accentColor)
+                                        .clipShape(Capsule())
+                                }
+                            }
 
-                            Text("Configure a secure GitHub Personal Access Token to authenticate API queries, fetch repository lists, create pull requests, and pull/push changes.")
+                            Text("Configure a secure GitHub Personal Access Token to authenticate API queries, fetch repository lists, create pull requests, and pull/push changes, or use your local machine's Git identity.")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
 
-                            SecureField("ghp_xxxxxxxxxxxx", text: $token)
-                                .textFieldStyle(.roundedBorder)
+                            HStack(spacing: 8) {
+                                if isTokenVisible {
+                                    TextField("ghp_xxxxxxxxxxxx", text: $token)
+                                        .textFieldStyle(.roundedBorder)
+                                } else {
+                                    SecureField("ghp_xxxxxxxxxxxx", text: $token)
+                                        .textFieldStyle(.roundedBorder)
+                                }
+
+                                if isSavedToken || !token.isEmpty {
+                                    Button {
+                                        isTokenVisible.toggle()
+                                    } label: {
+                                        Label(isTokenVisible ? "Hide" : "View", systemImage: isTokenVisible ? "eye.slash" : "eye")
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .help(isTokenVisible ? "Mask token" : "View token in cleartext")
+
+                                    Button {
+                                        copyTokenToClipboard()
+                                    } label: {
+                                        Label(isCopied ? "Copied!" : "Copy", systemImage: isCopied ? "checkmark" : "doc.on.doc")
+                                            .foregroundStyle(isCopied ? Color.accentColor : .primary)
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .help("Copy token to clipboard")
+                                }
+                            }
 
                             HStack(spacing: 12) {
                                 Button("Save Token") {
                                     saveToken()
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .tint(.green)
+                                .tint(Color.accentColor)
+                                .disabled(token.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                                Button {
+                                    useLocalIdentity()
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        if isLoadingLocalIdentity {
+                                            ProgressView()
+                                                .controlSize(.small)
+                                        } else {
+                                            Image(systemName: "person.crop.circle.badge.checkmark")
+                                        }
+                                        Text("Use Local Identity")
+                                    }
+                                }
+                                .buttonStyle(.bordered)
+                                .help("Retrieves local git configuration (user.name, user.email, SSH / credentials) and uses it for source control operations without requiring a token")
+
+                                if isSavedToken {
+                                    Button("Remove Token", role: .destructive) {
+                                        removeToken()
+                                    }
+                                    .buttonStyle(.bordered)
+                                }
+                            }
+
+                            if let status = localIdentityStatus {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "info.circle.fill")
+                                        .foregroundStyle(Color.accentColor)
+                                    Text(status)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                .padding(.top, 2)
                             }
                         }
                         .padding()
@@ -73,7 +151,7 @@ struct GitHubSettingsView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Label("Git Committer Identity", systemImage: "person.text.rectangle.fill")
                                 .font(.headline)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(Color.accentColor)
 
                             Text("Identify yourself as the author of local commits. Git embeds these details into commit metadata records.")
                                 .font(.subheadline)
@@ -99,7 +177,7 @@ struct GitHubSettingsView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Label("Stop Source Control", systemImage: "xmark.octagon.fill")
                                 .font(.headline)
-                                .foregroundStyle(.red)
+                                .foregroundStyle(.secondary)
 
                             Text("Permanently disconnect remote GitHub mapping, erase credentials, and reset source control workspace settings. This takes you back to onboarding.")
                                 .font(.subheadline)
@@ -111,7 +189,7 @@ struct GitHubSettingsView: View {
                                 Text("Stop Source Control")
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(.red)
+                            .tint(.secondary)
                         }
                         .padding()
                     }
@@ -121,8 +199,12 @@ struct GitHubSettingsView: View {
             }
             .onAppear {
                 token = KeychainService.shared.get(forKey: KeychainService.githubToken) ?? ""
+                isSavedToken = !token.isEmpty
                 gitName = AppSettings.shared.gitUserName
                 gitEmail = AppSettings.shared.gitUserEmail
+                if AppSettings.shared.useLocalGitIdentity {
+                    localIdentityStatus = "Using local Git identity (\(gitName.isEmpty ? "configured locally" : gitName))"
+                }
             }
         }
     }
@@ -131,6 +213,51 @@ struct GitHubSettingsView: View {
         KeychainService.shared.set(token, forKey: KeychainService.githubToken)
         AppSettings.shared.httpsAuthToken = token
         APIKeyManager.shared.storeKey(service: .gitHub, key: token)
+        isSavedToken = true
+        AppSettings.shared.useLocalGitIdentity = false
+        localIdentityStatus = nil
+    }
+
+    private func removeToken() {
+        KeychainService.shared.delete(forKey: KeychainService.githubToken)
+        APIKeyManager.shared.deleteKey(service: .gitHub)
+        AppSettings.shared.httpsAuthToken = ""
+        token = ""
+        isSavedToken = false
+        isTokenVisible = false
+    }
+
+    private func copyTokenToClipboard() {
+        guard !token.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(token, forType: .string)
+        isCopied = true
+        Task {
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            isCopied = false
+        }
+    }
+
+    private func useLocalIdentity() {
+        isLoadingLocalIdentity = true
+        Task {
+            let identity = await GitHubTokenProvider.applyLocalIdentity(workingDirectory: project?.directoryURL)
+            gitName = identity.name
+            gitEmail = identity.email
+
+            var details: [String] = []
+            if !identity.name.isEmpty { details.append("Name: \(identity.name)") }
+            if !identity.email.isEmpty { details.append("Email: \(identity.email)") }
+            if !identity.credentialHelper.isEmpty { details.append("Helper: \(identity.credentialHelper)") }
+            if identity.hasSSHAgent { details.append("SSH Agent: Active") }
+
+            if details.isEmpty {
+                localIdentityStatus = "Local Git identity enabled (using default machine git & ssh settings)"
+            } else {
+                localIdentityStatus = "Local identity configured: " + details.joined(separator: ", ")
+            }
+            isLoadingLocalIdentity = false
+        }
     }
 
     private func saveIdentity() {
@@ -151,6 +278,7 @@ struct GitHubSettingsView: View {
             AppSettings.shared.httpsAuthToken = ""
             AppSettings.shared.gitUserName = ""
             AppSettings.shared.gitUserEmail = ""
+            AppSettings.shared.useLocalGitIdentity = false
             AppSettings.shared.hasCompletedOnboarding = false
 
             KeychainService.shared.delete(forKey: KeychainService.githubToken)
@@ -213,6 +341,7 @@ struct SetRepoInProject: View {
     }
 
     private var isAuthenticated: Bool {
+        if AppSettings.shared.useLocalGitIdentity { return true }
         guard let token = KeychainService.shared.get(forKey: KeychainService.githubToken) else { return false }
         return !token.isEmpty
     }
@@ -229,7 +358,7 @@ struct SetRepoInProject: View {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
                         Image(systemName: isGitInitialized ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                            .foregroundStyle(isGitInitialized ? .green : .orange)
+                            .foregroundStyle(isGitInitialized ? Color.accentColor : .secondary)
                         Text(isGitInitialized ? "Local Git History Initialized" : "Local Git History Not Initialized")
                             .font(.subheadline.bold())
 
@@ -240,7 +369,7 @@ struct SetRepoInProject: View {
                                 initializeLocalGit()
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(.orange)
+                            .tint(Color.accentColor)
                             .disabled(isPerformingAction)
                         }
                     }
@@ -261,20 +390,20 @@ struct SetRepoInProject: View {
 
             if let msg = statusMessage {
                 HStack {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(.secondary)
                     Text(msg)
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.secondary)
                 }
                 .padding(.top, 4)
             }
 
             if let err = errorMessage {
                 HStack {
-                    Image(systemName: "exclamationmark.octagon.fill").foregroundStyle(.red)
+                    Image(systemName: "exclamationmark.octagon.fill").foregroundStyle(.secondary)
                     Text(err)
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
                 }
                 .padding(.top, 4)
             }
@@ -329,12 +458,12 @@ struct SetRepoInProject: View {
                     GridRow {
                         Text("Visibility:").bold()
                         Text(meta.isPrivate ? "Private" : "Public")
-                            .foregroundStyle(meta.isPrivate ? .yellow : .green)
+                            .foregroundStyle(meta.isPrivate ? Color.accentColor : .secondary)
                     }
                     GridRow {
                         Text("Sync Status:").bold()
                         Text("Synchronized with active project")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .font(.subheadline)
@@ -429,7 +558,7 @@ struct SetRepoInProject: View {
                         createNewRepository()
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.green)
+                    .tint(Color.accentColor)
                     .disabled(newRepoName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isCreatingRepo)
                 }
                 .padding()
@@ -577,7 +706,14 @@ struct SetRepoInProject: View {
         }
 
         let token = KeychainService.shared.get(forKey: KeychainService.githubToken) ?? ""
-        let authenticatedURL = "https://\(token)@github.com/\(repoName).git"
+        let authenticatedURL: String
+        if !token.isEmpty && !AppSettings.shared.useLocalGitIdentity {
+            authenticatedURL = "https://\(token)@github.com/\(repoName).git"
+        } else if !AppSettings.shared.sshKeyPath.isEmpty || repoName.hasPrefix("git@") {
+            authenticatedURL = repoName.hasPrefix("git@") ? repoName : "git@github.com:\(repoName).git"
+        } else {
+            authenticatedURL = "https://github.com/\(repoName).git"
+        }
 
         _ = try? await ProcessRunnerTool.shared.run(executableURL: gitBinary, arguments: ["remote", "remove", "origin"], workingDirectory: dirURL)
         let result = try await ProcessRunnerTool.shared.run(

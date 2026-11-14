@@ -62,7 +62,7 @@ struct LicencesAddView: View {
                             HStack {
                                 Label("Project Licenses", systemImage: "doc.text.fill")
                                     .font(.headline)
-                                    .foregroundColor(.orange)
+                                    .foregroundStyle(Color.accentColor)
                                 Spacer()
                             }
                             Text("Quickly add open source license templates directly to your project codebase.")
@@ -77,7 +77,7 @@ struct LicencesAddView: View {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Filters & Selection")
                                 .font(.subheadline.bold())
-                                .foregroundColor(.blue)
+                                .foregroundStyle(Color.accentColor)
 
                             HStack(spacing: 12) {
                                 HStack {
@@ -111,7 +111,7 @@ struct LicencesAddView: View {
                             HStack {
                                 Label("License Templates", systemImage: "list.bullet.rectangle")
                                     .font(.headline)
-                                    .foregroundColor(.green)
+                                    .foregroundStyle(.secondary)
                                 Spacer()
                             }
 
@@ -142,8 +142,8 @@ struct LicencesAddView: View {
                                                         .font(.system(size: 9, weight: .bold))
                                                         .padding(.horizontal, 6)
                                                         .padding(.vertical, 2)
-                                                        .background(Color.blue.opacity(0.15), in: Capsule())
-                                                        .foregroundStyle(.blue)
+                                                        .background(Color.accentColor.opacity(0.15), in: Capsule())
+                                                        .foregroundStyle(Color.accentColor)
                                                 }
 
                                                 Text(license.summary)
@@ -242,7 +242,7 @@ struct LicensePreviewDetailView: View {
                             HStack {
                                 Label("License Summary", systemImage: "info.circle.fill")
                                     .font(.headline)
-                                    .foregroundColor(.orange)
+                                    .foregroundStyle(Color.accentColor)
                                 Spacer()
 
                                 Button {
@@ -252,7 +252,7 @@ struct LicensePreviewDetailView: View {
                                     Label("Add to Project", systemImage: "plus.circle.fill")
                                 }
                                 .buttonStyle(.borderedProminent)
-                                .tint(.orange)
+                                .tint(Color.accentColor)
                             }
 
                             Text(license.summary)
@@ -267,7 +267,7 @@ struct LicensePreviewDetailView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             Label("License Template Body", systemImage: "scroll")
                                 .font(.subheadline.bold())
-                                .foregroundColor(.blue)
+                                .foregroundStyle(Color.accentColor)
 
                             Text(license.body)
                                 .font(.system(.body, design: .monospaced))

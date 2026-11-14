@@ -21,7 +21,7 @@ struct ActivityFeedView: View {
             HStack {
                 Label("Repository Activity Feed", systemImage: "bolt.fill")
                     .font(.headline)
-                    .foregroundStyle(.orange)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
@@ -40,7 +40,7 @@ struct ActivityFeedView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal)
             }
 
@@ -51,13 +51,13 @@ struct ActivityFeedView: View {
                     title: "No Activity",
                     description: "No recent activity has been recorded in this repository's feed.",
                     systemImage: "bolt.slash",
-                    accentColor: .orange
+                    accentColor: .accentColor
                 )
             } else {
                 List(events) { item in
                     HStack(spacing: 16) {
                         Image(systemName: "circle.circle.fill")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Color.accentColor)
                             .font(.title3)
 
                         VStack(alignment: .leading, spacing: 4) {

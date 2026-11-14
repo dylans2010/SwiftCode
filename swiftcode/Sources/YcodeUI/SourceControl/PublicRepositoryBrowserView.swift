@@ -55,7 +55,7 @@ public struct PublicRepositoryBrowserView: View {
                     if let meta {
                         HStack(spacing: 8) {
                             Label("\(meta.stargazersCount)", systemImage: "star.fill")
-                                .foregroundStyle(.yellow)
+                                .foregroundStyle(.secondary)
                             Label("\(meta.forksCount)", systemImage: "arrow.triangle.branch")
                                 .foregroundStyle(.secondary)
                             Text("Default: \(meta.defaultBranch ?? "main")")
@@ -115,7 +115,7 @@ public struct PublicRepositoryBrowserView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal)
                     .padding(.bottom, 8)
             }
@@ -139,8 +139,8 @@ public struct PublicRepositoryBrowserView: View {
                                         .font(.system(size: 10, weight: .bold))
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)
-                                        .background(Color.orange.opacity(0.12))
-                                        .foregroundStyle(.orange)
+                                        .background(Color.accentColor.opacity(0.12))
+                                        .foregroundStyle(Color.accentColor)
                                         .cornerRadius(4)
                                 }
                             }
@@ -199,7 +199,7 @@ public struct PublicRepositoryBrowserView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("README.md")
                         .font(.headline)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.accentColor)
 
                     if readmeContent.isEmpty {
                         Text("No README.md resolved or loading…")
@@ -230,7 +230,7 @@ public struct PublicRepositoryBrowserView: View {
                     List(fileTree, id: \.path) { entry in
                         HStack {
                             Image(systemName: entry.type == "tree" ? "folder.fill" : "doc.text")
-                                .foregroundStyle(entry.type == "tree" ? .orange : .secondary)
+                                .foregroundStyle(entry.type == "tree" ? Color.accentColor : .secondary)
                             Text(entry.path)
                                 .font(.subheadline)
                                 .lineLimit(1)

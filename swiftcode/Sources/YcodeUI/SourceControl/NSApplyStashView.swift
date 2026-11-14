@@ -21,7 +21,7 @@ public struct NSApplyStashView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Apply Stash (⇧⌘V)", systemImage: "archivebox.fill")
                         .font(.headline)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Color.accentColor)
 
                     Text("Apply the most recent stashed state.")
                         .font(.caption)
@@ -80,7 +80,7 @@ public struct NSApplyStashView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {
@@ -153,11 +153,6 @@ public struct NSApplyStashView: View {
     }
 
     private func statusColor(for status: String) -> Color {
-        switch status.trimmingCharacters(in: .whitespaces) {
-        case "M": return .orange
-        case "A": return .green
-        case "D": return .red
-        default: return .secondary
-        }
+        return .secondary
     }
 }

@@ -17,7 +17,7 @@ public struct GitChangesView: View {
             HStack {
                 Label("Git Workspace Changes", systemImage: "plus.minus.circle")
                     .font(.headline)
-                    .foregroundColor(.orange)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
@@ -36,7 +36,7 @@ public struct GitChangesView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(Theme.accentSwiftUIColor)
+                    .tint(Color.accentColor)
 
                     Button("Unstage All") {
                         if let status = viewModel.status {
@@ -60,7 +60,7 @@ public struct GitChangesView: View {
                                 HStack {
                                     Label("Staged Changes", systemImage: "checkmark.circle.fill")
                                         .font(.subheadline.bold())
-                                        .foregroundColor(.green)
+                                        .foregroundStyle(.secondary)
                                     Spacer()
                                     Text("\(status.files.filter { $0.isStaged }.count) files")
                                         .font(.caption2.bold())
@@ -101,7 +101,7 @@ public struct GitChangesView: View {
                                 HStack {
                                     Label("Unstaged Changes", systemImage: "exclamationmark.circle.fill")
                                         .font(.subheadline.bold())
-                                        .foregroundColor(.orange)
+                                        .foregroundStyle(.secondary)
                                     Spacer()
                                     Text("\(status.files.filter { !$0.isStaged }.count) files")
                                         .font(.caption2.bold())
@@ -124,6 +124,7 @@ public struct GitChangesView: View {
                                                     Task { await viewModel.stage(file) }
                                                 }
                                                 .buttonStyle(.borderedProminent)
+                                                .tint(Color.accentColor)
                                                 .controlSize(.small)
                                             }
                                             .padding(6)
@@ -169,6 +170,7 @@ public struct GitChangesView: View {
                                                             Task { await viewModel.stage(file) }
                                                         }
                                                         .buttonStyle(.borderedProminent)
+                                                        .tint(Color.accentColor)
                                                         .controlSize(.small)
                                                     }
                                                 }
@@ -189,7 +191,7 @@ public struct GitChangesView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Label("Commit Changes", systemImage: "pencil.and.outline")
                                 .font(.subheadline.bold())
-                                .foregroundColor(.orange)
+                                .foregroundStyle(.primary)
 
                             TextEditor(text: $commitMessage)
                                 .font(.system(.body, design: .monospaced))
@@ -209,7 +211,7 @@ public struct GitChangesView: View {
                                 }
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(.orange)
+                            .tint(Color.accentColor)
                             .controlSize(.large)
                             .disabled(commitMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }

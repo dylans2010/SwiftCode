@@ -231,7 +231,7 @@ public struct RepositoryExplorerView: View {
                         HStack(spacing: 8) {
                             VStack(spacing: 2) {
                                 Image(systemName: proj.githubRepo != nil ? "cloud.fill" : "laptopcomputer")
-                                    .foregroundStyle(proj.githubRepo != nil ? Color.blue : Color.secondary)
+                                    .foregroundStyle(proj.githubRepo != nil ? Color.accentColor : Color.secondary)
                                     .font(.system(size: 11))
                             }
                             .frame(width: 22)
@@ -246,13 +246,13 @@ public struct RepositoryExplorerView: View {
                                     if pinned.contains(proj.name) {
                                         Image(systemName: "pin.fill")
                                             .font(.system(size: 9))
-                                            .foregroundStyle(.orange)
+                                            .foregroundStyle(Color.accentColor)
                                     }
 
                                     if favorites.contains(proj.name) {
                                         Image(systemName: "star.fill")
                                             .font(.system(size: 9))
-                                            .foregroundStyle(.yellow)
+                                            .foregroundStyle(.secondary)
                                     }
                                 }
 
@@ -321,7 +321,7 @@ public struct RepositoryExplorerView: View {
                                 .font(.title2.bold())
                             if activeProj.githubRepo != nil {
                                 Image(systemName: "cloud.checkmark.fill")
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(Color.accentColor)
                                     .help("Remote associated with GitHub")
                             }
                         }
@@ -398,7 +398,7 @@ public struct RepositoryExplorerView: View {
                         Spacer()
                         if let repo = proj.githubRepo {
                             Text(repo)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(Color.accentColor)
                         } else {
                             Text("Local Only")
                                 .foregroundStyle(.secondary)
@@ -411,9 +411,9 @@ public struct RepositoryExplorerView: View {
                         if archived.contains(proj.name) {
                             Text("Archived").foregroundStyle(.secondary)
                         } else if pinned.contains(proj.name) {
-                            Text("Pinned Active").foregroundStyle(.orange)
+                            Text("Pinned Active").foregroundStyle(Color.accentColor)
                         } else {
-                            Text("Normal").foregroundStyle(.green)
+                            Text("Normal").foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -572,15 +572,15 @@ public struct RepositoryExplorerView: View {
                         .font(.headline)
 
                     HStack(spacing: 16) {
-                        analyticsStatCard(title: "Commit Velocity", value: "\(gitViewModel.history.count) Commits", subtitle: "Total tracked history", icon: "clock.fill", color: .purple)
-                        analyticsStatCard(title: "Pull Request rate", value: "88% merged", subtitle: "Avg merge: 3.5 hrs", icon: "arrow.triangle.pull", color: .green)
-                        analyticsStatCard(title: "Deployments", value: "14 runs", subtitle: "100% success rate", icon: "cloud.fill", color: .blue)
+                        analyticsStatCard(title: "Commit Velocity", value: "\(gitViewModel.history.count) Commits", subtitle: "Total tracked history", icon: "clock.fill", color: Color.accentColor)
+                        analyticsStatCard(title: "Pull Request rate", value: "88% merged", subtitle: "Avg merge: 3.5 hrs", icon: "arrow.triangle.pull", color: Color.accentColor)
+                        analyticsStatCard(title: "Deployments", value: "14 runs", subtitle: "100% success rate", icon: "cloud.fill", color: Color.accentColor)
                     }
 
                     HStack(spacing: 16) {
-                        analyticsStatCard(title: "Contributor Count", value: "3 Engineers", subtitle: "Active on primary branches", icon: "person.3.fill", color: .orange)
-                        analyticsStatCard(title: "Language Coverage", value: "Swift 94%", subtitle: "Mainly native code", icon: "curlybraces", color: .teal)
-                        analyticsStatCard(title: "Code Ownership", value: "Lead 70%", subtitle: "Distributed code risk", icon: "shield.fill", color: .indigo)
+                        analyticsStatCard(title: "Contributor Count", value: "3 Engineers", subtitle: "Active on primary branches", icon: "person.3.fill", color: Color.accentColor)
+                        analyticsStatCard(title: "Language Coverage", value: "Swift 94%", subtitle: "Mainly native code", icon: "curlybraces", color: Color.accentColor)
+                        analyticsStatCard(title: "Code Ownership", value: "Lead 70%", subtitle: "Distributed code risk", icon: "shield.fill", color: Color.accentColor)
                     }
                 }
 
@@ -600,7 +600,7 @@ public struct RepositoryExplorerView: View {
                         Label(isGeneratingAIInsights ? "Synthesizing Insights..." : "Evaluate AI Insights Summary", systemImage: "sparkles")
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.purple)
+                    .tint(Color.accentColor)
                     .disabled(isGeneratingAIInsights)
 
                     if isGeneratingAIInsights {
@@ -693,7 +693,7 @@ public struct RepositoryExplorerView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
             .disabled(cloneURLText.isEmpty || cloneDestText.isEmpty)
         }
         .padding(24)
@@ -725,7 +725,7 @@ public struct RepositoryExplorerView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
             .disabled(initRepoName.isEmpty)
         }
         .padding(24)
@@ -757,7 +757,7 @@ public struct RepositoryExplorerView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
             .disabled(renameText.isEmpty)
         }
         .padding(24)

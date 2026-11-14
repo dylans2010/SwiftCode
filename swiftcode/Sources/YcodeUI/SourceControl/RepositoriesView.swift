@@ -70,14 +70,14 @@ struct RepositoriesView: View {
                         VStack(alignment: .leading, spacing: 20) {
                             let conflicts = status.files.filter { $0.status == .conflicted }
                             if !conflicts.isEmpty {
-                                fileGroupView(title: "Conflicts", files: conflicts, color: .red)
+                                fileGroupView(title: "Conflicts", files: conflicts, color: Color.accentColor)
                             }
 
                             let staged = status.files.filter { $0.isStaged }
-                            fileGroupView(title: "Staged Changes", files: staged, color: .green)
+                            fileGroupView(title: "Staged Changes", files: staged, color: Color.accentColor)
 
                             let unstaged = status.files.filter { !$0.isStaged && $0.status != .conflicted }
-                            fileGroupView(title: "Unstaged / Untracked", files: unstaged, color: .orange)
+                            fileGroupView(title: "Unstaged / Untracked", files: unstaged, color: Color.accentColor)
                         }
                         .padding()
                     }
@@ -86,7 +86,7 @@ struct RepositoriesView: View {
                     VStack(alignment: .leading, spacing: 14) {
                         Label("Commit Changes", systemImage: "pencil.and.outline")
                             .font(.headline)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(Color.accentColor)
 
                         Text("Write a message to commit staged files to local history.")
                             .font(.caption)
@@ -160,7 +160,7 @@ struct RepositoriesView: View {
                                         selectedConflictedFile = file
                                     }
                                     .buttonStyle(.borderedProminent)
-                                    .tint(.red)
+                                    .tint(.secondary)
                                     .controlSize(.small)
                                 } else if file.isStaged {
                                     Button("Unstage") {
@@ -198,7 +198,7 @@ struct RepositoriesView: View {
             title: "Git Repository Not Initialized",
             description: "Initialize local Git history tracking in this workspace to record, branch, stage, and sync changes.",
             systemImage: "folder.badge.plus",
-            accentColor: .orange,
+            accentColor: Color.accentColor,
             actionTitle: "Initialize Repository"
         ) {
             guard let project = project else { return }
@@ -245,7 +245,7 @@ struct RepositoriesView: View {
                     title: "No Repositories Resolved",
                     description: "Connect a GitHub authentication token or verify token scopes on GitHub.",
                     systemImage: "folder.badge.questionmark",
-                    accentColor: .purple
+                    accentColor: Color.accentColor
                 )
             } else {
                 let filtered = searchPattern.isEmpty ? remoteRepos : remoteRepos.filter {
@@ -259,7 +259,7 @@ struct RepositoriesView: View {
                     List(filtered) { repo in
                         HStack(spacing: 16) {
                             Image(systemName: repo.isPrivate ? "lock.fill" : "globe")
-                                .foregroundStyle(repo.isPrivate ? .yellow : .green)
+                                .foregroundStyle(repo.isPrivate ? Color.accentColor : .secondary)
                                 .font(.title3)
 
                             VStack(alignment: .leading, spacing: 4) {

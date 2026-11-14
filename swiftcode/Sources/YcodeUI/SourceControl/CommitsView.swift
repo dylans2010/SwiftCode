@@ -126,7 +126,7 @@ struct CommitsView: View {
             HStack(spacing: 12) {
                 Label("Commit Log", systemImage: "clock.arrow.circlepath")
                     .font(.headline)
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(Color.accentColor)
 
                 Spacer()
 
@@ -220,7 +220,7 @@ struct CommitsView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .tint(.purple)
+            .tint(Color.accentColor)
             .disabled(compareStartSHA.isEmpty || compareEndSHA.isEmpty || isGeneratingDiff)
 
             Spacer()
@@ -235,7 +235,7 @@ struct CommitsView: View {
         }
         .padding(.horizontal)
         .padding(.vertical, 8)
-        .background(Color.purple.opacity(0.08))
+        .background(Color.secondary.opacity(0.06))
     }
 
     private var commitListWithGraphView: some View {
@@ -269,24 +269,24 @@ struct CommitsView: View {
                                         var path = Path()
                                         path.move(to: CGPoint(x: mainLaneX, y: 0))
                                         path.addLine(to: CGPoint(x: mainLaneX, y: h))
-                                        context.stroke(path, with: .color(.purple), lineWidth: 2)
+                                        context.stroke(path, with: .color(.secondary), lineWidth: 2)
 
                                         if commit.parentHashes.count > 1 {
                                             var mergePath = Path()
                                             mergePath.move(to: CGPoint(x: mainLaneX, y: midY))
                                             mergePath.addQuadCurve(to: CGPoint(x: secondaryLaneX, y: h), control: CGPoint(x: secondaryLaneX, y: midY))
-                                            context.stroke(mergePath, with: .color(.green), lineWidth: 2)
+                                            context.stroke(mergePath, with: .color(.secondary.opacity(0.6)), lineWidth: 2)
 
-                                            context.fill(Path(ellipseIn: CGRect(x: secondaryLaneX - 4, y: h - 4, width: 8, height: 8)), with: .color(.green))
+                                            context.fill(Path(ellipseIn: CGRect(x: secondaryLaneX - 4, y: h - 4, width: 8, height: 8)), with: .color(.secondary.opacity(0.6)))
                                         }
 
                                         let circleRect = CGRect(x: mainLaneX - 5, y: midY - 5, width: 10, height: 10)
-                                        let color: Color = isSelected ? .orange : .purple
+                                        let color: Color = isSelected ? Color.accentColor : Color.secondary
                                         context.fill(Path(ellipseIn: circleRect), with: .color(color))
 
                                         if index == 0 {
                                             let outerRing = CGRect(x: mainLaneX - 8, y: midY - 8, width: 16, height: 16)
-                                            context.stroke(Path(ellipseIn: outerRing), with: .color(.orange), lineWidth: 1.5)
+                                            context.stroke(Path(ellipseIn: outerRing), with: .color(Color.accentColor), lineWidth: 1.5)
                                         }
                                     }
                                     .frame(width: 50, height: 44)
@@ -303,8 +303,8 @@ struct CommitsView: View {
                                                     .font(.system(size: 8, weight: .bold))
                                                     .padding(.horizontal, 4)
                                                     .padding(.vertical, 1)
-                                                    .background(Color.orange.opacity(0.12))
-                                                    .foregroundStyle(.orange)
+                                                    .background(Color.accentColor.opacity(0.12))
+                                                    .foregroundStyle(Color.accentColor)
                                                     .cornerRadius(3)
                                             }
                                         }
@@ -374,7 +374,7 @@ struct CommitsView: View {
                         HStack(spacing: 8) {
                             Text(String(commit.sha.prefix(7)))
                                 .font(.system(.caption, design: .monospaced).bold())
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(Color.accentColor)
 
                             Button {
                                 let pb = NSPasteboard.general
@@ -435,7 +435,7 @@ struct CommitsView: View {
                                                 Spacer()
                                             }
                                             .padding(6)
-                                            .background(Color.purple.opacity(0.08))
+                                            .background(Color.secondary.opacity(0.06))
                                             .cornerRadius(4)
                                         }
                                         .buttonStyle(.plain)
@@ -453,7 +453,7 @@ struct CommitsView: View {
                                         Text("Loading changed files…").font(.caption).foregroundStyle(.secondary)
                                     }
                                 } else if let error = changedFilesError {
-                                    Text(error).font(.caption).foregroundStyle(.red)
+                                    Text(error).font(.caption).foregroundStyle(.secondary)
                                 } else if changedFiles.isEmpty {
                                     Text("No files changed in this commit.").font(.caption).foregroundStyle(.secondary)
                                 } else {
@@ -472,7 +472,7 @@ struct CommitsView: View {
                                 VStack(alignment: .leading, spacing: 8) {
                                     Text("Diff Range Comparisons")
                                         .font(.subheadline.bold())
-                                        .foregroundStyle(.purple)
+                                        .foregroundStyle(Color.accentColor)
 
                                     ScrollView {
                                         Text(generatedDiffOutput)
@@ -542,8 +542,8 @@ struct CommitsView: View {
             Spacer()
             if let adds, let dels {
                 HStack(spacing: 6) {
-                    Text("+\(adds)").foregroundStyle(.green).font(.caption2.bold())
-                    Text("-\(dels)").foregroundStyle(.red).font(.caption2.bold())
+                    Text("+\(adds)").foregroundStyle(Color.accentColor).font(.caption2.bold())
+                    Text("-\(dels)").foregroundStyle(.secondary).font(.caption2.bold())
                 }
             } else {
                 Text("binary").foregroundStyle(.secondary).font(.caption2.bold())
@@ -560,7 +560,7 @@ struct CommitsView: View {
         VStack(alignment: .leading, spacing: 10) {
             Label("Emergency Rollback Desk", systemImage: "arrow.uturn.backward.circle.fill")
                 .font(.subheadline.bold())
-                .foregroundStyle(.red)
+                .foregroundStyle(Color.accentColor)
 
             Text("Executes git hard reset to revert your repository head to this point. Any uncommitted work is lost.")
                 .font(.system(size: 10))
@@ -597,14 +597,14 @@ struct CommitsView: View {
             if showRollbackSuccess {
                 Text("Rollback successfully executed. Workspace synchronized.")
                     .font(.caption)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.accentColor)
                     .padding(6)
-                    .background(Color.green.opacity(0.12))
+                    .background(Color.accentColor.opacity(0.08))
                     .cornerRadius(4)
             }
         }
         .padding(10)
-        .background(Color.red.opacity(0.04))
+        .background(Color.secondary.opacity(0.04))
         .cornerRadius(6)
     }
 

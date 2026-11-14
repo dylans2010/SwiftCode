@@ -19,7 +19,7 @@ public struct NSCreatePRView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Create Pull Request (⇧⌘Q)", systemImage: "arrow.up.right.square.fill")
                         .font(.headline)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.accentColor)
 
                     TextField("PR Title...", text: $prTitle)
                         .textFieldStyle(.roundedBorder)
@@ -38,7 +38,7 @@ public struct NSCreatePRView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {

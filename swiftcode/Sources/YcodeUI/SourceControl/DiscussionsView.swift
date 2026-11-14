@@ -106,7 +106,7 @@ struct DiscussionsView: View {
     private func categoryRow(name: String, icon: String) -> some View {
         HStack {
             Image(systemName: icon)
-                .foregroundStyle(.purple)
+                .foregroundStyle(Color.accentColor)
                 .frame(width: 16)
             Text(name)
                 .font(.subheadline)
@@ -173,7 +173,7 @@ struct DiscussionsView: View {
                                 if thread.replies.contains(where: { $0.isAccepted }) {
                                     Label("Resolved", systemImage: "checkmark.circle.fill")
                                         .font(.system(size: 8, weight: .bold))
-                                        .foregroundStyle(.green)
+                                        .foregroundStyle(Color.accentColor)
                                 }
                             }
                         }
@@ -206,8 +206,8 @@ struct DiscussionsView: View {
                                     .font(.caption.bold())
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(Color.purple.opacity(0.12))
-                                    .foregroundStyle(.purple)
+                                    .background(Color.accentColor.opacity(0.12))
+                                    .foregroundStyle(Color.accentColor)
                                     .cornerRadius(4)
                             }
                         }
@@ -260,7 +260,7 @@ struct DiscussionsView: View {
                                     if reply.isAccepted {
                                         Label("ACCEPTED ANSWER", systemImage: "checkmark.circle.fill")
                                             .font(.system(size: 8, weight: .bold))
-                                            .foregroundStyle(.green)
+                                            .foregroundStyle(Color.accentColor)
                                     }
                                     Text(formatDateString(reply.date)).font(.caption2).foregroundStyle(.secondary)
                                 }
@@ -279,7 +279,7 @@ struct DiscussionsView: View {
                                 .padding(.top, 2)
                             }
                             .padding(10)
-                            .background(reply.isAccepted ? Color.green.opacity(0.04) : Color.secondary.opacity(0.02))
+                            .background(reply.isAccepted ? Color.accentColor.opacity(0.06) : Color.secondary.opacity(0.02))
                             .cornerRadius(6)
                             Divider()
                         }
@@ -294,7 +294,7 @@ struct DiscussionsView: View {
                                 executePostReply()
                             }
                             .buttonStyle(.borderedProminent)
-                            .tint(.purple)
+                            .tint(Color.accentColor)
                             .disabled(replyText.trimmingCharacters(in: .whitespaces).isEmpty)
                         }
                     }
@@ -355,7 +355,7 @@ struct DiscussionsView: View {
             title: "No Repository Associated",
             description: "A GitHub repository must first be associated with this project to view and manage Discussions.",
             systemImage: "bubble.left.and.bubble.right.fill",
-            accentColor: .orange,
+            accentColor: .accentColor,
             actionTitle: "Configure Repository Association"
         ) {
             RepositoryContext.shared.showingSetRepoSheet = true

@@ -26,7 +26,14 @@ public struct OpenAIProvider: AssistantProvider {
         switch credential {
         case .apiKey(let k) where !k.isEmpty: return k
         case .account(let a): return try await a.accessToken(forceRefresh: forceRefresh)
-        default: throw AssistantError.notSignedIn(hint: Self.signedOutHint)
+        default:
+            if let envKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"], !envKey.isEmpty {
+                return envKey
+            }
+            if let kc = KeychainService.shared.get(forKey: "openai_api_key"), !kc.isEmpty {
+                return kc
+            }
+            throw AssistantError.notSignedIn(hint: Self.signedOutHint)
         }
     }
 

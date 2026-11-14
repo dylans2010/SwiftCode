@@ -80,7 +80,14 @@ public final class AssistManager {
     private func failRequest(_ error: String, systemMessage: String? = nil) {
         lastError = error
         setRequestPhase(.failed)
-        messages.append(AssistMessage(role: .system, content: systemMessage ?? error))
+        let displayError = systemMessage ?? error
+        if let last = messages.last, last.role == .assistant && last.content.isEmpty {
+            if let idx = messages.indices.last {
+                messages[idx].content = displayError
+            }
+        } else {
+            messages.append(AssistMessage(role: .assistant, content: displayError))
+        }
         isProcessing = false
         saveHistory()
     }
@@ -349,6 +356,8 @@ public final class AssistManager {
         let selectedDiscoveredModel = AssistModelDiscoveryService.shared.discoveredModels.first(where: { $0.modelIdentifier == selectedModelID })
         let isMetaAssist = AppSettings.shared.isMetaAssist ||
             selectedDiscoveredModel?.providerID == MetaAssistProvider.providerID ||
+            selectedModelID.hasPrefix("muse-") ||
+            selectedModelID.lowercased().contains("muse") ||
             (selectedModelID == MetaAssistProvider.defaultModelID && selectedDiscoveredModel == nil)
         if isMetaAssist {
             await sendMetaAssistMessage(trimmed, attachments: attachments, envelope: envelope, metrics: metrics, generation: generation)
@@ -357,11 +366,21 @@ public final class AssistManager {
 
         let isAgentMode = UserDefaults.standard.bool(forKey: "com.swiftcode.assist.mode")
         let isLightweightConversation = attachments.isEmpty && envelope == nil && Self.isLightweightConversation(trimmed)
-        let isAntigravityAvailable = GoogleCloudSDKRuntime.shared.isAvailable
+        let hasAntigravityKey = !(ProcessInfo.processInfo.environment["ANTIGRAVITY_API_KEY"] ?? "").isEmpty ||
+            !(ProcessInfo.processInfo.environment["GEMINI_API_KEY"] ?? "").isEmpty ||
+            !(ProcessInfo.processInfo.environment["GOOGLE_API_KEY"] ?? "").isEmpty ||
+            !(KeychainService.shared.get(forKey: "antigravity_api_key") ?? "").isEmpty ||
+            !(KeychainService.shared.get(forKey: "gemini_api_key") ?? "").isEmpty
+        let isAgyInstalled = CLIToolLocator.isInstalled("agy") || CLIToolLocator.isInstalled("gemini")
+        let isAntigravityExplicit = selectedModelID.lowercased().contains("antigravity") ||
+            selectedModelID.lowercased().contains("agy") ||
+            selectedDiscoveredModel?.providerID == "antigravity" ||
+            AppSettings.shared.isGoogleCloudAssist
+        let isAntigravityAvailable = GoogleCloudSDKRuntime.shared.isAvailable || isAgyInstalled || hasAntigravityKey
         let googleAuthMode = UserDefaults.standard.string(forKey: "assist_google_auth_mode") ?? AppSettings.shared.assistGoogleAuthMode
         let isGoogleOAuthSession = (googleAuthMode == "google_oauth") && GoogleAccountAuthService.shared.isAuthenticated && !AppSettings.shared.alternativeKeysEnabled
 
-        if isAntigravityAvailable && (AppSettings.shared.isGoogleCloudAssist || isAgentMode || isGoogleOAuthSession) {
+        if (isAntigravityExplicit || isAntigravityAvailable) && (AppSettings.shared.isGoogleCloudAssist || isAgentMode || isGoogleOAuthSession || isAntigravityExplicit) {
             await sendGoogleCloudSDKMessage(trimmed, attachments: attachments, envelope: envelope, metrics: metrics, generation: generation)
             return
         }
@@ -687,13 +706,45 @@ public final class AssistManager {
         setRequestPhase(.receivingResponse)
     }
 
+    public static func formatUserFacingErrorMessage(errorDescription: String, provider: String?, model: String?) -> String {
+        let providerName = provider ?? "AI Provider"
+        let modelName = model ?? "Selected model"
+        let lower = errorDescription.lowercased()
+
+        if lower.contains("invalid_key") || lower.contains("invalid key") || lower.contains("401") || lower.contains("unauthorized") || lower.contains("not signed in") || lower.contains("authentication") {
+            return "⚠️ **Authentication Error (\(providerName))**\n\nCould not authenticate with \(providerName) for model `\(modelName)`. Please verify your API key or credentials in Settings ▸ Assist or ensure the environment variable (e.g. \(providerName.uppercased())_API_KEY) is exported."
+        }
+        if lower.contains("rate_limited") || lower.contains("rate limit") || lower.contains("429") || lower.contains("resource_exhausted") || lower.contains("quota") {
+            return "⏳ **Rate Limit Exceeded (\(providerName))**\n\nThe provider has temporarily throttled requests for `\(modelName)`. Please wait a moment before retrying or switch to another model in Settings ▸ Assist."
+        }
+        if lower.contains("model_not_found") || lower.contains("not found") || lower.contains("404") {
+            return "🔍 **Model Not Found (\(providerName))**\n\nThe requested model `\(modelName)` could not be found or is not available for this account. Please select another model in Settings ▸ Assist."
+        }
+        if lower.contains("muse cli not found") || (lower.contains("muse") && lower.contains("not found")) {
+            return "⚙️ **Muse CLI Not Found**\n\nThe Muse code assistant CLI could not be located. Please install the Muse SDK or verify that `muse` is in your PATH / environment (`MUSE_PATH`, `MUSE_API_KEY`)."
+        }
+        if lower.contains("timed out") || lower.contains("timeout") {
+            return "⏱️ **Request Timed Out (\(providerName))**\n\nThe request to `\(modelName)` timed out waiting for a response. Please check your network connection and try again."
+        }
+        if lower.contains("network") || lower.contains("unreachable") || lower.contains("connection refused") {
+            return "🌐 **Network Error (\(providerName))**\n\nCould not reach \(providerName). Please verify your internet connection. (Details: \(errorDescription))"
+        }
+        return "⚠️ **Assist Error (\(providerName))**\n\n\(errorDescription)"
+    }
+
     private func finishChatResponse(messageID: UUID, error: String? = nil, timedOut: Bool = false, modelID: String? = nil, providerID: String? = nil, tokenUsage: AssistTokenUsage? = nil) {
         if let error {
-            lastError = "AI request failed: \(error)"
-            messages.append(AssistMessage(role: .system, content: lastError ?? "AI request failed."))
-        }
-        if let index = messages.firstIndex(where: { $0.id == messageID }), messages[index].content.isEmpty, error != nil {
-            messages.remove(at: index)
+            let formattedError = Self.formatUserFacingErrorMessage(errorDescription: error, provider: providerID, model: modelID)
+            lastError = formattedError
+            if let index = messages.firstIndex(where: { $0.id == messageID }) {
+                if messages[index].content.isEmpty {
+                    messages[index].content = formattedError
+                } else {
+                    messages.append(AssistMessage(role: .assistant, content: formattedError))
+                }
+            } else {
+                messages.append(AssistMessage(role: .assistant, content: formattedError))
+            }
         }
         attributeFinishedMessage(messageID: messageID, modelID: modelID, providerID: providerID, tokenUsage: tokenUsage)
         isProcessing = false
@@ -1133,16 +1184,20 @@ public final class AssistManager {
             } catch {
                 await MainActor.run {
                     guard generation == self.currentGeneration else { return }
-                    let errStr = "Assist with Meta Error: \(error.localizedDescription)"
+                    let errStr = Self.formatUserFacingErrorMessage(
+                        errorDescription: error.localizedDescription,
+                        provider: "Muse",
+                        model: AppSettings.shared.selectedAssistModelID
+                    )
                     self.lastError = errStr
                     if let messageID, let idx = self.messages.firstIndex(where: { $0.id == messageID }) {
                         if self.messages[idx].content.isEmpty {
                             self.messages[idx].content = errStr
                         } else {
-                            self.messages.append(AssistMessage(role: .system, content: errStr))
+                            self.messages.append(AssistMessage(role: .assistant, content: errStr))
                         }
                     } else {
-                        self.messages.append(AssistMessage(role: .system, content: errStr))
+                        self.messages.append(AssistMessage(role: .assistant, content: errStr))
                     }
                     self.setRequestPhase(.failed)
                     self.saveHistory()
@@ -2042,11 +2097,24 @@ public final class AssistManager {
                 await postNotice(.error, finalErrorMsg, replacingPlaceholder: true)
                 await MainActor.run {
                     self.lastError = finalErrorMsg
+                    let formattedErr = Self.formatUserFacingErrorMessage(
+                        errorDescription: rawErr,
+                        provider: currentConfig.provider,
+                        model: currentModelName
+                    )
                     if let idx = self.messages.indices.last {
                         self.messages[idx].activityGroup?.isExecuting = false
+                        if self.messages[idx].content.isEmpty {
+                            self.messages[idx].content = formattedErr
+                        } else {
+                            self.messages.append(AssistMessage(role: .assistant, content: formattedErr))
+                        }
+                    } else {
+                        self.messages.append(AssistMessage(role: .assistant, content: formattedErr))
                     }
                     self.setRequestPhase(.failed)
                     self.isProcessing = false
+                    self.saveHistory()
                 }
                 break executionLoop
             }

@@ -11,6 +11,9 @@ struct GitHubIntegrationView: View {
     @AppStorage("github_repo_url") private var sharedRepoURL: String = ""
 
     @State private var token: String = ""
+    @State private var isTokenVisible = false
+    @State private var isCopied = false
+    @State private var localIdentityStatus: String? = nil
     @State private var repoURL: String = ""
     @State private var commitMessage: String = "Update From SwiftCode"
     @State private var isAuthenticated = false
@@ -63,7 +66,7 @@ struct GitHubIntegrationView: View {
             HStack {
                 Label("GitHub Integration", systemImage: "folder.fill.badge.gearshape")
                     .font(.headline)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
                 Button("Done") { dismiss() }
                     .buttonStyle(.bordered)
@@ -159,7 +162,7 @@ struct GitHubIntegrationView: View {
             HStack {
                 Label("Authentication Status", systemImage: "key.fill")
                     .font(.subheadline.bold())
-                    .foregroundColor(.yellow)
+                    .foregroundStyle(.secondary)
                 Spacer()
             }
 
@@ -167,11 +170,11 @@ struct GitHubIntegrationView: View {
                 HStack(spacing: 16) {
                     ZStack {
                         Circle()
-                            .fill(Color.blue.opacity(0.15))
+                            .fill(Color.accentColor.opacity(0.15))
                             .frame(width: 48, height: 48)
                         Image(systemName: "person.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color.accentColor)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(user.name ?? user.login)
@@ -189,34 +192,102 @@ struct GitHubIntegrationView: View {
                     } label: {
                         Text("Sign Out")
                             .font(.caption.bold())
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.secondary)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(Color.red.opacity(0.1), in: Capsule())
+                            .background(Color.secondary.opacity(0.1), in: Capsule())
                     }
                     .buttonStyle(.plain)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text("Personal Access Token")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    SecureField("ghp_xxxxxxxxxxxx", text: $token)
-                        .font(.system(.body, design: .monospaced))
-                        .textFieldStyle(.roundedBorder)
-                        .autocorrectionDisabled()
-
-                    Button {
-                        connectToGitHub()
-                    } label: {
-                        Label("Connect To GitHub", systemImage: "link")
-                            .font(.subheadline.bold())
-                            .frame(maxWidth: .infinity)
+                    HStack {
+                        Text("Personal Access Token")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        if AppSettings.shared.useLocalGitIdentity {
+                            Text("Local Identity Active")
+                                .font(.caption.bold())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.accentColor.opacity(0.15))
+                                .foregroundStyle(Color.accentColor)
+                                .clipShape(Capsule())
+                        }
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(Theme.accentSwiftUIColor)
-                    .controlSize(.large)
-                    .disabled(token.isEmpty || isLoading)
+
+                    HStack(spacing: 8) {
+                        if isTokenVisible {
+                            TextField("ghp_xxxxxxxxxxxx", text: $token)
+                                .font(.system(.body, design: .monospaced))
+                                .textFieldStyle(.roundedBorder)
+                                .autocorrectionDisabled()
+                        } else {
+                            SecureField("ghp_xxxxxxxxxxxx", text: $token)
+                                .font(.system(.body, design: .monospaced))
+                                .textFieldStyle(.roundedBorder)
+                                .autocorrectionDisabled()
+                        }
+
+                        if !token.isEmpty {
+                            Button {
+                                isTokenVisible.toggle()
+                            } label: {
+                                Label(isTokenVisible ? "Hide" : "View", systemImage: isTokenVisible ? "eye.slash" : "eye")
+                            }
+                            .buttonStyle(.bordered)
+                            .help(isTokenVisible ? "Mask token" : "View token in cleartext")
+
+                            Button {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(token, forType: .string)
+                                isCopied = true
+                                Task {
+                                    try? await Task.sleep(nanoseconds: 2_000_000_000)
+                                    isCopied = false
+                                }
+                            } label: {
+                                Label(isCopied ? "Copied!" : "Copy", systemImage: isCopied ? "checkmark" : "doc.on.doc")
+                                    .foregroundStyle(isCopied ? Color.accentColor : .primary)
+                            }
+                            .buttonStyle(.bordered)
+                            .help("Copy token to clipboard")
+                        }
+                    }
+
+                    HStack(spacing: 12) {
+                        Button {
+                            connectToGitHub()
+                        } label: {
+                            Label("Connect To GitHub", systemImage: "link")
+                                .font(.subheadline.bold())
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Theme.accentSwiftUIColor)
+                        .controlSize(.large)
+                        .disabled(token.isEmpty || isLoading)
+
+                        Button {
+                            Task {
+                                let identity = await GitHubTokenProvider.applyLocalIdentity()
+                                localIdentityStatus = "Using local Git identity: \(identity.name) <\(identity.email)>"
+                            }
+                        } label: {
+                            Label("Use Local Identity", systemImage: "person.crop.circle.badge.checkmark")
+                                .font(.subheadline.bold())
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .help("Retrieves local git configuration and uses that identity rather than requiring a Personal Access Token")
+                    }
+
+                    if let status = localIdentityStatus {
+                        Text(status)
+                            .font(.caption)
+                            .foregroundStyle(Color.accentColor)
+                    }
                 }
             }
         }
@@ -227,7 +298,7 @@ struct GitHubIntegrationView: View {
             HStack {
                 Label("GitHub Modules & Workflows", systemImage: "square.grid.2x2.fill")
                     .font(.subheadline.bold())
-                    .foregroundColor(.purple)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
             }
 
@@ -236,7 +307,7 @@ struct GitHubIntegrationView: View {
                     title: "Branch Management",
                     subtitle: "Switch, create, or delete branches",
                     icon: "arrow.triangle.branch",
-                    color: .green
+                    color: Color.accentColor
                 ) {
                     showBranchManagement = true
                 }
@@ -247,7 +318,7 @@ struct GitHubIntegrationView: View {
                     title: "Pull Requests",
                     subtitle: "Create PRs with reviewers and labels",
                     icon: "arrow.triangle.pull",
-                    color: .purple
+                    color: Color.accentColor
                 ) {
                     showPullRequest = true
                 }
@@ -258,7 +329,7 @@ struct GitHubIntegrationView: View {
                     title: "Licenses",
                     subtitle: "Browse, filter, and add OSS licenses",
                     icon: "doc.text.magnifyingglass",
-                    color: .cyan
+                    color: Color.accentColor
                 ) {
                     showLicenses = true
                 }
@@ -298,7 +369,7 @@ struct GitHubIntegrationView: View {
             HStack {
                 Label("Repository Setup", systemImage: "folder.fill.badge.gearshape")
                     .font(.subheadline.bold())
-                    .foregroundColor(.blue)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
             }
 
@@ -325,7 +396,7 @@ struct GitHubIntegrationView: View {
                             ProgressView().scaleEffect(0.8)
                         } else {
                             Image(systemName: "arrow.down.circle.fill")
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
                     .buttonStyle(.plain)
@@ -338,7 +409,7 @@ struct GitHubIntegrationView: View {
                             ProgressView().scaleEffect(0.8)
                         } else {
                             Image(systemName: "checkmark.shield.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(.secondary)
                         }
                     }
                     .buttonStyle(.plain)
@@ -348,11 +419,11 @@ struct GitHubIntegrationView: View {
                 if let error = repoValidationError {
                     HStack(spacing: 6) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.secondary)
                             .font(.caption)
                         Text(error)
                             .font(.caption)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -360,13 +431,13 @@ struct GitHubIntegrationView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 8) {
                             Image(systemName: detail.isPrivate ? "lock.fill" : "globe")
-                                .foregroundStyle(detail.isPrivate ? .yellow : .green)
+                                .foregroundStyle(detail.isPrivate ? Color.accentColor : .secondary)
                                 .font(.caption)
                             Text(detail.fullName)
                                 .font(.subheadline.weight(.semibold))
                             Spacer()
                             Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
+                                .foregroundStyle(.secondary)
                                 .font(.caption)
                         }
 
@@ -379,13 +450,13 @@ struct GitHubIntegrationView: View {
                         HStack(spacing: 16) {
                             Label("\(detail.stargazersCount)", systemImage: "star.fill")
                                 .font(.caption)
-                                .foregroundStyle(.yellow)
+                                .foregroundStyle(.secondary)
                             Label("\(detail.forksCount)", systemImage: "tuningfork")
                                 .font(.caption)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(Color.accentColor)
                             Label("\(detail.openIssuesCount ?? 0)", systemImage: "exclamationmark.circle")
                                 .font(.caption)
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
                     .padding(10)
@@ -396,7 +467,7 @@ struct GitHubIntegrationView: View {
                     Link(destination: repositoryURL) {
                         Label("Open Repository On GitHub", systemImage: "arrow.up.right.square")
                             .font(.subheadline)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color.accentColor)
                     }
                 }
 
@@ -405,7 +476,7 @@ struct GitHubIntegrationView: View {
                 } label: {
                     Label("Create New Repository", systemImage: "plus.circle.fill")
                         .font(.subheadline)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .opacity(ownerFromRepo.isEmpty ? 1 : 0)
@@ -420,11 +491,11 @@ struct GitHubIntegrationView: View {
                             Text("Downloading…")
                                 .font(.subheadline)
                         }
-                        .foregroundStyle(.teal)
+                        .foregroundStyle(Color.accentColor)
                     } else {
                         Label("Save Repository To Device", systemImage: "arrow.down.circle.fill")
                             .font(.subheadline)
-                            .foregroundStyle(.teal)
+                            .foregroundStyle(Color.accentColor)
                     }
                 }
                 .buttonStyle(.plain)
@@ -438,7 +509,7 @@ struct GitHubIntegrationView: View {
             HStack {
                 Label("Repository Branches", systemImage: "arrow.branch")
                     .font(.subheadline.bold())
-                    .foregroundColor(.green)
+                    .foregroundStyle(.secondary)
                 Spacer()
                 Button {
                     loadBranches()
@@ -452,12 +523,12 @@ struct GitHubIntegrationView: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.secondary)
                     Text("Active Branch: ")
                         .foregroundStyle(.secondary)
                     Text(currentBranch)
                         .fontWeight(.semibold)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.secondary)
                 }
 
                 if branches.isEmpty {
@@ -482,7 +553,7 @@ struct GitHubIntegrationView: View {
             HStack {
                 Label("Push & Synchronize", systemImage: "arrow.triangle.2.circlepath")
                     .font(.subheadline.bold())
-                    .foregroundColor(.orange)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
             }
 
@@ -502,7 +573,7 @@ struct GitHubIntegrationView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.orange)
+                    .tint(Color.accentColor)
                     .controlSize(.large)
                     .disabled(isLoading)
 
@@ -516,7 +587,7 @@ struct GitHubIntegrationView: View {
             HStack {
                 Label("Developer Tools & Utilities", systemImage: "wrench.and.screwdriver.fill")
                     .font(.subheadline.bold())
-                    .foregroundColor(.purple)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
             }
 
@@ -528,7 +599,7 @@ struct GitHubIntegrationView: View {
                         icon: "square.grid.2x2.fill",
                         title: "Git Commands",
                         subtitle: "Run git ops with guided buttons",
-                        color: .orange
+                        color: Color.accentColor
                     )
                 }
                 .buttonStyle(.plain)
@@ -559,7 +630,7 @@ struct GitHubIntegrationView: View {
             HStack {
                 Label("Build Actions", systemImage: "hammer.fill")
                     .font(.subheadline.bold())
-                    .foregroundColor(.purple)
+                    .foregroundStyle(Color.accentColor)
                 Spacer()
                 Button {
                     loadWorkflowRuns()
@@ -602,18 +673,18 @@ struct GitHubIntegrationView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.green)
+            .tint(Color.accentColor)
             .disabled(newRepoName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
 
             if let url = createdRepoURL {
                 Section("Repository Created") {
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Your New Repository Is Ready!", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                            .foregroundStyle(.secondary)
                             .font(.subheadline)
                         Text(url)
                             .font(.system(.caption, design: .monospaced))
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color.accentColor)
                             .textSelection(.enabled)
                         if let repoURL = URL(string: url) {
                             Link(destination: repoURL) {
@@ -682,7 +753,7 @@ struct GitHubIntegrationView: View {
                             } label: {
                                 HStack(spacing: 12) {
                                     Image(systemName: repo.isPrivate ? "lock.fill" : "globe")
-                                        .foregroundStyle(repo.isPrivate ? .yellow : .green)
+                                        .foregroundStyle(repo.isPrivate ? Color.accentColor : .secondary)
                                         .frame(width: 20)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(repo.fullName)
@@ -953,18 +1024,18 @@ struct BranchRow: View {
         Button(action: action) {
             HStack {
                 Image(systemName: "arrow.branch")
-                    .foregroundColor(isActive ? .green : .secondary)
+                    .foregroundStyle(isActive ? Color.accentColor : .secondary)
                 Text(branch.name)
-                    .foregroundStyle(isActive ? .green : .primary)
+                    .foregroundStyle(isActive ? Color.accentColor : .primary)
                     .font(.subheadline)
                 Spacer()
                 if isActive {
                     Image(systemName: "checkmark")
-                        .foregroundColor(.green)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(8)
-            .background(isActive ? Color.green.opacity(0.1) : Color.secondary.opacity(0.04))
+            .background(isActive ? Color.secondary.opacity(0.1) : Color.secondary.opacity(0.04))
             .cornerRadius(6)
         }
         .buttonStyle(.plain)
@@ -976,10 +1047,10 @@ struct WorkflowRunRow: View {
 
     var statusColor: Color {
         switch run.conclusion ?? run.status {
-        case "success": return .green
-        case "failure": return .red
+        case "success": return Color.accentColor
+        case "failure": return .secondary
         case "cancelled": return .gray
-        case "in_progress": return .blue
+        case "in_progress": return Color.accentColor
         default: return .secondary
         }
     }
@@ -1016,7 +1087,7 @@ struct WorkflowRunRow: View {
             if let url = URL(string: run.htmlUrl) {
                 Link(destination: url) {
                     Image(systemName: "arrow.up.right.square")
-                        .foregroundColor(.blue)
+                        .foregroundStyle(Color.accentColor)
                 }
                 .buttonStyle(.plain)
             }

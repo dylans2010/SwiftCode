@@ -39,7 +39,7 @@ struct GitConflictResolverView: View {
             HStack {
                 Label("Merge Conflict Resolver", systemImage: "arrow.triangle.merge")
                     .font(.headline)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.primary)
 
                 Spacer()
 
@@ -63,7 +63,7 @@ struct GitConflictResolverView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if !errorMessage.isEmpty {
                 VStack(spacing: 12) {
-                    Image(systemName: "exclamationmark.triangle.fill").font(.largeTitle).foregroundStyle(.red)
+                    Image(systemName: "exclamationmark.triangle.fill").font(.largeTitle).foregroundStyle(.secondary)
                     Text("Resolution Failed").font(.headline)
                     Text(errorMessage).font(.caption).foregroundStyle(.secondary)
                 }
@@ -128,10 +128,10 @@ struct GitConflictResolverView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("CURRENT CHANGE (HEAD)")
                         .font(.caption2.bold())
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(.secondary)
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.orange.opacity(0.1))
+                        .background(Color.secondary.opacity(0.08))
 
                     Divider()
 
@@ -156,10 +156,10 @@ struct GitConflictResolverView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text("INCOMING CHANGE")
                         .font(.caption2.bold())
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(.secondary)
                         .padding(8)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.blue.opacity(0.1))
+                        .background(Color.secondary.opacity(0.08))
 
                     Divider()
 
@@ -189,7 +189,7 @@ struct GitConflictResolverView: View {
                 HStack {
                     Text("RESOLVED OUTPUT EDITOR (LIVE PREVIEW)")
                         .font(.caption2.bold())
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.secondary)
 
                     Spacer()
 
@@ -207,13 +207,13 @@ struct GitConflictResolverView: View {
                     } label: {
                         Label(isRunningAIResolution ? "Explaining..." : "AI Resolve Suggestion", systemImage: "sparkles")
                             .font(.caption)
-                            .foregroundStyle(.purple)
+                            .foregroundStyle(Color.accentColor)
                     }
                     .buttonStyle(.plain)
                     .disabled(isRunningAIResolution)
                 }
                 .padding(8)
-                .background(Color.green.opacity(0.06))
+                .background(Color.secondary.opacity(0.06))
 
                 Divider()
 
@@ -227,7 +227,7 @@ struct GitConflictResolverView: View {
 
                 if !aiSuggestionText.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("AI Recommended Resolution:").font(.caption.bold()).foregroundStyle(.purple)
+                        Text("AI Recommended Resolution:").font(.caption.bold()).foregroundStyle(Color.accentColor)
                         ScrollView {
                             Text(aiSuggestionText)
                                 .font(.system(size: 10, design: .monospaced))
@@ -247,11 +247,11 @@ struct GitConflictResolverView: View {
                     if markersCount > 0 {
                         Label("\(markersCount) conflict markers remaining!", systemImage: "exclamationmark.triangle.fill")
                             .font(.caption)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(.secondary)
                     } else {
                         Label("Conflict markers resolved!", systemImage: "checkmark.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     Spacer()
@@ -263,7 +263,7 @@ struct GitConflictResolverView: View {
                             .fontWeight(.bold)
                     }
                     .buttonStyle(.borderedProminent)
-                    .tint(.green)
+                    .tint(Color.accentColor)
                     .disabled(markersCount > 0)
                 }
                 .padding(12)

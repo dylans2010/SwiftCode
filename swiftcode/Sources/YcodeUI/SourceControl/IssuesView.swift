@@ -103,7 +103,7 @@ struct IssuesView: View {
                     Label("New Issue", systemImage: "plus")
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.cyan)
+                .tint(Color.accentColor)
                 .disabled(context.connectedRepository == nil)
             }
             .padding()
@@ -118,7 +118,7 @@ struct IssuesView: View {
                     title: "No Issues Open",
                     description: "No issues match your filter criteria. Create one now!",
                     systemImage: "exclamationmark.bubble",
-                    accentColor: .cyan,
+                    accentColor: .accentColor,
                     actionTitle: "Create Issue"
                 ) {
                     showCreateIssue = true
@@ -145,12 +145,12 @@ struct IssuesView: View {
                                             }
                                         } label: {
                                             Image(systemName: selectedIssueIDs.contains(issue.id) ? "checkmark.square.fill" : "square")
-                                                .foregroundStyle(selectedIssueIDs.contains(issue.id) ? .cyan : .secondary)
+                                                .foregroundStyle(selectedIssueIDs.contains(issue.id) ? Color.accentColor : .secondary)
                                         }
                                         .buttonStyle(.plain)
 
                                         Image(systemName: issue.state == "open" ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
-                                            .foregroundStyle(issue.state == "open" ? .cyan : .green)
+                                            .foregroundStyle(issue.state == "open" ? Color.accentColor : .secondary)
                                             .font(.title3)
 
                                         VStack(alignment: .leading, spacing: 4) {
@@ -172,16 +172,16 @@ struct IssuesView: View {
                                                     .font(.system(size: 8, weight: .bold))
                                                     .padding(.horizontal, 4)
                                                     .padding(.vertical, 1)
-                                                    .background(Color.red.opacity(0.12))
-                                                    .foregroundStyle(.red)
+                                                    .background(Color.secondary.opacity(0.12))
+                                                    .foregroundStyle(.secondary)
                                                     .cornerRadius(3)
 
                                                 Text("v1.0.0")
                                                     .font(.system(size: 8, weight: .bold))
                                                     .padding(.horizontal, 4)
                                                     .padding(.vertical, 1)
-                                                    .background(Color.purple.opacity(0.12))
-                                                    .foregroundStyle(.purple)
+                                                    .background(Color.secondary.opacity(0.12))
+                                                    .foregroundStyle(.secondary)
                                                     .cornerRadius(3)
                                             }
                                         }
@@ -192,8 +192,8 @@ struct IssuesView: View {
                                             .font(.system(size: 8, weight: .bold))
                                             .padding(.horizontal, 6)
                                             .padding(.vertical, 2)
-                                            .background(issue.state == "open" ? Color.cyan.opacity(0.12) : Color.green.opacity(0.12))
-                                            .foregroundStyle(issue.state == "open" ? .cyan : .green)
+                                            .background(Color.secondary.opacity(0.12))
+                                            .foregroundStyle(.secondary)
                                             .cornerRadius(4)
                                     }
                                 }
@@ -215,7 +215,7 @@ struct IssuesView: View {
                                         Label("Close Selected Issues", systemImage: "xmark.circle")
                                     }
                                     .buttonStyle(.borderedProminent)
-                                    .tint(.cyan)
+                                    .tint(Color.accentColor)
                                 }
                             }
                         }
@@ -242,7 +242,7 @@ struct IssuesView: View {
             title: "No Repository Associated",
             description: "A GitHub repository must first be associated with this project to view and manage Issues.",
             systemImage: "exclamationmark.circle",
-            accentColor: .orange,
+            accentColor: .accentColor,
             actionTitle: "Configure Repository Association"
         ) {
             RepositoryContext.shared.showingSetRepoSheet = true
@@ -254,7 +254,7 @@ struct IssuesView: View {
             HStack {
                 Label("New Issue Specification", systemImage: "plus.circle.fill")
                     .font(.headline)
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Button("Cancel") {
                     showCreateIssue = false
@@ -307,7 +307,7 @@ struct IssuesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.cyan)
+            .tint(Color.accentColor)
             .disabled(newTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         .padding(24)

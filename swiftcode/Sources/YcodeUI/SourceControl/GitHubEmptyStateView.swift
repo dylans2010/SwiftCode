@@ -5,7 +5,7 @@ struct GitHubEmptyStateView: View {
     let title: String
     let description: String
     let systemImage: String
-    var accentColor: Color = .orange
+    var accentColor: Color = .accentColor
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
 

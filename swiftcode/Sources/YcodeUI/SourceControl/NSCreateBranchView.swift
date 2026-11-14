@@ -17,7 +17,7 @@ public struct NSCreateBranchView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Create Branch (⇧⌘J)", systemImage: "plus.circle.fill")
                         .font(.headline)
-                        .foregroundStyle(.cyan)
+                        .foregroundStyle(Color.accentColor)
 
                     TextField("Branch name...", text: $branchName)
                         .textFieldStyle(.roundedBorder)
@@ -40,7 +40,7 @@ public struct NSCreateBranchView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {

@@ -37,7 +37,7 @@ struct PullRequestView: View {
             HStack {
                 Label("New Pull Request", systemImage: "arrow.triangle.pull")
                     .font(.headline)
-                    .foregroundColor(.purple)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Button("Cancel") { dismiss() }
                     .buttonStyle(.bordered)
@@ -51,7 +51,7 @@ struct PullRequestView: View {
                             HStack {
                                 Label("Compare & Pull Branches", systemImage: "arrow.triangle.branch")
                                     .font(.subheadline.bold())
-                                    .foregroundColor(.purple)
+                                    .foregroundStyle(.secondary)
                                 Spacer()
                             }
 
@@ -80,11 +80,11 @@ struct PullRequestView: View {
                                 if headBranch == baseBranch && !headBranch.isEmpty {
                                     HStack(spacing: 6) {
                                         Image(systemName: "exclamationmark.triangle.fill")
-                                            .foregroundStyle(.yellow)
+                                            .foregroundStyle(Color.accentColor)
                                             .font(.caption)
                                         Text("Source and target branches must be different.")
                                             .font(.caption)
-                                            .foregroundStyle(.yellow)
+                                            .foregroundStyle(Color.accentColor)
                                     }
                                 }
                             }
@@ -98,7 +98,7 @@ struct PullRequestView: View {
                             HStack {
                                 Label("Pull Request Title", systemImage: "textformat")
                                     .font(.subheadline.bold())
-                                    .foregroundColor(.orange)
+                                    .foregroundStyle(.secondary)
                                 Spacer()
                             }
 
@@ -115,7 +115,7 @@ struct PullRequestView: View {
                             HStack {
                                 Label("Pull Request Description", systemImage: "doc.text")
                                     .font(.subheadline.bold())
-                                    .foregroundColor(.blue)
+                                    .foregroundStyle(.secondary)
                                 Spacer()
                             }
 
@@ -147,7 +147,7 @@ struct PullRequestView: View {
                             HStack {
                                 Label("Optional Configurations", systemImage: "slider.horizontal.3")
                                     .font(.subheadline.bold())
-                                    .foregroundColor(.green)
+                                    .foregroundStyle(.secondary)
                                 Spacer()
                             }
 
@@ -182,7 +182,7 @@ struct PullRequestView: View {
                                     Spacer()
                                     Toggle("", isOn: $isDraft)
                                         .labelsHidden()
-                                        .tint(.orange)
+                                        .tint(Color.accentColor)
                                 }
                                 .padding(8)
                                 .background(Color.secondary.opacity(0.05))
@@ -221,7 +221,7 @@ struct PullRequestView: View {
                             }
                             .buttonStyle(.borderedProminent)
                             .controlSize(.large)
-                            .tint(.purple)
+                            .tint(Color.accentColor)
                             .disabled(!canSubmit || isSubmitting)
                         }
                         .padding()
@@ -294,7 +294,7 @@ struct PullRequestView: View {
         VStack(spacing: 24) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 64))
-                .foregroundStyle(.green)
+                .foregroundStyle(Color.accentColor)
 
             Text("Pull Request Created!")
                 .font(.title2.bold())
@@ -305,7 +305,7 @@ struct PullRequestView: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(Color.orange, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 12))
                         .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 32)
@@ -324,7 +324,7 @@ struct PullRequestView: View {
     private func prNotificationBanner(_ n: PRNotification) -> some View {
         HStack(spacing: 10) {
             Image(systemName: n.isError ? "xmark.circle.fill" : "checkmark.circle.fill")
-                .foregroundStyle(n.isError ? .red : .green)
+                .foregroundStyle(n.isError ? .secondary : Color.accentColor)
             Text(n.message)
                 .font(.subheadline)
             Spacer()
@@ -334,7 +334,7 @@ struct PullRequestView: View {
             RoundedRectangle(cornerRadius: 12)
                 .fill(.ultraThinMaterial)
                 .overlay(RoundedRectangle(cornerRadius: 12).stroke(
-                    n.isError ? Color.red.opacity(0.4) : Color.green.opacity(0.4),
+                    Color.secondary.opacity(0.2),
                     lineWidth: 1
                 ))
         )

@@ -347,6 +347,9 @@ public final class AppSettings: ObservableObject, Sendable {
     public var gitUserEmail: String {
         didSet { debouncedSave("gitUserEmail", gitUserEmail) }
     }
+    public var useLocalGitIdentity: Bool {
+        didSet { debouncedSave("useLocalGitIdentity", useLocalGitIdentity) }
+    }
     public var defaultBranch: String {
         didSet { debouncedSave("defaultBranch", defaultBranch) }
     }
@@ -594,6 +597,7 @@ public final class AppSettings: ObservableObject, Sendable {
         gitPath = UserDefaults.standard.string(forKey: "gitPath") ?? ""
         gitUserName = UserDefaults.standard.string(forKey: "gitUserName") ?? ""
         gitUserEmail = UserDefaults.standard.string(forKey: "gitUserEmail") ?? ""
+        useLocalGitIdentity = UserDefaults.standard.object(forKey: "useLocalGitIdentity") as? Bool ?? false
         defaultBranch = UserDefaults.standard.string(forKey: "defaultBranch") ?? "main"
         defaultGitHubRepo = UserDefaults.standard.string(forKey: "defaultGitHubRepo") ?? ""
         startOnNewProject = UserDefaults.standard.object(forKey: "startOnNewProject") as? Bool ?? false

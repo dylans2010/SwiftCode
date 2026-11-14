@@ -1,4 +1,5 @@
 import SwiftUI
+import YcodeAssistant
 
 @MainActor
 struct GitCommitComposerView: View {
@@ -36,6 +37,13 @@ struct GitCommitComposerView: View {
                     .font(.headline)
                     .foregroundStyle(.orange)
 
+                Label("Foundation Models", systemImage: "apple.intelligence")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.purple)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.purple.opacity(0.12), in: Capsule())
+
                 Spacer()
 
                 if isGeneratingAI {
@@ -53,7 +61,7 @@ struct GitCommitComposerView: View {
                         }
                     }
                     .buttonStyle(.bordered)
-                    .help("Review diff and suggest a commit message using AI")
+                    .help("Review diff and suggest a commit message using Apple Intelligence Foundation Models")
                 }
             }
 
@@ -117,6 +125,27 @@ struct GitCommitComposerView: View {
                         }
                         .padding(.top, 4)
 
+                        VStack(alignment: .leading, spacing: 4) {
+                            HStack {
+                                Text("Model")
+                                    .font(.system(size: 10, weight: .bold))
+                                    .foregroundStyle(.secondary)
+                                Spacer()
+                                Text("Foundation Models Only")
+                                    .font(.system(size: 9, weight: .semibold))
+                                    .foregroundStyle(.purple)
+                            }
+                            Picker("", selection: Binding(
+                                get: { FoundationModels.shared.selectedModel },
+                                set: { FoundationModels.shared.selectedModel = $0 }
+                            )) {
+                                ForEach(AppleFoundationModel.allCases) { model in
+                                    Text(model.rawValue).tag(model)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                        }
+
                         HStack(spacing: 16) {
                             Toggle("Sign Commit", isOn: $isSigning)
                                 .toggleStyle(.checkbox)
@@ -158,6 +187,29 @@ struct GitCommitComposerView: View {
         .onChange(of: title) { _, _ in updateParentBinding() }
         .onChange(of: bodyText) { _, _ in updateParentBinding() }
         .onChange(of: coAuthor) { _, _ in updateParentBinding() }
+        .onAppear {
+            enforceFoundationModelsOnly()
+        }
+    }
+
+    private func enforceFoundationModelsOnly() {
+        let keysToCheck = [
+            "commit_composer_provider",
+            "commitComposerProvider",
+            "commit_composer_model",
+            "commitComposerModel",
+            "git_commit_ai_provider",
+            "git_commit_composer_provider",
+            "source_control_ai_provider"
+        ]
+        for key in keysToCheck {
+            if let val = UserDefaults.standard.string(forKey: key) {
+                if val != "foundationModels" && val != "Apple Foundation Models" && val != AppleFoundationModel.afm3Core.rawValue && val != AppleFoundationModel.afm3CoreAdvanced.rawValue {
+                    UserDefaults.standard.removeObject(forKey: key)
+                }
+            }
+        }
+        FoundationModels.shared.isEnabled = true
     }
 
     private func updateParentBinding() {
@@ -186,6 +238,7 @@ struct GitCommitComposerView: View {
     }
 
     private func generateAICommitMessage() {
+        enforceFoundationModelsOnly()
         isGeneratingAI = true
         Task {
             do {
@@ -209,7 +262,7 @@ struct GitCommitComposerView: View {
                 }
 
                 let prompt = """
-                You are a Git commit expert. Review the following Git diff and generate a clear, professional, conventional commit message.
+                You are a Git commit expert powered strictly by Apple Intelligence Foundation Models. Review the following Git diff and generate a clear, professional, conventional commit message.
                 Follow the Conventional Commits specification (e.g. feat(scope): message).
                 Return ONLY a JSON object with the following keys, and NO other text, markdown formatting, or triple backticks:
                 {
@@ -223,7 +276,12 @@ struct GitCommitComposerView: View {
                 \(diffText.prefix(2500))
                 """
 
-                let response = try await LLMService.shared.generateExternalResponse(prompt: prompt, useContext: false)
+                // Strictly enforce Apple Intelligence Foundation Models only
+                FoundationModels.shared.isEnabled = true
+                let response = try await FoundationModels.shared.generatePrivateResponse(
+                    prompt: prompt,
+                    systemPrompt: "You are a Git commit expert powered strictly by Apple Intelligence Foundation Models. Generate conventional commit messages in JSON format."
+                )
 
                 let cleanResponse = response.trimmingCharacters(in: .whitespacesAndNewlines)
                     .replacingOccurrences(of: "```json", with: "")
@@ -244,7 +302,7 @@ struct GitCommitComposerView: View {
                 }
             } catch {
                 title = "code changes"
-                bodyText = "Failed to run AI Model: \(error.localizedDescription)"
+                bodyText = "Apple Foundation Models: \(error.localizedDescription)"
             }
             updateParentBinding()
             isGeneratingAI = false

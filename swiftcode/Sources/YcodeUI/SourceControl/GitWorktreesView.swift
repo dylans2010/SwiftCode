@@ -48,7 +48,7 @@ struct GitWorktreesView: View {
                             HStack {
                                 Label("Worktree Management Hub", systemImage: "arrow.triangle.branch")
                                     .font(.headline)
-                                    .foregroundColor(.orange)
+                                    .foregroundStyle(.primary)
                                 Spacer()
                             }
 
@@ -98,7 +98,7 @@ struct GitWorktreesView: View {
                             HStack {
                                 Label("Repository Worktrees Catalog", systemImage: "folder.badge.gearshape")
                                     .font(.headline)
-                                    .foregroundColor(.blue)
+                                    .foregroundStyle(.secondary)
                                 Spacer()
                             }
 
@@ -178,7 +178,7 @@ struct GitWorktreesView: View {
                                 HStack {
                                     Label("Selected Worktree Inspector", systemImage: "info.circle")
                                         .font(.headline)
-                                        .foregroundColor(.green)
+                                        .foregroundStyle(.secondary)
                                     Spacer()
 
                                     Button {
@@ -204,7 +204,7 @@ struct GitWorktreesView: View {
                                     GridRow {
                                         Text("Branch:").bold()
                                         Text(wt.branch ?? "Detached HEAD")
-                                            .foregroundColor(wt.isDetached ? .red : .primary)
+                                            .foregroundStyle(wt.isDetached ? .secondary : .primary)
                                     }
                                     GridRow {
                                         Text("HEAD Commit:").bold()
@@ -220,7 +220,7 @@ struct GitWorktreesView: View {
                                     GridRow {
                                         Text("Lock Status:").bold()
                                         Text(wt.isLocked ? "Locked (\(wt.lockReason ?? ""))" : "Unlocked")
-                                            .foregroundColor(wt.isLocked ? .red : .green)
+                                            .foregroundStyle(.secondary)
                                     }
                                 }
                                 .font(.subheadline)
@@ -355,8 +355,8 @@ struct GitWorktreesView: View {
                             .font(.system(size: 8, weight: .bold))
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
-                            .background(Color.orange.opacity(0.15))
-                            .foregroundStyle(.orange)
+                            .background(Color.secondary.opacity(0.12))
+                            .foregroundStyle(.secondary)
                             .cornerRadius(4)
                     }
 
@@ -365,8 +365,8 @@ struct GitWorktreesView: View {
                             .font(.system(size: 8, weight: .bold))
                             .padding(.horizontal, 4)
                             .padding(.vertical, 1)
-                            .background(Color.green.opacity(0.15))
-                            .foregroundStyle(.green)
+                            .background(Color.accentColor.opacity(0.12))
+                            .foregroundStyle(Color.accentColor)
                             .cornerRadius(4)
                     }
                 }
@@ -380,14 +380,14 @@ struct GitWorktreesView: View {
 
             if wt.isLocked {
                 Image(systemName: "lock.fill")
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
             }
 
             Button {
                 manager.toggleFavorite(for: wt)
             } label: {
                 Image(systemName: wt.isFavorite ? "star.fill" : "star")
-                    .foregroundStyle(wt.isFavorite ? .yellow : .secondary)
+                    .foregroundStyle(wt.isFavorite ? Color.accentColor : .secondary)
             }
             .buttonStyle(.plain)
 
@@ -422,7 +422,7 @@ struct GitWorktreesView: View {
                         VStack(alignment: .leading, spacing: 14) {
                             Label("Source & Path Configuration", systemImage: "slider.horizontal.3")
                                 .font(.headline)
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.secondary)
 
                             Toggle("Create Brand New Branch instead of existing", isOn: $isCreatingNewBranch)
 

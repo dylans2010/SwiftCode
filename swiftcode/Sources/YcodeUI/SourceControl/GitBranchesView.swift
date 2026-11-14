@@ -14,7 +14,7 @@ public struct GitBranchesView: View {
             HStack {
                 Label("Git Branches Directory", systemImage: "arrow.triangle.branch")
                     .font(.headline)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.primary)
                 Spacer()
                 Button(action: {}) {
                     Label("New Branch", systemImage: "plus")
@@ -39,12 +39,12 @@ public struct GitBranchesView: View {
                                     ForEach(branches, id: \.name) { branch in
                                         HStack {
                                             Image(systemName: "arrow.triangle.branch")
-                                                .foregroundStyle(branch.isCurrent ? .green : .secondary)
+                                                .foregroundStyle(branch.isCurrent ? Color.accentColor : .secondary)
                                             Text(branch.name)
                                                 .fontWeight(branch.isCurrent ? .bold : .regular)
                                             if branch.isCurrent {
                                                 Image(systemName: "checkmark.circle.fill")
-                                                    .foregroundStyle(.green)
+                                                    .foregroundStyle(Color.accentColor)
                                             }
                                             Spacer()
                                             if branch.isRemote {
@@ -57,7 +57,7 @@ public struct GitBranchesView: View {
                                             }
                                         }
                                         .padding(8)
-                                        .background(branch.isCurrent ? Color.green.opacity(0.05) : Color.secondary.opacity(0.04))
+                                        .background(branch.isCurrent ? Color.accentColor.opacity(0.08) : Color.secondary.opacity(0.04))
                                         .cornerRadius(6)
                                         .contextMenu {
                                             Button("Checkout") {  }

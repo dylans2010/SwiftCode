@@ -418,10 +418,10 @@ private struct GistDiffView: View {
                                 Text(line).font(.body.monospaced())
                             case .delete(let line):
                                 Text(line).font(.body.monospaced())
-                                    .foregroundStyle(.red)
+                                    .foregroundStyle(.secondary)
                             case .insert(let line):
                                 Text(line).font(.body.monospaced())
-                                    .foregroundStyle(.green)
+                                    .foregroundStyle(.secondary)
                             }
                         }
                     }

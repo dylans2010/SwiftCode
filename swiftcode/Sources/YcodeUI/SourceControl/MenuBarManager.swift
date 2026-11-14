@@ -135,7 +135,7 @@ struct NoLinkedRepositoryCard: View {
         VStack(spacing: 16) {
             Image(systemName: "link.badge.plus")
                 .font(.system(size: 44))
-                .foregroundStyle(.orange)
+                .foregroundStyle(Color.accentColor)
 
             Text("No Linked Repository")
                 .font(.headline)
@@ -152,7 +152,7 @@ struct NoLinkedRepositoryCard: View {
                 Label("Configure Repo", systemImage: "gearshape")
             }
             .buttonStyle(.borderedProminent)
-            .tint(.orange)
+            .tint(Color.accentColor)
             .controlSize(.regular)
         }
         .padding()

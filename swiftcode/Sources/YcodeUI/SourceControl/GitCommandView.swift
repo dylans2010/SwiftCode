@@ -401,7 +401,7 @@ public struct GitCommandRow: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: card.icon)
-                    .foregroundStyle(card.isDestructive ? .red : .accentColor)
+                    .foregroundStyle(card.isDestructive ? Color.secondary : Color.accentColor)
                     .frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(card.title)

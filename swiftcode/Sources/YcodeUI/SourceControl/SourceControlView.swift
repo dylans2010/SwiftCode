@@ -572,7 +572,7 @@ struct SourceControlOffView: View {
     var body: some View {
         ContentUnavailableView {
             Label("Source Control Off", systemImage: "xmark.octagon.fill")
-                .foregroundColor(.red)
+                .foregroundStyle(.secondary)
         } description: {
             Text("You have Source Control off or you may not have a valid PAT key, set one up to continue.")
                 .font(.body)

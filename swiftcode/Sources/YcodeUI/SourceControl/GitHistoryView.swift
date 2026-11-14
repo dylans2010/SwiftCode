@@ -14,7 +14,7 @@ public struct GitHistoryView: View {
             HStack {
                 Label("Commit Logs History", systemImage: "clock.arrow.circlepath")
                     .font(.headline)
-                    .foregroundColor(.blue)
+                    .foregroundStyle(.primary)
                 Spacer()
             }
             .padding(.bottom, 16)
@@ -47,10 +47,10 @@ public struct GitHistoryView: View {
 
                                                 Text(commit.shortHash)
                                                     .font(.system(.caption2, design: .monospaced))
-                                                    .foregroundStyle(.blue)
+                                                    .foregroundStyle(Color.accentColor)
                                                     .padding(.horizontal, 6)
                                                     .padding(.vertical, 2)
-                                                    .background(Color.blue.opacity(0.1))
+                                                    .background(Color.accentColor.opacity(0.1))
                                                     .cornerRadius(4)
 
                                                 Text(commit.date, style: .date)

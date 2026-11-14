@@ -109,7 +109,7 @@ struct PullRequestsView: View {
                     Label("New Pull Request", systemImage: "arrow.triangle.pull")
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.green)
+                .tint(Color.accentColor)
                 .disabled(context.connectedRepository == nil)
             }
             .padding()
@@ -124,7 +124,7 @@ struct PullRequestsView: View {
                     title: "No Pull Requests Found",
                     description: "No pull requests match the selected state filter.",
                     systemImage: "arrow.triangle.pull",
-                    accentColor: .green,
+                    accentColor: Color.accentColor,
                     actionTitle: "Create New PR"
                 ) {
                     showCreatePR = true
@@ -209,9 +209,9 @@ struct PullRequestsView: View {
 
     private func prStateColor(_ pr: GitHubPullRequest) -> Color {
         if pr.state.lowercased() == "closed" {
-            return .purple
+            return Color.accentColor
         }
-        return .green
+        return .secondary
     }
 
     private var disconnectedPlaceholder: some View {
@@ -219,7 +219,7 @@ struct PullRequestsView: View {
             title: "No Repository Associated",
             description: "A GitHub repository must first be associated with this project to view and manage Pull Requests.",
             systemImage: "arrow.triangle.pull",
-            accentColor: .orange,
+            accentColor: Color.accentColor,
             actionTitle: "Configure Repository Association"
         ) {
             RepositoryContext.shared.showingSetRepoSheet = true

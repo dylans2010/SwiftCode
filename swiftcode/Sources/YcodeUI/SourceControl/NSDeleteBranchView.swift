@@ -17,7 +17,7 @@ public struct NSDeleteBranchView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Delete Branch (⇧⌘D)", systemImage: "trash.fill")
                         .font(.headline)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
 
                     if !branches.isEmpty {
                         Picker("Select Branch", selection: $branchToDelete) {
@@ -46,7 +46,7 @@ public struct NSDeleteBranchView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {
@@ -74,7 +74,7 @@ public struct NSDeleteBranchView: View {
                             }
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(.red)
+                        .tint(Color.accentColor)
                         .controlSize(.small)
                         .disabled(branchToDelete.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isLoading)
 

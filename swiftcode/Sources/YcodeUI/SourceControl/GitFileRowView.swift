@@ -13,10 +13,10 @@ public struct GitFileRowView: View {
         HStack(spacing: 8) {
             Text(file.status.rawValue.uppercased())
                 .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(statusColor)
+                .foregroundStyle(.secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
-                .background(statusColor.opacity(0.15))
+                .background(Color.secondary.opacity(0.12))
                 .cornerRadius(4)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -32,15 +32,5 @@ public struct GitFileRowView: View {
         .padding(.vertical, 4)
         .liquidGlass(style: .subtle, cornerRadius: 6)
         .sourceControlEmbedded()
-    }
-
-    private var statusColor: Color {
-        switch file.status {
-        case .modified: return .orange
-        case .added: return .green
-        case .deleted: return .red
-        case .conflicted: return .purple
-        default: return .secondary
-        }
     }
 }

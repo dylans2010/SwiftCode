@@ -20,7 +20,7 @@ public struct NSCreateRepositoryView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Create Repository (⇧⌘R)", systemImage: "folder.badge.plus")
                         .font(.headline)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color.accentColor)
 
                     TextField("Repository name...", text: $repoName)
                         .textFieldStyle(.roundedBorder)
@@ -43,7 +43,7 @@ public struct NSCreateRepositoryView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {

@@ -25,13 +25,23 @@ extension GitRepository {
 
     public static func parseDiff(_ output: String) -> [DiffHunk] {
         var hunks: [DiffHunk] = []
+        var currentFile: String?
         var currentHeader: (oldStart: Int, oldCount: Int, newStart: Int, newCount: Int)?
         var currentLines: [String] = []
 
         for line in output.components(separatedBy: .newlines) {
-            if line.hasPrefix("@@ ") {
+            if line.hasPrefix("diff --git ") {
+                let parts = line.components(separatedBy: " ")
+                if parts.count >= 4 {
+                    var path = parts[3]
+                    if path.hasPrefix("b/") { path = String(path.dropFirst(2)) }
+                    currentFile = path
+                }
+            } else if line.hasPrefix("+++ b/") {
+                currentFile = String(line.dropFirst(6))
+            } else if line.hasPrefix("@@ ") {
                 if let header = currentHeader {
-                    hunks.append(DiffHunk(oldStart: header.oldStart, oldCount: header.oldCount, newStart: header.newStart, newCount: header.newCount, lines: currentLines))
+                    hunks.append(DiffHunk(filePath: currentFile, oldStart: header.oldStart, oldCount: header.oldCount, newStart: header.newStart, newCount: header.newCount, lines: currentLines))
                 }
                 currentHeader = parseHunkHeader(line)
                 currentLines = []
@@ -40,7 +50,7 @@ extension GitRepository {
             }
         }
         if let header = currentHeader {
-            hunks.append(DiffHunk(oldStart: header.oldStart, oldCount: header.oldCount, newStart: header.newStart, newCount: header.newCount, lines: currentLines))
+            hunks.append(DiffHunk(filePath: currentFile, oldStart: header.oldStart, oldCount: header.oldCount, newStart: header.newStart, newCount: header.newCount, lines: currentLines))
         }
         return hunks
     }

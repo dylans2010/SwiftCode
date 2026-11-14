@@ -34,10 +34,16 @@ public final class AntigravitySDKModelFetcher {
 
     public func isAntigravityCatalogModel(_ modelID: String) -> Bool {
         let normalized = modelID.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized.contains("antigravity") {
+            return true
+        }
         if models.contains(where: { $0.id.lowercased() == normalized }) {
             return true
         }
         if Self.seedModels.contains(where: { $0.id.lowercased() == normalized }) {
+            return true
+        }
+        if normalized.hasPrefix("gemini-") {
             return true
         }
         return false
@@ -98,13 +104,20 @@ public final class AntigravitySDKModelFetcher {
 
     private func fetchFromSDKRuntime() async -> [AntigravitySDKModel] {
         return await Task.detached(priority: .userInitiated) {
+            var agyBinaryCandidates: [String] = []
+            if let custom = ProcessInfo.processInfo.environment["AGY_PATH"], !custom.isEmpty {
+                agyBinaryCandidates.append((custom as NSString).expandingTildeInPath)
+            }
             let homeDir = FileManager.default.homeDirectoryForCurrentUser
-            let agyBinaryCandidates = [
+            agyBinaryCandidates.append(contentsOf: [
                 homeDir.appendingPathComponent(".gemini/bin/agy").path,
+                homeDir.appendingPathComponent(".gemini/antigravity/bin/agy").path,
                 homeDir.appendingPathComponent(".local/bin/agy").path,
-                "/usr/local/bin/agy",
+                homeDir.appendingPathComponent("bin/agy").path,
                 "/opt/homebrew/bin/agy",
-            ]
+                "/usr/local/bin/agy",
+                "/usr/bin/agy"
+            ])
 
             for binaryPath in agyBinaryCandidates {
                 if FileManager.default.isExecutableFile(atPath: binaryPath) {

@@ -23,14 +23,14 @@ public struct NSPushView: View {
                     HStack {
                         Label("Git Push", systemImage: "arrow.up.circle.fill")
                             .font(.headline)
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color.accentColor)
                         Spacer()
                         Button("Full View…") {
                             showFullSheet = true
                         }
                         .buttonStyle(.plain)
                         .font(.caption2)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color.accentColor)
                     }
 
                     
@@ -53,11 +53,11 @@ public struct NSPushView: View {
                         if outgoingCount == 0 {
                             Label("Already up to date", systemImage: "checkmark.circle")
                                 .font(.caption2.bold())
-                                .foregroundStyle(.green)
+                                .foregroundStyle(Color.accentColor)
                         } else {
                             Label("\(outgoingCount) unpushed commit\(outgoingCount == 1 ? "" : "s")", systemImage: "arrow.up")
                                 .font(.caption2.bold())
-                                .foregroundStyle(.blue)
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
                     }
@@ -69,7 +69,7 @@ public struct NSPushView: View {
                     ))
                     .toggleStyle(.checkbox)
                     .font(.caption2)
-                    .foregroundStyle(forcePush ? .red : .primary)
+                    .foregroundStyle(forcePush ? .secondary : .primary)
 
                     if isLoading {
                         ProgressView()
@@ -80,7 +80,7 @@ public struct NSPushView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption2)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {
@@ -97,10 +97,9 @@ public struct NSPushView: View {
                             Spacer()
                         }
                         .padding(.vertical, 6)
-                        .background(forcePush ? Color.red : Color.blue)
+                        .background(Color.accentColor)
                         .foregroundColor(.white)
                         .cornerRadius(6)
-                        .shadow(color: (forcePush ? Color.red : Color.blue).opacity(0.4), radius: 6, x: 0, y: 1)
                     }
                     .buttonStyle(.plain)
                     .disabled(isLoading || (outgoingCount == 0 && !forcePush))

@@ -261,6 +261,7 @@ public struct CLIToolLocator: Sendable {
     public func usualFolders() -> [String] {
         var f = ["/opt/homebrew/bin", "/usr/local/bin", "\(home)/.local/bin", "\(home)/bin", "\(home)/.npm-global/bin",
                  "\(home)/.bun/bin", "\(home)/.volta/bin", "\(home)/.claude/local", "\(home)/.codex/bin", "\(home)/.antigravity/bin",
+                 "\(home)/.gemini/bin", "\(home)/.gemini/antigravity/bin",
                  "/usr/bin"]
         let nvm = "\(home)/.nvm/versions/node"
         if let versions = try? FileManager.default.contentsOfDirectory(atPath: nvm) {
@@ -280,6 +281,10 @@ public struct CLIToolLocator: Sendable {
             if isExecutable(p) { return URL(fileURLWithPath: p) }
         }
         return nil
+    }
+
+    public static func isInstalled(_ name: String) -> Bool {
+        CLIToolLocator().find(name) != nil
     }
 }
 
@@ -325,6 +330,21 @@ public struct CLIAgentProvider: AgentAttachable {
     func environment() -> [String: String] {
         var env = ProcessInfo.processInfo.environment
         if let token = attachment?.mcp?.token, agent == .codex { env[CLIAgentKind.mcpTokenVariable] = token }
+        if agent == .antigravity {
+            let envAntigravityKey = ProcessInfo.processInfo.environment["ANTIGRAVITY_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let envGeminiKey = ProcessInfo.processInfo.environment["GEMINI_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let envGoogleKey = ProcessInfo.processInfo.environment["GOOGLE_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let storedKey = defaultSecretStore().readString(SecretAccount.geminiKey)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let resolvedKey = envAntigravityKey ?? envGeminiKey ?? envGoogleKey ?? storedKey
+            if let resolvedKey, !resolvedKey.isEmpty {
+                env["ANTIGRAVITY_API_KEY"] = resolvedKey
+                env["GEMINI_API_KEY"] = resolvedKey
+                env["GOOGLE_API_KEY"] = resolvedKey
+            }
+            if let adcPath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"], !adcPath.isEmpty {
+                env["GOOGLE_APPLICATION_CREDENTIALS"] = adcPath
+            }
+        }
         if let dir = executable?.deletingLastPathComponent().path {
             env["PATH"] = ([dir] + (env["PATH"].map { [$0] } ?? ["/usr/bin:/bin"])).joined(separator: ":")
         }

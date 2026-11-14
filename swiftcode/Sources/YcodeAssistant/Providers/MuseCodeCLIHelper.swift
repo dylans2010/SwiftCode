@@ -59,15 +59,15 @@ public enum MuseCodeCLIError: Error, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .executableNotFound:
-            return "The 'muse' CLI executable was not found on your system."
+            return "Muse CLI not found. Please install the Muse SDK or check your configuration."
         case .installationFailed(let msg):
             return "Failed to install 'muse' CLI: \(msg)"
         case .executionFailed(let code, let stderr):
-            return "CLI execution failed with code \(code): \(stderr)"
+            return "Muse CLI execution failed with code \(code): \(stderr)"
         case .timeout, .turnTimeout:
-            return "CLI command timed out."
+            return "Muse CLI command timed out."
         case .cancelled:
-            return "CLI operation was cancelled."
+            return "Muse CLI operation was cancelled."
         }
     }
 }
@@ -80,18 +80,46 @@ public actor MuseCodeCLIHelper {
     nonisolated public func discoverExecutablePath() -> String? {
         let fileManager = FileManager.default
 
+        let envVarCandidates = [
+            ProcessInfo.processInfo.environment["MUSE_PATH"],
+            ProcessInfo.processInfo.environment["MUSE_BIN_PATH"],
+            ProcessInfo.processInfo.environment["MUSE_CLI_PATH"]
+        ]
+        for envCandidate in envVarCandidates {
+            if let envCandidate = envCandidate?.trimmingCharacters(in: .whitespacesAndNewlines), !envCandidate.isEmpty {
+                let expanded = (envCandidate as NSString).expandingTildeInPath
+                if fileManager.fileExists(atPath: expanded) && fileManager.isExecutableFile(atPath: expanded) {
+                    return expanded
+                }
+            }
+        }
+
         let candidatePaths = [
             NSString(string: "~/.local/bin/muse").expandingTildeInPath,
             "/usr/local/bin/muse",
             "/opt/homebrew/bin/muse",
             NSString(string: "~/.nvm/versions/node/current/bin/muse").expandingTildeInPath,
             NSString(string: "~/.muse/bin/muse").expandingTildeInPath,
+            NSString(string: "~/bin/muse").expandingTildeInPath,
+            NSString(string: "~/.cargo/bin/muse").expandingTildeInPath,
+            "/opt/local/bin/muse",
             "/usr/bin/muse"
         ]
 
         for path in candidatePaths {
             if fileManager.fileExists(atPath: path) && fileManager.isExecutableFile(atPath: path) {
                 return path
+            }
+        }
+
+        let home = NSHomeDirectory()
+        let nvm = (home as NSString).appendingPathComponent(".nvm/versions/node")
+        if let versions = try? fileManager.contentsOfDirectory(atPath: nvm) {
+            for v in versions.sorted().reversed() {
+                let p = "\(nvm)/\(v)/bin/muse"
+                if fileManager.fileExists(atPath: p) && fileManager.isExecutableFile(atPath: p) {
+                    return p
+                }
             }
         }
 
@@ -134,6 +162,19 @@ public actor MuseCodeCLIHelper {
     }
 
     nonisolated public func readAuthInfo() -> (isAuthenticated: Bool, email: String?, fullName: String?) {
+        if let envKey = ProcessInfo.processInfo.environment["MUSE_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+            return (true, "env@muse.ai", "Muse API Key User")
+        }
+        if let key = KeychainService.shared.get(forKey: "muse_api_key")?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
+            return (true, "keychain@muse.ai", "Muse Key User")
+        }
+        if let key = KeychainService.shared.get(forKey: "muse-api-key")?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
+            return (true, "keychain@muse.ai", "Muse Key User")
+        }
+        if let key = defaultSecretStore().readString("muse_api_key")?.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty {
+            return (true, "secretstore@muse.ai", "Muse Key User")
+        }
+
         guard let path = getAuthFilePath() else {
             return (false, nil, nil)
         }
@@ -141,23 +182,42 @@ public actor MuseCodeCLIHelper {
             return (false, nil, nil)
         }
         if let config = try? JSONDecoder().decode(MuseAuthConfigFile.self, from: data),
-           let meta = config.providers?["meta"] {
-            let email = meta.userEmail
-            let name = meta.userFullName
-            let hasCreds = (email != nil && !email!.isEmpty) ||
-                           (meta.accessToken != nil && !meta.accessToken!.isEmpty) ||
-                           (meta.apiKey != nil && !meta.apiKey!.isEmpty) ||
-                           (meta.mechanism != nil && !meta.mechanism!.isEmpty) ||
-                           (meta.storage != nil && !meta.storage!.isEmpty)
-            return (hasCreds, email, name)
+           let providers = config.providers {
+            for (_, meta) in providers {
+                let email = meta.userEmail
+                let name = meta.userFullName
+                let hasCreds = (email != nil && !email!.isEmpty) ||
+                               (meta.accessToken != nil && !meta.accessToken!.isEmpty) ||
+                               (meta.apiKey != nil && !meta.apiKey!.isEmpty) ||
+                               (meta.mechanism != nil && !meta.mechanism!.isEmpty) ||
+                               (meta.storage != nil && !meta.storage!.isEmpty)
+                if hasCreds {
+                    return (true, email, name)
+                }
+            }
         }
-        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let providers = json["providers"] as? [String: Any],
-           let meta = providers["meta"] as? [String: Any] {
-            let email = meta["user_email"] as? String
-            let name = meta["user_full_name"] as? String
-            let hasCreds = email != nil || meta["access_token"] != nil || meta["mechanism"] != nil || meta["storage"] != nil
-            return (hasCreds, email, name)
+        if let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let providers = json["providers"] as? [String: Any] {
+                for (_, value) in providers {
+                    if let meta = value as? [String: Any] {
+                        let email = meta["user_email"] as? String
+                        let name = meta["user_full_name"] as? String
+                        let hasCreds = (email != nil && !email!.isEmpty) ||
+                            meta["access_token"] != nil ||
+                            meta["api_key"] != nil ||
+                            meta["mechanism"] != nil ||
+                            meta["storage"] != nil
+                        if hasCreds {
+                            return (true, email, name)
+                        }
+                    }
+                }
+            }
+            if json["access_token"] != nil || json["api_key"] != nil || json["token"] != nil {
+                let email = json["user_email"] as? String
+                let name = json["user_full_name"] as? String
+                return (true, email, name)
+            }
         }
         return (false, nil, nil)
     }
@@ -235,6 +295,18 @@ public actor MuseCodeCLIHelper {
             if let customEnv = environment {
                 for (k, v) in customEnv {
                     env[k] = v
+                }
+            }
+            if env["MUSE_API_KEY"] == nil || env["MUSE_API_KEY"]?.isEmpty == true {
+                if let envKey = ProcessInfo.processInfo.environment["MUSE_API_KEY"], !envKey.isEmpty {
+                    env["MUSE_API_KEY"] = envKey
+                } else if let key = KeychainService.shared.get(forKey: "muse_api_key") ?? KeychainService.shared.get(forKey: "muse-api-key"), !key.isEmpty {
+                    env["MUSE_API_KEY"] = key
+                }
+            }
+            if env["MUSE_AUTH_PATH"] == nil || env["MUSE_AUTH_PATH"]?.isEmpty == true {
+                if let authPath = MuseCodeCLIHelper.shared.getAuthFilePath() {
+                    env["MUSE_AUTH_PATH"] = authPath
                 }
             }
             let home = NSHomeDirectory()

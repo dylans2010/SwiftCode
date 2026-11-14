@@ -63,7 +63,7 @@ struct ReleasesView: View {
             HStack(spacing: 12) {
                 Label("Repository Releases", systemImage: "shippingbox.fill")
                     .font(.headline)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(.secondary)
 
                 Spacer()
 
@@ -80,7 +80,7 @@ struct ReleasesView: View {
                     Label("Draft New Release", systemImage: "plus")
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.green)
+                .tint(Color.accentColor)
                 .disabled(context.connectedRepository == nil)
             }
             .padding()
@@ -95,7 +95,7 @@ struct ReleasesView: View {
                     title: "No Releases Published",
                     description: "No GitHub releases found for this repository. Draft one now!",
                     systemImage: "shippingbox",
-                    accentColor: .green,
+                    accentColor: Color.accentColor,
                     actionTitle: "Draft Release"
                 ) {
                     showDraftSheet = true
@@ -109,7 +109,7 @@ struct ReleasesView: View {
                             } label: {
                                 HStack(spacing: 16) {
                                     Image(systemName: "shippingbox.fill")
-                                        .foregroundStyle(.green)
+                                        .foregroundStyle(.secondary)
                                         .font(.title2)
 
                                     VStack(alignment: .leading, spacing: 4) {
@@ -163,7 +163,7 @@ struct ReleasesView: View {
             title: "No Repository Associated",
             description: "A GitHub repository must first be associated with this project to view and manage Releases.",
             systemImage: "shippingbox",
-            accentColor: .orange,
+            accentColor: Color.accentColor,
             actionTitle: "Configure Repository Association"
         ) {
             RepositoryContext.shared.showingSetRepoSheet = true
@@ -235,7 +235,7 @@ struct ReleasesView: View {
                                         .font(.caption)
                                 }
                                 .padding()
-                                .background(Color.blue.opacity(0.1))
+                                .background(Color.accentColor.opacity(0.1))
                                 .cornerRadius(8)
                             }
                         }
@@ -250,7 +250,7 @@ struct ReleasesView: View {
     private func assetRow(name: String, size: String) -> some View {
         HStack {
             Image(systemName: "shippingbox")
-                .foregroundStyle(.green)
+                .foregroundStyle(.secondary)
             Text(name)
                 .font(.system(size: 11, design: .monospaced))
             Spacer()
@@ -299,7 +299,7 @@ struct ReleasesView: View {
                                 .font(.caption)
                         }
                         .buttonStyle(.plain)
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(Color.accentColor)
                         .disabled(isGeneratingAINotes)
                     }
 
@@ -319,7 +319,7 @@ struct ReleasesView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(.green)
+            .tint(Color.accentColor)
             .disabled(draftTag.isEmpty || draftTitle.isEmpty || isPublishingDraft)
         }
         .padding(24)

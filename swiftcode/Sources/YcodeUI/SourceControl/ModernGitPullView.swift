@@ -42,7 +42,7 @@ public struct ModernGitPullView: View {
             HStack {
                 Image(systemName: "arrow.down.circle.fill")
                     .font(.title2)
-                    .foregroundStyle(.cyan)
+                    .foregroundStyle(Color.accentColor)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Source Control: Pull")
                         .font(.headline.bold())
@@ -128,7 +128,7 @@ public struct ModernGitPullView: View {
                         } else if incomingCommits.isEmpty {
                             Label("Repository is up to date", systemImage: "checkmark.circle")
                                 .font(.caption.bold())
-                                .foregroundStyle(.green)
+                                .foregroundStyle(Color.accentColor)
                         }
                     }
 
@@ -136,7 +136,7 @@ public struct ModernGitPullView: View {
                         VStack(spacing: 8) {
                             Image(systemName: "checkmark.seal.fill")
                                 .font(.largeTitle)
-                                .foregroundStyle(.green.opacity(0.8))
+                                .foregroundStyle(Color.accentColor)
                             Text("Your local branch is completely up to date.")
                                 .font(.subheadline.bold())
                             Text("No incoming commits waiting from '\(selectedRemote)/\(selectedBranch)'.")
@@ -154,8 +154,8 @@ public struct ModernGitPullView: View {
                                     .font(.system(.caption, design: .monospaced).bold())
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(Color.cyan.opacity(0.15))
-                                    .foregroundStyle(.cyan)
+                                    .background(Color.accentColor.opacity(0.12))
+                                    .foregroundStyle(Color.accentColor)
                                     .cornerRadius(4)
 
                                 VStack(alignment: .leading, spacing: 2) {
@@ -187,13 +187,13 @@ public struct ModernGitPullView: View {
                 if let err = errorMessage {
                     Text(err)
                         .font(.caption)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
                 }
 
                 if let succ = successMessage {
                     Text(succ)
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(Color.accentColor)
                 }
 
                 Spacer()
@@ -221,10 +221,9 @@ public struct ModernGitPullView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(Color.cyan)
-                        .foregroundColor(.black)
+                        .background(Color.accentColor)
+                        .foregroundColor(.white)
                         .cornerRadius(8)
-                        .shadow(color: Color.cyan.opacity(0.4), radius: 6, x: 0, y: 2)
                     }
                     .buttonStyle(.plain)
                     .disabled(isPulling)

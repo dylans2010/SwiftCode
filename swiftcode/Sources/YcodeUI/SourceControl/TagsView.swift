@@ -67,7 +67,7 @@ public struct TagsView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
                     .padding()
             }
         }

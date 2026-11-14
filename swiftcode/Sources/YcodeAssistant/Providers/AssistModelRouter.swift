@@ -783,7 +783,22 @@ public final class AssistModelRouter: Sendable {
                 return GoogleAccountAuthService.shared.isAuthenticated
             }
         }
-        if p == "meta_assist" || p == "meta" {
+        if p == "antigravity" {
+            if CLIToolLocator().find("agy") != nil || GoogleAmbientCredentials.findAgyCLI(environment: ProcessInfo.processInfo.environment, homeDirectory: FileManager.default.homeDirectoryForCurrentUser) != nil {
+                return true
+            }
+            if GoogleAmbientCredentials.fetchAntigravityCredentialsFromKeychain() != nil {
+                return true
+            }
+            if GoogleAccountAuthService.shared.isAuthenticated {
+                return true
+            }
+            return !(resolveAPIKey(for: "antigravity") ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        if p == "meta_assist" || p == "meta" || p == "muse" {
+            if !(resolveAPIKey(for: "muse") ?? "").isEmpty {
+                return true
+            }
             return MuseCodeCLIHelper.shared.isInstalled()
         }
         if ["ollama", "lmstudio", "local", "litert", "apple", "custom"].contains(p) { return true }
@@ -792,27 +807,70 @@ public final class AssistModelRouter: Sendable {
 
     public func resolveAPIKey(for provider: String) -> String? {
         let p = provider.lowercased()
-        if p == "gemini" || p == "google" {
+        if p == "gemini" || p == "google" || p == "antigravity" {
             let authMode = UserDefaults.standard.string(forKey: "assist_google_auth_mode") ?? AppSettings.shared.assistGoogleAuthMode
-            if authMode == "google_oauth" {
+            if authMode == "google_oauth" && GoogleAccountAuthService.shared.isAuthenticated {
                 return nil
             }
+            if let envKey = ProcessInfo.processInfo.environment["ANTIGRAVITY_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+                return envKey
+            }
+            if let envKey = ProcessInfo.processInfo.environment["GEMINI_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+                return envKey
+            }
+            if let envKey = ProcessInfo.processInfo.environment["GOOGLE_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+                return envKey
+            }
             return KeychainService.shared.get(forKey: LLMProvider.google.keychainKey)
+                ?? KeychainService.shared.get(forKey: "gemini-api-key")
+                ?? KeychainService.shared.get(forKey: "gemini_api_key")
+                ?? KeychainService.shared.get(forKey: "antigravity-api-key")
                 ?? APIKeyManager.shared.retrieveKey(service: .google)
         } else if p == "anthropic" || p == "claude" {
+            if let envKey = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+                return envKey
+            }
             return APIKeyManager.shared.retrieveKey(service: .anthropic)
                 ?? KeychainService.shared.get(forKey: LLMProvider.anthropic.keychainKey)
+                ?? KeychainService.shared.get(forKey: "anthropic-api-key")
+                ?? KeychainService.shared.get(forKey: "anthropic_api_key")
         } else if p == "openai" || p == "chatgpt" {
+            if let envKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+                return envKey
+            }
             return APIKeyManager.shared.retrieveKey(service: .openai)
                 ?? KeychainService.shared.get(forKey: LLMProvider.openai.keychainKey)
+                ?? KeychainService.shared.get(forKey: "openai-api-key")
+                ?? KeychainService.shared.get(forKey: "openai_api_key")
         } else if p == "mistral" {
+            if let envKey = ProcessInfo.processInfo.environment["MISTRAL_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+                return envKey
+            }
             return APIKeyManager.shared.retrieveKey(service: .mistral)
                 ?? KeychainService.shared.get(forKey: LLMProvider.mistral.keychainKey)
+                ?? KeychainService.shared.get(forKey: "mistral-api-key")
+                ?? KeychainService.shared.get(forKey: "mistral_api_key")
         } else if p == "qwen" {
+            if let envKey = ProcessInfo.processInfo.environment["QWEN_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+                return envKey
+            }
             return KeychainService.shared.get(forKey: LLMProvider.qwen.keychainKey)
+                ?? KeychainService.shared.get(forKey: "qwen-api-key")
+                ?? KeychainService.shared.get(forKey: "qwen_api_key")
         } else if p == "openrouter" {
+            if let envKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+                return envKey
+            }
             return OpenRouterClient.resolveOpenRouterAPIKey()
                 ?? KeychainService.shared.get(forKey: LLMProvider.openRouter.keychainKey)
+                ?? KeychainService.shared.get(forKey: "openrouter-api-key")
+                ?? KeychainService.shared.get(forKey: "openrouter_api_key")
+        } else if p == "meta_assist" || p == "meta" || p == "muse" {
+            if let envKey = ProcessInfo.processInfo.environment["MUSE_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines), !envKey.isEmpty {
+                return envKey
+            }
+            return KeychainService.shared.get(forKey: "muse_api_key")
+                ?? KeychainService.shared.get(forKey: "muse-api-key")
         } else if p == "codex" {
             return KeychainService.shared.get(forKey: KeychainService.codexUserAPIKey)
         } else if p == "ollama" || p == "lmstudio" || p == "local" {

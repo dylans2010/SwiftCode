@@ -16,7 +16,7 @@ public struct NSMergeView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Git Merge (⇧⌘M)", systemImage: "arrow.triangle.merge")
                         .font(.headline)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color.accentColor)
 
                     Text("Merge another branch into active HEAD.")
                         .font(.caption)
@@ -45,7 +45,7 @@ public struct NSMergeView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {

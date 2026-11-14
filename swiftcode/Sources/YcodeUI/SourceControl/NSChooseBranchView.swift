@@ -16,7 +16,7 @@ public struct NSChooseBranchView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Choose Branch (⇧⌘B)", systemImage: "arrow.triangle.branch")
                         .font(.headline)
-                        .foregroundStyle(.cyan)
+                        .foregroundStyle(Color.accentColor)
 
                     Picker("Branch", selection: $selectedBranch) {
                         ForEach(branches, id: \.self) { branch in
@@ -35,7 +35,7 @@ public struct NSChooseBranchView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {

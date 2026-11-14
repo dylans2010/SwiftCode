@@ -22,7 +22,7 @@ public struct NSStashView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Git Stash (⇧⌘Z)", systemImage: "archivebox.fill")
                         .font(.headline)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Color.accentColor)
 
                     Text("Stash away local modifications.")
                         .font(.caption)
@@ -85,7 +85,7 @@ public struct NSStashView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {
@@ -157,12 +157,6 @@ public struct NSStashView: View {
     }
 
     private func statusColor(for status: String) -> Color {
-        switch status.trimmingCharacters(in: .whitespaces) {
-        case "M": return .orange
-        case "A": return .green
-        case "D": return .red
-        case "??": return .blue
-        default: return .secondary
-        }
+        return .secondary
     }
 }

@@ -12,7 +12,7 @@ struct NotificationsView: View {
             HStack {
                 Label("GitHub Notifications Inbox", systemImage: "bell.fill")
                     .font(.headline)
-                    .foregroundStyle(.yellow)
+                    .foregroundStyle(.secondary)
 
                 Spacer()
 
@@ -31,7 +31,7 @@ struct NotificationsView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.caption)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
                     .padding(.horizontal)
             }
 
@@ -42,7 +42,7 @@ struct NotificationsView: View {
                     title: "Inbox Zero!",
                     description: "No unread notifications in your GitHub account. Looking clean!",
                     systemImage: "bell.slash",
-                    accentColor: .yellow
+                    accentColor: Color.accentColor
                 )
             } else {
                 List(notifications) { item in
@@ -51,7 +51,7 @@ struct NotificationsView: View {
                     } label: {
                         HStack(spacing: 16) {
                             Image(systemName: item.unread ? "envelope.fill" : "envelope.open.fill")
-                                .foregroundStyle(.yellow)
+                                .foregroundStyle(.secondary)
                                 .font(.title3)
 
                             VStack(alignment: .leading, spacing: 4) {
@@ -71,7 +71,7 @@ struct NotificationsView: View {
                             Spacer()
 
                             if item.unread {
-                                Circle().fill(Color.yellow).frame(width: 8, height: 8)
+                                Circle().fill(Color.accentColor).frame(width: 8, height: 8)
                             }
                         }
                         .padding(.vertical, 6)

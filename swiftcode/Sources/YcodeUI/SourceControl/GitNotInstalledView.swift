@@ -9,7 +9,7 @@ public struct GitNotInstalledView: View {
         VStack(alignment: .leading, spacing: 12) {
             Label("Git is not installed", systemImage: "exclamationmark.triangle.fill")
                 .font(.headline)
-                .foregroundStyle(.orange)
+                .foregroundStyle(.secondary)
 
             Text("Source control needs the git command-line tools. Install Git, then reopen the project.")
                 .font(.subheadline)

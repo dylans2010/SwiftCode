@@ -153,10 +153,28 @@ public actor GoogleCloudSDKProcess {
         env.removeValue(forKey: "GOOGLE_OAUTH_ACCESS_TOKEN")
         env.removeValue(forKey: "GEMINI_API_KEY")
         env.removeValue(forKey: "GOOGLE_API_KEY")
+        env.removeValue(forKey: "ANTIGRAVITY_API_KEY")
+
+        let envAntigravityKey = ProcessInfo.processInfo.environment["ANTIGRAVITY_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let envGeminiKey = ProcessInfo.processInfo.environment["GEMINI_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let envGoogleKey = ProcessInfo.processInfo.environment["GOOGLE_API_KEY"]?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let storedKey = defaultSecretStore().readString(SecretAccount.geminiKey)?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let resolvedKey = envAntigravityKey ?? envGeminiKey ?? envGoogleKey ?? storedKey
+
+        if let resolvedKey, !resolvedKey.isEmpty {
+            env["ANTIGRAVITY_API_KEY"] = resolvedKey
+            env["GEMINI_API_KEY"] = resolvedKey
+            env["GOOGLE_API_KEY"] = resolvedKey
+        }
+
         if isOAuthMode, let oauthToken = await GoogleAccountAuthService.shared.getValidAccessToken(), !oauthToken.isEmpty {
             env["GOOGLE_OAUTH_ACCESS_TOKEN"] = oauthToken
-        } else if !isOAuthMode, let apiKey = defaultSecretStore().readString(SecretAccount.geminiKey), !apiKey.isEmpty {
-            env["GEMINI_API_KEY"] = apiKey
+        } else if let creds = GoogleAmbientCredentials.fetchAntigravityCredentialsFromKeychain(), let token = creds.accessToken, !token.isEmpty {
+            env["GOOGLE_OAUTH_ACCESS_TOKEN"] = token
+        }
+
+        if let adcPath = ProcessInfo.processInfo.environment["GOOGLE_APPLICATION_CREDENTIALS"], !adcPath.isEmpty {
+            env["GOOGLE_APPLICATION_CREDENTIALS"] = adcPath
         }
 
         proc.environment = env
@@ -208,6 +226,11 @@ public actor GoogleCloudSDKProcess {
     private func findDownloadedAntigravityBinary(sdkDir: URL) -> String? {
         let homeDir = FileManager.default.homeDirectoryForCurrentUser.path
         let candidatePaths = [
+            "\(homeDir)/.gemini/bin/agy",
+            "\(homeDir)/.local/bin/agy",
+            "/opt/homebrew/bin/agy",
+            "/usr/local/bin/agy",
+            "\(homeDir)/bin/agy",
             "\(homeDir)/.local/bin/google-antigravity",
             "\(homeDir)/Library/Python/3.14/bin/google-antigravity",
             "/opt/homebrew/bin/google-antigravity",

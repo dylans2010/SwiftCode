@@ -67,8 +67,17 @@ public struct OpenRouterProvider: AssistantProvider {
         (try? await listModels())?.first { $0.id == model }?.contextWindow
     }
 
+    private func resolvedKey() async -> String? {
+        if let apiKey, !apiKey.isEmpty { return apiKey }
+        let resolved = await MainActor.run { OpenRouterClient.resolveOpenRouterAPIKey() }
+        if !resolved.isEmpty { return resolved }
+        if let envKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"], !envKey.isEmpty { return envKey }
+        if let kc = KeychainService.shared.get(forKey: KeychainService.openRouterAPIKey), !kc.isEmpty { return kc }
+        return nil
+    }
+
     private func fetchModelsData() async throws -> Data {
-        guard let key = apiKey, !key.isEmpty else { throw AssistantError.notSignedIn(hint: Self.signedOutHint) }
+        guard let key = await resolvedKey(), !key.isEmpty else { throw AssistantError.notSignedIn(hint: Self.signedOutHint) }
         guard let url = HTTP.url(baseURL, "models") else { throw AssistantError.failed("The OpenRouter address is not valid.") }
         var request = URLRequest(url: url)
         request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
@@ -148,7 +157,7 @@ public struct OpenRouterProvider: AssistantProvider {
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
         let provider = self
         return eventStream { out in
-            guard let key = provider.apiKey, !key.isEmpty else { throw AssistantError.notSignedIn(hint: Self.signedOutHint) }
+            guard let key = await provider.resolvedKey(), !key.isEmpty else { throw AssistantError.notSignedIn(hint: Self.signedOutHint) }
             guard let url = HTTP.url(provider.baseURL, "chat/completions") else { throw AssistantError.failed("The OpenRouter address is not valid.") }
             var req = URLRequest(url: url)
             req.httpMethod = "POST"

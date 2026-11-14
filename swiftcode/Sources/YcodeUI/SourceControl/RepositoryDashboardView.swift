@@ -69,7 +69,7 @@ public struct RepositoryDashboardView: View {
                 if let errorMessage {
                     Text(errorMessage)
                         .font(.subheadline)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(.secondary)
                 }
             }
             .padding(20)
@@ -260,7 +260,7 @@ public struct RepositoryDashboardView: View {
             ForEach(timelineEntries) { entry in
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: entry.isCI ? "play.circle" : "clock.arrow.circlepath")
-                        .foregroundStyle(entry.isCI ? .blue : .secondary)
+                        .foregroundStyle(entry.isCI ? Color.accentColor : .secondary)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(entry.title)
                             .font(.subheadline)

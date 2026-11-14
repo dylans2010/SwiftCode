@@ -22,14 +22,14 @@ public struct NSPullView: View {
                     HStack {
                         Label("Git Pull (⌥⌘X)", systemImage: "arrow.down.circle.fill")
                             .font(.headline)
-                            .foregroundStyle(.cyan)
+                            .foregroundStyle(Color.accentColor)
                         Spacer()
                         Button("Full View…") {
                             showFullSheet = true
                         }
                         .buttonStyle(.plain)
                         .font(.caption2)
-                        .foregroundStyle(.cyan)
+                        .foregroundStyle(Color.accentColor)
                     }
 
                     
@@ -52,11 +52,11 @@ public struct NSPullView: View {
                         if incomingCount == 0 {
                             Label("Up to date with remote", systemImage: "checkmark.circle")
                                 .font(.caption2.bold())
-                                .foregroundStyle(.green)
+                                .foregroundStyle(Color.accentColor)
                         } else {
                             Label("\(incomingCount) incoming commit\(incomingCount == 1 ? "" : "s")", systemImage: "arrow.down")
                                 .font(.caption2.bold())
-                                .foregroundStyle(.cyan)
+                                .foregroundStyle(Color.accentColor)
                         }
                         Spacer()
                     }
@@ -74,7 +74,7 @@ public struct NSPullView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption2)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {
@@ -92,10 +92,9 @@ public struct NSPullView: View {
                                 Spacer()
                             }
                             .padding(.vertical, 6)
-                            .background(Color.cyan)
-                            .foregroundColor(.black)
+                            .background(Color.accentColor)
+                            .foregroundColor(.white)
                             .cornerRadius(6)
-                            .shadow(color: Color.cyan.opacity(0.4), radius: 6, x: 0, y: 1)
                         }
                         .buttonStyle(.plain)
                         .disabled(isLoading)

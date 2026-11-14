@@ -15,7 +15,7 @@ public struct NSFetchView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Label("Git Fetch (⇧⌘E)", systemImage: "arrow.down.and.line.horizontal.and.arrow.up")
                         .font(.headline)
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color.accentColor)
 
                     Text("Download references from remote without merging.")
                         .font(.caption)
@@ -34,7 +34,7 @@ public struct NSFetchView: View {
                     if !successMsg.isEmpty {
                         Text(successMsg)
                             .font(.caption)
-                            .foregroundStyle(.green)
+                            .foregroundStyle(Color.accentColor)
                     }
 
                     if !errorMsg.isEmpty {

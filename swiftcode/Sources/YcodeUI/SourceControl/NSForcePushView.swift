@@ -24,7 +24,7 @@ public struct NSForcePushView: View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Force Push", systemImage: "exclamationmark.triangle.fill")
                 .font(.headline)
-                .foregroundStyle(.orange)
+                .foregroundStyle(.secondary)
 
             Text("Force-pushing rewrites history on the remote. Anyone else working on \(currentBranch) will need to re-sync.")
                 .font(.subheadline)
@@ -56,12 +56,12 @@ public struct NSForcePushView: View {
             if let errorMessage {
                 Text(errorMessage)
                     .font(.subheadline)
-                    .foregroundStyle(.red)
+                    .foregroundStyle(.secondary)
             }
             if didPush {
                 Label("Pushed \(currentBranch) to \(remoteName).", systemImage: "checkmark.circle.fill")
                     .font(.subheadline)
-                    .foregroundStyle(.green)
+                    .foregroundStyle(Color.accentColor)
             }
 
             HStack {
@@ -72,7 +72,7 @@ public struct NSForcePushView: View {
                     Task { await forcePush() }
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.red)
+                .tint(Color.accentColor)
                 .disabled(isPushing)
             }
         }
