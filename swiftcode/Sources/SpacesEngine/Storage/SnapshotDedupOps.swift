@@ -17,6 +17,24 @@ public struct SnapshotDedupOps {
         public var sharedBlobCount: Int
         public var bytesSaved: Int64
         public var perSnapshot: [PerSnapshot]
+        public var explanation: String = "The object store is content-addressed: identical content always maps to the same object id, so the same blob is stored once no matter how many snapshots reference it. Duplicates are structurally impossible, not removed after the fact."
+        public var contentAddressed: Bool = true
+        public var completeByMeasurement: Bool = true
+
+        public init(snapshotCount: Int, naiveBytes: Int64, sharedBytes: Int64,
+                    sharedBlobCount: Int, bytesSaved: Int64, perSnapshot: [PerSnapshot],
+                    explanation: String = "The object store is content-addressed: identical content always maps to the same object id, so the same blob is stored once no matter how many snapshots reference it. Duplicates are structurally impossible, not removed after the fact.",
+                    contentAddressed: Bool = true, completeByMeasurement: Bool = true) {
+            self.snapshotCount = snapshotCount
+            self.naiveBytes = naiveBytes
+            self.sharedBytes = sharedBytes
+            self.sharedBlobCount = sharedBlobCount
+            self.bytesSaved = bytesSaved
+            self.perSnapshot = perSnapshot
+            self.explanation = explanation
+            self.contentAddressed = contentAddressed
+            self.completeByMeasurement = completeByMeasurement
+        }
     }
 
     public func deduplicationReport() throws -> DeduplicationReport {

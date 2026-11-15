@@ -56,7 +56,8 @@ public final class SpacesAPI: @unchecked Sendable {
     
 
     public func status() throws -> WorktreeScanner.StatusReport {
-        try WorktreeScanner(repo: repo).status()
+        _ = try? ContinuousSnapshotOps(repo: repo).captureIfDue()
+        return try WorktreeScanner(repo: repo).status()
     }
 
     public func add(_ path: String, all: Bool = false) throws -> [String] {
@@ -80,6 +81,9 @@ public final class SpacesAPI: @unchecked Sendable {
     }
 
     public func restore(_ path: String, staged: Bool = false) throws {
+        if !staged {
+            _ = try RecoveryCheckpointOps(repo: repo).createCheckpointBefore(operation: "restore \(path)")
+        }
         try repo.performTransaction {
             if staged { try StagingOps(repo: repo).unstage(path) }
             else { try StagingOps(repo: repo).restoreWorktree(path) }
@@ -95,8 +99,14 @@ public final class SpacesAPI: @unchecked Sendable {
     @discardableResult
     public func commit(message: String, amend: Bool = false,
                        trailers: [String: String] = [:]) throws -> StagingOps.CommitResult {
+        try enforceOperationPermission("commit")
+        try enforceRepositoryPolicy(operation: .commit, details: PolicyEngineOps.PolicyOperationDetails(
+            message: message, paths: (try? status().staged.map { $0.path }) ?? []))
         try validateCommitPolicies(message: message)
-        return try StagingOps(repo: repo).commit(message: message, amend: amend, trailers: trailers)
+        let result = try StagingOps(repo: repo).commit(message: message, amend: amend, trailers: trailers)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "commit", details: message, result: "success")
+        _ = try? AutomationOps(repo: repo).runAutomation(event: .postCommit)
+        return result
     }
 
     public func log(limit: Int = 100, all: Bool = false,
@@ -130,6 +140,7 @@ public final class SpacesAPI: @unchecked Sendable {
     }
 
     public func deleteBranch(_ name: String, force: Bool = false) throws {
+        try enforceOperationPermission("branch-delete")
         let check = try ProtectedHistoryOps(repo: repo).checkProtectedHistory(ref: "refs/heads/" + name, operation: "delete")
         if !check.allowed {
             try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "branch-delete", details: name, result: "denied: \(check.reasons.joined(separator: "; "))")
@@ -148,16 +159,34 @@ public final class SpacesAPI: @unchecked Sendable {
     }
 
     public func reset(to rev: String, mode: BranchOps.ResetMode) throws {
+        try enforceOperationPermission("reset")
+        if mode == .hard {
+            _ = try RecoveryCheckpointOps(repo: repo).createCheckpointBefore(operation: "reset --hard \(rev)")
+        }
         try BranchOps(repo: repo).reset(to: rev, mode: mode)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "reset", details: rev, result: "success")
     }
 
     
 
     @discardableResult
     public func merge(_ target: String) throws -> MergeEngine.MergeOutcome {
+        try enforceOperationPermission("merge")
+        try enforceReviewMergePolicy(target: target)
+        try enforceRepositoryPolicy(operation: .merge, details: PolicyEngineOps.PolicyOperationDetails(
+            branch: try repo.refs.currentBranch()))
+        _ = try RecoveryCheckpointOps(repo: repo).createCheckpointBefore(operation: "merge \(target)")
         let outcome = try MergeEngine(repo: repo).merge(target)
         let result = outcome.commitOID == nil && !outcome.conflicts.isEmpty ? "conflicted" : "success"
         try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "merge", details: target, result: result)
+        let completed: Bool
+        switch outcome.result {
+        case .upToDate, .fastForward: completed = true
+        case .merged: completed = outcome.commitOID != nil
+        }
+        if completed {
+            _ = try? AutomationOps(repo: repo).runAutomation(event: .postMerge)
+        }
         return outcome
     }
 
@@ -183,12 +212,14 @@ public final class SpacesAPI: @unchecked Sendable {
 
     @discardableResult
     public func cherryPick(_ rev: String) throws -> ObjectID? {
-        try MergeEngine(repo: repo).cherryPick(rev)
+        _ = try RecoveryCheckpointOps(repo: repo).createCheckpointBefore(operation: "cherry-pick \(rev)")
+        return try MergeEngine(repo: repo).cherryPick(rev)
     }
 
     @discardableResult
     public func revert(_ rev: String) throws -> ObjectID? {
-        try MergeEngine(repo: repo).cherryPick(rev, revert: true)
+        _ = try RecoveryCheckpointOps(repo: repo).createCheckpointBefore(operation: "revert \(rev)")
+        return try MergeEngine(repo: repo).cherryPick(rev, revert: true)
     }
 
     public func cherryPickContinue() throws -> ObjectID? {
@@ -201,7 +232,10 @@ public final class SpacesAPI: @unchecked Sendable {
 
     @discardableResult
     public func rebase(onto: String, todo: [String]? = nil) throws -> RebaseOps.RebaseState? {
-        try RebaseOps(repo: repo).start(onto: onto, todo: todo)
+        _ = try RecoveryCheckpointOps(repo: repo).createCheckpointBefore(operation: "rebase onto \(onto)")
+        let state = try RebaseOps(repo: repo).start(onto: onto, todo: todo)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "rebase", details: onto, result: "success")
+        return state
     }
 
     public func rebaseContinue() throws -> RebaseOps.RebaseState? {
@@ -232,13 +266,16 @@ public final class SpacesAPI: @unchecked Sendable {
     @discardableResult
     public func createTag(_ name: String, at: String = "HEAD",
                           annotated: Bool = false, message: String = "") throws -> ObjectID {
-        try repo.performTransaction {
+        let oid = try repo.performTransaction {
             try TagOps(repo: repo).create(name, at: at, annotated: annotated, message: message)
         }
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "tag", details: name, result: "success")
+        return oid
     }
 
     public func deleteTag(_ name: String) throws {
         try repo.performTransaction { try TagOps(repo: repo).delete(name) }
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "tag-delete", details: name, result: "success")
     }
 
     public func verifyTag(_ name: String) throws -> Bool {
@@ -253,15 +290,22 @@ public final class SpacesAPI: @unchecked Sendable {
 
     @discardableResult
     public func stash(message: String? = nil) throws -> StashOps.StashEntry? {
-        try StashOps(repo: repo).create(message: message)
+        let entry = try StashOps(repo: repo).create(message: message)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "stash", details: message ?? "", result: "success")
+        return entry
     }
 
     public func stashApply(_ id: String, pop: Bool = false) throws {
+        if pop {
+            _ = try RecoveryCheckpointOps(repo: repo).createCheckpointBefore(operation: "stash pop \(id)")
+        }
         try StashOps(repo: repo).apply(id, drop: pop)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: pop ? "stash-pop" : "stash-apply", details: id, result: "success")
     }
 
     public func stashDrop(_ id: String) throws {
         try StashOps(repo: repo).drop(id)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "stash-drop", details: id, result: "success")
     }
 
     
@@ -298,19 +342,43 @@ public final class SpacesAPI: @unchecked Sendable {
     }
 
     public func fetch(_ remote: String) throws -> RemoteOps.FetchReport {
-        try RemoteOps(repo: repo).fetch(remote)
+        let report = try RemoteOps(repo: repo).fetch(remote)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "fetch", details: remote, result: "success")
+        return report
     }
 
     public func pull(_ remote: String, branch: String? = nil) throws -> MergeEngine.MergeOutcome? {
-        try RemoteOps(repo: repo).pull(remote, branch: branch)
+        let outcome = try RemoteOps(repo: repo).pull(remote, branch: branch)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "pull", details: remote, result: "success")
+        return outcome
     }
 
     public func push(_ remote: String, refspec: String) throws -> RemoteOps.PushReport {
-        try RemoteOps(repo: repo).push(remote, refspec: refspec)
+        try enforceOperationPermission("push")
+        try enforceRepositoryPolicy(operation: .push, details: PolicyEngineOps.PolicyOperationDetails(
+            branch: Self.branchName(fromRefspec: refspec)))
+        let report = try RemoteOps(repo: repo).push(remote, refspec: refspec)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "push", details: "\(remote) \(refspec)", result: "success")
+        _ = try? AutomationOps(repo: repo).runAutomation(event: .postPush)
+        return report
     }
 
     public func push(_ remote: String, refspec: String, force: Bool) throws -> RemoteOps.PushReport {
-        try RemoteOps(repo: repo).push(remote, refspec: refspec, force: force)
+        try enforceOperationPermission("push")
+        try enforceRepositoryPolicy(operation: .push, details: PolicyEngineOps.PolicyOperationDetails(
+            branch: Self.branchName(fromRefspec: refspec)))
+        let report = try RemoteOps(repo: repo).push(remote, refspec: refspec, force: force)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "push", details: "\(remote) \(refspec)", result: "success")
+        _ = try? AutomationOps(repo: repo).runAutomation(event: .postPush)
+        return report
+    }
+
+    @discardableResult
+    public func cloneRepository(url: String, into dest: URL? = nil) throws -> SpacesAPI {
+        let cloned = try CloneOps.clone(url: url, into: dest, repo: repo)
+        let api = SpacesAPI(repo: cloned)
+        try? AccessAuditOps(repo: cloned).recordAuditEvent(operation: "clone", details: url, result: "success")
+        return api
     }
 
     
@@ -346,7 +414,9 @@ public final class SpacesAPI: @unchecked Sendable {
     }
 
     public func storage() throws -> (objects: Int64, index: Int64, total: Int64, fileCount: Int) {
-        try MaintenanceOps(repo: repo).storage()
+        let result = try MaintenanceOps(repo: repo).storage()
+        _ = try? PredictiveStorageOps(repo: repo).recordStorageSample()
+        return result
     }
 
     @discardableResult
@@ -428,6 +498,52 @@ extension SpacesAPI {
         public var behind: Int
     }
 
+    private func enforceOperationPermission(_ operation: String) throws {
+        let permissions = OperationPermissionOps(repo: repo)
+        guard permissions.hasConfiguredPermissions() else { return }
+        let role = try permissions.currentRole()
+        guard try permissions.checkOperationPermission(operation: operation, role: role) else {
+            try? AccessAuditOps(repo: repo).recordAuditEvent(
+                operation: operation, details: "role \(role.rawValue)", result: "denied: permission")
+            throw SpacesError.invalidArgument(
+                "operation \(operation) is not permitted for role \(role.rawValue)")
+        }
+    }
+
+    private func enforceRepositoryPolicy(operation: PolicyEngineOps.PolicyOperation,
+                                         details: PolicyEngineOps.PolicyOperationDetails = PolicyEngineOps.PolicyOperationDetails()) throws {
+        let violations = try PolicyEngineOps(repo: repo).checkPolicy(operation: operation, details: details)
+        guard !violations.isEmpty else { return }
+        let message = violations.map { $0.message }.joined(separator: "; ")
+        try? AccessAuditOps(repo: repo).recordAuditEvent(
+            operation: operation.rawValue,
+            details: details.branch ?? details.message ?? "",
+            result: "denied: \(message)")
+        throw SpacesError.invalidArgument(
+            "operation \(operation.rawValue) refused by repository policy: \(message)")
+    }
+
+    private func enforceReviewMergePolicy(target: String) throws {
+        let check = try ReviewPolicyOps(repo: repo).reviewMergeCheckForTarget(target)
+        guard check.allowed else {
+            let message = check.reasons.joined(separator: "; ")
+            try? AccessAuditOps(repo: repo).recordAuditEvent(
+                operation: "merge", details: target, result: "denied: \(message)")
+            throw SpacesError.invalidArgument("merge refused by review policy: \(message)")
+        }
+    }
+
+    static func branchName(fromRefspec refspec: String) -> String? {
+        let trimmed = refspec.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        let destination = trimmed.split(separator: ":").last.map(String.init) ?? trimmed
+        if destination.hasPrefix("refs/heads/") {
+            return String(destination.dropFirst("refs/heads/".count))
+        }
+        if destination.hasPrefix("refs/") { return nil }
+        return destination.isEmpty ? nil : destination
+    }
+
     private func validateCommitPolicies(message: String) throws {
         let rules = try ValidationPolicyOps(repo: repo).commitPolicies()
         guard !rules.isEmpty else { return }
@@ -440,8 +556,14 @@ extension SpacesAPI {
 
     @discardableResult
     public func commitWithMetadata(message: String, metadata: CommitMetadata) throws -> StagingOps.CommitResult {
+        try enforceOperationPermission("commit")
+        try enforceRepositoryPolicy(operation: .commit, details: PolicyEngineOps.PolicyOperationDetails(
+            message: message, paths: (try? status().staged.map { $0.path }) ?? []))
         try validateCommitPolicies(message: message)
-        return try StagingOps(repo: repo).commitWithMetadata(message: message, metadata: metadata)
+        let result = try StagingOps(repo: repo).commitWithMetadata(message: message, metadata: metadata)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(operation: "commit", details: message, result: "success")
+        _ = try? AutomationOps(repo: repo).runAutomation(event: .postCommit)
+        return result
     }
 
     @discardableResult

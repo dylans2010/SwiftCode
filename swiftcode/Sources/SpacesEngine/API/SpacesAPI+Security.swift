@@ -71,8 +71,14 @@ extension SpacesAPI {
         try OperationPermissionOps(repo: repo).operationPermissions()
     }
 
+    public func operationPermissionNote() -> String {
+        OperationPermissionOps.guardrailNote
+    }
+
     public func setOperationPermissions(_ permissions: OperationPermissionOps.OperationPermissions) throws {
         try OperationPermissionOps(repo: repo).setOperationPermissions(permissions)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(
+            operation: "permissions-change", details: "", result: "success")
     }
 
     public func checkOperationPermission(operation: String, role: OperationPermissionOps.Role) throws -> Bool {
@@ -84,12 +90,20 @@ extension SpacesAPI {
     }
 
     public func setRole(_ role: OperationPermissionOps.Role) throws {
+        let previous = try OperationPermissionOps(repo: repo).currentRole()
         try OperationPermissionOps(repo: repo).setRole(role)
+        try? AccessAuditOps(repo: repo).recordAuditEvent(
+            operation: "role-change",
+            details: "\(previous.rawValue) -> \(role.rawValue)", result: "success")
     }
 
     @discardableResult
     public func signSnapshot(_ rev: String) throws -> String {
         try SignedSnapshotOps(repo: repo).signSnapshot(rev: rev)
+    }
+
+    public func signedSnapshotInfo(_ rev: String) throws -> SignedSnapshotOps.SnapshotSignatureInfo {
+        try SignedSnapshotOps(repo: repo).snapshotSignatureInfo(rev: rev)
     }
 
     public func verifySnapshotSignature(_ rev: String) throws -> Bool {

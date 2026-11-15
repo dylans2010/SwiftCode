@@ -1,8 +1,32 @@
+import Crypto
 import Foundation
 
 public struct SignedSnapshotOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
+
+    public static let signingMethod = "hmac-sha256 (symmetric, repo-local key)"
+
+    public struct SnapshotSignatureInfo: Sendable {
+        public var snapshot: String
+        public var signature: String
+        public var signer: String
+        public var timestamp: Int64
+        public var keyFingerprint: String?
+        public var method: String
+        public var verified: Bool
+
+        public init(snapshot: String, signature: String, signer: String, timestamp: Int64,
+                    keyFingerprint: String?, method: String, verified: Bool) {
+            self.snapshot = snapshot
+            self.signature = signature
+            self.signer = signer
+            self.timestamp = timestamp
+            self.keyFingerprint = keyFingerprint
+            self.method = method
+            self.verified = verified
+        }
+    }
 
     public struct SnapshotSignatureRecord: Codable, Sendable {
         public var snapshot: String
@@ -43,6 +67,23 @@ public struct SignedSnapshotOps {
                 repo: repo, relativePath: Self.signatureRelativePath(for: oid), value: record)
         }
         return signature
+    }
+
+    public func snapshotSignatureInfo(rev: String) throws -> SnapshotSignatureInfo {
+        let oid = try repo.resolveRevision(rev)
+        guard let record: SnapshotSignatureRecord = try? SecurityFileStore.load(
+            repo: repo, relativePath: Self.signatureRelativePath(for: oid)) else {
+            throw SpacesError.refNotFound("no signature recorded for snapshot \(oid.hex)")
+        }
+        let fingerprint = try? SigningKeyStore(repo: repo).existingKeyInfo()?.fingerprint
+        return SnapshotSignatureInfo(
+            snapshot: record.snapshot,
+            signature: record.signature,
+            signer: record.signer,
+            timestamp: record.timestamp,
+            keyFingerprint: fingerprint,
+            method: Self.signingMethod,
+            verified: (try? verifySnapshotSignature(rev)) ?? false)
     }
 
     public func verifySnapshotSignature(rev: String) throws -> Bool {

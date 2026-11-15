@@ -6,6 +6,27 @@ public struct NotificationOps {
 
     public static let deliveryDescription = "Notifications are delivered locally only: pendingNotifications lists repository events recorded in this repository, with no push service, network delivery, or external notification provider involved."
 
+    public static let inboxDescription = "Delivered notifications are stored in a user-visible local inbox inside this repository (notifications/inbox.json). There is no push or remote delivery: this is a single-user local repository, so the inbox file is the delivery mechanism."
+
+    public struct InboxNotification: Codable, Sendable {
+        public var event: Event
+        public var timestamp: Int64
+        public var message: String
+        public var oid: ObjectID?
+        public var deliveredAt: Int64
+        public var seen: Bool
+
+        public init(event: Event, timestamp: Int64, message: String, oid: ObjectID? = nil,
+                    deliveredAt: Int64, seen: Bool = false) {
+            self.event = event
+            self.timestamp = timestamp
+            self.message = message
+            self.oid = oid
+            self.deliveredAt = deliveredAt
+            self.seen = seen
+        }
+    }
+
     public enum Event: String, Codable, Sendable, Equatable, CaseIterable {
         case commit
         case branch
@@ -128,12 +149,69 @@ public struct NotificationOps {
         return unique
     }
 
+    private var inboxURL: URL {
+        repo.metaURL.appendingPathComponent("notifications")
+            .appendingPathComponent("inbox.json")
+    }
+
+    private func loadInbox() throws -> [InboxNotification] {
+        if let stored: [InboxNotification] = try CollaborationStore.load(inboxURL) {
+            return stored
+        }
+        return []
+    }
+
+    private func inboxKey(_ note: PendingNotification) -> String {
+        note.oid.map { $0.hex }
+            ?? "\(note.timestamp)|\(note.event.rawValue)|\(note.message)"
+    }
+
+    private func inboxKey(_ note: InboxNotification) -> String {
+        note.oid.map { $0.hex }
+            ?? "\(note.timestamp)|\(note.event.rawValue)|\(note.message)"
+    }
+
+    @discardableResult
+    public func deliverPendingNotifications() throws -> [InboxNotification] {
+        let pending = try pendingNotifications()
+        return try repo.withLock {
+            var inbox = try loadInbox()
+            var delivered: [InboxNotification] = []
+            for note in pending {
+                let key = inboxKey(note)
+                guard !inbox.contains(where: { inboxKey($0) == key }) else { continue }
+                let entry = InboxNotification(event: note.event, timestamp: note.timestamp,
+                                              message: note.message, oid: note.oid,
+                                              deliveredAt: CollaborationStore.now(), seen: false)
+                inbox.append(entry)
+                delivered.append(entry)
+            }
+            if !delivered.isEmpty {
+                try CollaborationStore.save(inbox, to: inboxURL)
+            }
+            return delivered
+        }
+    }
+
+    public func notificationInbox() throws -> [InboxNotification] {
+        try loadInbox().sorted { $0.deliveredAt > $1.deliveredAt }
+    }
+
     public func markNotificationsSeen() throws {
         let pending = try pendingNotifications()
         let latest = pending.map { $0.timestamp }.max() ?? 0
         let marker = max(CollaborationStore.now(), latest)
         try repo.performTransaction(steps: ["notifications-seen"]) {
             try CollaborationStore.saveText("\(marker)\n", to: lastSeenURL)
+            var inbox = try loadInbox()
+            var changed = false
+            for index in inbox.indices where !inbox[index].seen {
+                inbox[index].seen = true
+                changed = true
+            }
+            if changed {
+                try CollaborationStore.save(inbox, to: inboxURL)
+            }
         }
     }
 }

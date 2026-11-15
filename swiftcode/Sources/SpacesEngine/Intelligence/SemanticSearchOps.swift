@@ -135,6 +135,70 @@ public struct SemanticSearchOps {
         return stored?.symbols ?? []
     }
 
+    public struct RankedSymbol: Sendable {
+        public var symbol: Symbol
+        public var score: Double
+        public var matchedTerms: [String]
+        public var method: String
+
+        public init(symbol: Symbol, score: Double, matchedTerms: [String], method: String) {
+            self.symbol = symbol
+            self.score = score
+            self.matchedTerms = matchedTerms
+            self.method = method
+        }
+    }
+
+    public static let rankedMethodDescription = "Token-frequency ranking over the symbol index (symbol names and file paths). This is declaration and symbol matching, not embeddings and not semantic understanding."
+
+    public func rankedSearchSymbols(query: String, kind: SymbolKind? = nil,
+                                    limit: Int = 100) throws -> [RankedSymbol] {
+        let terms = query.lowercased()
+            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            .map(String.init).filter { !$0.isEmpty }
+        guard !terms.isEmpty else {
+            throw SpacesError.invalidArgument("symbol query must not be empty")
+        }
+        let all = try symbols()
+        var ranked: [RankedSymbol] = []
+        for symbol in all {
+            if let kind, symbol.kind != kind { continue }
+            let name = symbol.name.lowercased()
+            let nameTokens = name.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+            let fileLower = symbol.file.lowercased()
+            let pathTokens = fileLower.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init)
+            var score = 0.0
+            var matched: [String] = []
+            for term in terms {
+                var termScore = 0.0
+                if nameTokens.contains(term) {
+                    termScore += 3
+                } else if nameTokens.contains(where: { $0.hasPrefix(term) }) {
+                    termScore += 2
+                } else if name.contains(term) {
+                    termScore += 1
+                }
+                if pathTokens.contains(term) {
+                    termScore += 1
+                } else if fileLower.contains(term) {
+                    termScore += 0.5
+                }
+                if termScore > 0 { matched.append(term) }
+                score += termScore
+            }
+            guard score > 0 else { continue }
+            ranked.append(RankedSymbol(symbol: symbol, score: score, matchedTerms: matched,
+                                       method: Self.rankedMethodDescription))
+        }
+        ranked.sort {
+            if $0.score != $1.score { return $0.score > $1.score }
+            if $0.symbol.name != $1.symbol.name { return $0.symbol.name < $1.symbol.name }
+            if $0.symbol.file != $1.symbol.file { return $0.symbol.file < $1.symbol.file }
+            return $0.symbol.line < $1.symbol.line
+        }
+        return Array(ranked.prefix(max(0, limit)))
+    }
+
     public func searchSymbols(query: String, kind: SymbolKind? = nil,
                               limit: Int = 100) throws -> [Symbol] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)

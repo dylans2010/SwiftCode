@@ -43,6 +43,8 @@ public struct ContinuousSnapshotOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
 
+    public static let triggerDescription = "There is no background daemon. Continuous snapshots are captured only when SpacesAPI.status() is called and the configured interval has elapsed since the last scheduled snapshot."
+
     public struct ContinuousConfig: Codable, Sendable {
         public var enabled: Bool
         public var intervalMinutes: Int

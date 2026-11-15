@@ -136,6 +136,19 @@ extension SpacesAPI {
         try NotificationOps(repo: repo).pendingNotifications()
     }
 
+    @discardableResult
+    public func deliverPendingNotifications() throws -> [NotificationOps.InboxNotification] {
+        try NotificationOps(repo: repo).deliverPendingNotifications()
+    }
+
+    public func notificationInbox() throws -> [NotificationOps.InboxNotification] {
+        try NotificationOps(repo: repo).notificationInbox()
+    }
+
+    public func notificationDeliveryDescription() -> String {
+        NotificationOps.inboxDescription
+    }
+
     public func markNotificationsSeen() throws {
         try NotificationOps(repo: repo).markNotificationsSeen()
     }

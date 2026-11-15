@@ -14,6 +14,10 @@ extension SpacesAPI {
         try ContinuousSnapshotOps(repo: repo).captureIfDue()
     }
 
+    public func continuousSnapshotTriggerDescription() -> String {
+        ContinuousSnapshotOps.triggerDescription
+    }
+
     @discardableResult
     public func branchFromSnapshot(rev: String, name: String) throws -> ObjectID {
         try SnapshotBranchingOps(repo: repo).branchFromSnapshot(rev: rev, name: name)
@@ -77,6 +81,20 @@ extension SpacesAPI {
 
     public func compactionProfiles() throws -> [CompactionProfileOps.CompactionProfile] {
         try CompactionProfileOps(repo: repo).compactionProfiles()
+    }
+
+    @discardableResult
+    public func createCompactionProfile(_ profile: CompactionProfileOps.CompactionProfile) throws -> CompactionProfileOps.CompactionProfile {
+        try CompactionProfileOps(repo: repo).createCompactionProfile(profile)
+    }
+
+    @discardableResult
+    public func updateCompactionProfile(name: String, profile: CompactionProfileOps.CompactionProfile) throws -> CompactionProfileOps.CompactionProfile {
+        try CompactionProfileOps(repo: repo).updateCompactionProfile(name: name, profile: profile)
+    }
+
+    public func deleteCompactionProfile(name: String) throws {
+        try CompactionProfileOps(repo: repo).deleteCompactionProfile(name: name)
     }
 
     @discardableResult

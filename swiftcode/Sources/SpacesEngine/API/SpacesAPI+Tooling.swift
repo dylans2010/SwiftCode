@@ -17,12 +17,27 @@ public extension SpacesAPI {
         try ApiCompatibilityOps(repo: repo).compatibilityBetween(from: from, to: to)
     }
 
+    @discardableResult
+    public func recordBuildResult(commit: ObjectID, command: String,
+                                  timeoutSeconds: TimeInterval = 120) throws -> BuildImpactOps.BuildRecord {
+        try BuildImpactOps(repo: repo).recordBuildResult(commit: commit, command: command,
+                                                         timeoutSeconds: timeoutSeconds)
+    }
+
     public func recordBuildResult(commit: ObjectID, result: BuildImpactOps.BuildResult, durationMs: Int64, failures: [String]) throws {
         try BuildImpactOps(repo: repo).recordBuildResult(commit: commit, result: result, durationMs: durationMs, failures: failures)
     }
 
     public func buildHistory(commit: ObjectID) throws -> [BuildImpactOps.BuildRecord] {
         try BuildImpactOps(repo: repo).buildHistory(commit: commit)
+    }
+
+    @discardableResult
+    public func recordTestResult(commit: ObjectID, suite: String, command: String,
+                                 timeoutSeconds: TimeInterval = 120) throws -> TestProvenanceOps.TestRecord {
+        try TestProvenanceOps(repo: repo).recordTestResult(commit: commit, suite: suite,
+                                                           command: command,
+                                                           timeoutSeconds: timeoutSeconds)
     }
 
     public func recordTestResult(commit: ObjectID, suite: String, passed: Int, failed: Int) throws {
@@ -39,6 +54,15 @@ public extension SpacesAPI {
 
     public func validationPlan(rev: String) throws -> [ChangeValidationOps.ValidationPlanEntry] {
         try ChangeValidationOps(repo: repo).validationPlan(rev: rev)
+    }
+
+    @discardableResult
+    public func runValidation(rev: String, timeoutSeconds: TimeInterval = 300) throws -> [ChangeValidationOps.ValidationRunResult] {
+        try ChangeValidationOps(repo: repo).runValidation(rev: rev, timeoutSeconds: timeoutSeconds)
+    }
+
+    public func validationRuns(rev: String) throws -> [ChangeValidationOps.ValidationRunResult] {
+        try ChangeValidationOps(repo: repo).validationRuns(rev: rev)
     }
 
     public func automationPipelines() throws -> [AutomationOps.Pipeline] {

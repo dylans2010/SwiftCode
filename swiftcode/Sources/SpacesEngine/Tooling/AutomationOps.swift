@@ -8,6 +8,7 @@ public struct AutomationOps {
         case postCommit = "post-commit"
         case postMerge = "post-merge"
         case postCheckout = "post-checkout"
+        case postPush = "post-push"
     }
 
     public struct Pipeline: Codable, Sendable, Equatable {
@@ -15,12 +16,15 @@ public struct AutomationOps {
         public var event: AutomationEvent
         public var command: String
         public var enabled: Bool
+        public var on: [String]
 
-        public init(id: String, event: AutomationEvent, command: String, enabled: Bool = false) {
+        public init(id: String, event: AutomationEvent, command: String, enabled: Bool = false,
+                    on: [String] = []) {
             self.id = id
             self.event = event
             self.command = command
             self.enabled = enabled
+            self.on = on
         }
     }
 
@@ -80,11 +84,21 @@ public struct AutomationOps {
         }
     }
 
+    public static func triggerName(for event: AutomationEvent) -> String {
+        switch event {
+        case .postCommit: return "commit"
+        case .postMerge: return "merge"
+        case .postPush: return "push"
+        case .postCheckout: return "checkout"
+        }
+    }
+
     public func runAutomation(event: AutomationEvent) throws -> [AutomationRunResult] {
         let config: AutomationConfig? = try ToolingStorage.readJSON(repo: repo, relativePath: "tooling/automation.json")
         guard let config else { return [] }
+        let trigger = Self.triggerName(for: event)
         var results: [AutomationRunResult] = []
-        for pipeline in config.pipelines where pipeline.event == event {
+        for pipeline in config.pipelines where pipeline.event == event || pipeline.on.contains(trigger) {
             if !pipeline.enabled {
                 results.append(AutomationRunResult(pipelineId: pipeline.id, event: event, command: pipeline.command, status: .skipped, reason: "pipeline is disabled"))
                 continue

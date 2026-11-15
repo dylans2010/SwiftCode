@@ -33,6 +33,11 @@ extension SpacesAPI {
         try SemanticSearchOps(repo: repo).searchSymbols(query: query, kind: kind, limit: limit)
     }
 
+    public func rankedSemanticSearch(query: String, kind: SemanticSearchOps.SymbolKind? = nil,
+                                     limit: Int = 100) throws -> [SemanticSearchOps.RankedSymbol] {
+        try SemanticSearchOps(repo: repo).rankedSearchSymbols(query: query, kind: kind, limit: limit)
+    }
+
     public func historySearch(query: String, limit: Int = 100,
                               useRegex: Bool = false) throws -> [HistoricalSearchOps.HistoricalMatch] {
         try HistoricalSearchOps(repo: repo).search(query: query, limit: limit, useRegex: useRegex)

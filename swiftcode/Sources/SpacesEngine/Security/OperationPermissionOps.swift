@@ -7,6 +7,8 @@ public struct OperationPermissionOps {
     public static let permissionsRelativePath = "security/permissions.json"
     public static let roleRelativePath = "security/role.json"
 
+    public static let guardrailNote = "Operation permissions are a single-user local guardrail, not multi-user access control: there is one local actor (the repository identity) and the current role is a local setting. Enforcement only applies when a permissions file has been configured; with no configured permissions every operation is allowed."
+
     public enum Role: String, Codable, Sendable, CaseIterable {
         case admin
         case developer
@@ -27,12 +29,18 @@ public struct OperationPermissionOps {
                 "push": [.admin, .developer],
                 "branch-create": [.admin, .developer],
                 "branch-delete": [.admin],
-                "tag": [.admin, .developer],
                 "merge": [.admin, .developer],
+                "reset": [.admin, .developer],
+                "tag": [.admin, .developer],
                 "snapshot": [.admin, .developer, .reviewer, .reader],
                 "read": [.admin, .developer, .reviewer, .reader],
             ])
         }
+    }
+
+    public func hasConfiguredPermissions() -> Bool {
+        let url = repo.metaURL.appendingPathComponent(Self.permissionsRelativePath)
+        return FileManager.default.fileExists(atPath: url.path)
     }
 
     public struct RoleRecord: Codable, Sendable {

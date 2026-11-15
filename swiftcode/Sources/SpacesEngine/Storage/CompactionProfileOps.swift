@@ -54,6 +54,70 @@ public struct CompactionProfileOps {
     }
 
     @discardableResult
+    public func createCompactionProfile(_ profile: CompactionProfile) throws -> CompactionProfile {
+        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            throw SpacesError.invalidArgument("compaction profile name must not be empty")
+        }
+        guard !profile.kind.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw SpacesError.invalidArgument("compaction profile kind must not be empty")
+        }
+        guard profile.pruneDays >= 0 else {
+            throw SpacesError.invalidArgument("compaction profile pruneDays must not be negative")
+        }
+        var stored = profile
+        stored.name = trimmedName
+        return try repo.withLock {
+            var profiles = try compactionProfiles()
+            guard !profiles.contains(where: { $0.name == trimmedName }) else {
+                throw SpacesError.invalidArgument("compaction profile already exists: \(trimmedName)")
+            }
+            profiles.append(stored)
+            try StorageFileIO.save(repo: repo, name: "compaction.json", value: profiles)
+            return stored
+        }
+    }
+
+    @discardableResult
+    public func updateCompactionProfile(name: String, profile: CompactionProfile) throws -> CompactionProfile {
+        let trimmedName = profile.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else {
+            throw SpacesError.invalidArgument("compaction profile name must not be empty")
+        }
+        guard !profile.kind.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw SpacesError.invalidArgument("compaction profile kind must not be empty")
+        }
+        guard profile.pruneDays >= 0 else {
+            throw SpacesError.invalidArgument("compaction profile pruneDays must not be negative")
+        }
+        var stored = profile
+        stored.name = trimmedName
+        return try repo.withLock {
+            var profiles = try compactionProfiles()
+            guard let index = profiles.firstIndex(where: { $0.name == name }) else {
+                throw SpacesError.invalidArgument("unknown compaction profile \(name)")
+            }
+            if trimmedName != name, profiles.contains(where: { $0.name == trimmedName }) {
+                throw SpacesError.invalidArgument("compaction profile already exists: \(trimmedName)")
+            }
+            profiles[index] = stored
+            try StorageFileIO.save(repo: repo, name: "compaction.json", value: profiles)
+            return stored
+        }
+    }
+
+    public func deleteCompactionProfile(name: String) throws {
+        try repo.withLock {
+            var profiles = try compactionProfiles()
+            guard let index = profiles.firstIndex(where: { $0.name == name }) else {
+                throw SpacesError.invalidArgument("unknown compaction profile \(name)")
+            }
+            profiles.remove(at: index)
+            try StorageFileIO.save(repo: repo, name: "compaction.json", value: profiles)
+        }
+    }
+
+    @discardableResult
     public func applyCompactionProfile(name: String) throws -> CompactionResult {
         guard let profile = try compactionProfiles().first(where: { $0.name == name }) else {
             throw SpacesError.invalidArgument("unknown compaction profile \(name)")

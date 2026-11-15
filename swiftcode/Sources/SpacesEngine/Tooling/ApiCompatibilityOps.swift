@@ -55,34 +55,62 @@ public struct ApiCompatibilityOps {
     public func compatibilityBetween(from: String, to: String) throws -> [CompatibilityChange] {
         let oldSurface = try publicApiSurface(rev: from)
         let newSurface = try publicApiSurface(rev: to)
-        func keyed(_ entries: [ApiSurfaceEntry]) -> [String: ApiSurfaceEntry] {
-            var counts: [String: Int] = [:]
-            var result: [String: ApiSurfaceEntry] = [:]
+        let newProtocols = try protocolSpans(rev: to)
+        func grouped(_ entries: [ApiSurfaceEntry]) -> [String: [ApiSurfaceEntry]] {
+            var result: [String: [ApiSurfaceEntry]] = [:]
             for entry in entries {
-                let base = entry.kind.rawValue + "|" + entry.name + "|" + entry.path
-                let occurrence = counts[base, default: 0]
-                counts[base] = occurrence + 1
-                result[base + "#" + String(occurrence)] = entry
+                result[entry.kind.rawValue + "|" + entry.name + "|" + entry.path, default: []].append(entry)
             }
             return result
         }
-        let oldMap = keyed(oldSurface)
-        let newMap = keyed(newSurface)
+        func insideProtocol(_ entry: ApiSurfaceEntry) -> Bool {
+            newProtocols.contains { $0.path == entry.path && entry.line > $0.start && entry.line < $0.end }
+        }
+        let oldGroups = grouped(oldSurface)
+        let newGroups = grouped(newSurface)
         var changes: [CompatibilityChange] = []
-        for key in oldMap.keys.sorted() {
-            guard let oldEntry = oldMap[key] else { continue }
-            if let newEntry = newMap[key] {
-                if oldEntry.signature != newEntry.signature {
-                    changes.append(CompatibilityChange(kind: oldEntry.kind, name: oldEntry.name, change: .changed, breaking: true, oldSignature: oldEntry.signature, newSignature: newEntry.signature, path: oldEntry.path))
+        for key in oldGroups.keys.sorted() {
+            guard let oldEntries = oldGroups[key] else { continue }
+            var unmatchedNew = newGroups[key] ?? []
+            for oldEntry in oldEntries {
+                if let index = unmatchedNew.firstIndex(where: { $0.signature == oldEntry.signature }) {
+                    unmatchedNew.remove(at: index)
+                } else if let replacement = unmatchedNew.first {
+                    unmatchedNew.remove(at: 0)
+                    changes.append(CompatibilityChange(kind: oldEntry.kind, name: oldEntry.name, change: .changed, breaking: true, oldSignature: oldEntry.signature, newSignature: replacement.signature, path: oldEntry.path))
+                } else {
+                    changes.append(CompatibilityChange(kind: oldEntry.kind, name: oldEntry.name, change: .removed, breaking: true, oldSignature: oldEntry.signature, newSignature: nil, path: oldEntry.path))
                 }
-            } else {
-                changes.append(CompatibilityChange(kind: oldEntry.kind, name: oldEntry.name, change: .removed, breaking: true, oldSignature: oldEntry.signature, newSignature: nil, path: oldEntry.path))
+            }
+            for newEntry in unmatchedNew {
+                changes.append(CompatibilityChange(kind: newEntry.kind, name: newEntry.name, change: .added, breaking: insideProtocol(newEntry), oldSignature: nil, newSignature: newEntry.signature, path: newEntry.path))
             }
         }
-        for key in newMap.keys.sorted() where oldMap[key] == nil {
-            guard let newEntry = newMap[key] else { continue }
-            changes.append(CompatibilityChange(kind: newEntry.kind, name: newEntry.name, change: .added, breaking: false, oldSignature: nil, newSignature: newEntry.signature, path: newEntry.path))
+        for key in newGroups.keys.sorted() where oldGroups[key] == nil {
+            for newEntry in newGroups[key] ?? [] {
+                changes.append(CompatibilityChange(kind: newEntry.kind, name: newEntry.name, change: .added, breaking: insideProtocol(newEntry), oldSignature: nil, newSignature: newEntry.signature, path: newEntry.path))
+            }
         }
         return changes.sorted { ($0.name, $0.path) < ($1.name, $1.path) }
+    }
+
+    private struct ProtocolSpan {
+        var path: String
+        var start: Int
+        var end: Int
+    }
+
+    private func protocolSpans(rev: String) throws -> [ProtocolSpan] {
+        var spans: [ProtocolSpan] = []
+        for path in try ToolingStorage.swiftPaths(repo: repo, rev: rev) {
+            guard let text = try ToolingStorage.blobText(repo: repo, rev: rev, path: path) else { continue }
+            for declaration in SwiftDeclarationParser.parse(text)
+            where declaration.kind == .protocolType {
+                let bodyLines = declaration.body.components(separatedBy: "\n").count
+                spans.append(ProtocolSpan(path: path, start: declaration.line,
+                                          end: declaration.line + max(1, bodyLines)))
+            }
+        }
+        return spans
     }
 }

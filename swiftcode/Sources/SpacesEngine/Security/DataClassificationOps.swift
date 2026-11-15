@@ -36,9 +36,48 @@ public struct DataClassificationOps {
         }
     }
 
+    public static func defaultClassificationRules() -> ClassificationRuleSet {
+        ClassificationRuleSet(categories: [
+            ClassificationCategory(
+                name: "secrets",
+                pathPatterns: [],
+                contentPatterns: [
+                    #"-----BEGIN [A-Z ]*PRIVATE KEY-----"#,
+                    #"(?i)(api[_-]?key|secret|password|token)\s*[:=]\s*['"][^'"]{8,}"#,
+                    #"AKIA[0-9A-Z]{16}"#,
+                    #"gh[pousr]_[A-Za-z0-9]{36,}"#,
+                    #"xox[baprs]-[A-Za-z0-9-]{10,}"#
+                ]),
+            ClassificationCategory(
+                name: "credentials",
+                pathPatterns: ["*credentials*", "*.pem", "*.key"],
+                contentPatterns: [
+                    #"gh[pousr]_[A-Za-z0-9]{36,}"#,
+                    #"xox[baprs]-[A-Za-z0-9-]{10,}"#,
+                    #"AKIA[0-9A-Z]{16}"#
+                ]),
+            ClassificationCategory(
+                name: "private-keys",
+                pathPatterns: ["*.pem", "*.key", "id_rsa", "id_rsa_*", "id_ed25519", "id_ed25519_*"],
+                contentPatterns: [#"-----BEGIN [A-Z ]*PRIVATE KEY-----"#]),
+            ClassificationCategory(
+                name: "pii",
+                pathPatterns: [],
+                contentPatterns: [
+                    #"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"#,
+                    #"\b\d{3}-\d{2}-\d{4}\b"#,
+                    #"\b(?:\d[ -]*?){13,16}\b"#
+                ]),
+            ClassificationCategory(
+                name: "env-files",
+                pathPatterns: [".env", ".env.*", "*.env"],
+                contentPatterns: []),
+        ])
+    }
+
     public func classificationRules() throws -> ClassificationRuleSet {
         try SecurityFileStore.load(repo: repo, relativePath: Self.rulesRelativePath)
-            ?? ClassificationRuleSet()
+            ?? Self.defaultClassificationRules()
     }
 
     public func setClassificationRules(_ rules: ClassificationRuleSet) throws {

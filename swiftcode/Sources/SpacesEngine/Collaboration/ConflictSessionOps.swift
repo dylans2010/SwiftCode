@@ -31,14 +31,17 @@ public struct ConflictSessionOps {
         public var resolved: Int
         public var unclaimed: [String]
         public var unresolved: [String]
+        public var conflictedPaths: [String]
 
         public init(total: Int, claimed: Int, resolved: Int,
-                    unclaimed: [String], unresolved: [String]) {
+                    unclaimed: [String], unresolved: [String],
+                    conflictedPaths: [String] = []) {
             self.total = total
             self.claimed = claimed
             self.resolved = resolved
             self.unclaimed = unclaimed
             self.unresolved = unresolved
+            self.conflictedPaths = conflictedPaths
         }
     }
 
@@ -115,17 +118,47 @@ public struct ConflictSessionOps {
             }
             stored.resolutionsByPath[path] = text
             try CollaborationStore.save(stored, to: url(for: session))
+            if repo.inMerge() || repo.inCherryPick() {
+                let conflicted = (try? WorktreeScanner(repo: repo).conflictedPaths()) ?? []
+                if conflicted.contains(path) {
+                    let fileURL = try repo.worktreeURL(forRelativePath: path)
+                    try FileManager.default.createDirectory(
+                        at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                    try Data(text.utf8).write(to: fileURL, options: .atomic)
+                    _ = try StagingOps(repo: repo).add(path)
+                    try markConflictResolved(path: path)
+                }
+            }
             return stored
         }
+    }
+
+    private func markConflictResolved(path: String) throws {
+        let conflictsURL = repo.metaURL.appendingPathComponent("conflicts.json")
+        guard let data = try? Data(contentsOf: conflictsURL),
+              var records = try? JSONDecoder().decode(
+                [WorktreeScanner.ConflictRecord].self, from: data) else { return }
+        var changed = false
+        for index in records.indices where records[index].path == path && !records[index].resolved {
+            records[index].resolved = true
+            changed = true
+        }
+        guard changed else { return }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        try repo.refs.atomicWrite(conflictsURL, contents: encoder.encode(records))
     }
 
     public func sessionStatus(session: String) throws -> SessionStatus {
         let stored = try loadSession(id: session)
         let unclaimed = stored.paths.filter { stored.ownerByPath[$0] == nil }
         let unresolved = stored.paths.filter { stored.resolutionsByPath[$0] == nil }
+        let liveConflicted = (try? WorktreeScanner(repo: repo).conflictedPaths()) ?? []
+        let conflictedPaths = stored.paths.filter { liveConflicted.contains($0) }
         return SessionStatus(total: stored.paths.count,
                              claimed: stored.paths.count - unclaimed.count,
                              resolved: stored.paths.count - unresolved.count,
-                             unclaimed: unclaimed, unresolved: unresolved)
+                             unclaimed: unclaimed, unresolved: unresolved,
+                             conflictedPaths: conflictedPaths)
     }
 }

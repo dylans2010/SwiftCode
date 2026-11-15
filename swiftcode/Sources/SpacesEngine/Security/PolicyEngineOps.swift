@@ -88,6 +88,7 @@ public struct PolicyEngineOps {
         case commit
         case branchCreate = "branch-create"
         case branchDelete = "branch-delete"
+        case merge
         case push
         case tag
     }
@@ -183,7 +184,7 @@ public struct PolicyEngineOps {
         for rule in policy.rules where rule.enabled {
             switch rule.kind {
             case .protectedBranches:
-                guard operation == .branchDelete || operation == .push,
+                guard operation == .branchDelete || operation == .push || operation == .merge,
                       let branch = details.branch else { continue }
                 let patterns = securitySplitList(rule.value)
                 let matched = patterns.contains {
