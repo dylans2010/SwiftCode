@@ -566,6 +566,42 @@ public struct RemoteOps {
         }
     }
 
+    public struct DeleteRefReport: Sendable {
+        public var remote: String
+        public var ref: String
+        public var deleted: Bool
+    }
+
+    @discardableResult
+    public func deleteRemoteRef(_ remote: String, ref: String) throws -> DeleteRefReport { return try repo.withLock {
+        guard repo.config.remotes[remote] != nil else {
+            throw SpacesError.remoteNotFound(remote)
+        }
+        let transport = try transport(for: remote)
+        let conn = try transport.connect()
+        defer { conn.close() }
+
+        try conn.send(["v": RepositoryFormat.protocolVersion, "op": "hello",
+                       "caps": ["objects-v1", "refs-v1"]])
+        try validateHelloResponse(try conn.receive())
+        try conn.send(["v": RepositoryFormat.protocolVersion, "op": "delete-ref",
+                       "refs": [ref]])
+        let response = try conn.receive()
+        if response["op"] as? String == "error" {
+            throw SpacesError.protocolError(response["error"] as? String ?? "remote delete-ref failed")
+        }
+        guard response["op"] as? String == "ok" else {
+            throw SpacesError.protocolError("remote rejected delete-ref")
+        }
+        let deleted = ((response["deleted"] as? [String]) ?? []).contains(ref)
+        if deleted, ref.hasPrefix("refs/heads/") {
+            let tracking = "refs/remotes/\(remote)/\(String(ref.dropFirst("refs/heads/".count)))"
+            try? repo.refs.deleteRef(tracking)
+        }
+        return DeleteRefReport(remote: remote, ref: ref, deleted: deleted)
+        }
+    }
+
     private func isAncestorLocal(_ ancestor: ObjectID, of descendant: ObjectID) throws -> Bool {
         var visited = Set<ObjectID>()
         var queue = [descendant]

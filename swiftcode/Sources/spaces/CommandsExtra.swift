@@ -188,37 +188,54 @@ struct LfsStatus: ParsableCommand {
         let enabled = repo.config.lfs.enabled
         print("lfs: \(enabled ? "enabled" : "disabled"), threshold \(repo.config.lfs.thresholdBytes) bytes")
         print("local lfs objects: \(count) (\(bytes) bytes)")
-        print("note: remote LFS transfer requires a Spaces server")
     }
 }
 
 struct LfsFetch: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "fetch", abstract: "Fetch LFS objects")
     @Option(name: .long) var repo: String?
+    @Argument var remote: String = "origin"
     @OptionGroup var global: GlobalOptions
     func run() throws {
         SpacesOutput.apply(global, command: "LfsFetch")
-        throw SpacesError.lfsError("LFS fetch is not implemented: the Spaces engine provides no remote LFS transfer")
+        let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
+        let report = try LfsTransferOps(repo: repo).fetch(remote)
+        print("lfs fetch from \(report.remote): \(report.transferred) object(s) fetched, \(report.alreadyPresent) already present, \(report.failed.count) failed")
+        if !report.failed.isEmpty {
+            throw SpacesError.lfsError("failed lfs objects: \(report.failed.joined(separator: ", "))")
+        }
     }
 }
 
 struct LfsPush: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "push", abstract: "Push LFS objects")
     @Option(name: .long) var repo: String?
+    @Argument var remote: String = "origin"
     @OptionGroup var global: GlobalOptions
     func run() throws {
         SpacesOutput.apply(global, command: "LfsPush")
-        throw SpacesError.lfsError("LFS push is not implemented: the Spaces engine provides no remote LFS transfer")
+        let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
+        let report = try LfsTransferOps(repo: repo).push(remote)
+        print("lfs push to \(report.remote): \(report.transferred) object(s) pushed, \(report.alreadyPresent) already present, \(report.failed.count) failed")
+        if !report.failed.isEmpty {
+            throw SpacesError.lfsError("failed lfs objects: \(report.failed.joined(separator: ", "))")
+        }
     }
 }
 
 struct LfsPull: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "pull", abstract: "Pull LFS objects")
     @Option(name: .long) var repo: String?
+    @Argument var remote: String = "origin"
     @OptionGroup var global: GlobalOptions
     func run() throws {
         SpacesOutput.apply(global, command: "LfsPull")
-        throw SpacesError.lfsError("LFS pull is not implemented: the Spaces engine provides no remote LFS transfer")
+        let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
+        let report = try LfsTransferOps(repo: repo).pull(remote)
+        print("lfs pull from \(report.remote): \(report.transferred) object(s) pulled, \(report.alreadyPresent) already present, \(report.failed.count) failed")
+        if !report.failed.isEmpty {
+            throw SpacesError.lfsError("failed lfs objects: \(report.failed.joined(separator: ", "))")
+        }
     }
 }
 

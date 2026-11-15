@@ -418,7 +418,11 @@ struct Unpublish: ParsableCommand {
               (try? repo.refs.readRef("refs/remotes/\(remote)/\(branch)")) != nil else {
             throw SpacesError.refNotFound("refs/heads/\(branch)")
         }
-        throw SpacesError.remoteError("cannot delete remote branch \(remote)/\(branch): the Spaces transport has no remote branch deletion operation")
+        let report = try RemoteOps(repo: repo).deleteRemoteRef(remote, ref: "refs/heads/\(branch)")
+        guard report.deleted else {
+            throw SpacesError.remoteError("remote did not confirm deletion of \(remote)/\(branch)")
+        }
+        print("deleted remote branch \(remote)/\(branch)")
     }
 }
 

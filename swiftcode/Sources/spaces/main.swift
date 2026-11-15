@@ -21,7 +21,7 @@ struct SpacesCLI: AsyncParsableCommand {
             Snapshot.self, Timeline.self, Checkpoint.self, Recover.self,
             RestorePoint.self, RecoveryList.self, RecoveryPrune.self,
             Remote.self, Remotes.self, Fetch.self, Pull.self, Push.self, Sync.self,
-            Publish.self, Unpublish.self, Upstream.self, Transfer.self,
+            Publish.self, Unpublish.self, Upstream.self, Transfer.self, Serve.self,
             Clone.self, Doctor.self, Fsck.self, GC.self, Prune.self,
             Compact.self, Optimize.self, Repack.self, Count.self,
             CountObjects.self, Storage.self, Integrity.self, Diagnostics.self,

@@ -71,65 +71,12 @@ final class LocalConnection: TransportConnection, @unchecked Sendable {
     }
 
     func send(_ message: [String: Any]) throws {
-        guard let op = message["op"] as? String else {
-            throw SpacesError.protocolError("missing op")
-        }
         let repo = try remoteRepo()
-        switch op {
-        case "hello":
-            pending = ["v": RepositoryFormat.protocolVersion, "op": "hello",
-                       "caps": ["objects-v1", "refs-v1"],
-                       "repo": remoteWorktree.lastPathComponent]
-        case "advertise-refs":
-            let refs = try repo.refs.allRefs().map {
-                ["name": $0.name, "oid": $0.oid.hex] as [String: Any]
-            }
-            
-            
-            pending = ["v": 1, "op": "refs", "refs": refs]
-        case "want":
-            let oids = (message["oids"] as? [String]) ?? []
-            let haves = (message["haves"] as? [String]) ?? []
-            let objects = try producePack(repo: repo, wants: oids, haves: haves)
-            pending = ["v": 1, "op": "pack", "objects": objects]
-        case "update-refs":
-            let refs = (message["refs"] as? [[String: Any]]) ?? []
-            for r in refs {
-                guard let name = r["name"] as? String, let hex = r["oid"] as? String,
-                      let oid = try? ObjectID(validating: hex) else { continue }
-                _ = try repo.refs.updateRef(name, to: oid)
-            }
-            pending = ["v": 1, "op": "ok"]
-        case "have":
-            let oids = (message["oids"] as? [String]) ?? []
-            var present: [String] = []
-            for h in oids {
-                if let oid = try? ObjectID(validating: h), repo.objects.exists(oid) {
-                    present.append(h)
-                }
-            }
-            pending = ["v": 1, "op": "ack", "oids": present]
-        case "store":
-            
-            let objects = (message["objects"] as? [[String: Any]]) ?? []
-            for o in objects {
-                guard let hex = o["id"] as? String,
-                      let typeRaw = o["type"] as? String,
-                      let type = ObjectType(rawValue: typeRaw),
-                      let b64 = o["data"] as? String,
-                      let payload = Data(base64Encoded: b64),
-                      let oid = try? ObjectID(validating: hex) else { continue }
-                
-                guard ObjectID.compute(type: type, payload: payload) == oid else { continue }
-                _ = try repo.objects.write(type: type, payload: payload)
-            }
-            pending = ["v": 1, "op": "ok"]
-        default:
-            throw SpacesError.protocolError("unknown op: \(op)")
-        }
+        pending = try SpacesProtocolHandler(repo: repo).handle(message)
     }
 
     private var pending: [String: Any]?
+
 
     func receive() throws -> [String: Any] {
         guard let p = pending else { throw SpacesError.protocolError("no pending response") }
@@ -138,32 +85,6 @@ final class LocalConnection: TransportConnection, @unchecked Sendable {
     }
 
     func close() { closed = true }
-
-    
-    
-    private func producePack(repo: Repository, wants: [String], haves: [String]) throws -> [[String: Any]] {
-        var wantIDs: [ObjectID] = []
-        for w in wants { if let o = try? ObjectID(validating: w) { wantIDs.append(o) } }
-        var haveIDs: [ObjectID] = []
-        for h in haves { if let o = try? ObjectID(validating: h) { haveIDs.append(o) } }
-
-        let wantReach = try repo.objects.reachable(from: wantIDs)
-        let haveReach = try repo.objects.reachable(from: haveIDs)
-        let toSend = wantReach.subtracting(haveReach)
-
-        var result: [[String: Any]] = []
-        
-        
-        for id in toSend.sorted() {
-            guard let stored = try? repo.objects.read(id) else { continue }
-            result.append([
-                "id": id.hex,
-                "type": stored.type.rawValue,
-                "data": stored.payload.base64EncodedString()
-            ])
-        }
-        return result
-    }
 }
 
 
