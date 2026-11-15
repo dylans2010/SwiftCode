@@ -1442,6 +1442,15 @@ struct ImportGit: ParsableCommand {
         print("imported \(report.commits) commits, \(report.objectsWritten) objects")
         print("branches: \(report.branches.joined(separator: ", "))")
         print("tags: \(report.tags.joined(separator: ", "))")
+        print("gitlinks: \(report.gitlinks.count)")
+        for entry in report.gitlinks { print("  gitlink: \(entry.path) -> \(entry.target)") }
+        print("gpg signatures: \(report.gpgSignatures.count)")
+        print("notes imported: \(report.notesImported)")
+        if !report.notesRefs.isEmpty { print("notes refs: \(report.notesRefs.joined(separator: ", "))") }
+        print("lfs pointers: \(report.lfsPointers.count)")
+        for entry in report.lfsPointers {
+            print("  lfs: \(entry.path) \(entry.oid) \(entry.size) bytes\(entry.objectImported ? "" : " (object not imported)")")
+        }
         for w in report.warnings { print("warning: \(w)") }
     }
 }
@@ -1475,6 +1484,10 @@ struct ExportGit: ParsableCommand {
         let report = try GitMigration(repo: repo).exportGit(to: path)
         if wantsJSON(json) { printJSON(report); return }
         print("exported to \(report.gitDir): \(report.objectsWritten) objects, \(report.refsWritten.count) refs")
+        if report.updatedExisting { print("updated existing git repository") }
+        if !report.hooksExported.isEmpty { print("hooks: \(report.hooksExported.joined(separator: ", "))") }
+        if !report.reflogsExported.isEmpty { print("reflogs: \(report.reflogsExported.joined(separator: ", "))") }
+        if !report.configKeysWritten.isEmpty { print("config: \(report.configKeysWritten.joined(separator: ", "))") }
         for w in report.warnings { print("warning: \(w)") }
     }
 }

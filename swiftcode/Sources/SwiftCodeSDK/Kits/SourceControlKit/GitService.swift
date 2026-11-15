@@ -91,13 +91,23 @@ public actor GitService {
 
     public func clone(remoteURL: URL, destinationURL: URL, token: String?) async throws {
         var env = ProcessInfo.processInfo.environment
-        if let token = token {
-            env["GIT_TERMINAL_PROMPT"] = "0"
+        env["GIT_TERMINAL_PROMPT"] = "0"
+        var args: [String] = ["clone"]
+        if let token, !token.isEmpty {
+            guard token.unicodeScalars.allSatisfy({ !$0.properties.isControl }),
+                  let scheme = remoteURL.scheme?.lowercased(),
+                  scheme == "http" || scheme == "https",
+                  let host = remoteURL.host, !host.isEmpty else {
+                throw GitError.invalidBranch("a clone token is only supported for http(s) remotes and must not contain control characters")
+            }
+            var hostPart = host
+            if let port = remoteURL.port { hostPart += ":\(port)" }
+            args += ["-c", "http.\(scheme)://\(hostPart)/.extraHeader=Authorization: Bearer \(token)"]
         }
 
         let result = try Subprocess.run(
             await gitURL.path,
-            ["clone", remoteURL.absoluteString, destinationURL.path],
+            args + [remoteURL.absoluteString, destinationURL.path],
             environment: env
         )
         if result.status != 0 { throw GitError.commandFailed(command: "git", exitCode: result.status, output: result.stderrText) }

@@ -43,6 +43,14 @@ struct BranchesView: View {
 
     @State private var branchPendingDelete: GitBranch?
     @State private var resetPending: (mode: String, target: String)?
+    @State private var branchHealth: [String: BranchHealth] = [:]
+
+    private struct BranchHealth: Sendable {
+        var lastCommit: Date?
+        var ahead: Int?
+        var behind: Int?
+        var mergedIntoMain: Bool?
+    }
     @State private var showForcePushConfirm = false
     @State private var showStashSheet = false
     @State private var stashMessage = ""
@@ -417,6 +425,7 @@ struct BranchesView: View {
                 .listStyle(.plain)
             }
         }
+        .task(id: branchHealthKey) { loadBranchHealth() }
         .sheet(isPresented: $showCreateBranchSheet) { createBranchSheet }
         .sheet(isPresented: $showRenameBranchSheet) { renameBranchSheet }
         .sheet(isPresented: $showMergeSheet) { mergeSheetView }
@@ -469,24 +478,164 @@ struct BranchesView: View {
         }
     }
 
+    private var branchHealthKey: String {
+        gitViewModel.branches.map(\.name).joined(separator: "\n") + "|" + (gitViewModel.usesSpaces ? "spaces" : "git")
+    }
+
+    private var defaultBranchName: String {
+        if gitViewModel.branches.contains(where: { $0.name == "main" }) { return "main" }
+        if gitViewModel.branches.contains(where: { $0.name == "master" }) { return "master" }
+        return gitViewModel.branches.first(where: { $0.isCurrent })?.name ?? "main"
+    }
+
     private func isStale(_ branch: GitBranch) -> Bool {
-        branch.name.contains("old") || branch.name.contains("temp") || branch.name.contains("stale")
+        guard !branch.isCurrent, branch.name != "main", branch.name != "master" else { return false }
+        guard let last = branchHealth[branch.name]?.lastCommit else { return false }
+        return last < Date().addingTimeInterval(-180 * 86400)
     }
 
     @ViewBuilder
     private func branchHealthIndicator(for branch: GitBranch) -> some View {
-        HStack(spacing: 12) {
-            if branch.name == "main" || branch.name == "master" {
-                Label("Healthy", systemImage: "checkmark.shield")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        if let health = branchHealth[branch.name],
+           health.lastCommit != nil || health.ahead != nil || health.mergedIntoMain == true {
+            HStack(spacing: 12) {
+                if let last = health.lastCommit {
+                    Label(Self.relativeDayLabel(last), systemImage: "clock")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                if let ahead = health.ahead, let behind = health.behind {
+                    if ahead == 0 && behind == 0 {
+                        Label("Up to date", systemImage: "checkmark.circle")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Label("↑\(ahead) ↓\(behind)", systemImage: "arrow.left.arrow.right")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                if health.mergedIntoMain == true {
+                    Label("Merged into \(defaultBranchName)", systemImage: "checkmark.circle")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 8)
+        }
+    }
+
+    private static func relativeDayLabel(_ date: Date) -> String {
+        let days = Int(Date().timeIntervalSince(date) / 86400)
+        if days <= 0 { return "Last commit today" }
+        if days == 1 { return "Last commit yesterday" }
+        return "Last commit \(days)d ago"
+    }
+
+    private func loadBranchHealth() {
+        guard let proj = project else { return }
+        let branches = gitViewModel.branches.filter { !$0.isRemote }
+        guard !branches.isEmpty else { return }
+        let directoryURL = proj.directoryURL
+        let useSpaces = gitViewModel.usesSpaces
+        let mainBranch = defaultBranchName
+        let gitBinary = URL(fileURLWithPath: AppSettings.shared.gitPath.isEmpty ? "/usr/bin/git" : AppSettings.shared.gitPath)
+        Task {
+            var loaded: [String: BranchHealth] = [:]
+            if useSpaces {
+                loaded = await loadSpacesBranchHealth(directoryURL: directoryURL, branches: branches, mainBranch: mainBranch)
             } else {
-                Label("No conflict risk", systemImage: "checkmark.circle")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                loaded = await loadGitBranchHealth(gitBinary: gitBinary, directoryURL: directoryURL,
+                                                   branches: branches, mainBranch: mainBranch)
+            }
+            branchHealth = loaded
+        }
+    }
+
+    private func loadSpacesBranchHealth(directoryURL: URL, branches: [GitBranch],
+                                       mainBranch: String) async -> [String: BranchHealth] {
+        guard let nodes = try? await SpacesService.shared.graph(repositoryURL: directoryURL,
+                                                                limit: 500, all: true) else {
+            return [:]
+        }
+        var tipByBranch: [String: Int] = [:]
+        var nodeByOID: [String: Int] = [:]
+        for (index, node) in nodes.enumerated() { nodeByOID[node.oid.hex] = index }
+        for branch in branches {
+            if let index = nodes.firstIndex(where: { $0.refs.contains(branch.name) }) {
+                tipByBranch[branch.name] = index
             }
         }
-        .padding(.horizontal, 8)
+        func ancestors(of start: Int) -> Set<Int> {
+            var seen: Set<Int> = []
+            var stack = [start]
+            while let current = stack.popLast() {
+                guard seen.insert(current).inserted else { continue }
+                for parent in nodes[current].parents {
+                    if let parentIndex = nodeByOID[parent.hex] { stack.append(parentIndex) }
+                }
+            }
+            return seen
+        }
+        var loaded: [String: BranchHealth] = [:]
+        let mainAncestors = tipByBranch[mainBranch].map { ancestors(of: $0) }
+        for branch in branches {
+            guard let tipIndex = tipByBranch[branch.name] else { continue }
+            var health = BranchHealth()
+            health.lastCommit = Date(timeIntervalSince1970: TimeInterval(nodes[tipIndex].timestamp))
+            if let mainSet = mainAncestors {
+                let branchSet = ancestors(of: tipIndex)
+                if !branchSet.intersection(mainSet).isEmpty {
+                    health.ahead = branchSet.subtracting(mainSet).count
+                    health.behind = mainSet.subtracting(branchSet).count
+                    if branch.name != mainBranch && mainSet.contains(tipIndex) {
+                        health.mergedIntoMain = true
+                    }
+                }
+            }
+            if health.lastCommit != nil || health.ahead != nil || health.mergedIntoMain == true {
+                loaded[branch.name] = health
+            }
+        }
+        return loaded
+    }
+
+    private func loadGitBranchHealth(gitBinary: URL, directoryURL: URL, branches: [GitBranch],
+                                     mainBranch: String) async -> [String: BranchHealth] {
+        func runGit(_ args: [String]) async -> String? {
+            guard let result = try? await ProcessRunnerTool.shared.run(
+                executableURL: gitBinary, arguments: args, workingDirectory: directoryURL),
+                  result.exitCode == 0 else { return nil }
+            return result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        var merged: Set<String> = []
+        if let mergedOutput = await runGit(["branch", "--merged", mainBranch, "--format=%(refname:short)"]) {
+            merged = Set(mergedOutput.components(separatedBy: .newlines).map {
+                $0.trimmingCharacters(in: .whitespaces)
+            }.filter { !$0.isEmpty })
+        }
+        var loaded: [String: BranchHealth] = [:]
+        for branch in branches {
+            var health = BranchHealth()
+            if let timestamp = await runGit(["log", "-1", "--format=%ct", branch.name]),
+               let seconds = Double(timestamp) {
+                health.lastCommit = Date(timeIntervalSince1970: seconds)
+            }
+            if let aheadText = await runGit(["rev-list", "--count", branch.name, "--not", mainBranch]),
+               let ahead = Int(aheadText),
+               let behindText = await runGit(["rev-list", "--count", mainBranch, "--not", branch.name]),
+               let behind = Int(behindText) {
+                health.ahead = ahead
+                health.behind = behind
+            }
+            if branch.name != mainBranch && merged.contains(branch.name) {
+                health.mergedIntoMain = true
+            }
+            if health.lastCommit != nil || health.ahead != nil || health.mergedIntoMain == true {
+                loaded[branch.name] = health
+            }
+        }
+        return loaded
     }
 
     private var createBranchSheet: some View {

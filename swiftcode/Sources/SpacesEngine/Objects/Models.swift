@@ -112,16 +112,18 @@ public struct TagPayload: Codable, Sendable {
     public var tagger: Signature?
     public var message: String
     public var signature: String?
+    public var taggerTimezone: Int?
 
     public init(object: ObjectID, objectType: ObjectType, name: String,
                 tagger: Signature? = nil, message: String = "",
-                signature: String? = nil) {
+                signature: String? = nil, taggerTimezone: Int? = nil) {
         self.object = object
         self.objectType = objectType
         self.name = name
         self.tagger = tagger
         self.message = message
         self.signature = signature
+        self.taggerTimezone = taggerTimezone
     }
 }
 

@@ -250,8 +250,8 @@ public final class SpacesAPI: @unchecked Sendable {
         try RebaseOps(repo: repo).abort()
     }
 
-    public func graph(limit: Int = 200) throws -> [BranchOps.GraphNode] {
-        try BranchOps(repo: repo).graph(limit: limit)
+    public func graph(limit: Int = 200, all: Bool = false) throws -> [BranchOps.GraphNode] {
+        try BranchOps(repo: repo).graph(limit: limit, all: all)
     }
 
     public func mergeBase(_ a: String, _ b: String) throws -> ObjectID? {
@@ -404,8 +404,8 @@ public final class SpacesAPI: @unchecked Sendable {
     }
 
     @discardableResult
-    public func gc() throws -> (pruned: Int, reachable: Int) {
-        try MaintenanceOps(repo: repo).gc()
+    public func gc(pruneDays: Int = 0) throws -> (pruned: Int, reachable: Int) {
+        try MaintenanceOps(repo: repo).gc(pruneDays: pruneDays)
     }
 
     public func countObjects() throws -> (blobs: Int, trees: Int, commits: Int,
@@ -606,11 +606,14 @@ extension SpacesAPI {
     }
 
     public func signingIdentities() throws -> [String] {
-        var identities = ["default"]
+        var identities = Set<String>(["default"])
         let files = (try? FileManager.default.contentsOfDirectory(atPath: repo.metaURL.path)) ?? []
         for file in files where file.hasPrefix("signing-") && file.hasSuffix(".key") {
             let name = String(file.dropFirst("signing-".count).dropLast(".key".count))
-            if !name.isEmpty && name != "default" { identities.append(name) }
+            if !name.isEmpty && name != "default" { identities.insert(name) }
+        }
+        for name in SigningKeyStore.knownIdentities() where !name.isEmpty {
+            identities.insert(name)
         }
         return identities.sorted()
     }
@@ -661,17 +664,7 @@ extension SpacesAPI {
               identity != ".", identity != ".." else {
             throw SpacesError.invalidArgument("invalid signing identity: \(identity)")
         }
-        let keyURL = repo.metaURL.appendingPathComponent("signing-" + identity + ".key")
-        let keyData: Data
-        if let existing = try? Data(contentsOf: keyURL), existing.count >= 32 {
-            keyData = existing
-        } else {
-            let generated = SymmetricKey(size: .bits256)
-            let data = generated.withUnsafeBytes { Data($0) }
-            try data.write(to: keyURL, options: .atomic)
-            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: keyURL.path)
-            keyData = data
-        }
+        let keyData = try SigningKeyStore(repo: repo, identity: identity).loadOrCreate()
         let mac = HMAC<SHA256>.authenticationCode(
             for: Data("spaces-sign-v1\ncommit\n\(object)".utf8),
             using: SymmetricKey(data: keyData))

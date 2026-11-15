@@ -608,6 +608,7 @@ public struct GitMigration {
         var objectHex: String?
         var objectType: ObjectType = .commit
         var tagger: Signature?
+        var taggerTimezone: Int?
         var tagName = ""
         for line in headers {
             if line.hasPrefix("object ") { objectHex = String(line.dropFirst(7)) }
@@ -615,7 +616,13 @@ public struct GitMigration {
                 objectType = ObjectType(rawValue: String(line.dropFirst(5))) ?? .commit
             }
             else if line.hasPrefix("tag ") { tagName = String(line.dropFirst(4)) }
-            else if line.hasPrefix("tagger ") { tagger = parseGitSignature(String(line.dropFirst(7))) }
+            else if line.hasPrefix("tagger ") {
+                let taggerLine = String(line.dropFirst(7))
+                tagger = parseGitSignature(taggerLine)
+                if let minutes = gitSignatureOffsetMinutes(taggerLine) {
+                    taggerTimezone = minutes * 60
+                }
+            }
         }
         guard let hex = objectHex, let oid = oidMap[hex] else { return nil }
         var signature: String? = nil
@@ -624,7 +631,8 @@ public struct GitMigration {
             tagMessage = String(tagMessage[..<sigRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
         }
         return TagPayload(object: oid, objectType: objectType, name: tagName,
-                          tagger: tagger, message: tagMessage, signature: signature)
+                          tagger: tagger, message: tagMessage, signature: signature,
+                          taggerTimezone: taggerTimezone)
     }
 
     public struct ExportReport: Sendable, Encodable {
@@ -1088,7 +1096,7 @@ public struct GitMigration {
         input += "type \(tag.objectType.rawValue)\n"
         input += "tag \(tag.name)\n"
         if let tagger = tag.tagger {
-            input += "tagger \(gitSignature(tagger))\n"
+            input += "tagger \(gitSignature(tagger, offsetSeconds: tag.taggerTimezone))\n"
         }
         input += "\n\(tag.message)\n"
         if let signature = tag.signature, signature.hasPrefix("-----BEGIN PGP SIGNATURE-----") {
@@ -1125,8 +1133,8 @@ public struct GitMigration {
         env[prefix + "DATE"] = "@\(sig.timestamp) \(gitOffsetToken(minutes: minutes))"
     }
 
-    private func gitSignature(_ s: Signature) -> String {
-        let tz = TimeZone.current.secondsFromGMT(for: Date(timeIntervalSince1970: TimeInterval(s.timestamp)))
+    private func gitSignature(_ s: Signature, offsetSeconds: Int? = nil) -> String {
+        let tz = offsetSeconds ?? TimeZone.current.secondsFromGMT(for: Date(timeIntervalSince1970: TimeInterval(s.timestamp)))
         let sign = tz >= 0 ? "+" : "-"
         let absTz = abs(tz)
         let hh = absTz / 3600, mm = (absTz % 3600) / 60

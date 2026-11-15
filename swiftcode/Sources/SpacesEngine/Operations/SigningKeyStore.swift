@@ -8,15 +8,17 @@ import Security
 public struct SigningKeyStore {
     public let repo: Repository
     public let identityHash: String
+    public let identity: String
 
     public struct KeyInfo: Sendable {
         public var fingerprint: String
         public var createdAt: Date?
     }
 
-    public init(repo: Repository) {
+    public init(repo: Repository, identity: String = "default") {
         self.repo = repo
-        self.identityHash = Self.identityHash(for: repo)
+        self.identity = identity
+        self.identityHash = Self.identityHash(for: repo, identity: identity)
     }
 
     public static func fingerprint(of key: Data) -> String {
@@ -38,13 +40,50 @@ public struct SigningKeyStore {
         return repo.metaURL
     }
 
-    private static func identityHash(for repo: Repository) -> String {
-        let digest = SHA256.hash(data: Data(canonicalMetaURL(for: repo).path.utf8))
+    private static func identityHash(for repo: Repository, identity: String = "default") -> String {
+        let input = identity == "default"
+            ? canonicalMetaURL(for: repo).path
+            : canonicalMetaURL(for: repo).path + "\n" + identity
+        let digest = SHA256.hash(data: Data(input.utf8))
         return digest.map { String(format: "%02x", $0) }.joined()
     }
 
     private var legacyKeyURL: URL {
-        Self.canonicalMetaURL(for: repo).appendingPathComponent("signing.key")
+        if identity == "default" {
+            return Self.canonicalMetaURL(for: repo).appendingPathComponent("signing.key")
+        }
+        return Self.canonicalMetaURL(for: repo).appendingPathComponent("signing-\(identity).key")
+    }
+
+    private static var identityRegistryURL: URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent(".config/spaces/keys/identities.json")
+    }
+
+    public static func knownIdentities() -> [String] {
+        guard let data = try? Data(contentsOf: identityRegistryURL),
+              let decoded = try? JSONDecoder().decode([String: String].self, from: data) else {
+            return []
+        }
+        return decoded.values.sorted()
+    }
+
+    private func recordIdentity() {
+        guard identity != "default" else { return }
+        let dir = Self.identityRegistryURL.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true,
+                                                 attributes: [.posixPermissions: 0o700])
+        var registry: [String: String] = [:]
+        if let data = try? Data(contentsOf: Self.identityRegistryURL),
+           let decoded = try? JSONDecoder().decode([String: String].self, from: data) {
+            registry = decoded
+        }
+        registry[identityHash] = identity
+        if let data = try? JSONEncoder().encode(registry) {
+            try? data.write(to: Self.identityRegistryURL, options: .atomic)
+            try? FileManager.default.setAttributes([.posixPermissions: 0o600],
+                                                   ofItemAtPath: Self.identityRegistryURL.path)
+        }
     }
 
     private var service: String { "spaces-signing" }
@@ -58,30 +97,36 @@ public struct SigningKeyStore {
         #if canImport(Security)
         if let existing = try loadFromKeychain() {
             try? FileManager.default.removeItem(at: legacyKeyURL)
+            recordIdentity()
             return existing
         }
         if let legacy = readLegacyKey() {
             try storeInKeychain(legacy)
             try? FileManager.default.removeItem(at: legacyKeyURL)
+            recordIdentity()
             return legacy
         }
         let fresh = generateKey()
         try storeInKeychain(fresh)
         try? FileManager.default.removeItem(at: legacyKeyURL)
+        recordIdentity()
         return fresh
         #else
         if let existing = try loadFromFile() {
             try? FileManager.default.removeItem(at: legacyKeyURL)
+            recordIdentity()
             return existing
         }
         if let legacy = readLegacyKey() {
             try storeToFile(legacy)
             try? FileManager.default.removeItem(at: legacyKeyURL)
+            recordIdentity()
             return legacy
         }
         let fresh = generateKey()
         try storeToFile(fresh)
         try? FileManager.default.removeItem(at: legacyKeyURL)
+        recordIdentity()
         return fresh
         #endif
     }

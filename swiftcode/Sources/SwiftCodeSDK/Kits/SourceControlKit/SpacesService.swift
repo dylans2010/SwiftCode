@@ -196,9 +196,9 @@ public actor SpacesService {
         return try api.show(sha)
     }
 
-    public func graph(repositoryURL: URL, limit: Int = 100) async throws -> [BranchOps.GraphNode] {
+    public func graph(repositoryURL: URL, limit: Int = 100, all: Bool = false) async throws -> [BranchOps.GraphNode] {
         let (_, api) = try api(for: repositoryURL)
-        return try api.graph(limit: limit)
+        return try api.graph(limit: limit, all: all)
     }
 
     

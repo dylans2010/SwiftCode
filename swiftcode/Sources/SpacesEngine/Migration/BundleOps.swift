@@ -204,22 +204,39 @@ public enum ArchiveOps {
         var pos = 0
         var pendingLongName: String?
         var pendingLongLink: String?
+        var pendingPaxPath: String?
+        var pendingPaxLinkPath: String?
+        var globalPaxPath: String?
+        var globalPaxLinkPath: String?
         while pos + 512 <= data.count {
             let header = [UInt8](data[pos..<(pos + 512)])
             if header.allSatisfy({ $0 == 0 }) { break }
             guard verifyTarChecksum(header) else {
                 throw SpacesError.invalidObject("bad tar header checksum at offset \(pos)")
             }
+            let typeflag = header[156]
+            let isMetaEntry = typeflag == 0x78 || typeflag == 0x67 || typeflag == 0x4C || typeflag == 0x4B
             var name = tarString(header, 0, 100)
             let prefix = tarString(header, 345, 155)
             if !prefix.isEmpty { name = prefix + "/" + name }
-            if let long = pendingLongName { name = long; pendingLongName = nil }
+            if !isMetaEntry, let long = pendingLongName { name = long; pendingLongName = nil }
+            else if let long = pendingLongName { name = long }
+            if isMetaEntry {
+                if let pax = pendingPaxPath { name = pax }
+                else if let pax = globalPaxPath { name = pax }
+            } else if let pax = pendingPaxPath { name = pax; pendingPaxPath = nil }
+            else if let pax = globalPaxPath { name = pax }
             var linkName = tarString(header, 157, 100)
-            if let longLink = pendingLongLink { linkName = longLink; pendingLongLink = nil }
+            if !isMetaEntry, let longLink = pendingLongLink { linkName = longLink; pendingLongLink = nil }
+            else if let longLink = pendingLongLink { linkName = longLink }
+            if isMetaEntry {
+                if let paxLink = pendingPaxLinkPath { linkName = paxLink }
+                else if let paxLink = globalPaxLinkPath { linkName = paxLink }
+            } else if let paxLink = pendingPaxLinkPath { linkName = paxLink; pendingPaxLinkPath = nil }
+            else if let paxLink = globalPaxLinkPath { linkName = paxLink }
             let size = try tarSize(header)
             let mode = tarOctal(header, 100, 8) ?? 0o644
             let mtime = tarOctal(header, 136, 12) ?? 0
-            let typeflag = header[156]
             let dataStart = pos + 512
             let dataEnd = dataStart + size
             guard dataEnd <= data.count else {
@@ -231,8 +248,14 @@ public enum ArchiveOps {
                 pendingLongName = String(decoding: payload.prefix(while: { $0 != 0 }), as: UTF8.self)
             case 0x4B:
                 pendingLongLink = String(decoding: payload.prefix(while: { $0 != 0 }), as: UTF8.self)
-            case 0x78, 0x67:
-                break
+            case 0x78:
+                let records = paxRecords(payload)
+                if let path = records["path"] { pendingPaxPath = path }
+                if let linkPath = records["linkpath"] { pendingPaxLinkPath = linkPath }
+            case 0x67:
+                let records = paxRecords(payload)
+                if let path = records["path"] { globalPaxPath = path }
+                if let linkPath = records["linkpath"] { globalPaxLinkPath = linkPath }
             case 0x30, 0x00:
                 let target = try containedTarget(destStandard: destStandard, relative: name)
                 try ensureNoSymlinkParent(target, destStandard: destStandard)
@@ -281,6 +304,26 @@ public enum ArchiveOps {
         let field = header[offset..<(offset + length)]
         let bytes = field.prefix(while: { $0 != 0 })
         return String(decoding: bytes, as: UTF8.self)
+    }
+
+    private static func paxRecords(_ payload: Data) -> [String: String] {
+        var records: [String: String] = [:]
+        var offset = 0
+        while offset < payload.count {
+            guard let space = payload[offset...].firstIndex(of: 0x20) else { break }
+            let lengthText = String(decoding: payload[offset..<space], as: UTF8.self)
+            guard let length = Int(lengthText.trimmingCharacters(in: .whitespaces)),
+                  length > 0, offset + length <= payload.count else { break }
+            let bodyEnd = payload[offset + length - 1] == 0x0A ? offset + length - 1 : offset + length
+            let body = payload[(space + 1)..<bodyEnd]
+            if let equals = body.firstIndex(of: 0x3D) {
+                let key = String(decoding: body[body.startIndex..<equals], as: UTF8.self)
+                let value = String(decoding: body[body.index(after: equals)..<body.endIndex], as: UTF8.self)
+                records[key] = value
+            }
+            offset += length
+        }
+        return records
     }
 
     private static func tarOctal(_ header: [UInt8], _ offset: Int, _ length: Int) -> Int? {
