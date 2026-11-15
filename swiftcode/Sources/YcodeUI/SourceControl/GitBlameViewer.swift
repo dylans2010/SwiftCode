@@ -19,6 +19,7 @@ public struct GitBlameViewer: View {
 
     @State private var blameLines: [BlameLineEntry] = []
     @State private var isLoadingBlame = false
+    @State private var blameError: String?
     @State private var selectedLineIndex: Int?
 
     @State private var blameSearchText = ""
@@ -172,6 +173,12 @@ public struct GitBlameViewer: View {
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let blameError {
+                    ContentUnavailableView(
+                        "Blame Unavailable",
+                        systemImage: "exclamationmark.triangle",
+                        description: Text(blameError)
+                    )
                 } else if blameLines.isEmpty {
                     ContentUnavailableView(
                         "No Blame History Loaded",
@@ -312,7 +319,7 @@ public struct GitBlameViewer: View {
                 if count > 200 { break }
 
                 let pathStr = fileURL.path
-                if pathStr.contains("/.build") || pathStr.contains("/.git") || pathStr.contains("/DerivedData") || pathStr.contains("/node_modules") {
+                if pathStr.contains("/.build") || pathStr.contains("/.git") || pathStr.contains("/.spaces") || pathStr.contains("/DerivedData") || pathStr.contains("/node_modules") {
                     enumerator?.skipDescendants()
                     continue
                 }
@@ -333,63 +340,84 @@ public struct GitBlameViewer: View {
         }
     }
 
+    private static func formatBlameDate(_ timestamp: Int64) -> String {
+        guard timestamp > 0 else { return "unknown" }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        return formatter.localizedString(for: Date(timeIntervalSince1970: TimeInterval(timestamp)), relativeTo: Date())
+    }
+
+    private static func parsePorcelainBlame(_ output: String) -> [BlameLineEntry] {
+        var entries: [BlameLineEntry] = []
+        var sha = ""
+        var author = "unknown"
+        var timestamp: Int64 = 0
+        var lineNumber = 0
+        for line in output.components(separatedBy: .newlines) {
+            if line.hasPrefix("\t") {
+                lineNumber += 1
+                entries.append(BlameLineEntry(
+                    lineNumber: lineNumber,
+                    sha: sha.isEmpty ? "unknown" : sha,
+                    author: author,
+                    date: formatBlameDate(timestamp),
+                    code: String(line.dropFirst())
+                ))
+                sha = ""
+                author = "unknown"
+                timestamp = 0
+            } else if line.hasPrefix("author ") {
+                author = String(line.dropFirst("author ".count))
+            } else if line.hasPrefix("author-time ") {
+                timestamp = Int64(line.dropFirst("author-time ".count)) ?? 0
+            } else if sha.isEmpty {
+                let head = line.components(separatedBy: " ")
+                if head.count >= 4, head[0].count == 40, head[0].allSatisfy({ $0.isHexDigit }) {
+                    sha = head[0]
+                }
+            }
+        }
+        return entries
+    }
+
     private func loadBlameInfo(for fileURL: URL) {
         guard let proj = gitViewModel.repositoryURL else { return }
         isLoadingBlame = true
         blameLines = []
+        blameError = nil
 
         Task {
             do {
-                let relPath = fileURL.path.replacingOccurrences(of: proj.path + "/", with: "")
-                let gitBinary = URL(fileURLWithPath: AppSettings.shared.gitPath.isEmpty ? "/usr/bin/git" : AppSettings.shared.gitPath)
-
-                let result = try await ProcessRunnerTool.shared.run(
-                    executableURL: gitBinary,
-                    arguments: ["blame", "-s", relPath],
-                    workingDirectory: proj
-                )
-
-                if result.exitCode == 0 {
-                    let lines = result.stdout.components(separatedBy: .newlines)
-                    var index = 1
-                    var parsedList: [BlameLineEntry] = []
-
-                    for line in lines {
-                        if line.isEmpty { continue }
-
-                        let parts = line.components(separatedBy: ") ")
-                        if parts.count >= 2 {
-                            let metadata = parts[0]
-                            let code = parts.dropFirst().joined(separator: ") ")
-
-                            let metaParts = metadata.components(separatedBy: .whitespaces).filter { !$0.isEmpty }
-                            if let sha = metaParts.first {
-                                parsedList.append(BlameLineEntry(
-                                    lineNumber: index,
-                                    sha: sha,
-                                    author: "Jules",
-                                    date: "1 day ago",
-                                    code: code
-                                ))
-                            }
-                        } else {
-                            parsedList.append(BlameLineEntry(
-                                lineNumber: index,
-                                sha: "00000000",
-                                author: "Jules",
-                                date: "Initial",
-                                code: line
-                            ))
-                        }
-                        index += 1
+                if gitViewModel.usesSpaces {
+                    let lines = try await SpacesService.shared.blame(fileURL: fileURL, repositoryURL: proj)
+                    self.blameLines = lines.enumerated().map { index, blame in
+                        BlameLineEntry(
+                            lineNumber: index + 1,
+                            sha: blame.commit.hex,
+                            author: blame.author.isEmpty ? "unknown" : blame.author,
+                            date: Self.formatBlameDate(blame.timestamp),
+                            code: blame.line
+                        )
                     }
-                    self.blameLines = parsedList
                 } else {
-                    throw AppError.gitError(result.stderr)
+                    let relPath = fileURL.path.replacingOccurrences(of: proj.path + "/", with: "")
+                    let gitBinary = URL(fileURLWithPath: AppSettings.shared.gitPath.isEmpty ? "/usr/bin/git" : AppSettings.shared.gitPath)
+
+                    let result = try await ProcessRunnerTool.shared.run(
+                        executableURL: gitBinary,
+                        arguments: ["blame", "--line-porcelain", relPath],
+                        workingDirectory: proj
+                    )
+
+                    guard result.exitCode == 0 else {
+                        throw AppError.gitError(result.stderr)
+                    }
+                    self.blameLines = Self.parsePorcelainBlame(result.stdout)
                 }
             } catch {
                 logger.error("Blame native failed: \(error.localizedDescription)")
                 self.blameLines = []
+                self.blameError = error.localizedDescription
             }
             isLoadingBlame = false
         }
@@ -398,6 +426,32 @@ public struct GitBlameViewer: View {
     private func triggerCommitPopover(sha: String) {
         hoverCommitSHA = sha
         isShowingPopover = true
-        hoverCommitDetails = "SHA: \(sha)\nAuthor: Jules <support@swiftcode.app>\nDate: 2 days ago\n\nCommit Message: Streamline layout constraints and performance drag cycles."
+        hoverCommitDetails = nil
+        guard let repoURL = gitViewModel.repositoryURL else {
+            hoverCommitDetails = "Commit details unavailable: no repository."
+            return
+        }
+        Task {
+            do {
+                if gitViewModel.usesSpaces {
+                    let result = try await SpacesService.shared.showCommit(sha: sha, repositoryURL: repoURL)
+                    let info = result.info
+                    self.hoverCommitDetails = "SHA: \(info.oid.hex)\nAuthor: \(info.author.name) <\(info.author.email)>\nDate: \(Self.formatBlameDate(info.timestamp))\nAdded: \(result.diffStat.added) Removed: \(result.diffStat.removed) Files: \(result.diffStat.files)\n\n\(info.message)"
+                } else {
+                    let gitBinary = URL(fileURLWithPath: AppSettings.shared.gitPath.isEmpty ? "/usr/bin/git" : AppSettings.shared.gitPath)
+                    let result = try await ProcessRunnerTool.shared.run(
+                        executableURL: gitBinary,
+                        arguments: ["show", "-s", "--format=%H%n%an <%ae>%n%ad%n%B", "--date=iso", sha],
+                        workingDirectory: repoURL
+                    )
+                    guard result.exitCode == 0 else {
+                        throw AppError.gitError(result.stderr)
+                    }
+                    self.hoverCommitDetails = result.stdout
+                }
+            } catch {
+                self.hoverCommitDetails = "Commit details unavailable: \(error.localizedDescription)"
+            }
+        }
     }
 }

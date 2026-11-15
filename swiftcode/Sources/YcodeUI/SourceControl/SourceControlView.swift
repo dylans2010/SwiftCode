@@ -196,6 +196,7 @@ public enum SourceControlSelection: String, CaseIterable, Identifiable, Codable 
     case githubDiscovery = "GitHub Discovery"
     case aiAssistant = "AI Repository Assistant"
     case spacesWorkspace = "Spaces Workspace"
+    case spacesSettings = "Spaces Settings"
 
     public var id: String { rawValue }
 
@@ -244,6 +245,7 @@ public enum SourceControlSelection: String, CaseIterable, Identifiable, Codable 
         case .conflictResolver: return "arrow.triangle.merge"
         case .gists: return "doc.on.doc.fill"
         case .spacesWorkspace: return "externaldrive.badge.checkmark"
+        case .spacesSettings: return "gearshape.fill"
         }
     }
 }
@@ -562,6 +564,7 @@ func buildSourceControlSidebarNodes() -> [SourceControlSidebarNode] {
     let spaces = SourceControlSidebarNode(title: "SPACES (NATIVE SOURCE CONTROL)", isGroup: true)
     spaces.children = [
         SourceControlSidebarNode(title: "Spaces Workspace", icon: "externaldrive.badge.checkmark", selection: .spacesWorkspace),
+        SourceControlSidebarNode(title: "Spaces Settings", icon: "gearshape.fill", selection: .spacesSettings),
         SourceControlSidebarNode(title: "Changes", icon: "doc.badge.plus", selection: .changes),
         SourceControlSidebarNode(title: "Branches", icon: "arrow.triangle.branch", selection: .branches),
         SourceControlSidebarNode(title: "Commit History", icon: "clock.arrow.circlepath", selection: .commitHistory),
@@ -760,6 +763,8 @@ struct SourceControlMainWrapper: View {
                     AIRepositoryAssistantView()
                 case .spacesWorkspace:
                     SpacesWorkspaceView(project: project)
+                case .spacesSettings:
+                    SpacesSettingsView(project: project)
                 }
             }
         }
@@ -803,10 +808,10 @@ private extension SourceControlMainWrapper {
 
     @ViewBuilder
     func repositoryOrFallback<Content: View>(@ViewBuilder content: (GitRepository) -> Content) -> some View {
-        if let repository = gitRepository {
-            content(repository)
-        } else if Preferences.shared.usesSpacesSourceControl || (try? Repository.open(at: project.directoryURL)) != nil {
+        if GitViewModel.resolveProvider(for: project.directoryURL) == .spaces {
             SpacesWorkspaceView(project: project)
+        } else if let repository = gitRepository {
+            content(repository)
         } else {
             GitNotInstalledView()
         }

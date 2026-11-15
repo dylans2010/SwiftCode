@@ -13,6 +13,9 @@ final class SpacesWorkspaceModel {
         case overview = "Overview"
         case changes = "Changes"
         case branches = "Branches"
+        case tags = "Tags"
+        case compare = "Compare"
+        case search = "Search"
         case history = "History"
         case operations = "Operations"
         case remotes = "Remotes"
@@ -31,6 +34,15 @@ final class SpacesWorkspaceModel {
     var api: SpacesAPI?
     var error: String?
     var notice: String?
+    var inFlight = 0
+    private var runningTasks: [Task<Void, Never>] = []
+
+    var isBusy: Bool { inFlight > 0 }
+
+    func cancelOperations() {
+        for task in runningTasks { task.cancel() }
+        runningTasks.removeAll()
+    }
 
     
     var status: WorktreeScanner.StatusReport?
@@ -49,9 +61,20 @@ final class SpacesWorkspaceModel {
     var branches: [BranchOps.BranchInfo] = []
     var tags: [TagOps.TagInfo] = []
     var newBranchName = ""
+    var newTagName = ""
+    var newTagMessage = ""
     var mergeTarget = ""
     var rebaseOnto = ""
     var cherryPickRev = ""
+    var stashMessage = ""
+
+    var compareFrom = ""
+    var compareTo = ""
+    var compareOutput = ""
+
+    var searchQuery = ""
+    var searchResults: [SearchOps.Result] = []
+    var hasSearched = false
 
     
     var stashes: [StashOps.StashEntry] = []
@@ -92,11 +115,10 @@ final class SpacesWorkspaceModel {
             api = SpacesAPI(repo: r)
             self.error = nil
             refreshAll()
-        } catch _ {
+        } catch {
             repo = nil
             api = nil
-            
-            self.error = nil
+            self.error = error.localizedDescription
         }
     }
 
@@ -104,6 +126,7 @@ final class SpacesWorkspaceModel {
         do {
             let identity = Signature(name: NSFullUserName(), email: "\(NSUserName())@localhost")
             let r = try Repository.create(at: project.directoryURL,
+                                          defaultBranch: SpacesService.defaultBranchSetting,
                                           user: SpacesConfig.User(name: identity.name, email: identity.email))
             repo = r
             api = SpacesAPI(repo: r)
@@ -128,25 +151,33 @@ final class SpacesWorkspaceModel {
 
     private func run(_ what: String, _ body: @escaping @Sendable (SpacesAPI) throws -> Void) {
         guard let api else { return }
-        Task.detached {
+        inFlight += 1
+        let task = Task.detached {
+            defer { Task { @MainActor in self.inFlight -= 1 } }
             do { try body(api) } catch {
                 await MainActor.run { self.error = "\(what): \(error.localizedDescription)" }
             }
+            guard !Task.isCancelled else { return }
             await MainActor.run { self.refreshAll() }
         }
+        runningTasks.append(task)
     }
 
     private func runValue<T: Sendable>(_ what: String, _ body: @escaping @Sendable (SpacesAPI) throws -> T,
                                        assign: @escaping @MainActor @Sendable (T) -> Void) {
         guard let api else { return }
-        Task.detached {
+        inFlight += 1
+        let task = Task.detached {
+            defer { Task { @MainActor in self.inFlight -= 1 } }
             do {
                 let value = try body(api)
+                guard !Task.isCancelled else { return }
                 await MainActor.run { assign(value) }
             } catch {
                 await MainActor.run { self.error = "\(what): \(error.localizedDescription)" }
             }
         }
+        runningTasks.append(task)
     }
 
     func refreshStatus() {
@@ -243,10 +274,46 @@ final class SpacesWorkspaceModel {
         cherryPickRev = ""
     }
 
-    func stash() { run("stash") { _ = try $0.stash(message: "wip") } }
+    func stash(message: String) {
+        let text = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        run("stash") { _ = try $0.stash(message: text.isEmpty ? nil : text) }
+        stashMessage = ""
+    }
     func applyStash(_ id: String, pop: Bool = false) { run("apply stash") { try $0.stashApply(id, pop: pop) } }
     func dropStash(_ id: String) { run("drop stash") { try $0.stashDrop(id) } }
 
+    func createTag() {
+        let name = newTagName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else { return }
+        let message = newTagMessage
+        run("create tag") { _ = try $0.createTag(name, at: "HEAD", annotated: !message.isEmpty, message: message) }
+        newTagName = ""
+        newTagMessage = ""
+    }
+
+    func deleteTag(_ name: String) { run("delete tag") { try $0.deleteTag(name) } }
+
+    func compare() {
+        let from = compareFrom
+        let to = compareTo
+        guard !from.isEmpty, !to.isEmpty, from != to else { return }
+        Task {
+            do {
+                let out = try await SpacesService.shared.compare(from: from, to: to, repositoryURL: project.directoryURL)
+                self.compareOutput = out.isEmpty ? "No differences between \(from) and \(to)." : out
+            } catch {
+                self.error = "compare: \(error.localizedDescription)"
+                self.compareOutput = ""
+            }
+        }
+    }
+
+    func search() {
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return }
+        hasSearched = true
+        runValue("search", { try $0.search(SearchOps.Query(text: query)) }, assign: { self.searchResults = $0 })
+    }
     func snapshot() { run("snapshot") { _ = try $0.snapshot(message: "manual snapshot") } }
     func restoreSnapshot(_ rev: String) { run("restore snapshot") { try $0.restoreSnapshot(rev) } }
 
@@ -259,6 +326,10 @@ final class SpacesWorkspaceModel {
     func fetch() { run("fetch") { _ = try $0.fetch("origin") } }
     func pull() { run("pull") { _ = try $0.pull("origin") } }
     func push() { run("push") { _ = try $0.push("origin", refspec: "refs/heads/*:refs/heads/*") } }
+    func forcePush() {
+        guard let branch = status?.branch else { return }
+        run("force push") { _ = try $0.push("origin", refspec: "refs/heads/\(branch):refs/heads/\(branch)", force: true) }
+    }
 
     func gc() { run("gc") { _ = try $0.gc() } }
     func rebuildIndex() { run("rebuild index") { _ = try $0.rebuildIndex() } }
@@ -393,6 +464,60 @@ final class SpacesWorkspaceModel {
 
 struct SpacesWorkspaceView: View {
     @State private var model: SpacesWorkspaceModel
+    @State private var pendingAction: PendingDestructiveAction?
+
+    private enum PendingDestructiveAction: Identifiable {
+        case deleteBranch(String)
+        case deleteTag(String)
+        case dropStash(String)
+        case restoreSnapshot(String)
+        case removeRemote(String)
+        case discardFile(String)
+        case cleanUntracked
+        case forcePush
+
+        var id: String {
+            switch self {
+            case .deleteBranch(let name): return "deleteBranch:\(name)"
+            case .deleteTag(let name): return "deleteTag:\(name)"
+            case .dropStash(let id): return "dropStash:\(id)"
+            case .restoreSnapshot(let rev): return "restoreSnapshot:\(rev)"
+            case .removeRemote(let name): return "removeRemote:\(name)"
+            case .discardFile(let path): return "discardFile:\(path)"
+            case .cleanUntracked: return "cleanUntracked"
+            case .forcePush: return "forcePush"
+            }
+        }
+    }
+
+    private var pendingActionMessage: String {
+        switch pendingAction {
+        case .deleteBranch(let name): return "Delete the branch \(name)? This action cannot be reversed."
+        case .deleteTag(let name): return "Delete the tag \(name)? This does not delete the tag on any remote."
+        case .dropStash(let id): return "Drop the stash \(id)? Its changes will be lost."
+        case .restoreSnapshot(let rev): return "Restore the snapshot \(rev)? The working tree returns to that checkpoint and uncommitted changes may be lost."
+        case .removeRemote(let name): return "Remove the remote \(name)?"
+        case .discardFile(let path): return "Discard all changes to \(path)? This cannot be reversed."
+        case .cleanUntracked: return "Delete all untracked files? This cannot be reversed."
+        case .forcePush: return "Force push the current branch (\(model.status?.branch ?? "HEAD"))? Remote history will be rewritten."
+        case .none: return ""
+        }
+    }
+
+    private func confirmPendingAction() {
+        guard let action = pendingAction else { return }
+        pendingAction = nil
+        switch action {
+        case .deleteBranch(let name): model.deleteBranch(name)
+        case .deleteTag(let name): model.deleteTag(name)
+        case .dropStash(let id): model.dropStash(id)
+        case .restoreSnapshot(let rev): model.restoreSnapshot(rev)
+        case .removeRemote(let name): model.removeRemote(name)
+        case .discardFile(let path): model.restore(path)
+        case .cleanUntracked: model.clean()
+        case .forcePush: model.forcePush()
+        }
+    }
 
     init(project: Project) {
         _model = State(initialValue: SpacesWorkspaceModel(project: project))
@@ -407,10 +532,22 @@ struct SpacesWorkspaceView: View {
                 detail
             }
         }
-        .alert("Spaces", isPresented: .constant(model.error != nil || model.notice != nil)) {
+        .alert("Spaces", isPresented: Binding(
+            get: { model.error != nil || model.notice != nil },
+            set: { if !$0 { model.error = nil; model.notice = nil } }
+        )) {
             Button("OK") { model.error = nil; model.notice = nil }
         } message: {
             Text(model.error ?? model.notice ?? "")
+        }
+        .alert("Confirm", isPresented: Binding(
+            get: { pendingAction != nil },
+            set: { if !$0 { pendingAction = nil } }
+        )) {
+            Button("Confirm", role: .destructive) { confirmPendingAction() }
+            Button("Cancel", role: .cancel) { pendingAction = nil }
+        } message: {
+            Text(pendingActionMessage)
         }
     }
 
@@ -421,6 +558,18 @@ struct SpacesWorkspaceView: View {
             Text("Spaces — Native Apple Source Control")
                 .font(.headline)
             Spacer()
+            if model.isBusy {
+                ProgressView().controlSize(.small)
+                Button("Cancel") { model.cancelOperations() }
+                    .controlSize(.small)
+            }
+            Button {
+                model.refreshAll()
+            } label: {
+                Label("Refresh", systemImage: "arrow.clockwise")
+            }
+            .controlSize(.small)
+            .disabled(model.isBusy)
             if let status = model.status {
                 Text(status.branch ?? "HEAD")
                     .font(.caption.monospaced())
@@ -458,6 +607,9 @@ struct SpacesWorkspaceView: View {
                 case .overview: overview
                 case .changes: changes
                 case .branches: branchesView
+                case .tags: tagsView
+                case .compare: compareView
+                case .search: searchView
                 case .history: history
                 case .operations: operations
                 case .remotes: remotes
@@ -537,7 +689,7 @@ struct SpacesWorkspaceView: View {
                 HStack {
                     Text("Working Tree Changes").font(.headline)
                     Spacer()
-                    Button("Clean") { model.clean() }
+                    Button("Clean") { pendingAction = .cleanUntracked }
                         .controlSize(.small)
                     Button("Stage All") { model.stageAll() }
                         .controlSize(.small)
@@ -561,7 +713,7 @@ struct SpacesWorkspaceView: View {
                                 Button("Unstage") { model.unstage(entry.path) }.controlSize(.small)
                             } else {
                                 Button("Stage") { model.stage(entry.path) }.controlSize(.small)
-                                Button("Discard") { model.restore(entry.path) }
+                                Button("Discard") { pendingAction = .discardFile(entry.path) }
                                     .controlSize(.small)
                                     .foregroundStyle(.red)
                             }
@@ -657,12 +809,36 @@ struct SpacesWorkspaceView: View {
                     Button("Switch") { model.switchTo(b.name) }
                         .controlSize(.small)
                         .disabled(b.isCurrent)
-                    Button("Delete") { model.deleteBranch(b.name) }
+                    Button("Delete") { pendingAction = .deleteBranch(b.name) }
                         .controlSize(.small)
                         .disabled(b.isCurrent)
                 }
             }
         }
+    }
+
+    private var graphLaneSpans: [Int: (start: Int, end: Int)] {
+        var spans: [Int: (start: Int, end: Int)] = [:]
+        for (index, node) in model.graphNodes.enumerated() {
+            if let span = spans[node.lane] {
+                spans[node.lane] = (min(span.start, index), max(span.end, index))
+            } else {
+                spans[node.lane] = (index, index)
+            }
+        }
+        return spans
+    }
+
+    private var graphMaxLane: Int { model.graphNodes.map(\.lane).max() ?? 0 }
+
+    private var graphIndexByOID: [String: Int] {
+        var map: [String: Int] = [:]
+        for (index, node) in model.graphNodes.enumerated() { map[node.oid.hex] = index }
+        return map
+    }
+
+    private var graphByOID: [String: BranchOps.GraphNode] {
+        Dictionary(uniqueKeysWithValues: model.graphNodes.map { ($0.oid.hex, $0) })
     }
 
     private var history: some View {
@@ -671,13 +847,18 @@ struct SpacesWorkspaceView: View {
                 Text("Commit History").font(.headline).frame(maxWidth: .infinity, alignment: .leading).padding(12)
                 Divider()
                 List(model.commits, id: \.oid) { c in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(c.summary.isEmpty ? c.message : c.summary).font(.callout)
-                        HStack {
-                            Text(c.oid.hex.prefix(8)).font(.caption.monospaced()).foregroundStyle(.secondary)
-                            Text(c.author.name).font(.caption).foregroundStyle(.secondary)
-                            if c.isMerge { badge("merge", .purple) }
-                            ForEach(c.refs.prefix(3), id: \.self) { r in badge(r, .blue) }
+                    HStack(spacing: 4) {
+                        if let node = graphByOID[c.oid.hex], let rowIndex = graphIndexByOID[c.oid.hex] {
+                            CommitGraphLaneView(node: node, rowIndex: rowIndex, laneSpans: graphLaneSpans, maxLane: graphMaxLane)
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(c.summary.isEmpty ? c.message : c.summary).font(.callout)
+                            HStack {
+                                Text(c.oid.hex.prefix(8)).font(.caption.monospaced()).foregroundStyle(.secondary)
+                                Text(c.author.name).font(.caption).foregroundStyle(.secondary)
+                                if c.isMerge { badge("merge", .purple) }
+                                ForEach(c.refs.prefix(3), id: \.self) { r in badge(r, .blue) }
+                            }
                         }
                     }
                     .contentShape(Rectangle())
@@ -763,7 +944,9 @@ struct SpacesWorkspaceView: View {
             }
             Section("Stash Changes") {
                 HStack {
-                    Button("Stash Current Changes") { model.stash() }
+                    TextField("Stash message (e.g. work in progress on login flow)", text: $model.stashMessage)
+                    Button("Stash Current Changes") { model.stash(message: model.stashMessage) }
+                        .disabled(model.stashMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
                 if !model.stashes.isEmpty {
                     ForEach(model.stashes, id: \.id) { s in
@@ -775,7 +958,7 @@ struct SpacesWorkspaceView: View {
                             Spacer()
                             Button("Apply") { model.applyStash(s.id, pop: false) }
                             Button("Pop") { model.applyStash(s.id, pop: true) }
-                            Button("Drop") { model.dropStash(s.id) }.foregroundStyle(.red)
+                            Button("Drop") { pendingAction = .dropStash(s.id) }.foregroundStyle(.red)
                         }
                     }
                 }
@@ -792,7 +975,7 @@ struct SpacesWorkspaceView: View {
                                 Text("\(snap.oid.hex.prefix(8)) • \(snap.kind)").font(.caption.monospaced()).foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Button("Restore") { model.restoreSnapshot(snap.oid.hex) }
+                            Button("Restore") { pendingAction = .restoreSnapshot(snap.oid.hex) }
                         }
                     }
                 }
@@ -811,7 +994,7 @@ struct SpacesWorkspaceView: View {
                             Text(r.url).font(.caption.monospaced()).foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Button("Remove") { model.removeRemote(r.name) }
+                        Button("Remove") { pendingAction = .removeRemote(r.name) }
                             .controlSize(.small)
                     }
                 }
@@ -824,10 +1007,134 @@ struct SpacesWorkspaceView: View {
                     Button("Fetch") { model.fetch() }
                     Button("Pull") { model.pull() }
                     Button("Push") { model.push() }
+                    Button("Force Push") { pendingAction = .forcePush }
+                        .foregroundStyle(.red)
                 }
             }
         }
         .formStyle(.grouped)
+    }
+
+    private var tagsView: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Tags").font(.headline)
+                Spacer()
+                TextField("New tag (e.g. v1.2.0)", text: $model.newTagName)
+                    .textFieldStyle(.roundedBorder).frame(width: 140)
+                TextField("Message (optional, empty makes a lightweight tag)", text: $model.newTagMessage)
+                    .textFieldStyle(.roundedBorder).frame(width: 220)
+                Button("Create") { model.createTag() }
+                    .disabled(model.newTagName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+            .padding(12)
+            Divider()
+            if model.tags.isEmpty {
+                ContentUnavailableView("No Tags", systemImage: "tag", description: Text("This repository has no tags yet."))
+            } else {
+                List(model.tags, id: \.name) { tag in
+                    HStack {
+                        Image(systemName: "tag.fill").foregroundStyle(.secondary)
+                        Text(tag.name).font(.callout.monospaced())
+                        if tag.isAnnotated { badge("annotated", .blue) }
+                        Spacer()
+                        Text(tag.oid.hex.prefix(8)).font(.caption).foregroundStyle(.secondary)
+                        Button("Delete") { pendingAction = .deleteTag(tag.name) }
+                            .controlSize(.small)
+                    }
+                }
+            }
+        }
+    }
+
+    private var compareView: some View {
+        Form {
+            Section("Compare Revisions") {
+                HStack {
+                    TextField("From (branch, tag, or SHA)", text: $model.compareFrom)
+                    Text("vs")
+                    TextField("To (branch, tag, or SHA)", text: $model.compareTo)
+                    Button("Compare") { model.compare() }
+                        .disabled(model.compareFrom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.compareTo.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.compareFrom == model.compareTo || model.isBusy)
+                }
+                if model.compareOutput.isEmpty {
+                    Text("Enter two revisions to see the unified diff between them.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 0) {
+                            ForEach(Array(model.compareOutput.components(separatedBy: .newlines).enumerated()), id: \.offset) { _, line in
+                                Text(line)
+                                    .font(.system(.caption, design: .monospaced))
+                                    .foregroundStyle(diffLineColor(line))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 1)
+                                    .background(diffLineBackground(line))
+                            }
+                        }
+                    }
+                    .frame(minHeight: 200)
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .onAppear {
+            if model.compareFrom.isEmpty {
+                model.compareFrom = model.status?.branch ?? "main"
+            }
+            if model.compareTo.isEmpty {
+                model.compareTo = model.branches.first(where: { !$0.isCurrent })?.name ?? ""
+            }
+        }
+    }
+
+    private var searchView: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Search").font(.headline)
+                Spacer()
+                TextField("Search files, commits, and content…", text: $model.searchQuery)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 320)
+                    .onSubmit { model.search() }
+                Button("Search") { model.search() }
+                    .disabled(model.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || model.isBusy)
+            }
+            .padding(12)
+            Divider()
+            if model.isBusy {
+                ProgressView("Searching…")
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+            } else if model.searchResults.isEmpty {
+                ContentUnavailableView(
+                    model.hasSearched ? "No Results" : "Search this Repository",
+                    systemImage: "magnifyingglass",
+                    description: Text(model.hasSearched ? "Nothing matched \"\(model.searchQuery)\"." : "Search file names, commit messages, and file contents across the Spaces history.")
+                )
+            } else {
+                List(Array(model.searchResults.enumerated()), id: \.offset) { _, result in
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            badge(result.kind.rawValue, .blue)
+                            Text(result.title).font(.callout)
+                            Spacer()
+                            if let line = result.line {
+                                Text("line \(line)").font(.caption.monospaced()).foregroundStyle(.secondary)
+                            }
+                        }
+                        if !result.detail.isEmpty {
+                            Text(result.detail).font(.caption).foregroundStyle(.secondary)
+                        }
+                        if let path = result.path {
+                            Text(path).font(.caption.monospaced()).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+        }
     }
 
     private var maintenance: some View {
@@ -931,6 +1238,31 @@ struct SpacesWorkspaceView: View {
                     .disabled(model.consoleInput.trimmingCharacters(in: .whitespaces).isEmpty || model.isExecutingConsole)
             }
             .padding(12)
+        }
+    }
+}
+
+private struct CommitGraphLaneView: View {
+    let node: BranchOps.GraphNode
+    let rowIndex: Int
+    let laneSpans: [Int: (start: Int, end: Int)]
+    let maxLane: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(0...maxLane, id: \.self) { lane in
+                ZStack {
+                    if let span = laneSpans[lane], rowIndex >= span.start, rowIndex <= span.end {
+                        Rectangle().fill(Color.secondary.opacity(0.5)).frame(width: 1.5)
+                    }
+                    if lane == node.lane {
+                        Circle()
+                            .fill(node.parents.count > 1 ? Color.purple : Color.accentColor)
+                            .frame(width: 8, height: 8)
+                    }
+                }
+                .frame(width: 12)
+            }
         }
     }
 }

@@ -15,7 +15,14 @@ public actor SpacesService {
     public init() {}
 
     
-    public func isSpacesAvailable() async -> Bool { true }
+    public static var defaultBranchSetting: String {
+        UserDefaults.standard.string(forKey: "spacesDefaultBranch") ?? "main"
+    }
+
+    public func isSpacesAvailable(at url: URL) async -> Bool {
+        guard Repository.isRepository(at: url) else { return false }
+        return (try? Repository.open(at: url)) != nil
+    }
 
     
     public func isSpacesRepository(at url: URL) -> Bool {
@@ -115,8 +122,18 @@ public actor SpacesService {
     }
 
     public func clone(remoteURL: URL, destinationURL: URL, token: String?) async throws {
-        
-        
+        if let token, !token.isEmpty {
+            guard let scheme = remoteURL.scheme?.lowercased(),
+                  scheme == "http" || scheme == "https" || scheme == "spaces",
+                  let host = remoteURL.host, !host.isEmpty else {
+                throw SpacesError.invalidArgument("a clone token is only supported for http(s) remotes")
+            }
+            #if os(macOS)
+            try KeychainCredentialStore().save(Credentials(token: token), for: host)
+            #else
+            try FileCredentialStore().save(Credentials(token: token), for: host)
+            #endif
+        }
         _ = try CloneOps.clone(url: remoteURL.absoluteString, into: destinationURL)
     }
 
@@ -161,6 +178,27 @@ public actor SpacesService {
     public func renameBranch(_ old: String, to new: String, repositoryURL: URL) async throws {
         let (_, api) = try api(for: repositoryURL)
         try api.renameBranch(old, to: new)
+    }
+
+    public func cherryPick(rev: String, repositoryURL: URL) async throws {
+        let (_, api) = try api(for: repositoryURL)
+        _ = try api.cherryPick(rev)
+    }
+
+    public func blame(fileURL: URL, repositoryURL: URL) async throws -> [HistoryOps.BlameLine] {
+        let (repo, api) = try api(for: repositoryURL)
+        let rel = try relativePath(fileURL, repositoryURL: repositoryURL, repo: repo)
+        return try api.blame(rel)
+    }
+
+    public func showCommit(sha: String, repositoryURL: URL) async throws -> HistoryOps.ShowResult {
+        let (_, api) = try api(for: repositoryURL)
+        return try api.show(sha)
+    }
+
+    public func graph(repositoryURL: URL, limit: Int = 100) async throws -> [BranchOps.GraphNode] {
+        let (_, api) = try api(for: repositoryURL)
+        return try api.graph(limit: limit)
     }
 
     
@@ -219,9 +257,8 @@ public actor SpacesService {
     }
 
     public func forcePush(branch: String, repositoryURL: URL) async throws {
-        
-        
-        try await push(repositoryURL: repositoryURL)
+        let (_, api) = try api(for: repositoryURL)
+        _ = try api.push("origin", refspec: "refs/heads/\(branch):refs/heads/\(branch)", force: true)
     }
 
     public func rollback(to sha: String, repositoryURL: URL) async throws {
@@ -255,6 +292,16 @@ public actor SpacesService {
         return try api.tags().map {
             GitBranch(name: $0.name, isCurrent: false, isRemote: false)
         }
+    }
+
+    public func createTag(name: String, at rev: String = "HEAD", annotated: Bool = false, message: String = "", repositoryURL: URL) async throws {
+        let (_, api) = try api(for: repositoryURL)
+        _ = try api.createTag(name, at: rev, annotated: annotated, message: message)
+    }
+
+    public func deleteTag(name: String, repositoryURL: URL) async throws {
+        let (_, api) = try api(for: repositoryURL)
+        try api.deleteTag(name)
     }
 
     
@@ -334,6 +381,25 @@ public actor SpacesService {
             }
         }
         return out
+    }
+
+    public func compare(from: String, to: String, repositoryURL: URL) async throws -> String {
+        let (_, api) = try api(for: repositoryURL)
+        let diffs = try api.diff(from, to)
+        var out = ""
+        for d in diffs {
+            if let p = d.patch {
+                out += p
+            } else {
+                out += "diff --spaces a/\(d.oldPath) b/\(d.newPath)\n"
+            }
+        }
+        return out
+    }
+
+    public func search(query: String, repositoryURL: URL) async throws -> [SearchOps.Result] {
+        let (_, api) = try api(for: repositoryURL)
+        return try api.search(SearchOps.Query(text: query))
     }
 
     

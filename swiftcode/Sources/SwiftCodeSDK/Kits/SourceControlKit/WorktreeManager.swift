@@ -158,7 +158,9 @@ public final class WorktreeManager {
             }
         }
 
-        _ = try await executeGitStreaming(args: args, workingDirectory: repositoryURL)
+        guard try await executeGitStreaming(args: args, workingDirectory: repositoryURL) else {
+            throw WorktreeError.gitError("git worktree add failed.")
+        }
         appendLogStream("✓ Worktree successfully created.\n")
         await refresh(repositoryURL: repositoryURL)
     }
@@ -182,7 +184,12 @@ public final class WorktreeManager {
 
     public func moveWorktree(worktreePath: String, destinationPath: String, repositoryURL: URL) async throws {
         appendLogStream("Moving worktree from \(worktreePath) to \(destinationPath)...\n")
-        _ = try await executeGitStreaming(args: ["worktree", "move", worktreePath, destinationPath], workingDirectory: repositoryURL)
+        if await SpacesService.shared.isSpacesRepository(at: repositoryURL) {
+            throw WorktreeError.gitError("Moving a Spaces worktree is not supported: the Spaces engine has no worktree move operation, and its remove operation deletes the worktree directory, so a move cannot be rebuilt from remove plus add. Delete the worktree and create a new one at the destination; uncommitted changes in the moved worktree are not preserved.")
+        }
+        guard try await executeGitStreaming(args: ["worktree", "move", worktreePath, destinationPath], workingDirectory: repositoryURL) else {
+            throw WorktreeError.gitError("git worktree move failed.")
+        }
         appendLogStream("✓ Worktree moved successfully.\n")
         await refresh(repositoryURL: repositoryURL)
     }
@@ -202,7 +209,9 @@ public final class WorktreeManager {
 
         var args = ["worktree", "remove", worktreePath]
         if force { args.append("--force") }
-        _ = try await executeGitStreaming(args: args, workingDirectory: repositoryURL)
+        guard try await executeGitStreaming(args: args, workingDirectory: repositoryURL) else {
+            throw WorktreeError.gitError("git worktree remove failed.")
+        }
         appendLogStream("✓ Worktree removed.\n")
 
         UserDefaults.standard.removeObject(forKey: "wt_fav_\(worktreePath)")
@@ -214,28 +223,48 @@ public final class WorktreeManager {
 
     public func lockWorktree(worktreePath: String, reason: String, repositoryURL: URL) async throws {
         appendLogStream("Locking worktree at \(worktreePath) for reason: \(reason)...\n")
-        _ = try await executeGitStreaming(args: ["worktree", "lock", worktreePath, "--reason", reason], workingDirectory: repositoryURL)
+        if await SpacesService.shared.isSpacesRepository(at: repositoryURL) {
+            throw WorktreeError.gitError("Locking a worktree is not supported for Spaces repositories: the Spaces engine has no worktree lock operation.")
+        }
+        guard try await executeGitStreaming(args: ["worktree", "lock", worktreePath, "--reason", reason], workingDirectory: repositoryURL) else {
+            throw WorktreeError.gitError("git worktree lock failed.")
+        }
         appendLogStream("✓ Worktree locked.\n")
         await refresh(repositoryURL: repositoryURL)
     }
 
     public func unlockWorktree(worktreePath: String, repositoryURL: URL) async throws {
         appendLogStream("Unlocking worktree at \(worktreePath)...\n")
-        _ = try await executeGitStreaming(args: ["worktree", "unlock", worktreePath], workingDirectory: repositoryURL)
+        if await SpacesService.shared.isSpacesRepository(at: repositoryURL) {
+            throw WorktreeError.gitError("Unlocking a worktree is not supported for Spaces repositories: the Spaces engine has no worktree unlock operation.")
+        }
+        guard try await executeGitStreaming(args: ["worktree", "unlock", worktreePath], workingDirectory: repositoryURL) else {
+            throw WorktreeError.gitError("git worktree unlock failed.")
+        }
         appendLogStream("✓ Worktree unlocked.\n")
         await refresh(repositoryURL: repositoryURL)
     }
 
     public func repairWorktree(repositoryURL: URL) async throws {
         appendLogStream("Repairing worktree structures...\n")
-        _ = try await executeGitStreaming(args: ["worktree", "repair"], workingDirectory: repositoryURL)
+        if await SpacesService.shared.isSpacesRepository(at: repositoryURL) {
+            throw WorktreeError.gitError("Repairing worktrees is not supported for Spaces repositories: the Spaces engine has no worktree repair operation.")
+        }
+        guard try await executeGitStreaming(args: ["worktree", "repair"], workingDirectory: repositoryURL) else {
+            throw WorktreeError.gitError("git worktree repair failed.")
+        }
         appendLogStream("✓ Worktree structures repaired.\n")
         await refresh(repositoryURL: repositoryURL)
     }
 
     public func pruneWorktrees(repositoryURL: URL) async throws {
         appendLogStream("Pruning stale worktrees...\n")
-        _ = try await executeGitStreaming(args: ["worktree", "prune"], workingDirectory: repositoryURL)
+        if await SpacesService.shared.isSpacesRepository(at: repositoryURL) {
+            throw WorktreeError.gitError("Pruning worktrees is not supported for Spaces repositories: the Spaces engine has no worktree prune operation.")
+        }
+        guard try await executeGitStreaming(args: ["worktree", "prune"], workingDirectory: repositoryURL) else {
+            throw WorktreeError.gitError("git worktree prune failed.")
+        }
         appendLogStream("✓ Stale worktree records pruned.\n")
         await refresh(repositoryURL: repositoryURL)
     }

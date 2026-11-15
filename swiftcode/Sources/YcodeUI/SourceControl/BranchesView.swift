@@ -41,6 +41,14 @@ struct BranchesView: View {
     @State private var filterMode: BranchFilter = .all
     @State private var selectedBranches: Set<String> = []
 
+    @State private var branchPendingDelete: GitBranch?
+    @State private var resetPending: (mode: String, target: String)?
+    @State private var showForcePushConfirm = false
+    @State private var showStashSheet = false
+    @State private var stashMessage = ""
+    @State private var compareOutput = ""
+    @State private var showCompareResult = false
+
     @State private var showAICleanupSheet = false
     @State private var aiCleanupPlan = ""
     @State private var isGeneratingAICleanup = false
@@ -125,11 +133,16 @@ struct BranchesView: View {
                 .controlSize(.small)
                 .frame(width: 140)
 
+                if gitViewModel.isScanning || gitViewModel.isBusy {
+                    ProgressView().controlSize(.small)
+                }
+
                 Button {
                     gitViewModel.refreshBranches()
                 } label: {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
+                .disabled(gitViewModel.isScanning)
 
                 Button {
                     showCreateBranchSheet = true
@@ -195,6 +208,51 @@ struct BranchesView: View {
                 .controlSize(.small)
 
                 Spacer()
+
+                Button {
+                    runViewModelOperation("Fetch") { try await gitViewModel.fetch() }
+                } label: {
+                    Label("Fetch", systemImage: "arrow.down.to.line")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(gitViewModel.isBusy)
+
+                Button {
+                    runViewModelOperation("Pull") { try await gitViewModel.pull() }
+                } label: {
+                    Label("Pull", systemImage: "arrow.down.circle")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(gitViewModel.isBusy)
+
+                Button {
+                    runViewModelOperation("Push") { try await gitViewModel.push() }
+                } label: {
+                    Label("Push", systemImage: "arrow.up.circle")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(gitViewModel.isBusy)
+
+                Button {
+                    showForcePushConfirm = true
+                } label: {
+                    Label("Force Push", systemImage: "exclamationmark.arrow.up")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(gitViewModel.isBusy)
+
+                Button {
+                    showStashSheet = true
+                } label: {
+                    Label("Stash", systemImage: "archivebox")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(gitViewModel.isBusy)
 
                 Button {
                     showAICleanupSheet = true
@@ -327,7 +385,7 @@ struct BranchesView: View {
                                         .controlSize(.small)
 
                                         Button("Delete") {
-                                            gitViewModel.deleteBranch(branch)
+                                            branchPendingDelete = branch
                                         }
                                         .buttonStyle(.bordered)
                                         .controlSize(.small)
@@ -368,6 +426,47 @@ struct BranchesView: View {
         .sheet(isPresented: $showCompareSheet) { compareSheetView }
         .sheet(isPresented: $showInteractiveRebase) { interactiveRebaseSheetView }
         .sheet(isPresented: $showAICleanupSheet) { aiCleanupSheetView }
+        .sheet(isPresented: $showStashSheet) { stashSheetView }
+        .sheet(isPresented: $showCompareResult) { compareResultView }
+        .alert("Delete branch?", isPresented: Binding(
+            get: { branchPendingDelete != nil },
+            set: { if !$0 { branchPendingDelete = nil } }
+        )) {
+            Button("Delete", role: .destructive) {
+                if let branch = branchPendingDelete {
+                    gitViewModel.deleteBranch(branch)
+                    branchPendingDelete = nil
+                }
+            }
+            Button("Cancel", role: .cancel) { branchPendingDelete = nil }
+        } message: {
+            Text("This deletes the local branch \(branchPendingDelete?.name ?? ""). This action cannot be reversed.")
+        }
+        .alert("Reset branch?", isPresented: Binding(
+            get: { resetPending != nil },
+            set: { if !$0 { resetPending = nil } }
+        )) {
+            Button("Reset", role: .destructive) {
+                if let pending = resetPending {
+                    executeGitOperation(arguments: ["reset", pending.mode, pending.target])
+                    resetPending = nil
+                    showResetSheet = false
+                }
+            }
+            Button("Cancel", role: .cancel) { resetPending = nil }
+        } message: {
+            Text("This resets the current branch to \(resetPending?.target ?? "") with \(resetPending?.mode ?? ""). A hard reset discards uncommitted changes.")
+        }
+        .alert("Force push?", isPresented: $showForcePushConfirm) {
+            Button("Force Push", role: .destructive) {
+                runViewModelOperation("Force Push") {
+                    try await gitViewModel.forcePush(branch: gitViewModel.status?.branchName ?? "main")
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Force push rewrites the remote history of \(gitViewModel.status?.branchName ?? "main"). Other collaborators may lose work.")
+        }
     }
 
     private func isStale(_ branch: GitBranch) -> Bool {
@@ -606,8 +705,7 @@ struct BranchesView: View {
             .padding()
 
             Button {
-                executeGitOperation(arguments: ["reset", sourceBranch, targetBranch])
-                showResetSheet = false
+                resetPending = (mode: sourceBranch, target: targetBranch)
             } label: {
                 Text("Execute Reset")
                     .fontWeight(.bold)
@@ -654,8 +752,8 @@ struct BranchesView: View {
             .padding()
 
             Button {
-                executeGitOperation(arguments: ["diff", "\(sourceBranch)..\(targetBranch)", "--stat"])
                 showCompareSheet = false
+                runCompare()
             } label: {
                 Text("Compare & Log Diff")
                     .fontWeight(.bold)
@@ -663,7 +761,7 @@ struct BranchesView: View {
             }
             .buttonStyle(.borderedProminent)
             .tint(Color.accentColor)
-            .disabled(sourceBranch.isEmpty || targetBranch.isEmpty)
+            .disabled(sourceBranch.isEmpty || targetBranch.isEmpty || sourceBranch == targetBranch)
         }
         .padding(24)
         .frame(width: 460)
@@ -776,8 +874,130 @@ struct BranchesView: View {
         .frame(width: 480)
     }
 
+    private func runViewModelOperation(_ label: String, _ work: @escaping () async throws -> Void) {
+        Task {
+            do {
+                try await work()
+                successMessage = "\(label) completed."
+                showSuccess = true
+            } catch {
+                errorMessage = "\(label) failed: \(error.localizedDescription)"
+                showError = true
+            }
+        }
+    }
+
+    private func runCompare() {
+        guard let proj = project else { return }
+        isExecutingGitCmd = true
+        compareOutput = ""
+        Task {
+            do {
+                if gitViewModel.usesSpaces {
+                    let from = sourceBranch
+                    let to = targetBranch
+                    compareOutput = try await SpacesService.shared.compare(from: from, to: to, repositoryURL: proj.directoryURL)
+                    if compareOutput.isEmpty {
+                        compareOutput = "No differences between \(from) and \(to)."
+                    }
+                } else {
+                    let gitBinary = URL(fileURLWithPath: AppSettings.shared.gitPath.isEmpty ? "/usr/bin/git" : AppSettings.shared.gitPath)
+                    let result = try await ProcessRunnerTool.shared.run(
+                        executableURL: gitBinary,
+                        arguments: ["diff", "\(sourceBranch)..\(targetBranch)"],
+                        workingDirectory: proj.directoryURL
+                    )
+                    guard result.exitCode == 0 else {
+                        throw AppError.gitError(result.stderr)
+                    }
+                    compareOutput = result.stdout.isEmpty ? "No differences between \(sourceBranch) and \(targetBranch)." : result.stdout
+                }
+                showCompareResult = true
+            } catch {
+                errorMessage = "Compare failed: \(error.localizedDescription)"
+                showError = true
+            }
+            isExecutingGitCmd = false
+        }
+    }
+
+    private var stashSheetView: some View {
+        VStack(spacing: 20) {
+            HStack {
+                Label("Stash Changes", systemImage: "archivebox")
+                    .font(.headline)
+                    .foregroundStyle(Color.accentColor)
+                Spacer()
+                Button("Cancel") { showStashSheet = false }
+                    .buttonStyle(.bordered)
+            }
+
+            TextField("Stash message (e.g. work in progress on login flow)", text: $stashMessage)
+                .textFieldStyle(.roundedBorder)
+
+            Button {
+                let message = stashMessage
+                stashMessage = ""
+                showStashSheet = false
+                runViewModelOperation("Stash") { try await gitViewModel.stash(message: message) }
+            } label: {
+                Text("Stash")
+                    .fontWeight(.semibold)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Color.accentColor)
+            .disabled(stashMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        }
+        .padding(24)
+        .frame(width: 400)
+    }
+
+    private var compareResultView: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Label("Compare \(sourceBranch) vs \(targetBranch)", systemImage: "arrow.left.and.right")
+                    .font(.headline)
+                Spacer()
+                Button("Done") { showCompareResult = false }
+                    .buttonStyle(.bordered)
+            }
+            .padding(16)
+            Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(compareOutput.components(separatedBy: .newlines).enumerated()), id: \.offset) { _, line in
+                        Text(line)
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(compareLineColor(line))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 1)
+                            .background(compareLineBackground(line))
+                    }
+                }
+            }
+            .background(Color.black.opacity(0.85))
+        }
+        .frame(width: 700, height: 500)
+    }
+
+    private func compareLineColor(_ line: String) -> Color {
+        if line.hasPrefix("+") && !line.hasPrefix("+++") { return .green }
+        if line.hasPrefix("-") && !line.hasPrefix("---") { return .red }
+        if line.hasPrefix("@@") { return .blue }
+        return .primary
+    }
+
+    private func compareLineBackground(_ line: String) -> Color {
+        if line.hasPrefix("+") && !line.hasPrefix("+++") { return Color.green.opacity(0.08) }
+        if line.hasPrefix("-") && !line.hasPrefix("---") { return Color.red.opacity(0.08) }
+        return .clear
+    }
+
     private func executeGitOperation(arguments: [String]) {
         guard let proj = project else { return }
+        guard !isExecutingGitCmd else { return }
         isExecutingGitCmd = true
 
         if gitViewModel.usesSpaces {
@@ -796,6 +1016,8 @@ struct BranchesView: View {
                                 try await SpacesService.shared.deleteBranch(name: b, repositoryURL: proj.directoryURL)
                             }
                             commandLog = "Success! Deleted branches: \(arguments.dropFirst(2).joined(separator: ", "))"
+                        } else {
+                            commandLog = "Unsupported Spaces branch operation: \(arguments.joined(separator: " "))"
                         }
                     case "merge":
                         if arguments.count >= 2 {
@@ -809,6 +1031,12 @@ struct BranchesView: View {
                             try await SpacesService.shared.rebase(onto: target, repositoryURL: proj.directoryURL)
                             commandLog = "Success! Rebased onto \(target)"
                         }
+                    case "cherry-pick":
+                        if arguments.count >= 2 {
+                            let rev = arguments[1]
+                            try await SpacesService.shared.cherryPick(rev: rev, repositoryURL: proj.directoryURL)
+                            commandLog = "Success! Cherry-picked \(rev)"
+                        }
                     case "reset":
                         if arguments.count >= 3 {
                             let target = arguments[2]
@@ -817,11 +1045,18 @@ struct BranchesView: View {
                         }
                     case "diff":
                         if arguments.count >= 2 {
-                            let diff = try await SpacesService.shared.getDiff(repositoryURL: proj.directoryURL)
-                            commandLog = diff.map { $0.header + "\n" + $0.lines.joined(separator: "\n") }.joined(separator: "\n")
+                            let range = arguments[1]
+                            let parts = range.components(separatedBy: "..")
+                            if parts.count == 2 {
+                                let diff = try await SpacesService.shared.getDiffBetween(from: parts[0], to: parts[1], repositoryURL: proj.directoryURL)
+                                commandLog = diff.isEmpty ? "No differences between \(parts[0]) and \(parts[1])." : diff
+                            } else {
+                                let diff = try await SpacesService.shared.getDiff(repositoryURL: proj.directoryURL)
+                                commandLog = diff.map { $0.header + "\n" + $0.lines.joined(separator: "\n") }.joined(separator: "\n")
+                            }
                         }
                     default:
-                        commandLog = "Spaces operation executed."
+                        commandLog = "Unsupported Spaces operation: \(arguments.joined(separator: " "))"
                     }
                 } catch {
                     commandLog = "Execution failed:\n\(error.localizedDescription)"
