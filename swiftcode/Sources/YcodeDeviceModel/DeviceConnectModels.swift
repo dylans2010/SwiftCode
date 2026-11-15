@@ -213,6 +213,7 @@ public struct DeviceMetrics: Codable, Sendable, Hashable {
     public var activeThreads: Int
     public var diskAvailable: Double
     public var isAvailable: Bool
+    public var unavailableReason: String?
 
     public init(
         cpuUsage: Double = 0,
@@ -220,7 +221,8 @@ public struct DeviceMetrics: Codable, Sendable, Hashable {
         batteryLevel: Double = 100,
         activeThreads: Int = 1,
         diskAvailable: Double = 0,
-        isAvailable: Bool = true
+        isAvailable: Bool = true,
+        unavailableReason: String? = nil
     ) {
         self.cpuUsage = cpuUsage
         self.memoryUsage = memoryUsage
@@ -228,11 +230,30 @@ public struct DeviceMetrics: Codable, Sendable, Hashable {
         self.activeThreads = activeThreads
         self.diskAvailable = diskAvailable
         self.isAvailable = isAvailable
+        self.unavailableReason = unavailableReason
     }
 
     public static let unavailable = DeviceMetrics(
         cpuUsage: 0, memoryUsage: 0, batteryLevel: 0,
-        activeThreads: 0, diskAvailable: 0, isAvailable: false)
+        activeThreads: 0, diskAvailable: 0, isAvailable: false,
+        unavailableReason: "Apple exposes no per-process CPU, memory, battery, or thread telemetry for apps on a tethered device; only process liveness is observable.")
+
+    public static func unavailable(reason: String) -> DeviceMetrics {
+        DeviceMetrics(
+            cpuUsage: 0, memoryUsage: 0, batteryLevel: 0,
+            activeThreads: 0, diskAvailable: 0, isAvailable: false,
+            unavailableReason: reason)
+    }
+}
+
+public enum SimulatorDefaultsValue {
+    public static func parseBool(_ output: String) -> Bool? {
+        switch output.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "1", "true", "yes", "on": return true
+        case "0", "false", "no", "off": return false
+        default: return nil
+        }
+    }
 }
 
 public struct DeviceSession: Identifiable, Codable, Sendable, Hashable {

@@ -248,8 +248,33 @@ public final class DeviceConnectEngine: Sendable {
 public actor DeviceDiscovery {
     private var isDiscovering = false
     private var timer: Task<Void, Never>?
+    private var previousDevices: [ConnectedDevice] = []
+    private var hasPreviousSnapshot = false
 
     public init() {}
+
+    public static func disconnectedDevices(previous: [ConnectedDevice], current: [ConnectedDevice]) -> [ConnectedDevice] {
+        let currentIDs = Set(current.map(\.udid))
+        return previous.filter { !currentIDs.contains($0.udid) }
+    }
+
+    public static func newlyConnectedDevices(previous: [ConnectedDevice], current: [ConnectedDevice]) -> [ConnectedDevice] {
+        let previousIDs = Set(previous.map(\.udid))
+        return current.filter { !previousIDs.contains($0.udid) }
+    }
+
+    private func noteDiscovered(_ devices: [ConnectedDevice]) {
+        if hasPreviousSnapshot {
+            for gone in Self.disconnectedDevices(previous: previousDevices, current: devices) {
+                DeviceConnectNotificationCenter.shared.post(name: DeviceConnectNotificationCenter.deviceDisconnected, userInfo: ["udid": gone.udid, "device": gone])
+            }
+            for arrived in Self.newlyConnectedDevices(previous: previousDevices, current: devices) {
+                DeviceConnectNotificationCenter.shared.post(name: DeviceConnectNotificationCenter.deviceConnected, userInfo: ["udid": arrived.udid, "device": arrived])
+            }
+        }
+        previousDevices = devices
+        hasPreviousSnapshot = true
+    }
 
     public func startContinuousDiscovery(interval: TimeInterval = 10, onDiscover: @escaping @Sendable ([ConnectedDevice]) -> Void, onError: (@Sendable (Error) -> Void)? = nil) {
         guard !isDiscovering else { return }
@@ -259,6 +284,7 @@ public actor DeviceDiscovery {
             while !Task.isCancelled {
                 do {
                     let devices = try await DiscoverDevicesCommand().execute()
+                    self.noteDiscovered(devices)
                     onDiscover(devices)
                 } catch {
                     onError?(error)
@@ -273,6 +299,8 @@ public actor DeviceDiscovery {
         timer?.cancel()
         timer = nil
         isDiscovering = false
+        previousDevices = []
+        hasPreviousSnapshot = false
     }
 }
 
@@ -315,7 +343,7 @@ public actor RuntimeCoordinator {
 
         monitoringTasks[deviceUDID] = Task { [deviceUDID, bundleID, pid, onStateChanged, onMetrics] in
             onStateChanged(.running)
-            onMetrics(.unavailable)
+            onMetrics(.unavailable(reason: "Apple exposes no per-process CPU, memory, battery, or thread telemetry for apps on a tethered device; only process liveness is observable via kill(pid, 0)."))
 
             while !Task.isCancelled {
                 if !Self.processIsAlive(pid: pid) {

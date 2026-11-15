@@ -298,6 +298,11 @@ public actor SimctlService {
     public func captureScreenshot(udid: String) async throws -> URL {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent("swiftcode-screenshot-\(udid)-\(UUID().uuidString).png")
+        try await captureScreenshot(udid: udid, to: url)
+        return url
+    }
+
+    public func captureScreenshot(udid: String, to url: URL) async throws {
         let command = SimulatorCommand.screenshot(udid: udid, path: url.path)
         let result = try await executor.execute(command)
         if result.exitCode != 0 {
@@ -306,6 +311,58 @@ public actor SimctlService {
         guard FileManager.default.fileExists(atPath: url.path) else {
             throw SimulatorError.simctlFailed(reason: "simctl reported success but no screenshot file was created.")
         }
-        return url
+    }
+
+    public func fetchInstalledApplications(udid: String, platform: String) async throws -> [SimulatorApplication] {
+        let command = SimulatorCommand.listApps(udid: udid)
+        let result = try await executor.execute(command)
+        guard result.exitCode == 0 else {
+            logger.error("List apps command returned non-zero code \(result.exitCode): \(result.errorOutput)")
+            throw SimulatorError.simctlFailed(reason: "List apps command returned non-zero code. Output: \(result.errorOutput)")
+        }
+        guard let data = result.output.data(using: .utf8) else {
+            throw SimulatorError.simctlFailed(reason: "Invalid listapps response encoding")
+        }
+        return try parseInstalledApplications(data: data, platform: platform)
+    }
+
+    public func parseInstalledApplications(data: Data, platform: String) throws -> [SimulatorApplication] {
+        let plist: Any
+        do {
+            plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+        } catch {
+            logger.error("[FAILED] parsing simctl listapps output: \(error.localizedDescription)")
+            throw SimulatorError.simctlFailed(reason: "listapps output is not a valid property list: \(error.localizedDescription)")
+        }
+        guard let appsByID = plist as? [String: Any] else {
+            throw SimulatorError.simctlFailed(reason: "listapps output is not a dictionary keyed by bundle identifier.")
+        }
+        var apps: [SimulatorApplication] = []
+        for (bundleID, record) in appsByID {
+            guard !bundleID.isEmpty, let info = record as? [String: Any] else { continue }
+            let displayName = (info["CFBundleDisplayName"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+            let bundleName = (info["CFBundleName"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+            let name = displayName ?? bundleName ?? bundleID
+            let path = info["Path"] as? String ?? ""
+            let shortVersion = (info["CFBundleShortVersionString"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+            let version = shortVersion ?? info["CFBundleVersion"] as? String ?? ""
+            apps.append(SimulatorApplication(bundleIdentifier: bundleID, name: name, path: path, version: version, targetPlatform: platform))
+        }
+        apps.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        return apps
+    }
+
+    public func cloneDevice(sourceUDID: String, newName: String) async throws -> String {
+        let command = SimulatorCommand.clone(udid: sourceUDID, name: newName)
+        let result = try await executor.execute(command)
+        let output = result.output.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard result.exitCode == 0 else {
+            logger.error("Clone command returned non-zero code \(result.exitCode): \(result.errorOutput)")
+            throw SimulatorError.simctlFailed(reason: result.errorOutput.isEmpty ? "simctl clone failed with exit code \(result.exitCode)." : result.errorOutput)
+        }
+        guard !output.isEmpty else {
+            throw SimulatorError.simctlFailed(reason: "simctl clone succeeded but returned no UDID for the new device.")
+        }
+        return output
     }
 }

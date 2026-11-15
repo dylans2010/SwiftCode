@@ -1,19 +1,32 @@
+import AppKit
 import YcodeDeviceModel
 import SwiftUI
+
+public struct DeviceConsoleFileExport {
+    public static func save(text: String, suggestedName: String) -> String? {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = suggestedName
+        panel.canCreateDirectories = true
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        do {
+            try text.write(to: url, atomically: true, encoding: .utf8)
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
+    }
+}
 
 public struct DeviceConnectConsole: View {
     @State private var consoleManager = ConsoleManager.shared
     @State private var searchText = ""
     @State private var filterSeverity: DeviceLog.Severity? = nil
+    @State private var exportError: String? = nil
 
     public init() {}
 
     private var filteredLogs: [DeviceLog] {
-        let logs = consoleManager.selectedConsoleTab == 0 ? consoleManager.buildLogs : consoleManager.runtimeLogs
-        return logs.filter { log in
-            (searchText.isEmpty || log.message.localizedCaseInsensitiveContains(searchText)) &&
-            (filterSeverity == nil || log.severity == filterSeverity)
-        }
+        consoleManager.visibleLogs(searchText: searchText, severity: filterSeverity)
     }
 
     public var body: some View {
@@ -28,6 +41,10 @@ public struct DeviceConnectConsole: View {
 
                 Spacer()
 
+                TextField("Search", text: $searchText)
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 160)
+
                 Picker("Severity", selection: $filterSeverity) {
                     Text("All").tag(nil as DeviceLog.Severity?)
                     Text("Info").tag(DeviceLog.Severity.info as DeviceLog.Severity?)
@@ -37,9 +54,32 @@ public struct DeviceConnectConsole: View {
                 .frame(width: 150)
 
                 Button(action: {
-                    let logsText = filteredLogs.map { log in
-                        "[\(formattedTime(log.timestamp))] [\(log.severity.rawValue)] \(log.message)"
-                    }.joined(separator: "\n")
+                    if consoleManager.isPaused {
+                        consoleManager.resume()
+                    } else {
+                        consoleManager.pause()
+                    }
+                }) {
+                    Label(consoleManager.isPaused ? "Resume" : "Pause", systemImage: consoleManager.isPaused ? "play.fill" : "pause.fill")
+                }
+                .buttonStyle(.bordered)
+                .help(consoleManager.isPaused ? "Resume appending new log lines" : "Pause appending new log lines; incoming lines are buffered")
+
+                Button(action: {
+                    let text = consoleManager.exportText(searchText: searchText, severity: filterSeverity)
+                    if let error = DeviceConsoleFileExport.save(text: text, suggestedName: "device-connect-logs.txt") {
+                        exportError = "Export failed: \(error)"
+                    } else {
+                        exportError = nil
+                    }
+                }) {
+                    Label("Export", systemImage: "square.and.arrow.up")
+                }
+                .buttonStyle(.bordered)
+                .help("Write the currently filtered log lines to a file")
+
+                Button(action: {
+                    let logsText = DeviceConnectConsoleManager.formattedText(filteredLogs)
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(logsText, forType: .string)
                 }) {
@@ -65,6 +105,24 @@ public struct DeviceConnectConsole: View {
             }
             .padding(10)
             .liquidGlass(style: .standard, cornerRadius: 0)
+
+            if consoleManager.isPaused {
+                Text("Paused — incoming log lines are buffered and will appear on Resume.")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+            }
+
+            if let exportError {
+                Text(exportError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+            }
 
             Divider()
 
@@ -93,7 +151,7 @@ public struct DeviceConnectConsole: View {
                     .padding()
                 }
                 .onChange(of: filteredLogs.count) { _, _ in
-                    if let last = filteredLogs.last {
+                    if !consoleManager.isPaused, let last = filteredLogs.last {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }

@@ -10,7 +10,6 @@ struct DeviceConnectQuickView: View {
     @State private var deploymentManager = DeviceConnectDeploymentManager.shared
     @State private var buildManager = DeviceConnectBuildManager.shared
     @State private var runtimeManager = DeviceConnectRuntimeManager.shared
-    @State private var consoleManager = DeviceConnectConsoleManager.shared
     @State private var environmentManager = DeviceConnectEnvironmentManager.shared
     @State private var sessionManager = DeviceConnectSessionManager.shared
     @State private var historyManager = DeviceConnectHistoryManager.shared
@@ -235,27 +234,8 @@ struct DeviceConnectQuickView: View {
 
     private var consoleSection: some View {
         VStack(spacing: 0) {
-            Picker("Console", selection: $consoleManager.selectedConsoleTab) {
-                Text("Build").tag(0)
-                Text("Runtime").tag(1)
-            }
-            .pickerStyle(.segmented)
-            .padding(8)
-            List(consoleManager.selectedConsoleTab == 0 ? consoleManager.buildLogs : consoleManager.runtimeLogs) { log in
-                HStack(alignment: .top, spacing: 6) {
-                    Text(log.timestamp, style: .time)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("[\(log.severity.rawValue)]")
-                        .font(.caption)
-                        .foregroundStyle(log.severity == .error ? .red : log.severity == .warning ? .orange : .secondary)
-                    Text(log.message)
-                        .font(.body.monospaced())
-                        .textSelection(.enabled)
-                }
-            }
+            DeviceConnectConsole()
             HStack {
-                Button("Clear") { consoleManager.clearLogs() }
                 Spacer()
                 Button("Diagnostics Report") {
                     Task {

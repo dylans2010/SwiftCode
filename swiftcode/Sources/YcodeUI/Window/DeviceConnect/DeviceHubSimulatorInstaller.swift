@@ -131,6 +131,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
     @Published public var availableDeviceTypes: [(name: String, identifier: String)] = []
     @Published public var deviceTypeRecords: [DeviceTypeRecord] = []
     @Published public var availableRuntimes: [(name: String, identifier: String)] = []
+    @Published public var existingSimulatorNames: [String] = []
     @Published public var platformStatuses: [DeviceHubPlatform: PlatformStatus] = [:]
     @Published public var isQueryingPlatforms: Bool = false
 
@@ -500,6 +501,44 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
     }
 
     
+
+    public static func parseExistingSimulatorNames(from jsonData: Data) -> [String] {
+        guard let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+              let devices = json["devices"] as? [String: [[String: Any]]] else { return [] }
+        var names: [String] = []
+        for list in devices.values {
+            for device in list {
+                if let name = device["name"] as? String, !name.isEmpty {
+                    names.append(name)
+                }
+            }
+        }
+        return names
+    }
+
+    public static func fetchExistingSimulatorNames() async throws -> [String] {
+        let result = try await DeviceConnectProcessRunner.shared.run(
+            executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+            arguments: ["simctl", "list", "-j", "devices"],
+            timeout: 30
+        )
+        guard result.exitCode == 0, let data = result.stdout.data(using: .utf8) else {
+            let detail = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+            throw NSError(domain: "SimulatorInstaller", code: Int(result.exitCode),
+                          userInfo: [NSLocalizedDescriptionKey: detail.isEmpty ? "Failed to list existing simulators" : detail])
+        }
+        return parseExistingSimulatorNames(from: data)
+    }
+
+    public func refreshExistingSimulatorNames() {
+        Task {
+            if let names = try? await Self.fetchExistingSimulatorNames() {
+                await MainActor.run {
+                    self.existingSimulatorNames = names
+                }
+            }
+        }
+    }
 
     public static func createSimulator(name: String, deviceTypeID: String, runtimeID: String) async throws -> String {
         let result = try await DeviceConnectProcessRunner.shared.run(
@@ -913,6 +952,69 @@ public struct InstallSimulatorSheet: View {
     }
 }
 
+public enum SimulatorCreateValidation {
+    public static func runtimeFamily(identifier: String, name: String) -> String? {
+        let haystack = (identifier + " " + name).lowercased()
+        if haystack.contains("watchos") || haystack.contains("watch") { return "watchOS" }
+        if haystack.contains("tvos") { return "tvOS" }
+        if haystack.contains("xros") || haystack.contains("visionos") || haystack.contains("vision") { return "visionOS" }
+        if haystack.contains("ios") { return "iOS" }
+        return nil
+    }
+
+    public static func expectedRuntimeFamily(productFamily: String) -> String? {
+        let family = productFamily.lowercased()
+        if family.contains("watch") { return "watchOS" }
+        if family.contains("tv") { return "tvOS" }
+        if family.contains("vision") { return "visionOS" }
+        if family.contains("iphone") || family.contains("ipad") { return "iOS" }
+        return nil
+    }
+
+    public static func runtimeFamily(for platform: DeviceHubPlatform) -> String {
+        switch platform {
+        case .iOS, .iPadOS: return "iOS"
+        case .watchOS: return "watchOS"
+        case .tvOS: return "tvOS"
+        case .visionOS: return "visionOS"
+        }
+    }
+
+    public static func isCompatible(deviceType: DeviceTypeRecord, runtimeIdentifier: String, runtimeName: String) -> Bool {
+        guard let expected = expectedRuntimeFamily(productFamily: deviceType.productFamily),
+              let actual = runtimeFamily(identifier: runtimeIdentifier, name: runtimeName) else { return false }
+        return expected == actual
+    }
+
+    public static func duplicateExistingName(_ name: String, existingNames: [String]) -> String? {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+        return existingNames.first { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == trimmed.lowercased() }
+    }
+
+    public static func validationError(
+        name: String,
+        deviceType: DeviceTypeRecord?,
+        runtimeName: String?,
+        runtimeIdentifier: String?,
+        existingNames: [String]
+    ) -> String? {
+        guard let deviceType, let runtimeName, let runtimeIdentifier else {
+            return "Select a device type and a runtime before creating a simulator."
+        }
+        if !isCompatible(deviceType: deviceType, runtimeIdentifier: runtimeIdentifier, runtimeName: runtimeName) {
+            if let expected = expectedRuntimeFamily(productFamily: deviceType.productFamily) {
+                return "\(deviceType.name) cannot run on \(runtimeName). Choose a \(expected) runtime for this device type."
+            }
+            return "\(deviceType.name) cannot run on \(runtimeName). Choose a runtime for this device type."
+        }
+        if let existing = duplicateExistingName(name, existingNames: existingNames) {
+            return "A simulator named “\(existing)” already exists. Choose a different name."
+        }
+        return nil
+    }
+}
+
 public struct CreateSimulatorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject private var installer = DeviceHubSimulatorInstaller.shared
@@ -949,6 +1051,36 @@ public struct CreateSimulatorSheet: View {
                 return record.productFamily == "Apple Vision" || record.name.contains("Vision")
             }
         }
+    }
+
+    private var filteredRuntimes: [(name: String, identifier: String)] {
+        let family = SimulatorCreateValidation.runtimeFamily(for: selectedPlatform)
+        return installer.availableRuntimes.filter { runtime in
+            SimulatorCreateValidation.runtimeFamily(identifier: runtime.identifier, name: runtime.name) == family
+        }
+    }
+
+    private var selectedDeviceTypeRecord: DeviceTypeRecord? {
+        filteredDeviceTypes.first { $0.identifier == selectedDeviceType }
+    }
+
+    private var selectedRuntimeRecord: (name: String, identifier: String)? {
+        filteredRuntimes.first { $0.identifier == selectedRuntime }
+    }
+
+    private var createValidationMessage: String? {
+        let trimmedName = simulatorName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return nil }
+        guard !selectedDeviceType.isEmpty, !selectedRuntime.isEmpty else {
+            return "Select a device type and a runtime before creating a simulator."
+        }
+        return SimulatorCreateValidation.validationError(
+            name: trimmedName,
+            deviceType: selectedDeviceTypeRecord,
+            runtimeName: selectedRuntimeRecord?.name,
+            runtimeIdentifier: selectedRuntimeRecord?.identifier,
+            existingNames: installer.existingSimulatorNames
+        )
     }
 
     public var body: some View {
@@ -1023,10 +1155,10 @@ public struct CreateSimulatorSheet: View {
                         .font(.subheadline)
                         .fontWeight(.medium)
                     Picker("", selection: $selectedRuntime) {
-                        if installer.availableRuntimes.isEmpty {
-                            Text("Default / Latest Installed Runtime").tag("")
+                        if filteredRuntimes.isEmpty {
+                            Text(installer.availableRuntimes.isEmpty ? "Loading runtimes…" : "No compatible runtime available").tag("")
                         }
-                        ForEach(installer.availableRuntimes, id: \.identifier) { r in
+                        ForEach(filteredRuntimes, id: \.identifier) { r in
                             Text(r.name).tag(r.identifier)
                         }
                     }
@@ -1053,7 +1185,7 @@ public struct CreateSimulatorSheet: View {
                     .cornerRadius(6)
                 }
 
-                if let err = errorMessage {
+                if let err = createValidationMessage ?? errorMessage {
                     Text(err)
                         .font(.caption)
                         .foregroundStyle(.red)
@@ -1075,7 +1207,7 @@ public struct CreateSimulatorSheet: View {
                     create()
                 }
                 .buttonStyle(.borderedProminent)
-                .disabled(simulatorName.trimmingCharacters(in: .whitespaces).isEmpty || isCreating)
+                .disabled(simulatorName.trimmingCharacters(in: .whitespaces).isEmpty || selectedDeviceType.isEmpty || selectedRuntime.isEmpty || createValidationMessage != nil || isCreating)
             }
             .padding(.horizontal)
             .padding(.bottom)
@@ -1083,16 +1215,23 @@ public struct CreateSimulatorSheet: View {
         .frame(width: 500, height: selectedPlatform == .iPadOS ? 430 : 380)
         .onAppear {
             installer.fetchAvailableTypesAndRuntimes()
+            installer.refreshExistingSimulatorNames()
             updateSelectionForPlatform()
         }
         .onChange(of: installer.deviceTypeRecords.count) { _ in
             updateSelectionForPlatform()
         }
+        .onChange(of: installer.availableRuntimes.count) { _ in
+            updateSelectionForPlatform()
+        }
     }
 
     private func updateSelectionForPlatform() {
-        if let first = filteredDeviceTypes.first?.identifier {
-            selectedDeviceType = first
+        if selectedDeviceType.isEmpty || !filteredDeviceTypes.contains(where: { $0.identifier == selectedDeviceType }) {
+            selectedDeviceType = filteredDeviceTypes.first?.identifier ?? ""
+        }
+        if selectedRuntime.isEmpty || !filteredRuntimes.contains(where: { $0.identifier == selectedRuntime }) {
+            selectedRuntime = filteredRuntimes.first?.identifier ?? ""
         }
         updateDefaultName()
     }
@@ -1100,24 +1239,41 @@ public struct CreateSimulatorSheet: View {
     private func updateDefaultName() {
         if let chosen = filteredDeviceTypes.first(where: { $0.identifier == selectedDeviceType }) {
             simulatorName = "\(chosen.name) (\(selectedPlatform.title))"
-        } else if selectedPlatform == .iPadOS {
-            simulatorName = "iPad Pro 13-inch (iPadOS)"
-        } else {
-            simulatorName = "iPhone 16 Pro (iOS)"
         }
     }
 
     private func create() {
-        guard !simulatorName.isEmpty else { return }
+        let name = simulatorName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty else {
+            errorMessage = "Enter a name for the simulator."
+            return
+        }
+        guard !selectedDeviceType.isEmpty, !selectedRuntime.isEmpty else {
+            errorMessage = "Select a device type and a runtime before creating a simulator."
+            return
+        }
         isCreating = true
         errorMessage = nil
 
-        let typeID = selectedDeviceType.isEmpty ? (filteredDeviceTypes.first?.identifier ?? "iPhone 16 Pro") : selectedDeviceType
-        let runID = selectedRuntime.isEmpty ? (installer.availableRuntimes.first?.identifier ?? "iOS") : selectedRuntime
-
         Task {
+            let freshNames = (try? await DeviceHubSimulatorInstaller.fetchExistingSimulatorNames()) ?? installer.existingSimulatorNames
+            let deviceType = selectedDeviceTypeRecord
+            let runtime = selectedRuntimeRecord
+            let problem: String?
+            if let deviceType, let runtime {
+                problem = SimulatorCreateValidation.validationError(name: name, deviceType: deviceType, runtimeName: runtime.name, runtimeIdentifier: runtime.identifier, existingNames: freshNames)
+            } else {
+                problem = "Select a device type and a runtime before creating a simulator."
+            }
+            if let problem {
+                await MainActor.run {
+                    self.isCreating = false
+                    self.errorMessage = problem
+                }
+                return
+            }
             do {
-                let udid = try await DeviceHubSimulatorInstaller.createSimulator(name: simulatorName, deviceTypeID: typeID, runtimeID: runID)
+                let udid = try await DeviceHubSimulatorInstaller.createSimulator(name: name, deviceTypeID: selectedDeviceType, runtimeID: selectedRuntime)
 
                 
                 if selectedPlatform == .iPadOS {

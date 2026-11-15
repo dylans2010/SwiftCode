@@ -1,6 +1,7 @@
 import AppKit
 import Foundation
 import Testing
+import YcodeDeviceModel
 @testable import YcodeIDECore
 @testable import YcodeUI
 
@@ -114,6 +115,50 @@ func makeArchive(in dir: URL, name: String, app: String?, version: String, build
        "connectionProperties": {"pairingState": "paired", "tunnelState": "disconnected"}},
       {"identifier": "sim", "deviceProperties": {"name": "Simulated"}, "hardwareProperties": {"reality": "virtual"}}]}}
     """
+
+    static let devicectlTwo = """
+    {"result": {"devices": [
+      {"identifier": "UDID-A",
+       "deviceProperties": {"name": "Phone A", "osVersionNumber": "30.0"},
+       "hardwareProperties": {"platform": "iOS", "reality": "physical", "marketingName": "iPhone A", "udid": "UDID-A"},
+       "connectionProperties": {"pairingState": "paired", "tunnelState": "connected"}},
+      {"identifier": "UDID-B",
+       "deviceProperties": {"name": "Phone B", "osVersionNumber": "30.0"},
+       "hardwareProperties": {"platform": "iOS", "reality": "physical", "marketingName": "iPhone B", "udid": "UDID-B"},
+       "connectionProperties": {"pairingState": "paired", "tunnelState": "connected"}}]}}
+    """
+
+    @Test func disconnectedPhysicalDeviceMarkedUnavailable() throws {
+        let devs = DevicesList.devices(devicectlJSON: Data(Self.devicectlTwo.utf8))
+        #expect(devs.count == 2)
+        let c = DevicesController(devices: devs, simulators: [])
+        c.view.frame = NSRect(x: 0, y: 0, width: 820, height: 480)
+        c.show(.devices)
+        c.select(row: c.rows.firstIndex(where: { $0.identifier == "UDID-A" }) ?? 0)
+        #expect(c.selected?.identifier == "UDID-A")
+        c.markPhysicalDeviceDisconnected(udid: "UDID-A")
+        #expect(c.devices.first { $0.identifier == "UDID-A" }?.isAvailable == false)
+        #expect(c.devices.first { $0.identifier == "UDID-A" }?.state == "disconnected")
+        #expect(c.devices.first { $0.identifier == "UDID-B" }?.isAvailable == true)
+        #expect(c.selected?.identifier == "UDID-B")
+        #expect(c.detailRows.contains { $0 == ("Available", "Yes") })
+        #expect(c.detailRows.contains { $0 == ("Trust", "Not checked yet") })
+        #expect(c.detailRows.contains { $0 == ("Developer Mode", "Not checked yet") })
+    }
+
+    @Test func deviceDisconnectedNotificationMarksRowUnavailable() async throws {
+        let devs = DevicesList.devices(devicectlJSON: Data(Self.devicectlTwo.utf8))
+        let c = DevicesController(devices: devs, simulators: [])
+        c.view.frame = NSRect(x: 0, y: 0, width: 820, height: 480)
+        c.show(.devices)
+        c.pollPairs()
+        #expect(c.pairing.disconnectObserver != nil)
+        NotificationCenter.default.post(name: DeviceConnectNotificationCenter.deviceDisconnected, object: nil, userInfo: ["udid": "UDID-B"])
+        try await Task.sleep(for: .milliseconds(200))
+        #expect(c.devices.first { $0.identifier == "UDID-B" }?.isAvailable == false)
+        #expect(c.devices.first { $0.identifier == "UDID-B" }?.state == "disconnected")
+        #expect(c.devices.first { $0.identifier == "UDID-A" }?.isAvailable == true)
+    }
 
     @Test func devicesAndSimulators() throws {
         let sims = DevicesList.simulators(simctlJSON: Data(Self.simctl.utf8))

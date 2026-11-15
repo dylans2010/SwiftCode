@@ -5,6 +5,7 @@ import UniformTypeIdentifiers
 import YcodeDeviceModel
 import YcodeDeviceUI
 import YcodeIDECore
+import YcodeSimFeatures
 import SwiftCodeConnect
 
 
@@ -30,7 +31,37 @@ extension DeviceHubSimctl {
     }
 }
 
+struct SimulatorAccessibilityState {
+    var increaseContrast: Bool?
+    var reduceMotion: Bool?
+    var stageManager: Bool?
+}
+
+enum SimulatorAccessibilityCache {
+    static var states: [String: SimulatorAccessibilityState] = [:]
+}
+
 extension DevicesController {
+
+    static func readSimulatorAccessibility(udid: String) async -> SimulatorAccessibilityState {
+        func read(domain: String, key: String) async -> Bool? {
+            let (status, output) = await DeviceHubSimulatorInstaller.runXcrunProcess(["simctl", "spawn", udid, "defaults", "read", domain, key])
+            guard status == 0 else { return nil }
+            return SimulatorDefaultsValue.parseBool(output)
+        }
+        return SimulatorAccessibilityState(
+            increaseContrast: await read(domain: SimPrefs.accessibility, key: SimPrefs.darkenColors),
+            reduceMotion: await read(domain: SimPrefs.accessibility, key: SimPrefs.reduceMotion),
+            stageManager: await read(domain: "com.apple.springboard", key: "SBStageManagerEnabled"))
+    }
+
+    static func cacheSimulatorAccessibility(udid: String, increaseContrast: Bool? = nil, reduceMotion: Bool? = nil, stageManager: Bool? = nil) {
+        var cached = SimulatorAccessibilityCache.states[udid] ?? SimulatorAccessibilityState()
+        if let increaseContrast { cached.increaseContrast = increaseContrast }
+        if let reduceMotion { cached.reduceMotion = reduceMotion }
+        if let stageManager { cached.stageManager = stageManager }
+        SimulatorAccessibilityCache.states[udid] = cached
+    }
 
     
 
@@ -161,13 +192,13 @@ extension DevicesController {
         guard let r = row(from: sender), isLocalSimulator(r), r.state == "Booted" else { return }
         if let rec = videoRecordings[r.identifier] {
             videoRecordings.removeValue(forKey: r.identifier)
-            Task.detached { DeviceHubSimctl.stopRecording(rec.process) }
+            Task.detached { SimulatorManager.stopScreenRecording(rec.process) }
             canvas.showBanner("Recording saved to \(rec.url.lastPathComponent)", seconds: 4)
             showDetails()
             return
         }
         do {
-            let (process, url) = try DeviceHubSimctl.startRecording(udid: r.identifier, deviceName: r.name,
+            let (process, url) = try SimulatorManager.startScreenRecording(udid: r.identifier, deviceName: r.name,
                                                                   into: DeviceLiveSession.captureDirectory)
             videoRecordings[r.identifier] = (process, url)
             canvas.showBanner("Recording “\(r.name)”…", seconds: 3)
@@ -284,9 +315,15 @@ extension DevicesController {
         func apply() {
             let name = field.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !name.isEmpty, name != r.name else { return }
-            let (status, output) = DeviceHubSimctl.renameDevice(udid: r.identifier, to: name)
-            canvas.showBanner(status == 0 ? "Renamed to “\(name)”" : "Rename failed: \(output)", seconds: status == 0 ? 3 : 5)
-            refreshLocalRows()
+            Task {
+                do {
+                    try await SimulatorManager.shared.renameDevice(udid: r.identifier, to: name)
+                    canvas.showBanner("Renamed to “\(name)”", seconds: 3)
+                } catch {
+                    canvas.showBanner("Rename failed: \(error.localizedDescription)", seconds: 5)
+                }
+                refreshLocalRows()
+            }
         }
         if let w = view.window, w.isVisible {
             alert.beginSheetModal(for: w) { if $0 == .alertFirstButtonReturn { apply() } }
@@ -427,6 +464,7 @@ extension DevicesController {
         let r = selected
         let booted = r?.state == "Booted"
         let recording = r.map { videoRecordings[$0.identifier] != nil } ?? false
+        let cachedAccessibility = selected.flatMap { SimulatorAccessibilityCache.states[$0.identifier] }
 
         func control(_ title: String, _ sel: Selector, symbol: String, enabled: Bool = true) -> InspectorCard.Row {
             let b = NSButton(title: title, target: self, action: sel)
@@ -436,7 +474,7 @@ extension DevicesController {
             b.setAccessibilityLabel(title)
             return InspectorCard.Row(symbol: symbol, title: title, control: b)
         }
-        func toggle(_ title: String, _ sel: Selector, symbol: String, on: Bool) -> InspectorCard.Row {
+        func toggle(_ title: String, _ sel: Selector, symbol: String, on: Bool) -> (row: InspectorCard.Row, control: NSSwitch) {
             let s = NSSwitch()
             s.state = on ? .on : .off
             s.target = self
@@ -444,7 +482,7 @@ extension DevicesController {
             s.controlSize = .small
             s.isEnabled = booted
             s.setAccessibilityLabel(title)
-            return InspectorCard.Row(symbol: symbol, title: title, control: s)
+            return (InspectorCard.Row(symbol: symbol, title: title, control: s), s)
         }
         func popup(_ titles: [String], selectedIndex: Int, sel: Selector) -> NSPopUpButton {
             let p = NSPopUpButton(frame: .zero, pullsDown: false)
@@ -462,8 +500,8 @@ extension DevicesController {
 
         
         let appearancePop = popup(["Light", "Dark"], selectedIndex: 0, sel: #selector(localAppearancePopupChanged(_:)))
-        let contrastSwitch = toggle("Increase Contrast", #selector(localIncreaseContrastToggled(_:)), symbol: "circle.righthalf.filled", on: false)
-        let motionSwitch = toggle("Reduce Motion", #selector(localReduceMotionToggled(_:)), symbol: "circle.dotted.and.circle", on: false)
+        let contrastSwitch = toggle("Increase Contrast", #selector(localIncreaseContrastToggled(_:)), symbol: "circle.righthalf.filled", on: cachedAccessibility?.increaseContrast ?? false)
+        let motionSwitch = toggle("Reduce Motion", #selector(localReduceMotionToggled(_:)), symbol: "circle.dotted.and.circle", on: cachedAccessibility?.reduceMotion ?? false)
         let textSlider = NSSlider(value: 3, minValue: 0, maxValue: 11, target: self, action: #selector(localContentSizeChanged(_:)))
         textSlider.numberOfTickMarks = 12
         textSlider.allowsTickMarkValuesOnly = true
@@ -473,8 +511,8 @@ extension DevicesController {
         let appearanceRows: [InspectorCard.Row] = [
             InspectorCard.Row(symbol: "circle.lefthalf.filled", title: "Appearance", control: appearancePop),
             InspectorCard.Row(symbol: "textformat.size", title: "Dynamic Type", control: textSlider),
-            contrastSwitch,
-            motionSwitch
+            contrastSwitch.row,
+            motionSwitch.row
         ]
         cards.append(InspectorCard(rows: appearanceRows, identifier: "settings-local-appearance"))
 
@@ -508,10 +546,12 @@ extension DevicesController {
         cards.append(InspectorCard(rows: powerRows, identifier: "settings-local-power"))
 
         
+        var stageSwitch: (row: InspectorCard.Row, control: NSSwitch)?
         if let r, DeviceHubUnifiedWorkspace.isIPad(for: r) {
-            let stageSwitch = toggle("Stage Manager", #selector(localStageManagerToggled(_:)), symbol: "square.split.2x2", on: false)
+            let stage = toggle("Stage Manager", #selector(localStageManagerToggled(_:)), symbol: "square.split.2x2", on: cachedAccessibility?.stageManager ?? false)
+            stageSwitch = stage
             let iPadRows: [InspectorCard.Row] = [
-                stageSwitch,
+                stage.row,
                 control("Pencil Double-Tap", #selector(simulatePencilDoubleTapChosen(_:)), symbol: "applepencil"),
                 control("Pencil Squeeze", #selector(simulatePencilSqueezeChosen(_:)), symbol: "hand.tap")
             ]
@@ -523,12 +563,12 @@ extension DevicesController {
             control("Clone Simulator…", #selector(showCloneSimulatorSheet(_:)), symbol: "square.on.square"),
             control("Shake Device", #selector(shakeChosen(_:)), symbol: "iphone.radiowaves.left.and.right"),
             control("Memory Warning", #selector(memoryPressureChosen(_:)), symbol: "memorychip"),
-            toggle("Slow Animations", #selector(slowAnimationsChosen(_:)), symbol: "tortoise", on: isSlowAnimationsEnabled),
-            toggle("Standby Mode", #selector(standbyChosen(_:)), symbol: "moon.zzz", on: isStandbyModeEnabled),
+            toggle("Slow Animations", #selector(slowAnimationsChosen(_:)), symbol: "tortoise", on: isSlowAnimationsEnabled).row,
+            toggle("Standby Mode", #selector(standbyChosen(_:)), symbol: "moon.zzz", on: isStandbyModeEnabled).row,
         ]
         if let r, isLocalSimulator(r) {
             quickRows += [
-                toggle("Live View", #selector(localLiveSwitchToggled(_:)), symbol: "eye", on: localLiveViewEnabled),
+                toggle("Live View", #selector(localLiveSwitchToggled(_:)), symbol: "eye", on: localLiveViewEnabled).row,
                 control(recording ? "Stop Recording" : "Record Video", #selector(recordVideoChosen(_:)), symbol: "record.circle"),
                 control("View Logs", #selector(viewLogsChosen(_:)), symbol: "text.alignleft"),
                 control("Install App…", #selector(installAppChosen(_:)), symbol: "square.and.arrow.down"),
@@ -551,6 +591,22 @@ extension DevicesController {
             l.preferredMaxLayoutWidth = InspectorCard.width - 20
             stack.addArrangedSubview(l)
         }
+        if let r, booted, SimulatorAccessibilityCache.states[r.identifier] == nil {
+            let udid = r.identifier
+            let contrastControl = contrastSwitch.control
+            let motionControl = motionSwitch.control
+            let stageControl = stageSwitch?.control
+            Task { [weak self] in
+                let state = await Self.readSimulatorAccessibility(udid: udid)
+                await MainActor.run {
+                    SimulatorAccessibilityCache.states[udid] = state
+                    guard self?.selected?.identifier == udid else { return }
+                    if let value = state.increaseContrast { contrastControl.state = value ? .on : .off }
+                    if let value = state.reduceMotion { motionControl.state = value ? .on : .off }
+                    if let value = state.stageManager { stageControl?.state = value ? .on : .off }
+                }
+            }
+        }
         return stack
     }
 
@@ -558,8 +614,12 @@ extension DevicesController {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         let isDark = sender.indexOfSelectedItem == 1
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: isDark ? "dark" : "light")
-            await MainActor.run { self?.canvas.showBanner("Appearance: \(isDark ? "Dark" : "Light")", seconds: 2) }
+            do {
+                try await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: isDark ? "dark" : "light")
+                await MainActor.run { self?.canvas.showBanner("Appearance: \(isDark ? "Dark" : "Light")", seconds: 2) }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Appearance failed: \(error.localizedDescription)", seconds: 4) }
+            }
         }
     }
 
@@ -567,27 +627,31 @@ extension DevicesController {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         let title = sender.titleOfSelectedItem ?? ""
         Task { [weak self] in
-            switch title {
-            case "Apple Park":
-                try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 37.3346, longitude: -122.0090)
-                await MainActor.run { self?.canvas.showBanner("Location: Apple Park", seconds: 2) }
-            case "City Run":
-                try? await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "City Run")
-                await MainActor.run { self?.canvas.showBanner("Scenario: City Run", seconds: 2) }
-            case "Freeway Drive":
-                try? await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "Freeway Drive")
-                await MainActor.run { self?.canvas.showBanner("Scenario: Freeway Drive", seconds: 2) }
-            case "San Francisco":
-                try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 37.7749, longitude: -122.4194)
-                await MainActor.run { self?.canvas.showBanner("Location: San Francisco", seconds: 2) }
-            case "New York City":
-                try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 40.7128, longitude: -74.0060)
-                await MainActor.run { self?.canvas.showBanner("Location: New York City", seconds: 2) }
-            case "Custom Coordinates…":
-                await MainActor.run { self?.simulateLocationCustom(sender) }
-            default:
-                try? await DeviceHubSimulatorInstaller.clearLocation(udid: r.identifier)
-                await MainActor.run { self?.canvas.showBanner("Location cleared", seconds: 2) }
+            do {
+                switch title {
+                case "Apple Park":
+                    try await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 37.3346, longitude: -122.0090)
+                    await MainActor.run { self?.canvas.showBanner("Location: Apple Park", seconds: 2) }
+                case "City Run":
+                    try await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "City Run")
+                    await MainActor.run { self?.canvas.showBanner("Scenario: City Run", seconds: 2) }
+                case "Freeway Drive":
+                    try await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "Freeway Drive")
+                    await MainActor.run { self?.canvas.showBanner("Scenario: Freeway Drive", seconds: 2) }
+                case "San Francisco":
+                    try await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 37.7749, longitude: -122.4194)
+                    await MainActor.run { self?.canvas.showBanner("Location: San Francisco", seconds: 2) }
+                case "New York City":
+                    try await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 40.7128, longitude: -74.0060)
+                    await MainActor.run { self?.canvas.showBanner("Location: New York City", seconds: 2) }
+                case "Custom Coordinates…":
+                    await MainActor.run { self?.simulateLocationCustom(sender) }
+                default:
+                    try await DeviceHubSimulatorInstaller.clearLocation(udid: r.identifier)
+                    await MainActor.run { self?.canvas.showBanner("Location cleared", seconds: 2) }
+                }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Location failed: \(error.localizedDescription)", seconds: 4) }
             }
         }
     }
@@ -604,8 +668,12 @@ extension DevicesController {
         let idx = min(sizes.count - 1, max(0, sender.integerValue))
         let size = sizes[idx]
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setContentSize(udid: r.identifier, size: size)
-            await MainActor.run { self?.canvas.showBanner("Text Size: \(size)", seconds: 2) }
+            do {
+                try await DeviceHubSimulatorInstaller.setContentSize(udid: r.identifier, size: size)
+                await MainActor.run { self?.canvas.showBanner("Text Size: \(size)", seconds: 2) }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Text size failed: \(error.localizedDescription)", seconds: 4) }
+            }
         }
     }
 
@@ -613,8 +681,12 @@ extension DevicesController {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         let level = sender.integerValue
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: level, batteryState: "discharging")
-            await MainActor.run { self?.canvas.showBanner("Battery: \(level)%", seconds: 2) }
+            do {
+                try await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: level, batteryState: "discharging")
+                await MainActor.run { self?.canvas.showBanner("Battery: \(level)%", seconds: 2) }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Battery override failed: \(error.localizedDescription)", seconds: 4) }
+            }
         }
     }
 
@@ -622,12 +694,16 @@ extension DevicesController {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         let type = sender.titleOfSelectedItem?.lowercased() ?? "wifi"
         Task { [weak self] in
-            if type == "reset" {
-                try? await DeviceHubSimulatorInstaller.clearStatusBar(udid: r.identifier)
-                await MainActor.run { self?.canvas.showBanner("Status bar overrides reset", seconds: 2) }
-            } else {
-                try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: type, wifiMode: "active", wifiBars: 3, cellularMode: "active", cellularBars: 4)
-                await MainActor.run { self?.canvas.showBanner("Network: \(type.uppercased())", seconds: 2) }
+            do {
+                if type == "reset" {
+                    try await DeviceHubSimulatorInstaller.clearStatusBar(udid: r.identifier)
+                    await MainActor.run { self?.canvas.showBanner("Status bar overrides reset", seconds: 2) }
+                } else {
+                    try await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: type, wifiMode: "active", wifiBars: 3, cellularMode: "active", cellularBars: 4)
+                    await MainActor.run { self?.canvas.showBanner("Network: \(type.uppercased())", seconds: 2) }
+                }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Network override failed: \(error.localizedDescription)", seconds: 4) }
             }
         }
     }
@@ -636,8 +712,18 @@ extension DevicesController {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         let enabled = sender.state == .on
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setIncreaseContrast(udid: r.identifier, enabled: enabled)
-            await MainActor.run { self?.canvas.showBanner("Increase Contrast: \(enabled ? "On" : "Off")", seconds: 2) }
+            do {
+                try await DeviceHubSimulatorInstaller.setIncreaseContrast(udid: r.identifier, enabled: enabled)
+                await MainActor.run {
+                    Self.cacheSimulatorAccessibility(udid: r.identifier, increaseContrast: enabled)
+                    self?.canvas.showBanner("Increase Contrast: \(enabled ? "On" : "Off")", seconds: 2)
+                }
+            } catch {
+                await MainActor.run {
+                    sender.state = enabled ? .off : .on
+                    self?.canvas.showBanner("Increase Contrast failed: \(error.localizedDescription)", seconds: 4)
+                }
+            }
         }
     }
 
@@ -645,8 +731,18 @@ extension DevicesController {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         let enabled = sender.state == .on
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setReduceMotion(udid: r.identifier, enabled: enabled)
-            await MainActor.run { self?.canvas.showBanner("Reduce Motion: \(enabled ? "On" : "Off")", seconds: 2) }
+            do {
+                try await DeviceHubSimulatorInstaller.setReduceMotion(udid: r.identifier, enabled: enabled)
+                await MainActor.run {
+                    Self.cacheSimulatorAccessibility(udid: r.identifier, reduceMotion: enabled)
+                    self?.canvas.showBanner("Reduce Motion: \(enabled ? "On" : "Off")", seconds: 2)
+                }
+            } catch {
+                await MainActor.run {
+                    sender.state = enabled ? .off : .on
+                    self?.canvas.showBanner("Reduce Motion failed: \(error.localizedDescription)", seconds: 4)
+                }
+            }
         }
     }
 
@@ -654,8 +750,18 @@ extension DevicesController {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         let enabled = sender.state == .on
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setStageManager(udid: r.identifier, enabled: enabled)
-            await MainActor.run { self?.canvas.showBanner("Stage Manager: \(enabled ? "Enabled" : "Disabled")", seconds: 2) }
+            do {
+                try await DeviceHubSimulatorInstaller.setStageManager(udid: r.identifier, enabled: enabled)
+                await MainActor.run {
+                    Self.cacheSimulatorAccessibility(udid: r.identifier, stageManager: enabled)
+                    self?.canvas.showBanner("Stage Manager: \(enabled ? "Enabled" : "Disabled")", seconds: 2)
+                }
+            } catch {
+                await MainActor.run {
+                    sender.state = enabled ? .off : .on
+                    self?.canvas.showBanner("Stage Manager failed: \(error.localizedDescription)", seconds: 4)
+                }
+            }
         }
     }
 
@@ -959,6 +1065,8 @@ final class DeviceHubLogWindowController: NSWindowController {
     private var peer: HubConnectPeer?
     private var streamUDID: String?
     private var tail = ""
+    private var pendingText = ""
+    private var isPaused = false
     private var didClose = false
 
     init(title: String, udid: String?, peer: HubConnectPeer?) {
@@ -978,10 +1086,37 @@ final class DeviceHubLogWindowController: NSWindowController {
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered, defer: false)
         window.title = title
-        window.contentView = scroll
         window.isReleasedWhenClosed = false
         super.init(window: window)
         window.delegate = self
+        let pause = NSButton(title: "Pause", target: self, action: #selector(togglePause(_:)))
+        pause.bezelStyle = .rounded
+        pause.controlSize = .small
+        let exportButton = NSButton(title: "Export…", target: self, action: #selector(exportLogs(_:)))
+        exportButton.bezelStyle = .rounded
+        exportButton.controlSize = .small
+        let copyButton = NSButton(title: "Copy", target: self, action: #selector(copyLogs(_:)))
+        copyButton.bezelStyle = .rounded
+        copyButton.controlSize = .small
+        let clearButton = NSButton(title: "Clear", target: self, action: #selector(clearLogs(_:)))
+        clearButton.bezelStyle = .rounded
+        clearButton.controlSize = .small
+        let toolbarHeight: CGFloat = 36
+        let toolbar = NSView(frame: NSRect(x: 0, y: 480 - toolbarHeight, width: 720, height: toolbarHeight))
+        toolbar.autoresizingMask = [.width, .minYMargin]
+        var x: CGFloat = 10
+        for button in [pause, exportButton, copyButton, clearButton] {
+            button.sizeToFit()
+            button.frame = NSRect(x: x, y: (toolbarHeight - button.frame.height) / 2, width: button.frame.width, height: button.frame.height)
+            toolbar.addSubview(button)
+            x += button.frame.width + 8
+        }
+        scroll.frame = NSRect(x: 0, y: 0, width: 720, height: 480 - toolbarHeight)
+        scroll.autoresizingMask = [.width, .height]
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: 720, height: 480))
+        container.addSubview(toolbar)
+        container.addSubview(scroll)
+        window.contentView = container
     }
 
     @available(*, unavailable)
@@ -1007,12 +1142,47 @@ final class DeviceHubLogWindowController: NSWindowController {
         }
     }
 
+    @objc private func togglePause(_ sender: NSButton) {
+        isPaused.toggle()
+        sender.title = isPaused ? "Resume" : "Pause"
+        if !isPaused, !pendingText.isEmpty {
+            let buffered = pendingText
+            pendingText = ""
+            append(buffered)
+        }
+    }
+
+    @objc private func exportLogs(_ sender: NSButton) {
+        if let error = DeviceConsoleFileExport.save(text: tail, suggestedName: "simulator-logs.txt") {
+            let alert = NSAlert()
+            alert.messageText = "Export failed"
+            alert.informativeText = error
+            alert.runModal()
+        }
+    }
+
+    @objc private func copyLogs(_ sender: NSButton) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(tail, forType: .string)
+    }
+
+    @objc private func clearLogs(_ sender: NSButton) {
+        tail = ""
+        pendingText = ""
+        textView.string = ""
+    }
+
     private func append(_ text: String) {
+        if isPaused {
+            pendingText += text
+            if pendingText.count > 512 * 1024 { pendingText = String(pendingText.suffix(256 * 1024)) }
+            return
+        }
         tail += text
-        
+
         if tail.count > 512 * 1024 { tail = String(tail.suffix(256 * 1024)) }
         textView.string = tail
-        
+
         let end = NSRange(location: max(0, (textView.string as NSString).length - 1), length: 0)
         textView.scrollRangeToVisible(end)
     }

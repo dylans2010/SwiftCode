@@ -84,6 +84,25 @@ import Testing
         #expect(DeviceMetrics().isAvailable)
     }
 
+    @Test func deviceMetricsUnavailableCarriesReason() {
+        #expect(DeviceMetrics.unavailable.unavailableReason != nil)
+        #expect(DeviceMetrics.unavailable(reason: "test reason").unavailableReason == "test reason")
+        #expect(!DeviceMetrics.unavailable(reason: "test reason").isAvailable)
+        #expect(DeviceMetrics().unavailableReason == nil)
+    }
+
+    @Test func simulatorDefaultsValueParsesBoolOutput() {
+        #expect(SimulatorDefaultsValue.parseBool("1\n") == true)
+        #expect(SimulatorDefaultsValue.parseBool("0") == false)
+        #expect(SimulatorDefaultsValue.parseBool("true") == true)
+        #expect(SimulatorDefaultsValue.parseBool("false") == false)
+        #expect(SimulatorDefaultsValue.parseBool("yes") == true)
+        #expect(SimulatorDefaultsValue.parseBool("no") == false)
+        #expect(SimulatorDefaultsValue.parseBool("") == nil)
+        #expect(SimulatorDefaultsValue.parseBool("2") == nil)
+        #expect(SimulatorDefaultsValue.parseBool("unknown") == nil)
+    }
+
     @Test func processRunnerCapturesEchoOutput() async throws {
         let result = try await DeviceConnectProcessRunner.shared.run(
             executableURL: URL(fileURLWithPath: "/bin/echo"),
@@ -109,6 +128,70 @@ import Testing
             onStderr: { _ in })
         #expect(success)
         #expect(box.lines.contains("streamed"))
+    }
+}
+
+@Suite(.serialized)
+struct DeviceConnectConsoleTests {
+    @Test @MainActor func consoleFilteringMatchesSearchAndSeverity() {
+        let manager = DeviceConnectConsoleManager.shared
+        manager.clearAllLogs()
+        manager.appendLog(DeviceLog(type: .build, severity: .error, message: "boom failed"))
+        manager.appendLog(DeviceLog(type: .build, severity: .warning, message: "careful now"))
+        manager.appendLog(DeviceLog(type: .runtime, severity: .info, message: "boom running"))
+        #expect(DeviceConnectConsoleManager.filteredLogs(manager.buildLogs, searchText: "boom", severity: nil).count == 1)
+        #expect(DeviceConnectConsoleManager.filteredLogs(manager.buildLogs, searchText: "", severity: .warning).count == 1)
+        #expect(DeviceConnectConsoleManager.filteredLogs(manager.buildLogs, searchText: "boom", severity: .warning).isEmpty)
+        #expect(DeviceConnectConsoleManager.filteredLogs(manager.buildLogs, searchText: "", severity: nil).count == 2)
+        #expect(manager.visibleLogs(searchText: "boom", severity: nil).count == 1)
+        manager.clearAllLogs()
+        #expect(manager.buildLogs.isEmpty)
+        #expect(manager.runtimeLogs.isEmpty)
+    }
+
+    @Test @MainActor func consolePauseBuffersAndResumeFlushes() {
+        let manager = DeviceConnectConsoleManager.shared
+        manager.clearAllLogs()
+        manager.pause()
+        #expect(manager.isPaused)
+        manager.appendLog(DeviceLog(type: .runtime, severity: .info, message: "held line"))
+        manager.appendLog(DeviceLog(type: .build, severity: .error, message: "held build"))
+        #expect(manager.runtimeLogs.isEmpty)
+        #expect(manager.buildLogs.isEmpty)
+        manager.resume()
+        #expect(!manager.isPaused)
+        #expect(manager.runtimeLogs.count == 1)
+        #expect(manager.runtimeLogs[0].message == "held line")
+        #expect(manager.buildLogs.count == 1)
+        #expect(manager.buildLogs[0].message == "held build")
+        manager.clearAllLogs()
+    }
+
+    @Test @MainActor func consoleExportTextFormatsFilteredLines() {
+        let logs = [
+            DeviceLog(type: .build, severity: .error, message: "boom"),
+            DeviceLog(type: .build, severity: .warning, message: "careful"),
+            DeviceLog(type: .build, severity: .info, message: "all good"),
+        ]
+        let text = DeviceConnectConsoleManager.formattedText(logs)
+        #expect(text.contains("[error] boom"))
+        #expect(text.contains("[warning] careful"))
+        #expect(text.contains("[info] all good"))
+        #expect(DeviceConnectConsoleManager.formattedText([]).isEmpty)
+        #expect(DeviceConnectConsoleManager.formattedText(DeviceConnectConsoleManager.filteredLogs(logs, searchText: "", severity: .error)).contains("boom"))
+        #expect(!DeviceConnectConsoleManager.formattedText(DeviceConnectConsoleManager.filteredLogs(logs, searchText: "", severity: .error)).contains("careful"))
+    }
+
+    @Test @MainActor func consoleClearRemovesOnlySelectedTab() {
+        let manager = DeviceConnectConsoleManager.shared
+        manager.clearAllLogs()
+        manager.selectedConsoleTab = 0
+        manager.appendLog(DeviceLog(type: .build, severity: .info, message: "build line"))
+        manager.appendLog(DeviceLog(type: .runtime, severity: .info, message: "runtime line"))
+        manager.clearLogs()
+        #expect(manager.buildLogs.isEmpty)
+        #expect(manager.runtimeLogs.count == 1)
+        manager.clearAllLogs()
     }
 }
 

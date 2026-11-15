@@ -194,4 +194,100 @@ import Testing
             Issue.record("Unexpected error: \(error).")
         }
     }
+
+    @Test func physicalDeviceReadinessMapsDetectedStates() throws {
+        let trustedJSON = """
+        {"result": {"devices": [
+          {"identifier": "UDID-1",
+           "deviceProperties": {"name": "Phone", "osVersionNumber": "26.1", "developerMode": true},
+           "hardwareProperties": {"platform": "iOS", "marketingName": "iPhone", "udid": "UDID-1"},
+           "connectionProperties": {"pairingState": "paired", "tunnelState": "connected"}}]}}
+        """
+        let readiness = PhysicalDeviceReadiness.from(details: try DeviceInfoDetails.parse(data: Data(trustedJSON.utf8), deviceUDID: "UDID-1"))
+        #expect(readiness.trust == .trusted)
+        #expect(readiness.developerMode == .enabled)
+        #expect(readiness.ready)
+        #expect(readiness.actionGuidance == nil)
+        #expect(readiness.summary == "Trusted, Developer Mode on")
+        #expect(readiness.trustText == "Trusted")
+        #expect(readiness.developerModeText == "On")
+
+        let untrustedJSON = """
+        {"result": {"devices": [
+          {"identifier": "UDID-2",
+           "deviceProperties": {"name": "Phone", "osVersionNumber": "26.1", "developerMode": false},
+           "hardwareProperties": {"platform": "iOS", "marketingName": "iPhone", "udid": "UDID-2"},
+           "connectionProperties": {"pairingState": "unpaired", "tunnelState": "disconnected"}}]}}
+        """
+        let blocked = PhysicalDeviceReadiness.from(details: try DeviceInfoDetails.parse(data: Data(untrustedJSON.utf8), deviceUDID: "UDID-2"))
+        #expect(blocked.trust == .untrusted)
+        #expect(blocked.developerMode == .disabled)
+        #expect(!blocked.ready)
+        #expect(blocked.summary == "Not trusted, Developer Mode off")
+        #expect(blocked.trustText == "Not trusted")
+        #expect(blocked.developerModeText == "Off")
+        let guidance = try #require(blocked.actionGuidance)
+        #expect(guidance.contains("Trust"))
+        #expect(guidance.contains("Developer Mode"))
+    }
+
+    @Test func physicalDeviceReadinessUnknownWhenDetailsMissing() throws {
+        let json = """
+        {"result": {"deviceProperties": {"name": "Watch"},
+           "hardwareProperties": {"platform": "watchOS"},
+           "connectionProperties": {}}}
+        """
+        let readiness = PhysicalDeviceReadiness.from(details: try DeviceInfoDetails.parse(data: Data(json.utf8), deviceUDID: "UDID-9"))
+        #expect(readiness.trust == .unknown)
+        #expect(readiness.developerMode == .unknown)
+        #expect(!readiness.ready)
+        #expect(readiness.actionGuidance != nil)
+    }
+
+    @Test func physicalDeviceUntrustedReadinessCarriesTrustGuidance() throws {
+        let readiness = PhysicalDeviceReadiness.untrusted(udid: "UDID-3", reason: "devicectl lists this device as unpaired.")
+        #expect(readiness.trust == .untrusted)
+        #expect(readiness.developerMode == .unknown)
+        #expect(!readiness.ready)
+        let guidance = try #require(readiness.actionGuidance)
+        #expect(guidance.contains("Trust"))
+    }
+
+    @Test func physicalDeviceUnreachableReadinessKeepsProbeError() throws {
+        let readiness = PhysicalDeviceReadiness.unreachable(udid: "UDID-4", reason: "device is locked")
+        #expect(readiness.trust == .unknown)
+        #expect(readiness.developerMode == .unknown)
+        #expect(!readiness.ready)
+        let guidance = try #require(readiness.actionGuidance)
+        #expect(guidance.contains("device is locked"))
+    }
+
+    @Test func physicalDevicePairingIsHonestlyUnavailable() {
+        var pairUnavailable = false
+        if case let .unavailable(pairReason, pairAlternative) = PhysicalDevicePairingSupport.pair {
+            pairUnavailable = true
+            #expect(!pairReason.isEmpty)
+            #expect(pairAlternative.contains("Trust"))
+        }
+        #expect(pairUnavailable)
+        var unpairUnavailable = false
+        if case let .unavailable(unpairReason, unpairAlternative) = PhysicalDevicePairingSupport.unpair {
+            unpairUnavailable = true
+            #expect(!unpairReason.isEmpty)
+            #expect(unpairAlternative.contains("Xcode"))
+        }
+        #expect(unpairUnavailable)
+    }
+
+    @Test func deviceDiscoveryDiffFindsDisconnectsAndArrivals() {
+        let a = ConnectedDevice(name: "A", model: "iPhone", productType: "iPhone", platform: "iOS", osVersion: "26", buildVersion: "1", architecture: "arm64", udid: "UDID-A")
+        let b = ConnectedDevice(name: "B", model: "iPhone", productType: "iPhone", platform: "iOS", osVersion: "26", buildVersion: "1", architecture: "arm64", udid: "UDID-B")
+        let c = ConnectedDevice(name: "C", model: "iPhone", productType: "iPhone", platform: "iOS", osVersion: "26", buildVersion: "1", architecture: "arm64", udid: "UDID-C")
+        #expect(DeviceDiscovery.disconnectedDevices(previous: [a, b], current: [b, c]).map(\.udid) == ["UDID-A"])
+        #expect(DeviceDiscovery.disconnectedDevices(previous: [a], current: [a]).isEmpty)
+        #expect(DeviceDiscovery.disconnectedDevices(previous: [], current: [a]).isEmpty)
+        #expect(DeviceDiscovery.newlyConnectedDevices(previous: [a, b], current: [b, c]).map(\.udid) == ["UDID-C"])
+        #expect(DeviceDiscovery.newlyConnectedDevices(previous: [a], current: [a]).isEmpty)
+        #expect(DeviceDiscovery.newlyConnectedDevices(previous: [], current: []).isEmpty)
+    }
 }

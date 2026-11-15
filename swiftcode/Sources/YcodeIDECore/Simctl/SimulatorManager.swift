@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import os
+import YcodeDeviceModel
 #if canImport(AppKit)
 import AppKit
 #endif
@@ -20,7 +21,7 @@ public final class SimulatorManager {
 
     public var selectedDeviceID: String? {
         didSet {
-            refreshInstalledApplications()
+            Task { await refreshInstalledApplications() }
         }
     }
     public var selectedRuntimeID: String?
@@ -88,8 +89,7 @@ public final class SimulatorManager {
                         self.selectedRuntimeID = firstRuntime.identifier
                     }
 
-                    self.refreshInstalledApplications()
-
+                    await self.refreshInstalledApplications()
                     if snapshot.runtimes.isEmpty {
                         self.state = .empty(reason: .noRuntimesInstalled)
                         self.log("No simulator runtimes discovered on this developer workstation.")
@@ -276,7 +276,7 @@ public final class SimulatorManager {
         do {
             try await installationService.installApp(at: url.path, onDeviceUDID: udid)
             log("Bundle installed successfully.")
-            refreshInstalledApplications()
+            await refreshInstalledApplications()
         } catch {
             log("Deployment failed: \(error.localizedDescription)", isError: true)
         }
@@ -310,7 +310,7 @@ public final class SimulatorManager {
         do {
             try await simctlService.uninstallApplication(udid: udid, bundleID: bundleID)
             log("App uninstalled.")
-            refreshInstalledApplications()
+            await refreshInstalledApplications()
         } catch {
             log("Uninstall failed: \(error.localizedDescription)", isError: true)
         }
@@ -341,13 +341,177 @@ public final class SimulatorManager {
         }
     }
 
-    private func refreshInstalledApplications() {
+    public func captureScreenshot() async throws -> URL {
+        guard let udid = selectedDeviceID else {
+            throw SimulatorError.simctlFailed(reason: "No simulator device is selected.")
+        }
+        return try await simctlService.captureScreenshot(udid: udid)
+    }
+
+    public func captureScreenshot(udid: String, to url: URL) async throws {
+        try await simctlService.captureScreenshot(udid: udid, to: url)
+    }
+
+    nonisolated public static func captureScreenshotSync(udid: String, to url: URL) throws {
+        let command = SimulatorCommand.screenshot(udid: udid, path: url.path)
+        let result = try DeviceConnectProcessRunner.shared.runBlocking(
+            executableURL: URL(fileURLWithPath: command.executable),
+            arguments: command.arguments,
+            timeout: command.timeout
+        )
+        guard result.exitCode == 0 else {
+            throw SimulatorError.simctlFailed(reason: result.stderr.isEmpty ? "simctl screenshot failed with exit code \(result.exitCode)." : result.stderr)
+        }
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            throw SimulatorError.simctlFailed(reason: "simctl reported success but no screenshot file was created.")
+        }
+    }
+
+    nonisolated public static func startScreenRecording(udid: String, deviceName: String, into directory: URL) throws -> (process: Process, url: URL) {
+        let stamp = ISO8601DateFormatter.string(from: Date(), timeZone: .current,
+                                                formatOptions: [.withYear, .withMonth, .withDay, .withTime, .withDashSeparatorInDate, .withColonSeparatorInTime])
+            .replacingOccurrences(of: ":", with: "-")
+        let url = directory.appendingPathComponent("\(deviceName) Recording \(stamp).mov")
+        let command = SimulatorCommand.recordVideo(udid: udid, path: url.path)
+        let process = try DeviceConnectProcessRunner.shared.runStreaming(
+            executableURL: URL(fileURLWithPath: command.executable),
+            arguments: command.arguments,
+            onStdout: { _ in },
+            onStderr: { _ in }
+        )
+        return (process, url)
+    }
+
+    nonisolated public static func stopScreenRecording(_ process: Process) {
+        if process.isRunning {
+            #if canImport(Darwin)
+            Darwin.kill(process.processIdentifier, SIGINT)
+            #else
+            process.terminate()
+            #endif
+            let deadline = Date().addingTimeInterval(10)
+            while process.isRunning, Date() < deadline { Thread.sleep(forTimeInterval: 0.05) }
+            if process.isRunning { process.terminate() }
+        }
+    }
+
+    nonisolated public static func devicePlistURL(udid: String) -> URL {
+        FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Developer/CoreSimulator/Devices/\(udid)/device.plist")
+    }
+
+    nonisolated public static func writeDeviceName(plistURL: URL, name: String) throws -> String {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw SimulatorError.simctlFailed(reason: "Device name must not be empty.")
+        }
+        let data: Data
+        do {
+            data = try Data(contentsOf: plistURL)
+        } catch {
+            throw SimulatorError.simctlFailed(reason: "Could not read \(plistURL.path): \(error.localizedDescription)")
+        }
+        let plist: Any
+        do {
+            plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+        } catch {
+            throw SimulatorError.simctlFailed(reason: "Could not parse \(plistURL.path): \(error.localizedDescription)")
+        }
+        guard var dict = plist as? [String: Any] else {
+            throw SimulatorError.simctlFailed(reason: "Unexpected device.plist format at \(plistURL.path).")
+        }
+        dict["name"] = trimmed
+        let newData: Data
+        do {
+            newData = try PropertyListSerialization.data(fromPropertyList: dict, format: .xml, options: 0)
+        } catch {
+            throw SimulatorError.simctlFailed(reason: "Could not serialize device.plist: \(error.localizedDescription)")
+        }
+        do {
+            try newData.write(to: plistURL, options: .atomic)
+        } catch {
+            throw SimulatorError.simctlFailed(reason: "Could not write \(plistURL.path): \(error.localizedDescription)")
+        }
+        let verificationData: Data
+        do {
+            verificationData = try Data(contentsOf: plistURL)
+        } catch {
+            throw SimulatorError.simctlFailed(reason: "Could not re-read \(plistURL.path) to verify the rename: \(error.localizedDescription)")
+        }
+        do {
+            let verification = try PropertyListSerialization.propertyList(from: verificationData, options: [], format: nil)
+            guard let verificationDict = verification as? [String: Any],
+                  let verifiedName = verificationDict["name"] as? String,
+                  verifiedName == trimmed else {
+                throw SimulatorError.simctlFailed(reason: "Rename did not persist: re-read of \(plistURL.path) does not contain the new name.")
+            }
+            return verifiedName
+        } catch let error as SimulatorError {
+            throw error
+        } catch {
+            throw SimulatorError.simctlFailed(reason: "Could not parse \(plistURL.path) to verify the rename: \(error.localizedDescription)")
+        }
+    }
+
+    public func renameDevice(udid: String, to newName: String) async throws {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw SimulatorError.simctlFailed(reason: "Device name must not be empty.")
+        }
+        guard let device = devices.first(where: { $0.udid == udid }) else {
+            throw SimulatorError.deviceNotAvailable(udid: udid)
+        }
+        guard device.state == .shutdown else {
+            throw SimulatorError.simctlFailed(reason: "Device '\(device.name)' must be shut down before renaming.")
+        }
+        let plistURL = Self.devicePlistURL(udid: udid)
+        let verifiedName = try await Task.detached(priority: .userInitiated) {
+            try Self.writeDeviceName(plistURL: plistURL, name: trimmed)
+        }.value
+        if let idx = devices.firstIndex(where: { $0.udid == udid }) {
+            devices[idx] = SimulatorDevice(
+                udid: device.udid,
+                name: verifiedName,
+                runtimeIdentifier: device.runtimeIdentifier,
+                platform: device.platform,
+                osVersion: device.osVersion,
+                architecture: device.architecture,
+                state: device.state,
+                isAvailable: device.isAvailable,
+                dateCreated: device.dateCreated
+            )
+        }
+        log("Renamed device '\(udid)' to '\(verifiedName)'.")
+    }
+
+    public func cloneDevice(sourceUDID: String, newName: String) async throws -> String {
+        let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw SimulatorError.simctlFailed(reason: "Clone name must not be empty.")
+        }
+        guard let source = devices.first(where: { $0.udid == sourceUDID }) else {
+            throw SimulatorError.deviceNotAvailable(udid: sourceUDID)
+        }
+        log("Cloning device '\(source.name)' as '\(trimmed)'...")
+        let newUDID = try await simctlService.cloneDevice(sourceUDID: sourceUDID, newName: trimmed)
+        log("Clone created with UDID '\(newUDID)'.")
+        await refreshAll()
+        return newUDID
+    }
+
+    private func refreshInstalledApplications() async {
         guard let device = selectedDevice, device.state == .booted else {
             self.installedApps = []
             return
         }
-
-        _ = device
-        self.installedApps = []
+        do {
+            let apps = try await simctlService.fetchInstalledApplications(udid: device.udid, platform: device.platform)
+            guard selectedDeviceID == device.udid else { return }
+            self.installedApps = apps
+        } catch {
+            guard selectedDeviceID == device.udid else { return }
+            self.installedApps = []
+            log("Failed to list installed applications: \(error.localizedDescription)", isError: true)
+        }
     }
 }

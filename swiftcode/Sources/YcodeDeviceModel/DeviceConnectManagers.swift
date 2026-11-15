@@ -37,12 +37,19 @@ public final class DeviceConnectConsoleManager {
 
     public private(set) var buildLogs: [DeviceLog] = []
     public private(set) var runtimeLogs: [DeviceLog] = []
+    public private(set) var isPaused = false
+
+    private var pausedLogs: [DeviceLog] = []
 
     public var selectedConsoleTab: Int = 0
 
     private init() {}
 
     public func appendLog(_ log: DeviceLog) {
+        if isPaused {
+            pausedLogs.append(log)
+            return
+        }
         if log.type == .build {
             buildLogs.append(log)
         } else {
@@ -50,12 +57,61 @@ public final class DeviceConnectConsoleManager {
         }
     }
 
+    public func pause() {
+        isPaused = true
+    }
+
+    public func resume() {
+        isPaused = false
+        let buffered = pausedLogs
+        pausedLogs.removeAll()
+        for log in buffered {
+            if log.type == .build {
+                buildLogs.append(log)
+            } else {
+                runtimeLogs.append(log)
+            }
+        }
+    }
+
     public func clearLogs() {
         if selectedConsoleTab == 0 {
             buildLogs.removeAll()
+            pausedLogs.removeAll { $0.type == .build }
         } else {
             runtimeLogs.removeAll()
+            pausedLogs.removeAll { $0.type != .build }
         }
+    }
+
+    public func clearAllLogs() {
+        buildLogs.removeAll()
+        runtimeLogs.removeAll()
+        pausedLogs.removeAll()
+    }
+
+    public static func filteredLogs(_ logs: [DeviceLog], searchText: String, severity: DeviceLog.Severity?) -> [DeviceLog] {
+        logs.filter { log in
+            (searchText.isEmpty || log.message.localizedCaseInsensitiveContains(searchText)) &&
+            (severity == nil || log.severity == severity)
+        }
+    }
+
+    public static func formattedText(_ logs: [DeviceLog]) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm:ss.SSS"
+        return logs.map { log in
+            "[\(formatter.string(from: log.timestamp))] [\(log.severity.rawValue)] \(log.message)"
+        }.joined(separator: "\n")
+    }
+
+    public func visibleLogs(searchText: String, severity: DeviceLog.Severity?) -> [DeviceLog] {
+        let logs = selectedConsoleTab == 0 ? buildLogs : runtimeLogs
+        return Self.filteredLogs(logs, searchText: searchText, severity: severity)
+    }
+
+    public func exportText(searchText: String, severity: DeviceLog.Severity?) -> String {
+        Self.formattedText(visibleLogs(searchText: searchText, severity: severity))
     }
 }
 
@@ -161,7 +217,7 @@ public final class DeviceConnectRuntimeManager {
     public static let shared = DeviceConnectRuntimeManager()
 
     public private(set) var runtimeStatus: RuntimeStatus = .idle
-    public private(set) var metrics: DeviceMetrics = DeviceMetrics()
+    public private(set) var metrics: DeviceMetrics = DeviceMetrics.unavailable
     public private(set) var activePID: Int32? = nil
 
     private var coordinator: RuntimeCoordinator?

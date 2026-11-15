@@ -1,4 +1,5 @@
 import AppKit
+import YcodeDeviceModel
 import YcodeDeviceUI
 import YcodeIDECore
 
@@ -23,6 +24,8 @@ public final class HubPairing {
     public internal(set) var pairs: [RemoteDevicePair] = []
     public internal(set) var status: String?
     public internal(set) var task: Task<Void, Never>?
+    public internal(set) var physicalReadiness: [String: PhysicalDeviceReadiness] = [:]
+    var disconnectObserver: NSObjectProtocol?
 
     public var readPairs: (() async -> [RemoteDevicePair]?)?
     public var pairDevices: ((DeviceRow, DeviceRow) async -> (Bool, String))?
@@ -189,6 +192,37 @@ extension DevicesController {
 
     func isPairablePhone(_ r: DeviceRow) -> Bool { r.isSwiftCodeRemote && r.platform == "iOS" && (r.deviceTypeID?.hasPrefix("iphone") ?? false) }
     func isSwiftCodeWatch(_ r: DeviceRow) -> Bool { r.isSwiftCodeRemote && r.platform == "watchOS" }
+    func isPhysicalDevice(_ r: DeviceRow) -> Bool { devices.contains { $0.identifier == r.identifier } }
+
+    func installPhysicalDisconnectObserver() {
+        guard pairing.disconnectObserver == nil else { return }
+        pairing.disconnectObserver = NotificationCenter.default.addObserver(
+            forName: DeviceConnectNotificationCenter.deviceDisconnected,
+            object: nil,
+            queue: nil
+        ) { [weak self] note in
+            guard let udid = note.userInfo?["udid"] as? String else { return }
+            Task { @MainActor [weak self] in
+                self?.markPhysicalDeviceDisconnected(udid: udid)
+            }
+        }
+    }
+
+    func markPhysicalDeviceDisconnected(udid: String) {
+        guard let row = devices.first(where: { $0.identifier == udid }), row.isAvailable else { return }
+        pairing.physicalReadiness.removeValue(forKey: udid)
+        var updated = row
+        updated.isAvailable = false
+        updated.state = "disconnected"
+        upsertDeviceRow(updated)
+        if selected?.identifier == udid {
+            select(row: rows.firstIndex(where: { $0.isAvailable }) ?? rows.count)
+        }
+        guard isViewLoaded else { return }
+        refreshCanvas()
+        updateInspector()
+        canvas.showBanner("“\(row.name)” disconnected.", seconds: 4)
+    }
 
     func remoteRow(directory: String) -> DeviceRow? { simulators.first { $0.isSwiftCodeRemote && $0.deviceDirectory == directory } }
 
@@ -220,6 +254,19 @@ extension DevicesController {
 
     func pairInfoRows(for r: DeviceRow) -> [(String, String)] {
         var out: [(String, String)] = []
+        if isPhysicalDevice(r) {
+            if let readiness = pairing.physicalReadiness[r.identifier] {
+                out.append(("Trust", readiness.trustText))
+                out.append(("Developer Mode", readiness.developerModeText))
+                if let guidance = readiness.actionGuidance {
+                    out.append(("To Fix", guidance))
+                }
+            } else {
+                out.append(("Trust", "Not checked yet"))
+                out.append(("Developer Mode", "Not checked yet"))
+            }
+            return out
+        }
         guard pairingAvailable else { return out }
         let ps = pairs(of: r)
         if isPairablePhone(r) {
@@ -261,6 +308,10 @@ extension DevicesController {
             return i
         }
         let watches = pairing.runtimeChoices?("watchOS") ?? []
+        if isPhysicalDevice(r) {
+            out.append(item("Check Trust & Developer Mode…", #selector(checkPhysicalReadinessChosen(_:)), r.identifier, enabled: idle))
+            out.append(item("Unpair Device…", #selector(unpairPhysicalChosen(_:)), r.identifier, enabled: idle))
+        }
         if isPairablePhone(r), pairingAvailable {
             out.append(item("Pair Watch…", #selector(pairWatchChosen(_:)), r.identifier, enabled: idle && pairing.pairDevices != nil && !watches.isEmpty))
             for p in pairs(of: r) {
@@ -283,6 +334,21 @@ extension DevicesController {
     private func row(identifier: Any?) -> DeviceRow? { (identifier as? String).flatMap { id in allRows.first { $0.identifier == id } } }
 
     @objc func pairWatchChosen(_ sender: NSMenuItem) { if let r = row(identifier: sender.representedObject) { presentPairWatch(phone: r) } }
+    @objc func checkPhysicalReadinessChosen(_ sender: NSMenuItem) { if let r = row(identifier: sender.representedObject) { checkPhysicalReadiness(for: r) } }
+    @objc func unpairPhysicalChosen(_ sender: NSMenuItem) {
+        guard let r = row(identifier: sender.representedObject) else { return }
+        if case let .unavailable(reason, alternative) = PhysicalDevicePairingSupport.unpair {
+            let a = NSAlert()
+            a.messageText = "Unpairing “\(r.name)” is not available in SwiftCode"
+            a.informativeText = "\(reason)\n\n\(alternative)"
+            a.addButton(withTitle: "OK")
+            if let w = view.window, w.isVisible {
+                a.beginSheetModal(for: w)
+            } else {
+                _ = a.runModal()
+            }
+        }
+    }
     @objc func unpairChosen(_ sender: NSMenuItem) { if let p = pair(id: sender.representedObject) { unpair(p) } }
     @objc func activatePairChosen(_ sender: NSMenuItem) { if let p = pair(id: sender.representedObject) { activate(p) } }
     @objc func deleteDeviceChosen(_ sender: NSMenuItem) { if let r = row(identifier: sender.representedObject) { delete(r) } }
@@ -455,7 +521,40 @@ extension DevicesController {
         if isViewLoaded { showDetails() }
     }
 
+    @discardableResult
+    func checkPhysicalReadiness(for r: DeviceRow) -> Task<Void, Never>? {
+        runPairing("Checking trust and Developer Mode…", then: { [weak self] ok in
+            guard !ok, let self else { return }
+            guard let guidance = self.pairing.physicalReadiness[r.identifier]?.actionGuidance else { return }
+            let a = NSAlert()
+            a.messageText = "“\(r.name)” is not ready"
+            a.informativeText = guidance
+            a.addButton(withTitle: "OK")
+            if let w = self.view.window, w.isVisible {
+                a.beginSheetModal(for: w)
+            } else {
+                _ = a.runModal()
+            }
+        }) {
+            if r.state.contains("unpaired") {
+                let readiness = PhysicalDeviceReadiness.untrusted(udid: r.identifier, reason: "devicectl lists this device as unpaired.")
+                self.pairing.physicalReadiness[r.identifier] = readiness
+                return (false, readiness.summary)
+            }
+            do {
+                let readiness = try await DeviceReadinessCommand().execute(deviceUDID: r.identifier)
+                self.pairing.physicalReadiness[r.identifier] = readiness
+                return (readiness.ready, readiness.summary)
+            } catch {
+                let readiness = PhysicalDeviceReadiness.unreachable(udid: r.identifier, reason: error.localizedDescription)
+                self.pairing.physicalReadiness[r.identifier] = readiness
+                return (false, readiness.summary)
+            }
+        }
+    }
+
     func pollPairs() {
+        installPhysicalDisconnectObserver()
         pairing.polls += 1
         guard pairing.polls % 8 == 0, pairing.task == nil else { return }
         Task { await refreshPairs() }

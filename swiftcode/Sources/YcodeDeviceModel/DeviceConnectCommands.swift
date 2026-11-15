@@ -142,6 +142,132 @@ public struct DeviceInfoCommand {
     }
 }
 
+public enum PhysicalDeviceTrustState: String, Sendable {
+    case trusted
+    case untrusted
+    case unknown
+}
+
+public enum PhysicalDeviceDeveloperModeState: String, Sendable {
+    case enabled
+    case disabled
+    case unknown
+}
+
+public struct PhysicalDeviceReadiness: Sendable {
+    public let udid: String
+    public let trust: PhysicalDeviceTrustState
+    public let developerMode: PhysicalDeviceDeveloperModeState
+    public let connectionState: String
+    public let probeError: String?
+
+    public init(udid: String, trust: PhysicalDeviceTrustState, developerMode: PhysicalDeviceDeveloperModeState, connectionState: String, probeError: String? = nil) {
+        self.udid = udid
+        self.trust = trust
+        self.developerMode = developerMode
+        self.connectionState = connectionState
+        self.probeError = probeError
+    }
+
+    public static let trustInstructions = "Connect the device to this Mac with a cable, unlock it, then tap Trust when the device asks Trust This Computer. Enter the device passcode if asked, then check again."
+    public static let developerModeInstructions = "On the device, open Settings, Privacy & Security, Developer Mode, turn it on, then restart the device when asked."
+    public static let unpairInstructions = "Open Xcode, choose Window, Devices and Simulators, Control-click the device, then choose Unpair Device. To remove trust from the device instead, open Settings, General, Transfer or Reset iPhone, Reset, then Reset Location & Privacy. That resets trust for every computer."
+
+    public static func from(details: DeviceInfoDetails) -> PhysicalDeviceReadiness {
+        PhysicalDeviceReadiness(
+            udid: details.identifier,
+            trust: details.trusted.map { $0 ? PhysicalDeviceTrustState.trusted : PhysicalDeviceTrustState.untrusted } ?? .unknown,
+            developerMode: details.developerModeEnabled.map { $0 ? PhysicalDeviceDeveloperModeState.enabled : PhysicalDeviceDeveloperModeState.disabled } ?? .unknown,
+            connectionState: details.connectionState,
+            probeError: nil
+        )
+    }
+
+    public static func untrusted(udid: String, reason: String) -> PhysicalDeviceReadiness {
+        PhysicalDeviceReadiness(udid: udid, trust: .untrusted, developerMode: .unknown, connectionState: "", probeError: reason)
+    }
+
+    public static func unreachable(udid: String, reason: String) -> PhysicalDeviceReadiness {
+        PhysicalDeviceReadiness(udid: udid, trust: .unknown, developerMode: .unknown, connectionState: "", probeError: reason)
+    }
+
+    public var ready: Bool { trust == .trusted && developerMode == .enabled }
+
+    public var summary: String {
+        let trustWord: String
+        switch trust {
+        case .trusted: trustWord = "Trusted"
+        case .untrusted: trustWord = "Not trusted"
+        case .unknown: trustWord = "Trust unknown"
+        }
+        let modeWord: String
+        switch developerMode {
+        case .enabled: modeWord = "Developer Mode on"
+        case .disabled: modeWord = "Developer Mode off"
+        case .unknown: modeWord = "Developer Mode unknown"
+        }
+        return "\(trustWord), \(modeWord)"
+    }
+
+    public var trustText: String {
+        switch trust {
+        case .trusted: return "Trusted"
+        case .untrusted: return "Not trusted"
+        case .unknown: return "Unknown"
+        }
+    }
+
+    public var developerModeText: String {
+        switch developerMode {
+        case .enabled: return "On"
+        case .disabled: return "Off"
+        case .unknown: return "Unknown"
+        }
+    }
+
+    public var actionGuidance: String? {
+        guard !ready else { return nil }
+        var parts: [String] = []
+        switch trust {
+        case .trusted: break
+        case .untrusted: parts.append(Self.trustInstructions)
+        case .unknown:
+            var text = "Trust state could not be determined. Unlock the device, connect it again, then check again."
+            if let probeError { text += " Last probe failed: \(probeError)" }
+            parts.append(text)
+        }
+        switch developerMode {
+        case .enabled: break
+        case .disabled: parts.append(Self.developerModeInstructions)
+        case .unknown:
+            if trust == .trusted { parts.append("Developer Mode could not be determined. Unlock the device, then check again.") }
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " ")
+    }
+}
+
+public enum PhysicalDevicePairingSupport {
+    public enum Availability: Sendable {
+        case unavailable(reason: String, alternative: String)
+    }
+
+    public static let pair = Availability.unavailable(
+        reason: "Apple provides no command-line tool to pair a physical iOS device. devicectl and xcdevice can only list devices and query them once the device already trusts this Mac.",
+        alternative: "Connect the device with a cable, unlock it, then tap Trust when the device asks Trust This Computer. Run Check Trust & Developer Mode again afterwards to confirm.")
+    public static let unpair = Availability.unavailable(
+        reason: "Apple provides no command-line tool to unpair a physical iOS device. devicectl and xcdevice have no unpair operation.",
+        alternative: PhysicalDeviceReadiness.unpairInstructions)
+}
+
+public struct DeviceReadinessCommand {
+    public init() {}
+
+    public func execute(deviceUDID: String) async throws -> PhysicalDeviceReadiness {
+        let details = try await DeviceInfoCommand().execute(deviceUDID: deviceUDID)
+        return PhysicalDeviceReadiness.from(details: details)
+    }
+}
+
 public struct DiagnosticsCommand {
     public init() {}
 

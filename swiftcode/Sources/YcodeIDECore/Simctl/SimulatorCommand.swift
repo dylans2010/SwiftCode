@@ -98,4 +98,16 @@ public struct SimulatorCommand: Sendable, Identifiable {
     public static func screenshot(udid: String, path: String) -> SimulatorCommand {
         SimulatorCommand(name: "Capture Screenshot", executable: "/usr/bin/xcrun", arguments: ["simctl", "io", udid, "screenshot", path], timeout: 20.0)
     }
+
+    public static func listApps(udid: String) -> SimulatorCommand {
+        SimulatorCommand(name: "List Installed Applications", executable: "/usr/bin/xcrun", arguments: ["simctl", "listapps", udid], timeout: 20.0)
+    }
+
+    public static func recordVideo(udid: String, path: String) -> SimulatorCommand {
+        SimulatorCommand(name: "Record Simulator Video", executable: "/usr/bin/xcrun", arguments: ["simctl", "io", udid, "recordVideo", "--codec=h264", path], timeout: 60.0)
+    }
+
+    public static func clone(udid: String, name: String) -> SimulatorCommand {
+        SimulatorCommand(name: "Clone Device", executable: "/usr/bin/xcrun", arguments: ["simctl", "clone", udid, name], timeout: 60.0)
+    }
 }

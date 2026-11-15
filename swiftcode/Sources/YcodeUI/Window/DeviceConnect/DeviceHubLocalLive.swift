@@ -134,11 +134,7 @@ final class LocalSimPump: @unchecked Sendable {
 
     
     private func capture(to url: URL) -> (png: [UInt8], image: CGImage, width: Int, height: Int)? {
-        guard let result = try? DeviceConnectProcessRunner.shared.runBlocking(
-            executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
-            arguments: ["simctl", "io", udid, "screenshot", url.path],
-            timeout: 20
-        ), result.exitCode == 0, let png = try? Data(contentsOf: url), !png.isEmpty,
+        guard (try? SimulatorManager.captureScreenshotSync(udid: udid, to: url)) != nil, let png = try? Data(contentsOf: url), !png.isEmpty,
               let source = CGImageSourceCreateWithData(png as CFData, nil),
               let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
         return (Array(png), image, image.width, image.height)
@@ -257,33 +253,8 @@ enum DeviceHubSimctl {
 
     
     
-    static func startRecording(udid: String, deviceName: String, into directory: URL) throws -> (process: Process, url: URL) {
-        let stamp = ISO8601DateFormatter.string(from: Date(), timeZone: .current,
-                                                formatOptions: [.withYear, .withMonth, .withDay, .withTime, .withDashSeparatorInDate, .withColonSeparatorInTime])
-            .replacingOccurrences(of: ":", with: "-")
-        let url = directory.appendingPathComponent("\(deviceName) Recording \(stamp).mov")
-        let process = try DeviceConnectProcessRunner.shared.runStreaming(
-            executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
-            arguments: ["simctl", "io", udid, "recordVideo", "--codec=h264", url.path],
-            onStdout: { _ in },
-            onStderr: { _ in }
-        )
-        return (process, url)
-    }
-
-    
     static func stopRecording(_ process: Process) {
-        if process.isRunning {
-            #if canImport(Darwin)
-            Darwin.kill(process.processIdentifier, SIGINT)
-            #else
-            process.terminate()
-            #endif
-            
-            let deadline = Date().addingTimeInterval(10)
-            while process.isRunning, Date() < deadline { Thread.sleep(forTimeInterval: 0.05) }
-            if process.isRunning { process.terminate() }
-        }
+        SimulatorManager.stopScreenRecording(process)
     }
 
     
@@ -332,25 +303,5 @@ enum DeviceHubSimctl {
     
     
     
-    static func devicePlistURL(udid: String) -> URL {
-        FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Developer/CoreSimulator/Devices/\(udid)/device.plist")
-    }
-
-    
-    
-    
-    static func renameDevice(udid: String, to name: String) -> (status: Int32, output: String) {
-        let url = devicePlistURL(udid: udid)
-        guard var plist = NSDictionary(contentsOf: url) as? [String: Any] else {
-            return (-1, "could not read \(url.path)")
-        }
-        plist["name"] = name
-        guard let data = try? PropertyListSerialization.data(fromPropertyList: plist, format: .xml, options: 0),
-              (try? data.write(to: url)) != nil else {
-            return (-1, "could not write \(url.path)")
-        }
-        return (0, "")
-    }
 }
 #endif
