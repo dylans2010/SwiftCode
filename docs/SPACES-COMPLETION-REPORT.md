@@ -7,7 +7,7 @@ features (A1–F60), §5 CLI parity, UI/settings/detection, §4 hardening,
 `tools/clean.py` repo-wide cleanup, validation matrix, integration workflows,
 and the §9 30-step end-to-end acceptance scenario.
 
-Final remote main SHA: 0d330727f4d16e9b3c01c0991946be4573c30353 (S10 + coordinator fix push; the report's own SHA line was filled in the follow-up commit below)
+S10 + coordinator-fix push: 0d330727f4d16e9b3c01c0991946be4573c30353. This SHA line was filled in by the follow-up commit a2599bddd5398b4a1333b1b73f54389c2fab11bc (see git log); the live tip may be newer — verify it with the GitHub API.
 
 ## How this report was built
 
