@@ -11,7 +11,9 @@ struct Init: ParsableCommand {
     @Option(name: .long, help: "Author name") var name: String?
     @Option(name: .long, help: "Author email") var email: String?
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Init")
         var user: SpacesConfig.User? = nil
         if let n = name, let e = email { user = SpacesConfig.User(name: n, email: e) }
         let repo = try Repository.create(at: URL(fileURLWithPath: path),
@@ -25,7 +27,9 @@ struct Clone: ParsableCommand {
     @Argument(help: "Remote URL or local path") var url: String
     @Argument(help: "Destination directory") var directory: String?
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Clone")
         let dest = directory.map { URL(fileURLWithPath: $0) }
         let repo = try CloneOps.clone(url: url, into: dest)
         print("Cloned into \(repo.worktreeURL.path)")
@@ -37,7 +41,9 @@ struct Open: ParsableCommand {
     @Argument(help: "Path") var path: String = "."
     @Option(name: .long) var repo: String?
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Open")
         let repo = try Repository.open(at: URL(fileURLWithPath: path))
         let api = SpacesAPI(repo: repo)
         let info = try api.info()
@@ -50,7 +56,9 @@ struct Open: ParsableCommand {
 struct Discover: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Discover the repository containing a path")
     @Argument(help: "Path") var path: String = "."
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Discover")
         guard let root = RepositoryFormat.discover(from: URL(fileURLWithPath: path)) else {
             throw SpacesError.notARepository(path)
         }
@@ -61,7 +69,9 @@ struct Discover: ParsableCommand {
 struct Inspect: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Inspect repository metadata")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Inspect")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let api = SpacesAPI(repo: repo)
         let info = try api.info()
@@ -75,7 +85,9 @@ struct Inspect: ParsableCommand {
 struct Validate: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Validate repository structure")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Validate")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let problems = repo.validate()
         if problems.isEmpty { print("Repository is valid") }
@@ -87,7 +99,9 @@ struct Repair: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Repair repository issues")
     @Option(name: .long) var repo: String?
     @Flag(name: .long) var dryRun: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Repair")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         if dryRun {
             for d in try MaintenanceOps(repo: repo).diagnose() where d.level != .ok { print(d) }
@@ -100,7 +114,9 @@ struct Repair: ParsableCommand {
 struct Migrate: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Migrate repository format")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Migrate")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         if repo.config.version > RepositoryFormat.formatVersion {
             throw SpacesError.configError("downgrade not supported")
@@ -114,7 +130,13 @@ struct Migrate: ParsableCommand {
 struct Upgrade: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Upgrade repository format")
     @Option(name: .long) var repo: String?
-    func run() throws { try Migrate().run() }
+    @OptionGroup var global: GlobalOptions
+    func run() throws {
+        SpacesOutput.apply(global, command: "Upgrade")
+        var cmd = Migrate()
+        cmd.repo = repo
+        try cmd.run()
+    }
 }
 
 struct Config: ParsableCommand {
@@ -124,15 +146,33 @@ struct Config: ParsableCommand {
     @Argument(help: "Value") var value: String?
     @Flag(name: .long) var list: Bool = false
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Config")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         if list || (key == nil && value == nil) {
             print(String(data: try JSONEncoder().encode(repo.config), encoding: .utf8)!)
             return
         }
         guard let key else { throw SpacesError.invalidArgument("key required") }
-        
         let parts = key.split(separator: ".").map(String.init)
+        if parts.count == 3, parts[0] == "remote", parts[2] == "url" {
+            if let v = value {
+                if var remote = repo.config.remotes[parts[1]] {
+                    remote.url = v
+                    repo.config.remotes[parts[1]] = remote
+                } else {
+                    repo.config.remotes[parts[1]] = SpacesConfig.RemoteConfig(url: v)
+                }
+                try repo.saveConfig()
+                print("set \(key) = \(v)")
+            } else if let remote = repo.config.remotes[parts[1]] {
+                print(remote.url)
+            } else {
+                throw SpacesError.invalidArgument("no such remote: \(parts[1])")
+            }
+            return
+        }
         if parts.count == 2, parts[0] == "remote", let remote = repo.config.remotes[parts[1]] {
             print(remote.url); return
         }
@@ -160,13 +200,16 @@ struct Config: ParsableCommand {
 
 struct Version: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Print Spaces version")
-    func run() { print("spaces 1.0.0 (SwiftCode native source control)") }
+    @OptionGroup var global: GlobalOptions
+    func run() throws { try SpacesOutput.apply(global, command: "Version"); print("spaces 1.0.0 (SwiftCode native source control)") }
 }
 
 struct Info: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Repository information")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Info")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let api = SpacesAPI(repo: repo)
         let info = try api.info()
@@ -190,14 +233,16 @@ struct Status: ParsableCommand {
     @Flag(name: .long) var branch: Bool = false
     @Flag(name: .long) var json: Bool = false
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Status")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let report = try WorktreeScanner(repo: repo).status()
         if branch {
             print("\(report.branch ?? "HEAD")")
             return
         }
-        if json {
+        if wantsJSON(json) {
             printStatus(report, json: true)
         } else if short {
             for s in report.staged { print("\(s.indexStatus?.rawValue.prefix(1) ?? " ") \(s.path)") }
@@ -214,7 +259,9 @@ struct Changes: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Flag(name: .long) var staged: Bool = false
     @Flag(name: .long) var nameOnly: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Changes")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let report = try WorktreeScanner(repo: repo).status()
         let entries = staged ? report.staged : report.entries.filter { $0.isStaged || $0.isUnstaged }
@@ -235,7 +282,9 @@ struct Add: ParsableCommand {
     @Argument(help: "Path(s) to stage, or . for all") var paths: [String] = ["."]
     @Flag(name: .long) var all: Bool = false
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Add")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ops = StagingOps(repo: repo)
         var staged: [String] = []
@@ -251,7 +300,9 @@ struct Remove: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Argument var paths: [String]
     @Flag(name: .long) var cached: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Remove")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ops = StagingOps(repo: repo)
         for p in paths {
@@ -267,7 +318,9 @@ struct Move: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Argument var old: String
     @Argument var new: String
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Move")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try StagingOps(repo: repo).move(old, new)
         print("renamed \(old) -> \(new)")
@@ -280,7 +333,9 @@ struct Restore: ParsableCommand {
     @Argument var paths: [String]
     @Flag(name: .long) var staged: Bool = false
     @Option(name: .long) var source: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Restore")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ops = StagingOps(repo: repo)
         for p in paths {
@@ -309,7 +364,9 @@ struct Clean: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Flag(name: .long) var dryRun: Bool = false
     @Flag(name: .long) var force: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Clean")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ops = StagingOps(repo: repo)
         if !force && !dryRun {
@@ -326,7 +383,9 @@ struct Unstage: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Unstage paths")
     @Option(name: .long) var repo: String?
     @Argument var paths: [String]
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Unstage")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ops = StagingOps(repo: repo)
         for p in paths { try ops.unstage(p); print("unstaged \(p)") }
@@ -337,7 +396,9 @@ struct Stage: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Stage paths (alias for add)")
     @Option(name: .long) var repo: String?
     @Argument var paths: [String]
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Stage")
         var cmd = try Add.parseAsRoot((["--repo", repo ?? "."] + paths))
         try cmd.run()
     }
@@ -355,7 +416,9 @@ struct Commit: ParsableCommand {
     @Option(name: .long, help: "Commit author name") var authorName: String?
     @Option(name: .long, help: "Commit author email") var authorEmail: String?
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Commit")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         var msg = message
         if let f = file { msg = try String(contentsOfFile: f, encoding: .utf8) }
@@ -385,7 +448,9 @@ struct Amend: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Amend the last commit")
     @Option(name: .long) var repo: String?
     @Option(name: .shortAndLong) var message: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Amend")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let result = try StagingOps(repo: repo).amend(message: message)
         print("[\(try repo.refs.currentBranch() ?? "HEAD")] \(result.oid.hex.prefix(7)) \(result.summary) (amended)")
@@ -403,10 +468,12 @@ struct Log: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @Argument var path: String?
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Log")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let history = HistoryOps(repo: repo)
-        if json {
+        if wantsJSON(json) {
             let infos = try history.log(firstParentOnly: firstParent, limit: limit, all: all)
             var rows: [[String: Any]] = []
             for c in infos {
@@ -451,7 +518,9 @@ struct Show: ParsableCommand {
     @Argument var rev: String = "HEAD"
     @Flag(name: .long) var stat: Bool = false
     @Flag(name: .long) var nameOnly: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Show")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let result = try HistoryOps(repo: repo).show(rev)
         let c = result.info
@@ -473,7 +542,9 @@ struct Show: ParsableCommand {
 struct Describe: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Describe HEAD relative to nearest tag")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Describe")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         print(try HistoryOps(repo: repo).describe())
     }
@@ -490,7 +561,9 @@ struct Diff: ParsableCommand {
     @Flag(name: .long) var nameOnly: Bool = false
     @Option(name: .long) var path: String?
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Diff")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ops = DiffOps(repo: repo)
         let diffs: [DiffOps.FileDiff]
@@ -521,7 +594,9 @@ struct Patch: ParsableCommand {
     @Argument var from: String
     @Argument var to: String = "HEAD"
     @Argument(help: "Output file") var output: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Patch")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let diffs = try DiffOps(repo: repo).commitDiff(from, to)
         let patch = DiffOps.renderPatch(diffs)
@@ -546,7 +621,9 @@ struct BranchCreate: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Argument var name: String
     @Argument var startPoint: String = "HEAD"
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "BranchCreate")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try BranchOps(repo: repo).create(name, at: startPoint)
         print("created branch \(name) at \(oid.hex.prefix(7))")
@@ -558,7 +635,9 @@ struct BranchDelete: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Argument var name: String
     @Flag(name: .long) var force: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "BranchDelete")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try BranchOps(repo: repo).delete(name, force: force)
         print("deleted branch \(name) (archived for recovery)")
@@ -570,7 +649,9 @@ struct BranchRename: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Argument var old: String
     @Argument var new: String
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "BranchRename")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try BranchOps(repo: repo).rename(old, to: new)
         print("renamed \(old) -> \(new)")
@@ -582,10 +663,12 @@ struct BranchList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Flag(name: .long) var all: Bool = false
     @Flag(name: .long) var json: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "BranchList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let branches = try BranchOps(repo: repo).list(includeRemote: all)
-        if json { printJSON(branches); return }
+        if wantsJSON(json) { printJSON(branches); return }
         for b in branches {
             let marker = b.isCurrent ? "*" : " "
             let remote = b.isRemote ? " (remote)" : ""
@@ -598,7 +681,13 @@ struct BranchList: ParsableCommand {
 struct Branches: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "List branches (alias)")
     @Option(name: .long) var repo: String?
-    func run() throws { try BranchList().run() }
+    @OptionGroup var global: GlobalOptions
+    func run() throws {
+        SpacesOutput.apply(global, command: "Branches")
+        var cmd = BranchList()
+        cmd.repo = repo
+        try cmd.run()
+    }
 }
 
 struct Switch: ParsableCommand {
@@ -608,14 +697,19 @@ struct Switch: ParsableCommand {
     @Flag(name: .long) var create: Bool = false
     @Flag(name: .long) var force: Bool = false
     @Flag(name: .long) var detach: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Switch")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         if detach {
-            try BranchOps(repo: repo).switchTo(target, force: force, create: false)
+            let oid = try repo.resolveRevision(target)
+            try BranchOps(repo: repo).switchTo(target, force: force, create: create)
+            try repo.setDetachedHead(oid)
+            print("detached HEAD at \(oid.hex.prefix(12))")
         } else {
             try BranchOps(repo: repo).switchTo(target, force: force, create: create)
+            print("switched to \(target)")
         }
-        print("switched to \(target)")
     }
 }
 
@@ -625,8 +719,11 @@ struct Checkout: ParsableCommand {
     @Argument var target: String
     @Flag(name: .long) var create: Bool = false
     @Flag(name: .long) var force: Bool = false
+    @Flag(name: .long) var detach: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
-        var cmd = try Switch.parseAsRoot(["--repo", repo ?? ".", target] + (create ? ["--create"] : []) + (force ? ["--force"] : []))
+        SpacesOutput.apply(global, command: "Checkout")
+        var cmd = try Switch.parseAsRoot(["--repo", repo ?? ".", target] + (create ? ["--create"] : []) + (force ? ["--force"] : []) + (detach ? ["--detach"] : []))
         try cmd.run()
     }
 }
@@ -644,7 +741,9 @@ struct Merge: ParsableCommand {
     @Flag(name: .long) var preview: Bool = false
     @Argument var targetArg: String?
 
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Merge")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let engine = MergeEngine(repo: repo)
         if abort { try engine.mergeAbort(); print("merge aborted"); return }
@@ -689,7 +788,9 @@ struct Merge: ParsableCommand {
 struct MergeAbort: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "merge-abort", abstract: "Abort a merge")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "MergeAbort")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try MergeEngine(repo: repo).mergeAbort()
         print("merge aborted")
@@ -700,7 +801,9 @@ struct MergeContinue: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "merge-continue", abstract: "Continue a merge after resolving conflicts")
     @Option(name: .long) var repo: String?
     @Option(name: .shortAndLong) var message: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "MergeContinue")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try MergeEngine(repo: repo).mergeContinue(message: message)
         print("merge committed: \(oid.hex.prefix(7))")
@@ -711,7 +814,9 @@ struct MergePreview: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "merge-preview", abstract: "Preview a merge")
     @Option(name: .long) var repo: String?
     @Argument var target: String
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "MergePreview")
         var cmd = try Merge.parseAsRoot(["--repo", repo ?? ".", "--preview", target])
         try cmd.run()
     }
@@ -721,7 +826,9 @@ struct MergeStrategy: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "merge-strategy", abstract: "Show the default merge strategy, or details for one strategy")
     @Option(name: .long) var repo: String?
     @Argument var name: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "MergeStrategy")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let engine = MergeEngine(repo: repo)
         if let name {
@@ -747,7 +854,9 @@ struct Rebase: ParsableCommand {
     @Argument var onto: String
     @Argument var branch: String?
     @Option(name: .long, help: "Todo spec lines: 'pick <rev>', 'drop <rev>', 'squash <rev>'...") var todo: [String] = []
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Rebase")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         if let b = branch {
             try BranchOps(repo: repo).switchTo(b)
@@ -768,7 +877,9 @@ struct Rebase: ParsableCommand {
 struct RebaseContinue: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "rebase-continue", abstract: "Continue rebase")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "RebaseContinue")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let state = try RebaseOps(repo: repo).continueRebase()
         if let s = state { print("rebase: \(s.todo.count - s.done) commits remaining") }
@@ -779,7 +890,9 @@ struct RebaseContinue: ParsableCommand {
 struct RebaseAbort: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "rebase-abort", abstract: "Abort rebase")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "RebaseAbort")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try RebaseOps(repo: repo).abort()
         print("rebase aborted")
@@ -789,7 +902,9 @@ struct RebaseAbort: ParsableCommand {
 struct RebaseSkip: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "rebase-skip", abstract: "Skip current rebase commit")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "RebaseSkip")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let state = try RebaseOps(repo: repo).skip()
         if let s = state { print("rebase: \(s.todo.count - s.done) commits remaining") }
@@ -803,14 +918,22 @@ struct CherryPick: ParsableCommand {
     @Argument var revs: [String]
     @Flag(name: .long) var `continue`: Bool = false
     @Flag(name: .long) var abort: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "CherryPick")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let engine = MergeEngine(repo: repo)
         if abort { try engine.cherryPickAbort(); print("cherry-pick aborted"); return }
         if `continue` {
-            if let oid = try engine.cherryPickContinue() {
-                print("cherry-pick committed: \(oid.hex.prefix(7))")
-            } else { print("nothing to continue") }
+            do {
+                if let oid = try engine.cherryPickContinue() {
+                    print("cherry-pick committed: \(oid.hex.prefix(7))")
+                } else {
+                    print("nothing to continue: no cherry-pick in progress")
+                }
+            } catch SpacesError.invalidArgument(let message) where message == "no cherry-pick/revert in progress" {
+                print("nothing to continue: no cherry-pick in progress")
+            }
             return
         }
         for rev in revs {
@@ -827,10 +950,18 @@ struct CherryPick: ParsableCommand {
 struct CherryPickContinue: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "cherry-pick-continue", abstract: "Continue cherry-pick")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "CherryPickContinue")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
-        if let oid = try MergeEngine(repo: repo).cherryPickContinue() {
-            print("committed \(oid.hex.prefix(7))")
+        do {
+            if let oid = try MergeEngine(repo: repo).cherryPickContinue() {
+                print("committed \(oid.hex.prefix(7))")
+            } else {
+                print("nothing to continue: no cherry-pick in progress")
+            }
+        } catch SpacesError.invalidArgument(let message) where message == "no cherry-pick/revert in progress" {
+            print("nothing to continue: no cherry-pick in progress")
         }
     }
 }
@@ -838,7 +969,9 @@ struct CherryPickContinue: ParsableCommand {
 struct CherryPickAbort: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "cherry-pick-abort", abstract: "Abort cherry-pick")
     @Option(name: .long) var repo: String?
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "CherryPickAbort")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try MergeEngine(repo: repo).cherryPickAbort()
         print("aborted")
@@ -849,7 +982,9 @@ struct Revert: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Revert a commit")
     @Option(name: .long) var repo: String?
     @Argument var revs: [String]
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Revert")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for rev in revs {
             if let oid = try MergeEngine(repo: repo).cherryPick(rev, revert: true) {
@@ -869,7 +1004,9 @@ struct Reset: ParsableCommand {
     @Flag(name: .long) var mixed: Bool = false
     @Flag(name: .long) var hard: Bool = false
     @Argument var rev: String = "HEAD"
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Reset")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let mode: BranchOps.ResetMode = hard ? .hard : (soft ? .soft : .mixed)
         try BranchOps(repo: repo).reset(to: rev, mode: mode)
@@ -882,7 +1019,9 @@ struct ResetHistory: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Argument var rev: String = "HEAD"
     @Flag(name: .long) var hard: Bool = true
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "ResetHistory")
         var cmd = try Reset.parseAsRoot(["--repo", repo ?? ".", "--hard", rev])
         try cmd.run()
     }
@@ -893,7 +1032,9 @@ struct Reflog: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Option(name: .long) var limit: Int = 50
     @Argument var ref: String = "HEAD"
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Reflog")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for e in try repo.readReflog(refName: ref, limit: limit) {
             print("\(e.timestamp) \(e.new?.hex.prefix(7) ?? "--------") \(e.message) (\(e.ident))")
@@ -906,7 +1047,9 @@ struct Blame: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Argument var path: String
     @Argument var rev: String = "HEAD"
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Blame")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for line in try HistoryOps(repo: repo).blame(path, rev: rev) {
             print("\(line.commit.hex.prefix(7)) (\(line.author)) \(line.line)")
@@ -919,7 +1062,9 @@ struct Ancestry: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Argument var a: String
     @Argument var b: String
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Ancestry")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         if let mb = try HistoryOps(repo: repo).mergeBase(
             repo.resolveRevision(a), repo.resolveRevision(b)) {
@@ -935,7 +1080,9 @@ struct Graph: ParsableCommand {
     @Option(name: .long) var repo: String?
     @Option(name: .long) var limit: Int = 100
     @Flag(name: .long) var all: Bool = false
+    @OptionGroup var global: GlobalOptions
     func run() throws {
+        SpacesOutput.apply(global, command: "Graph")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let nodes = try BranchOps(repo: repo).graph(limit: limit)
         for n in nodes {

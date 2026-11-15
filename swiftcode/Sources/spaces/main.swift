@@ -10,17 +10,17 @@ struct SpacesCLI: AsyncParsableCommand {
         version: "1.0.0",
         subcommands: [
             Init.self, Status.self, Changes.self, Stage.self, Add.self, Remove.self,
-            Move.self, Restore.self, Clean.self, Unstage.self, Reset.self,
+            Move.self, Restore.self, Clean.self, Unstage.self, Reset.self, ResetHistory.self,
             Commit.self, Amend.self, Log.self, Show.self, Describe.self, Diff.self,
             Patch.self, Ancestry.self, Graph.self, Blame.self, Annotate.self,
-            Branch.self, Switch.self, Checkout.self, Merge.self, MergeAbort.self,
+            Branch.self, Branches.self, Switch.self, Checkout.self, Merge.self, MergeAbort.self,
             MergeContinue.self, MergePreview.self, MergeStrategyList.self,
             Rebase.self, RebaseContinue.self, RebaseAbort.self, RebaseSkip.self,
             CherryPick.self, CherryPickContinue.self, CherryPickAbort.self,
-            Revert.self, Reflog.self, Tag.self, Stash.self,
+            Revert.self, Reflog.self, Tag.self, Tags.self, VerifyTag.self, Stash.self, Stashes.self,
             Snapshot.self, Timeline.self, Checkpoint.self, Recover.self,
             RestorePoint.self, RecoveryList.self, RecoveryPrune.self,
-            Remote.self, Fetch.self, Pull.self, Push.self, Sync.self,
+            Remote.self, Remotes.self, Fetch.self, Pull.self, Push.self, Sync.self,
             Publish.self, Unpublish.self, Upstream.self, Transfer.self,
             Clone.self, Doctor.self, Fsck.self, GC.self, Prune.self,
             Compact.self, Optimize.self, Repack.self, Count.self,
@@ -29,7 +29,7 @@ struct SpacesCLI: AsyncParsableCommand {
             Maintenance.self, Migrate.self, Upgrade.self, Config.self,
             Version.self, Info.self, Inspect.self, Validate.self,
             Open.self, Discover.self, Explain.self, Impact.self, Compare.self,
-            Benchmark.self, Trace.self, Events.self, Notes.self, Sign.self,
+            Benchmark.self, Trace.self, Events.self, Notes.self, Security.self, Sign.self,
             VerifySignature.self, Identities.self, Credentials.self,
             Permissions.self, Audit.self, Search.self, Find.self,
             FindFile.self, FindCommit.self, FindChange.self, FindBranch.self,
@@ -89,14 +89,83 @@ struct OutputOptions: ParsableArguments {
 
     @Flag(name: .long, help: "Force operation")
     var force: Bool = false
+
+    @Option(name: .long, help: "Output format: text, json, jsonl")
+    var format: String = "text"
+
+    @Flag(name: .long, help: "Debug output")
+    var debug: Bool = false
+
+    var jsonRequested: Bool { json || format == "json" || format == "jsonl" }
+}
+
+struct GlobalOptions: ParsableArguments {
+    @Option(name: .long, help: "Output format: text, json, jsonl")
+    var format: String = "text"
+
+    @Flag(name: .long, help: "Suppress non-essential output")
+    var quiet: Bool = false
+
+    @Flag(name: .long, help: "Verbose output")
+    var verbose: Bool = false
+
+    @Flag(name: .long, help: "Debug output")
+    var debug: Bool = false
+
+    @Flag(name: .long, help: "Disable colored output")
+    var noColor: Bool = false
+}
+
+enum SpacesOutput {
+    nonisolated(unsafe) static var format: String = "text"
+    nonisolated(unsafe) static var quiet: Bool = false
+    nonisolated(unsafe) static var verbose: Bool = false
+    nonisolated(unsafe) static var debug: Bool = false
+    nonisolated(unsafe) static var noColor: Bool = false
+
+    static func apply(_ global: GlobalOptions, command: String) throws {
+        guard ["text", "json", "jsonl"].contains(global.format) else {
+            throw SpacesError.invalidArgument("unknown --format '\(global.format)' (expected text, json, or jsonl)")
+        }
+        if global.format != "text" { format = global.format }
+        quiet = quiet || global.quiet
+        verbose = verbose || global.verbose
+        debug = debug || global.debug
+        noColor = noColor || global.noColor
+        if verbose && !quiet {
+            FileHandle.standardError.write("spaces: running \(command)\n".data(using: .utf8)!)
+        }
+        if debug && !quiet {
+            FileHandle.standardError.write("spaces: debug: \(command) format=\(format) quiet=\(quiet) verbose=\(verbose) no-color=\(noColor)\n".data(using: .utf8)!)
+        }
+    }
+
+    static func apply(_ output: OutputOptions, command: String) throws {
+        try apply(GlobalOptions(format: output.format, quiet: output.quiet,
+                                verbose: output.verbose, debug: output.debug,
+                                noColor: output.noColor), command: command)
+    }
+}
+
+func wantsJSON(_ localJSON: Bool) -> Bool {
+    localJSON || SpacesOutput.format == "json" || SpacesOutput.format == "jsonl"
+}
+
+func print(_ items: Any..., separator: String = " ", terminator: String = "\n") {
+    if SpacesOutput.quiet && SpacesOutput.format == "text" { return }
+    Swift.print(items.map { String(describing: $0) }.joined(separator: separator), terminator: terminator)
 }
 
 func printJSON<T: Encodable>(_ value: T) {
     let encoder = JSONEncoder()
-    encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    if SpacesOutput.format == "jsonl" {
+        encoder.outputFormatting = [.sortedKeys]
+    } else {
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+    }
     if let data = try? encoder.encode(value),
        let str = String(data: data, encoding: .utf8) {
-        print(str)
+        Swift.print(str)
     }
 }
 
