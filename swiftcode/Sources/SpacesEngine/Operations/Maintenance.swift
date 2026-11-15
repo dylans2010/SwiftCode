@@ -312,7 +312,7 @@ public struct MaintenanceOps {
             
             
             
-            let oldIndex = try repo.index()
+            let oldIndex = (try? repo.index()) ?? Index()
             for (path, e) in oldIndex.entries where index.entries[path] == nil {
                 let url = try repo.worktreeURL(forRelativePath: path)
                 if FileManager.default.fileExists(atPath: url.path) {
