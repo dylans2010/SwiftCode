@@ -769,4 +769,6 @@ remain the gate, now over 208 `@Test` funcs).
   recorded path is rejected; scoped finalize during a merge is refused
   and the merge state is untouched).
 
-Follow-up push SHA: 2ef39dfc1e47941db1a478a6179dc88c8c2c9902.
+Follow-up push SHA: 2ef39dfc1e47941db1a478a6179dc88c8c2c9902. This SHA line was
+filled in by the follow-up commit 1d3ecba4 (see git log); the live tip may
+be newer — verify it with the GitHub API.
