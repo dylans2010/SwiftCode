@@ -7,6 +7,40 @@ public struct MergeEngine {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
 
+    public struct MergeStrategyInfo: Sendable {
+        public var name: String
+        public var implemented: Bool
+        public var description: String
+    }
+
+    private static let knownStrategies: [MergeStrategyInfo] = [
+        MergeStrategyInfo(name: "ort", implemented: true, description: "Three-way merge over the merge base. Paths changed on one side only are taken; paths changed on both sides are merged line by line, and overlapping changes become conflicts."),
+        MergeStrategyInfo(name: "recursive", implemented: false, description: "Not implemented. Spaces has a single three-way merge implementation; recursive is not a separate implementation, so it is listed for transparency and rejected when requested.")
+    ]
+
+    public func supportedMergeStrategies() -> [MergeStrategyInfo] {
+        Self.knownStrategies
+    }
+
+    public func defaultMergeStrategy() -> MergeStrategyInfo {
+        Self.knownStrategies[0]
+    }
+
+    public func strategy(named name: String) throws -> MergeStrategyInfo {
+        guard let info = Self.knownStrategies.first(where: { $0.name == name }) else {
+            throw SpacesError.invalidArgument("unknown merge strategy '\(name)'; supported strategies: \(Self.knownStrategies.map { $0.name }.joined(separator: ", "))")
+        }
+        return info
+    }
+
+    public func resolveMergeStrategy(_ name: String) throws -> MergeStrategyInfo {
+        let info = try strategy(named: name)
+        guard info.implemented else {
+            throw SpacesError.unsupportedOperation("merge strategy '\(name)' is not implemented; supported strategies: \(Self.knownStrategies.filter { $0.implemented }.map { $0.name }.joined(separator: ", "))")
+        }
+        return info
+    }
+
     public enum MergeResult {
         case upToDate
         case fastForward(ObjectID)
@@ -195,8 +229,8 @@ public struct MergeEngine {
     @discardableResult
     public func merge(_ target: String, allowFF: Bool = true,
                       strategy: String = "ort") throws -> MergeOutcome {
-        _ = strategy
-        return try repo.performTransaction(steps: ["merge:\(target)"]) {
+        let resolved = try resolveMergeStrategy(strategy)
+        return try repo.performTransaction(steps: ["merge:\(target) strategy:\(resolved.name)"]) {
             if repo.inMerge() { throw SpacesError.mergeInProgress }
             if repo.inRebase() { throw SpacesError.rebaseInProgress }
             guard let headOID = try repo.refs.headOID(objects: repo.objects) else {

@@ -78,9 +78,10 @@ spaces branch|switch|merge|rebase|cherry-pick|revert
 spaces tag|stash|snapshot|reset|restore|clean
 spaces diff|apply|format-patch
 spaces remote|fetch|push|pull|clone|bundle|archive
-spaces worktree-add|worktree-remove|worktree-list
-spaces workspace-switch|workspace-remove|workspace-list
-spaces merge-strategy|merge-strategies
+spaces worktree add|remove|list
+spaces worktrees|workspaces
+spaces workspace create|switch|remove|list
+spaces merge-strategy [name]|merge-strategies
 spaces fsck|gc|count|storage|diagnose|health|repair|rebuild-index
 spaces search|history
 spaces hook|sign|verify
@@ -207,21 +208,30 @@ command; "no CLI command" means the feature is reachable only through
 
 ### Worktree and workspace command names
 
-The canonical top-level commands are `spaces worktree-add`,
-`spaces worktree-remove`, `spaces worktree-list`,
-`spaces workspace-switch`, `spaces workspace-remove`, and
-`spaces workspace-list`, plus `spaces merge-strategies` (the
-`spaces merge-strategy` command keeps its existing name). Do not use the
-older `spaces worktree add|remove|list` forms.
+The canonical commands are the group forms `spaces worktree add|remove|list`
+and `spaces workspace create|switch|remove|list`, plus the list shortcuts
+`spaces worktrees` and `spaces workspaces`. The leaf structs
+(`WorktreeAdd`, `WorktreeList`, `WorktreeRemove`, `WorkspaceCreate`,
+`WorkspaceSwitch`, `WorkspaceRemove`, `WorkspaceList`) are subcommands of
+their groups only and are not registered as top-level commands, so there is
+no redundant `spaces worktree worktree-add` path and no generic top-level
+`spaces create`. `spaces workspace switch <name-or-path>` resolves the
+argument against the registered worktrees and prints the validated
+worktree's name, path, branch, and HEAD oid, followed by the exact `cd`
+command for that path; an unregistered target exits with an error listing
+the registered worktrees.
 
-Known wart, recorded as a follow-up decision rather than fixed here: the
-worktree/workspace command structs are dual-role — they are registered both
-as top-level commands and as subcommands of the `worktree`/`workspace`
-groups — so the group paths are now redundantly named
-(`spaces worktree worktree-add`, `spaces workspace workspace-switch`, and
-so on). The alternative is de-registering the top-level aliases to restore
-the documented group paths; that choice is left to the coordinator's final
-report.
+### Merge strategies
+
+`MergeEngine` owns the strategy model. `ort` is the implemented default:
+the three-way merge over the merge base. `recursive` is listed but not
+implemented — Spaces has a single three-way merge implementation — and
+requesting it (or any unknown strategy) fails with an error naming the
+supported set instead of silently falling back. `spaces merge-strategy`
+prints the default strategy, `spaces merge-strategy <name>` prints one
+strategy's detail, and `spaces merge-strategies` lists all strategies
+with their implemented status. `spaces merge --strategy <name>` validates
+the strategy before any merge work starts.
 
 ## Repository detection
 

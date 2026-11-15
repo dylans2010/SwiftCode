@@ -344,4 +344,36 @@ import Testing
         #expect(log.count >= 2)
         #expect(log.contains { $0.oid == first })
     }
+
+    @Test func workspaceSwitchResolvesRegisteredWorktree() throws {
+        let (_, api, url) = try SpacesTestSupport.makeRepo()
+        let head = try SpacesTestSupport.commitFiles(api, ["a.txt": "one\n"], message: "base")
+        let main = try api.resolveWorktree("main")
+        #expect(main.name == "main")
+        #expect(main.path == api.repo.worktreeURL.path)
+        #expect(main.branch == "main")
+        #expect(main.headOID == head.hex)
+        let wtPath = URL(fileURLWithPath: url.appendingPathComponent("wt-side").path).standardizedFileURL.path
+        let added = try api.addWorktree(path: wtPath, newBranch: "side")
+        #expect(added.name == "wt-side")
+        let byName = try api.resolveWorktree("wt-side")
+        #expect(byName.path == wtPath)
+        #expect(byName.branch == "side")
+        #expect(byName.headOID == head.hex)
+        let byPath = try api.resolveWorktree(wtPath)
+        #expect(byPath.name == "wt-side")
+        #expect(byPath.headOID == head.hex)
+    }
+
+    @Test func workspaceSwitchRejectsUnknownWorktree() throws {
+        let (_, api, _) = try SpacesTestSupport.makeRepo()
+        _ = try SpacesTestSupport.commitFiles(api, ["a.txt": "one\n"], message: "base")
+        do {
+            _ = try api.resolveWorktree("no-such-worktree")
+            Issue.record("expected unknown worktree to throw")
+        } catch {
+            #expect(String(describing: error).contains("no-such-worktree"))
+            #expect(String(describing: error).contains("main"))
+        }
+    }
 }

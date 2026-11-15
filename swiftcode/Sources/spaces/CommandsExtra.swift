@@ -314,7 +314,12 @@ struct MergeStrategyList: ParsableCommand {
     static let configuration = CommandConfiguration(commandName: "merge-strategies", abstract: "List merge strategies")
     @Option(name: .long) var repo: String?
     func run() throws {
-        var cmd = try MergeStrategy.parseAsRoot(["--repo", repo ?? "."])
-        try cmd.run()
+        let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
+        let engine = MergeEngine(repo: repo)
+        let fallback = engine.defaultMergeStrategy()
+        for info in engine.supportedMergeStrategies() {
+            print("\(info.name)\(info.name == fallback.name ? " (default)" : "") - \(info.implemented ? "implemented" : "not implemented")")
+            print("  \(info.description)")
+        }
     }
 }

@@ -42,6 +42,32 @@ public struct WorktreeOps {
         return result
     }
 
+    public struct ResolvedWorktree: Sendable {
+        public var name: String
+        public var path: String
+        public var branch: String?
+        public var headOID: String
+    }
+
+    public func resolve(_ target: String) throws -> ResolvedWorktree {
+        let worktrees = try list()
+        guard let wt = worktrees.first(where: { $0.name == target || $0.path == target }) else {
+            throw SpacesError.invalidArgument("no registered worktree '\(target)'; registered worktrees: \(worktrees.map { $0.name }.joined(separator: ", "))")
+        }
+        let isOID = wt.head.count == 40 && wt.head.allSatisfy { $0.isHexDigit }
+        let branch = (!isOID && wt.head != "(detached)") ? wt.head : nil
+        var oid: String? = isOID ? wt.head : nil
+        if oid == nil, let branch, let refOID = try? repo.refs.readRef("refs/heads/\(branch)"),
+           let resolved = refOID {
+            oid = resolved.hex
+        }
+        if oid == nil, wt.isMain {
+            oid = try repo.refs.headOID(objects: repo.objects)?.hex
+        }
+        return ResolvedWorktree(name: wt.name, path: wt.path, branch: branch,
+                                headOID: oid ?? "(unknown)")
+    }
+
     
     
     @discardableResult

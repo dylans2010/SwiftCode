@@ -250,12 +250,54 @@ public struct StagingOps {
                        trailers: metadata.trailers, metadata: metadata)
     }
 
+    public func writeScopedTree(paths: [String]) throws -> ObjectID {
+        let index = try repo.index()
+        let headFlat = try headFlattened()
+        var scoped = headFlat
+        for path in paths {
+            if let entry = index.entries[path] {
+                let headEntry = headFlat[path]
+                guard entry.oid != headEntry?.oid || entry.mode != headEntry?.mode else {
+                    throw SpacesError.invalidArgument("no staged change for \(path)")
+                }
+                scoped[path] = (entry.oid, entry.mode)
+            } else {
+                guard headFlat[path] != nil else {
+                    throw SpacesError.invalidArgument("no staged change for \(path)")
+                }
+                scoped.removeValue(forKey: path)
+            }
+        }
+        if scoped.isEmpty { return try TreeBuilder.emptyTree(objects: repo.objects) }
+        return try TreeBuilder.writeTree(entries: scoped, objects: repo.objects)
+    }
+
+    @discardableResult
+    public func commit(message: String, onlyPaths: [String]) throws -> CommitResult {
+        try commitCore(message: message, onlyPaths: onlyPaths, metadata: CommitMetadata())
+    }
+
     @discardableResult
     public func commitCore(message: String, stageAll: Bool = false,
                            amend: Bool = false, author: Signature? = nil,
                            trailers: [String: String] = [:],
-                           metadata: CommitMetadata) throws -> CommitResult {
+                           metadata: CommitMetadata, onlyPaths: [String]? = nil) throws -> CommitResult {
         try repo.performTransaction(steps: ["commit"]) {
+            if let only = onlyPaths {
+                guard !amend else {
+                    throw SpacesError.invalidArgument("scoped commit cannot amend")
+                }
+                guard !stageAll else {
+                    throw SpacesError.invalidArgument("scoped commit cannot stage all files")
+                }
+                guard !only.isEmpty else {
+                    throw SpacesError.invalidArgument("at least one path is required")
+                }
+                guard !repo.inMerge() else {
+                    throw SpacesError.invalidArgument("cannot finalize a scoped staged commit while a merge is in progress")
+                }
+            }
+
             if amend && repo.inMerge() {
                 throw SpacesError.invalidArgument("cannot amend a merge in progress")
             }
@@ -284,7 +326,12 @@ public struct StagingOps {
                 }
             }
 
-            let treeOID = try writeIndexTree()
+            let treeOID: ObjectID
+            if let only = onlyPaths {
+                treeOID = try writeScopedTree(paths: only)
+            } else {
+                treeOID = try writeIndexTree()
+            }
 
             let isEmptyRoot = parents.isEmpty && index.entries.isEmpty
             var unchangedFromHead = false
@@ -298,12 +345,12 @@ public struct StagingOps {
             }
 
             var changed = 0
+            let newFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: treeOID)
             if let first = parents.first {
                 let oldFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: repo.commitObject(first).tree)
-                let newFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: treeOID)
                 changed = Set(oldFlat.keys).union(newFlat.keys).filter { oldFlat[$0]?.oid != newFlat[$0]?.oid }.count
             } else {
-                changed = index.entries.count
+                changed = newFlat.count
             }
 
             try runHook(.preCommit, input: message)

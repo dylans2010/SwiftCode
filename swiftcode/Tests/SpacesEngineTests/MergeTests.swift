@@ -207,4 +207,75 @@ import Testing
         let show = try api.show("HEAD")
         #expect(show.info.message.hasPrefix("second"))
     }
+
+    @Test func mergeStrategyListingIsEngineBacked() throws {
+        let (_, api, _) = try SpacesTestSupport.makeRepo()
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "1"], message: "c1")
+        let strategies = api.mergeStrategies()
+        #expect(strategies.map { $0.name } == ["ort", "recursive"])
+        #expect(strategies.first { $0.name == "ort" }?.implemented == true)
+        #expect(strategies.first { $0.name == "recursive" }?.implemented == false)
+        #expect(api.defaultMergeStrategy().name == "ort")
+        #expect(api.defaultMergeStrategy().implemented)
+        let ort = try api.mergeStrategy(named: "ort")
+        #expect(ort.implemented)
+        let recursive = try api.mergeStrategy(named: "recursive")
+        #expect(!recursive.implemented)
+    }
+
+    @Test func mergeStrategyUnknownNameThrows() throws {
+        let (_, api, _) = try SpacesTestSupport.makeRepo()
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "1"], message: "c1")
+        do {
+            _ = try api.mergeStrategy(named: "bogus")
+            Issue.record("expected unknown strategy to throw")
+        } catch {
+            #expect(String(describing: error).contains("bogus"))
+            #expect(String(describing: error).contains("ort"))
+        }
+    }
+
+    @Test func mergeWithUnknownStrategyThrowsBeforeWork() throws {
+        let (repo, api, _) = try SpacesTestSupport.makeRepo()
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "1"], message: "c1")
+        let headBefore = try repo.refs.headOID(objects: repo.objects)
+        do {
+            _ = try MergeEngine(repo: repo).merge("main", strategy: "bogus")
+            Issue.record("expected unknown strategy to throw")
+        } catch {
+            #expect(String(describing: error).contains("bogus"))
+        }
+        #expect(try repo.refs.headOID(objects: repo.objects) == headBefore)
+        #expect(try api.log().count == 1)
+    }
+
+    @Test func mergeWithRecursiveStrategyIsRejected() throws {
+        let (repo, api, _) = try SpacesTestSupport.makeRepo()
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "1"], message: "c1")
+        let headBefore = try repo.refs.headOID(objects: repo.objects)
+        do {
+            _ = try MergeEngine(repo: repo).merge("main", strategy: "recursive")
+            Issue.record("expected unimplemented strategy to throw")
+        } catch {
+            #expect(String(describing: error).contains("recursive"))
+            #expect(String(describing: error).contains("not implemented"))
+        }
+        #expect(try repo.refs.headOID(objects: repo.objects) == headBefore)
+        #expect(try api.log().count == 1)
+    }
+
+    @Test func mergeWithExplicitOrtStrategySucceeds() throws {
+        let (repo, api, _) = try SpacesTestSupport.makeRepo()
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "1"], message: "base")
+        try api.createBranch("side")
+        try api.switchTo("side")
+        _ = try SpacesTestSupport.commitFiles(api, ["g": "2"], message: "side work")
+        try api.switchTo("main")
+        let outcome = try MergeEngine(repo: repo).merge("side", strategy: "ort")
+        guard case .fastForward = outcome.result else {
+            Issue.record("expected fast-forward, got \(outcome.result)")
+            return
+        }
+        #expect(try api.status().isClean)
+    }
 }

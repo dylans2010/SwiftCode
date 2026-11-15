@@ -143,6 +143,64 @@ import Testing
         #expect(try api.log().first?.message == "[feat] staged change")
     }
 
+    @Test func multiStageCommitFinalizeScopesToRecordedPaths() throws {
+        let (repo, api, url) = try SpacesTestSupport.makeRepo()
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "1", "g": "1"], message: "base")
+        try SpacesTestSupport.write("2", to: url.appendingPathComponent("f"))
+        try SpacesTestSupport.write("2", to: url.appendingPathComponent("g"))
+        let tx = try api.prepareCommit(message: "[feat] staged f only", paths: ["f"])
+        #expect(try api.validateStagedCommit(tx: tx).isEmpty)
+        _ = try api.previewStagedCommit(tx: tx)
+        _ = try api.add("g")
+        let oid = try api.finalizeStagedCommit(tx: tx)
+        let commit = try repo.commitObject(oid)
+        let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: commit.tree)
+        #expect(try repo.blobData(flat["f"]!.oid) == Data("2".utf8))
+        #expect(try repo.blobData(flat["g"]!.oid) == Data("1".utf8))
+        #expect(try api.status().staged.map { $0.path }.contains("g"))
+        #expect(try String(contentsOf: url.appendingPathComponent("g"), encoding: .utf8) == "2")
+    }
+
+    @Test func multiStageCommitFinalizeRejectsUnchangedRecordedPath() throws {
+        let (_, api, _) = try SpacesTestSupport.makeRepo()
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "1"], message: "base")
+        let tx = try api.prepareCommit(message: "[feat] no change", paths: ["f"])
+        #expect(try api.validateStagedCommit(tx: tx).isEmpty)
+        _ = try api.previewStagedCommit(tx: tx)
+        do {
+            _ = try api.finalizeStagedCommit(tx: tx)
+            Issue.record("expected unchanged recorded path to throw")
+        } catch {
+            #expect(String(describing: error).contains("f"))
+        }
+        #expect(try api.log().count == 1)
+    }
+
+    @Test func multiStageCommitFinalizeRefusesDuringMerge() throws {
+        let (_, api, url) = try SpacesTestSupport.makeRepo()
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "base\n"], message: "base")
+        try api.createBranch("side")
+        try api.switchTo("side")
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "side\n"], message: "side")
+        try api.switchTo("main")
+        _ = try SpacesTestSupport.commitFiles(api, ["f": "main\n"], message: "main")
+        _ = try api.merge("side")
+        #expect(try api.repo.inMerge())
+        let tx = try api.prepareCommit(message: "[feat] during merge", paths: ["f"])
+        #expect(try api.validateStagedCommit(tx: tx).isEmpty)
+        _ = try api.previewStagedCommit(tx: tx)
+        do {
+            _ = try api.finalizeStagedCommit(tx: tx)
+            Issue.record("expected scoped finalize during merge to throw")
+        } catch {
+            #expect(String(describing: error).contains("merge"))
+        }
+        #expect(try api.repo.inMerge())
+        #expect(try api.log().count == 2)
+        try api.mergeAbort()
+        #expect(try !api.repo.inMerge())
+    }
+
     @Test func undoRestoresDeletedBranchAndRemovesCreatedBranch() throws {
         let (_, api, _) = try SpacesTestSupport.makeRepo()
         _ = try SpacesTestSupport.commitFiles(api, ["f": "1"], message: "base")

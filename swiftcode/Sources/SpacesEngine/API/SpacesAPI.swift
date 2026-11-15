@@ -169,6 +169,18 @@ public final class SpacesAPI: @unchecked Sendable {
         try MergeEngine(repo: repo).mergeAbort()
     }
 
+    public func mergeStrategies() -> [MergeEngine.MergeStrategyInfo] {
+        MergeEngine(repo: repo).supportedMergeStrategies()
+    }
+
+    public func mergeStrategy(named name: String) throws -> MergeEngine.MergeStrategyInfo {
+        try MergeEngine(repo: repo).strategy(named: name)
+    }
+
+    public func defaultMergeStrategy() -> MergeEngine.MergeStrategyInfo {
+        MergeEngine(repo: repo).defaultMergeStrategy()
+    }
+
     @discardableResult
     public func cherryPick(_ rev: String) throws -> ObjectID? {
         try MergeEngine(repo: repo).cherryPick(rev)
@@ -371,6 +383,10 @@ public final class SpacesAPI: @unchecked Sendable {
 
     public func removeWorktree(_ name: String) throws {
         try WorktreeOps(repo: repo).remove(name)
+    }
+
+    public func resolveWorktree(_ target: String) throws -> WorktreeOps.ResolvedWorktree {
+        try WorktreeOps(repo: repo).resolve(target)
     }
 
     

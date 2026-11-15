@@ -117,7 +117,7 @@ public struct MultiStageCommitOps {
         guard violations.isEmpty else {
             throw SpacesError.invalidArgument("staged commit \(tx) fails validation: \(violations.map { $0.message }.joined(separator: "; "))")
         }
-        let result = try StagingOps(repo: repo).commit(message: record.message)
+        let result = try StagingOps(repo: repo).commit(message: record.message, onlyPaths: record.paths)
         try repo.withLock {
             try? FileManager.default.removeItem(at: fileURL(tx: tx))
         }

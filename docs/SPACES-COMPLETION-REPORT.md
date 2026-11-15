@@ -17,7 +17,10 @@ positional script (162 registered in `main.swift`, 162 unique derived names);
 `@Test` functions were counted per test file with `grep -c`; UI actions were
 mapped by grepping the view sources for `SpacesAPI` calls; Git limitations were
 read from `GitMigration.swift`; the re-checks below re-read the flagged engine
-files. Nothing in this report is copied from a stale list.
+files. Nothing in this report is copied from a stale list. The 2026-11-14
+follow-up re-enumerated the CLI names after removing 7 redundant top-level
+worktree/workspace registrations (155 registered, 155 unique) and re-counted
+the tests (208 `@Test` funcs); the follow-up's own numbers are in §12.
 
 ## Verification status — read first
 
@@ -41,12 +44,12 @@ and was verified on disk (statically; see the gate note above).
 |---|---|---|
 | Engine core (`.spaces/` format, objects, index, staging, branches, merge, rebase, stash, tags, snapshots, history, diff, maintenance, remotes, journal, Git migration, bundles, search) | COMPLETE | One follow-up found in S10 (see §4 follow-up) |
 | Intelligence (A1–A10) | COMPLETE | Risk scores are heuristics, labelled as such |
-| Advanced version control (B11–B20) | PARTIAL | B19 finalize scoping deviates (see B19) |
+| Advanced version control (B11–B20) | COMPLETE | B19 finalize is scoped to the recorded paths (follow-up, 2026-11-14) |
 | Storage (C21–C30) | COMPLETE | Growth estimate is a projection, not a forecast |
 | Collaboration (D31–D40) | COMPLETE | |
 | Security (E41–E50) | COMPLETE | |
 | Developer tooling (F51–F60) | COMPLETE | |
-| CLI parity (§5) | COMPLETE | 162/162 named commands present; `merge-strategy` output is static (see below) |
+| CLI parity (§5) | COMPLETE | 155/155 named commands present; merge strategies are engine-backed (follow-up, 2026-11-14) |
 | UI / settings / detection | COMPLETE | Static only; never opened in Xcode |
 | §4 hardening | COMPLETE | 25 tests; one Maintenance follow-up (see below) |
 | `tools/clean.py` + repo-wide cleanup | COMPLETE | Exact numbers in §7 |
@@ -62,7 +65,7 @@ COMPLETE. `.spaces/` format v1 (SHA-256 objects `blob`/`tree`/`commit`/`tag`/
 `snapshot`, two-level fanout under `objects/xx/<rest>`, JSON stat-cached index,
 reflogs, JSONL journal, PID lock file with stale-lock stealing, hooks, LFS,
 worktrees). `SpacesAPI` is the single facade used by the CLI and the app:
-252 `public func` declarations counted by grep across `SpacesAPI.swift` and its six extensions.
+256 `public func` declarations counted by grep across `SpacesAPI.swift` and its six extensions.
 Core operations: init/open/recover, add/stage/move/remove/unstage/restore/clean,
 commit/amend, log/show/blame/graph/reflog, branch create/switch/delete/rename/
 reset, merge/cherry-pick/revert/rebase, stash, tags, snapshots/timeline,
@@ -102,7 +105,7 @@ status follows; "CLI" names the top-level command where one exists.
 | A9 | Change Risk | — | Scored per-factor measurements, labelled heuristic |
 | A10 | Health History | — | `.spaces/intelligence/health-history.jsonl` |
 
-### B. Advanced version control (10) — PARTIAL (B19)
+### B. Advanced version control (10) — COMPLETE
 
 | # | Feature | CLI | Note |
 |---|---|---|---|
@@ -114,7 +117,7 @@ status follows; "CLI" names the top-level command where one exists.
 | B16 | Commit Graph Dependencies | — | Declared dependencies between commits |
 | B17 | Partial Restore | — | Selected paths only |
 | B18 | Validation Policies | — | `.spaces/policies.json`; enforced by `commit`/`commitValidated` |
-| B19 | Multi-Stage Commit | — | **PARTIAL:** `finalizeStagedCommit` commits the whole index, not only the paths recorded at `prepare` time |
+| B19 | Multi-Stage Commit | — | `finalizeStagedCommit` commits only the paths recorded at `prepare` time; extra staged paths stay staged, and finalize refuses during a merge |
 | B20 | Operation Undo | `operation-undo` | Append-only log; refuses history rewrites |
 
 ### C. Storage (10) — COMPLETE
@@ -179,12 +182,14 @@ status follows; "CLI" names the top-level command where one exists.
 
 ## 3. CLI parity
 
-COMPLETE. 162 top-level commands registered in `swiftcode/Sources/spaces/
-main.swift`, enumerated from the sources by S10 (not copied from docs).
-Every one of the 29 §5 commands named in the spec is present, plus the
-`snapshots` and `history` aliases.
+COMPLETE. 155 top-level commands registered in `swiftcode/Sources/spaces/
+main.swift`, enumerated from the sources by S10 (not copied from docs) and
+re-enumerated after the 2026-11-14 follow-up, which removed the 7 redundant
+top-level worktree/workspace leaf registrations (see below). Every one of
+the 29 §5 commands named in the spec is present, plus the `snapshots` and
+`history` aliases.
 
-All 162 registered top-level names, in registration order:
+All 155 registered top-level names, in registration order:
 
 `init status changes stage add remove move restore clean unstage reset commit
 amend log show describe diff patch ancestry graph blame annotate branch switch
@@ -199,9 +204,8 @@ version info inspect validate open discover explain impact compare benchmark
 trace events notes sign verify-signature identities credentials permissions
 audit search find find-file find-commit find-change find-branch find-history
 hooks hook-install hook-remove lfs extensions import-git import export-git
-export archive bundle worktree worktrees worktree-add worktree-list
-worktree-remove workspace workspaces create workspace-switch workspace-remove
-workspace-list ls-files ls-tree cat-file merge-strategy semantic-search
+export archive bundle worktree worktrees workspace workspaces
+ls-files ls-tree cat-file merge-strategy semantic-search
 history-search dependencies file-evolution branch-stack branch-checkpoint
 changeset provenance policy security-report secret-history ownership review
 review-status discussion notifications backup backup-verify backup-restore
@@ -209,33 +213,40 @@ storage-heatmap storage-profile workspace-template automation patch-collection
 symbol-history api-compatibility test-provenance build-impact performance
 operation-undo snapshots history`
 
-Uniqueness: S10 re-ran a positional uniqueness check over all derived
-top-level names (explicit `commandName:` where present, kebab-cased struct
-name otherwise): **162 registered, 162 unique, 0 duplicates.** The earlier
-"git" duplicate is refuted again: `import-git`/`export-git` are the top-level
-names; the `git` names belong to `ImportGitCmd`/`ExportGitCmd`, which are
-subcommands of the `import`/`export` groups only, not top-level commands.
+Uniqueness: re-run by positional script after the 2026-11-14 follow-up
+over all derived top-level names (explicit `commandName:` where present,
+kebab-cased struct name otherwise): **155 registered, 155 unique,
+0 duplicates.** The earlier "git" duplicate is refuted again: `import-git`/
+`export-git` are the top-level names; the `git` names belong to
+`ImportGitCmd`/`ExportGitCmd`, which are subcommands of the `import`/
+`export` groups only, not top-level commands.
 **Whether ArgumentParser traps on duplicates at launch is UNVERIFIED** — no
 `spaces` binary was built or run in this environment (no toolchain), so the
 duplicate-name question is settled only statically.
 
-Known CLI issues, pre-existing and not fixed in this slice:
+Fixed in the 2026-11-14 follow-up (previously open decisions, now done):
 
-- `merge-strategy` prints a static string (`"ort (default); recursive
-  available via --strategy"`, `CommandsCore.swift`) without consulting the
-  engine or the repository. `merge-strategies` is a thin forwarding wrapper
-  that delegates to it, so both commands produce the same static output.
-  The audit's "functionally identical bodies" wording is corrected here:
-  the bodies are not duplicated text — one is a forwarder — but the
-  observable behaviour is identical, and neither performs real work.
-- Dual-role worktree/workspace structs (open decision, recorded in
-  `docs/SPACES.md`): the structs are registered both as top-level commands
-  and as subcommands of the `worktree`/`workspace` groups, so the group
-  paths read redundantly (`spaces worktree worktree-add`,
-  `spaces workspace workspace-switch`). The alternative — de-registering the
-  top-level aliases to restore the documented group paths — is left open.
-- `spaces create` is the derived top-level name of `WorkspaceCreate`
-  (unique, no conflict, but a generic name).
+- `merge-strategy` / `merge-strategies` are engine-backed:
+  `MergeEngine.supportedMergeStrategies()` lists `ort` (implemented, the
+  default) and `recursive` (listed, not implemented — there is no separate
+  recursive implementation), `strategy(named:)` returns one strategy's
+  detail, and `merge --strategy <name>` validates before any merge work,
+  rejecting unknown names and `recursive` with errors naming the supported
+  set. No command prints a hardcoded strategy string.
+- Dual-role worktree/workspace structs: the 7 top-level leaf registrations
+  (`worktree-add`, `worktree-list`, `worktree-remove`, `create`,
+  `workspace-switch`, `workspace-remove`, `workspace-list`) were removed
+  from `main.swift`; the leaf structs remain subcommands of the `worktree`
+  / `workspace` groups only, so the canonical paths are `spaces worktree
+  add|remove|list` and `spaces workspace create|switch|remove|list`, plus
+  the `spaces worktrees` / `spaces workspaces` list shortcuts. `spaces
+  workspace switch` now resolves its argument against the registered
+  worktrees via `WorktreeOps.resolve` and prints the validated worktree's
+  real name, path, branch, and HEAD oid, followed by the exact `cd`
+  command; an unregistered target errors listing the registered worktrees.
+  The generic top-level `spaces create` name is gone with the removal.
+  `spaces worktrees` / `spaces workspaces` now forward their `--repo`
+  option instead of dropping it.
 
 Fixed in earlier waves and re-confirmed present: `spaces trace` really
 executes `status`/`log`/`fsck`/`storage`/`search` between before/after object
@@ -473,8 +484,8 @@ with a diverging head is covered separately by
 
 | File | `@Test` funcs |
 |---|---|
-| AdvancedVCTests | 10 |
-| CLIContractTests | 30 |
+| AdvancedVCTests | 13 |
+| CLIContractTests | 32 |
 | CollaborationTests | 11 |
 | CoreFlowTests | 9 |
 | DetectionTests | 8 |
@@ -483,16 +494,18 @@ with a diverging head is covered separately by
 | InfraTests | 11 |
 | IntegrationWorkflowTests | 4 |
 | IntelligenceTests | 10 |
-| MergeTests | 12 |
+| MergeTests | 17 |
 | ObjectStoreTests | 6 |
 | SecurityTests | 10 |
 | StorageTests | 10 |
 | ToolingTests | 11 |
 | ValidationMatrixTests | 30 |
 | TestSupport | 0 |
-| **Total** | **198** |
+| **Total** | **208** |
 
-163 existed before this slice; 35 are new (30 + 4 + 1).
+163 existed before this slice; 35 are new (30 + 4 + 1). The 2026-11-14
+follow-up adds 10 more: 5 strategy tests in MergeTests, 2 worktree-resolve
+tests in CLIContractTests, 3 B19 scoping tests in AdvancedVCTests.
 
 ## 7. `tools/clean.py` and the repo-wide cleanup
 
@@ -599,7 +612,7 @@ None were recorded in the audit for S6, and S10 found none on re-read.
 
 ### (e) CLI duplicate names — re-verified statically
 
-162 registered, 162 unique derived top-level names, 0 duplicates
+155 registered, 155 unique derived top-level names, 0 duplicates
 (positional script; the first regex-based attempt cross-matched
 `commandName:` across struct boundaries and was discarded). The `git`
 group-subcommand question is refuted again (see §3). Whether ArgumentParser
@@ -607,14 +620,14 @@ traps on duplicates at launch remains UNVERIFIED without a toolchain.
 
 ### (f) Counts
 
-- Engine: 99 Swift files, 15,526 lines (`swiftcode/Sources/SpacesEngine/`).
-- CLI: 6 files, 3,989 lines (`swiftcode/Sources/spaces/`).
-- Tests: 17 files, 3,538 lines, 198 `@Test` funcs
+- Engine: 99 Swift files, 15,649 lines (`swiftcode/Sources/SpacesEngine/`).
+- CLI: 6 files, 4,021 lines (`swiftcode/Sources/spaces/`).
+- Tests: 17 files, 3,702 lines, 208 `@Test` funcs
   (`swiftcode/Tests/SpacesEngineTests/`).
 - UI views: 5 files, 2,916 lines (`SpacesWorkspaceView` + 4 feature views).
-- `SpacesService`: 414 lines. Docs: `SPACES.md` 284 lines;
+- `SpacesService`: 414 lines. Docs: `SPACES.md` 294 lines;
   `tools/clean.py` 505 lines.
-- Total Spaces Swift: 26,383 lines across engine, CLI, tests, views, and
+- Total Spaces Swift: 26,702 lines across engine, CLI, tests, views, and
   `SpacesService`.
 
 ### Fixes made by S10 and the coordinator
@@ -636,12 +649,16 @@ delete-first path. Statically verified only; the Xcode test run is the proof.
 
 Open decisions (for Dylan / the coordinator, not decided here):
 
-1. Dual-role worktree/workspace structs: de-register the top-level aliases
-   or keep the redundant group paths (`spaces worktree worktree-add`)?
-2. `merge-strategy` / `merge-strategies`: implement a real engine-backed
-   strategy listing, or remove the commands?
-3. B19 multi-stage finalize: scope `finalizeStagedCommit` to the recorded
-   paths, or document whole-index finalization as the behaviour?
+All three open decisions from S10 were resolved by Dylan's follow-up
+("implement them, implement everything") on 2026-11-14 and implemented in
+the same-day follow-up slice (see §12):
+
+1. Dual-role worktree/workspace structs: top-level aliases de-registered;
+   canonical paths are now the group forms.
+2. `merge-strategy` / `merge-strategies`: real engine-backed strategy
+   listing and validation, as specified in §12.
+3. B19 multi-stage finalize: scoped to the recorded paths, as specified
+   in §12.
 
 Mac gate (Dylan's Mac, in order):
 
@@ -652,7 +669,7 @@ Mac gate (Dylan's Mac, in order):
    build (including the `CQuickJS`-style question for any new target
    reference — note the Spaces targets are declared in `project.yml` and
    `Package.swift`; confirm Xcode picks them up).
-3. Run `swift test` / the Xcode test target: 198 `@Test` funcs, including
+3. Run `swift test` / the Xcode test target: 208 `@Test` funcs, including
    the 30-step E2E scenario. Investigate any failure by step number
    (E2E) or matrix-row name.
 4. Run the `spaces` binary: `spaces --help` (confirm no duplicate-name
@@ -676,3 +693,81 @@ Mac gate (Dylan's Mac, in order):
 - `docs/SPACES-COMPLETION-REPORT.md` — this report.
 
 No other files were created, modified, committed, or pushed by this slice.
+
+## 12. Follow-up: merge strategies, worktree dedup, B19 scoping (2026-11-14)
+
+Dylan's reply to the completion report ("implement them, implement
+everything") authorized resolving all three open decisions from §10.
+Implemented in one follow-up commit on `main`; statically verified only
+(no Swift toolchain here — Xcode build and `swift test` on Dylan's Mac
+remain the gate, now over 208 `@Test` funcs).
+
+### Merge strategies — engine-backed
+
+- `MergeEngine.MergeStrategyInfo` (`name`, `implemented`, `description`)
+  with `supportedMergeStrategies()`, `defaultMergeStrategy()`,
+  `strategy(named:)`, and `resolveMergeStrategy(_:)` in
+  `SpacesEngine/Operations/MergeOps.swift`. `ort` is the implemented
+  default (the existing three-way `mergeTrees`); `recursive` is listed as
+  not implemented and is rejected when requested, because there is no
+  separate recursive implementation to alias it to. Unknown names error
+  naming the supported set. `merge()` validates via
+  `resolveMergeStrategy` before opening any transaction, and records the
+  resolved strategy in the transaction journal.
+- `spaces merge-strategy [name]` opens the repository and prints the
+  default strategy, or the named strategy's detail; `spaces
+  merge-strategies` lists all strategies with implemented status. Both
+  call the engine. `spaces merge --strategy <name>` now fails honestly
+  on unknown or unimplemented strategies instead of silently ignoring
+  the flag.
+- `SpacesAPI` gains `mergeStrategies()`, `mergeStrategy(named:)`, and
+  `defaultMergeStrategy()` passthroughs.
+- Tests: 5 new in `MergeTests` (listing/default, unknown name,
+  unknown strategy rejected before work with HEAD unchanged, `recursive`
+  rejected with HEAD unchanged, explicit `ort` merge succeeds).
+
+### Worktree / workspace deduplication and real switch
+
+- `main.swift` no longer registers the 7 leaf commands
+  (`worktree-add`, `worktree-list`, `worktree-remove`, `create`,
+  `workspace-switch`, `workspace-remove`, `workspace-list`). Canonical
+  paths are `spaces worktree add|remove|list` and `spaces workspace
+  create|switch|remove|list`, plus `spaces worktrees` / `spaces
+  workspaces`. Top-level count is 155 (was 162), re-verified 155 unique.
+  The generic top-level `spaces create` name is gone.
+- `WorktreeOps.resolve(_:)` (`SpacesEngine/Operations/WorktreeOps.swift`)
+  resolves a name or path against the registered worktrees and returns
+  the real name, path, branch (when known), and HEAD oid; an
+  unregistered target throws an error listing the registered worktrees.
+- `spaces workspace switch <name-or-path>` uses `resolve` and prints
+  the validated worktree's name, path, branch, and HEAD oid, followed by
+  the exact `cd` command for that path. A child process cannot change
+  the parent shell's directory, so the printed `cd` is the honest
+  mechanism, not a fake switch.
+- `spaces worktrees` / `spaces workspaces` now forward their `--repo`
+  option instead of dropping it. `SpacesAPI` gains a `resolveWorktree`
+  passthrough.
+- Tests: 2 new in `CLIContractTests` (resolve by name and by path with
+  real branch and HEAD oid; unknown target rejected naming the
+  registered worktrees).
+
+### B19 multi-stage commit scoping
+
+- `StagingOps.writeScopedTree(paths:)` and
+  `commit(message:onlyPaths:)` (`SpacesEngine/Operations/Staging.swift`)
+  build the commit tree from HEAD's tree overlaid with only the recorded
+  paths. A recorded path deleted from the index is removed from the
+  tree; a recorded path with no staged change versus HEAD is an error,
+  not silent success. Everything else in the index stays out of the
+  commit and stays staged afterward. Scoped finalize refuses while a
+  merge is in progress, instead of committing the whole index.
+  `MultiStageCommitOps.finalize` now uses the scoped commit with
+  `record.paths`; the validate-then-finalize gating and stage-record
+  deletion are unchanged.
+- Tests: 3 new in `AdvancedVCTests` (extra path staged outside the
+  transaction stays out of the commit tree and stays staged; unchanged
+  recorded path is rejected; scoped finalize during a merge is refused
+  and the merge state is untouched).
+
+Follow-up push SHA: (filled in by the doc-only follow-up commit; verify
+the live tip with the GitHub API).

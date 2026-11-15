@@ -718,9 +718,24 @@ struct MergePreview: ParsableCommand {
 }
 
 struct MergeStrategy: ParsableCommand {
-    static let configuration = CommandConfiguration(commandName: "merge-strategy", abstract: "Show merge strategy")
+    static let configuration = CommandConfiguration(commandName: "merge-strategy", abstract: "Show the default merge strategy, or details for one strategy")
     @Option(name: .long) var repo: String?
-    func run() throws { print("ort (default); recursive available via --strategy") }
+    @Argument var name: String?
+    func run() throws {
+        let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
+        let engine = MergeEngine(repo: repo)
+        if let name {
+            let info = try engine.strategy(named: name)
+            print("\(info.name)\(info.name == engine.defaultMergeStrategy().name ? " (default)" : "")")
+            print("implemented: \(info.implemented ? "yes" : "no")")
+            print(info.description)
+            return
+        }
+        let info = engine.defaultMergeStrategy()
+        print("default: \(info.name)")
+        print("implemented: \(info.implemented ? "yes" : "no")")
+        print(info.description)
+    }
 }
 
 

@@ -1360,7 +1360,11 @@ struct Worktree: ParsableCommand {
 struct Worktrees: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "List worktrees")
     @Option(name: .long) var repo: String?
-    func run() throws { try WorktreeList().run() }
+    func run() throws {
+        var cmd = WorktreeList()
+        cmd.repo = repo
+        try cmd.run()
+    }
 }
 
 struct WorktreeList: ParsableCommand {
@@ -1406,7 +1410,11 @@ struct Workspace: ParsableCommand {
 struct Workspaces: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "List workspaces")
     @Option(name: .long) var repo: String?
-    func run() throws { try WorkspaceList().run() }
+    func run() throws {
+        var cmd = WorkspaceList()
+        cmd.repo = repo
+        try cmd.run()
+    }
 }
 
 struct WorkspaceCreate: ParsableCommand {
@@ -1427,9 +1435,15 @@ struct WorkspaceCreate: ParsableCommand {
 struct WorkspaceSwitch: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Switch workspace")
     @Option(name: .long) var repo: String?
-    @Argument var path: String
+    @Argument var target: String
     func run() throws {
-        print("workspaces are separate directories; cd to \(path) to switch")
+        let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
+        let resolved = try WorktreeOps(repo: repo).resolve(target)
+        print("workspace: \(resolved.name)")
+        print("path: \(resolved.path)")
+        print("branch: \(resolved.branch ?? "(detached)")")
+        print("HEAD: \(resolved.headOID)")
+        print("cd \(resolved.path)")
     }
 }
 
