@@ -615,6 +615,16 @@
 		27C0A77202CA7A9040A73412 /* UnixSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CD895C553F962547376B828 /* UnixSocket.swift */; };
 		27C14491E46C1ED7916AF613 /* DatabaseViewSQLiteHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = C344D3758A65B5A9D245C505 /* DatabaseViewSQLiteHelpers.swift */; };
 		27CE31EFBF453CDBBBFF662B /* AdvancedVCTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A83314A7DE3A11478B94613 /* AdvancedVCTests.swift */; };
+		4E4C19875EEBF3BFF54068B8 /* EndToEndScenarioTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D72214020CFBC380288FCA76 /* EndToEndScenarioTests.swift */; };
+		47D55F25A726EAFBA26A84EB /* IntegrationWorkflowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C3686E8336CB664E990EB5F /* IntegrationWorkflowTests.swift */; };
+		0ABEFE29A2F0BB01BF76D6D9 /* ValidationMatrixTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF347870C5DD95FE068EE1E /* ValidationMatrixTests.swift */; };
+		B022639299447F2F7EE5D487 /* Wave2ApiGapsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 814601BFDE2B5FF8E6B3B2F6 /* Wave2ApiGapsTests.swift */; };
+		62215773753254F5BFDA9551 /* Wave2CompressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5105A0DCF49C06D45A7A9128 /* Wave2CompressionTests.swift */; };
+		829C4C0B2BEFF0998D28AD79 /* Wave2GitCompatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7841B0CBD1675285F24033A4 /* Wave2GitCompatTests.swift */; };
+		07F87311129956AC739AC637 /* Wave2HttpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50C8A454425D1E970402508B /* Wave2HttpTests.swift */; };
+		6AE01252F6A17A7257487BDB /* Wave2SigningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9525E91ACC37FC550E373192 /* Wave2SigningTests.swift */; };
+		843AEF6BBE413234C695C4C8 /* Wave2SshTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840D4BF21511634653B30BCA /* Wave2SshTests.swift */; };
+		BA44A31F844A8C8CD58A0344 /* WaveFixesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39258EAD450361AE110D5C9D /* WaveFixesTests.swift */; };
 		27F5D046A2631C37DEBAF8B5 /* BuildAndTesting.md in Resources */ = {isa = PBXBuildFile; fileRef = 47BEF02E34791CD03FC3E918 /* BuildAndTesting.md */; };
 		2806604B5C7503C21E2E2F2E /* DecompileAssistIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF45E22FCE71C3682066908D /* DecompileAssistIdentity.swift */; };
 		2815BEE61EAD38FB57396F45 /* AssistGitBisectTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3392C426FB5A4DB9A626798A /* AssistGitBisectTool.swift */; };
@@ -7025,6 +7035,16 @@
 		7A75C4DF73ECDB41A64B10D3 /* ExtV2AssistBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtV2AssistBridge.swift; sourceTree = "<group>"; };
 		7A81C7D1E33E0F1144E3B06C /* AgentSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentSession.swift; sourceTree = "<group>"; };
 		7A83314A7DE3A11478B94613 /* AdvancedVCTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedVCTests.swift; sourceTree = "<group>"; };
+		D72214020CFBC380288FCA76 /* EndToEndScenarioTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EndToEndScenarioTests.swift; sourceTree = "<group>"; };
+		8C3686E8336CB664E990EB5F /* IntegrationWorkflowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationWorkflowTests.swift; sourceTree = "<group>"; };
+		FFF347870C5DD95FE068EE1E /* ValidationMatrixTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValidationMatrixTests.swift; sourceTree = "<group>"; };
+		814601BFDE2B5FF8E6B3B2F6 /* Wave2ApiGapsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wave2ApiGapsTests.swift; sourceTree = "<group>"; };
+		5105A0DCF49C06D45A7A9128 /* Wave2CompressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wave2CompressionTests.swift; sourceTree = "<group>"; };
+		7841B0CBD1675285F24033A4 /* Wave2GitCompatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wave2GitCompatTests.swift; sourceTree = "<group>"; };
+		50C8A454425D1E970402508B /* Wave2HttpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wave2HttpTests.swift; sourceTree = "<group>"; };
+		9525E91ACC37FC550E373192 /* Wave2SigningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wave2SigningTests.swift; sourceTree = "<group>"; };
+		840D4BF21511634653B30BCA /* Wave2SshTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wave2SshTests.swift; sourceTree = "<group>"; };
+		39258EAD450361AE110D5C9D /* WaveFixesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveFixesTests.swift; sourceTree = "<group>"; };
 		7A97B10E4E1750F88FB7E936 /* BuildSettingsQuery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuildSettingsQuery.swift; sourceTree = "<group>"; };
 		7AA758134F157375E905B5C9 /* XcodeGenNativeGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XcodeGenNativeGenerator.swift; sourceTree = "<group>"; };
 		7AB2437BFE32D1D36364810A /* NativeSettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSettingsViews.swift; sourceTree = "<group>"; };
@@ -10133,8 +10153,10 @@
 				593208BA8AA41A478DE40CE3 /* CollaborationTests.swift */,
 				E1337E9C3C2313867A464095 /* CoreFlowTests.swift */,
 				5CBBCA17EE6F62AE010DB7D0 /* DetectionTests.swift */,
+				D72214020CFBC380288FCA76 /* EndToEndScenarioTests.swift */,
 				1F777E4F1B4C8CFCB200E79F /* HardeningTests.swift */,
 				C3C7E7D3CF2FFEAC0BFA7EAC /* InfraTests.swift */,
+				8C3686E8336CB664E990EB5F /* IntegrationWorkflowTests.swift */,
 				DA6D689C7ABEB34520521F8F /* IntelligenceTests.swift */,
 				CE131667AAE698EE8C6DAFD5 /* MergeTests.swift */,
 				4C98565EDAE43BCAC7ACE389 /* ObjectStoreTests.swift */,
@@ -10142,6 +10164,14 @@
 				5EB15ACE8E097C47D8604B83 /* StorageTests.swift */,
 				22E5509AF6F01E03BEEADE87 /* TestSupport.swift */,
 				F0DEE33D91660D98A944A770 /* ToolingTests.swift */,
+				FFF347870C5DD95FE068EE1E /* ValidationMatrixTests.swift */,
+				814601BFDE2B5FF8E6B3B2F6 /* Wave2ApiGapsTests.swift */,
+				5105A0DCF49C06D45A7A9128 /* Wave2CompressionTests.swift */,
+				7841B0CBD1675285F24033A4 /* Wave2GitCompatTests.swift */,
+				50C8A454425D1E970402508B /* Wave2HttpTests.swift */,
+				9525E91ACC37FC550E373192 /* Wave2SigningTests.swift */,
+				840D4BF21511634653B30BCA /* Wave2SshTests.swift */,
+				39258EAD450361AE110D5C9D /* WaveFixesTests.swift */,
 			);
 			name = SpacesEngineTests;
 			path = swiftcode/Tests/SpacesEngineTests;
@@ -20233,8 +20263,10 @@
 				4814B98F11765B68DC377064 /* CollaborationTests.swift in Sources */,
 				137F4295CB7AC9C31F6C6645 /* CoreFlowTests.swift in Sources */,
 				CAC40411148585E1DCBB8BFC /* DetectionTests.swift in Sources */,
+				4E4C19875EEBF3BFF54068B8 /* EndToEndScenarioTests.swift in Sources */,
 				4092287BCAB020E96F4B5655 /* HardeningTests.swift in Sources */,
 				02D0EE215A947D76030CA8AF /* InfraTests.swift in Sources */,
+				47D55F25A726EAFBA26A84EB /* IntegrationWorkflowTests.swift in Sources */,
 				816AA7141796DC0A14B42755 /* IntelligenceTests.swift in Sources */,
 				0A8D0D60C2B571918E254713 /* MergeTests.swift in Sources */,
 				860B13F984F326C1E3E62101 /* ObjectStoreTests.swift in Sources */,
@@ -20242,6 +20274,14 @@
 				21BFE395B18D0D0869B94779 /* StorageTests.swift in Sources */,
 				B6A79E108012FEE5F21830AD /* TestSupport.swift in Sources */,
 				E128DAFAD17523B95B3A9E11 /* ToolingTests.swift in Sources */,
+				0ABEFE29A2F0BB01BF76D6D9 /* ValidationMatrixTests.swift in Sources */,
+				B022639299447F2F7EE5D487 /* Wave2ApiGapsTests.swift in Sources */,
+				62215773753254F5BFDA9551 /* Wave2CompressionTests.swift in Sources */,
+				829C4C0B2BEFF0998D28AD79 /* Wave2GitCompatTests.swift in Sources */,
+				07F87311129956AC739AC637 /* Wave2HttpTests.swift in Sources */,
+				6AE01252F6A17A7257487BDB /* Wave2SigningTests.swift in Sources */,
+				843AEF6BBE413234C695C4C8 /* Wave2SshTests.swift in Sources */,
+				BA44A31F844A8C8CD58A0344 /* WaveFixesTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
