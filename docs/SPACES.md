@@ -116,8 +116,35 @@ Operations: `clone`, `fetch`, `push`, `pull` with remote-tracking refs
 - **Import** reads a git repository via `git cat-file --batch-all-objects` +
   `for-each-ref`, converts SHA-1 git objects to SHA-256 Spaces objects
   (blobs/trees bottom-up, commits parent-first, annotated tags), and maps refs.
+  Submodules become tracked `spaces-gitlink:` marker blobs with their paths and
+  target commits recorded in `.spaces/migration/gitlinks.json` and the import
+  report; GPG `gpgsig` payloads are preserved on the imported Space commits
+  (listed in the report) and written back on export; `refs/notes/*` are
+  imported into `.spaces/notes.json` keyed by the imported commit; LFS pointer
+  files are detected and their objects copied from the source repo's local LFS
+  store when present, otherwise recorded in
+  `.spaces/migration/lfs-pointers.json` with a warning (no remote LFS
+  transfer). Every lossy decision (source remotes, local config, hooks,
+  reflogs, unimported refs, `mergetag`/`gpgsig-sha256` headers) warns
+  explicitly in the import report.
 - **Export** writes a real `.git` via `git init` + `hash-object`/`mktree`/
-  `commit-tree`/`mktag`/`update-ref`, preserving history, authors, and tags.
+  `commit-tree`/`mktag`/`update-ref`, preserving history, authors, and tags,
+  and also writes safe config keys only (user, init default branch, core
+  flags, branch tracking, remote url/pushurl/fetch — never credentials),
+  copies non-sample hooks from `.spaces/hooks/`, and exports Spaces reflogs
+  into `.git/logs/`. Exporting into a directory that already contains a
+  `.git` (or a bare git directory) updates its refs and objects in place and
+  leaves other refs untouched.
+- **Git binary requirement.** Import/export shell out to the git CLI; Spaces
+  itself does not need git. The binary is probed at `/usr/bin/git`,
+  `/opt/homebrew/bin/git`, `/usr/local/bin/git`, `/opt/local/bin/git`,
+  `/Library/Developer/CommandLineTools/usr/bin/git`,
+  `/Applications/Xcode.app/Contents/Developer/usr/bin/git`,
+  `~/homebrew/bin/git`, `~/opt/homebrew/bin/git`, `~/.local/bin/git`, the
+  `xcode-select -p` developer directory, the `xcrun -f git` result, then
+  `PATH`. Without one, import/export throw a `migrationError` naming the
+  searched locations and the install options (Xcode Command Line Tools or
+  Homebrew).
 - Bundles (`spaces bundle`) and tar archives (`spaces archive`) provide
   offline transfer formats.
 
