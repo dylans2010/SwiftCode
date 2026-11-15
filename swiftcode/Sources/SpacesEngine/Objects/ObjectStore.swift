@@ -20,22 +20,21 @@ public final class ObjectStore: @unchecked Sendable {
     public func write(type: ObjectType, payload: Data) throws -> ObjectID {
         let id = ObjectID.compute(type: type, payload: payload)
         let destination = url(for: id)
+        let diskData = Self.encodeForDisk(type: type, payload: payload)
         if FileManager.default.fileExists(atPath: destination.path) {
             do {
                 _ = try read(id)
                 return id
             } catch {
-                let encoded = ObjectCoding.encode(StoredObject(type: type, payload: payload))
                 try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
                                                         withIntermediateDirectories: true)
-                try AtomicFileIO.writeAtomically(encoded, to: destination)
+                try AtomicFileIO.writeAtomically(diskData, to: destination)
                 return id
             }
         }
-        let encoded = ObjectCoding.encode(StoredObject(type: type, payload: payload))
         try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(),
                                                 withIntermediateDirectories: true)
-        try AtomicFileIO.writeAtomically(encoded, to: destination)
+        try AtomicFileIO.writeAtomically(diskData, to: destination)
         return id
     }
 
@@ -56,8 +55,13 @@ public final class ObjectStore: @unchecked Sendable {
         catch { throw SpacesError.ioError("cannot read object \(id.hex): \(error.localizedDescription)") }
 
         let stored: StoredObject
-        do { stored = try ObjectCoding.decode(data) }
-        catch { throw SpacesError.objectCorrupt(id.hex) }
+        do {
+            let inner = try Self.decodeDiskFile(data)
+            stored = try ObjectCoding.decode(inner)
+        } catch let error as SpacesError {
+            if case .unsupportedOperation = error { throw error }
+            throw SpacesError.objectCorrupt(id.hex)
+        }
 
         if let expected = expectedType, stored.type != expected {
             throw SpacesError.invalidObject("object \(id.hex) is \(stored.type.rawValue), expected \(expected.rawValue)")
@@ -191,5 +195,52 @@ public final class ObjectStore: @unchecked Sendable {
             throw SpacesError.ioError("failed to prune \(failures.count) object(s): \(failures.prefix(5).joined(separator: ", "))")
         }
         return removed
+    }
+
+    private static let diskMagic: [UInt8] = [0x53, 0x50, 0x43, 0x32]
+    private static let diskHeaderSize = 21
+    private static let compressedFlag: UInt8 = 0x01
+
+    private static func encodeForDisk(type: ObjectType, payload: Data) -> Data {
+        let encoded = ObjectCoding.encode(StoredObject(type: type, payload: payload))
+        let (stored, compressed) = ObjectCompression.encodeForStorage(encoded)
+        var data = Data()
+        data.append(contentsOf: diskMagic)
+        data.append(compressed ? compressedFlag : 0)
+        var uncompressedLength = UInt64(encoded.count).bigEndian
+        withUnsafeBytes(of: &uncompressedLength) { data.append(contentsOf: $0) }
+        var storedLength = UInt64(stored.count).bigEndian
+        withUnsafeBytes(of: &storedLength) { data.append(contentsOf: $0) }
+        data.append(stored)
+        return data
+    }
+
+    private static func decodeDiskFile(_ data: Data) throws -> Data {
+        guard data.count >= 4, Array(data.prefix(4)) == diskMagic else {
+            return data
+        }
+        guard data.count >= diskHeaderSize else {
+            throw SpacesError.invalidObject("compressed object file is truncated")
+        }
+        let flags = data[4]
+        guard flags == 0 || flags == compressedFlag else {
+            throw SpacesError.invalidObject("compressed object has unknown flags")
+        }
+        let uncompressedLength = data[5..<13].reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
+        let storedLength = data[13..<21].reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
+        guard storedLength == UInt64(data.count - diskHeaderSize) else {
+            throw SpacesError.invalidObject("compressed object length mismatch")
+        }
+        let stored = data.subdata(in: diskHeaderSize..<data.count)
+        if flags == compressedFlag {
+            guard uncompressedLength <= UInt64(Int.max) else {
+                throw SpacesError.invalidObject("compressed object declares an impossible length")
+            }
+            return try ObjectCompression.decompress(stored, expectedLength: Int(uncompressedLength))
+        }
+        guard storedLength == uncompressedLength else {
+            throw SpacesError.invalidObject("stored object length mismatch")
+        }
+        return stored
     }
 }
