@@ -30,6 +30,14 @@ registered in `main.swift`, 162 unique derived names, 0 duplicates, via a
 positional script that resolves each struct's explicit `commandName:` and
 otherwise kebab-cases the struct name) and re-counted the tests (221
 `@Test` funcs after adding 13 in `WaveFixesTests.swift`, §13).
+Wave 2 slice G (2026-11-14, base `b2a1a3f`, slices A–F on main) re-counted
+everything again by grep instead of trusting the handoff numbers: 303
+`@Test` funcs in `SpacesEngineTests` (221 pre-Wave-2 + 82 new Wave 2
+files), 163 registered CLI commands in `main.swift` (162 unique before
+slice D added `serve`; 163 unique, 0 duplicates), 8 new `@Test` funcs in
+`swiftcode/Tests/SwiftCodeSDKTests/Wave2SdkTests.swift`, and a
+`clean.py --check` re-run (4,675 files, 0 strippable comments, exit 0).
+The per-slice evidence and the pruned BLOCKED list are in §14.
 
 ## Verification status — read first
 
@@ -39,7 +47,9 @@ and statically verified only: zero comments in the new files, balanced
 delimiters, and every referenced `SpacesAPI`/`SpacesEngine` symbol confirmed
 to exist by grep. The Xcode build, `swift test`, and the live 30-step E2E run
 on Dylan's Mac are the pending gate. No test in this report is claimed as
-passing. At the slice-I base the suite is 221 `@Test` funcs (§6, §13).
+passing. At the slice-I base the suite is 221 `@Test` funcs (§6, §13); after
+Wave 2 slices A–G the suite is 303 `@Test` funcs in `SpacesEngineTests`
+plus 8 in `SwiftCodeSDKTests` (§6, §14) — still 0 executed anywhere.
 
 Status meanings used below: **COMPLETE** — the deliverable exists as real code
 and was verified on disk (statically; see the gate note above).
@@ -58,15 +68,16 @@ and was verified on disk (statically; see the gate note above).
 | Collaboration (D31–D40) | COMPLETE | Merge refuses when the review policy is unmet (D34, §13) |
 | Security (E41–E50) | COMPLETE | Signing key lives outside the repo; `snapshotSignatureInfo` reads the migrated key (slice I test, §13) |
 | Developer tooling (F51–F60) | COMPLETE | |
-| CLI parity (§5) | COMPLETE | 162/162 named commands present (slice E re-count, slice I re-verified); merge strategies are engine-backed (follow-up, 2026-11-14) |
+| CLI parity (§5) | COMPLETE | 163/163 named commands present (slice D added `serve`; slice G re-counted, 163 unique, 0 duplicates, §14); merge strategies are engine-backed (follow-up, 2026-11-14) |
 | UI / settings / detection | COMPLETE | Static only; never opened in Xcode; Wave 2 slice D closed D1–D14 (§4) |
 | §4 hardening | COMPLETE | 25 tests; one Maintenance follow-up (see below); `gc` age retention added by slice I |
-| `tools/clean.py` + repo-wide cleanup | COMPLETE | Exact numbers in §7; slice I re-check: 4,660 files, 0 strippable comments |
+| `tools/clean.py` + repo-wide cleanup | COMPLETE | Exact numbers in §7; slice G re-check: 4,675 files, 0 strippable comments |
 | Validation matrix | COMPLETE | 30 tests written, 0 executed here |
 | Integration workflows | COMPLETE | 4 tests written, 0 executed here |
 | §9 E2E scenario (30 steps) | COMPLETE | 1 ordered test written, 0 executed here |
 | Wave 1/2 fix coverage | COMPLETE | 13 new tests in `WaveFixesTests.swift`, 0 executed here (§13) |
-| Git compatibility | PARTIAL | Real import/export; dry-run writes nothing (slice I test, §13); limitations in §8 |
+| Wave 2 closure (slices A–G) | COMPLETE | 82 new engine tests + 8 new SDK tests; Git compat, compression, SSH, HTTP server, unpublish, LFS transfer, API gaps, Ed25519 signing all closed (§14) |
+| Git compatibility | COMPLETE | Real import/export incl. gitlinks, GPG payloads, notes, LFS pointers, remotes/config/hooks/reflogs on export (§8, §14); live round-trip still unexecuted (Mac gate) |
 | Build / test verification | BLOCKED | No Swift toolchain in this environment |
 
 ## 1. Engine core
@@ -310,6 +321,17 @@ Fixed in the 2026-11-14 follow-up (previously open decisions, now done):
 Fixed in earlier waves and re-confirmed present: `spaces trace` really
 executes `status`/`log`/`fsck`/`storage`/`search` between before/after object
 counts (it was a no-op wrapper at the audit baseline).
+
+Fixed in Wave 2 slice D (`b2a1a3f`, previously open, now done; full evidence
+in §14): `spaces serve` is registered (163 top-level commands, 163 unique
+derived names, 0 duplicates, re-counted by slice G with the same positional
+script — the 162-name list above is the slice-I snapshot). `spaces serve
+<path>` speaks the protocol over stdio; `--http-port` serves the same
+protocol over HTTP. Slice D also closed the two honest-failure items slice
+E recorded above: `lfs fetch`/`push`/`pull` now transfer objects over
+local and HTTP remotes with hash verification and offset resume, and
+`unpublish` deletes the remote ref via the transport delete-ref operation
+instead of failing honestly.
 
 ## 4. UI, settings, detection
 
@@ -581,13 +603,31 @@ with a diverging head is covered separately by
 | ValidationMatrixTests | 30 |
 | TestSupport | 0 |
 | WaveFixesTests | 13 |
-| **Total** | **221** |
+| Wave2CompressionTests | 13 |
+| Wave2SigningTests | 10 |
+| Wave2GitCompatTests | 12 |
+| Wave2SshTests | 17 |
+| Wave2ApiGapsTests | 8 |
+| Wave2HttpTests | 22 |
+| **Total** | **303** |
 
 163 existed before this slice; 35 are new (30 + 4 + 1). The 2026-11-14
 follow-up adds 10 more: 5 strategy tests in MergeTests, 2 worktree-resolve
 tests in CLIContractTests, 3 B19 scoping tests in AdvancedVCTests. Slice I
 (2026-11-14) adds 13 more in `WaveFixesTests.swift` (see §13): 208 + 13 =
 221. All counts re-verified by grep at the slice-I base.
+
+Wave 2 (slices A–F, 2026-11-14) adds 82 more in six new files
+(`Wave2CompressionTests` 13, `Wave2SigningTests` 10,
+`Wave2GitCompatTests` 12, `Wave2SshTests` 17, `Wave2ApiGapsTests` 8,
+`Wave2HttpTests` 22 — each count re-read by slice G with `grep -c "@Test"`,
+not copied from the handoff): 221 + 82 = 303. Slice G adds 8 more in a
+different target, `swiftcode/Tests/SwiftCodeSDKTests/Wave2SdkTests.swift`
+(190 lines, 8 `@Test` funcs, 0 comments), testing the SDK seams slice E
+could not reach from the engine tests (`GitService.clone` token passing
+against a fake git binary; `SpacesService.shared.graph` on a real temp
+Spaces repo) — see §14. Suite total across both targets: 311 `@Test`
+funcs, 0 executed anywhere.
 
 ## 7. `tools/clean.py` and the repo-wide cleanup
 
@@ -622,41 +662,56 @@ found. No transform was run (none needed). The new slice-I files
 (`WaveFixesTests.swift`, the `Maintenance.swift` gc fix) contain 0 `//`
 and 0 `/*` occurrences (verified by grep).
 
+Slice G re-check (2026-11-14, at base `b2a1a3f`): `python3 tools/clean.py
+--check` exit 0 — scanned **4,675 files**, **0 strippable comments**
+found (final run, including the new `Wave2SdkTests.swift`). No transform
+was run (none needed). The 15-file growth since
+slice I is the Wave 2 engine/CLI/test additions plus slice G's test file. Every Wave 2 new Swift
+file contains 0 real comments (verified by grep — see §14; the only `//`
+occurrences are `ssh://` / `http://` URL string literals, and the one
+`/*` match in the Wave 2 diffs is the `refs/notes/*` glob in
+`docs/SPACES.md` prose, not code).
+
 Dylan's absolute rule (zero comments in new Swift files) is honoured by
 every file written in Waves 1–4: the three new S10 test files contain
 0 `//` and 0 `/*` occurrences (verified by grep).
 
 ## 8. Git compatibility limitations
 
-PARTIAL. Git interop is real (shells out to the git CLI), not a wrapper
-around a fake format, but it has these evidenced limits:
+COMPLETE (Wave 2 slice A, `99f8c7d`, with the slice-E/G SDK coverage in
+§14). Git interop is real (shells out to the git CLI), not a wrapper
+around a fake format. What the slice-I version of this section listed as
+limits is now closed, item by item:
 
-- **Requires a git executable.** `GitMigration.findGit` looks in
-  `/usr/bin/git`, `/opt/homebrew/bin/git`, `/usr/local/bin/git`, then
-  `PATH`; without one, import/export throw `migrationError`. Spaces itself
-  needs no git.
-- **Import is lossy by design.** SHA-1 git objects are converted to SHA-256
-  Spaces objects (blobs/trees bottom-up, commits parent-first, annotated
-  tags), refs are mapped, authors/committers (name, email, timestamp) are
-  preserved. Import reports warnings instead of failing on unconvertible
-  trees, unparseable commits, unresolved parents, and unimported ref
-  targets. No submodule/gitlink handling, no GPG-signature handling, no
-  notes, and no LFS handling were found in `GitMigration.swift` — a repo
-  using those will import without them, silently, apart from the warnings
-  above.
-- **Export writes a fresh `.git`.** `git init` + `hash-object` /
-  `mktree` / `commit-tree` / `mktag` / `update-ref`, preserving history,
-  authors, and tags. It does not preserve the source repo's remotes,
-  configuration, hooks, or reflogs, and it produces a new repository rather
-  than updating an existing one.
-- **Untested here.** Import/export are covered by the new matrix tests
-  (`gitImportSmallRepo`, `gitExportRoundTrip`) and E2E steps 26–27, none of
-  which have been executed (no toolchain). A live git repo with branches,
-  tags, and merges has not been round-tripped and compared by hand.
-  Slice I adds `gitImportDryRunWritesNothing`, which asserts a dry-run
-  import of a real 2-commit git repo reports 2 commits and writes no
-  objects, creates no refs, writes no `migration.log`, and checks out no
-  files (also statically verified only, 0 executed here).
+- **Requires a git executable.** Unchanged and honest: `GitMigration.findGit`
+  looks in `/usr/bin/git`, `/opt/homebrew/bin/git`, `/usr/local/bin/git`,
+  then `PATH`; without one, import/export throw `migrationError`. Spaces
+  itself needs no git.
+- **Import is lossy by design — now explicit, not silent.** SHA-1 git
+  objects are converted to SHA-256 Spaces objects (blobs/trees bottom-up,
+  commits parent-first, annotated tags), refs are mapped, authors/committers
+  (name, email, timestamp) are preserved. Slice A closed every item this
+  section previously listed as missing: gitlinks (submodules) are recorded,
+  GPG-signature payloads are preserved on the imported objects, git notes
+  are imported, and LFS pointers are detected with their local objects
+  imported where present. Every lossy import decision now produces an
+  explicit warning in the import report instead of importing silently.
+  Import still reports warnings instead of failing on unconvertible trees,
+  unparseable commits, unresolved parents, and unimported ref targets.
+- **Export preserves the source repo's surroundings.** Export still writes
+  via `git init` + `hash-object` / `mktree` / `commit-tree` / `mktag` /
+  `update-ref`, preserving history, authors, and tags — and now also
+  exports remotes, configuration, hooks, and reflogs, and can export into
+  an existing `.git` instead of only producing a fresh repository.
+- **Untested here.** Import/export are covered by the matrix tests
+  (`gitImportSmallRepo`, `gitExportRoundTrip`), the 12
+  `Wave2GitCompatTests`, and E2E steps 26–27, none of which have been
+  executed (no toolchain). A live git repo with branches, tags, and merges
+  has not been round-tripped and compared by hand. Slice I adds
+  `gitImportDryRunWritesNothing`, which asserts a dry-run import of a real
+  2-commit git repo reports 2 commits and writes no objects, creates no
+  refs, writes no `migration.log`, and checks out no files (also statically
+  verified only, 0 executed here).
 
 ## 9. S10 re-checks
 
@@ -773,9 +828,11 @@ Mac gate (Dylan's Mac, in order):
    build (including the `CQuickJS`-style question for any new target
    reference — note the Spaces targets are declared in `project.yml` and
    `Package.swift`; confirm Xcode picks them up).
-3. Run `swift test` / the Xcode test target: 221 `@Test` funcs, including
-   the 30-step E2E scenario and the 13 new `WaveFixesTests`. Investigate
-   any failure by step number (E2E) or test name.
+3. Run `swift test` / the Xcode test target: 311 `@Test` funcs (303 in
+   `SpacesEngineTests`, including the 30-step E2E scenario, the 13
+   `WaveFixesTests`, and the 82 Wave 2 tests in §14; plus 8 new
+   `Wave2SdkTests` in `SwiftCodeSDKTests`). Investigate any failure by
+   step number (E2E) or test name.
 4. Run the `spaces` binary: `spaces --help` (confirm no duplicate-name
    trap at launch), then a live E2E pass of steps 1–30 against a real
    directory, plus a real Git import/export round-trip.
@@ -791,6 +848,18 @@ Mac gate (Dylan's Mac, in order):
    test (divergent push). The rebase-edit semantic question in §13 is
    now decided and fixed: `edit` applies the commit, then stops, and
    `rebaseEditAdvances` pins the edited commit surviving the rebase.
+8. Project-file catch-up (found by slice G, §14 — not a code defect):
+   the checked-in `SwiftCode.xcodeproj/project.pbxproj` lists
+   `SpacesEngineTests` files individually and contains zero `Wave2`
+   references, so none of the Wave 2 test files run under Xcode until
+   the project is regenerated from `project.yml` (which declares
+   `SpacesEngineTests` by directory) or the files are added by hand;
+   `WaveFixesTests` is missing from the pbxproj the same way. There is
+   no `SwiftCodeSDKTests` target in `project.yml` or the pbxproj at all,
+   so `Wave2SdkTests.swift` (and every other SDK test) runs only under
+   `swift test` until a target exists. Confirm the regenerated project
+   still opens and builds after any regeneration — regenerating from
+   `project.yml` has previously wiped hand-applied registrations.
 
 ## 11. Files delivered by S10
 
@@ -998,20 +1067,26 @@ edit item hits a conflict, resolving it returns to the `edit` stop
 instead of advancing past it. `rebaseEditAdvances` now pins the
 edited commit surviving the rebase.
 
-### Honest BLOCKED list (unchanged, with exact reasons)
+### Honest BLOCKED list (pruned by Wave 2 — only the genuine remainder)
 
-- Object compression: no portable zlib binding in the Swift standard
-  library; no compression implementation exists in the repo.
-- SSH transport: no SSH client in the repo and no peer to speak it.
-- Spaces HTTP server: the HTTP client exists; no server implementation
-  exists in the repo.
-- LFS remote transfer: no transfer operation; `lfs fetch`/`push`/`pull`
-  fail honestly. `unpublish`: no transport delete-ref operation.
-- Build / test verification: no Swift toolchain in this environment.
-  Xcode build, `swift test`, and the live 30-step E2E on Dylan's Mac
-  remain the gate; 0 of the 221 tests have been executed anywhere.
-- `SpacesAPI.gc()` has no `pruneDays` passthrough (see above); the CLI
-  and compaction profiles call `MaintenanceOps` directly.
+Wave 2 slices A–F closed every item this list carried at slice I except
+the Mac gate itself (evidence in §14):
+
+- Object compression: CLOSED by slice B (real zlib via the Compression
+  framework). SSH transport: CLOSED by slice C (real ssh binary) with its
+  `spaces serve` peer added by slice D. Spaces HTTP server: CLOSED by
+  slice D (real POSIX-socket server sharing one protocol handler with the
+  stdio peer). LFS remote transfer and `unpublish`: CLOSED by slice D.
+  `SpacesAPI.gc()` `pruneDays` passthrough: CLOSED by slice E.
+- Build / test verification: still BLOCKED — no Swift toolchain in this
+  environment. Xcode build, `swift test`, and the live 30-step E2E on
+  Dylan's Mac remain the gate; 0 of the 311 tests have been executed
+  anywhere.
+- Live round-trips still unexecuted: no live SSH round-trip has run
+  against a real `spaces serve` peer, no live HTTP fetch/push has run
+  against the real server, and no live Git import/export round-trip has
+  been compared by hand — the tests covering them are written but
+  unexecuted, like everything else in this report.
 
 ### Files changed by slice I
 
@@ -1024,3 +1099,281 @@ edited commit surviving the rebase.
 
 No other files were created, modified, committed, or pushed by this
 slice. Nothing was committed or pushed, per the slice rules.
+
+## 14. Wave 2: closing the PARTIAL/BLOCKED list (2026-11-14)
+
+Base: local HEAD `b2a1a3f` (Wave 2 slice D), slices A–F already on main.
+Statically verified only — no Swift toolchain in this environment, 0 tests
+executed, 0 builds run. Slice G re-counted every number below by grep in
+its own worktree instead of copying the handoff numbers; where a count
+differed from the handoff, the grep result is what is recorded. The Xcode
+gate in §10 is unchanged and now covers 311 `@Test` funcs.
+
+### Per-slice evidence
+
+**Slice B — object compression (`482e53c`): COMPLETE.** Real zlib via the
+Compression framework in
+`swiftcode/Sources/SpacesEngine/Objects/ObjectCompression.swift` (83
+lines, 0 comments), with a stored-uncompressed fallback when the
+framework is unavailable (`#if canImport(Compression)`); object IDs
+remain hash-of-content (`ObjectID.compute`, SHA-256). Tests:
+`swiftcode/Tests/SpacesEngineTests/Wave2CompressionTests.swift` (194
+lines, 13 `@Test` funcs, 0 comments) — re-counted 13 by grep, matching
+the handoff. The missing-framework read path (decompress of a compressed
+blob without Compression throws `unsupportedOperation`) cannot be
+exercised on macOS, where the framework is always present; the test for
+it asserts the stored fallback instead. CryptoKit/Compression autolink
+is relied on, not an explicit link — see "Remaining honest items".
+
+**Slice F — Ed25519 signing (`b9d1e1f`): COMPLETE.** Real Ed25519 via
+CryptoKit in
+`swiftcode/Sources/SpacesEngine/Security/Ed25519Signing.swift` (273
+lines, 0 comments), with an honest HMAC-SHA256 fallback when CryptoKit
+is unavailable (`#if canImport(CryptoKit)`); the public key is published
+in-repo at `.spaces/security/signing-public-key.json`
+(`publicKeyRelativePath`). Tests:
+`swiftcode/Tests/SpacesEngineTests/Wave2SigningTests.swift` (183 lines,
+10 `@Test` funcs, 0 comments) — re-counted 10 by grep. Slice F also
+fixed a pre-existing break that had kept SpacesEngine uncompilable at
+the base: a `SecurityFileStore` parameter-label mismatch (`relative:`
+vs `relativePath:`).
+
+**Slice A — Git compatibility (`99f8c7d`): COMPLETE.** `GitMigration.swift`
+(+731/−137 lines) plus 29 lines in `docs/SPACES.md`: gitlinks recorded,
+GPG payloads preserved, git notes imported, LFS pointer detection with
+local-object import, an explicit warning for every lossy import
+decision, export of remotes/config/hooks/reflogs, export into an
+existing `.git`, wider git probing. Tests:
+`swiftcode/Tests/SpacesEngineTests/Wave2GitCompatTests.swift` (271
+lines, 12 `@Test` funcs, 0 comments) — re-counted 12 by grep. Note: the
+engine has no usable LFS store beyond `config` + the `lfs/objects`
+directory; slice D built LFS transfer on top of that. §8 is updated to
+COMPLETE accordingly.
+
+**Slice C — SSH transport (`9c18b52`): COMPLETE.** Real SSH over the
+system `ssh` binary in
+`swiftcode/Sources/SpacesEngine/Networking/SshTransport.swift` (375
+lines, 0 real comments): `-T`, `BatchMode=yes`, `ConnectTimeout`, the
+`spaces serve` remote command over stdio. Host-key verification is
+honored by omission — the transport never passes
+`StrictHostKeyChecking=no` and relies on the ssh default (no
+`StrictHostKeyChecking` setting exists anywhere in the file, verified by
+grep). Tests: `swiftcode/Tests/SpacesEngineTests/Wave2SshTests.swift`
+(170 lines, 17 `@Test` funcs, 0 real comments — the 13 `//` occurrences
+are `ssh://` URL string literals) — re-counted 17 by grep. Slice C
+noted the remote `spaces serve` peer did not exist; slice D implemented
+it. The live SSH round-trip against a real peer remains unexecuted (Mac
+gate).
+
+**Slice E — API gaps (`5a930b5`): COMPLETE.**
+`SpacesAPI.gc(pruneDays:)` passthrough exists
+(`SpacesAPI.swift:407`); `TagPayload.taggerTimezone` is wired into
+export; pax path overrides are honored in tar extraction;
+`GitService.clone` actually passes the token (verified again by slice G
+— see "SDK tests" below); `SpacesService.graph` is wired into
+`BranchesView`; evidence-based branch health replaced the deleted
+name-substring `"stale"` heuristic; named-identity signing keys moved
+out of the repo with migration; import/export CLI text output added.
+Tests: `swiftcode/Tests/SpacesEngineTests/Wave2ApiGapsTests.swift` (200
+lines, 8 `@Test` funcs, 0 comments) — re-counted 8 by grep. One E note
+carries forward: `GitService.clone` throws the misleadingly named
+`GitError.invalidBranch` for token errors (the case name says branch;
+the condition is a token problem) — now pinned by two SDK tests, not
+renamed, because renaming the case would churn every call site for a
+cosmetic fix.
+
+**Slice D — HTTP server, serve peer, unpublish, LFS (`b2a1a3f`):
+COMPLETE.** Real HTTP/1.1 server over POSIX sockets, no Network
+framework, in `swiftcode/Sources/SpacesEngine/Networking/HttpServer.swift`
+(295 lines, 0 real comments — the one `//` is an `http://` URL literal);
+`spaces serve <path>` stdio peer in `StdioServer.swift` (53 lines)
+sharing one protocol handler (`ProtocolHandler.swift`, 224 lines) with
+the HTTP server; the wire protocol is versioned by
+`RepositoryFormat.protocolVersion` (= 1) — the literal string
+`spaces-proto/1` appears only in the `serve` command's help abstract,
+not in any engine source. Transport delete-ref
+(`RemoteOps.deleteRemoteRef`, `ProtocolHandler` delete-ref) with
+`spaces unpublish` wired (`CommandsRemote.swift:405`); LFS
+fetch/push/pull over local + HTTP remotes with hash verification and
+offset resume (`LfsTransferOps.swift`, 310 lines). Tests:
+`swiftcode/Tests/SpacesEngineTests/Wave2HttpTests.swift` (426 lines, 22
+`@Test` funcs, 0 comments) — re-counted 22 by grep, matching the
+handoff. CLI is now 163 commands (`Serve` registered; 163 registered,
+163 unique, 0 duplicates, re-counted by slice G with the positional
+script). Flagged follow-up, not a fake: `spaces serve --http-port`
+binds `INADDR_ANY` (`HttpServer.swift:50`) with no authentication —
+a decision for Dylan, recorded under "Remaining honest items".
+
+### Updated inventory (re-counted by slice G at base `b2a1a3f`)
+
+- Tests: 24 files, 5,346 lines, 303 `@Test` funcs in
+  `swiftcode/Tests/SpacesEngineTests/` (221 pre-Wave-2 + 82 Wave 2:
+  13 + 10 + 12 + 17 + 8 + 22); plus 8 `@Test` funcs in
+  `swiftcode/Tests/SwiftCodeSDKTests/Wave2SdkTests.swift` (190 lines).
+  Suite total: 311, 0 executed anywhere.
+- Engine: 108 Swift files, 20,782 lines
+  (`swiftcode/Sources/SpacesEngine/`).
+- CLI: 7 files, 4,703 lines (`swiftcode/Sources/spaces/`).
+- `SpacesService`: 480 lines, unchanged. `docs/SPACES.md`: 321 lines.
+- Git compatibility: COMPLETE (§8). Compression: COMPLETE. SSH:
+  COMPLETE (incl. serve peer). HTTP server: COMPLETE. Unpublish:
+  COMPLETE. LFS transfer: COMPLETE. API gaps: COMPLETE. Ed25519
+  signing: COMPLETE. The §13 BLOCKED list is pruned to the genuine
+  remainder (Mac gate + unexecuted live round-trips).
+
+### SDK tests: `swiftcode/Tests/SwiftCodeSDKTests/Wave2SdkTests.swift`
+
+Slice E could not write these from the engine tests: the seams live in
+the app's SDK layer (`SwiftCodeSDK`), not in `SpacesEngine`. Slice G
+verified both seams exist exactly as E described and wrote 8 real
+`@Test` funcs (swift-testing, `@Suite(.serialized)` because the fake-git
+tests mutate the process-global `git_executable_path` default):
+
+1. `cloneWithTokenPassesExtraHeaderToFakeGit` — sets the `git_executable_path`
+   UserDefaults key (the actual key name, read from
+   `GitService.swift:8`) to a shell script that logs its argv and exits 0,
+   calls `GitService.clone` with token `tok-123`, and asserts the logged
+   argv is `clone`, `-c`,
+   `http.https://example.com/.extraHeader=Authorization: Bearer tok-123`,
+   the remote URL, and the destination path. This is the real token path:
+   `GitService.clone` (`GitService.swift:92`) builds that `-c` argument
+   and runs it through `Subprocess.run`.
+2. `cloneWithoutTokenPassesNoExtraHeader` — same fake git, `token: nil`;
+   asserts no logged argument contains `extraHeader` or `Authorization`.
+3. `cloneTokenWithControlCharacterThrowsInvalidBranch` — token `"bad\ntoken"`;
+   asserts it throws `GitError.invalidBranch` (the misleading case name,
+   pinned, not renamed).
+4. `cloneTokenOnNonHttpRemoteThrowsInvalidBranch` — token on a
+   `spaces://` remote; asserts the same `invalidBranch` throw, since the
+   guard only admits `http`/`https`.
+5. `cloneFailureSurfacesCommandFailed` — fake git exits 3; asserts
+   `GitError.commandFailed` with exit code 3.
+6. `graphReturnsBranchTipNodeWithRealTimestamp` — creates a real temp
+   Spaces repo through `SpacesService.shared.initialize`, stages and
+   commits one file through `SpacesService.stage` / `commit`, then calls
+   `SpacesService.shared.graph` and asserts exactly one node, `summary`
+   equal to the commit message, empty parents, `refs` containing `main`,
+   and `timestamp` (the committer timestamp, `Signature` defaults to
+   `Date()` at commit time) inside the window bracketed around the
+   commit, plus a 64-hex-character object id.
+7. `graphOnEmptyRepoReturnsNoNodes` — a repo with no commits returns an
+   empty graph.
+8. `graphAfterSecondCommitListsNewestFirst` — two commits; asserts two
+   nodes, newest first, with the first node's parents equal to the
+   second node's oid.
+
+Nothing in this file is faked: the git binary is a real (script) executable
+invoked through the real `Subprocess.run` path, and the repo is a real
+Spaces repo on a temp directory. Nothing that could not be tested was
+left silent: both seams existed as described, so both items were tested.
+Two deliberate design points, both Mac-gate items: the file uses
+swift-testing `@Test` (matching the Wave 2 engine tests) rather than the
+XCTest style of the older SDK tests, and it never names a SpacesEngine
+type or `import`s SpacesEngine — `SwiftCodeSDKTests` has no direct
+SpacesEngine dependency in `Package.swift`, so the graph nodes are used
+only through the values `SpacesService.graph` returns (`.summary`,
+`.parents`, `.refs`, `.timestamp`, `.oid.hex` by member access). SwiftPM
+picks the file up by directory; whether that member-access-through-a-
+transitively-typed-value idiom compiles is part of what the Mac gate
+must confirm.
+
+### `clean.py`
+
+`python3 tools/clean.py --check` exit 0 at base `b2a1a3f`: scanned **4,675
+files**, **0 strippable comments** found (final run, including the new
+`Wave2SdkTests.swift`). No transform was run (none needed). Comment grep on all 14 Wave 2 new Swift files: 0 `/*`
+occurrences; the only `//` occurrences are `ssh://` (3 in
+`SshTransport.swift`, 13 in `Wave2SshTests.swift`) and `http://` (1 in
+`HttpServer.swift`, 1 in `CommandsServe.swift`) URL string literals —
+not comments. The one `/*` match in the Wave 2 diffs is the
+``refs/notes/*`` glob in `docs/SPACES.md` prose. Slice G's two new files
+(`Wave2SdkTests.swift`, this report) likewise contain 0 real comments.
+
+### Legacy-migration directive — not followed, verified
+
+The stale Legacy-migration directive (the "MANDATORY TASK: COMPLETE
+SWIFTCODE-LEGACY FEATURE MIGRATION" block in the repo `AGENTS.md`) was
+NOT followed by any Wave 2 slice. Verified: no `SwiftCode-Legacy/`
+directory exists in this worktree, no `INVENTORY.md` exists, and `git log
+--name-only` over the Wave 2 range (`482e53c^..b2a1a3f`) touches no path
+matching `legacy` or `INVENTORY` (case-insensitive). Wave 2 touched only
+Spaces engine/CLI/UI/test sources and the two docs files. Dylan deleted
+`SwiftCode-Legacy/` wholesale in `3cdd82f4`; it stays deleted.
+
+### Corrections to the handoff found by slice G (named, not silent)
+
+- **The "Xcode project references the test directory" premise is wrong
+  for the checked-in project.** `SwiftCode.xcodeproj/project.pbxproj`
+  is a plain `PBXGroup` listing `SpacesEngineTests` files individually,
+  and `grep -c "Wave2"` on it returns 0 — none of the Wave 2 engine test
+  files (A–F), and not even slice I's `WaveFixesTests`, are in the Xcode
+  build. `project.yml` does declare `SpacesEngineTests` by directory
+  path, so regenerating from it would pick the files up — but
+  regenerating has previously wiped hand-applied registrations, and the
+  pbxproj is the file Xcode actually opens. Worse for the SDK slice:
+  there is no `SwiftCodeSDKTests` target in `project.yml` at all, and
+  zero `SwiftCodeSDKTests` references in the pbxproj, so
+  `Wave2SdkTests.swift` (like every SDK test) runs only under `swift
+  test` until a target exists. This is a Mac-gate item in §10, not
+  something slice G could fix: the slice rules forbade touching project
+  files.
+- **`spaces-proto/1` as a wire label is overstated.** The literal string
+  exists only in the `serve` command's help abstract; the engine
+  versions the protocol with `RepositoryFormat.protocolVersion = 1`.
+  The protocol itself is real (one handler shared by stdio and HTTP),
+  but the report now cites the version constant, not the label.
+- **SSH host-key verification is honored by omission, not by an explicit
+  setting.** `SshTransport` never passes `StrictHostKeyChecking=no`
+  and relies on the ssh default; no `StrictHostKeyChecking` string
+  exists in the file. The §14 wording says exactly that.
+- Nothing else in the handoff contradicted the disk: the per-slice test
+  counts (13/10/12/17/8/22), the 221 pre-Wave-2 total, and the 162
+  pre-slice-D CLI count all re-counted exactly.
+
+### Remaining honest items
+
+- **The Mac gate (only BLOCKED item left).** Xcode build, `swift test`
+  (311 `@Test` funcs), and the live 30-step E2E on Dylan's Mac. 0 tests
+  executed anywhere here — stated plainly, as in every prior section.
+  Includes the unexecuted live round-trips: SSH against a real `spaces
+  serve` peer, HTTP fetch/push against the real server, and a Git
+  import/export round-trip compared by hand.
+- **`spaces serve --http-port` binds `INADDR_ANY` with no authentication**
+  (slice D's flag). A follow-up decision for Dylan: bind localhost by
+  default, add an auth token, or accept the exposure — not a fake, not
+  fixed silently.
+- **`GitService.clone` throws misleadingly named `GitError.invalidBranch`
+  for token errors** (E's note, now pinned by SDK tests 3–4). Cosmetic;
+  renaming churns call sites, so it stays until a rename is wanted.
+- **The missing-framework read path for compressed blobs cannot be
+  exercised on macOS** (B's note): with Compression always present, the
+  `unsupportedOperation` branch in `ObjectCompression.decompress` is
+  unreachable there.
+- **CryptoKit/Compression framework autolink is relied on, not an explicit
+  link** (B/F notes): `#if canImport(...)` guards with Swift autolink.
+  If Xcode ever links `SpacesEngine` without the autolinked frameworks,
+  the Ed25519/compression paths silently degrade to the HMAC/stored
+  fallbacks — the Mac gate should confirm the real paths are the ones
+  taken (the signing/compression tests assert real-round-trip behavior,
+  so a silent fallback would fail loudly there).
+- **Compile risks for the Mac gate.** The `Wave2SdkTests.swift` member
+  access on transitively typed graph nodes (no SpacesEngine import —
+  see "SDK tests") is the one new idiom without precedent in the SDK
+  test target; everything else in the file uses only
+  `SwiftCodeSDK`-public API. The Wave 2 engine files use `#if
+  canImport(Compression)` / `#if canImport(CryptoKit)` (compile-safe
+  on macOS) and POSIX socket calls in `HttpServer.swift` (conditional
+  `#if canImport(Darwin) import Darwin #elseif canImport(Glibc) import
+  Glibc` — the standard portable pattern, verified by read). No other new
+  compile risk was
+  found by grep; the Xcode build remains the proof, as always.
+
+### Files changed by slice G
+
+- `swiftcode/Tests/SwiftCodeSDKTests/Wave2SdkTests.swift` — new, 190
+  lines, 8 `@Test` funcs, 0 comments.
+- `docs/SPACES-COMPLETION-REPORT.md` — this report (§14; §3/§6/§7/§8/§10
+  updates; §13 BLOCKED list pruned).
+
+No other files were created, modified, committed, or pushed by this
+slice. Nothing was pushed, per the slice rules; the coordinator pushes.
