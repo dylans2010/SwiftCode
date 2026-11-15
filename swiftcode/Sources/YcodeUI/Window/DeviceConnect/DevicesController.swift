@@ -17,6 +17,10 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     public private(set) var simulators: [DeviceRow]
     public private(set) var selected: DeviceRow?
     public private(set) var sidebarModel = HubSidebarModel()
+    public var hubSection: DeviceHubSection = .devices
+    public lazy var groupStore = DeviceGroupStore(defaults: defaults)
+    var sectionHosting: NSHostingController<AnyView>?
+    var sectionPopup: NSPopUpButton?
     public private(set) var inspectorTab: InspectorTab = .settings
     public private(set) var infoTab: InfoTab = .info
     public private(set) var hiddenInfoRows: Set<String> = []
@@ -28,7 +32,9 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     let details = NSStackView()
     public let canvas = DeviceCanvasView(mode: .hub)
     public var workspaceMode: DeviceHubUnifiedWorkspace.HubWorkspaceMode = .canvas
-    private let workspaceContainer = NSView()
+    let workspaceContainer = NSView()
+    var settingsHosting: NSHostingController<DeviceHubSettingsView>?
+    var settingsWidthConstrained = false
     private var visualUISplitVC: VisualUIBuilderSplitViewController?
     private var visualUIContainer: NSView?
     private var deviceConnectHostingView: NSHostingView<DeviceConnectView>?
@@ -74,11 +80,12 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     private func rebuildModel() {
         var m = sidebarModel
         m.devices = allRows.map(hubDevice)
+        m.groups = groupStore.loadGroups()
         sidebarModel = m
         tableRows = currentRows
     }
 
-    var currentRows: [HubSidebarRow] { sortChosen ? sidebarModel.rows : Self.unsortedRows(sidebarModel) }
+    var currentRows: [HubSidebarRow] { sortChosen ? sidebarModel.rowsIncludingGroups : Self.unsortedRows(sidebarModel) }
 
     public var rows: [DeviceRow] {
         currentRows.compactMap { $0.device }.compactMap { d in allRows.first { $0.identifier == d.id } }
@@ -142,6 +149,11 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         var out: [HubSidebarRow] = []
         for (title, list) in [(HubSidebarModel.available, shown.filter(\.isAvailable)), (HubSidebarModel.unavailable, shown.filter { !$0.isAvailable })]
         where !list.isEmpty {
+            let collapsed = m.collapsed.contains(title)
+            out.append(.header(title, collapsed: collapsed))
+            if !collapsed { out += list.map { .device($0) } }
+        }
+        for (title, list) in m.groupSections {
             let collapsed = m.collapsed.contains(title)
             out.append(.header(title, collapsed: collapsed))
             if !collapsed { out += list.map { .device($0) } }
@@ -584,7 +596,7 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     func stopLocalDeviceRuntime(_ id: String) {
         closeLocalLink(id)
         if let rec = videoRecordings.removeValue(forKey: id) {
-            Task.detached { DeviceHubSimctl.stopRecording(rec.process) }
+            Task.detached { SimulatorManager.stopScreenRecording(rec.process) }
         }
     }
 
@@ -638,6 +650,10 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         connect.target = self
         connect.representedObject = r.identifier
         menu.addItem(connect)
+        let utilities = NSMenuItem(title: "Device Utilities…", action: #selector(showUtilitiesChosen(_:)), keyEquivalent: "")
+        utilities.target = self
+        utilities.representedObject = r.identifier
+        menu.addItem(utilities)
         if simulators.contains(where: { $0.identifier == r.identifier }) {
             let builder = NSMenuItem(title: "Open in UI Builder", action: #selector(openInUIBuilderChosen(_:)), keyEquivalent: "")
             builder.target = self
@@ -976,12 +992,20 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         noResults.orientation = .vertical
         noResults.spacing = 6
         noResults.isHidden = true
+        let popup = makeSectionPopup()
+        popup.translatesAutoresizingMaskIntoConstraints = false
+        root.addSubview(popup)
+        sectionPopup = popup
         for v in [searchField, scroll, noResults] as [NSView] {
             v.translatesAutoresizingMaskIntoConstraints = false
             root.addSubview(v)
         }
         NSLayoutConstraint.activate([
-            searchField.topAnchor.constraint(equalTo: root.safeAreaLayoutGuide.topAnchor, constant: 6),
+            popup.topAnchor.constraint(equalTo: root.safeAreaLayoutGuide.topAnchor, constant: 6),
+            popup.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 10),
+            popup.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -10),
+            popup.heightAnchor.constraint(equalToConstant: 26),
+            searchField.topAnchor.constraint(equalTo: popup.bottomAnchor, constant: 6),
             searchField.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 10),
             searchField.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -10),
             searchField.heightAnchor.constraint(equalToConstant: 28),
@@ -1069,10 +1093,12 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         syncSelectedDeviceWithActiveWorkspace()
     }
 
-    private func updateWorkspaceViews() {
+    func updateWorkspaceViews() {
+        let showsSectionPage = !hubSection.showsCanvas && workspaceMode == .canvas
+        sectionHosting?.view.isHidden = !showsSectionPage
         switch workspaceMode {
         case .canvas:
-            canvas.isHidden = false
+            canvas.isHidden = showsSectionPage
             visualUIContainer?.isHidden = true
             deviceConnectHostingView?.isHidden = true
         case .visualUI:
@@ -1219,16 +1245,37 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         window.beginSheet(sheetWindow)
     }
 
+    private func runSimulatorAction(_ work: @escaping (DeviceRow) async throws -> Void, success successMessage: String) {
+        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
+        Task { [weak self] in
+            do {
+                try await work(r)
+                await MainActor.run { self?.canvas.showBanner(successMessage, seconds: 2) }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Failed: \(error.localizedDescription)", seconds: 5) }
+            }
+        }
+    }
+
     @objc public func quickBootAllSimulators(_ sender: Any? = nil) {
         let targets = rows.filter { isLocalSimulator($0) && $0.state != "Booted" }
         canvas.showBanner("Booting \(targets.count) simulators…", seconds: 2)
         Task { [weak self] in
+            var failures: [String] = []
             for target in targets {
-                _ = try? await DeviceHubSimulatorInstaller.bootSimulator(udid: target.identifier)
+                do {
+                    try await DeviceHubSimulatorInstaller.bootSimulator(udid: target.identifier)
+                } catch {
+                    failures.append("\(target.name): \(error.localizedDescription)")
+                }
             }
             await MainActor.run {
                 self?.refreshLocalRows()
-                self?.canvas.showBanner("Simulators booted", seconds: 2)
+                if failures.isEmpty {
+                    self?.canvas.showBanner("Simulators booted", seconds: 2)
+                } else {
+                    self?.canvas.showBanner("Boot failed for \(failures.count) simulator(s): \(failures.joined(separator: "; "))", seconds: 6)
+                }
             }
         }
     }
@@ -1236,10 +1283,17 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     @objc public func shutDownAllSimulators(_ sender: Any? = nil) {
         canvas.showBanner("Shutting down all simulators…", seconds: 2)
         Task { [weak self] in
-            _ = try? await DeviceHubSimulatorInstaller.shutdownAllSimulators()
-            await MainActor.run {
-                self?.refreshLocalRows()
-                self?.canvas.showBanner("All simulators shut down", seconds: 2)
+            do {
+                try await DeviceHubSimulatorInstaller.shutdownAllSimulators()
+                await MainActor.run {
+                    self?.refreshLocalRows()
+                    self?.canvas.showBanner("All simulators shut down", seconds: 2)
+                }
+            } catch {
+                await MainActor.run {
+                    self?.refreshLocalRows()
+                    self?.canvas.showBanner("Shut down failed: \(error.localizedDescription)", seconds: 5)
+                }
             }
         }
     }
@@ -1255,10 +1309,17 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
 
         canvas.showBanner("Erasing all simulators…", seconds: 3)
         Task { [weak self] in
-            _ = try? await DeviceHubSimulatorInstaller.eraseAllSimulators()
-            await MainActor.run {
-                self?.refreshLocalRows()
-                self?.canvas.showBanner("All simulators erased", seconds: 3)
+            do {
+                try await DeviceHubSimulatorInstaller.eraseAllSimulators()
+                await MainActor.run {
+                    self?.refreshLocalRows()
+                    self?.canvas.showBanner("All simulators erased", seconds: 3)
+                }
+            } catch {
+                await MainActor.run {
+                    self?.refreshLocalRows()
+                    self?.canvas.showBanner("Erase all failed: \(error.localizedDescription)", seconds: 5)
+                }
             }
         }
     }
@@ -1270,136 +1331,137 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     
 
     @objc public func simulateLocationApplePark(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 37.3346, longitude: -122.0090)
-            await MainActor.run { self?.canvas.showBanner("Location: Apple Park", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: 37.3346, longitude: -122.0090)
+        }, success: "Location: Apple Park")
     }
 
     @objc public func simulateLocationCityRun(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "City Run")
-            await MainActor.run { self?.canvas.showBanner("Location Scenario: City Run", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "City Run")
+        }, success: "Location Scenario: City Run")
     }
 
     @objc public func simulateLocationFreewayDrive(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "Freeway Drive")
-            await MainActor.run { self?.canvas.showBanner("Location Scenario: Freeway Drive", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.runLocationScenario(udid: r.identifier, scenario: "Freeway Drive")
+        }, success: "Location Scenario: Freeway Drive")
     }
 
     @objc public func simulateLocationCustom(_ sender: Any? = nil) {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         guard let coord = Self.askCustomCoordinates() else { return }
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: coord.latitude, longitude: coord.longitude)
-            await MainActor.run { self?.canvas.showBanner("Location: \(coord)", seconds: 2) }
+            do {
+                try await DeviceHubSimulatorInstaller.setLocation(udid: r.identifier, latitude: coord.latitude, longitude: coord.longitude)
+                await MainActor.run { self?.canvas.showBanner("Location: \(coord)", seconds: 2) }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Location failed: \(error.localizedDescription)", seconds: 5) }
+            }
         }
     }
 
     @objc public func clearSimulatedLocation(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.clearLocation(udid: r.identifier)
-            await MainActor.run { self?.canvas.showBanner("Location simulation cleared", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.clearLocation(udid: r.identifier)
+        }, success: "Location simulation cleared")
     }
 
     
 
     @objc public func setSimulatorAppearanceLight(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: "light")
-            await MainActor.run { self?.canvas.showBanner("Appearance: Light", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: "light")
+        }, success: "Appearance: Light")
     }
 
     @objc public func setSimulatorAppearanceDark(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: "dark")
-            await MainActor.run { self?.canvas.showBanner("Appearance: Dark", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: "dark")
+        }, success: "Appearance: Dark")
     }
 
     @objc public func toggleSimulatorIncreaseContrast(_ sender: Any? = nil) {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setIncreaseContrast(udid: r.identifier, enabled: true)
-            await MainActor.run { self?.canvas.showBanner("Increase Contrast: Enabled", seconds: 2) }
+            let current = await Self.readSimulatorAccessibility(udid: r.identifier).increaseContrast
+            let enabled = !(current ?? false)
+            do {
+                try await DeviceHubSimulatorInstaller.setIncreaseContrast(udid: r.identifier, enabled: enabled)
+                Self.cacheSimulatorAccessibility(udid: r.identifier, increaseContrast: enabled)
+                await MainActor.run { self?.canvas.showBanner("Increase Contrast: \(enabled ? "Enabled" : "Disabled")", seconds: 2) }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Increase Contrast failed: \(error.localizedDescription)", seconds: 5) }
+            }
         }
     }
 
     @objc public func toggleSimulatorReduceMotion(_ sender: Any? = nil) {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setReduceMotion(udid: r.identifier, enabled: true)
-            await MainActor.run { self?.canvas.showBanner("Reduce Motion: Enabled", seconds: 2) }
+            let current = await Self.readSimulatorAccessibility(udid: r.identifier).reduceMotion
+            let enabled = !(current ?? false)
+            do {
+                try await DeviceHubSimulatorInstaller.setReduceMotion(udid: r.identifier, enabled: enabled)
+                Self.cacheSimulatorAccessibility(udid: r.identifier, reduceMotion: enabled)
+                await MainActor.run { self?.canvas.showBanner("Reduce Motion: \(enabled ? "Enabled" : "Disabled")", seconds: 2) }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Reduce Motion failed: \(error.localizedDescription)", seconds: 5) }
+            }
         }
     }
 
     
 
     @objc public func setSimulatorBattery100(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: 100, batteryState: "charged")
-            await MainActor.run { self?.canvas.showBanner("Battery: 100% (Charged)", seconds: 2) }
-        }
+        setSimulatorBattery(level: 100, state: "charged")
     }
 
     @objc public func setSimulatorBattery50(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: 50, batteryState: "discharging")
-            await MainActor.run { self?.canvas.showBanner("Battery: 50% (Discharging)", seconds: 2) }
-        }
+        setSimulatorBattery(level: 50, state: "discharging")
     }
 
     @objc public func setSimulatorBattery20(_ sender: Any? = nil) {
+        setSimulatorBattery(level: 20, state: "discharging")
+    }
+
+    private func setSimulatorBattery(level: Int, state: String) {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: 20, batteryState: "discharging")
-            await MainActor.run { self?.canvas.showBanner("Battery: 20% (Low Power)", seconds: 2) }
+            do {
+                try await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: level, batteryState: state)
+                await MainActor.run {
+                    self?.groupStore.saveBatteryLevel(level, udid: r.identifier)
+                    self?.canvas.showBanner("Battery: \(level)% (\(state.capitalized))", seconds: 2)
+                }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Battery override failed: \(error.localizedDescription)", seconds: 5) }
+            }
         }
     }
 
     @objc public func setSimulatorNetwork5G(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: "5g", cellularMode: "active", cellularBars: 4, operatorName: "5G Ultra")
-            await MainActor.run { self?.canvas.showBanner("Network: 5G Active", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: "5g", cellularMode: "active", cellularBars: 4, operatorName: "5G Ultra")
+        }, success: "Network: 5G Active")
     }
 
     @objc public func setSimulatorNetworkWiFi(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: "wifi", wifiMode: "active", wifiBars: 3, operatorName: "Wi-Fi")
-            await MainActor.run { self?.canvas.showBanner("Network: Wi-Fi Active", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: "wifi", wifiMode: "active", wifiBars: 3, operatorName: "Wi-Fi")
+        }, success: "Network: Wi-Fi Active")
     }
 
     @objc public func setSimulatorNetworkOffline(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: "hide", wifiMode: "searching", wifiBars: 0, cellularMode: "searching", cellularBars: 0)
-            await MainActor.run { self?.canvas.showBanner("Network: Offline / Searching", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, dataNetwork: "hide", wifiMode: "searching", wifiBars: 0, cellularMode: "searching", cellularBars: 0)
+        }, success: "Network: Offline / Searching")
     }
 
     @objc public func clearSimulatorNetworkOverrides(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.clearStatusBar(udid: r.identifier)
-            await MainActor.run { self?.canvas.showBanner("Status bar overrides cleared", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.clearStatusBar(udid: r.identifier)
+        }, success: "Status bar overrides cleared")
     }
 
     
@@ -1407,25 +1469,28 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     @objc public func toggleStageManagerChosen(_ sender: Any? = nil) {
         guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
         Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.setStageManager(udid: r.identifier, enabled: true)
-            await MainActor.run { self?.canvas.showBanner("Stage Manager toggled", seconds: 2) }
+            let current = await Self.readSimulatorAccessibility(udid: r.identifier).stageManager
+            let enabled = !(current ?? false)
+            do {
+                try await DeviceHubSimulatorInstaller.setStageManager(udid: r.identifier, enabled: enabled)
+                Self.cacheSimulatorAccessibility(udid: r.identifier, stageManager: enabled)
+                await MainActor.run { self?.canvas.showBanner("Stage Manager: \(enabled ? "Enabled" : "Disabled")", seconds: 2) }
+            } catch {
+                await MainActor.run { self?.canvas.showBanner("Stage Manager failed: \(error.localizedDescription)", seconds: 5) }
+            }
         }
     }
 
     @objc public func simulatePencilDoubleTapChosen(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.simulateApplePencilAction(udid: r.identifier, action: "doubleTap")
-            await MainActor.run { self?.canvas.showBanner("Apple Pencil: Double-Tap Simulated", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.simulateApplePencilAction(udid: r.identifier, action: "doubleTap")
+        }, success: "Apple Pencil: Double-Tap Simulated")
     }
 
     @objc public func simulatePencilSqueezeChosen(_ sender: Any? = nil) {
-        guard let r = selected, isLocalSimulator(r) || r.isSwiftCodeRemote else { return }
-        Task { [weak self] in
-            try? await DeviceHubSimulatorInstaller.simulateApplePencilAction(udid: r.identifier, action: "squeeze")
-            await MainActor.run { self?.canvas.showBanner("Apple Pencil: Squeeze Simulated", seconds: 2) }
-        }
+        runSimulatorAction({ r in
+            try await DeviceHubSimulatorInstaller.simulateApplePencilAction(udid: r.identifier, action: "squeeze")
+        }, success: "Apple Pencil: Squeeze Simulated")
     }
 
     func performWithoutDisplay(_ c: DeviceCommand) -> Bool {
@@ -1578,21 +1643,24 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
         appsHosting = nil
         switch inspectorTab {
         case .settings:
-            if let r = selected, r.isSwiftCodeRemote {
-                inspectorContent.addArrangedSubview(settingsControls())
-                if cameraControlsShown { inspectorContent.addArrangedSubview(cameraControls()) }
-                if headsetControlsShown {
-                    inspectorContent.addArrangedSubview(headsetControls())
-                    if headset.report == nil, headset.checkTask == nil { checkHeadset() }
-                }
-            } else if let r = selected, isLocalSimulator(r) {
-                inspectorContent.addArrangedSubview(localSettingsControls())
+            if let r = selected, r.isSwiftCodeRemote, headsetControlsShown, headset.report == nil, headset.checkTask == nil {
+                checkHeadset()
+            }
+            let hosting: NSHostingController<DeviceHubSettingsView>
+            if let existing = settingsHosting {
+                existing.rootView = DeviceHubSettingsView(hub: self)
+                hosting = existing
             } else {
-                if selected == nil {
-                    inspectorContent.addArrangedSubview(Self.secondary("No Selection"))
-                } else {
-                    inspectorContent.addArrangedSubview(InspectorCard(message: Self.noSettingsMessage, identifier: "settings-unavailable"))
-                }
+                hosting = NSHostingController(rootView: DeviceHubSettingsView(hub: self))
+                settingsHosting = hosting
+                addChild(hosting)
+            }
+            let settingsView = hosting.view
+            settingsView.translatesAutoresizingMaskIntoConstraints = false
+            inspectorContent.addArrangedSubview(settingsView)
+            if !settingsWidthConstrained {
+                settingsView.widthAnchor.constraint(equalTo: inspectorContent.widthAnchor, constant: -20).isActive = true
+                settingsWidthConstrained = true
             }
         case .reports:
             buildReportsTab()
@@ -1774,6 +1842,11 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     public func restoreState() {
         if let f = defaults.string(forKey: Self.filterKey).flatMap(HubFilter.init(rawValue:)) { sidebarModel.filter = f }
         sidebarModel.collapsed = Set(defaults.stringArray(forKey: Self.collapsedKey) ?? [])
+        if let section = defaults.string(forKey: DeviceHubStoreKeys.section).flatMap(DeviceHubSection.init(rawValue:)) {
+            hubSection = section
+            sectionPopup?.selectItem(at: DeviceHubSection.allCases.firstIndex(of: section) ?? 0)
+            if isViewLoaded { showHubSection(section) }
+        }
         inspectorTab = InspectorTab(rawValue: defaults.integer(forKey: Self.tabKey)) ?? .settings
         infoTab = InfoTab(rawValue: defaults.integer(forKey: Self.infoTabKey)) ?? .info
         hiddenInfoRows = Set(defaults.stringArray(forKey: Self.hiddenInfoKey) ?? [])

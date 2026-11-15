@@ -269,6 +269,7 @@ targets:
       - target: YcodePlist
       - target: YcodeWorkspace
       - target: YcodeSubprocess
+      - target: YcodeDeviceModel
 
   YcodeDebug:
     type: library.static

@@ -124,6 +124,7 @@ public final class DeviceConnectDeploymentManager {
     public private(set) var currentStageDescription = "Idle"
     public private(set) var isDeploying = false
     public private(set) var logs: [DeviceLog] = []
+    public private(set) var lastFailureReport: String?
 
     private init() {}
 
@@ -202,10 +203,19 @@ public final class DeviceConnectDeploymentManager {
                 body: "Successfully deployed and launched \(projectName)."
             )
         } else {
+            let report = await DiagnosticsFormatter.formatPipelineFailure(
+                stage: deploymentStatus,
+                error: "Deployment to \(device.name) failed.",
+                deviceUDID: device.udid
+            )
+            lastFailureReport = report
+            let failureLog = DeviceLog(type: .build, severity: .error, message: report)
+            logs.append(failureLog)
+            DeviceConnectConsoleManager.shared.appendLog(failureLog)
             DeviceConnectNotificationService.shared.postNotification(
                 title: "Deployment Failed",
                 subtitle: device.name,
-                body: "Failed to deploy \(projectName). Please check build logs."
+                body: "Failed to deploy \(projectName). See the deployment log for the detected device state."
             )
         }
     }
@@ -279,7 +289,26 @@ public final class DeviceConnectDeviceManager {
 
     private let service = DeviceConnectDeviceService()
 
-    private init() {}
+    private var disconnectObserver: NSObjectProtocol?
+
+    private init() {
+        disconnectObserver = NotificationCenter.default.addObserver(
+            forName: DeviceConnectNotificationCenter.deviceDisconnected,
+            object: nil,
+            queue: nil
+        ) { [weak self] note in
+            guard let udid = note.userInfo?["udid"] as? String else { return }
+            Task { @MainActor [weak self] in
+                self?.markDeviceDisconnected(udid: udid)
+            }
+        }
+    }
+
+    public func markDeviceDisconnected(udid: String) {
+        devices = devices.map { device in
+            device.udid == udid ? device.markingDisconnected() : device
+        }
+    }
 
     public func startDiscovery() async {
         guard !isDiscovering else { return }

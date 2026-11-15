@@ -459,7 +459,6 @@ public enum LayoutProbe {
             let row = DeviceRow.shutDownSwiftCodeSimulator(name: "Phone (SwiftCode)", identifier: "layout-probe-1")
             var booted = DeviceRow.shutDownSwiftCodeSimulator(name: "Foldable (SwiftCode)", identifier: "h:/layout-probe-2")
             booted.state = "Booted"
-            booted.osVersion = "27.1"
             booted.model = "Foldable, SwiftCode Simulator (Linux)"
             booted.isSwiftCodeRemote = true
             booted.isFoldable = true

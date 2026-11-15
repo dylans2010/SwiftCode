@@ -79,7 +79,9 @@ import Testing
         #expect(throws: DeviceDiscoveryError.self) {
             try DevicesList.parsePhysicalDevices(data: Data("{\"result\": {}}".utf8))
         }
-        #expect(DevicesList.devices(devicectlJSON: Data("not json".utf8)).isEmpty)
+        #expect(throws: DeviceDiscoveryError.self) {
+            try DevicesList.devices(devicectlJSON: Data("not json".utf8))
+        }
     }
 
     @Test func shutDownSwiftCodeSimulatorHasNoFabricatedOSVersion() {

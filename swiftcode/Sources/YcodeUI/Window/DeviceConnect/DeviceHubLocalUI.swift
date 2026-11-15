@@ -43,6 +43,12 @@ enum SimulatorAccessibilityCache {
 
 extension DevicesController {
 
+    static func readSimulatorAppearanceIsDark(udid: String) async -> Bool? {
+        let (status, output) = await DeviceHubSimulatorInstaller.runXcrunProcess(["simctl", "spawn", udid, "defaults", "read", SimPrefs.styleDomain, SimPrefs.styleKey])
+        guard status == 0, let mode = SimulatorDefaultsValue.parseInt(output) else { return nil }
+        return mode == 2
+    }
+
     static func readSimulatorAccessibility(udid: String) async -> SimulatorAccessibilityState {
         func read(domain: String, key: String) async -> Bool? {
             let (status, output) = await DeviceHubSimulatorInstaller.runXcrunProcess(["simctl", "spawn", udid, "defaults", "read", domain, key])
@@ -355,22 +361,7 @@ extension DevicesController {
     
     
     @objc func newSimulatorChosen(_ sender: Any?) {
-        presentNewSimulatorSheet()
-    }
-
-    func presentNewSimulatorSheet() {
-        let hosting = NSHostingController(rootView: SimulatorCreationView())
-        let window = NSWindow(contentViewController: hosting)
-        window.styleMask = [.titled, .closable]
-        window.title = "New Simulator"
-        window.isReleasedWhenClosed = false
-        window.setContentSize(NSSize(width: 520, height: 620))
-        guard let w = view.window else { window.makeKeyAndOrderFront(nil); return }
-        w.beginSheet(window) { [weak self] _ in
-            
-            
-            self?.refreshLocalRows()
-        }
+        showCreateSimulatorSheet(initialPlatform: .iOS)
     }
 
     
@@ -499,7 +490,8 @@ extension DevicesController {
         var cards: [NSView] = []
 
         
-        let appearancePop = popup(["Light", "Dark"], selectedIndex: 0, sel: #selector(localAppearancePopupChanged(_:)))
+        let initialAppearanceIsDark = selected.flatMap { groupStore.savedAppearanceIsDark(udid: $0.identifier) } ?? false
+        let appearancePop = popup(["Light", "Dark"], selectedIndex: initialAppearanceIsDark ? 1 : 0, sel: #selector(localAppearancePopupChanged(_:)))
         let contrastSwitch = toggle("Increase Contrast", #selector(localIncreaseContrastToggled(_:)), symbol: "circle.righthalf.filled", on: cachedAccessibility?.increaseContrast ?? false)
         let motionSwitch = toggle("Reduce Motion", #selector(localReduceMotionToggled(_:)), symbol: "circle.dotted.and.circle", on: cachedAccessibility?.reduceMotion ?? false)
         let textSlider = NSSlider(value: 3, minValue: 0, maxValue: 11, target: self, action: #selector(localContentSizeChanged(_:)))
@@ -533,7 +525,8 @@ extension DevicesController {
         cards.append(InspectorCard(rows: locRows, identifier: "settings-local-location"))
 
         
-        let batterySlider = NSSlider(value: 100, minValue: 0, maxValue: 100, target: self, action: #selector(localBatterySliderChanged(_:)))
+        let initialBatteryLevel = selected.flatMap { groupStore.savedBatteryLevel(udid: $0.identifier) } ?? 100
+        let batterySlider = NSSlider(value: Double(initialBatteryLevel), minValue: 0, maxValue: 100, target: self, action: #selector(localBatterySliderChanged(_:)))
         batterySlider.isContinuous = false
         batterySlider.controlSize = .small
         batterySlider.isEnabled = booted
@@ -591,6 +584,19 @@ extension DevicesController {
             l.preferredMaxLayoutWidth = InspectorCard.width - 20
             stack.addArrangedSubview(l)
         }
+        if let r, booted {
+            let udid = r.identifier
+            let appearanceControl = appearancePop
+            Task { [weak self] in
+                if let isDark = await Self.readSimulatorAppearanceIsDark(udid: udid) {
+                    await MainActor.run {
+                        self?.groupStore.saveAppearanceIsDark(isDark, udid: udid)
+                        guard self?.selected?.identifier == udid else { return }
+                        appearanceControl.selectItem(at: isDark ? 1 : 0)
+                    }
+                }
+            }
+        }
         if let r, booted, SimulatorAccessibilityCache.states[r.identifier] == nil {
             let udid = r.identifier
             let contrastControl = contrastSwitch.control
@@ -616,7 +622,10 @@ extension DevicesController {
         Task { [weak self] in
             do {
                 try await DeviceHubSimulatorInstaller.setAppearance(udid: r.identifier, appearance: isDark ? "dark" : "light")
-                await MainActor.run { self?.canvas.showBanner("Appearance: \(isDark ? "Dark" : "Light")", seconds: 2) }
+                await MainActor.run {
+                    self?.groupStore.saveAppearanceIsDark(isDark, udid: r.identifier)
+                    self?.canvas.showBanner("Appearance: \(isDark ? "Dark" : "Light")", seconds: 2)
+                }
             } catch {
                 await MainActor.run { self?.canvas.showBanner("Appearance failed: \(error.localizedDescription)", seconds: 4) }
             }
@@ -683,7 +692,10 @@ extension DevicesController {
         Task { [weak self] in
             do {
                 try await DeviceHubSimulatorInstaller.overrideStatusBar(udid: r.identifier, batteryLevel: level, batteryState: "discharging")
-                await MainActor.run { self?.canvas.showBanner("Battery: \(level)%", seconds: 2) }
+                await MainActor.run {
+                    self?.groupStore.saveBatteryLevel(level, udid: r.identifier)
+                    self?.canvas.showBanner("Battery: \(level)%", seconds: 2)
+                }
             } catch {
                 await MainActor.run { self?.canvas.showBanner("Battery override failed: \(error.localizedDescription)", seconds: 4) }
             }

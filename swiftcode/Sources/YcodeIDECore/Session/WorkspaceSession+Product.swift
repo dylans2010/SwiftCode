@@ -1,5 +1,6 @@
 import Foundation
 import YcodeBuild
+import YcodeDeviceModel
 import YcodeProject
 import YcodeSettings
 import YcodeWorkspace
@@ -285,17 +286,12 @@ enum SDKInfo {
         lock.unlock()
         func run(_ args: [String]) -> String? {
             MainThreadGuard.blockingCall("xcrun \(args.joined(separator: " "))")
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-            p.arguments = args
-            let out = Pipe()
-            p.standardOutput = out
-            p.standardError = FileHandle.nullDevice
-            guard (try? p.run()) != nil else { return nil }
-            let data = out.fileHandleForReading.readDataToEndOfFile()
-            p.waitUntilExit()
-            let s = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            return p.terminationStatus == 0 && !s.isEmpty ? s : nil
+            guard let result = try? DeviceConnectProcessRunner.shared.runBlocking(
+                executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+                arguments: args
+            ) else { return nil }
+            let s = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+            return result.exitCode == 0 && !s.isEmpty ? s : nil
         }
         let info = run(["--sdk", name, "--show-sdk-path"]).map { Info(path: $0, version: run(["--sdk", name, "--show-sdk-version"])) }
         lock.lock()

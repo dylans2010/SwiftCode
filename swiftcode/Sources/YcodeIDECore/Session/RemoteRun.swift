@@ -1,6 +1,7 @@
 import Foundation
 import YcodeDebug
 import YcodeBuild
+import YcodeDeviceModel
 import YcodeProfiler
 import YcodeSubprocess
 
@@ -364,20 +365,16 @@ public struct RemoteSimulator: Sendable {
 
     func runLocalData(_ exe: String, _ args: [String], errors: Bool, timeout: TimeInterval? = nil) -> (Int32, Data) {
         MainThreadGuard.blockingCall("\(URL(fileURLWithPath: exe).lastPathComponent) \(args.prefix(2).joined(separator: " "))")
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: exe)
-        p.arguments = args
-        let out = Pipe()
-        p.standardOutput = out
-        p.standardError = errors ? out : FileHandle.nullDevice
-        p.standardInput = FileHandle.nullDevice
-        guard (try? p.run()) != nil else { return (127, Data("could not run \(exe)".utf8)) }
-        if let timeout {
-            DispatchQueue.global().asyncAfter(deadline: .now() + timeout) { if p.isRunning { p.terminate() } }
+        do {
+            let result = try DeviceConnectProcessRunner.shared.runBlocking(
+                executableURL: URL(fileURLWithPath: exe),
+                arguments: args,
+                timeout: timeout
+            )
+            return (result.exitCode, Data((result.stdout + (errors ? result.stderr : "")).utf8))
+        } catch {
+            return (127, Data("could not run \(exe): \(error.localizedDescription)".utf8))
         }
-        let d = out.fileHandleForReading.readDataToEndOfFile()
-        p.waitUntilExit()
-        return (p.terminationStatus, d)
     }
 
     public func upload(_ app: URL) throws {

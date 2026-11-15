@@ -124,8 +124,8 @@ public enum DevicesList {
         }.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
-    public static func devices(devicectlJSON data: Data) -> [DeviceRow] {
-        (try? parsePhysicalDevices(data: data)) ?? []
+    public static func devices(devicectlJSON data: Data) throws -> [DeviceRow] {
+        try parsePhysicalDevices(data: data)
     }
 
     public static func load() async throws -> (devices: [DeviceRow], simulators: [DeviceRow]) {

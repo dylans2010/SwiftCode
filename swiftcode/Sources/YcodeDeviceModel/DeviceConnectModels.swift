@@ -35,6 +35,29 @@ public struct ConnectedDevice: Identifiable, Codable, Sendable, Hashable {
     public let isDeploymentSupported: Bool?
     public let isSigningCompatible: Bool?
 
+    public func markingDisconnected() -> ConnectedDevice {
+        ConnectedDevice(
+            name: name,
+            model: model,
+            productType: productType,
+            platform: platform,
+            osVersion: osVersion,
+            buildVersion: buildVersion,
+            architecture: architecture,
+            udid: udid,
+            isConnected: false,
+            isAvailable: false,
+            isBusy: isBusy,
+            isOffline: true,
+            isWireless: isWireless,
+            isUSB: isUSB,
+            isDeveloperModeEnabled: isDeveloperModeEnabled,
+            isTrusted: isTrusted,
+            isDeploymentSupported: false,
+            isSigningCompatible: isSigningCompatible
+        )
+    }
+
     public init(
         name: String,
         model: String,
@@ -253,6 +276,10 @@ public enum SimulatorDefaultsValue {
         case "0", "false", "no", "off": return false
         default: return nil
         }
+    }
+
+    public static func parseInt(_ output: String) -> Int? {
+        Int(output.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 }
 

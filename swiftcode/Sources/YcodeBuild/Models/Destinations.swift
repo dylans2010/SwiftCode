@@ -1,4 +1,5 @@
 import Foundation
+import YcodeDeviceModel
 import YcodeSubprocess
 
 public struct Destination: Equatable, Sendable, Hashable {
@@ -43,7 +44,6 @@ public struct DestinationGroup: Equatable, Sendable {
 
 public enum DestinationCatalog {
     static let platformOrder = ["macOS", "iOS", "watchOS", "tvOS", "visionOS"]
-    static let runtimePlatforms = ["iOS": "iOS", "watchOS": "watchOS", "tvOS": "tvOS", "xrOS": "visionOS", "visionOS": "visionOS"]
 
     public static func simulators(fromSimctlJSON data: Data) -> [Destination] {
         guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -52,7 +52,10 @@ public enum DestinationCatalog {
         for (runtime, devices) in byRuntime {
             let tail = runtime.split(separator: ".").last.map(String.init) ?? runtime
             let parts = tail.split(separator: "-").map(String.init)
-            guard let first = parts.first, let platform = runtimePlatforms[first] else { continue }
+            guard let first = parts.first else { continue }
+            let devicePlatform = DevicePlatform(parsing: first)
+            guard devicePlatform != .unknown, devicePlatform != .macOS else { continue }
+            let platform = devicePlatform.rawValue
             let version = parts.dropFirst().joined(separator: ".")
             for d in devices where (d["isAvailable"] as? Bool) ?? true {
                 guard let name = d["name"] as? String, let udid = d["udid"] as? String else { continue }

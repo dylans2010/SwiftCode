@@ -21,6 +21,7 @@ public final class SimulatorManager {
 
     public var selectedDeviceID: String? {
         didSet {
+            DeviceGroupStore(defaults: .standard).saveSimulatorSelection(selectedDeviceID)
             Task { await refreshInstalledApplications() }
         }
     }
@@ -53,6 +54,7 @@ public final class SimulatorManager {
 
     private init() {
         self.state = .discovering(stage: .initializing)
+        self.selectedDeviceID = DeviceGroupStore(defaults: .standard).savedSimulatorSelection()
         Task {
             await refreshAll()
         }

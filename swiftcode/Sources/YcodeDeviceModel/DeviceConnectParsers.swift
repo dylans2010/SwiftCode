@@ -219,8 +219,34 @@ public struct DiagnosticsFormatter {
         Deployment failed at stage: \(stage.description)
         Timestamp: \(ISO8601DateFormatter().string(from: Date()))
         Error Details: \(error)
-        Suggested Action: Verify developer mode is active on your target device and connected securely.
+        Suggested Action: Device readiness was not probed for this failure. Run Check Trust & Developer Mode on the device, or call the device-specific failure format, to report the detected state instead of this generic hint.
         """
+    }
+
+    public static func formatPipelineFailure(stage: DeploymentStatus, error: String, readiness: PhysicalDeviceReadiness) -> String {
+        let guidance = readiness.actionGuidance ?? "The device is trusted and Developer Mode is on, so trust and Developer Mode do not explain this failure."
+        return """
+        Deployment failed at stage: \(stage.description)
+        Timestamp: \(ISO8601DateFormatter().string(from: Date()))
+        Error Details: \(error)
+        Detected Device State: \(readiness.summary)
+        Suggested Action: \(guidance)
+        """
+    }
+
+    public static func formatPipelineFailure(stage: DeploymentStatus, error: String, deviceUDID: String) async -> String {
+        do {
+            let readiness = try await DeviceReadinessCommand().execute(deviceUDID: deviceUDID)
+            return formatPipelineFailure(stage: stage, error: error, readiness: readiness)
+        } catch {
+            return """
+            Deployment failed at stage: \(stage.description)
+            Timestamp: \(ISO8601DateFormatter().string(from: Date()))
+            Error Details: \(error)
+            Detected Device State: readiness could not be probed: \(error.localizedDescription)
+            Suggested Action: Connect the device again, unlock it, and run Check Trust & Developer Mode before retrying the deployment.
+            """
+        }
     }
 }
 

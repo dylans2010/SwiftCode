@@ -66,7 +66,9 @@ struct SimulatorSidebar: View {
         }
         .simulatorWorkspaceEmbedded()
         .sheet(isPresented: $showingCreationSheet) {
-            SimulatorCreationView()
+            CreateSimulatorSheet { _ in
+                Task { await manager.refreshAll() }
+            }
         }
     }
 }

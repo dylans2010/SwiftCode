@@ -124,7 +124,9 @@ struct DeviceManagementView: View {
         }
         .simulatorWorkspaceEmbedded()
         .sheet(isPresented: $showingCreationSheet) {
-            SimulatorCreationView()
+            CreateSimulatorSheet { _ in
+                Task { await manager.refreshAll() }
+            }
         }
         .sheet(isPresented: $showingDiagnosticsSheet) {
             SimulatorDiagnosticsView()

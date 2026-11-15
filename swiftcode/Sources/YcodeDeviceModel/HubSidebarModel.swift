@@ -72,12 +72,33 @@ public struct HubSidebarModel: Equatable, Sendable {
     public static let unavailable = "Unavailable"
 
     public var devices: [HubDevice]
+    public var groups: [DeviceGroup] = []
     public var filter: HubFilter = .all
     public var sort: HubSort = .name
     public var search: String = ""
     public var collapsed: Set<String> = []
 
     public init(devices: [HubDevice] = []) { self.devices = devices }
+
+    public static func groupHeaderTitle(_ group: DeviceGroup) -> String { "Group: \(group.name)" }
+
+    public var groupSections: [(title: String, devices: [HubDevice])] {
+        return groups.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }.compactMap { group in
+            let members = visible.filter { group.deviceIDs.contains($0.id) }
+            guard !members.isEmpty else { return nil }
+            return (Self.groupHeaderTitle(group), members)
+        }
+    }
+
+    public var rowsIncludingGroups: [HubSidebarRow] {
+        var out = rows
+        for (title, list) in groupSections {
+            let isCollapsed = collapsed.contains(title)
+            out.append(.header(title, collapsed: isCollapsed))
+            if !isCollapsed { out += list.map { .device($0) } }
+        }
+        return out
+    }
 
     public var visible: [HubDevice] {
         let q = search.trimmingCharacters(in: .whitespaces)

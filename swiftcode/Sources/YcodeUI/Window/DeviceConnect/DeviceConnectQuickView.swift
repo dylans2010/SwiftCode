@@ -23,6 +23,8 @@ struct DeviceConnectQuickView: View {
     @State private var configuration = "Debug"
     @State private var appBundlePath = ""
     @State private var diagnosticsReport = ""
+    @State private var runError: String?
+    @State private var stopError: String?
 
     var body: some View {
         NavigationSplitView {
@@ -176,7 +178,7 @@ struct DeviceConnectQuickView: View {
                         await deploymentManager.startDeployment(
                             device: deviceManager.selectedDevice ?? ConnectedDevice(
                                 name: "Unknown", model: "Unknown", productType: "", platform: "iOS",
-                                osVersion: "", buildVersion: "", architecture: "arm64", udid: ""),
+                                osVersion: "", buildVersion: "", architecture: "unknown", udid: ""),
                             projectName: projectName.isEmpty ? "App" : projectName,
                             projectPath: projectPath,
                             scheme: scheme,
@@ -189,9 +191,16 @@ struct DeviceConnectQuickView: View {
                     Button("Run App") {
                         Task {
                             guard let device = deviceManager.selectedDevice else { return }
-                            let pid = try? await DeviceConnectLaunchService().launch(deviceUDID: device.udid, bundleIdentifier: bundleIdentifier)
-                            if let pid {
-                                runtimeManager.startMonitoring(deviceUDID: device.udid, bundleID: bundleIdentifier, pid: pid)
+                            runError = nil
+                            do {
+                                let pid = try await DeviceConnectLaunchService().launch(deviceUDID: device.udid, bundleIdentifier: bundleIdentifier)
+                                if let pid {
+                                    runtimeManager.startMonitoring(deviceUDID: device.udid, bundleID: bundleIdentifier, pid: pid)
+                                } else {
+                                    runError = "Run failed: the device did not report a process ID for the launched app."
+                                }
+                            } catch {
+                                runError = "Run failed: \(error.localizedDescription)"
                             }
                         }
                     }
@@ -199,11 +208,30 @@ struct DeviceConnectQuickView: View {
                     Button("Stop App") {
                         Task {
                             guard let device = deviceManager.selectedDevice else { return }
-                            _ = try? await DeviceConnectRuntimeService().stop(deviceUDID: device.udid, bundleIdentifier: bundleIdentifier)
-                            runtimeManager.stopMonitoring(deviceUDID: device.udid)
+                            stopError = nil
+                            do {
+                                let stopped = try await DeviceConnectRuntimeService().stop(deviceUDID: device.udid, bundleIdentifier: bundleIdentifier)
+                                if stopped {
+                                    runtimeManager.stopMonitoring(deviceUDID: device.udid)
+                                } else {
+                                    stopError = "Stop failed: the app is still running on the device."
+                                }
+                            } catch {
+                                stopError = "Stop failed: \(error.localizedDescription)"
+                            }
                         }
                     }
                     .disabled(deviceManager.selectedDevice == nil || bundleIdentifier.isEmpty)
+                if let runError {
+                    Text(runError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+                if let stopError {
+                    Text(stopError)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
                 }
                 if !runtimeManager.metrics.isAvailable {
                     Text("Live CPU/memory readings are not available for apps on a tethered device; the monitor reports whether the process is still running.")

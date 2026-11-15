@@ -320,8 +320,8 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
                 switch title {
                 case "iPhone…": return #selector(DevicesController.newIPhoneChosen(_:))
                 case "iPad…": return #selector(DevicesController.newIPadChosen(_:))
-                case "Apple Watch…": return watches ? #selector(DevicesController.newWatchChosen(_:)) : #selector(DevicesController.showCreateSimulatorSheet(_:))
-                case "Apple Vision Pro…": return visions ? #selector(DevicesController.newVisionDeviceChosen(_:)) : #selector(DevicesController.showCreateSimulatorSheet(_:))
+                case "Apple Watch…": return #selector(DevicesController.newWatchSimulatorChosen(_:))
+                case "Apple Vision Pro…": return #selector(DevicesController.newVisionSimulatorChosen(_:))
                 case "Apple TV…": return #selector(DevicesController.newTVChosen(_:))
                 default: return nil
                 }

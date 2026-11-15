@@ -135,7 +135,7 @@ let package = Package(
         .target(name: "YcodeCompletion", dependencies: ["YcodeAssistant"]),
         .testTarget(name: "YcodeCompletionTests", dependencies: ["YcodeCompletion", "YcodeAssistant"]),
         
-        .target(name: "YcodeBuild", dependencies: ["YcodeProject", "YcodePlist", "YcodeWorkspace", "YcodeSubprocess"]),
+        .target(name: "YcodeBuild", dependencies: ["YcodeProject", "YcodePlist", "YcodeWorkspace", "YcodeSubprocess", "YcodeDeviceModel"]),
         .target(name: "YcodeDebug", dependencies: ["YcodeSubprocess"]),
         .testTarget(name: "YcodeBuildTests", dependencies: ["YcodeBuild"]),
         .target(name: "YcodePreviews", dependencies: ["YcodeBuild", "YcodeSubprocess"]),

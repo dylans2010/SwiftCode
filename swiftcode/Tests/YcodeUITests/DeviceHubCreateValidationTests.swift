@@ -229,5 +229,83 @@ import Testing
         let data = Data("{\"devices\": {\"com.apple.CoreSimulator.SimRuntime.iOS-27-0\": [{\"udid\": \"AAAAAAAA-0000-0000-0000-000000000001\"}, {\"name\": \"iPhone 17 Pro\", \"udid\": \"AAAAAAAA-0000-0000-0000-000000000002\"}]}}".utf8)
         #expect(DeviceHubSimulatorInstaller.parseExistingSimulatorNames(from: data) == ["iPhone 17 Pro"])
     }
+
+    private func versionedPhone(min: String? = nil, max: String? = nil) -> DeviceTypeRecord {
+        DeviceTypeRecord(name: "iPhone 17 Pro", identifier: "com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro",
+                         productFamily: "iPhone", minRuntimeVersion: min, maxRuntimeVersion: max)
+    }
+
+    private func iosRuntime(version: String, supported: [String] = []) -> RuntimeRecord {
+        RuntimeRecord(name: "iOS \(version)", identifier: "com.apple.CoreSimulator.SimRuntime.iOS-\(version.replacingOccurrences(of: ".", with: "-"))",
+                      version: version, supportedDeviceTypes: supported)
+    }
+
+    @Test func versionWindowRefusesRuntimeBelowMinimumNamingBothValues() {
+        let error = SimulatorCreateValidation.versionWindowError(deviceType: versionedPhone(min: "26.0"), runtimeVersion: "25.1")
+        #expect(error != nil)
+        #expect(error?.contains("26.0") == true)
+        #expect(error?.contains("25.1") == true)
+    }
+
+    @Test func versionWindowRefusesRuntimeAboveMaximumNamingBothValues() {
+        let error = SimulatorCreateValidation.versionWindowError(deviceType: versionedPhone(max: "26.2"), runtimeVersion: "27.0")
+        #expect(error != nil)
+        #expect(error?.contains("26.2") == true)
+        #expect(error?.contains("27.0") == true)
+    }
+
+    @Test func versionWindowAcceptsRuntimeInsideWindow() {
+        #expect(SimulatorCreateValidation.versionWindowError(deviceType: versionedPhone(min: "26.0", max: "27.1"), runtimeVersion: "27.0") == nil)
+        #expect(SimulatorCreateValidation.versionWindowError(deviceType: versionedPhone(min: "26.0"), runtimeVersion: "26.0") == nil)
+        #expect(SimulatorCreateValidation.versionWindowError(deviceType: versionedPhone(), runtimeVersion: "27.0") == nil)
+        #expect(SimulatorCreateValidation.versionWindowError(deviceType: versionedPhone(min: "26.0"), runtimeVersion: nil) == nil)
+    }
+
+    @Test func versionComparisonOrdersDottedVersionsNumerically() {
+        #expect(SimulatorCreateValidation.compareVersions("26.10", "26.9") == .orderedDescending)
+        #expect(SimulatorCreateValidation.compareVersions("26.0", "26.0.1") == .orderedAscending)
+        #expect(SimulatorCreateValidation.compareVersions("27.0", "27.0") == .orderedSame)
+    }
+
+    @Test func validationErrorRefusesVersionWindowMismatch() {
+        let error = SimulatorCreateValidation.validationError(
+            name: "Phone",
+            deviceType: versionedPhone(min: "26.0"),
+            runtimeName: "iOS 25.1",
+            runtimeIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-25-1",
+            existingNames: [],
+            runtimeRecord: iosRuntime(version: "25.1"))
+        #expect(error?.contains("26.0") == true)
+        #expect(error?.contains("25.1") == true)
+    }
+
+    @Test func validationErrorRefusesRuntimeWithoutDeviceTypeSupport() {
+        let error = SimulatorCreateValidation.validationError(
+            name: "Phone",
+            deviceType: versionedPhone(),
+            runtimeName: "iOS 27.0",
+            runtimeIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+            existingNames: [],
+            runtimeRecord: iosRuntime(version: "27.0", supported: ["com.apple.CoreSimulator.SimDeviceType.iPhone-16"]))
+        #expect(error?.contains("does not list") == true)
+    }
+
+    @Test func validationErrorAcceptsSupportedDeviceTypeInWindow() {
+        let error = SimulatorCreateValidation.validationError(
+            name: "Phone",
+            deviceType: versionedPhone(min: "26.0", max: "27.1"),
+            runtimeName: "iOS 27.0",
+            runtimeIdentifier: "com.apple.CoreSimulator.SimRuntime.iOS-27-0",
+            existingNames: [],
+            runtimeRecord: iosRuntime(version: "27.0", supported: ["com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"]))
+        #expect(error == nil)
+    }
+
+    @Test func runtimeRecordCompatibilityChecksSupportAndWindow() {
+        let phone = versionedPhone(min: "26.0")
+        #expect(SimulatorCreateValidation.isCompatible(deviceType: phone, runtime: iosRuntime(version: "27.0", supported: ["com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"])) == true)
+        #expect(SimulatorCreateValidation.isCompatible(deviceType: phone, runtime: iosRuntime(version: "25.0", supported: ["com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro"])) == false)
+        #expect(SimulatorCreateValidation.isCompatible(deviceType: phone, runtime: iosRuntime(version: "27.0", supported: ["com.apple.CoreSimulator.SimDeviceType.iPhone-16"])) == false)
+    }
 }
 #endif

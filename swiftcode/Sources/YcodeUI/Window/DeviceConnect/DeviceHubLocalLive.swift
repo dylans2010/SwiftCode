@@ -253,11 +253,6 @@ enum DeviceHubSimctl {
 
     
     
-    static func stopRecording(_ process: Process) {
-        SimulatorManager.stopScreenRecording(process)
-    }
-
-    
     static func overrideStatusBar(udid: String, time: String?, batteryLevel: Int?, batteryState: String?,
                                   wifiBars: Int?, operatorName: String?) -> (status: Int32, output: String) {
         var args = ["simctl", "status_bar", udid, "override"]

@@ -1,6 +1,7 @@
 import Foundation
 import YcodeBuild
 import YcodeDebug
+import YcodeDeviceModel
 import YcodeSubprocess
 
 public struct Simctl: Sendable {
@@ -11,19 +12,16 @@ public struct Simctl: Sendable {
 
     public static let xcrun: @Sendable ([String]) -> (Int32, String) = { args in
         MainThreadGuard.blockingCall("simctl \(args.first ?? "")")
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-        p.arguments = ["simctl"] + args
-        let file = FileManager.default.temporaryDirectory.appendingPathComponent("swiftcode-simctl-\(UUID().uuidString).txt")
-        FileManager.default.createFile(atPath: file.path, contents: nil)
-        defer { try? FileManager.default.removeItem(at: file) }
-        guard let h = try? FileHandle(forWritingTo: file) else { return (127, "no temporary file") }
-        p.standardOutput = h
-        p.standardError = h
-        guard (try? p.run()) != nil else { return (127, "xcrun not found") }
-        p.waitUntilExit()
-        try? h.close()
-        return (p.terminationStatus, (try? String(contentsOf: file, encoding: .utf8)) ?? "")
+        do {
+            let result = try DeviceConnectProcessRunner.shared.runBlocking(
+                executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+                arguments: ["simctl"] + args,
+                timeout: nil
+            )
+            return (result.exitCode, result.stdout + result.stderr)
+        } catch {
+            return (127, "xcrun not found: \(error.localizedDescription)")
+        }
     }
 
     public struct Failure: Error, CustomStringConvertible {
@@ -274,15 +272,11 @@ extension WorkspaceSession {
 
     nonisolated static func newestProcess(matching marker: String) -> Int? {
         MainThreadGuard.blockingCall("pgrep -f")
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/pgrep")
-        p.arguments = ["-n", "-f", marker]
-        let out = Pipe()
-        p.standardOutput = out
-        guard (try? p.run()) != nil else { return nil }
-        let d = out.fileHandleForReading.readDataToEndOfFile()
-        p.waitUntilExit()
-        return Int(String(decoding: d, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines))
+        guard let result = try? DeviceConnectProcessRunner.shared.runBlocking(
+            executableURL: URL(fileURLWithPath: "/usr/bin/pgrep"),
+            arguments: ["-n", "-f", marker]
+        ) else { return nil }
+        return Int(result.stdout.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     func attachToSimulatorApp(pid: Int, executable: String, adapter: DAPTransport?) async {

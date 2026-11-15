@@ -97,36 +97,8 @@ public enum DeviceHubUnifiedWorkspace {
         isTablet(for: row)
     }
 
-    public struct TabletPreset: Identifiable, Sendable {
-        public var id: String { name }
-        public let name: String
-        public let model: String
-        public let screenSize: String
-        public let supportsStageManager: Bool
-        public let supportsPencilHover: Bool
-
-        public init(name: String, model: String, screenSize: String, supportsStageManager: Bool, supportsPencilHover: Bool) {
-            self.name = name
-            self.model = model
-            self.screenSize = screenSize
-            self.supportsStageManager = supportsStageManager
-            self.supportsPencilHover = supportsPencilHover
-        }
-    }
-
-    public static let iPadPresets: [TabletPreset] = [
-        TabletPreset(name: "iPad Pro 13-inch (M4)", model: "iPad16,5", screenSize: "13\"", supportsStageManager: true, supportsPencilHover: true),
-        TabletPreset(name: "iPad Pro 11-inch (M4)", model: "iPad16,3", screenSize: "11\"", supportsStageManager: true, supportsPencilHover: true),
-        TabletPreset(name: "iPad Air 13-inch (M2)", model: "iPad14,10", screenSize: "13\"", supportsStageManager: true, supportsPencilHover: true),
-        TabletPreset(name: "iPad Air 11-inch (M2)", model: "iPad14,8", screenSize: "11\"", supportsStageManager: true, supportsPencilHover: true),
-        TabletPreset(name: "iPad mini (A17 Pro)", model: "iPad16,1", screenSize: "8.3\"", supportsStageManager: false, supportsPencilHover: true),
-        TabletPreset(name: "iPad (10th generation)", model: "iPad13,18", screenSize: "10.9\"", supportsStageManager: false, supportsPencilHover: false),
-    ]
-
-    
-
     public static func cloneSimulator(udid: String, newName: String) async throws -> String {
-        try await DeviceHubSimulatorInstaller.cloneSimulator(sourceUDID: udid, newName: newName)
+        try await SimulatorManager.shared.cloneDevice(sourceUDID: udid, newName: newName)
     }
 
     public static func eraseSimulator(udid: String) async throws {

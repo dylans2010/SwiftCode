@@ -129,7 +129,7 @@ func makeArchive(in dir: URL, name: String, app: String?, version: String, build
     """
 
     @Test func disconnectedPhysicalDeviceMarkedUnavailable() throws {
-        let devs = DevicesList.devices(devicectlJSON: Data(Self.devicectlTwo.utf8))
+        let devs = try DevicesList.devices(devicectlJSON: Data(Self.devicectlTwo.utf8))
         #expect(devs.count == 2)
         let c = DevicesController(devices: devs, simulators: [])
         c.view.frame = NSRect(x: 0, y: 0, width: 820, height: 480)
@@ -147,7 +147,7 @@ func makeArchive(in dir: URL, name: String, app: String?, version: String, build
     }
 
     @Test func deviceDisconnectedNotificationMarksRowUnavailable() async throws {
-        let devs = DevicesList.devices(devicectlJSON: Data(Self.devicectlTwo.utf8))
+        let devs = try DevicesList.devices(devicectlJSON: Data(Self.devicectlTwo.utf8))
         let c = DevicesController(devices: devs, simulators: [])
         c.view.frame = NSRect(x: 0, y: 0, width: 820, height: 480)
         c.show(.devices)
@@ -164,7 +164,7 @@ func makeArchive(in dir: URL, name: String, app: String?, version: String, build
         let sims = DevicesList.simulators(simctlJSON: Data(Self.simctl.utf8))
         #expect(sims.map(\.name) == ["Phone A", "Phone B"])
         #expect(sims[0].model == "Phone A" && sims[0].osVersion == "30.1" && sims[1].state == "Booted" && !sims[1].isAvailable)
-        let devs = DevicesList.devices(devicectlJSON: Data(Self.devicectl.utf8))
+        let devs = try DevicesList.devices(devicectlJSON: Data(Self.devicectl.utf8))
         #expect(devs.count == 1 && devs[0].state == "paired, disconnected" && devs[0].model == "Test Model")
         let c = DevicesController(devices: devs, simulators: sims)
         c.view.frame = NSRect(x: 0, y: 0, width: 820, height: 480)

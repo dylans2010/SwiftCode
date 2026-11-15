@@ -108,11 +108,38 @@ public struct DeviceTypeRecord: Identifiable, Sendable, Hashable {
     public let name: String
     public let identifier: String
     public let productFamily: String
+    public let minRuntimeVersion: String?
+    public let maxRuntimeVersion: String?
+    public let supportedDeviceTypes: [String]
 
-    public init(name: String, identifier: String, productFamily: String) {
+    public init(name: String, identifier: String, productFamily: String, minRuntimeVersion: String? = nil,
+                maxRuntimeVersion: String? = nil, supportedDeviceTypes: [String] = []) {
         self.name = name
         self.identifier = identifier
         self.productFamily = productFamily
+        self.minRuntimeVersion = minRuntimeVersion
+        self.maxRuntimeVersion = maxRuntimeVersion
+        self.supportedDeviceTypes = supportedDeviceTypes
+    }
+}
+
+public struct RuntimeRecord: Identifiable, Sendable, Hashable {
+    public var id: String { identifier }
+    public let name: String
+    public let identifier: String
+    public let version: String?
+    public let buildVersion: String?
+    public let isAvailable: Bool
+    public let supportedDeviceTypes: [String]
+
+    public init(name: String, identifier: String, version: String? = nil, buildVersion: String? = nil,
+                isAvailable: Bool = true, supportedDeviceTypes: [String] = []) {
+        self.name = name
+        self.identifier = identifier
+        self.version = version
+        self.buildVersion = buildVersion
+        self.isAvailable = isAvailable
+        self.supportedDeviceTypes = supportedDeviceTypes
     }
 }
 
@@ -130,6 +157,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
     @Published public var errorMessage: String?
     @Published public var availableDeviceTypes: [(name: String, identifier: String)] = []
     @Published public var deviceTypeRecords: [DeviceTypeRecord] = []
+    @Published public var runtimeRecords: [RuntimeRecord] = []
     @Published public var availableRuntimes: [(name: String, identifier: String)] = []
     @Published public var existingSimulatorNames: [String] = []
     @Published public var platformStatuses: [DeviceHubPlatform: PlatformStatus] = [:]
@@ -149,11 +177,12 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         Task {
             do {
                 let records = try await Self.fetchDeviceTypeRecords()
-                let runtimes = try await Self.fetchRuntimes()
+                let runtimes = try await Self.fetchRuntimeRecords()
                 await MainActor.run {
                     self.deviceTypeRecords = records
                     self.availableDeviceTypes = records.map { (name: $0.name, identifier: $0.identifier) }
-                    self.availableRuntimes = runtimes
+                    self.runtimeRecords = runtimes
+                    self.availableRuntimes = runtimes.map { (name: $0.name, identifier: $0.identifier) }
                 }
             } catch {
                 await MainActor.run {
@@ -285,7 +314,10 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
                 if name.contains("Vision") { return "Apple Vision" }
                 return "iPhone"
             }()
-            return DeviceTypeRecord(name: name, identifier: id, productFamily: family)
+            return DeviceTypeRecord(name: name, identifier: id, productFamily: family,
+                                    minRuntimeVersion: dict["minRuntimeVersion"] as? String,
+                                    maxRuntimeVersion: dict["maxRuntimeVersion"] as? String,
+                                    supportedDeviceTypes: dict["supportedDeviceTypes"] as? [String] ?? [])
         }
     }
 
@@ -294,7 +326,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         return records.map { ($0.name, $0.identifier) }
     }
 
-    public static func fetchRuntimes() async throws -> [(name: String, identifier: String)] {
+    public static func fetchRuntimeRecords() async throws -> [RuntimeRecord] {
         let result = try await DeviceConnectProcessRunner.shared.run(
             executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
             arguments: ["simctl", "list", "-j", "runtimes"],
@@ -310,8 +342,17 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         return list.compactMap { dict in
             guard let name = dict["name"] as? String,
                   let id = dict["identifier"] as? String else { return nil }
-            return (name: name, identifier: id)
+            return RuntimeRecord(name: name, identifier: id,
+                                 version: dict["version"] as? String,
+                                 buildVersion: dict["buildversion"] as? String,
+                                 isAvailable: (dict["isAvailable"] as? Bool) ?? true,
+                                 supportedDeviceTypes: dict["supportedDeviceTypes"] as? [String] ?? [])
         }
+    }
+
+    public static func fetchRuntimes() async throws -> [(name: String, identifier: String)] {
+        let records = try await fetchRuntimeRecords()
+        return records.map { (name: $0.name, identifier: $0.identifier) }
     }
 
     
@@ -360,10 +401,23 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
                 self.currentRun = nil
                 switch outcome {
                 case .finished:
-                    self.progressStage = "\(hubPlatform.title) installation completed successfully!"
-                    self.progressFraction = 1.0
-                    self.queryPlatformStatuses()
-                    onFinished?(true)
+                    let verified: Bool
+                    do {
+                        verified = try await DeviceHubRuntimeBrowser().verifyInstalled(
+                            platform: DevicePlatform(rawValue: hubPlatform.rawValue) ?? .unknown)
+                    } catch {
+                        verified = false
+                    }
+                    if verified {
+                        self.progressStage = "\(hubPlatform.title) installation completed successfully!"
+                        self.progressFraction = 1.0
+                        self.queryPlatformStatuses()
+                        onFinished?(true)
+                    } else {
+                        self.progressStage = "\(hubPlatform.title) download finished, but the runtime did not appear in a fresh simctl runtime list."
+                        self.errorMessage = "The download reported success, yet no \(hubPlatform.title) runtime is listed by simctl. Check that Xcode is selected with xcode-select and that the download completed, then try again."
+                        onFinished?(false)
+                    }
                 case .cancelled:
                     self.progressStage = "Installation cancelled"
                     onFinished?(false)
@@ -432,13 +486,28 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
             }
 
             let exitCode = code
+            let verified: Bool
+            if exitCode == 0 {
+                do {
+                    let runtimes = try await DeviceHubRuntimeBrowser().listRuntimes()
+                    verified = !runtimes.isEmpty
+                } catch {
+                    verified = false
+                }
+            } else {
+                verified = false
+            }
             await MainActor.run {
                 self.isRunning = false
-                if exitCode == 0 {
+                if exitCode == 0, verified {
                     self.progressStage = "All platforms downloaded and installed successfully!"
                     self.progressFraction = 1.0
                     self.queryPlatformStatuses()
                     onFinished?(true)
+                } else if exitCode == 0 {
+                    self.progressStage = "Download finished, but no runtimes appeared in a fresh simctl runtime list."
+                    self.errorMessage = "xcodebuild reported success, yet simctl lists no runtimes. Check that Xcode is selected with xcode-select and that the downloads completed, then try again."
+                    onFinished?(false)
                 } else {
                     self.progressStage = "Download all platforms failed (Exit code \(exitCode))"
                     onFinished?(false)
@@ -458,14 +527,27 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
 
         Task.detached {
             let (status, output) = await Self.runXcrunProcess(["simctl", "runtime", "add", url.path], timeout: 180)
+            var verified = false
+            if status == 0 {
+                do {
+                    let runtimes = try await DeviceHubRuntimeBrowser().listRuntimes()
+                    verified = !runtimes.isEmpty
+                } catch {
+                    verified = false
+                }
+            }
             await MainActor.run {
                 self.isRunning = false
                 self.logLines.append(output)
-                if status == 0 {
+                if status == 0, verified {
                     self.progressStage = "Runtime successfully imported and verified!"
                     self.progressFraction = 1.0
                     self.queryPlatformStatuses()
                     onFinished?(true)
+                } else if status == 0 {
+                    self.progressStage = "Import finished, but no runtimes appeared in a fresh simctl runtime list."
+                    self.errorMessage = "simctl runtime add reported success, yet simctl lists no runtimes. The disk image may not have registered; try importing it again."
+                    onFinished?(false)
                 } else {
                     self.progressStage = "Failed to import runtime (Exit code \(status))"
                     self.errorMessage = output.isEmpty ? "simctl runtime add failed" : output
@@ -555,11 +637,10 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
     }
 
     public static func cloneSimulator(sourceUDID: String, newName: String) async throws -> String {
-        let (status, output) = await runXcrunProcess(["simctl", "clone", sourceUDID, newName])
-        if status != 0 {
-            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output.trimmingCharacters(in: .whitespacesAndNewlines)])
+        if SimulatorManager.shared.devices.first(where: { $0.udid == sourceUDID }) == nil {
+            await SimulatorManager.shared.refreshAll()
         }
-        return output.trimmingCharacters(in: .whitespacesAndNewlines)
+        return try await SimulatorManager.shared.cloneDevice(sourceUDID: sourceUDID, newName: newName)
     }
 
     public static func eraseSimulator(udid: String) async throws {
@@ -695,18 +776,29 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
     
 
     public static func setStageManager(udid: String, enabled: Bool) async throws {
-        _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.springboard", "SBStageManagerEnabled", "-bool", enabled ? "true" : "false"])
-        _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.springboard", "SBChamoisHideDock", "-bool", "false"])
+        let first = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.springboard", "SBStageManagerEnabled", "-bool", enabled ? "true" : "false"])
+        guard first.status == 0 else {
+            throw NSError(domain: "SimulatorInstaller", code: Int(first.status), userInfo: [NSLocalizedDescriptionKey: first.output.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
+        let second = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.springboard", "SBChamoisHideDock", "-bool", "false"])
+        guard second.status == 0 else {
+            throw NSError(domain: "SimulatorInstaller", code: Int(second.status), userInfo: [NSLocalizedDescriptionKey: second.output.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
     }
 
     public static func simulateApplePencilAction(udid: String, action: String) async throws {
+        let args: [String]
         switch action {
         case "doubleTap":
-            _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.Pencil", "DoubleTapAction", "-int", "1"])
+            args = ["simctl", "spawn", udid, "defaults", "write", "com.apple.Pencil", "DoubleTapAction", "-int", "1"]
         case "squeeze":
-            _ = await runXcrunProcess(["simctl", "spawn", udid, "defaults", "write", "com.apple.Pencil", "SqueezeAction", "-int", "1"])
+            args = ["simctl", "spawn", udid, "defaults", "write", "com.apple.Pencil", "SqueezeAction", "-int", "1"]
         default:
-            break
+            return
+        }
+        let (status, output) = await runXcrunProcess(args)
+        guard status == 0 else {
+            throw NSError(domain: "SimulatorInstaller", code: Int(status), userInfo: [NSLocalizedDescriptionKey: output.trimmingCharacters(in: .whitespacesAndNewlines)])
         }
     }
 }
@@ -888,6 +980,17 @@ public struct InstallSimulatorSheet: View {
                 .padding(.horizontal)
             }
 
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Installed Runtimes")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                ScrollView {
+                    DeviceHubRuntimeBrowserView(compact: true)
+                }
+                .frame(height: 150)
+            }
+            .padding(.horizontal)
+
             Spacer()
 
             
@@ -931,7 +1034,7 @@ public struct InstallSimulatorSheet: View {
             .padding(.horizontal)
             .padding(.bottom)
         }
-        .frame(width: 560, height: 460)
+        .frame(width: 560, height: 640)
         .onAppear {
             installer.queryPlatformStatuses()
         }
@@ -986,6 +1089,40 @@ public enum SimulatorCreateValidation {
         return expected == actual
     }
 
+    public static func isCompatible(deviceType: DeviceTypeRecord, runtime: RuntimeRecord) -> Bool {
+        guard isCompatible(deviceType: deviceType, runtimeIdentifier: runtime.identifier, runtimeName: runtime.name) else { return false }
+        if !runtime.supportedDeviceTypes.isEmpty && !runtime.supportedDeviceTypes.contains(deviceType.identifier) { return false }
+        return versionWindowError(deviceType: deviceType, runtimeVersion: runtime.version) == nil
+    }
+
+    public static func versionComponents(_ version: String) -> [Int] {
+        version.split(separator: ".").map { Int($0) ?? 0 }
+    }
+
+    public static func compareVersions(_ lhs: String, _ rhs: String) -> ComparisonResult {
+        let a = versionComponents(lhs)
+        let b = versionComponents(rhs)
+        for i in 0..<max(a.count, b.count) {
+            let x = i < a.count ? a[i] : 0
+            let y = i < b.count ? b[i] : 0
+            if x != y { return x < y ? .orderedAscending : .orderedDescending }
+        }
+        return .orderedSame
+    }
+
+    public static func versionWindowError(deviceType: DeviceTypeRecord, runtimeVersion: String?) -> String? {
+        guard let runtimeVersion, !runtimeVersion.isEmpty else { return nil }
+        if let min = deviceType.minRuntimeVersion, !min.isEmpty,
+           compareVersions(runtimeVersion, min) == .orderedAscending {
+            return "\(deviceType.name) requires runtime \(min) or newer, but the selected runtime is \(runtimeVersion). Choose a runtime \(min) or newer."
+        }
+        if let max = deviceType.maxRuntimeVersion, !max.isEmpty,
+           compareVersions(runtimeVersion, max) == .orderedDescending {
+            return "\(deviceType.name) requires runtime \(max) or older, but the selected runtime is \(runtimeVersion). Choose a runtime \(max) or older."
+        }
+        return nil
+    }
+
     public static func duplicateExistingName(_ name: String, existingNames: [String]) -> String? {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
@@ -997,7 +1134,8 @@ public enum SimulatorCreateValidation {
         deviceType: DeviceTypeRecord?,
         runtimeName: String?,
         runtimeIdentifier: String?,
-        existingNames: [String]
+        existingNames: [String],
+        runtimeRecord: RuntimeRecord? = nil
     ) -> String? {
         guard let deviceType, let runtimeName, let runtimeIdentifier else {
             return "Select a device type and a runtime before creating a simulator."
@@ -1007,6 +1145,13 @@ public enum SimulatorCreateValidation {
                 return "\(deviceType.name) cannot run on \(runtimeName). Choose a \(expected) runtime for this device type."
             }
             return "\(deviceType.name) cannot run on \(runtimeName). Choose a runtime for this device type."
+        }
+        if let runtimeRecord, !runtimeRecord.supportedDeviceTypes.isEmpty,
+           !runtimeRecord.supportedDeviceTypes.contains(deviceType.identifier) {
+            return "\(runtimeName) does not list \(deviceType.name) among its supported device types. Choose a runtime that supports this device type."
+        }
+        if let windowError = versionWindowError(deviceType: deviceType, runtimeVersion: runtimeRecord?.version) {
+            return windowError
         }
         if let existing = duplicateExistingName(name, existingNames: existingNames) {
             return "A simulator named “\(existing)” already exists. Choose a different name."
@@ -1053,9 +1198,12 @@ public struct CreateSimulatorSheet: View {
         }
     }
 
-    private var filteredRuntimes: [(name: String, identifier: String)] {
+    private var filteredRuntimes: [RuntimeRecord] {
         let family = SimulatorCreateValidation.runtimeFamily(for: selectedPlatform)
-        return installer.availableRuntimes.filter { runtime in
+        let records: [RuntimeRecord] = installer.runtimeRecords.isEmpty
+            ? installer.availableRuntimes.map { RuntimeRecord(name: $0.name, identifier: $0.identifier) }
+            : installer.runtimeRecords
+        return records.filter { runtime in
             SimulatorCreateValidation.runtimeFamily(identifier: runtime.identifier, name: runtime.name) == family
         }
     }
@@ -1064,7 +1212,7 @@ public struct CreateSimulatorSheet: View {
         filteredDeviceTypes.first { $0.identifier == selectedDeviceType }
     }
 
-    private var selectedRuntimeRecord: (name: String, identifier: String)? {
+    private var selectedRuntimeRecord: RuntimeRecord? {
         filteredRuntimes.first { $0.identifier == selectedRuntime }
     }
 
@@ -1079,7 +1227,8 @@ public struct CreateSimulatorSheet: View {
             deviceType: selectedDeviceTypeRecord,
             runtimeName: selectedRuntimeRecord?.name,
             runtimeIdentifier: selectedRuntimeRecord?.identifier,
-            existingNames: installer.existingSimulatorNames
+            existingNames: installer.existingSimulatorNames,
+            runtimeRecord: selectedRuntimeRecord
         )
     }
 
@@ -1261,7 +1410,7 @@ public struct CreateSimulatorSheet: View {
             let runtime = selectedRuntimeRecord
             let problem: String?
             if let deviceType, let runtime {
-                problem = SimulatorCreateValidation.validationError(name: name, deviceType: deviceType, runtimeName: runtime.name, runtimeIdentifier: runtime.identifier, existingNames: freshNames)
+                problem = SimulatorCreateValidation.validationError(name: name, deviceType: deviceType, runtimeName: runtime.name, runtimeIdentifier: runtime.identifier, existingNames: freshNames, runtimeRecord: runtime)
             } else {
                 problem = "Select a device type and a runtime before creating a simulator."
             }
@@ -1386,7 +1535,7 @@ public struct CloneSimulatorSheet: View {
 
         Task {
             do {
-                let newUDID = try await DeviceHubSimulatorInstaller.cloneSimulator(sourceUDID: sourceUDID, newName: cloneName)
+                let newUDID = try await SimulatorManager.shared.cloneDevice(sourceUDID: sourceUDID, newName: cloneName)
                 await MainActor.run {
                     self.isCloning = false
                     self.onCloned?(newUDID)
