@@ -176,15 +176,16 @@ public struct BranchOps {
 
     public func reset(to rev: String, mode: ResetMode) throws {
         try repo.performTransaction(steps: ["reset:\(mode)@\(rev)"]) {
+            if repo.inMerge() || repo.inRebase() || repo.inCherryPick() {
+                throw SpacesError.invalidArgument(
+                    "cannot reset while a merge, rebase, or cherry-pick is in progress")
+            }
             let oid = try repo.resolveRevision(rev)
             let oldHEAD = try repo.refs.headOID(objects: repo.objects)
             let commit = try repo.commitObject(oid)
 
-            
-            if mode == .hard {
-                _ = try SnapshotOps(repo: repo).create(
-                    message: "pre-reset checkpoint", kind: .preOperation, operation: "reset --hard")
-            }
+            _ = try SnapshotOps(repo: repo).create(
+                message: "pre-reset checkpoint", kind: .preOperation, operation: "reset --\(mode)")
 
             switch mode {
             case .soft:
@@ -230,6 +231,8 @@ public struct BranchOps {
                     index.entries[path] = try Index.entry(forFileAt: url, oid: e.oid, mode: e.mode)
                 }
                 try repo.saveIndex(index)
+                repo.clearState(["MERGE_HEAD", "MERGE_MSG", "MERGE_MODE",
+                                 "CHERRY_PICK_HEAD", "REVERT_HEAD", "conflicts.json"])
             }
             try repo.appendReflog(refName: "HEAD", old: oldHEAD, new: oid,
                                   message: "reset \(mode) to \(rev)")
@@ -237,6 +240,19 @@ public struct BranchOps {
     }
 
     
+    public func setUpstream(branch localBranch: String, remote: String,
+                            remoteBranch: String) throws { return try repo.withLock {
+        guard try repo.refs.readRef("refs/heads/\(localBranch)") != nil else {
+            throw SpacesError.branchNotFound(localBranch)
+        }
+        guard repo.config.remotes[remote] != nil else {
+            throw SpacesError.remoteNotFound(remote)
+        }
+        repo.config.branchTracking[localBranch] = "\(remote)/\(remoteBranch)"
+        try repo.saveConfig()
+        }
+    }
+
     public func reflog(refName: String = "HEAD", limit: Int = 50) throws -> [ReflogEntry] {
         try repo.readReflog(refName: refName, limit: limit)
     }
@@ -279,11 +295,15 @@ public struct BranchOps {
     }
 
     
-    public func restoreArchived(_ archiveName: String, as name: String? = nil) throws { return try repo.withLock {
+    public func restoreArchived(_ archiveName: String, as name: String? = nil,
+                                force: Bool = false) throws { return try repo.withLock {
         guard let ref = try repo.refs.allRefs().first(where: { $0.name == archiveName || $0.name.hasSuffix("/\(archiveName)") }) else {
             throw SpacesError.refNotFound(archiveName)
         }
         let target = name ?? String(ref.name.split(separator: "/").last ?? "").components(separatedBy: "-").dropLast().joined(separator: "-")
+        if !force, try repo.refs.readRef("refs/heads/\(target)") != nil {
+            throw SpacesError.branchExists(target)
+        }
         _ = try repo.refs.updateRef("refs/heads/\(target)", to: ref.oid)
         }
     }

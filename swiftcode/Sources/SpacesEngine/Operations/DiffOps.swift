@@ -246,20 +246,26 @@ public struct DiffOps {
 
     
     public func fileDiff(path: String, from: String? = nil, to: String? = nil) throws -> FileDiff? {
-        
-        var oldFlat: [String: (oid: ObjectID, mode: FileMode)] = [:]
-        var newFlat: [String: (oid: ObjectID, mode: FileMode)] = [:]
+        let oldFlat: [String: (oid: ObjectID, mode: FileMode)]
         if let f = from {
             let oid = try repo.resolveRevision(f)
             oldFlat = try TreeBuilder.flattenTree(repo: repo,
                                                   treeOID: repo.commitObject(oid).tree)
+        } else if let head = try repo.headCommit() {
+            oldFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: head.tree)
         } else {
-            
+            oldFlat = [:]
         }
+        let newFlat: [String: (oid: ObjectID, mode: FileMode)]
         if let t = to {
             let oid = try repo.resolveRevision(t)
             newFlat = try TreeBuilder.flattenTree(repo: repo,
                                                   treeOID: repo.commitObject(oid).tree)
+        } else {
+            let index = try repo.index()
+            var indexFlat: [String: (oid: ObjectID, mode: FileMode)] = [:]
+            for (p, e) in index.entries { indexFlat[p] = (e.oid, e.mode) }
+            newFlat = indexFlat
         }
         let diffs = try diffFlats(oldFlat, newFlat)
         return diffs.first { $0.oldPath == path || $0.newPath == path }

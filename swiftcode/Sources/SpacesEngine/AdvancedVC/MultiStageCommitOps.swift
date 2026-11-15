@@ -15,6 +15,34 @@ public struct MultiStageCommitOps {
         public var paths: [String]
         public var created: Int64
         public var violations: [ValidationPolicyOps.PolicyViolation]
+        public var stagedOIDs: [String: String]
+
+        public init(tx: String, stage: Stage, message: String, paths: [String],
+                    created: Int64, violations: [ValidationPolicyOps.PolicyViolation],
+                    stagedOIDs: [String: String] = [:]) {
+            self.tx = tx
+            self.stage = stage
+            self.message = message
+            self.paths = paths
+            self.created = created
+            self.violations = violations
+            self.stagedOIDs = stagedOIDs
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            tx = try container.decode(String.self, forKey: .tx)
+            stage = try container.decode(Stage.self, forKey: .stage)
+            message = try container.decode(String.self, forKey: .message)
+            paths = try container.decode([String].self, forKey: .paths)
+            created = try container.decode(Int64.self, forKey: .created)
+            violations = try container.decode([ValidationPolicyOps.PolicyViolation].self, forKey: .violations)
+            stagedOIDs = try container.decodeIfPresent([String: String].self, forKey: .stagedOIDs) ?? [:]
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case tx, stage, message, paths, created, violations, stagedOIDs
+        }
     }
 
     public struct StagePreview: Sendable, Codable {
@@ -68,8 +96,16 @@ public struct MultiStageCommitOps {
         for path in paths {
             staged.append(contentsOf: try StagingOps(repo: repo).add(path))
         }
+        let index = try repo.index()
+        var stagedOIDs: [String: String] = [:]
+        for path in staged {
+            if let entry = index.entries[path] {
+                stagedOIDs[path] = entry.oid.hex
+            }
+        }
         let record = StageRecord(tx: tx, stage: .prepared, message: trimmed,
-                                 paths: staged.sorted(), created: AdvancedVCStore.now(), violations: [])
+                                 paths: staged.sorted(), created: AdvancedVCStore.now(), violations: [],
+                                 stagedOIDs: stagedOIDs)
         return try repo.withLock {
             try save(record)
             return tx
@@ -116,6 +152,16 @@ public struct MultiStageCommitOps {
         let violations = try ValidationPolicyOps(repo: repo).validateCommit(message: record.message, stagedPaths: record.paths)
         guard violations.isEmpty else {
             throw SpacesError.invalidArgument("staged commit \(tx) fails validation: \(violations.map { $0.message }.joined(separator: "; "))")
+        }
+        repo.markIndexDirty()
+        let index = try repo.index()
+        for path in record.paths {
+            let current = index.entries[path]?.oid.hex
+            let recorded = record.stagedOIDs[path]
+            guard current == recorded else {
+                throw SpacesError.invalidArgument(
+                    "staged content for '\(path)' changed since prepare; re-prepare staged commit \(tx)")
+            }
         }
         let result = try StagingOps(repo: repo).commit(message: record.message, onlyPaths: record.paths)
         try repo.withLock {

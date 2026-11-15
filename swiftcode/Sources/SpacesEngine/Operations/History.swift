@@ -209,83 +209,101 @@ public struct HistoryOps {
 
     public func blame(_ path: String, rev: String = "HEAD") throws -> [BlameLine] {
         let endOID = try repo.resolveRevision(rev)
-        return try preciseBlame(path: path, endOID: endOID)
+        let endFlat = try TreeBuilder.flattenTree(
+            repo: repo, treeOID: try repo.commitObject(endOID).tree)
+        guard endFlat[path] != nil else { throw SpacesError.pathNotFound(path) }
+        return try blameWithParents(path: path, endOID: endOID)
     }
 
-    
-    
-    private func preciseBlame(path: String, endOID: ObjectID) throws -> [BlameLine] {
-        var commits: [(oid: ObjectID, payload: CommitPayload)] = []
-        var current = endOID
-        while true {
-            let p = try repo.commitObject(current)
-            commits.append((current, p))
-            guard let parent = p.parents.first else { break }
-            current = parent
+    private func renamedPath(from parentOID: ObjectID, to childOID: ObjectID,
+                             path: String) -> String {
+        guard let parentCommit = try? repo.commitObject(parentOID),
+              let childCommit = try? repo.commitObject(childOID),
+              let diffs = try? DiffOps(repo: repo).diffTrees(parentCommit.tree, childCommit.tree) else {
+            return path
         }
-        return try blameForward(commits: commits, path: path, endOID: endOID)
+        for diff in diffs where diff.status == .renamed && diff.newPath == path {
+            return diff.oldPath
+        }
+        return path
     }
 
-    
-    
-    
-    private func blameForward(commits: [(oid: ObjectID, payload: CommitPayload)],
-                              path: String, endOID: ObjectID) throws -> [BlameLine] {
-        func content(_ c: (oid: ObjectID, payload: CommitPayload)) throws -> (lines: [String], present: Bool) {
-            let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: c.payload.tree)
-            guard let e = flat[path] else { return ([], false) }
-            return (DiffEngine.splitLines(try repo.blobData(e.oid)), true)
+    private func blameWithParents(path: String, endOID: ObjectID) throws -> [BlameLine] {
+        var order: [ObjectID] = []
+        var visited = Set<ObjectID>()
+        var pathForCommit: [ObjectID: String] = [endOID: path]
+        var stack: [(oid: ObjectID, expanded: Bool)] = [(endOID, false)]
+        while let item = stack.popLast() {
+            if item.expanded {
+                order.append(item.oid)
+                continue
+            }
+            guard visited.insert(item.oid).inserted else { continue }
+            stack.append((item.oid, true))
+            let commit = try repo.commitObject(item.oid)
+            for parent in commit.parents.reversed() {
+                if pathForCommit[parent] == nil,
+                   let childPath = pathForCommit[item.oid] {
+                    pathForCommit[parent] = renamedPath(from: parent, to: item.oid, path: childPath)
+                }
+                stack.append((parent, false))
+            }
         }
 
-        
-        var ordered = commits.reversed() 
-        guard var current = ordered.first else { return [] }
-        var (lines, present) = try content(current)
-        guard present else { throw SpacesError.pathNotFound(path) }
-        var attrs = lines.map { _ in
-            (current.oid, current.payload.author.name, current.payload.author.timestamp)
+        var remainingChildren: [ObjectID: Int] = [:]
+        for oid in order {
+            for parent in try repo.commitObject(oid).parents {
+                remainingChildren[parent, default: 0] += 1
+            }
         }
 
-        for next in ordered.dropFirst() {
-            let (newLines, newPresent) = try content(next)
-            guard newPresent else { break } 
-            let edits = DiffEngine.diff(lines, newLines)
-            
-            var newAttrs = Array(repeating: (oid: next.oid,
-                                             author: next.payload.author.name,
-                                             ts: next.payload.author.timestamp),
-                                 count: newLines.count)
-            var seen = Array(repeating: false, count: newLines.count)
-            for e in edits {
-                switch e {
-                case .equal(let x, let y):
-                    if x < attrs.count && y < newAttrs.count {
-                        newAttrs[y] = attrs[x]
-                        seen[y] = true
+        var attributions: [ObjectID: [(oid: ObjectID, author: String, ts: Int64)]] = [:]
+        var linesByCommit: [ObjectID: [String]] = [:]
+        for oid in order {
+            let commit = try repo.commitObject(oid)
+            let lookupPath = pathForCommit[oid] ?? path
+            let flat = try TreeBuilder.flattenTree(repo: repo, treeOID: commit.tree)
+            let lines: [String]
+            if let entry = flat[lookupPath] {
+                lines = DiffEngine.splitLines(try repo.blobData(entry.oid))
+            } else {
+                lines = []
+            }
+            var attrs = lines.map { _ in
+                (oid, commit.author.name, commit.author.timestamp)
+            }
+            var claimed = Array(repeating: false, count: lines.count)
+            for parent in commit.parents {
+                guard let parentLines = linesByCommit[parent],
+                      let parentAttrs = attributions[parent],
+                      !parentLines.isEmpty else { continue }
+                let edits = DiffEngine.diff(parentLines, lines)
+                for edit in edits {
+                    if case .equal(let x, let y) = edit,
+                       x < parentAttrs.count, y < attrs.count, !claimed[y] {
+                        attrs[y] = parentAttrs[x]
+                        claimed[y] = true
                     }
-                case .insert(let y):
-                    if y < newAttrs.count {
-                        newAttrs[y] = (next.oid, next.payload.author.name,
-                                       next.payload.author.timestamp)
-                        seen[y] = true
-                    }
-                case .delete:
-                    break
                 }
             }
-            
-            
-            for i in newAttrs.indices where !seen[i] {
-                newAttrs[i] = (next.oid, next.payload.author.name, next.payload.author.timestamp)
+            attributions[oid] = attrs
+            linesByCommit[oid] = lines
+            for parent in commit.parents {
+                remainingChildren[parent, default: 0] -= 1
+                if remainingChildren[parent] == 0 {
+                    attributions.removeValue(forKey: parent)
+                    linesByCommit.removeValue(forKey: parent)
+                }
             }
-            lines = newLines
-            attrs = newAttrs
-            current = next
         }
 
-        return lines.indices.map { i in
-            BlameLine(line: lines[i], commit: attrs[i].0, author: attrs[i].1,
-                      timestamp: attrs[i].2, final: true)
+        guard let finalLines = linesByCommit[endOID],
+              let finalAttrs = attributions[endOID] else {
+            throw SpacesError.pathNotFound(path)
+        }
+        return finalLines.indices.map { i in
+            BlameLine(line: finalLines[i], commit: finalAttrs[i].oid,
+                      author: finalAttrs[i].author, timestamp: finalAttrs[i].ts, final: true)
         }
     }
 }

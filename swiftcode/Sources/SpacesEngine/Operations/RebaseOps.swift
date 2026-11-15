@@ -71,7 +71,7 @@ public struct RebaseOps {
             let history = try HistoryOps(repo: repo).walk(start: origHead, limit: 100_000)
             let ontoAncestors = try ancestorSet(ontoOID)
             var commits = history.filter { !ontoAncestors.contains($0.oid) }
-            commits.reverse() 
+            commits.reverse()
 
             var items: [TodoItem] = commits.map {
                 TodoItem(action: "pick", oid: $0.oid, message: $0.summary)
@@ -80,8 +80,15 @@ public struct RebaseOps {
                 items = try applyTodoSpec(items, spec: todoSpec)
             }
             guard !items.isEmpty else {
-                
+
                 return nil
+            }
+            for item in items {
+                let picked = try repo.commitObject(item.oid)
+                guard picked.parents.count <= 1 else {
+                    throw SpacesError.unsupportedOperation(
+                        "cannot rebase merge commit \(String(item.oid.hex.prefix(7))); rebasing a merge commit would drop its second parent")
+                }
             }
 
             
@@ -103,15 +110,20 @@ public struct RebaseOps {
     
     
     private func applyTodoSpec(_ items: [TodoItem], spec: [String]) throws -> [TodoItem] {
-        
+        let validActions: Set<String> = ["pick", "reword", "edit", "squash", "fixup", "drop"]
         var result: [TodoItem] = []
         var remaining = items
+        var hasKeptItem = false
         for line in spec {
             let parts = line.split(separator: " ").map(String.init)
             guard parts.count >= 2 else { continue }
             let action = parts[0]
+            guard validActions.contains(action) else {
+                throw SpacesError.invalidArgument(
+                    "rebase todo: unknown action '\(action)' (valid actions: pick, reword, edit, squash, fixup, drop)")
+            }
             let ref = parts[1]
-            
+
             var idx: Int? = Int(ref).map { $0 - 1 }
             if idx == nil {
                 idx = remaining.firstIndex { $0.oid.hex.hasPrefix(ref) }
@@ -119,14 +131,21 @@ public struct RebaseOps {
             guard let i = idx, i >= 0, i < remaining.count else {
                 throw SpacesError.invalidArgument("rebase todo: cannot resolve '\(ref)'")
             }
+            if action == "squash" || action == "fixup" {
+                guard hasKeptItem else {
+                    throw SpacesError.invalidArgument(
+                        "rebase todo: cannot '\(action)' the first commit; there is no previous commit to combine it with")
+                }
+            }
             var item = remaining.remove(at: i)
             item.action = action
             if action == "reword", parts.count > 2 {
                 item.message = parts.dropFirst(2).joined(separator: " ")
             }
             result.append(item)
+            if action != "drop" { hasKeptItem = true }
         }
-        
+
         return result
     }
 
@@ -140,6 +159,15 @@ public struct RebaseOps {
             guard unresolved.isEmpty else { throw SpacesError.conflictsRemain(unresolved) }
             if state.step == "conflict" {
                 try commitStep(&state)
+            } else if state.step == "edit" {
+                guard state.done < state.todo.count else {
+                    throw SpacesError.internalInconsistency("rebase edit step with no current item")
+                }
+                state.todo[state.done].done = true
+                state.done += 1
+                state.step = nil
+                state.squashMessage = nil
+                try saveState(state)
             }
             return try advance(&state)
         }
@@ -193,6 +221,10 @@ public struct RebaseOps {
     
     private func applyPick(_ item: TodoItem, state: inout RebaseState) throws {
         let commit = try repo.commitObject(item.oid)
+        guard commit.parents.count <= 1 else {
+            throw SpacesError.unsupportedOperation(
+                "cannot rebase merge commit \(String(item.oid.hex.prefix(7))); rebasing a merge commit would drop its second parent")
+        }
         guard let parent = commit.parents.first else {
             
             try pickRoot(item, state: &state)
@@ -341,7 +373,7 @@ public struct RebaseOps {
             }
             let origCommit = try repo.commitObject(state.origHead)
             try MergeEngine(repo: repo).checkoutTree(origCommit.tree, overlay: [:])
-            repo.clearState(["REBASE_HEAD", "conflicts.json"])
+            repo.clearState(["REBASE_HEAD", "CHERRY_PICK_HEAD", "conflicts.json"])
             try? FileManager.default.removeItem(at: stateDir)
             try repo.appendReflog(refName: "HEAD", old: nil, new: state.origHead,
                                   message: "rebase aborted")
@@ -359,7 +391,7 @@ public struct RebaseOps {
         } else {
             try repo.refs.setHEAD(oid: newHead)
         }
-        repo.clearState(["REBASE_HEAD", "conflicts.json"])
+        repo.clearState(["REBASE_HEAD", "CHERRY_PICK_HEAD", "conflicts.json"])
         try? FileManager.default.removeItem(at: stateDir)
         try repo.appendReflog(refName: "HEAD", old: state.origHead, new: newHead,
                               message: "rebase finished onto \(state.onto)")

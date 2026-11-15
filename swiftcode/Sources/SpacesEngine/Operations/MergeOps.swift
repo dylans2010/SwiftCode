@@ -89,9 +89,56 @@ public struct MergeEngine {
         var conflicts: [ConflictInfo] = []
         var resolvedContents: [String: Data] = [:]
         let policies = (try? resolutionPolicies()) ?? []
+        let oursRenames = detectRenames(base: baseFlat, side: oursFlat)
+        let theirsRenames = detectRenames(base: baseFlat, side: theirsFlat)
+        var oursRenameTargets: [String: String] = [:]
+        for (source, target) in oursRenames { oursRenameTargets[target] = source }
+        var theirsRenameTargets: [String: String] = [:]
+        for (source, target) in theirsRenames { theirsRenameTargets[target] = source }
 
         for path in allPaths.sorted() {
             let b = baseFlat[path], o = oursFlat[path], t = theirsFlat[path]
+
+            if let source = oursRenameTargets[path], theirsFlat[path] == nil,
+               theirsRenames[path] == nil, oursRenames[source] == path {
+                if let other = theirsFlat[source], let baseEntry = baseFlat[source],
+                   other.oid != baseEntry.oid || other.mode != baseEntry.mode {
+                    merged[path] = other
+                } else {
+                    merged[path] = oursFlat[path]!
+                }
+                continue
+            }
+            if let source = theirsRenameTargets[path], oursFlat[path] == nil,
+               oursRenames[path] == nil, theirsRenames[source] == path {
+                if let other = oursFlat[source], let baseEntry = baseFlat[source],
+                   other.oid != baseEntry.oid || other.mode != baseEntry.mode {
+                    merged[path] = other
+                } else {
+                    merged[path] = theirsFlat[path]!
+                }
+                continue
+            }
+            if oursRenames[path] != nil || theirsRenames[path] != nil {
+                if let oursTarget = oursRenames[path],
+                   let theirsTarget = theirsRenames[path],
+                   oursTarget != theirsTarget {
+                    conflicts.append(ConflictInfo(path: path, kind: .renameDelete,
+                                                  baseOID: b?.oid, oursOID: o?.oid,
+                                                  theirsOID: t?.oid))
+                    continue
+                }
+                if oursRenames[path] != nil && theirsRenames[path] != nil {
+                    continue
+                }
+                let other = oursRenames[path] != nil ? t : o
+                if other == nil {
+                    conflicts.append(ConflictInfo(path: path, kind: .renameDelete,
+                                                  baseOID: b?.oid, oursOID: o?.oid,
+                                                  theirsOID: t?.oid))
+                }
+                continue
+            }
 
             func same(_ x: (oid: ObjectID, mode: FileMode)?, _ y: (oid: ObjectID, mode: FileMode)?) -> Bool {
                 switch (x, y) {
@@ -142,11 +189,24 @@ public struct MergeEngine {
                 continue
             }
 
+            if o!.oid == t!.oid, o!.mode != t!.mode {
+                let baseMode = b?.mode
+                if o!.mode != baseMode && t!.mode != baseMode {
+                    conflicts.append(ConflictInfo(path: path, kind: .content,
+                                                  baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
+                    merged[path] = o!
+                } else {
+                    merged[path] = o!.mode != baseMode ? o! : t!
+                }
+                continue
+            }
+
             let oData = try repo.blobData(o!.oid)
             let tData = try repo.blobData(t!.oid)
             let bData = b.map { try? repo.blobData($0.oid) } ?? nil
             let binary = DiffEngine.isBinary(oData) || DiffEngine.isBinary(tData)
                 || (bData.map { DiffEngine.isBinary($0) } ?? false)
+            let binaryConflictKind: ConflictInfo.ConflictKind = b == nil ? .addAdd : .binary
             if binary {
                 if let action = policyAction(for: path, policies: policies) {
                     switch action {
@@ -155,12 +215,12 @@ public struct MergeEngine {
                     case .takeTheirs:
                         merged[path] = t!
                     case .manual:
-                        conflicts.append(ConflictInfo(path: path, kind: .binary,
+                        conflicts.append(ConflictInfo(path: path, kind: binaryConflictKind,
                                                       baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
                         merged[path] = o!
                     }
                 } else {
-                    conflicts.append(ConflictInfo(path: path, kind: .binary,
+                    conflicts.append(ConflictInfo(path: path, kind: binaryConflictKind,
                                                   baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
                     merged[path] = o!
                 }
@@ -188,14 +248,16 @@ public struct MergeEngine {
                         let data = Data(result.text.utf8)
                         let oid = try repo.objects.write(type: .blob, payload: data)
                         merged[path] = (oid, o!.mode)
-                        conflicts.append(ConflictInfo(path: path, kind: .content,
+                        conflicts.append(ConflictInfo(path: path,
+                                                      kind: b == nil ? .addAdd : .content,
                                                       baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
                     }
                 } else {
                     let data = Data(result.text.utf8)
                     let oid = try repo.objects.write(type: .blob, payload: data)
                     merged[path] = (oid, o!.mode)
-                    conflicts.append(ConflictInfo(path: path, kind: .content,
+                    conflicts.append(ConflictInfo(path: path,
+                                                  kind: b == nil ? .addAdd : .content,
                                                   baseOID: b?.oid, oursOID: o!.oid, theirsOID: t!.oid))
                 }
             }
@@ -218,6 +280,25 @@ public struct MergeEngine {
 
         let treeOID = try TreeBuilder.writeTree(entries: merged, objects: repo.objects)
         return (treeOID, conflicts, resolvedContents)
+    }
+
+    private func detectRenames(base: [String: (oid: ObjectID, mode: FileMode)],
+                               side: [String: (oid: ObjectID, mode: FileMode)])
+        -> [String: String] {
+        var pairs: [String: String] = [:]
+        var usedTargets = Set<String>()
+        for source in base.keys.sorted() {
+            guard let baseEntry = base[source], side[source] == nil else { continue }
+            for target in side.keys.sorted() {
+                guard base[target] == nil, !usedTargets.contains(target),
+                      let sideEntry = side[target],
+                      sideEntry.oid == baseEntry.oid else { continue }
+                pairs[source] = target
+                usedTargets.insert(target)
+                break
+            }
+        }
+        return pairs
     }
 
     public struct MergeOutcome {
@@ -360,62 +441,125 @@ public struct MergeEngine {
             if repo.inMerge() || repo.inRebase() { throw SpacesError.invalidArgument("operation in progress") }
             let oid = try repo.resolveRevision(rev)
             let commit = try repo.commitObject(oid)
-            guard let parent = commit.parents.first else {
-                throw SpacesError.invalidArgument("root commit cannot be cherry-picked/reverted")
-            }
-            let parentCommit = try repo.commitObject(parent)
-
             guard let headOID = try repo.refs.headOID(objects: repo.objects) else {
                 throw SpacesError.branchNotFound("HEAD")
             }
-            let headTree = try repo.commitObject(headOID).tree
-            let sourceTree = revert ? commit.tree : commit.tree
-            let baseTree = revert ? commit.tree : parentCommit.tree
-            _ = sourceTree
+            if commit.parents.isEmpty {
+                if revert {
+                    return try revertRootCommit(oid, commit: commit, headOID: headOID)
+                }
+                let merged = try mergeTrees(oursHead: headOID, theirsOID: oid, baseOID: nil)
+                return try completeCherryPick(merged: merged, headOID: headOID,
+                                              origOID: oid, origCommit: commit, revert: false,
+                                              baseOID: nil, label: rev)
+            }
+            let parent = commit.parents.first!
+            _ = try repo.commitObject(parent)
 
             let theirsOID = revert ? parent : oid
             let baseOID = revert ? oid : parent
             let merged = try mergeTrees(oursHead: headOID, theirsOID: theirsOID, baseOID: baseOID)
-
-            if !merged.conflicts.isEmpty {
-                try checkoutTree(merged.tree, overlay: merged.resolved)
-                let records = merged.conflicts.map {
-                    WorktreeScanner.ConflictRecord(path: $0.path, resolved: false,
-                                                   ours: $0.oursOID?.hex, theirs: $0.theirsOID?.hex,
-                                                   base: $0.baseOID?.hex)
-                }
-                let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
-                try encoder.encode(records).write(
-                    to: repo.metaURL.appendingPathComponent("conflicts.json"))
-                writeConflictProvenance(merged.conflicts)
-                recordConflictHistory(ours: headOID, theirs: oid, base: baseOID,
-                                      paths: merged.conflicts.map { $0.path },
-                                      categories: merged.conflicts.map { ConflictCategory(kind: $0.kind).rawValue },
-                                      resolution: "unresolved")
-                try repo.writeState(revert ? "REVERT_HEAD" : "CHERRY_PICK_HEAD",
-                                    contents: oid.hex + "\n")
-                return nil
-            }
-
-            let ident = repo.identity()
-            let verb = revert ? "Revert" : "Cherry-pick"
-            let origSummary = commit.summary
-            let message = revert
-                ? "Revert \"\(origSummary)\"\n\nThis reverts commit \(oid.hex)."
-                : commit.message
-            let payload = CommitPayload(tree: merged.tree, parents: [headOID],
-                                        author: ident, committer: ident, message: message)
-            let newOID = try repo.objects.write(.commit, value: payload)
-            if let sym = try repo.refs.symbolicHEAD() {
-                _ = try repo.refs.updateRef(sym, to: newOID)
-            } else {
-                try repo.refs.setHEAD(oid: newOID)
-            }
-            try checkoutCommit(newOID)
-            try repo.appendReflog(refName: "HEAD", old: headOID, new: newOID,
-                                  message: "\(verb.lowercased()) \(rev)")
-            return newOID
+            return try completeCherryPick(merged: merged, headOID: headOID,
+                                          origOID: oid, origCommit: commit, revert: revert,
+                                          baseOID: baseOID, label: rev)
         }
+    }
+
+    @discardableResult
+    public func cherryPick(_ revs: [String], revert: Bool = false) throws -> [ObjectID?] {
+        var results: [ObjectID?] = []
+        for rev in revs {
+            let result = try cherryPick(rev, revert: revert)
+            results.append(result)
+            if result == nil { break }
+        }
+        return results
+    }
+
+    private func completeCherryPick(merged: (tree: ObjectID, conflicts: [ConflictInfo],
+                                             resolved: [String: Data]),
+                                    headOID: ObjectID, origOID: ObjectID,
+                                    origCommit: CommitPayload, revert: Bool,
+                                    baseOID: ObjectID?, label: String) throws -> ObjectID? {
+        let stateName = revert ? "REVERT_HEAD" : "CHERRY_PICK_HEAD"
+        if !merged.conflicts.isEmpty {
+            try checkoutTree(merged.tree, overlay: merged.resolved)
+            let records = merged.conflicts.map {
+                WorktreeScanner.ConflictRecord(path: $0.path, resolved: false,
+                                               ours: $0.oursOID?.hex, theirs: $0.theirsOID?.hex,
+                                               base: $0.baseOID?.hex)
+            }
+            let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+            try encoder.encode(records).write(
+                to: repo.metaURL.appendingPathComponent("conflicts.json"))
+            writeConflictProvenance(merged.conflicts)
+            recordConflictHistory(ours: headOID, theirs: origOID, base: baseOID,
+                                  paths: merged.conflicts.map { $0.path },
+                                  categories: merged.conflicts.map { ConflictCategory(kind: $0.kind).rawValue },
+                                  resolution: "unresolved")
+            try repo.writeState(stateName, contents: origOID.hex + "\n")
+            return nil
+        }
+
+        let ident = repo.identity()
+        let verb = revert ? "Revert" : "Cherry-pick"
+        let origSummary = origCommit.summary
+        let message = revert
+            ? "Revert \"\(origSummary)\"\n\nThis reverts commit \(origOID.hex)."
+            : origCommit.message
+        let payload = CommitPayload(tree: merged.tree, parents: [headOID],
+                                    author: ident, committer: ident, message: message)
+        let newOID = try repo.objects.write(.commit, value: payload)
+        if let sym = try repo.refs.symbolicHEAD() {
+            _ = try repo.refs.updateRef(sym, to: newOID)
+        } else {
+            try repo.refs.setHEAD(oid: newOID)
+        }
+        try checkoutCommit(newOID)
+        try repo.appendReflog(refName: "HEAD", old: headOID, new: newOID,
+                              message: "\(verb.lowercased()) \(label)")
+        return newOID
+    }
+
+    private func revertRootCommit(_ oid: ObjectID, commit: CommitPayload,
+                                  headOID: ObjectID) throws -> ObjectID? {
+        let rootFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: commit.tree)
+        let headTree = try repo.commitObject(headOID).tree
+        let headFlat = try TreeBuilder.flattenTree(repo: repo, treeOID: headTree)
+        var mergedFlat = headFlat
+        var conflicts: [ConflictInfo] = []
+        for (path, entry) in rootFlat.sorted(by: { $0.key < $1.key }) {
+            guard let ours = headFlat[path] else { continue }
+            if ours.oid == entry.oid && ours.mode == entry.mode {
+                mergedFlat.removeValue(forKey: path)
+            } else {
+                conflicts.append(ConflictInfo(path: path, kind: .deleteModify,
+                                              baseOID: entry.oid, oursOID: ours.oid,
+                                              theirsOID: nil))
+            }
+        }
+        let treeOID = try TreeBuilder.writeTree(entries: mergedFlat, objects: repo.objects)
+        if !conflicts.isEmpty {
+            try checkoutTree(treeOID, overlay: [:])
+            let records = conflicts.map {
+                WorktreeScanner.ConflictRecord(path: $0.path, resolved: false,
+                                               ours: $0.oursOID?.hex, theirs: $0.theirsOID?.hex,
+                                               base: $0.baseOID?.hex)
+            }
+            let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+            try encoder.encode(records).write(
+                to: repo.metaURL.appendingPathComponent("conflicts.json"))
+            writeConflictProvenance(conflicts)
+            recordConflictHistory(ours: headOID, theirs: oid, base: nil,
+                                  paths: conflicts.map { $0.path },
+                                  categories: conflicts.map { ConflictCategory(kind: $0.kind).rawValue },
+                                  resolution: "unresolved")
+            try repo.writeState("REVERT_HEAD", contents: oid.hex + "\n")
+            return nil
+        }
+        return try completeCherryPick(merged: (treeOID, [], [:]), headOID: headOID,
+                                      origOID: oid, origCommit: commit, revert: true,
+                                      baseOID: oid, label: oid.hex)
     }
 
     public func cherryPickContinue() throws -> ObjectID? {

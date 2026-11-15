@@ -109,24 +109,22 @@ public struct SigningOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
 
-    private var keyURL: URL { repo.metaURL.appendingPathComponent("signing.key") }
+    public struct SignatureVerification: Sendable {
+        public var valid: Bool
+        public var fingerprint: String?
+        public var createdAt: Date?
+    }
 
-    
     public func signingKey() throws -> Data { return try repo.withLock {
-        if let data = try? Data(contentsOf: keyURL), data.count >= 32 { return data }
-        
-        let symmetric = SymmetricKey(size: .bits256)
-        let data = symmetric.withUnsafeBytes { Data($0) }
-        try data.write(to: keyURL, options: .atomic)
-        try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: keyURL.path)
-        return data
+        try SigningKeyStore(repo: repo).loadOrCreate()
         }
     }
 
-    
-    
-    public func sign(type: ObjectType, object: String) throws -> String {
-        let key = try signingKey()
+    public func signingKeyInfo() throws -> SigningKeyStore.KeyInfo {
+        try SigningKeyStore(repo: repo).keyInfo()
+    }
+
+    private func macHex(type: ObjectType, object: String, key: Data) -> String {
         let symmetricKey = SymmetricKey(data: key)
         let mac = HMAC<SHA256>.authenticationCode(
             for: Data("spaces-sign-v1\n\(type.rawValue)\n\(object)".utf8),
@@ -134,8 +132,33 @@ public struct SigningOps {
         return mac.map { String(format: "%02x", $0) }.joined()
     }
 
+    public func sign(type: ObjectType, object: String) throws -> String {
+        let store = SigningKeyStore(repo: repo)
+        let key = try store.loadOrCreate()
+        let info = try store.keyInfo()
+        let createdAt = Int64(info.createdAt?.timeIntervalSince1970 ?? 0)
+        return "v2.\(info.fingerprint).\(createdAt).\(macHex(type: type, object: object, key: key))"
+    }
+
     public func verify(type: ObjectType, object: String, signature: String) throws -> Bool {
-        let expected = try sign(type: type, object: object)
-        return expected == signature
+        try verifyDetailed(type: type, object: object, signature: signature).valid
+    }
+
+    public func verifyDetailed(type: ObjectType, object: String,
+                               signature: String) throws -> SignatureVerification {
+        let parts = signature.split(separator: ".")
+        if parts.count == 4, parts[0] == "v2" {
+            let store = SigningKeyStore(repo: repo)
+            let key = try store.loadOrCreate()
+            let valid = macHex(type: type, object: object, key: key) == String(parts[3])
+            let createdAt = Int64(String(parts[2])).map { Date(timeIntervalSince1970: TimeInterval($0)) }
+            return SignatureVerification(valid: valid, fingerprint: String(parts[1]),
+                                         createdAt: createdAt)
+        }
+        let store = SigningKeyStore(repo: repo)
+        let key = try store.loadOrCreate()
+        let info = try store.keyInfo()
+        return SignatureVerification(valid: macHex(type: type, object: object, key: key) == signature,
+                                     fingerprint: info.fingerprint, createdAt: info.createdAt)
     }
 }

@@ -1,5 +1,11 @@
 import Foundation
 
+#if canImport(Darwin)
+import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
+
 
 
 public struct StagingOps {
@@ -417,7 +423,8 @@ public struct StagingOps {
     
     
     @discardableResult
-    public func runHook(_ event: HookEvent, input: String = "") throws -> (code: Int32, output: String)? {
+    public func runHook(_ event: HookEvent, input: String = "",
+                        timeout: TimeInterval = 30) throws -> (code: Int32, output: String)? {
         let hookURL = repo.metaURL.appendingPathComponent("hooks").appendingPathComponent(event.rawValue)
         guard FileManager.default.isExecutableFile(atPath: hookURL.path) else { return nil }
         let process = Process()
@@ -428,11 +435,57 @@ public struct StagingOps {
         process.standardOutput = outPipe
         process.standardError = errPipe
         try process.run()
-        inPipe.fileHandleForWriting.write(Data(input.utf8))
-        try? inPipe.fileHandleForWriting.close()
+        let outLock = NSLock()
+        let errLock = NSLock()
+        var outData = Data()
+        var errData = Data()
+        outPipe.fileHandleForReading.readabilityHandler = { handle in
+            let chunk = handle.availableData
+            guard !chunk.isEmpty else { return }
+            outLock.lock()
+            outData.append(chunk)
+            outLock.unlock()
+        }
+        errPipe.fileHandleForReading.readabilityHandler = { handle in
+            let chunk = handle.availableData
+            guard !chunk.isEmpty else { return }
+            errLock.lock()
+            errData.append(chunk)
+            errLock.unlock()
+        }
+        DispatchQueue.global(qos: .utility).async {
+            inPipe.fileHandleForWriting.write(Data(input.utf8))
+            try? inPipe.fileHandleForWriting.close()
+        }
+        let deadline = Date().addingTimeInterval(timeout)
+        while process.isRunning && Date() < deadline {
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        if process.isRunning {
+            process.terminate()
+            let killDeadline = Date().addingTimeInterval(2)
+            while process.isRunning && Date() < killDeadline {
+                Thread.sleep(forTimeInterval: 0.05)
+            }
+            if process.isRunning {
+                kill(process.processIdentifier, SIGKILL)
+                process.waitUntilExit()
+            }
+            outPipe.fileHandleForReading.readabilityHandler = nil
+            errPipe.fileHandleForReading.readabilityHandler = nil
+            throw SpacesError.hookFailed(event.rawValue, -1,
+                                        "hook '\(event.rawValue)' timed out after \(Int(timeout))s")
+        }
         process.waitUntilExit()
-        let out = String(decoding: outPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-        let err = String(decoding: errPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        Thread.sleep(forTimeInterval: 0.1)
+        outPipe.fileHandleForReading.readabilityHandler = nil
+        errPipe.fileHandleForReading.readabilityHandler = nil
+        outLock.lock()
+        let out = String(decoding: outData, as: UTF8.self)
+        outLock.unlock()
+        errLock.lock()
+        let err = String(decoding: errData, as: UTF8.self)
+        errLock.unlock()
         if process.terminationStatus != 0 {
             throw SpacesError.hookFailed(event.rawValue, process.terminationStatus,
                                        (err + out).trimmingCharacters(in: .whitespacesAndNewlines))
