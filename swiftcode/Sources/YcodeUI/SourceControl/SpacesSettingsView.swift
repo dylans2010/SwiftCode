@@ -8,6 +8,7 @@ struct SpacesSettingsView: View {
     let project: Project
 
     @State private var provider: String = Preferences.shared.sourceControlSystem
+    @State private var repoProvider = "auto"
     @AppStorage("spacesDefaultBranch") private var defaultBranch = "main"
     @State private var statusMessage: String?
     @State private var isInitializing = false
@@ -51,6 +52,21 @@ struct SpacesSettingsView: View {
                 }
 
                 Section("This Repository") {
+                    Picker("Provider for this repository", selection: $repoProvider) {
+                        Text("Automatic").tag("auto")
+                        Text("Git").tag("git")
+                        Text("Spaces").tag("spaces")
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: repoProvider) { _, newValue in
+                        GitViewModel.setProviderOverride(newValue == "auto" ? nil : newValue, for: project.directoryURL)
+                    }
+                    .onAppear {
+                        repoProvider = GitViewModel.providerOverride(for: project.directoryURL) ?? "auto"
+                    }
+                    Text("Automatic uses Spaces when only a .spaces repository exists, Git when only .git exists, and the default provider when both exist. An explicit choice always wins.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                     LabeledContent("Git repository", value: hasGit ? "Yes" : "No")
                     LabeledContent("Spaces repository", value: hasSpaces ? "Yes" : "No")
                     LabeledContent("Active provider", value: resolvedProvider == .spaces ? "Spaces" : "Git")

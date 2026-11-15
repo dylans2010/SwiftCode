@@ -27,7 +27,22 @@ public class GitViewModel {
     public var lastError: String?
     private var cancellationRequested = false
 
+    /// Per-repository provider override ("git" or "spaces"), or nil for auto.
+    public static func providerOverride(for url: URL) -> String? {
+        UserDefaults.standard.string(forKey: "SwiftCode.scmProvider.\(url.standardizedFileURL.path)")
+    }
+
+    public static func setProviderOverride(_ value: String?, for url: URL) {
+        let key = "SwiftCode.scmProvider.\(url.standardizedFileURL.path)"
+        if let value { UserDefaults.standard.set(value, forKey: key) }
+        else { UserDefaults.standard.removeObject(forKey: key) }
+    }
+
     public static func resolveProvider(for url: URL) -> SourceControlProvider {
+        if let override = providerOverride(for: url) {
+            if override == "spaces" { return .spaces }
+            if override == "git" { return .git }
+        }
         let hasGit = FileManager.default.fileExists(atPath: url.appendingPathComponent(".git").path)
         var spacesDir: ObjCBool = false
         let hasSpaces = FileManager.default.fileExists(atPath: url.appendingPathComponent(".spaces").path, isDirectory: &spacesDir) && spacesDir.boolValue
