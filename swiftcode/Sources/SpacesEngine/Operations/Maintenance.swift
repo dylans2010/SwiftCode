@@ -84,16 +84,24 @@ public struct MaintenanceOps {
     
     @discardableResult
     public func gc(pruneDays: Int = 0) throws -> (pruned: Int, reachable: Int) {
-        try repo.performTransaction(steps: ["gc"]) {
+        guard pruneDays >= 0 else {
+            throw SpacesError.invalidArgument("pruneDays must not be negative")
+        }
+        return try repo.performTransaction(steps: ["gc"]) {
             let reachable = try reachableSet()
             let all = try repo.objects.allIDs()
-            
             var keep = reachable
             if pruneDays > 0 {
-                
+                let cutoff = Date().addingTimeInterval(-Double(pruneDays) * 86400)
+                for id in all where !reachable.contains(id) {
+                    let file = repo.objects.url(for: id)
+                    let mtime = (try? FileManager.default.attributesOfItem(atPath: file.path)[.modificationDate]) as? Date
+                    if mtime == nil || mtime! > cutoff {
+                        keep.insert(id)
+                    }
+                }
             }
             let pruned = try repo.objects.prune(unreachable: keep)
-            keep.removeAll()
             try? repo.journal.compact()
             return (pruned, reachable.count)
         }

@@ -158,7 +158,15 @@ public struct RebaseOps {
             let unresolved = try WorktreeScanner(repo: repo).conflictedPaths()
             guard unresolved.isEmpty else { throw SpacesError.conflictsRemain(unresolved) }
             if state.step == "conflict" {
+                let wasEdit = state.done < state.todo.count && state.todo[state.done].action == "edit"
                 try commitStep(&state)
+                if wasEdit {
+                    state.done -= 1
+                    state.todo[state.done].done = false
+                    state.step = "edit"
+                    try saveState(state)
+                    return state
+                }
             } else if state.step == "edit" {
                 guard state.done < state.todo.count else {
                     throw SpacesError.internalInconsistency("rebase edit step with no current item")
@@ -192,11 +200,21 @@ public struct RebaseOps {
             try saveState(state)
             return try advance(&state)
         case "edit":
-            
-            state.step = "edit"
-            state.todo[state.done] = item
-            try saveState(state)
-            return state
+            do {
+                try applyPick(item, state: &state)
+                state.step = "edit"
+                state.todo[state.done] = item
+                try saveState(state)
+                return state
+            } catch let e as SpacesError {
+                if case .conflictsRemain = e {
+                    state.step = "conflict"
+                    state.conflicts = try WorktreeScanner(repo: repo).conflictedPaths()
+                    try saveState(state)
+                    return state
+                }
+                throw e
+            }
         default:
             
             do {

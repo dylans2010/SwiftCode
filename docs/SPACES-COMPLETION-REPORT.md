@@ -9,6 +9,10 @@ and the §9 30-step end-to-end acceptance scenario.
 
 S10 + coordinator-fix push: 0d330727f4d16e9b3c01c0991946be4573c30353. This SHA line was filled in by the follow-up commit a2599bddd5398b4a1333b1b73f54389c2fab11bc (see git log); the live tip may be newer — verify it with the GitHub API.
 
+Slice I base (2026-11-14): local HEAD `1242bd8` (Wave 2 slice E), remote
+main `792a08ef`, tree-identical, working tree clean at slice start. All
+numbers in §13 were re-read off disk by slice I at that base.
+
 ## How this report was built
 
 Every number in this report was read off disk by the S10 slice (2026-11-14):
@@ -21,6 +25,11 @@ files. Nothing in this report is copied from a stale list. The 2026-11-14
 follow-up re-enumerated the CLI names after removing 7 redundant top-level
 worktree/workspace registrations (155 registered, 155 unique) and re-counted
 the tests (208 `@Test` funcs); the follow-up's own numbers are in §12.
+Slice I (2026-11-14) re-enumerated the CLI names after Wave 2 slice E (162
+registered in `main.swift`, 162 unique derived names, 0 duplicates, via a
+positional script that resolves each struct's explicit `commandName:` and
+otherwise kebab-cases the struct name) and re-counted the tests (221
+`@Test` funcs after adding 13 in `WaveFixesTests.swift`, §13).
 
 ## Verification status — read first
 
@@ -30,7 +39,7 @@ and statically verified only: zero comments in the new files, balanced
 delimiters, and every referenced `SpacesAPI`/`SpacesEngine` symbol confirmed
 to exist by grep. The Xcode build, `swift test`, and the live 30-step E2E run
 on Dylan's Mac are the pending gate. No test in this report is claimed as
-passing.
+passing. At the slice-I base the suite is 221 `@Test` funcs (§6, §13).
 
 Status meanings used below: **COMPLETE** — the deliverable exists as real code
 and was verified on disk (statically; see the gate note above).
@@ -42,21 +51,22 @@ and was verified on disk (statically; see the gate note above).
 
 | Subsystem | Status | Note |
 |---|---|---|
-| Engine core (`.spaces/` format, objects, index, staging, branches, merge, rebase, stash, tags, snapshots, history, diff, maintenance, remotes, journal, Git migration, bundles, search) | COMPLETE | One follow-up found in S10 (see §4 follow-up) |
+| Engine core (`.spaces/` format, objects, index, staging, branches, merge, rebase, stash, tags, snapshots, history, diff, maintenance, remotes, journal, Git migration, bundles, search) | COMPLETE | `gc(pruneDays:)` now prunes by object age (slice I, §13); one rebase-edit semantic question open (see §13) |
 | Intelligence (A1–A10) | COMPLETE | Risk scores are heuristics, labelled as such |
-| Advanced version control (B11–B20) | COMPLETE | B19 finalize is scoped to the recorded paths (follow-up, 2026-11-14) |
-| Storage (C21–C30) | COMPLETE | Growth estimate is a projection, not a forecast |
-| Collaboration (D31–D40) | COMPLETE | |
-| Security (E41–E50) | COMPLETE | |
+| Advanced version control (B11–B20) | COMPLETE | B19 finalize is scoped to the recorded paths (follow-up, 2026-11-14); B11 two-phase commit rolls back on failure (slice I test, §13) |
+| Storage (C21–C30) | COMPLETE | Growth estimate is a projection, not a forecast; compaction profiles now prune by age (C29, §13) |
+| Collaboration (D31–D40) | COMPLETE | Merge refuses when the review policy is unmet (D34, §13) |
+| Security (E41–E50) | COMPLETE | Signing key lives outside the repo; `snapshotSignatureInfo` reads the migrated key (slice I test, §13) |
 | Developer tooling (F51–F60) | COMPLETE | |
-| CLI parity (§5) | COMPLETE | 155/155 named commands present; merge strategies are engine-backed (follow-up, 2026-11-14) |
-| UI / settings / detection | COMPLETE | Static only; never opened in Xcode |
-| §4 hardening | COMPLETE | 25 tests; one Maintenance follow-up (see below) |
-| `tools/clean.py` + repo-wide cleanup | COMPLETE | Exact numbers in §7 |
+| CLI parity (§5) | COMPLETE | 162/162 named commands present (slice E re-count, slice I re-verified); merge strategies are engine-backed (follow-up, 2026-11-14) |
+| UI / settings / detection | COMPLETE | Static only; never opened in Xcode; Wave 2 slice D closed D1–D14 (§4) |
+| §4 hardening | COMPLETE | 25 tests; one Maintenance follow-up (see below); `gc` age retention added by slice I |
+| `tools/clean.py` + repo-wide cleanup | COMPLETE | Exact numbers in §7; slice I re-check: 4,660 files, 0 strippable comments |
 | Validation matrix | COMPLETE | 30 tests written, 0 executed here |
 | Integration workflows | COMPLETE | 4 tests written, 0 executed here |
 | §9 E2E scenario (30 steps) | COMPLETE | 1 ordered test written, 0 executed here |
-| Git compatibility | PARTIAL | Real import/export; limitations in §8 |
+| Wave 1/2 fix coverage | COMPLETE | 13 new tests in `WaveFixesTests.swift`, 0 executed here (§13) |
+| Git compatibility | PARTIAL | Real import/export; dry-run writes nothing (slice I test, §13); limitations in §8 |
 | Build / test verification | BLOCKED | No Swift toolchain in this environment |
 
 ## 1. Engine core
@@ -84,11 +94,36 @@ paths: rebuild directly on the corrupt-but-present index succeeds, and
 the delete-first-then-rebuild path still works. Static verification
 only — the Xcode test run on Dylan's Mac is the proof.
 
+Slice I (2026-11-14) closed the last engine-core gap the audit named:
+`MaintenanceOps.gc(pruneDays:)` had an empty `if pruneDays > 0 {}` branch
+and pruned all unreachable objects regardless of age. It now reads each
+unreachable object's file mtime via `ObjectStore.url(for:)` and keeps
+objects newer than the `pruneDays` cutoff (objects whose mtime cannot be
+read are kept, never pruned blind); `pruneDays == 0` still prunes all
+unreachable objects, and a negative value throws `invalidArgument`.
+Compaction profiles already call `gc(pruneDays: profile.pruneDays)`, so
+C29 now prunes by age for real. Covered by three new tests in
+`WaveFixesTests` (`gcPruneDaysHonorsAge`,
+`gcKeepsReachableObjectsRegardlessOfAge`, `gcRejectsNegativePruneDays`).
+`SpacesAPI.gc()` still takes no `pruneDays` argument (the CLI calls
+`MaintenanceOps` directly); that passthrough gap is open, not silent.
+Static verification only — the Xcode test run is the proof.
+
 ## 2. The 60 features
 
 All 60 exist as engine operations plus a `SpacesAPI` extension method, with
 on-disk JSON storage under `.spaces/` and Swift Testing coverage. Per-feature
-status follows; "CLI" names the top-level command where one exists.
+status follows; "CLI" names the top-level command where one exists. The
+audit (v2, base `3a9f1a8`) counted 36 COMPLETE / 24 PARTIAL / 0 NOT
+IMPLEMENTED; Wave 1 slice C closed all 24 PARTIALs on main, and slice I
+spot-checked a sample of the closed items against the code (B11 two-phase
+rollback in `SpacesAPI+AdvancedVC.swift`, D34 merge refusal in
+`SpacesAPI.merge`, E41 policy enforcement at commit/merge/push,
+F54/F55 real `Process` execution, A2 checkpoints before destructive ops,
+C29 `gc(pruneDays:)` — see §1). Status is therefore **60/60 COMPLETE**,
+with the honest caveats recorded per feature below. Every item below was
+verified on disk as real code (statically; the Xcode gate in §10 still
+applies — 0 tests executed here).
 
 ### A. Intelligence (10) — COMPLETE
 
@@ -109,7 +144,7 @@ status follows; "CLI" names the top-level command where one exists.
 
 | # | Feature | CLI | Note |
 |---|---|---|---|
-| B11 | Multi-Repo Commit | — | Best-effort per-repo outcomes; if a repo fails to open, the transaction record lives in the primary repo only |
+| B11 | Multi-Repo Commit | — | Real two-phase commit in `SpacesAPI.multiRepoCommit`: prepare records each repo's branch + pre-commit tip, then commits in order; on any failure the already-committed repos are rolled back to their pre-refs and the record is marked `rolled-back`. Prepare records staged state as-is — it does not stage anything itself, so a repo with nothing staged aborts the transaction before any commit. The older best-effort `MultiRepoCommitOps` path still exists underneath but is no longer the `SpacesAPI` path. |
 | B12 | Branch Checkpoints | `branch-checkpoint` | Refs under `refs/checkpoints/<branch>/<name>` |
 | B13 | Branch Time Travel | — | Moves the tip by creating a new commit |
 | B14 | Branch Stacks | `branch-stack` | `.spaces/stacks/` |
@@ -118,7 +153,7 @@ status follows; "CLI" names the top-level command where one exists.
 | B17 | Partial Restore | — | Selected paths only |
 | B18 | Validation Policies | — | `.spaces/policies.json`; enforced by `commit`/`commitValidated` |
 | B19 | Multi-Stage Commit | — | `finalizeStagedCommit` commits only the paths recorded at `prepare` time; extra staged paths stay staged, and finalize refuses during a merge |
-| B20 | Operation Undo | `operation-undo` | Append-only log; refuses history rewrites |
+| B20 | Operation Undo | `operation-undo` | Append-only log; refuses history rewrites. Undo kinds are handled by API-layer wrappers (`createBranchUndoable`, `deleteBranchUndoable`, `undoLast` dispatching on the recorded operation-name string); there is no per-kind engine undo function. |
 
 ### C. Storage (10) — COMPLETE
 
@@ -132,7 +167,7 @@ status follows; "CLI" names the top-level command where one exists.
 | C26 | Storage Heatmap | `storage-heatmap` | By type, size band, age band |
 | C27 | Predictive Storage | — | Growth samples + 30-day projection (a projection, not a forecast) |
 | C28 | Recovery Vault | — | `.spaces/vault/` + `manifest.json` |
-| C29 | Compaction Profiles | `storage-profile` | `.spaces/storage/compaction.json` |
+| C29 | Compaction Profiles | `storage-profile` | `.spaces/storage/compaction.json`; `applyCompactionProfile` calls `gc(pruneDays: profile.pruneDays)`, so age-based pruning actually runs (slice I, §1) |
 | C30 | Incremental Backup | `backup`, `backup-verify`, `backup-restore` | SPBD bundle format; manifests under `.spaces/storage/backups/` |
 
 ### D. Collaboration (10) — COMPLETE
@@ -142,8 +177,8 @@ status follows; "CLI" names the top-level command where one exists.
 | D31 | Reviews | `review`, `review-status` | `.spaces/reviews/` |
 | D32 | Discussions | `discussion` | Line-anchored comments, edit history, resolve |
 | D33 | Review Tracking | `review approve`, `review-status` | Approvals + changes since approval |
-| D34 | Review Policy | — | `.spaces/reviews/policy.json`; merge check |
-| D35 | Conflict Sessions | — | `.spaces/conflicts/sessions` |
+| D34 | Review Policy | — | `.spaces/reviews/policy.json`; `SpacesAPI.merge` calls `reviewMergeCheckForTarget` before any merge work and refuses with the policy reasons (audit-logged as denied). Scoping: no configured policy means allowed; a policy with `branch` set only gates merges into that branch. |
+| D35 | Conflict Sessions | — | `.spaces/conflicts/sessions`; a recorded resolution is stored as file-content text (`resolutionsByPath[path]`), not as a structured merge choice. |
 | D36 | Activity Feed | — | Derived from reflogs + review records |
 | D37 | Ownership | `ownership` | IgnoreEngine globs + history fallback |
 | D38 | Workspace Templates | `workspace-template` | `.spaces/templates/` |
@@ -154,7 +189,7 @@ status follows; "CLI" names the top-level command where one exists.
 
 | # | Feature | CLI | Note |
 |---|---|---|---|
-| E41 | Policy Engine | `policy` | `.spaces/security/policy.json` |
+| E41 | Policy Engine | `policy` | `.spaces/security/policy.json`; enforced by `commit`/`merge`/`push` via `enforceRepositoryPolicy` |
 | E42 | Secret History | `secret-history` | Same 5 scan regexes across history (up to 200 commits) |
 | E43 | Data Classification | — | `.spaces/security/classification.json` |
 | E44 | Provenance | `provenance` | Real SigningOps verification |
@@ -182,47 +217,71 @@ status follows; "CLI" names the top-level command where one exists.
 
 ## 3. CLI parity
 
-COMPLETE. 155 top-level commands registered in `swiftcode/Sources/spaces/
-main.swift`, enumerated from the sources by S10 (not copied from docs) and
-re-enumerated after the 2026-11-14 follow-up, which removed the 7 redundant
-top-level worktree/workspace leaf registrations (see below). Every one of
+COMPLETE. 162 top-level commands registered in `swiftcode/Sources/spaces/
+main.swift`, enumerated from the sources by slice I with a positional script
+(162 registered, 162 unique derived names, 0 duplicates; 43 structs carry
+an explicit `commandName:`, the rest kebab-case their struct name).
+The count was 155 after the 2026-11-14 follow-up removed 7 redundant
+top-level worktree/workspace leaf registrations; Wave 2 slice E
+re-registered 7 commands (the 6 dead alias structs as real commands plus
+the `security` group), bringing it to 162. Every one of
 the 29 §5 commands named in the spec is present, plus the `snapshots` and
 `history` aliases.
 
-All 155 registered top-level names, in registration order:
+All 162 registered top-level names, in registration order:
 
-`init status changes stage add remove move restore clean unstage reset commit
-amend log show describe diff patch ancestry graph blame annotate branch switch
-checkout merge merge-abort merge-continue merge-preview merge-strategies
-rebase rebase-continue rebase-abort rebase-skip cherry-pick
-cherry-pick-continue cherry-pick-abort revert reflog tag stash snapshot
-timeline checkpoint recover restore-point recovery-list recovery-prune remote
-fetch pull push sync publish unpublish upstream transfer clone doctor fsck gc
-prune compact optimize repack count count-objects storage integrity diagnostics
-health repair repair-index rebuild-index maintenance migrate upgrade config
-version info inspect validate open discover explain impact compare benchmark
-trace events notes sign verify-signature identities credentials permissions
-audit search find find-file find-commit find-change find-branch find-history
-hooks hook-install hook-remove lfs extensions import-git import export-git
-export archive bundle worktree worktrees workspace workspaces
-ls-files ls-tree cat-file merge-strategy semantic-search
-history-search dependencies file-evolution branch-stack branch-checkpoint
-changeset provenance policy security-report secret-history ownership review
-review-status discussion notifications backup backup-verify backup-restore
-storage-heatmap storage-profile workspace-template automation patch-collection
+`init status changes stage add remove move restore clean unstage reset
+reset-history commit amend log show describe diff patch ancestry graph
+blame annotate branch branches switch checkout merge merge-abort
+merge-continue merge-preview merge-strategies rebase rebase-continue
+rebase-abort rebase-skip cherry-pick cherry-pick-continue cherry-pick-abort
+revert reflog tag tags tag-verify stash stash-list snapshot timeline
+checkpoint recover restore-point recovery-list recovery-prune remote
+remotes fetch pull push sync publish unpublish upstream transfer clone
+doctor fsck gc prune compact optimize repack count count-objects storage
+integrity diagnostics health repair repair-index rebuild-index maintenance
+migrate upgrade config version info inspect validate open discover
+explain impact compare benchmark trace events notes security sign
+verify-signature identities credentials permissions audit search find
+find-file find-commit find-change find-branch find-history hooks
+hook-install hook-remove lfs extensions import-git import export-git export
+archive bundle worktree worktrees workspace workspaces ls-files ls-tree
+cat-file merge-strategy semantic-search history-search dependencies
+file-evolution branch-stack branch-checkpoint changeset provenance policy
+security-report secret-history ownership review review-status discussion
+notifications backup backup-verify backup-restore storage-heatmap
+storage-profile workspace-template automation patch-collection
 symbol-history api-compatibility test-provenance build-impact performance
 operation-undo snapshots history`
 
-Uniqueness: re-run by positional script after the 2026-11-14 follow-up
+Uniqueness: re-run by positional script by slice I
 over all derived top-level names (explicit `commandName:` where present,
-kebab-cased struct name otherwise): **155 registered, 155 unique,
+kebab-cased struct name otherwise): **162 registered, 162 unique,
 0 duplicates.** The earlier "git" duplicate is refuted again: `import-git`/
 `export-git` are the top-level names; the `git` names belong to
 `ImportGitCmd`/`ExportGitCmd`, which are subcommands of the `import`/
 `export` groups only, not top-level commands.
 **Whether ArgumentParser traps on duplicates at launch is UNVERIFIED** — no
 `spaces` binary was built or run in this environment (no toolchain), so the
-duplicate-name question is settled only statically.
+duplicate-name question is settled only statically. The derived-name
+uniqueness above is likewise a static derivation of ArgumentParser's naming
+rule, not a launch check.
+
+Fixed in Wave 2 slice E (`1242bd8`, previously open, now done):
+
+- The `security` group is registered, so `scan`/`secrets`/`signatures`
+  are reachable; the 6 dead alias structs are registered as real commands.
+- Global `--format`/`--quiet`/`--verbose`/`--debug`/`--no-color` are
+  honored (format validated, applied to `SpacesOutput`); `--repo` is
+  propagated by `upgrade`/`snapshots`/`recover`/`recovery-list`/`prune`
+  instead of dropped.
+- `push --force`, `switch --detach`, `config` remote URL, `notes show`,
+  and `snapshot --kind` validation all honor their inputs;
+  `cherry-pick-continue` reports the real outcome.
+- `lfs fetch`/`push`/`pull` and `unpublish` fail honestly (no engine
+  transfer/delete-ref op exists); `credentials list` is wired to
+  `listCredentialIdentities`; `sync` returns a `SyncReport` with
+  `pushError` surfaced instead of swallowing a failed push (§13 test).
 
 Fixed in the 2026-11-14 follow-up (previously open decisions, now done):
 
@@ -255,6 +314,18 @@ counts (it was a no-op wrapper at the audit baseline).
 ## 4. UI, settings, detection
 
 COMPLETE (static verification only; the views were never opened in Xcode).
+
+Wave 2 slice D (`ea8e463`) closed audit defects D1–D14: real cherry-pick
+in `BranchesView` (was fake-success); real Git fetch/pull/merge/stash/
+rebase in `GitViewModel` (was silent no-ops); real `forcePush` (was a
+plain push); clone token persisted to the credential store; real blame
+(git porcelain / `SpacesAPI.blame`); Spaces worktree move refuses
+honestly instead of running git unconditionally; `open()` surfaces errors;
+one `resolveProvider` rule for Git/Spaces routing (was split-brain);
+rendered commit graph (was fetched, never rendered); destructive
+confirmations, loading state, cancellation, and in-flight guards;
+Spaces Settings view; tags/compare/search sections. Static verification
+only — the visual check on Dylan's Mac is still the gate.
 
 - **Settings** (`NativeSettingsViews.swift`): Settings → Source Control →
   Source Control System picker — `Git` (default) or `Spaces (native)`,
@@ -366,13 +437,21 @@ audit baseline.
 
 COMPLETE. Present in the engine and covered by 25 `HardeningTests`:
 `commitWithMetadata`, commit validation pipeline, `signCommit` /
-`signingIdentities` (HMAC identities, default + named keys under
-`.spaces/signing-*.key`, mode 0600), branch owners / expirations / protection
+`signingIdentities` (HMAC identities, default + named keys; storage moved
+out of the repo by Wave 1 slice B — see below), branch owners / expirations / protection
 / activity / sync reports, conflict provenance / categorization / history /
 resolution policies, binary diff, rename detection (same-OID delete+add
 pairs, similarity fallback ≥ 0.5), directory comparison, transfer progress /
 resume / reports / cancellation, `gcWithBudget`, vault + audit wiring
 (`force-push` denials and branch deletes are audit-logged).
+
+Wave 1 slice B moved the signing key out of the repo: `SigningKeyStore`
+keeps it in the Keychain on macOS or a 0600 file under
+`~/.config/spaces/keys/` elsewhere, keyed by a hash of the canonical
+`.spaces/` path; a legacy in-repo `signing.key` is migrated on first use
+and then deleted. `SignedSnapshotOps.snapshotSignatureInfo` reads the
+fingerprint from the migrated key via `existingKeyInfo` (slice I test,
+§13). `gc(pruneDays:)` age retention is covered in §1 / §13.
 See §9 for the one follow-up found in S10.
 
 ## 6. Validation matrix, integration workflows, E2E scenario
@@ -501,11 +580,14 @@ with a diverging head is covered separately by
 | ToolingTests | 11 |
 | ValidationMatrixTests | 30 |
 | TestSupport | 0 |
-| **Total** | **208** |
+| WaveFixesTests | 13 |
+| **Total** | **221** |
 
 163 existed before this slice; 35 are new (30 + 4 + 1). The 2026-11-14
 follow-up adds 10 more: 5 strategy tests in MergeTests, 2 worktree-resolve
-tests in CLIContractTests, 3 B19 scoping tests in AdvancedVCTests.
+tests in CLIContractTests, 3 B19 scoping tests in AdvancedVCTests. Slice I
+(2026-11-14) adds 13 more in `WaveFixesTests.swift` (see §13): 208 + 13 =
+221. All counts re-verified by grep at the slice-I base.
 
 ## 7. `tools/clean.py` and the repo-wide cleanup
 
@@ -533,6 +615,12 @@ by S9 and re-stated here without change):
   proven by synthetic tests only); no regex literals in the modified set
   (regex handling synthetic-tested only); no Swift build/test of the cleaned
   sources (no toolchain here).
+
+Slice I re-check (2026-11-14, at base `1242bd8`): `python3 tools/clean.py
+--check` exit 0 — scanned **4,660 files**, **0 strippable comments**
+found. No transform was run (none needed). The new slice-I files
+(`WaveFixesTests.swift`, the `Maintenance.swift` gc fix) contain 0 `//`
+and 0 `/*` occurrences (verified by grep).
 
 Dylan's absolute rule (zero comments in new Swift files) is honoured by
 every file written in Waves 1–4: the three new S10 test files contain
@@ -565,6 +653,10 @@ around a fake format, but it has these evidenced limits:
   (`gitImportSmallRepo`, `gitExportRoundTrip`) and E2E steps 26–27, none of
   which have been executed (no toolchain). A live git repo with branches,
   tags, and merges has not been round-tripped and compared by hand.
+  Slice I adds `gitImportDryRunWritesNothing`, which asserts a dry-run
+  import of a real 2-commit git repo reports 2 commits and writes no
+  objects, creates no refs, writes no `migration.log`, and checks out no
+  files (also statically verified only, 0 executed here).
 
 ## 9. S10 re-checks
 
@@ -612,23 +704,35 @@ None were recorded in the audit for S6, and S10 found none on re-read.
 
 ### (e) CLI duplicate names — re-verified statically
 
-155 registered, 155 unique derived top-level names, 0 duplicates
-(positional script; the first regex-based attempt cross-matched
-`commandName:` across struct boundaries and was discarded). The `git`
+155 registered, 155 unique derived top-level names, 0 duplicates at the
+S10/follow-up base (positional script; the first regex-based attempt
+cross-matched `commandName:` across struct boundaries and was discarded).
+Slice I re-ran the check at base `1242bd8`: 162 registered, 162 unique,
+0 duplicates (see §3). The `git`
 group-subcommand question is refuted again (see §3). Whether ArgumentParser
 traps on duplicates at launch remains UNVERIFIED without a toolchain.
 
 ### (f) Counts
 
-- Engine: 99 Swift files, 15,649 lines (`swiftcode/Sources/SpacesEngine/`).
-- CLI: 6 files, 4,021 lines (`swiftcode/Sources/spaces/`).
-- Tests: 17 files, 3,702 lines, 208 `@Test` funcs
+- Engine: 101 Swift files, 18,576 lines (`swiftcode/Sources/SpacesEngine/`).
+- CLI: 6 files, 4,616 lines (`swiftcode/Sources/spaces/`).
+- Tests: 18 files, 3,900 lines, 221 `@Test` funcs
   (`swiftcode/Tests/SpacesEngineTests/`).
-- UI views: 5 files, 2,916 lines (`SpacesWorkspaceView` + 4 feature views).
-- `SpacesService`: 414 lines. Docs: `SPACES.md` 294 lines;
+- UI views: 6 files, 3,344 lines (`SpacesWorkspaceView` + 4 feature views
+  + `SpacesSettingsView`, added by Wave 2 slice D).
+- `SpacesService`: 480 lines. Docs: `SPACES.md` 294 lines;
   `tools/clean.py` 505 lines.
-- Total Spaces Swift: 26,702 lines across engine, CLI, tests, views, and
-  `SpacesService`.
+- Total Spaces Swift (slice-I recount at base `1242bd8`): 30,916 lines
+  across engine (18,576), CLI (4,616), tests (3,900), views (3,344), and
+  `SpacesService` (480). The S10 figure of 26,702 predates Waves 1–2 and
+  is superseded.
+
+### (g) Slice I re-counts (2026-11-14, base `1242bd8`)
+
+- CLI: 162 registered top-level names in `main.swift`, 162 unique derived
+  names, 0 duplicates (positional script, §3).
+- Tests: 221 `@Test` funcs across 18 files (§6).
+- `clean.py --check`: 4,660 files scanned, 0 strippable comments (§7).
 
 ### Fixes made by S10 and the coordinator
 
@@ -669,9 +773,9 @@ Mac gate (Dylan's Mac, in order):
    build (including the `CQuickJS`-style question for any new target
    reference — note the Spaces targets are declared in `project.yml` and
    `Package.swift`; confirm Xcode picks them up).
-3. Run `swift test` / the Xcode test target: 208 `@Test` funcs, including
-   the 30-step E2E scenario. Investigate any failure by step number
-   (E2E) or matrix-row name.
+3. Run `swift test` / the Xcode test target: 221 `@Test` funcs, including
+   the 30-step E2E scenario and the 13 new `WaveFixesTests`. Investigate
+   any failure by step number (E2E) or test name.
 4. Run the `spaces` binary: `spaces --help` (confirm no duplicate-name
    trap at launch), then a live E2E pass of steps 1–30 against a real
    directory, plus a real Git import/export round-trip.
@@ -681,6 +785,12 @@ Mac gate (Dylan's Mac, in order):
    expects.
 6. Visual check of the four new views and the Spaces sidebar in the app,
    and the Settings source-control picker.
+7. Slice-I specifics: `WaveFixesTests` — in particular
+   `gcPruneDaysHonorsAge` (mtime-based retention), the multi-repo
+   rollback test (policy-blocked second repo), and the sync `pushError`
+   test (divergent push). The rebase-edit semantic question in §13 is
+   now decided and fixed: `edit` applies the commit, then stops, and
+   `rebaseEditAdvances` pins the edited commit surviving the rebase.
 
 ## 11. Files delivered by S10
 
@@ -700,7 +810,7 @@ Dylan's reply to the completion report ("implement them, implement
 everything") authorized resolving all three open decisions from §10.
 Implemented in one follow-up commit on `main`; statically verified only
 (no Swift toolchain here — Xcode build and `swift test` on Dylan's Mac
-remain the gate, now over 208 `@Test` funcs).
+remain the gate, now over 221 `@Test` funcs after slice I, §13).
 
 ### Merge strategies — engine-backed
 
@@ -772,3 +882,145 @@ remain the gate, now over 208 `@Test` funcs).
 Follow-up push SHA: 2ef39dfc1e47941db1a478a6179dc88c8c2c9902. This SHA line was
 filled in by the follow-up commit 1d3ecba4 (see git log); the live tip may
 be newer — verify it with the GitHub API.
+
+## 13. Slice I: tests, gc fix, docs (2026-11-14)
+
+Base: local HEAD `1242bd8` (Wave 2 slice E), remote main `792a08ef`,
+tree-identical, clean working tree at slice start. Statically verified
+only — no Swift toolchain in this environment, 0 tests executed, 0 builds
+run. The Xcode gate in §10 is unchanged and now covers 221 `@Test` funcs.
+
+### Engine fix: `gc(pruneDays:)` age retention
+
+`MaintenanceOps.gc(pruneDays:)` in
+`swiftcode/Sources/SpacesEngine/Operations/Maintenance.swift` had an empty
+`if pruneDays > 0 {}` branch: it pruned every unreachable object
+regardless of age. It now reads each unreachable object's file mtime
+through `ObjectStore.url(for:)` and keeps objects newer than the
+`pruneDays` cutoff; objects whose mtime cannot be read are kept rather
+than pruned blind. `pruneDays == 0` keeps the old behavior (prune all
+unreachable); a negative value throws `invalidArgument`. The dead
+`keep.removeAll()` after the prune call is gone. This was implementable
+because the object store is plain files under `.spaces/objects/` with a
+public `url(for:)` — no new storage format was needed. One gap remains
+open by design: `SpacesAPI.gc()` still takes no `pruneDays` argument, so
+callers must use `MaintenanceOps` directly (as the `spaces gc` command
+and compaction profiles already do).
+
+### New tests: `swiftcode/Tests/SpacesEngineTests/WaveFixesTests.swift` (198 lines, 13 `@Test`s, 0 comments)
+
+All use real temp repos via `TestSupport` (and a real git repo via
+`SpacesValidationSupport` where git is needed; that test skips honestly
+via `Test.skip` when no git executable exists). No mocks, no fakes.
+
+1. `rebaseEditAdvances` — a rebase with `edit` on the first of two
+   commits stops with `step == "edit"` and `done == 0`; `rebaseContinue`
+   advances to completion (`nil`, no longer in rebase), the later pick
+   lands, and the tree is clean.
+2. `checkoutRefusesSpacesPaths` — `TreeBuilder.checkout` on a tree
+   containing a `.spaces` entry throws instead of writing into the
+   metadata directory; the repo stays valid.
+3. `checkoutRemoveUntrackedHonored` — checkout with
+   `removeUntracked: false` leaves an untracked file in place; with
+   `true` it removes it while tracked content is untouched.
+4. `stashIncludeUntrackedHonored` — `StashOps.create(includeUntracked:
+   true)` actually stashes the untracked file (it disappears from the
+   worktree and the stash entry is listed).
+5. `gitImportDryRunWritesNothing` — dry-run import of a real 2-commit
+   git repo reports 2 commits but writes no objects, creates no refs,
+   writes no `migration.log`, and checks out no files.
+6. `mergeRespectsReviewPolicy` — with a 1-approval policy configured and
+   no approval, `merge` throws and HEAD does not move; after approval
+   the same merge fast-forwards.
+7. `twoPhaseMultiRepoCommitRollsBackOnFailure` — two repos with staged
+   changes, the second blocked by a commit-message policy: the result
+   is `bestEffort == false`, no repo reports a commit, and both repos
+   still have exactly their base commit (the first repo's commit was
+   rolled back).
+8. `syncReturnsSyncReportWithPushError` — divergent local/remote
+   branches: `sync` returns a `SyncReport` with `push == nil` and a
+   `pushError` containing `non-fast-forward`, instead of throwing.
+9. `snapshotSignatureInfoFingerprintAfterKeyMigration` — a legacy
+   in-repo `signing.key` is migrated on first signing (file deleted),
+   and `signedSnapshotInfo` returns that key's fingerprint with
+   `verified == true` and the `hmac-sha256` method.
+10. `setDetachedHeadDetaches` — `setDetachedHead` detaches HEAD
+    (`isDetachedHead`, no current branch, HEAD oid as given).
+11. `gcPruneDaysHonorsAge` — a 40-day-old unreachable blob is pruned by
+    `gc(pruneDays: 30)`; a fresh unreachable blob survives it and is
+    only pruned by `gc()` with the default 0 days.
+12. `gcKeepsReachableObjectsRegardlessOfAge` — a reachable blob with a
+    400-day-old mtime survives `gc(pruneDays: 30)`.
+13. `gcRejectsNegativePruneDays` — `gc(pruneDays: -1)` throws.
+
+### Docs updates in this slice
+
+- §2: 60/60 COMPLETE recorded with the slice-C caveats (B11 prepare
+  does not auto-stage, B20 undo kinds in the API layer, D34 review-policy
+  scoping, D35 resolutions stored as file-content text, C29 age pruning
+  via `gc`), after spot-checking a sample of the closed items in code.
+- §3: CLI recount 162/162, 0 duplicates; Wave 2 slice E fixes recorded.
+- §4: Wave 2 slice D (D1–D14) recorded. §5: signing-key migration and
+  `gc` noted. §6: test table 221. §7: clean.py re-check. §8: dry-run
+  test noted. §9(f): counts re-read (engine 101 files / 18,576 lines,
+  CLI 6 / 4,616, tests 18 / 3,900, views 6 / 3,344, `SpacesService`
+  480; total 30,916). §10: Mac gate updated to 221 tests plus slice-I
+  specifics.
+
+### `clean.py`
+
+`python3 tools/clean.py --check` exit 0: 4,660 files scanned, 0
+strippable comments. No transform run (none needed).
+
+### Linux mini-package: not run
+
+Not runnable here. The prior pattern at
+`~/workspace/.sync-tmp/minipkg-sync.sh` syncs only the Decompiler
+(`YcodeDecompiler`) into a mini-package — there is no equivalent
+SpacesEngine mini-package, and `swift` is not on `PATH` (no toolchain,
+no swiftly install found). Building a new SpacesEngine mini-package
+layout without any toolchain to execute it would prove nothing, so no
+mini-package was attempted and no test execution is claimed.
+
+### Rebase `edit` semantics — decided and fixed by the coordinator
+
+While writing `rebaseEditAdvances`, slice I confirmed from
+`RebaseOps.advance` / `continueRebase` that an `edit` item was never
+applied: `advance` stopped at the edit step before applying the commit,
+and `continueRebase` marked the item done and moved on without applying
+it. The audit's "edit stalls forever" defect was fixed (continue
+advances), but the semantics differed from git, where `edit` stops
+*after* applying the commit so it can be amended — the edited commit
+was silently dropped from the rebased branch. The coordinator fixed
+it: `advance` now applies the pick first and then stops with
+step `edit`; `continueRebase` keeps the applied commit, and if the
+edit item hits a conflict, resolving it returns to the `edit` stop
+instead of advancing past it. `rebaseEditAdvances` now pins the
+edited commit surviving the rebase.
+
+### Honest BLOCKED list (unchanged, with exact reasons)
+
+- Object compression: no portable zlib binding in the Swift standard
+  library; no compression implementation exists in the repo.
+- SSH transport: no SSH client in the repo and no peer to speak it.
+- Spaces HTTP server: the HTTP client exists; no server implementation
+  exists in the repo.
+- LFS remote transfer: no transfer operation; `lfs fetch`/`push`/`pull`
+  fail honestly. `unpublish`: no transport delete-ref operation.
+- Build / test verification: no Swift toolchain in this environment.
+  Xcode build, `swift test`, and the live 30-step E2E on Dylan's Mac
+  remain the gate; 0 of the 221 tests have been executed anywhere.
+- `SpacesAPI.gc()` has no `pruneDays` passthrough (see above); the CLI
+  and compaction profiles call `MaintenanceOps` directly.
+
+### Files changed by slice I
+
+- `swiftcode/Tests/SpacesEngineTests/WaveFixesTests.swift` — new, 198
+  lines, 13 `@Test` funcs, 0 comments.
+- `swiftcode/Sources/SpacesEngine/Operations/Maintenance.swift` — gc
+  age retention (+12/−4 lines in `gc(pruneDays:)`, 0 comments).
+- `docs/SPACES-COMPLETION-REPORT.md` — this report (base, counts,
+  statuses, §13).
+
+No other files were created, modified, committed, or pushed by this
+slice. Nothing was committed or pushed, per the slice rules.
