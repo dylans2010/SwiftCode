@@ -8,6 +8,21 @@ import Glibc
 
 
 
+private final class ChunkCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data = Data()
+    func append(_ chunk: Data) {
+        lock.lock()
+        data.append(chunk)
+        lock.unlock()
+    }
+    var value: Data {
+        lock.lock()
+        defer { lock.unlock() }
+        return data
+    }
+}
+
 public struct StagingOps {
     public let repo: Repository
     public init(repo: Repository) { self.repo = repo }
@@ -280,7 +295,7 @@ public struct StagingOps {
 
     @discardableResult
     public func commit(message: String, onlyPaths: [String]) throws -> CommitResult {
-        try commitCore(message: message, onlyPaths: onlyPaths, metadata: CommitMetadata())
+        try commitCore(message: message, metadata: CommitMetadata(), onlyPaths: onlyPaths)
     }
 
     @discardableResult
@@ -435,23 +450,17 @@ public struct StagingOps {
         process.standardOutput = outPipe
         process.standardError = errPipe
         try process.run()
-        let outLock = NSLock()
-        let errLock = NSLock()
-        var outData = Data()
-        var errData = Data()
+        let outData = ChunkCollector()
+        let errData = ChunkCollector()
         outPipe.fileHandleForReading.readabilityHandler = { handle in
             let chunk = handle.availableData
             guard !chunk.isEmpty else { return }
-            outLock.lock()
             outData.append(chunk)
-            outLock.unlock()
         }
         errPipe.fileHandleForReading.readabilityHandler = { handle in
             let chunk = handle.availableData
             guard !chunk.isEmpty else { return }
-            errLock.lock()
             errData.append(chunk)
-            errLock.unlock()
         }
         DispatchQueue.global(qos: .utility).async {
             inPipe.fileHandleForWriting.write(Data(input.utf8))
@@ -480,12 +489,8 @@ public struct StagingOps {
         Thread.sleep(forTimeInterval: 0.1)
         outPipe.fileHandleForReading.readabilityHandler = nil
         errPipe.fileHandleForReading.readabilityHandler = nil
-        outLock.lock()
-        let out = String(decoding: outData, as: UTF8.self)
-        outLock.unlock()
-        errLock.lock()
-        let err = String(decoding: errData, as: UTF8.self)
-        errLock.unlock()
+        let out = String(decoding: outData.value, as: UTF8.self)
+        let err = String(decoding: errData.value, as: UTF8.self)
         if process.terminationStatus != 0 {
             throw SpacesError.hookFailed(event.rawValue, process.terminationStatus,
                                        (err + out).trimmingCharacters(in: .whitespacesAndNewlines))

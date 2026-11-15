@@ -14,7 +14,7 @@ struct HooksList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "HooksList")
+        try SpacesOutput.apply(global, command: "HooksList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let dir = repo.metaURL.appendingPathComponent("hooks")
         guard let files = try? FileManager.default.contentsOfDirectory(atPath: dir.path) else {
@@ -36,7 +36,7 @@ struct HookInstall: ParsableCommand {
     @Argument var script: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "HookInstall")
+        try SpacesOutput.apply(global, command: "HookInstall")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let valid = ["pre-commit", "post-commit", "pre-push", "post-push",
                      "pre-merge", "post-merge", "pre-rebase", "post-checkout",
@@ -59,7 +59,7 @@ struct HookRemove: ParsableCommand {
     @Argument var event: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "HookRemove")
+        try SpacesOutput.apply(global, command: "HookRemove")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let dest = repo.metaURL.appendingPathComponent("hooks").appendingPathComponent(event)
         guard FileManager.default.fileExists(atPath: dest.path) else {
@@ -76,7 +76,7 @@ struct HookRun: ParsableCommand {
     @Argument var event: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "HookRun")
+        try SpacesOutput.apply(global, command: "HookRun")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let result = try StagingOps(repo: repo).runHook(
             StagingOps.HookEvent(rawValue: event) ?? .preCommit, input: "")
@@ -92,7 +92,7 @@ struct HookInstallCmd: ParsableCommand {
     @Argument var script: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "HookInstallCmd")
+        try SpacesOutput.apply(global, command: "HookInstallCmd")
         var cmd = try HookInstall.parseAsRoot(["--repo", repo ?? ".", event, script])
         try cmd.run()
     }
@@ -104,7 +104,7 @@ struct HookRemoveCmd: ParsableCommand {
     @Argument var event: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "HookRemoveCmd")
+        try SpacesOutput.apply(global, command: "HookRemoveCmd")
         var cmd = try HookRemove.parseAsRoot(["--repo", repo ?? ".", event])
         try cmd.run()
     }
@@ -124,7 +124,7 @@ struct LfsTrack: ParsableCommand {
     @Argument var patterns: [String]
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "LfsTrack")
+        try SpacesOutput.apply(global, command: "LfsTrack")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let url = repo.worktreeURL.appendingPathComponent(RepositoryFormat.lfsAttributesName)
         var existing = (try? String(contentsOf: url, encoding: .utf8)) ?? ""
@@ -142,7 +142,7 @@ struct LfsUntrack: ParsableCommand {
     @Argument var patterns: [String]
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "LfsUntrack")
+        try SpacesOutput.apply(global, command: "LfsUntrack")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let url = repo.worktreeURL.appendingPathComponent(RepositoryFormat.lfsAttributesName)
         guard var text = try? String(contentsOf: url, encoding: .utf8) else {
@@ -173,7 +173,7 @@ struct LfsStatus: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "LfsStatus")
+        try SpacesOutput.apply(global, command: "LfsStatus")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let lfsDir = repo.metaURL.appendingPathComponent("lfs/objects")
         var count = 0, bytes: Int64 = 0
@@ -197,7 +197,7 @@ struct LfsFetch: ParsableCommand {
     @Argument var remote: String = "origin"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "LfsFetch")
+        try SpacesOutput.apply(global, command: "LfsFetch")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let report = try LfsTransferOps(repo: repo).fetch(remote)
         print("lfs fetch from \(report.remote): \(report.transferred) object(s) fetched, \(report.alreadyPresent) already present, \(report.failed.count) failed")
@@ -213,7 +213,7 @@ struct LfsPush: ParsableCommand {
     @Argument var remote: String = "origin"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "LfsPush")
+        try SpacesOutput.apply(global, command: "LfsPush")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let report = try LfsTransferOps(repo: repo).push(remote)
         print("lfs push to \(report.remote): \(report.transferred) object(s) pushed, \(report.alreadyPresent) already present, \(report.failed.count) failed")
@@ -229,7 +229,7 @@ struct LfsPull: ParsableCommand {
     @Argument var remote: String = "origin"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "LfsPull")
+        try SpacesOutput.apply(global, command: "LfsPull")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let report = try LfsTransferOps(repo: repo).pull(remote)
         print("lfs pull from \(report.remote): \(report.transferred) object(s) pulled, \(report.alreadyPresent) already present, \(report.failed.count) failed")
@@ -245,7 +245,7 @@ struct LfsPrune: ParsableCommand {
     @Flag(name: .long) var dryRun: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "LfsPrune")
+        try SpacesOutput.apply(global, command: "LfsPrune")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let lfsDir = repo.metaURL.appendingPathComponent("lfs/objects")
         var removed = 0
@@ -274,7 +274,7 @@ struct NotesAdd: ParsableCommand {
     @Option(name: .shortAndLong) var message: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "NotesAdd")
+        try SpacesOutput.apply(global, command: "NotesAdd")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try repo.resolveRevision(rev)
         let notesURL = repo.metaURL.appendingPathComponent("notes.json")
@@ -294,7 +294,7 @@ struct NotesList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "NotesList")
+        try SpacesOutput.apply(global, command: "NotesList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let notesURL = repo.metaURL.appendingPathComponent("notes.json")
         guard let data = try? Data(contentsOf: notesURL),
@@ -313,7 +313,7 @@ struct NotesShow: ParsableCommand {
     @Argument var rev: String = "HEAD"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "NotesShow")
+        try SpacesOutput.apply(global, command: "NotesShow")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try repo.resolveRevision(rev)
         let notesURL = repo.metaURL.appendingPathComponent("notes.json")
@@ -333,7 +333,7 @@ struct Annotate: ParsableCommand {
     @Argument var path: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Annotate")
+        try SpacesOutput.apply(global, command: "Annotate")
         var cmd = try Blame.parseAsRoot(["--repo", repo ?? ".", path])
         try cmd.run()
     }
@@ -351,7 +351,7 @@ struct ExtensionsList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ExtensionsList")
+        try SpacesOutput.apply(global, command: "ExtensionsList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for (name, enabled) in repo.config.extensions.sorted(by: { $0.key < $1.key }) {
             print("\(enabled ? "on " : "off") \(name)")
@@ -366,7 +366,7 @@ struct ExtensionInstall: ParsableCommand {
     @Argument var name: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ExtensionInstall")
+        try SpacesOutput.apply(global, command: "ExtensionInstall")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         repo.config.extensions[name] = true
         try repo.saveConfig()
@@ -380,7 +380,7 @@ struct ExtensionRemove: ParsableCommand {
     @Argument var name: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ExtensionRemove")
+        try SpacesOutput.apply(global, command: "ExtensionRemove")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         repo.config.extensions[name] = false
         try repo.saveConfig()
@@ -395,7 +395,7 @@ struct MergeStrategyList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "MergeStrategyList")
+        try SpacesOutput.apply(global, command: "MergeStrategyList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let engine = MergeEngine(repo: repo)
         let fallback = engine.defaultMergeStrategy()

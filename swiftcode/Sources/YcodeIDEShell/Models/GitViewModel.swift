@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import YcodeIDECore
+import YcodeAssistant
 import SwiftCodeSDK
 
 
@@ -120,7 +121,7 @@ public class GitViewModel {
         if usesSpaces, let url = repositoryURL {
             isGitInstalled = await SpacesService.shared.isSpacesAvailable(at: url)
         } else {
-            isGitInstalled = await GitService.shared.isGitInstalled()
+            isGitInstalled = await SwiftCodeSDK.GitService.shared.isGitInstalled()
         }
     }
 
@@ -135,9 +136,9 @@ public class GitViewModel {
                 history = try await SpacesService.shared.getLog(repositoryURL: url)
                 branches = try await SpacesService.shared.getBranches(repositoryURL: url)
             } else {
-                status = try await GitService.shared.getStatus(for: url)
-                history = try await GitService.shared.getLog(repositoryURL: url)
-                branches = try await GitService.shared.getBranches(repositoryURL: url)
+                status = try await SwiftCodeSDK.GitService.shared.getStatus(for: url)
+                history = try await SwiftCodeSDK.GitService.shared.getLog(repositoryURL: url)
+                branches = try await SwiftCodeSDK.GitService.shared.getBranches(repositoryURL: url)
             }
         } catch {
             lastError = error.localizedDescription
@@ -150,7 +151,7 @@ public class GitViewModel {
         if usesSpaces {
             try? await SpacesService.shared.stage(path: URL(fileURLWithPath: file.path), repositoryURL: url)
         } else {
-            try? await GitService.shared.stage(path: URL(fileURLWithPath: file.path), repositoryURL: url)
+            try? await SwiftCodeSDK.GitService.shared.stage(path: URL(fileURLWithPath: file.path), repositoryURL: url)
         }
         await refreshStatus()
     }
@@ -160,7 +161,7 @@ public class GitViewModel {
         if usesSpaces {
             try? await SpacesService.shared.unstage(path: URL(fileURLWithPath: file.path), repositoryURL: url)
         } else {
-            try? await GitService.shared.unstage(path: URL(fileURLWithPath: file.path), repositoryURL: url)
+            try? await SwiftCodeSDK.GitService.shared.unstage(path: URL(fileURLWithPath: file.path), repositoryURL: url)
         }
         await refreshStatus()
     }
@@ -170,7 +171,7 @@ public class GitViewModel {
         if usesSpaces {
             try? await SpacesService.shared.discardChanges(path: URL(fileURLWithPath: file.path), repositoryURL: url)
         } else {
-            try? await GitService.shared.discardChanges(path: URL(fileURLWithPath: file.path), repositoryURL: url)
+            try? await SwiftCodeSDK.GitService.shared.discardChanges(path: URL(fileURLWithPath: file.path), repositoryURL: url)
         }
         await refreshStatus()
     }
@@ -180,7 +181,7 @@ public class GitViewModel {
         if usesSpaces {
             try? await SpacesService.shared.commit(message: message, repositoryURL: url)
         } else {
-            try? await GitService.shared.commit(message: message, repositoryURL: url)
+            try? await SwiftCodeSDK.GitService.shared.commit(message: message, repositoryURL: url)
         }
         await refreshStatus()
     }
@@ -198,7 +199,7 @@ public class GitViewModel {
                 if usesSpaces {
                     try await SpacesService.shared.createBranch(name: name, repositoryURL: url)
                 } else {
-                    try await GitService.shared.createBranch(name: name, repositoryURL: url)
+                    try await SwiftCodeSDK.GitService.shared.createBranch(name: name, repositoryURL: url)
                 }
                 await refreshStatus()
             } catch {
@@ -215,7 +216,7 @@ public class GitViewModel {
                 if usesSpaces {
                     try await SpacesService.shared.checkout(branch: branch.name, repositoryURL: url)
                 } else {
-                    try await GitService.shared.checkout(branch: branch.name, repositoryURL: url)
+                    try await SwiftCodeSDK.GitService.shared.checkout(branch: branch.name, repositoryURL: url)
                 }
                 await refreshStatus()
             } catch {
@@ -232,7 +233,7 @@ public class GitViewModel {
                 if usesSpaces {
                     try await SpacesService.shared.deleteBranch(name: branch.name, repositoryURL: url)
                 } else {
-                    try await GitService.shared.deleteBranch(name: branch.name, repositoryURL: url)
+                    try await SwiftCodeSDK.GitService.shared.deleteBranch(name: branch.name, repositoryURL: url)
                 }
                 await refreshStatus()
             } catch {
@@ -247,7 +248,7 @@ public class GitViewModel {
         if usesSpaces {
             return (try? await SpacesService.shared.getDiff(repositoryURL: url)) ?? []
         }
-        return (try? await GitService.shared.getDiff(repositoryURL: url)) ?? []
+        return (try? await SwiftCodeSDK.GitService.shared.getDiff(repositoryURL: url)) ?? []
     }
 
     public func rollback(to sha: String) async throws {
@@ -258,7 +259,7 @@ public class GitViewModel {
             if usesSpaces {
                 try await SpacesService.shared.rollback(to: sha, repositoryURL: url)
             } else {
-                try await GitService.shared.rollback(to: sha, repositoryURL: url)
+                try await SwiftCodeSDK.GitService.shared.rollback(to: sha, repositoryURL: url)
             }
         } catch {
             lastError = error.localizedDescription
@@ -275,7 +276,7 @@ public class GitViewModel {
             if usesSpaces {
                 try await SpacesService.shared.forcePush(branch: branch, repositoryURL: url)
             } else {
-                try await GitService.shared.forcePush(branch: branch, repositoryURL: url)
+                try await SwiftCodeSDK.GitService.shared.forcePush(branch: branch, repositoryURL: url)
             }
         } catch {
             lastError = error.localizedDescription
@@ -292,7 +293,7 @@ public class GitViewModel {
             if usesSpaces {
                 try await SpacesService.shared.push(repositoryURL: url)
             } else {
-                try await GitService.shared.push(repositoryURL: url)
+                try await SwiftCodeSDK.GitService.shared.push(repositoryURL: url)
             }
         } catch {
             lastError = error.localizedDescription

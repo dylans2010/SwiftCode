@@ -40,7 +40,7 @@ public struct LanguageDiffOps {
     public func structuralDiff(from: String, to: String, path: String) throws -> [DeclarationChange] {
         let oldDeclarations = try declarations(at: from, path: path)
         let newDeclarations = try declarations(at: to, path: path)
-        return diffDeclarations(old: oldDeclarations, new: newDeclarations, path: path)
+        return Self.diffDeclarations(old: oldDeclarations, new: newDeclarations, path: path)
     }
 
     public static func diffDeclarations(old: [SwiftDeclarationParser.SwiftDeclaration], new: [SwiftDeclarationParser.SwiftDeclaration], path: String) -> [DeclarationChange] {

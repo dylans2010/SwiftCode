@@ -19,7 +19,7 @@ struct TagCreate: ParsableCommand {
     @Option(name: .shortAndLong) var message: String = ""
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "TagCreate")
+        try SpacesOutput.apply(global, command: "TagCreate")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try TagOps(repo: repo).create(name, at: rev, annotated: annotated || !message.isEmpty,
                                                 message: message, sign: sign)
@@ -33,7 +33,7 @@ struct TagDelete: ParsableCommand {
     @Argument var name: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "TagDelete")
+        try SpacesOutput.apply(global, command: "TagDelete")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try TagOps(repo: repo).delete(name)
         print("deleted tag \(name)")
@@ -46,7 +46,7 @@ struct TagList: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "TagList")
+        try SpacesOutput.apply(global, command: "TagList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let tags = try TagOps(repo: repo).list()
         if wantsJSON(json) { printJSON(tags); return }
@@ -62,7 +62,7 @@ struct Tags: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Tags")
+        try SpacesOutput.apply(global, command: "Tags")
         var cmd = TagList()
         cmd.repo = repo
         try cmd.run()
@@ -75,7 +75,7 @@ struct TagVerify: ParsableCommand {
     @Argument var name: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "TagVerify")
+        try SpacesOutput.apply(global, command: "TagVerify")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ok = try TagOps(repo: repo).verify(name)
         print(ok ? "signature valid" : "signature INVALID")
@@ -89,7 +89,7 @@ struct VerifyTag: ParsableCommand {
     @Argument var name: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "VerifyTag")
+        try SpacesOutput.apply(global, command: "VerifyTag")
         var cmd = try TagVerify.parseAsRoot(["--repo", repo ?? ".", name])
         try cmd.run()
     }
@@ -110,7 +110,7 @@ struct StashCreate: ParsableCommand {
     @Flag(name: .long) var includeUntracked: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "StashCreate")
+        try SpacesOutput.apply(global, command: "StashCreate")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         if let e = try StashOps(repo: repo).create(message: message) {
             print("Saved working directory state: \(e.id) \(e.message)")
@@ -123,7 +123,7 @@ struct StashList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "StashList")
+        try SpacesOutput.apply(global, command: "StashList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for e in try StashOps(repo: repo).list() {
             print("\(e.id) \(e.message) (\(e.branch ?? "-"), \(e.timestamp))")
@@ -136,7 +136,7 @@ struct Stashes: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Stashes")
+        try SpacesOutput.apply(global, command: "Stashes")
         var cmd = StashList()
         cmd.repo = repo
         try cmd.run()
@@ -149,7 +149,7 @@ struct StashShow: ParsableCommand {
     @Argument var id: String = ""
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "StashShow")
+        try SpacesOutput.apply(global, command: "StashShow")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ops = StashOps(repo: repo)
         let entries = try ops.list()
@@ -169,7 +169,7 @@ struct StashApply: ParsableCommand {
     @Argument var id: String = ""
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "StashApply")
+        try SpacesOutput.apply(global, command: "StashApply")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ops = StashOps(repo: repo)
         let entries = try ops.list()
@@ -187,7 +187,7 @@ struct StashPop: ParsableCommand {
     @Argument var id: String = ""
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "StashPop")
+        try SpacesOutput.apply(global, command: "StashPop")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ops = StashOps(repo: repo)
         let entries = try ops.list()
@@ -205,7 +205,7 @@ struct StashDrop: ParsableCommand {
     @Argument var id: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "StashDrop")
+        try SpacesOutput.apply(global, command: "StashDrop")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try StashOps(repo: repo).drop(id)
         print("dropped stash \(id)")
@@ -219,7 +219,7 @@ struct StashBranch: ParsableCommand {
     @Argument var id: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "StashBranch")
+        try SpacesOutput.apply(global, command: "StashBranch")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try StashOps(repo: repo).branch(name, at: id)
         print("created branch \(name) from stash \(id)")
@@ -241,7 +241,7 @@ struct RemoteAdd: ParsableCommand {
     @Option(name: .long) var pushURL: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "RemoteAdd")
+        try SpacesOutput.apply(global, command: "RemoteAdd")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try RemoteOps(repo: repo).add(name, url: url, pushURL: pushURL)
         print("added remote \(name): \(url)")
@@ -254,7 +254,7 @@ struct RemoteRemove: ParsableCommand {
     @Argument var name: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "RemoteRemove")
+        try SpacesOutput.apply(global, command: "RemoteRemove")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try RemoteOps(repo: repo).remove(name)
         print("removed remote \(name)")
@@ -266,7 +266,7 @@ struct RemoteList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "RemoteList")
+        try SpacesOutput.apply(global, command: "RemoteList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for r in RemoteOps(repo: repo).list() {
             print("\(r.name)\t\(r.url)")
@@ -279,7 +279,7 @@ struct Remotes: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Remotes")
+        try SpacesOutput.apply(global, command: "Remotes")
         var cmd = RemoteList()
         cmd.repo = repo
         try cmd.run()
@@ -293,7 +293,7 @@ struct RemoteSetURL: ParsableCommand {
     @Argument var url: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "RemoteSetURL")
+        try SpacesOutput.apply(global, command: "RemoteSetURL")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try RemoteOps(repo: repo).setURL(name, url: url)
         print("updated \(name) -> \(url)")
@@ -308,7 +308,7 @@ struct Fetch: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Fetch")
+        try SpacesOutput.apply(global, command: "Fetch")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let report = try RemoteOps(repo: repo).fetch(remote, prune: prune)
         if wantsJSON(json) { printJSON(report); return }
@@ -324,7 +324,7 @@ struct Pull: ParsableCommand {
     @Argument var branch: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Pull")
+        try SpacesOutput.apply(global, command: "Pull")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         if let outcome = try RemoteOps(repo: repo).pull(remote, branch: branch) {
             switch outcome.result {
@@ -348,7 +348,7 @@ struct Push: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Push")
+        try SpacesOutput.apply(global, command: "Push")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         var spec = refspec
         
@@ -371,7 +371,7 @@ struct Sync: ParsableCommand {
     @Argument var remote: String = "origin"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Sync")
+        try SpacesOutput.apply(global, command: "Sync")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let result = try RemoteOps(repo: repo).sync(remote)
         if let pushError = result.pushError {
@@ -389,7 +389,7 @@ struct Publish: ParsableCommand {
     @Argument var remote: String = "origin"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Publish")
+        try SpacesOutput.apply(global, command: "Publish")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         guard let branch = try repo.refs.currentBranch() else {
             throw SpacesError.detachedHead
@@ -409,7 +409,7 @@ struct Unpublish: ParsableCommand {
     @Argument var branch: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Unpublish")
+        try SpacesOutput.apply(global, command: "Unpublish")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         guard repo.config.remotes[remote] != nil else {
             throw SpacesError.invalidArgument("no such remote: \(remote)")
@@ -433,7 +433,7 @@ struct Upstream: ParsableCommand {
     @Argument var upstream: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Upstream")
+        try SpacesOutput.apply(global, command: "Upstream")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let current = try repo.refs.currentBranch()
         let name = branch ?? current ?? ""
@@ -455,7 +455,7 @@ struct Transfer: ParsableCommand {
     @Argument var remote: String = "origin"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Transfer")
+        try SpacesOutput.apply(global, command: "Transfer")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let report = try RemoteOps(repo: repo).fetch(remote)
         print("transfer report: \(report.newObjects) objects, \(report.remoteRefs.count) remote refs")
@@ -476,7 +476,7 @@ struct SnapshotCreate: ParsableCommand {
     @Option(name: .long) var kind: String = "manual"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "SnapshotCreate")
+        try SpacesOutput.apply(global, command: "SnapshotCreate")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         guard let k = SnapshotOps.Kind(rawValue: kind) else {
             throw SpacesError.invalidArgument("unknown snapshot kind: \(kind) (manual, automatic, pre-operation, scheduled, workspace)")
@@ -491,7 +491,7 @@ struct Snapshots: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Snapshots")
+        try SpacesOutput.apply(global, command: "Snapshots")
         var cmd = SnapshotList()
         cmd.repo = repo
         try cmd.run()
@@ -504,7 +504,7 @@ struct SnapshotList: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "SnapshotList")
+        try SpacesOutput.apply(global, command: "SnapshotList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let snaps = try SnapshotOps(repo: repo).list()
         if wantsJSON(json) { printJSON(snaps); return }
@@ -521,7 +521,7 @@ struct SnapshotRestore: ParsableCommand {
     @Argument var rev: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "SnapshotRestore")
+        try SpacesOutput.apply(global, command: "SnapshotRestore")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try SnapshotOps(repo: repo).restore(rev)
         print("restored snapshot \(rev)")
@@ -534,7 +534,7 @@ struct SnapshotDelete: ParsableCommand {
     @Argument var rev: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "SnapshotDelete")
+        try SpacesOutput.apply(global, command: "SnapshotDelete")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try SnapshotOps(repo: repo).delete(rev)
         print("deleted snapshot \(rev)")
@@ -547,7 +547,7 @@ struct Timeline: ParsableCommand {
     @Option(name: .long) var limit: Int = 100
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Timeline")
+        try SpacesOutput.apply(global, command: "Timeline")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for e in try SnapshotOps(repo: repo).timeline(limit: limit) {
             print("\(e.timestamp) [\(e.kind.rawValue)] \(e.title) — \(e.detail)")
@@ -561,7 +561,7 @@ struct Checkpoint: ParsableCommand {
     @Option(name: .shortAndLong) var message: String = "checkpoint"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Checkpoint")
+        try SpacesOutput.apply(global, command: "Checkpoint")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try SnapshotOps(repo: repo).create(message: message, kind: .preOperation,
                                                     operation: "manual checkpoint")
@@ -574,7 +574,7 @@ struct Recover: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Recover")
+        try SpacesOutput.apply(global, command: "Recover")
         var cmd = Timeline()
         cmd.repo = repo
         try cmd.run()
@@ -587,7 +587,7 @@ struct RestorePoint: ParsableCommand {
     @Argument var name: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "RestorePoint")
+        try SpacesOutput.apply(global, command: "RestorePoint")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try SnapshotOps(repo: repo).create(message: name, kind: .manual,
                                                     metadata: ["name": name])
@@ -600,7 +600,7 @@ struct RecoveryList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "RecoveryList")
+        try SpacesOutput.apply(global, command: "RecoveryList")
         var cmd = SnapshotList()
         cmd.repo = repo
         try cmd.run()
@@ -614,7 +614,7 @@ struct RecoveryPrune: ParsableCommand {
     @Flag(name: .long) var dryRun: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "RecoveryPrune")
+        try SpacesOutput.apply(global, command: "RecoveryPrune")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let cutoff = Int64(Date().timeIntervalSince1970) - Int64(olderThan * 86400)
         let snaps = try SnapshotOps(repo: repo).list()
@@ -642,7 +642,7 @@ struct Search: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Search")
+        try SpacesOutput.apply(global, command: "Search")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         var kinds: Set<SearchOps.ResultKind> = []
         if files { kinds.insert(.file) }
@@ -666,7 +666,7 @@ struct Find: ParsableCommand {
     @Argument var query: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Find")
+        try SpacesOutput.apply(global, command: "Find")
         var cmd = try Search.parseAsRoot(["--repo", repo ?? ".", query])
         try cmd.run()
     }
@@ -678,7 +678,7 @@ struct FindFile: ParsableCommand {
     @Argument var pattern: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "FindFile")
+        try SpacesOutput.apply(global, command: "FindFile")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for p in try SearchOps(repo: repo).findFiles(pattern: pattern) { print(p) }
     }
@@ -690,7 +690,7 @@ struct FindCommit: ParsableCommand {
     @Argument var query: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "FindCommit")
+        try SpacesOutput.apply(global, command: "FindCommit")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let q = SearchOps.Query(text: query, kinds: [.commit], limit: 100)
         for r in try SearchOps(repo: repo).search(q) {
@@ -705,7 +705,7 @@ struct FindChange: ParsableCommand {
     @Argument var query: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "FindChange")
+        try SpacesOutput.apply(global, command: "FindChange")
         var cmd = try Search.parseAsRoot(["--repo", repo ?? ".", "--content", query])
         try cmd.run()
     }
@@ -717,7 +717,7 @@ struct FindBranch: ParsableCommand {
     @Argument var query: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "FindBranch")
+        try SpacesOutput.apply(global, command: "FindBranch")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let q = SearchOps.Query(text: query, kinds: [.branch], limit: 100)
         for r in try SearchOps(repo: repo).search(q) { print(r.title) }
@@ -730,7 +730,7 @@ struct FindHistory: ParsableCommand {
     @Argument var path: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "FindHistory")
+        try SpacesOutput.apply(global, command: "FindHistory")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for c in try SearchOps(repo: repo).historyOf(path: path) {
             print("\(c.oid.hex.prefix(7)) \(c.summary)")
@@ -746,7 +746,7 @@ struct Fsck: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Fsck")
+        try SpacesOutput.apply(global, command: "Fsck")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let issues = try MaintenanceOps(repo: repo).fsck()
         if wantsJSON(json) { printJSON(issues); return }
@@ -764,7 +764,7 @@ struct GC: ParsableCommand {
     @Option(name: .long) var pruneDays: Int = 0
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "GC")
+        try SpacesOutput.apply(global, command: "GC")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let result = try MaintenanceOps(repo: repo).gc(pruneDays: pruneDays)
         print("gc complete: pruned \(result.pruned), \(result.reachable) reachable objects kept")
@@ -777,15 +777,16 @@ struct Prune: ParsableCommand {
     @Flag(name: .long) var dryRun: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Prune")
-        let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
+        try SpacesOutput.apply(global, command: "Prune")
         if dryRun {
+            let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
             let reachable = try MaintenanceOps(repo: repo).reachableSet()
             let all = try repo.objects.allIDs()
             print("\(all.count - reachable.count) unreachable object(s)")
         } else {
             var cmd = GC()
             cmd.repo = repo
+            cmd.global = global
             try cmd.run()
         }
     }
@@ -796,7 +797,7 @@ struct Compact: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Compact")
+        try SpacesOutput.apply(global, command: "Compact")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try repo.journal.compact()
         try MaintenanceOps(repo: repo).rebuildIndex()
@@ -809,7 +810,7 @@ struct Optimize: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Optimize")
+        try SpacesOutput.apply(global, command: "Optimize")
         var gc = try GC.parseAsRoot(["--repo", repo ?? "."])
         try gc.run()
         var ri = try RebuildIndex.parseAsRoot(["--repo", repo ?? "."])
@@ -822,7 +823,7 @@ struct Repack: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Repack")
+        try SpacesOutput.apply(global, command: "Repack")
         var cmd = try GC.parseAsRoot(["--repo", repo ?? "."])
         try cmd.run()
     }
@@ -834,7 +835,7 @@ struct Count: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Count")
+        try SpacesOutput.apply(global, command: "Count")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let c = try MaintenanceOps(repo: repo).countObjects()
         if wantsJSON(json) {
@@ -858,7 +859,7 @@ struct CountObjects: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "CountObjects")
+        try SpacesOutput.apply(global, command: "CountObjects")
         var cmd = try Count.parseAsRoot(["--repo", repo ?? "."])
         try cmd.run()
     }
@@ -869,7 +870,7 @@ struct Storage: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Storage")
+        try SpacesOutput.apply(global, command: "Storage")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let s = try MaintenanceOps(repo: repo).storage()
         print("objects:   \(s.objects) bytes")
@@ -883,7 +884,7 @@ struct Integrity: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Integrity")
+        try SpacesOutput.apply(global, command: "Integrity")
         var cmd = try Fsck.parseAsRoot(["--repo", repo ?? "."])
         try cmd.run()
     }
@@ -895,7 +896,7 @@ struct Diagnostics: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Diagnostics")
+        try SpacesOutput.apply(global, command: "Diagnostics")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let diags = try MaintenanceOps(repo: repo).diagnose()
         if wantsJSON(json) { printJSON(diags); return }
@@ -910,7 +911,7 @@ struct Health: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Health")
+        try SpacesOutput.apply(global, command: "Health")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let (score, issues) = try MaintenanceOps(repo: repo).healthScore()
         print("health: \(score)/100")
@@ -923,7 +924,7 @@ struct RepairIndex: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "RepairIndex")
+        try SpacesOutput.apply(global, command: "RepairIndex")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let n = try MaintenanceOps(repo: repo).rebuildIndex()
         print("index rebuilt: \(n) entries")
@@ -935,7 +936,7 @@ struct RebuildIndex: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "RebuildIndex")
+        try SpacesOutput.apply(global, command: "RebuildIndex")
         var cmd = try RepairIndex.parseAsRoot(["--repo", repo ?? "."])
         try cmd.run()
     }
@@ -946,7 +947,7 @@ struct Doctor: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Doctor")
+        try SpacesOutput.apply(global, command: "Doctor")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let diags = try MaintenanceOps(repo: repo).diagnose()
         var errors = 0, warnings = 0
@@ -970,7 +971,7 @@ struct Maintenance: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Maintenance")
+        try SpacesOutput.apply(global, command: "Maintenance")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let counts = try MaintenanceOps(repo: repo).countObjects()
         let reachable = try MaintenanceOps(repo: repo).reachableSet()
@@ -994,7 +995,7 @@ struct LsFiles: ParsableCommand {
     @Flag(name: .long) var modified: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "LsFiles")
+        try SpacesOutput.apply(global, command: "LsFiles")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         if stage {
             for p in try repo.trackedPaths() { print(p) }
@@ -1021,7 +1022,7 @@ struct LsTree: ParsableCommand {
     @Flag(name: .long) var recursive: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "LsTree")
+        try SpacesOutput.apply(global, command: "LsTree")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try repo.resolveRevision(rev)
         var flat = try TreeBuilder.flattenTree(repo: repo, treeOID: repo.commitObject(oid).tree)
@@ -1042,7 +1043,7 @@ struct CatFile: ParsableCommand {
     @Argument var object: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "CatFile")
+        try SpacesOutput.apply(global, command: "CatFile")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try ObjectID.resolve(object, in: repo.objects)
         let stored = try repo.objects.read(oid)
@@ -1062,7 +1063,7 @@ struct Explain: ParsableCommand {
     @Argument var rev: String = "HEAD"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Explain")
+        try SpacesOutput.apply(global, command: "Explain")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try repo.resolveRevision(rev)
         let commit = try repo.commitObject(oid)
@@ -1087,7 +1088,7 @@ struct Impact: ParsableCommand {
     @Argument var rev: String = "HEAD"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Impact")
+        try SpacesOutput.apply(global, command: "Impact")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let result = try HistoryOps(repo: repo).show(rev)
         print("commit \(result.info.oid.hex.prefix(12)): \(result.info.summary)")
@@ -1104,7 +1105,7 @@ struct Compare: ParsableCommand {
     @Flag(name: .long) var stat: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Compare")
+        try SpacesOutput.apply(global, command: "Compare")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let diffs = try DiffOps(repo: repo).commitDiff(a, b)
         var adds = 0, dels = 0
@@ -1122,7 +1123,7 @@ struct Benchmark: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Benchmark")
+        try SpacesOutput.apply(global, command: "Benchmark")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         var timings: [(String, Double)] = []
         func time(_ name: String, _ body: () throws -> Void) {
@@ -1144,7 +1145,7 @@ struct Trace: ParsableCommand {
     @Argument var operation: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Trace")
+        try SpacesOutput.apply(global, command: "Trace")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let api = SpacesAPI(repo: repo)
         let start = Date()
@@ -1184,7 +1185,7 @@ struct Events: ParsableCommand {
     @Option(name: .long) var limit: Int = 50
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Events")
+        try SpacesOutput.apply(global, command: "Events")
         var cmd = try Reflog.parseAsRoot(["--repo", repo ?? ".", "--limit", String(limit)])
         try cmd.run()
     }
@@ -1205,7 +1206,7 @@ struct Scan: ParsableCommand {
     @Flag(name: .long) var staged: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Scan")
+        try SpacesOutput.apply(global, command: "Scan")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         
         let patterns: [(String, String)] = [
@@ -1239,7 +1240,7 @@ struct Secrets: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Secrets")
+        try SpacesOutput.apply(global, command: "Secrets")
         var cmd = try Scan.parseAsRoot(["--repo", repo ?? "."])
         try cmd.run()
     }
@@ -1252,7 +1253,7 @@ struct Signatures: ParsableCommand {
     @Flag(name: .long) var verify: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Signatures")
+        try SpacesOutput.apply(global, command: "Signatures")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let oid = try repo.resolveRevision(rev)
         let commit = try repo.commitObject(oid)
@@ -1275,7 +1276,7 @@ struct Sign: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Sign")
+        try SpacesOutput.apply(global, command: "Sign")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         guard let head = try repo.refs.headOID(objects: repo.objects) else {
             throw SpacesError.branchNotFound("HEAD")
@@ -1304,7 +1305,7 @@ struct VerifySignature: ParsableCommand {
     @Argument var rev: String = "HEAD"
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "VerifySignature")
+        try SpacesOutput.apply(global, command: "VerifySignature")
         var cmd = try Signatures.parseAsRoot(["--repo", repo ?? ".", rev, "--verify"])
         try cmd.run()
     }
@@ -1315,7 +1316,7 @@ struct Identities: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Identities")
+        try SpacesOutput.apply(global, command: "Identities")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let ident = repo.identity()
         print("name:  \(ident.name)")
@@ -1334,7 +1335,7 @@ struct CredList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "CredList")
+        try SpacesOutput.apply(global, command: "CredList")
         #if os(macOS)
         let store = KeychainCredentialStore()
         #else
@@ -1360,7 +1361,7 @@ struct CredSet: ParsableCommand {
     @Option(name: .long) var username: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "CredSet")
+        try SpacesOutput.apply(global, command: "CredSet")
         #if os(macOS)
         let store = KeychainCredentialStore()
         #else
@@ -1380,7 +1381,7 @@ struct CredDelete: ParsableCommand {
     @Argument var host: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "CredDelete")
+        try SpacesOutput.apply(global, command: "CredDelete")
         #if os(macOS)
         let store = KeychainCredentialStore()
         #else
@@ -1396,7 +1397,7 @@ struct Permissions: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Permissions")
+        try SpacesOutput.apply(global, command: "Permissions")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         var worldWritable = 0, executables = 0
         for (p, e) in try repo.index().entries {
@@ -1418,7 +1419,7 @@ struct Audit: ParsableCommand {
     @Option(name: .long) var limit: Int = 100
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Audit")
+        try SpacesOutput.apply(global, command: "Audit")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for e in try repo.readReflog(limit: limit) {
             print("\(e.timestamp) \(e.ident): \(e.message)")
@@ -1439,7 +1440,7 @@ struct ImportGit: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ImportGit")
+        try SpacesOutput.apply(global, command: "ImportGit")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let report = try GitMigration(repo: repo).importGit(at: path, dryRun: dryRun)
         if wantsJSON(json) { printJSON(report); return }
@@ -1470,7 +1471,7 @@ struct ImportGitCmd: ParsableCommand {
     @Argument var path: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ImportGitCmd")
+        try SpacesOutput.apply(global, command: "ImportGitCmd")
         var cmd = try ImportGit.parseAsRoot((["--repo", repo ?? ".", path]))
         try cmd.run()
     }
@@ -1483,7 +1484,7 @@ struct ExportGit: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ExportGit")
+        try SpacesOutput.apply(global, command: "ExportGit")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let report = try GitMigration(repo: repo).exportGit(to: path)
         if wantsJSON(json) { printJSON(report); return }
@@ -1507,7 +1508,7 @@ struct ExportGitCmd: ParsableCommand {
     @Argument var path: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ExportGitCmd")
+        try SpacesOutput.apply(global, command: "ExportGitCmd")
         var cmd = try ExportGit.parseAsRoot((["--repo", repo ?? ".", path]))
         try cmd.run()
     }
@@ -1527,7 +1528,7 @@ struct BundleCreate: ParsableCommand {
     @Argument var refs: [String] = []
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BundleCreate")
+        try SpacesOutput.apply(global, command: "BundleCreate")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try BundleOps.create(repo: repo, output: output, refNames: refs)
         print("bundle written to \(output)")
@@ -1539,7 +1540,7 @@ struct BundleVerify: ParsableCommand {
     @Argument var path: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BundleVerify")
+        try SpacesOutput.apply(global, command: "BundleVerify")
         let report = try BundleOps.verify(path: path)
         print("bundle OK: \(report.objectCount) objects, \(report.refs.count) refs")
     }
@@ -1551,7 +1552,7 @@ struct BundleInspect: ParsableCommand {
     @Flag(name: .long) var json: Bool = false
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BundleInspect")
+        try SpacesOutput.apply(global, command: "BundleInspect")
         let report = try BundleOps.inspect(path: path)
         if wantsJSON(json) { printJSON(report); return }
         print("objects: \(report.objectCount)")
@@ -1575,7 +1576,7 @@ struct Archive: ParsableCommand {
     @Argument var output: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Archive")
+        try SpacesOutput.apply(global, command: "Archive")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try ArchiveOps.create(repo: repo, rev: rev, output: output)
         print("archive written to \(output)")
@@ -1594,7 +1595,7 @@ struct Worktrees: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Worktrees")
+        try SpacesOutput.apply(global, command: "Worktrees")
         var cmd = WorktreeList()
         cmd.repo = repo
         try cmd.run()
@@ -1606,7 +1607,7 @@ struct WorktreeList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "WorktreeList")
+        try SpacesOutput.apply(global, command: "WorktreeList")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         for w in try WorktreeOps(repo: repo).list() {
             print("\(w.isMain ? "*" : " ") \(w.name)\t\(w.path)\t\(w.head)")
@@ -1622,7 +1623,7 @@ struct WorktreeAdd: ParsableCommand {
     @Option(name: .long) var newBranch: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "WorktreeAdd")
+        try SpacesOutput.apply(global, command: "WorktreeAdd")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let wt = try WorktreeOps(repo: repo).add(path: path, branch: branch, newBranch: newBranch)
         print("worktree added: \(wt.path) (\(wt.head))")
@@ -1635,7 +1636,7 @@ struct WorktreeRemove: ParsableCommand {
     @Argument var name: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "WorktreeRemove")
+        try SpacesOutput.apply(global, command: "WorktreeRemove")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         try WorktreeOps(repo: repo).remove(name)
         print("worktree removed: \(name)")
@@ -1652,7 +1653,7 @@ struct Workspaces: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Workspaces")
+        try SpacesOutput.apply(global, command: "Workspaces")
         var cmd = WorkspaceList()
         cmd.repo = repo
         try cmd.run()
@@ -1667,7 +1668,7 @@ struct WorkspaceCreate: ParsableCommand {
     @Option(name: .long) var newBranch: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "WorkspaceCreate")
+        try SpacesOutput.apply(global, command: "WorkspaceCreate")
         var args = ["--repo", repo ?? ".", path]
         if let b = branch { args += ["--branch", b] }
         if let nb = newBranch { args += ["--new-branch", nb] }
@@ -1682,7 +1683,7 @@ struct WorkspaceSwitch: ParsableCommand {
     @Argument var target: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "WorkspaceSwitch")
+        try SpacesOutput.apply(global, command: "WorkspaceSwitch")
         let repo = try (repo.map { try Repository.open(at: URL(fileURLWithPath: $0)) } ?? Repository.open())
         let resolved = try WorktreeOps(repo: repo).resolve(target)
         print("workspace: \(resolved.name)")
@@ -1699,7 +1700,7 @@ struct WorkspaceRemove: ParsableCommand {
     @Argument var name: String
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "WorkspaceRemove")
+        try SpacesOutput.apply(global, command: "WorkspaceRemove")
         var cmd = try WorktreeRemove.parseAsRoot(["--repo", repo ?? ".", name])
         try cmd.run()
     }
@@ -1710,7 +1711,7 @@ struct WorkspaceList: ParsableCommand {
     @Option(name: .long) var repo: String?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "WorkspaceList")
+        try SpacesOutput.apply(global, command: "WorkspaceList")
         var cmd = try WorktreeList.parseAsRoot(["--repo", repo ?? "."])
         try cmd.run()
     }

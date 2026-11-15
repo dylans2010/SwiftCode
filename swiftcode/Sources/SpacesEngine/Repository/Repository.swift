@@ -227,7 +227,7 @@ public final class Repository: @unchecked Sendable {
                 notes.append("index rebuild failed: \(error.localizedDescription)")
             }
         }
-        if let symOpt = try? refs.symbolicHEAD(), let sym = symOpt {
+        if let sym = try? refs.symbolicHEAD() {
             do {
                 let oid = try refs.readRef(sym)
                 if oid == nil {
@@ -303,7 +303,11 @@ public final class Repository: @unchecked Sendable {
         var attempts = 0
         while true {
             attempts += 1
-            let fd = lockURL.path.withCString { open($0, O_WRONLY | O_CREAT | O_EXCL, 0o644) }
+            #if canImport(Darwin)
+            let fd = lockURL.path.withCString { Darwin.open($0, O_WRONLY | O_CREAT | O_EXCL, 0o644) }
+            #else
+            let fd = lockURL.path.withCString { Glibc.open($0, O_WRONLY | O_CREAT | O_EXCL, 0o644) }
+            #endif
             if fd >= 0 {
                 let payload = Data("\(ProcessInfo.processInfo.processIdentifier)\n\(Int64(Date().timeIntervalSince1970))\n".utf8)
                 var writeFailed = false

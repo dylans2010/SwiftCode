@@ -57,12 +57,12 @@ public struct Ed25519Signing {
         migrateLegacyKeyIfPresent()
         #if canImport(CryptoKit)
         let seed = try loadOrCreateSeed()
-        let privateKey = try CryptoKit.Curve25519.Signing.PrivateKey(rawRepresentation: seed)
+        let privateKey = try Crypto.Curve25519.Signing.PrivateKey(rawRepresentation: seed)
         let publicKeyData = privateKey.publicKey.rawRepresentation
         let fingerprint = SigningKeyStore.fingerprint(of: publicKeyData)
         let record = try ensurePublishedPublicKey(publicKeyData: publicKeyData, fingerprint: fingerprint)
         let signature = try privateKey.signature(for: Data(canonical.utf8))
-        return "ed25519.\(fingerprint).\(record.createdAt).\(signature.rawRepresentation.base64EncodedString())"
+        return "ed25519.\(fingerprint).\(record.createdAt).\(signature.base64EncodedString())"
         #else
         return try SigningOps(repo: repo).sign(type: .commit, object: canonical)
         #endif
@@ -195,9 +195,8 @@ public struct Ed25519Signing {
                                 reason: "published public key record or signature encoding is malformed")
         }
         do {
-            let publicKey = try CryptoKit.Curve25519.Signing.PublicKey(rawRepresentation: publicKeyData)
-            let rawSignature = try CryptoKit.Curve25519.Signing.Signature(rawRepresentation: signatureData)
-            let valid = publicKey.isValidSignature(rawSignature, for: Data(canonical.utf8))
+            let publicKey = try Crypto.Curve25519.Signing.PublicKey(rawRepresentation: publicKeyData)
+            let valid = publicKey.isValidSignature(signatureData, for: Data(canonical.utf8))
             return Verification(valid: valid, method: Self.ed25519Method, fingerprint: fingerprint,
                                 reason: valid ? "ed25519 signature verifies against the published public key"
                                     : "ed25519 signature does not match the canonical commit payload")

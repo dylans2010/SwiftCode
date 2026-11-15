@@ -91,7 +91,7 @@ public struct HistoryOps {
     }
 
     
-    public struct ShowResult {
+    public struct ShowResult: Sendable {
         public var info: CommitInfo
         public var diffStat: (added: Int, removed: Int, files: Int)
         public var patch: String
@@ -199,7 +199,7 @@ public struct HistoryOps {
     }
 
     
-    public struct BlameLine {
+    public struct BlameLine: Sendable {
         public var line: String
         public var commit: ObjectID
         public var author: String

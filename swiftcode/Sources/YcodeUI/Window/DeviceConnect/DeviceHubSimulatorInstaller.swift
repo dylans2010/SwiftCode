@@ -396,36 +396,34 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
                 }
             )
 
-            await MainActor.run {
-                self.isRunning = false
-                self.currentRun = nil
-                switch outcome {
-                case .finished:
-                    let verified: Bool
-                    do {
-                        verified = try await DeviceHubRuntimeBrowser().verifyInstalled(
-                            platform: DevicePlatform(rawValue: hubPlatform.rawValue) ?? .unknown)
-                    } catch {
-                        verified = false
-                    }
-                    if verified {
-                        self.progressStage = "\(hubPlatform.title) installation completed successfully!"
-                        self.progressFraction = 1.0
-                        self.queryPlatformStatuses()
-                        onFinished?(true)
-                    } else {
-                        self.progressStage = "\(hubPlatform.title) download finished, but the runtime did not appear in a fresh simctl runtime list."
-                        self.errorMessage = "The download reported success, yet no \(hubPlatform.title) runtime is listed by simctl. Check that Xcode is selected with xcode-select and that the download completed, then try again."
-                        onFinished?(false)
-                    }
-                case .cancelled:
-                    self.progressStage = "Installation cancelled"
-                    onFinished?(false)
-                case .failed(let code, let err):
-                    self.progressStage = "Failed (Exit code \(code))"
-                    self.errorMessage = err
+            self.isRunning = false
+            self.currentRun = nil
+            switch outcome {
+            case .finished:
+                let verified: Bool
+                do {
+                    verified = try await DeviceHubRuntimeBrowser().verifyInstalled(
+                        platform: DevicePlatform(rawValue: hubPlatform.rawValue) ?? .unknown)
+                } catch {
+                    verified = false
+                }
+                if verified {
+                    self.progressStage = "\(hubPlatform.title) installation completed successfully!"
+                    self.progressFraction = 1.0
+                    self.queryPlatformStatuses()
+                    onFinished?(true)
+                } else {
+                    self.progressStage = "\(hubPlatform.title) download finished, but the runtime did not appear in a fresh simctl runtime list."
+                    self.errorMessage = "The download reported success, yet no \(hubPlatform.title) runtime is listed by simctl. Check that Xcode is selected with xcode-select and that the download completed, then try again."
                     onFinished?(false)
                 }
+            case .cancelled:
+                self.progressStage = "Installation cancelled"
+                onFinished?(false)
+            case .failed(let code, let err):
+                self.progressStage = "Failed (Exit code \(code))"
+                self.errorMessage = err
+                onFinished?(false)
             }
         }
     }

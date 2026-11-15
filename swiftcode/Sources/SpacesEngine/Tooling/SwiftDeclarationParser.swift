@@ -11,7 +11,7 @@ public enum SwiftDeclarationParser {
         case protocolType = "protocol"
         case variable = "var"
         case constant = "let"
-        case typealias = "typealias"
+        case `typealias` = "typealias"
         case initializer = "init"
         case extensionType = "extension"
     }
@@ -135,7 +135,7 @@ public enum SwiftDeclarationParser {
         case "protocol": kind = .protocolType
         case "var": kind = .variable
         case "let": kind = .constant
-        case "typealias": kind = .typealias
+        case "typealias": kind = .`typealias`
         case "init": kind = .initializer
         case "extension": kind = .extensionType
         default: kind = nil

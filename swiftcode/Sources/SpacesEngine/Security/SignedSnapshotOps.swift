@@ -83,7 +83,7 @@ public struct SignedSnapshotOps {
             timestamp: record.timestamp,
             keyFingerprint: fingerprint,
             method: Self.signingMethod,
-            verified: (try? verifySnapshotSignature(rev)) ?? false)
+            verified: (try? verifySnapshotSignature(rev: rev)) ?? false)
     }
 
     public func verifySnapshotSignature(rev: String) throws -> Bool {

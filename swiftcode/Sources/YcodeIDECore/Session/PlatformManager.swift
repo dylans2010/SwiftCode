@@ -584,6 +584,6 @@ public final class PlatformManager {
             environment: environment,
             discoveryError: discoveryError
         )
-        Logger.discovery.info("[PLATFORM-MANAGER] Refreshed \(snapshot.platforms.count) platforms; installed: \(snapshot.installedPlatforms.count), missing: \(snapshot.missingPlatforms.count).")
+        Logger.discovery.info("[PLATFORM-MANAGER] Refreshed \(self.snapshot.platforms.count) platforms; installed: \(self.snapshot.installedPlatforms.count), missing: \(self.snapshot.missingPlatforms.count).")
     }
 }

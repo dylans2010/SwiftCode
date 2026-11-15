@@ -90,7 +90,7 @@ public struct ChangeValidationOps {
         }
         var components = Set<String>()
         for path in paths {
-            if let component = component(for: path) {
+            if let component = Self.component(for: path) {
                 components.insert(component)
             }
         }

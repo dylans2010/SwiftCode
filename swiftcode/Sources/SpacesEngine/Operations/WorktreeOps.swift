@@ -90,9 +90,8 @@ public struct WorktreeOps {
         let isOID = wt.head.count == 40 && wt.head.allSatisfy { $0.isHexDigit }
         let branch = (!isOID && wt.head != "(detached)") ? wt.head : nil
         var oid: String? = isOID ? wt.head : nil
-        if oid == nil, let branch, let refOID = try? repo.refs.readRef("refs/heads/\(branch)"),
-           let resolved = refOID {
-            oid = resolved.hex
+        if oid == nil, let branch, let refOID = try? repo.refs.readRef("refs/heads/\(branch)") {
+            oid = refOID.hex
         }
         if oid == nil, wt.isMain {
             oid = try repo.refs.headOID(objects: repo.objects)?.hex

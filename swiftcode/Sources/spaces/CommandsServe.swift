@@ -9,6 +9,14 @@ import Darwin
 import Glibc
 #endif
 
+private func cExit(_ code: Int32) -> Never {
+    #if canImport(Darwin)
+    Darwin.exit(code)
+    #else
+    Glibc.exit(code)
+    #endif
+}
+
 
 struct Serve: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Serve a repository over spaces-proto/1 (NDJSON on stdio; --http-port serves HTTP instead)")
@@ -16,7 +24,7 @@ struct Serve: ParsableCommand {
     @Option(name: .long) var httpPort: Int?
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "Serve")
+        try SpacesOutput.apply(global, command: "Serve")
         var location = URL(fileURLWithPath: path)
         if location.lastPathComponent == RepositoryFormat.metadataDirectoryName {
             location = location.deletingLastPathComponent()
@@ -37,11 +45,11 @@ struct Serve: ParsableCommand {
             _ = signal(SIGTERM, SIG_IGN)
             interrupt.setEventHandler {
                 server.stop()
-                exit(0)
+                cExit(0)
             }
             terminate.setEventHandler {
                 server.stop()
-                exit(0)
+                cExit(0)
             }
             interrupt.resume()
             terminate.resume()

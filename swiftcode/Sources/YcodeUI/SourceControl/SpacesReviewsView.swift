@@ -204,8 +204,7 @@ final class SpacesReviewsModel {
             error = "ownership rule: pattern and at least one owner are required"
             return
         }
-        var rules = ownershipRules
-        rules.append(OwnershipOps.Rule(pattern: pattern, owners: owners))
+        let rules = ownershipRules + [OwnershipOps.Rule(pattern: pattern, owners: owners)]
         perform("save ownership rules") { try $0.setOwnershipRules(rules) }
         ownershipPattern = ""
         ownershipOwners = ""

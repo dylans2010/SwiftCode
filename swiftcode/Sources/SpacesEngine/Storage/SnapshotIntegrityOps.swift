@@ -69,7 +69,7 @@ public struct SnapshotIntegrityOps {
     public func verifyAllSnapshots() throws -> [SnapshotVerification] {
         var results: [SnapshotVerification] = []
         for snapshot in try SnapshotOps(repo: repo).list() {
-            results.append(try verifySnapshot(snapshot.oid.hex))
+            results.append(try verifySnapshot(rev: snapshot.oid.hex))
         }
         return results
     }

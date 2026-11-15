@@ -7,7 +7,7 @@ public struct SemanticSearchOps {
     public enum SymbolKind: String, Codable, Sendable, CaseIterable {
         case function, classType = "class", structType = "struct", enumType = "enum",
              protocolType = "protocol", extensionType = "extension",
-             variable, typealias, moduleImport = "import"
+             variable, `typealias`, moduleImport = "import"
     }
 
     public struct Symbol: Codable, Sendable, Hashable {
@@ -49,7 +49,7 @@ public struct SemanticSearchOps {
             ("^\\s*(?:(?:public|private|fileprivate|internal|open|final|override|static|class|lazy|weak|unowned)\\s+)*(var|let)\\s+([A-Za-z_][A-Za-z0-9_]*)",
              { _ in .variable }),
             ("^\\s*typealias\\s+([A-Za-z_][A-Za-z0-9_]*)",
-             { _ in .typealias }),
+             { _ in .`typealias` }),
             ("^\\s*(?:@testable\\s+)?import\\s+([A-Za-z_][A-Za-z0-9_.]*)",
              { _ in .moduleImport }),
         ]

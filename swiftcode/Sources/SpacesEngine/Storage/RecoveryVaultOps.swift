@@ -41,7 +41,7 @@ public struct RecoveryVaultOps {
                 guard let data = try? Data(contentsOf: url) else {
                     throw SpacesError.pathNotFound(path)
                 }
-                let blob = try repo.objects.write(.blob, payload: data)
+                let blob = try repo.objects.write(type: .blob, payload: data)
                 let entry = VaultEntry(id: UUID().uuidString, path: path, blob: blob.hex,
                                        timestamp: Int64(Date().timeIntervalSince1970),
                                        reason: reason, size: Int64(data.count))

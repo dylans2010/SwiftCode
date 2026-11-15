@@ -94,7 +94,7 @@ public actor GitService {
         env["GIT_TERMINAL_PROMPT"] = "0"
         var args: [String] = ["clone"]
         if let token, !token.isEmpty {
-            guard token.unicodeScalars.allSatisfy({ !$0.properties.isControl }),
+            guard token.unicodeScalars.allSatisfy({ $0.properties.generalCategory != .control }),
                   let scheme = remoteURL.scheme?.lowercased(),
                   scheme == "http" || scheme == "https",
                   let host = remoteURL.host, !host.isEmpty else {

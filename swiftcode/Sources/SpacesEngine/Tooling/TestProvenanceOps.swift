@@ -37,8 +37,8 @@ public struct TestProvenanceOps {
         guard !suite.isEmpty else { throw SpacesError.invalidArgument("suite must not be empty") }
         guard passed >= 0 && failed >= 0 else { throw SpacesError.invalidArgument("passed and failed must not be negative") }
         let headHex: String
-        if let head = try? repo.refs.headOID(objects: repo.objects), let oid = head {
-            headHex = oid.hex
+        if let head = try? repo.refs.headOID(objects: repo.objects) {
+            headHex = head.hex
         } else {
             headHex = ""
         }
@@ -82,8 +82,8 @@ public struct TestProvenanceOps {
             failures = tail.isEmpty ? ["command exited with status \(outcome.exitCode)"] : tail
         }
         let headHex: String
-        if let head = try? repo.refs.headOID(objects: repo.objects), let oid = head {
-            headHex = oid.hex
+        if let head = try? repo.refs.headOID(objects: repo.objects) {
+            headHex = head.hex
         } else {
             headHex = ""
         }

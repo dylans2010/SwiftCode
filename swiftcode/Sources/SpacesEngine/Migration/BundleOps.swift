@@ -16,6 +16,7 @@ public enum BundleOps {
 
     public struct BundleReport: Sendable, Encodable {
         public var objectCount: Int
+        public var objects: [String]
         public var refs: [String: String]
         public var created: Int64
     }
@@ -78,6 +79,7 @@ public enum BundleOps {
     public static func inspect(path: String) throws -> BundleReport {
         let (header, _) = try readBundle(path: path)
         return BundleReport(objectCount: header.objects.count,
+                            objects: header.objects,
                             refs: header.refs, created: header.created)
     }
 
@@ -97,6 +99,7 @@ public enum BundleOps {
             throw SpacesError.objectNotFound(oidHex)
         }
         return BundleReport(objectCount: objects.count,
+                            objects: objects.map { $0.0 }.sorted(),
                             refs: header.refs, created: header.created)
     }
 
@@ -117,8 +120,8 @@ public enum BundleOps {
             guard let oid = try? ObjectID(validating: oidHex) else { continue }
             _ = try repo.refs.updateRef(name, to: oid)
         }
-        return BundleReport(objectCount: objects.count, refs: header.refs,
-                            created: header.created)
+        return BundleReport(objectCount: objects.count, objects: objects.map { $0.0 }.sorted(),
+                            refs: header.refs, created: header.created)
     }
 
     

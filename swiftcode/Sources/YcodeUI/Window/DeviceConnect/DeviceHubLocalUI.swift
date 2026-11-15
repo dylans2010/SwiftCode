@@ -38,7 +38,7 @@ struct SimulatorAccessibilityState {
 }
 
 enum SimulatorAccessibilityCache {
-    static var states: [String: SimulatorAccessibilityState] = [:]
+    nonisolated(unsafe) static var states: [String: SimulatorAccessibilityState] = [:]
 }
 
 extension DevicesController {

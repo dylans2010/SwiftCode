@@ -9,7 +9,7 @@ struct Provenance: ParsableCommand {
     @Argument(help: "Revision to verify") var rev: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "Provenance")
+        try SpacesOutput.apply(output, command: "Provenance")
         let api = try openAPI(repoOptions)
         let checks = try api.verifyProvenance(rev: rev)
         if output.jsonRequested { printJSON(checks); return }
@@ -34,7 +34,7 @@ struct PolicyShow: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "PolicyShow")
+        try SpacesOutput.apply(output, command: "PolicyShow")
         let api = try openAPI(repoOptions)
         let policy = try api.repositoryPolicy()
         if output.jsonRequested { printJSON(policy); return }
@@ -54,7 +54,7 @@ struct PolicyCheck: ParsableCommand {
     @Option(name: .long, help: "Path involved in the operation") var path: [String] = []
 
     func run() throws {
-        SpacesOutput.apply(output, command: "PolicyCheck")
+        try SpacesOutput.apply(output, command: "PolicyCheck")
         let api = try openAPI(repoOptions)
         guard let parsed = PolicyEngineOps.PolicyOperation(rawValue: operation) else {
             throw SpacesError.invalidArgument("unknown policy operation: \(operation)")
@@ -79,7 +79,7 @@ struct SecurityReport: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "SecurityReport")
+        try SpacesOutput.apply(output, command: "SecurityReport")
         let api = try openAPI(repoOptions)
         let report = try api.generateSecurityReport()
         if output.jsonRequested { printJSON(report); return }
@@ -108,7 +108,7 @@ struct SecretHistory: ParsableCommand {
     @Option(name: .long, help: "Maximum findings") var limit: Int = 100
 
     func run() throws {
-        SpacesOutput.apply(output, command: "SecretHistory")
+        try SpacesOutput.apply(output, command: "SecretHistory")
         let api = try openAPI(repoOptions)
         let findings = try api.secretHistory(limit: limit)
         if output.jsonRequested { printJSON(findings); return }
@@ -134,7 +134,7 @@ struct OwnershipRules: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "OwnershipRules")
+        try SpacesOutput.apply(output, command: "OwnershipRules")
         let api = try openAPI(repoOptions)
         let rules = try api.ownershipRules()
         if output.jsonRequested { printJSON(rules); return }
@@ -152,7 +152,7 @@ struct OwnershipOwners: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "OwnershipOwners")
+        try SpacesOutput.apply(global, command: "OwnershipOwners")
         let api = try openAPI(repoOptions)
         let owners = try api.ownersOf(path: path)
         if owners.isEmpty {
@@ -177,7 +177,7 @@ struct ReviewCreate: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ReviewCreate")
+        try SpacesOutput.apply(global, command: "ReviewCreate")
         let api = try openAPI(repoOptions)
         let review = try api.createReview(title: title, base: base, head: head)
         print("created review \(review.id): \(review.title)")
@@ -190,7 +190,7 @@ struct ReviewList: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "ReviewList")
+        try SpacesOutput.apply(output, command: "ReviewList")
         let api = try openAPI(repoOptions)
         let reviews = try api.listReviews()
         if output.jsonRequested { printJSON(reviews); return }
@@ -208,7 +208,7 @@ struct ReviewStatusCmd: ParsableCommand {
     @Argument(help: "Review id") var id: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "ReviewStatusCmd")
+        try SpacesOutput.apply(output, command: "ReviewStatusCmd")
         let api = try openAPI(repoOptions)
         let status = try api.reviewStatus(id: id)
         if output.jsonRequested {
@@ -228,7 +228,7 @@ struct ReviewApprove: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ReviewApprove")
+        try SpacesOutput.apply(global, command: "ReviewApprove")
         let api = try openAPI(repoOptions)
         let review = try api.approveReview(id: id, reviewer: reviewer)
         print("review \(review.id) approved by \(reviewer): \(review.status.rawValue)")
@@ -242,7 +242,7 @@ struct ReviewStatus: ParsableCommand {
     @Argument(help: "Review id") var id: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "ReviewStatus")
+        try SpacesOutput.apply(output, command: "ReviewStatus")
         let api = try openAPI(repoOptions)
         let status = try api.reviewStatus(id: id)
         if output.jsonRequested {
@@ -269,7 +269,7 @@ struct DiscussionAdd: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "DiscussionAdd")
+        try SpacesOutput.apply(global, command: "DiscussionAdd")
         let api = try openAPI(repoOptions)
         let comment = try api.addComment(review: review, path: path, line: line, body: body)
         print("added comment \(comment.id) on \(comment.path):\(comment.line)")
@@ -283,7 +283,7 @@ struct DiscussionList: ParsableCommand {
     @Argument(help: "Review id") var review: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "DiscussionList")
+        try SpacesOutput.apply(output, command: "DiscussionList")
         let api = try openAPI(repoOptions)
         let comments = try api.listComments(review: review)
         if output.jsonRequested { printJSON(comments); return }
@@ -302,7 +302,7 @@ struct DiscussionResolve: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "DiscussionResolve")
+        try SpacesOutput.apply(global, command: "DiscussionResolve")
         let api = try openAPI(repoOptions)
         let comment = try api.resolveComment(review: review, id: id)
         print("resolved comment \(comment.id) on \(comment.path):\(comment.line)")
@@ -320,7 +320,7 @@ struct NotificationsRules: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "NotificationsRules")
+        try SpacesOutput.apply(output, command: "NotificationsRules")
         let api = try openAPI(repoOptions)
         let rules = try api.notificationRules()
         if output.jsonRequested { printJSON(rules); return }
@@ -337,7 +337,7 @@ struct NotificationsPending: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "NotificationsPending")
+        try SpacesOutput.apply(global, command: "NotificationsPending")
         let api = try openAPI(repoOptions)
         let pending = try api.pendingNotifications()
         for notification in pending {
@@ -353,7 +353,7 @@ struct NotificationsSeen: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "NotificationsSeen")
+        try SpacesOutput.apply(global, command: "NotificationsSeen")
         let api = try openAPI(repoOptions)
         try api.markNotificationsSeen()
         print("notifications marked seen")
@@ -372,7 +372,7 @@ struct BackupCreate: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BackupCreate")
+        try SpacesOutput.apply(global, command: "BackupCreate")
         let api = try openAPI(repoOptions)
         let manifest = try api.createBackup(to: path)
         print("backup \(manifest.id) created at \(path): \(manifest.objects.count) object(s)")
@@ -386,7 +386,7 @@ struct BackupVerifyCmd: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BackupVerifyCmd")
+        try SpacesOutput.apply(global, command: "BackupVerifyCmd")
         let api = try openAPI(repoOptions)
         let report = try api.verifyBackup(url: path)
         print("backup OK: \(report.objectCount) object(s), \(report.refs.count) ref(s)")
@@ -400,7 +400,7 @@ struct BackupRestoreCmd: ParsableCommand {
     @Argument(help: "Backup path") var path: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "BackupRestoreCmd")
+        try SpacesOutput.apply(output, command: "BackupRestoreCmd")
         try requireDestructiveConfirmation(output, operation: "backup restore")
         let api = try openAPI(repoOptions)
         let report = try api.restoreBackup(url: path)
@@ -414,7 +414,7 @@ struct BackupList: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "BackupList")
+        try SpacesOutput.apply(output, command: "BackupList")
         let api = try openAPI(repoOptions)
         let backups = try api.backups()
         if output.jsonRequested { printJSON(backups); return }
@@ -432,7 +432,7 @@ struct BackupVerify: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BackupVerify")
+        try SpacesOutput.apply(global, command: "BackupVerify")
         let api = try openAPI(repoOptions)
         let report = try api.verifyBackup(url: path)
         print("backup OK: \(report.objectCount) object(s), \(report.refs.count) ref(s)")
@@ -446,7 +446,7 @@ struct BackupRestore: ParsableCommand {
     @Argument(help: "Backup path") var path: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "BackupRestore")
+        try SpacesOutput.apply(output, command: "BackupRestore")
         try requireDestructiveConfirmation(output, operation: "backup-restore")
         let api = try openAPI(repoOptions)
         let report = try api.restoreBackup(url: path)
@@ -460,7 +460,7 @@ struct StorageHeatmap: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "StorageHeatmap")
+        try SpacesOutput.apply(output, command: "StorageHeatmap")
         let api = try openAPI(repoOptions)
         let heatmap = try api.storageHeatmap()
         if output.jsonRequested { printJSON(heatmap); return }
@@ -492,7 +492,7 @@ struct StorageProfileList: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "StorageProfileList")
+        try SpacesOutput.apply(output, command: "StorageProfileList")
         let api = try openAPI(repoOptions)
         let profiles = try api.compactionProfiles()
         if output.jsonRequested { printJSON(profiles); return }
@@ -510,7 +510,7 @@ struct StorageProfileApply: ParsableCommand {
     @Argument(help: "Profile name") var name: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "StorageProfileApply")
+        try SpacesOutput.apply(output, command: "StorageProfileApply")
         try requireDestructiveConfirmation(output, operation: "storage-profile apply")
         let api = try openAPI(repoOptions)
         let result = try api.applyCompactionProfile(name: name)
@@ -530,7 +530,7 @@ struct WorkspaceTemplateCreate: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "WorkspaceTemplateCreate")
+        try SpacesOutput.apply(global, command: "WorkspaceTemplateCreate")
         let repo = try repoOptions.openRepo()
         let api = SpacesAPI(repo: repo)
         let config = WorkspaceTemplateOps.Config(defaultBranch: repo.config.core.defaultBranch)
@@ -545,7 +545,7 @@ struct WorkspaceTemplateList: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "WorkspaceTemplateList")
+        try SpacesOutput.apply(output, command: "WorkspaceTemplateList")
         let api = try openAPI(repoOptions)
         let templates = try api.workspaceTemplates()
         if output.jsonRequested { printJSON(templates); return }
@@ -563,7 +563,7 @@ struct WorkspaceTemplateApply: ParsableCommand {
     @Argument(help: "Template name") var name: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "WorkspaceTemplateApply")
+        try SpacesOutput.apply(output, command: "WorkspaceTemplateApply")
         try requireDestructiveConfirmation(output, operation: "workspace-template apply")
         let api = try openAPI(repoOptions)
         try api.applyWorkspaceTemplate(name: name)
@@ -582,7 +582,7 @@ struct AutomationList: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "AutomationList")
+        try SpacesOutput.apply(output, command: "AutomationList")
         let api = try openAPI(repoOptions)
         let pipelines = try api.automationPipelines()
         if output.jsonRequested { printJSON(pipelines); return }
@@ -600,7 +600,7 @@ struct AutomationRun: ParsableCommand {
     @Argument(help: "Event: post-commit, post-merge, post-checkout") var event: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "AutomationRun")
+        try SpacesOutput.apply(output, command: "AutomationRun")
         let api = try openAPI(repoOptions)
         guard let parsed = AutomationOps.AutomationEvent(rawValue: event) else {
             throw SpacesError.invalidArgument("unknown automation event: \(event)")
@@ -628,7 +628,7 @@ struct PatchCollectionCreate: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "PatchCollectionCreate")
+        try SpacesOutput.apply(global, command: "PatchCollectionCreate")
         let api = try openAPI(repoOptions)
         let collection = try api.createPatchCollection(name: name, from: from, to: to)
         print("created patch collection \(collection.name): \(collection.patches.count) patch(es)")
@@ -641,7 +641,7 @@ struct PatchCollectionList: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "PatchCollectionList")
+        try SpacesOutput.apply(output, command: "PatchCollectionList")
         let api = try openAPI(repoOptions)
         let collections = try api.patchCollections()
         if output.jsonRequested { printJSON(collections); return }
@@ -659,7 +659,7 @@ struct PatchCollectionApply: ParsableCommand {
     @Argument(help: "Collection name") var name: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "PatchCollectionApply")
+        try SpacesOutput.apply(output, command: "PatchCollectionApply")
         try requireDestructiveConfirmation(output, operation: "patch-collection apply")
         let api = try openAPI(repoOptions)
         let applied = try api.applyPatchCollection(name: name)
@@ -676,7 +676,7 @@ struct SymbolHistory: ParsableCommand {
     @Option(name: .long, help: "File path to trace the symbol in") var path: String = ""
 
     func run() throws {
-        SpacesOutput.apply(output, command: "SymbolHistory")
+        try SpacesOutput.apply(output, command: "SymbolHistory")
         guard !path.isEmpty else {
             throw SpacesError.invalidArgument("symbol-history requires --path")
         }
@@ -699,7 +699,7 @@ struct ApiCompatibility: ParsableCommand {
     @Flag(name: .long, help: "Allow breaking changes") var allowBreaking: Bool = false
 
     func run() throws {
-        SpacesOutput.apply(output, command: "ApiCompatibility")
+        try SpacesOutput.apply(output, command: "ApiCompatibility")
         let api = try openAPI(repoOptions)
         let changes = try api.apiCompatibilityBetween(from: from, to: to)
         if output.jsonRequested { printJSON(changes); return }
@@ -729,7 +729,7 @@ struct TestProvenanceRecord: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "TestProvenanceRecord")
+        try SpacesOutput.apply(global, command: "TestProvenanceRecord")
         let repo = try repoOptions.openRepo()
         let api = SpacesAPI(repo: repo)
         let oid = try repo.resolveRevision(commit)
@@ -745,7 +745,7 @@ struct TestProvenanceList: ParsableCommand {
     @Option(name: .long, help: "Commit revision") var commit: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "TestProvenanceList")
+        try SpacesOutput.apply(output, command: "TestProvenanceList")
         let repo = try repoOptions.openRepo()
         let api = SpacesAPI(repo: repo)
         let oid = try repo.resolveRevision(commit)
@@ -773,7 +773,7 @@ struct BuildImpactRecord: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BuildImpactRecord")
+        try SpacesOutput.apply(global, command: "BuildImpactRecord")
         let repo = try repoOptions.openRepo()
         let api = SpacesAPI(repo: repo)
         let oid = try repo.resolveRevision(commit)
@@ -792,7 +792,7 @@ struct BuildImpactHistory: ParsableCommand {
     @Option(name: .long, help: "Commit revision") var commit: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "BuildImpactHistory")
+        try SpacesOutput.apply(output, command: "BuildImpactHistory")
         let repo = try repoOptions.openRepo()
         let api = SpacesAPI(repo: repo)
         let oid = try repo.resolveRevision(commit)
@@ -816,7 +816,7 @@ struct Performance: ParsableCommand {
     }
 
     func run() throws {
-        SpacesOutput.apply(output, command: "Performance")
+        try SpacesOutput.apply(output, command: "Performance")
         let api = try openAPI(repoOptions)
         var samples: [PerformanceProfilerOps.ProfileSample] = []
         for operation in PerformanceProfilerOps.ProfileOperation.allCases {
@@ -845,7 +845,7 @@ struct OperationUndoList: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "OperationUndoList")
+        try SpacesOutput.apply(output, command: "OperationUndoList")
         let api = try openAPI(repoOptions)
         let operations = try api.undoableOperations()
         if output.jsonRequested { printJSON(operations); return }
@@ -862,7 +862,7 @@ struct OperationUndoUndo: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "OperationUndoUndo")
+        try SpacesOutput.apply(output, command: "OperationUndoUndo")
         try requireDestructiveConfirmation(output, operation: "operation-undo undo")
         let api = try openAPI(repoOptions)
         let record = try api.undoLast()
@@ -876,7 +876,7 @@ struct History: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "History")
+        try SpacesOutput.apply(global, command: "History")
         var cmd = try Log.parseAsRoot(["--repo", repoOptions.repo ?? "."])
         try cmd.run()
     }

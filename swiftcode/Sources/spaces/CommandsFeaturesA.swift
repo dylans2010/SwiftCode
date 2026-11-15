@@ -21,7 +21,7 @@ struct SemanticSearch: ParsableCommand {
     @Option(name: .long, help: "Maximum matches") var limit: Int = 100
 
     func run() throws {
-        SpacesOutput.apply(output, command: "SemanticSearch")
+        try SpacesOutput.apply(output, command: "SemanticSearch")
         let api = try openAPI(repoOptions)
         var symbolKind: SemanticSearchOps.SymbolKind?
         if let kind {
@@ -57,7 +57,7 @@ struct HistorySearch: ParsableCommand {
     }
 
     func run() throws {
-        SpacesOutput.apply(output, command: "HistorySearch")
+        try SpacesOutput.apply(output, command: "HistorySearch")
         let api = try openAPI(repoOptions)
         let matches = try api.historySearch(query: query, limit: limit, useRegex: regex)
         if output.jsonRequested {
@@ -78,7 +78,7 @@ struct Dependencies: ParsableCommand {
     @Flag(name: .long, help: "Rebuild the graph from current files") var refresh: Bool = false
 
     func run() throws {
-        SpacesOutput.apply(output, command: "Dependencies")
+        try SpacesOutput.apply(output, command: "Dependencies")
         let api = try openAPI(repoOptions)
         let graph = refresh ? try api.refreshDependencyGraph() : try api.dependencyGraph()
         if output.jsonRequested { printJSON(graph); return }
@@ -106,7 +106,7 @@ struct FileEvolution: ParsableCommand {
     }
 
     func run() throws {
-        SpacesOutput.apply(output, command: "FileEvolution")
+        try SpacesOutput.apply(output, command: "FileEvolution")
         let api = try openAPI(repoOptions)
         let steps = try api.fileEvolution(path: path, limit: limit)
         if output.jsonRequested {
@@ -135,7 +135,7 @@ struct BranchStackCreate: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BranchStackCreate")
+        try SpacesOutput.apply(global, command: "BranchStackCreate")
         let repo = try repoOptions.openRepo()
         let api = SpacesAPI(repo: repo)
         let resolvedBase: String
@@ -157,7 +157,7 @@ struct BranchStackList: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "BranchStackList")
+        try SpacesOutput.apply(output, command: "BranchStackList")
         let api = try openAPI(repoOptions)
         let stacks = try api.branchStacks()
         if output.jsonRequested { printJSON(stacks); return }
@@ -175,7 +175,7 @@ struct BranchStackStatusCmd: ParsableCommand {
     @Argument(help: "Stack name") var name: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "BranchStackStatusCmd")
+        try SpacesOutput.apply(output, command: "BranchStackStatusCmd")
         let api = try openAPI(repoOptions)
         let status = try api.branchStackStatus(name: name)
         if output.jsonRequested { printJSON(status); return }
@@ -194,7 +194,7 @@ struct BranchStackUpdate: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BranchStackUpdate")
+        try SpacesOutput.apply(global, command: "BranchStackUpdate")
         let api = try openAPI(repoOptions)
         let record = try api.updateBranchStack(name: name, branches: branches)
         print("updated stack \(record.name): \(record.branches.joined(separator: ", "))")
@@ -214,7 +214,7 @@ struct BranchCheckpointCreate: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "BranchCheckpointCreate")
+        try SpacesOutput.apply(global, command: "BranchCheckpointCreate")
         let api = try openAPI(repoOptions)
         let oid = try api.createBranchCheckpoint(branch: branch, name: name)
         print("checkpoint \(name) for branch \(branch): \(oid.hex.prefix(12))")
@@ -228,7 +228,7 @@ struct BranchCheckpointList: ParsableCommand {
     @Argument(help: "Branch name") var branch: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "BranchCheckpointList")
+        try SpacesOutput.apply(output, command: "BranchCheckpointList")
         let api = try openAPI(repoOptions)
         let checkpoints = try api.branchCheckpoints(branch: branch)
         if output.jsonRequested { printJSON(checkpoints); return }
@@ -247,7 +247,7 @@ struct BranchCheckpointRestore: ParsableCommand {
     @Argument(help: "Checkpoint name") var name: String
 
     func run() throws {
-        SpacesOutput.apply(output, command: "BranchCheckpointRestore")
+        try SpacesOutput.apply(output, command: "BranchCheckpointRestore")
         try requireDestructiveConfirmation(output, operation: "branch-checkpoint restore")
         let api = try openAPI(repoOptions)
         try api.restoreBranchCheckpoint(branch: branch, name: name)
@@ -268,7 +268,7 @@ struct ChangeSetCreate: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ChangeSetCreate")
+        try SpacesOutput.apply(global, command: "ChangeSetCreate")
         let api = try openAPI(repoOptions)
         let record = try api.createChangeSet(name: name, description: description)
         print("created change set \(record.id) (\(record.name))")
@@ -281,7 +281,7 @@ struct ChangeSetList: ParsableCommand {
     @OptionGroup var output: OutputOptions
 
     func run() throws {
-        SpacesOutput.apply(output, command: "ChangeSetList")
+        try SpacesOutput.apply(output, command: "ChangeSetList")
         let api = try openAPI(repoOptions)
         let sets = try api.changeSets()
         if output.jsonRequested { printJSON(sets); return }
@@ -300,7 +300,7 @@ struct ChangeSetAdd: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ChangeSetAdd")
+        try SpacesOutput.apply(global, command: "ChangeSetAdd")
         let api = try openAPI(repoOptions)
         let record = try api.addToChangeSet(id: id, path: path)
         print("added \(path) to change set \(record.id) (\(record.paths.count) path(s))")
@@ -314,7 +314,7 @@ struct ChangeSetStage: ParsableCommand {
 
     @OptionGroup var global: GlobalOptions
     func run() throws {
-        SpacesOutput.apply(global, command: "ChangeSetStage")
+        try SpacesOutput.apply(global, command: "ChangeSetStage")
         let api = try openAPI(repoOptions)
         let staged = try api.stageChangeSet(id: id)
         for path in staged { print("staged \(path)") }
