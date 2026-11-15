@@ -1,22 +1,22 @@
 import Foundation
 
 enum SecurityFileStore {
-    static func url(repo: Repository, relative: String) -> URL {
-        repo.metaURL.appendingPathComponent(relative)
+    static func url(repo: Repository, relativePath: String) -> URL {
+        repo.metaURL.appendingPathComponent(relativePath)
     }
 
-    static func load<T: Decodable>(repo: Repository, relative: String) throws -> T? {
-        let file = url(repo: repo, relative: relative)
+    static func load<T: Decodable>(repo: Repository, relativePath: String) throws -> T? {
+        let file = url(repo: repo, relativePath: relativePath)
         guard FileManager.default.fileExists(atPath: file.path) else { return nil }
         do {
             return try JSONDecoder().decode(T.self, from: Data(contentsOf: file))
         } catch {
-            throw SpacesError.configError("cannot parse \(relative): \(error.localizedDescription)")
+            throw SpacesError.configError("cannot parse \(relativePath): \(error.localizedDescription)")
         }
     }
 
-    static func save<T: Encodable>(repo: Repository, relative: String, value: T) throws {
-        let file = url(repo: repo, relative: relative)
+    static func save<T: Encodable>(repo: Repository, relativePath: String, value: T) throws {
+        let file = url(repo: repo, relativePath: relativePath)
         try FileManager.default.createDirectory(
             at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         let encoder = JSONEncoder()
@@ -24,8 +24,8 @@ enum SecurityFileStore {
         try encoder.encode(value).write(to: file, options: .atomic)
     }
 
-    static func appendLine(repo: Repository, relative: String, line: String) throws {
-        let file = url(repo: repo, relative: relative)
+    static func appendLine(repo: Repository, relativePath: String, line: String) throws {
+        let file = url(repo: repo, relativePath: relativePath)
         try FileManager.default.createDirectory(
             at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         if !FileManager.default.fileExists(atPath: file.path) {
@@ -37,8 +37,8 @@ enum SecurityFileStore {
         try handle.write(contentsOf: Data((line + "\n").utf8))
     }
 
-    static func readLines(repo: Repository, relative: String) -> [String] {
-        let file = url(repo: repo, relative: relative)
+    static func readLines(repo: Repository, relativePath: String) -> [String] {
+        let file = url(repo: repo, relativePath: relativePath)
         guard let text = try? String(contentsOf: file, encoding: .utf8) else { return [] }
         return text.components(separatedBy: "\n").filter { !$0.isEmpty }
     }

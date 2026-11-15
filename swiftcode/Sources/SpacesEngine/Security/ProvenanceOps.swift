@@ -71,18 +71,17 @@ public struct ProvenanceOps {
         }
         checks.append(ProvenanceCheck(name: "ancestry-intact", passed: ancestryPassed, detail: ancestryDetail))
         if let signature = commit.metadata.signature {
-            let valid: Bool
+            let result: Ed25519Signing.Verification
             do {
-                valid = try SigningOps(repo: repo).verify(
-                    type: .commit, object: oid.hex + commit.message, signature: signature)
+                result = try Ed25519Signing(repo: repo).verifyCommit(oid: oid, payload: commit)
             } catch {
-                valid = false
+                result = Ed25519Signing.Verification(valid: false, method: "", fingerprint: nil,
+                                                      reason: "signature verification failed: \(error.localizedDescription)")
             }
             checks.append(ProvenanceCheck(
                 name: "signature",
-                passed: valid,
-                detail: valid ? "signature verifies against the repository signing key"
-                    : "signature does not verify"))
+                passed: result.valid,
+                detail: result.reason))
         } else {
             let policy = try PolicyEngineOps(repo: repo).repositoryPolicy()
             let required = policy.rules.contains {
