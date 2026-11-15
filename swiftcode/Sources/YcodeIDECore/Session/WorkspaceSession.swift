@@ -16,7 +16,8 @@ public final class WorkspaceSession {
 
     public enum Change { case activity, issues, breakpoints, console, debugState, reports, tests, process }
 
-    public var model: WorkspaceModel { didSet { issueTargetStore.targets = [:] } }
+    public var model: WorkspaceModel { didSet { issueTargetStore.targets = [:]; targetNameIndex = nil } }
+    private var targetNameIndex: (files: [String: String], groups: [(String, String)])?
     public var scheme: String? { didSet { if scheme != oldValue { buildContextChanged() } } }
     public var destination: Destination? { didSet { if destination?.specifier != oldValue?.specifier { buildContextChanged() } } }
     public var engine: BuildEngine = BuildSystemPreference.current().makeEngine()
@@ -147,8 +148,17 @@ public final class WorkspaceSession {
     }
 
     public func runnerIdentifier(_ t: DiscoveredTest) -> String {
-        guard model.kind != .package, let target = model.targetName(compiling: t.file) else { return t.identifier }
+        guard model.kind != .package, let target = targetName(forFile: t.file) else { return t.identifier }
         return "\(target)/\(t.identifier)"
+    }
+
+    /// Name of the build target compiling `file`, resolved through a cached
+    /// one-pass index so repeated lookups (test discovery, reports) do not
+    /// rescan and re-stat every build-file path in the project.
+    public func targetName(forFile file: String) -> String? {
+        if targetNameIndex == nil { targetNameIndex = model.targetNameIndex() }
+        guard let index = targetNameIndex else { return nil }
+        return model.targetName(compiling: file, in: index)
     }
 
     static func sdkName(for destination: String) -> String {
@@ -171,7 +181,7 @@ public final class WorkspaceSession {
         c.duration = Date().timeIntervalSince(started)
         if action == "Test" {
             c.plan = effectiveTestPlan
-            c.testTargets = max(1, Set(tests.map { model.kind == .package ? URL(fileURLWithPath: $0.file).deletingLastPathComponent().lastPathComponent : (model.targetName(compiling: $0.file) ?? "") }).count)
+            c.testTargets = max(1, Set(tests.map { model.kind == .package ? URL(fileURLWithPath: $0.file).deletingLastPathComponent().lastPathComponent : (targetName(forFile: $0.file) ?? "") }).count)
         }
         return c
     }

@@ -332,7 +332,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
                 let parts = file.components(separatedBy: "/Tests/")
                 if parts.count > 1, let t = parts.last?.split(separator: "/").first { return String(t) }
             }
-            return self.session.model.targetName(compiling: file) ?? URL(fileURLWithPath: file).deletingLastPathComponent().lastPathComponent
+            return self.session.targetName(forFile: file) ?? URL(fileURLWithPath: file).deletingLastPathComponent().lastPathComponent
         }
         navigator.containingGroups = { [weak self] in
             guard let self, let file = self.navigator.selectedPath ?? self.editor.fileURL?.path else { return [] }

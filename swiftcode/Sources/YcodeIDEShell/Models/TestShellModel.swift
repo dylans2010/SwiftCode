@@ -61,7 +61,7 @@ public final class TestShellModel {
     }
 
     public func target(of t: DiscoveredTest) -> String {
-        if session.model.kind != .package, let name = session.model.targetName(compiling: t.file) { return name }
+        if session.model.kind != .package, let name = session.targetName(forFile: t.file) { return name }
         let dir = URL(fileURLWithPath: t.file).deletingLastPathComponent()
         let parts = dir.pathComponents
         if let i = parts.lastIndex(of: "Tests"), i + 1 < parts.count { return parts[i + 1] }

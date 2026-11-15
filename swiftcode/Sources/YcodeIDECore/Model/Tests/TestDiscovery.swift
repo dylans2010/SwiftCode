@@ -147,4 +147,43 @@ extension WorkspaceModel {
         }
         return nil
     }
+
+    /// Builds a one-pass index from standardized source-file path to the name
+    /// of the target that compiles it, plus synchronized-group directory
+    /// prefixes. Use this instead of calling `targetName(compiling:)` per
+    /// file: the per-file scan resolves every build-file path (with
+    /// filesystem stats) for every query and freezes the UI on large
+    /// projects.
+    public func targetNameIndex() -> (files: [String: String], groups: [(String, String)]) {
+        var files: [String: String] = [:]
+        var groups: [(String, String)] = []
+        for (projPath, project) in projects.sorted(by: { $0.key < $1.key }) {
+            let dir = project.projectDirectory(xcodeprojURL: URL(fileURLWithPath: projPath))
+            let resolve = project.resolvedPathResolver(projectDirectory: dir, parents: project.parentMap())
+            for t in project.targets {
+                let name = t.string("name") ?? ""
+                for phase in project.buildPhases(ofTarget: t.id) where phase.isa == "PBXSourcesBuildPhase" {
+                    for bf in phase.references("files") {
+                        guard let ref = project.fileReference(ofBuildFile: bf),
+                              let p = resolve(ref.id) else { continue }
+                        let key = URL(fileURLWithPath: p).standardizedFileURL.path
+                        if files[key] == nil { files[key] = name }
+                    }
+                }
+                for g in t.references("fileSystemSynchronizedGroups") {
+                    if let p = resolve(g) {
+                        groups.append((URL(fileURLWithPath: p).standardizedFileURL.path, name))
+                    }
+                }
+            }
+        }
+        return (files, groups)
+    }
+
+    public func targetName(compiling file: String, in index: (files: [String: String], groups: [(String, String)])) -> String? {
+        let path = URL(fileURLWithPath: file).standardizedFileURL.path
+        if let name = index.files[path] { return name }
+        for (dir, name) in index.groups where path.hasPrefix(dir + "/") { return name }
+        return nil
+    }
 }

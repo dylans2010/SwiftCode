@@ -36,6 +36,37 @@ extension PBXProj {
         return resolve(id)
     }
 
+    /// Returns a resolver that memoizes every intermediate object ID, so
+    /// resolving many file references in one project does not re-walk shared
+    /// parent chains (or re-stat the filesystem) for every lookup.
+    public func resolvedPathResolver(projectDirectory: URL, parents: [String: String]? = nil) -> (String) -> String? {
+        let parents = parents ?? parentMap()
+        var memo: [String: String?] = [:]
+        var active: Set<String> = []
+        func resolve(_ id: String) -> String? {
+            if let hit = memo[id] { return hit }
+            guard let obj = objects[id] else { memo[id] = nil; return nil }
+            guard active.insert(id).inserted else { return nil }
+            defer { active.remove(id) }
+            let path = obj.string("path") ?? ""
+            let result: String?
+            switch obj.string("sourceTree") ?? "<group>" {
+            case "<absolute>":
+                result = path
+            case "SOURCE_ROOT":
+                result = join(projectDirectory.path, path)
+            case "<group>":
+                let base = parents[id].flatMap(resolve) ?? projectDirectory.path
+                result = join(base, path)
+            case let tree:
+                result = path.isEmpty ? "$(\(tree))" : "$(\(tree))/\(path)"
+            }
+            memo[id] = result
+            return result
+        }
+        return resolve
+    }
+
     private func join(_ base: String, _ rel: String) -> String {
         if rel.isEmpty { return base }
         if rel.hasPrefix("/") { return rel }
