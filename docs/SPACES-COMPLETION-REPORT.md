@@ -1377,3 +1377,19 @@ Spaces engine/CLI/UI/test sources and the two docs files. Dylan deleted
 
 No other files were created, modified, committed, or pushed by this
 slice. Nothing was pushed, per the slice rules; the coordinator pushes.
+
+### Coordinator fix: Xcode test-target registration
+
+Slice G found the checked-in `SwiftCode.xcodeproj/project.pbxproj` lists
+SpacesEngineTests files individually and contained none of the 10 test
+files added after the original 14 (S10's three suites, slice I's
+`WaveFixesTests`, and the six Wave 2 engine suites), so Xcode would not
+have run them even though `swift test` picks them up by directory. The
+coordinator registered all 10 in the pbxproj (PBXFileReference +
+PBXBuildFile + group children + Sources build phase, alphabetical, IDs
+verified unique, parens balanced, 40 insertions / 0 deletions): the
+SpacesEngineTests target now has 24/24 files. `SwiftCodeSDKTests` has no
+Xcode target at all (and none in `project.yml`), so `Wave2SdkTests.swift`
+runs only under `swift test` until a target is added — recorded honestly,
+not silently fixed, because creating a new Xcode target by hand without
+Xcode to verify it is riskier than the gap it would close.
