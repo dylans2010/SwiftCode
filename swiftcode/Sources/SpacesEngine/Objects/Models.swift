@@ -45,8 +45,21 @@ public struct Signature: Codable, Hashable, Sendable {
 
     
     public static func parse(_ line: String) -> Signature? {
-        
-        nil
+        guard let lt = line.firstIndex(of: "<"), let gt = line.firstIndex(of: ">"), lt < gt else { return nil }
+        let name = line[..<lt].trimmingCharacters(in: .whitespaces)
+        guard !name.isEmpty else { return nil }
+        let email = String(line[line.index(after: lt)..<gt]).trimmingCharacters(in: .whitespaces)
+        guard !email.isEmpty else { return nil }
+        let rest = line[line.index(after: gt)...].trimmingCharacters(in: .whitespaces)
+        let fields = rest.split(separator: " ", omittingEmptySubsequences: true)
+        guard let first = fields.first, let timestamp = Int64(first) else { return nil }
+        guard fields.count <= 2 else { return nil }
+        if fields.count == 2 {
+            let tz = fields[1]
+            guard tz.count == 5, tz.hasPrefix("+") || tz.hasPrefix("-"),
+                  tz.dropFirst().allSatisfy({ $0.isNumber }) else { return nil }
+        }
+        return Signature(name: String(name), email: email, timestamp: timestamp)
     }
 }
 

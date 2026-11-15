@@ -1,14 +1,5 @@
 import Foundation
 
-
-
-
-
-
-
-
-
-
 public final class Journal: @unchecked Sendable {
     public struct Entry: Codable, Sendable {
         public var op: String
@@ -26,14 +17,25 @@ public final class Journal: @unchecked Sendable {
     }
 
     public var hasUnfinishedTransactions: Bool {
-        guard let lines = try? readLines() else { return false }
+        !unfinishedTransactionIDs().isEmpty
+    }
+
+    public func unfinishedTransactionIDs() -> [String] {
+        guard let lines = try? readLines() else { return [] }
+        var order: [String] = []
         var open = Set<String>()
         for line in lines {
             guard let e = try? JSONDecoder().decode(Entry.self, from: Data(line.utf8)) else { continue }
-            if e.op == "begin" { open.insert(e.tx) }
-            if e.op == "commit" || e.op == "abort" { open.remove(e.tx) }
+            if e.op == "begin", !open.contains(e.tx) {
+                open.insert(e.tx)
+                order.append(e.tx)
+            }
+            if e.op == "commit" || e.op == "abort" {
+                open.remove(e.tx)
+                order.removeAll { $0 == e.tx }
+            }
         }
-        return !open.isEmpty
+        return order
     }
 
     public func begin(tx: String, steps: [String]) throws {
@@ -51,9 +53,6 @@ public final class Journal: @unchecked Sendable {
                          time: Int64(Date().timeIntervalSince1970)))
     }
 
-    
-    
-    
     public func unfinishedSteps() -> [String] {
         guard let lines = try? readLines() else { return [] }
         var open: [String: [String]] = [:]
@@ -68,19 +67,24 @@ public final class Journal: @unchecked Sendable {
         return open.values.flatMap { $0 }
     }
 
-    
-    
     public func compact() throws {
         guard let lines = try? readLines() else { return }
-        var keep: [String] = []
-        var open = Set<String>()
+        var unfinished = Set<String>()
+        var parsed: [Entry?] = []
         for line in lines {
-            guard let e = try? JSONDecoder().decode(Entry.self, from: Data(line.utf8)) else { continue }
-            if e.op == "begin" { open.insert(e.tx) }
-            if e.op == "commit" || e.op == "abort" { open.remove(e.tx) }
-            if !open.isEmpty || e.op == "begin" { keep.append(line) }
+            let entry = try? JSONDecoder().decode(Entry.self, from: Data(line.utf8))
+            parsed.append(entry)
+            if let e = entry {
+                if e.op == "begin" { unfinished.insert(e.tx) }
+                if e.op == "commit" || e.op == "abort" { unfinished.remove(e.tx) }
+            }
         }
-        try atomicWriteText(keep.joined(separator: "\n") + (keep.isEmpty ? "" : "\n"))
+        var keep: [String] = []
+        for (line, entry) in zip(lines, parsed) {
+            if let e = entry, unfinished.contains(e.tx) { keep.append(line) }
+        }
+        let text = keep.joined(separator: "\n") + (keep.isEmpty ? "" : "\n")
+        try AtomicFileIO.writeAtomically(Data(text.utf8), to: url)
     }
 
     private func readLines() throws -> [String] {
@@ -95,19 +99,6 @@ public final class Journal: @unchecked Sendable {
         encoder.outputFormatting = [.sortedKeys]
         var line = try encoder.encode(entry)
         line.append(0x0a)
-        if !FileManager.default.fileExists(atPath: url.path) {
-            FileManager.default.createFile(atPath: url.path, contents: nil)
-        }
-        let handle = try FileHandle(forWritingTo: url)
-        defer { try? handle.close() }
-        try handle.seekToEnd()
-        try handle.write(contentsOf: line)
-    }
-
-    private func atomicWriteText(_ text: String) throws {
-        let temp = url.appendingPathExtension("tmp-\(UUID().uuidString)")
-        try Data(text.utf8).write(to: temp)
-        _ = try? FileManager.default.removeItem(at: url)
-        try FileManager.default.moveItem(at: temp, to: url)
+        try AtomicFileIO.append(line, to: url)
     }
 }
