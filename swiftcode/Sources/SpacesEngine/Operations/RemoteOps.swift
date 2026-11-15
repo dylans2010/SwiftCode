@@ -127,6 +127,8 @@ public struct RemoteOps {
         let reachable: Bool
         if cfg.url.hasPrefix("http://") || cfg.url.hasPrefix("https://") || cfg.url.hasPrefix("spaces://") {
             reachable = httpReachable(urlString: cfg.url)
+        } else if SshRemoteURL.isSSHURL(cfg.url) {
+            reachable = sshReachable(urlString: cfg.url)
         } else {
             reachable = (try? LocalTransport(path: cfg.url).resolve()) != nil
         }
@@ -143,6 +145,20 @@ public struct RemoteOps {
         let counts = try MaintenanceOps(repo: repo).countObjects()
         return RemoteHealth(remote: remote, reachable: reachable, lastSync: lastSync,
                             objectCount: counts.total, remoteRefCount: refCount)
+    }
+
+    private func sshReachable(urlString: String) -> Bool {
+        guard let remoteURL = try? SshRemoteURL.parse(urlString) else { return false }
+        guard let conn = try? SshTransport(remoteURL: remoteURL).connect() else { return false }
+        defer { conn.close() }
+        do {
+            try conn.send(["v": RepositoryFormat.protocolVersion, "op": "hello",
+                           "caps": ["objects-v1", "refs-v1"]])
+            try validateHelloResponse(try conn.receive())
+            return true
+        } catch {
+            return false
+        }
     }
 
     private func httpReachable(urlString: String) -> Bool {
@@ -232,7 +248,9 @@ public struct RemoteOps {
             let creds = try? store.load(host: host)
             return HTTPTransport(url: urlObj, credentials: creds)
         }
-        
+        if SshRemoteURL.isSSHURL(url) {
+            return try SshTransport(remoteURL: SshRemoteURL.parse(url))
+        }
         return LocalTransport(path: url)
     }
 
