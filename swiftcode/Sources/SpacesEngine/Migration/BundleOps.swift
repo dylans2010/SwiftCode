@@ -195,6 +195,168 @@ public enum ArchiveOps {
         try tar.write(to: URL(fileURLWithPath: output), options: .atomic)
     }
 
+    public static func extract(archive: String, to destination: String) throws -> [String] {
+        let data = try Data(contentsOf: URL(fileURLWithPath: archive))
+        let destURL = URL(fileURLWithPath: destination)
+        try FileManager.default.createDirectory(at: destURL, withIntermediateDirectories: true)
+        let destStandard = destURL.standardized.path
+        var extracted: [String] = []
+        var pos = 0
+        var pendingLongName: String?
+        var pendingLongLink: String?
+        while pos + 512 <= data.count {
+            let header = [UInt8](data[pos..<(pos + 512)])
+            if header.allSatisfy({ $0 == 0 }) { break }
+            guard verifyTarChecksum(header) else {
+                throw SpacesError.invalidObject("bad tar header checksum at offset \(pos)")
+            }
+            var name = tarString(header, 0, 100)
+            let prefix = tarString(header, 345, 155)
+            if !prefix.isEmpty { name = prefix + "/" + name }
+            if let long = pendingLongName { name = long; pendingLongName = nil }
+            var linkName = tarString(header, 157, 100)
+            if let longLink = pendingLongLink { linkName = longLink; pendingLongLink = nil }
+            let size = try tarSize(header)
+            let mode = tarOctal(header, 100, 8) ?? 0o644
+            let mtime = tarOctal(header, 136, 12) ?? 0
+            let typeflag = header[156]
+            let dataStart = pos + 512
+            let dataEnd = dataStart + size
+            guard dataEnd <= data.count else {
+                throw SpacesError.invalidObject("truncated tar entry \(name)")
+            }
+            let payload = data.subdata(in: dataStart..<dataEnd)
+            switch typeflag {
+            case 0x4C:
+                pendingLongName = String(decoding: payload.prefix(while: { $0 != 0 }), as: UTF8.self)
+            case 0x4B:
+                pendingLongLink = String(decoding: payload.prefix(while: { $0 != 0 }), as: UTF8.self)
+            case 0x78, 0x67:
+                break
+            case 0x30, 0x00:
+                let target = try containedTarget(destStandard: destStandard, relative: name)
+                try ensureNoSymlinkParent(target, destStandard: destStandard)
+                try removeConflictingEntry(target)
+                try FileManager.default.createDirectory(at: target.deletingLastPathComponent(),
+                                                        withIntermediateDirectories: true)
+                try payload.write(to: target, options: .atomic)
+                try restoreAttributes(target, mode: mode, mtime: mtime)
+                extracted.append(name)
+            case 0x35:
+                let target = try containedTarget(destStandard: destStandard, relative: name)
+                try ensureNoSymlinkParent(target, destStandard: destStandard)
+                try FileManager.default.createDirectory(at: target, withIntermediateDirectories: true)
+                try restoreAttributes(target, mode: mode, mtime: mtime)
+                extracted.append(name)
+            case 0x32:
+                let target = try containedTarget(destStandard: destStandard, relative: name)
+                try ensureNoSymlinkParent(target, destStandard: destStandard)
+                try removeConflictingEntry(target)
+                try FileManager.default.createDirectory(at: target.deletingLastPathComponent(),
+                                                        withIntermediateDirectories: true)
+                try FileManager.default.createSymbolicLink(atPath: target.path,
+                                                           withDestinationPath: linkName)
+                extracted.append(name)
+            case 0x31:
+                let target = try containedTarget(destStandard: destStandard, relative: name)
+                let source = try containedTarget(destStandard: destStandard, relative: linkName)
+                guard FileManager.default.fileExists(atPath: source.path) else {
+                    throw SpacesError.migrationError("tar hard link target missing: \(linkName)")
+                }
+                try ensureNoSymlinkParent(target, destStandard: destStandard)
+                try removeConflictingEntry(target)
+                try FileManager.default.createDirectory(at: target.deletingLastPathComponent(),
+                                                        withIntermediateDirectories: true)
+                try FileManager.default.copyItem(at: source, to: target)
+                extracted.append(name)
+            default:
+                throw SpacesError.migrationError("unsupported tar entry type \(typeflag) for \(name)")
+            }
+            pos = dataStart + ((size + 511) / 512) * 512
+        }
+        return extracted
+    }
+
+    private static func tarString(_ header: [UInt8], _ offset: Int, _ length: Int) -> String {
+        let field = header[offset..<(offset + length)]
+        let bytes = field.prefix(while: { $0 != 0 })
+        return String(decoding: bytes, as: UTF8.self)
+    }
+
+    private static func tarOctal(_ header: [UInt8], _ offset: Int, _ length: Int) -> Int? {
+        let field = Array(header[offset..<(offset + length)])
+        if field.first == 0x80 {
+            var value = 0
+            for b in field.dropFirst() { value = (value << 8) | Int(b) }
+            return value
+        }
+        let text = String(decoding: field, as: UTF8.self)
+            .trimmingCharacters(in: CharacterSet(charactersIn: " \0"))
+        guard !text.isEmpty else { return nil }
+        return Int(text, radix: 8)
+    }
+
+    private static func tarSize(_ header: [UInt8]) throws -> Int {
+        guard let size = tarOctal(header, 124, 12) else {
+            throw SpacesError.invalidObject("bad tar size field")
+        }
+        return size
+    }
+
+    private static func verifyTarChecksum(_ header: [UInt8]) -> Bool {
+        guard let stored = tarOctal(header, 148, 8) else { return false }
+        var sum = 0
+        for i in 0..<512 {
+            sum += (i >= 148 && i < 156) ? 0x20 : Int(header[i])
+        }
+        return sum == stored
+    }
+
+    private static func containedTarget(destStandard: String, relative: String) throws -> URL {
+        guard !relative.isEmpty else {
+            throw SpacesError.invalidObject("empty tar entry name")
+        }
+        let components = relative.split(separator: "/", omittingEmptySubsequences: true)
+        guard !components.contains("..") else {
+            throw SpacesError.invalidObject("tar entry escapes destination: \(relative)")
+        }
+        var target = URL(fileURLWithPath: destStandard)
+        for comp in components { target.appendPathComponent(String(comp)) }
+        let standardized = target.standardized.path
+        guard standardized == destStandard || standardized.hasPrefix(destStandard + "/") else {
+            throw SpacesError.invalidObject("tar entry escapes destination: \(relative)")
+        }
+        return URL(fileURLWithPath: standardized)
+    }
+
+    private static func ensureNoSymlinkParent(_ target: URL, destStandard: String) throws {
+        var current = target
+        while current.path != destStandard && current.path.hasPrefix(destStandard + "/") {
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: current.path),
+               let type = attrs[.type] as? FileAttributeType, type == .typeSymbolicLink {
+                throw SpacesError.invalidObject("tar entry passes through symlink: \(current.path)")
+            }
+            current = current.deletingLastPathComponent()
+        }
+    }
+
+    private static func removeConflictingEntry(_ target: URL) throws {
+        guard let attrs = try? FileManager.default.attributesOfItem(atPath: target.path),
+              let type = attrs[.type] as? FileAttributeType else { return }
+        if type == .typeDirectory {
+            throw SpacesError.invalidObject("tar entry conflicts with directory: \(target.path)")
+        }
+        try FileManager.default.removeItem(at: target)
+    }
+
+    private static func restoreAttributes(_ target: URL, mode: Int, mtime: Int) throws {
+        var attrs: [FileAttributeKey: Any] = [.posixPermissions: mode & 0o7777]
+        if mtime > 0 {
+            attrs[.modificationDate] = Date(timeIntervalSince1970: TimeInterval(mtime))
+        }
+        try FileManager.default.setAttributes(attrs, ofItemAtPath: target.path)
+    }
+
     private static func tarHeader(name: String, size: Int64, mode: Int,
                                   typeflag: UInt8, linkname: String) throws -> Data {
         var header = [UInt8](repeating: 0, count: 512)

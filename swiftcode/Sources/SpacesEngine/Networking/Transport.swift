@@ -169,6 +169,58 @@ final class LocalConnection: TransportConnection, @unchecked Sendable {
 
 
 
+
+func spacesSanitizedURLString(_ raw: String) -> String {
+    guard var components = URLComponents(string: raw) else { return raw }
+    components.user = nil
+    components.password = nil
+    return components.string ?? raw
+}
+
+private func isTransientNetworkError(_ error: Error) -> Bool {
+    guard let urlError = error as? URLError else { return false }
+    switch urlError.code {
+    case .timedOut, .cannotFindHost, .cannotConnectToHost, .networkConnectionLost,
+         .dnsLookupFailed, .notConnectedToInternet, .resourceUnavailable,
+         .secureConnectionFailed, .cannotLoadFromNetwork:
+        return true
+    default:
+        return false
+    }
+}
+
+private func performHTTPRequest(_ request: URLRequest, attempts: Int = 3) throws -> (Data, HTTPURLResponse) {
+    var delay: TimeInterval = 1
+    var lastError: Error?
+    for attempt in 0..<attempts {
+        let semaphore = DispatchSemaphore(value: 0)
+        var responseData: Data?
+        var response: URLResponse?
+        var responseError: Error?
+        URLSession.shared.dataTask(with: request) { data, resp, error in
+            responseData = data
+            response = resp
+            responseError = error
+            semaphore.signal()
+        }.resume()
+        semaphore.wait()
+        if let responseError {
+            lastError = responseError
+            if attempt + 1 < attempts, isTransientNetworkError(responseError) {
+                Thread.sleep(forTimeInterval: delay)
+                delay *= 2
+                continue
+            }
+            throw responseError
+        }
+        guard let http = response as? HTTPURLResponse, let data = responseData else {
+            throw SpacesError.remoteError("empty response")
+        }
+        return (data, http)
+    }
+    throw lastError ?? SpacesError.remoteError("request failed")
+}
+
 public struct HTTPTransport: SpacesTransport {
     public let url: URL
     public let credentials: Credentials?
@@ -179,7 +231,6 @@ public struct HTTPTransport: SpacesTransport {
     }
 
     public func connect() throws -> TransportConnection {
-        
         var request = URLRequest(url: url.appendingPathComponent("info/refs"))
         request.httpMethod = "GET"
         request.timeoutInterval = 15
@@ -187,21 +238,12 @@ public struct HTTPTransport: SpacesTransport {
             let token = creds.token ?? ""
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }
-        let semaphore = DispatchSemaphore(value: 0)
-        var responseData: Data?
-        var responseError: Error?
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            responseError = error
-            responseData = data
-            if let http = response as? HTTPURLResponse, http.statusCode == 401 {
-                responseError = SpacesError.authenticationRequired(url.absoluteString)
-            }
-            semaphore.signal()
-        }.resume()
-        semaphore.wait()
-        if let e = responseError { throw e }
-        guard responseData != nil else {
-            throw SpacesError.remoteError("empty response from \(url.absoluteString)")
+        let (_, http) = try performHTTPRequest(request)
+        if http.statusCode == 401 {
+            throw SpacesError.authenticationRequired(spacesSanitizedURLString(url.absoluteString))
+        }
+        guard (200...399).contains(http.statusCode) else {
+            throw SpacesError.remoteError("HTTP \(http.statusCode) from \(spacesSanitizedURLString(url.absoluteString))")
         }
         return HTTPConnection(base: url, credentials: credentials)
     }
@@ -217,40 +259,29 @@ final class HTTPConnection: TransportConnection, @unchecked Sendable {
     }
 
     func send(_ message: [String: Any]) throws {
-        
         guard let op = message["op"] as? String else {
             throw SpacesError.protocolError("missing op")
         }
         var request = URLRequest(url: base.appendingPathComponent("rpc/\(op)"))
         request.httpMethod = "POST"
+        request.timeoutInterval = 30
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let creds = credentials {
             request.setValue("Bearer \(creds.token ?? "")", forHTTPHeaderField: "Authorization")
         }
         request.httpBody = try JSONSerialization.data(withJSONObject: message)
-        let semaphore = DispatchSemaphore(value: 0)
-        var result: [String: Any]?
-        var failure: Error?
-        URLSession.shared.dataTask(with: request) { data, response, error in
-            if let error { failure = error }
-            else if let http = response as? HTTPURLResponse {
-                switch http.statusCode {
-                case 200:
-                    if let data,
-                       let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                        result = obj
-                    }
-                case 401:
-                    failure = SpacesError.authenticationRequired(self.base.absoluteString)
-                default:
-                    failure = SpacesError.remoteError("HTTP \(http.statusCode)")
-                }
+        let (data, http) = try performHTTPRequest(request)
+        switch http.statusCode {
+        case 200:
+            guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                throw SpacesError.protocolError("invalid JSON response for op \(op)")
             }
-            semaphore.signal()
-        }.resume()
-        semaphore.wait()
-        if let failure { throw failure }
-        pending = result
+            pending = obj
+        case 401:
+            throw SpacesError.authenticationRequired(spacesSanitizedURLString(base.absoluteString))
+        default:
+            throw SpacesError.remoteError("HTTP \(http.statusCode)")
+        }
     }
 
     private var pending: [String: Any]?
@@ -283,6 +314,7 @@ public protocol CredentialStore: Sendable {
     func load(host: String) throws -> Credentials?
     func save(_ creds: Credentials, for host: String) throws
     func delete(host: String) throws
+    func listCredentialIdentities() throws -> [(host: String, username: String?)]
 }
 
 
@@ -317,6 +349,11 @@ public final class FileCredentialStore: CredentialStore, @unchecked Sendable {
     }
     public func delete(host: String) throws {
         var dict = try all(); dict.removeValue(forKey: host); try writeAll(dict)
+    }
+
+    public func listCredentialIdentities() throws -> [(host: String, username: String?)] {
+        try all().map { (host: $0.key, username: $0.value.username) }
+            .sorted { $0.host < $1.host }
     }
 }
 
@@ -366,6 +403,22 @@ public struct KeychainCredentialStore: CredentialStore {
             kSecAttrAccount as String: host
         ]
         SecItemDelete(query as CFDictionary)
+    }
+
+    public func listCredentialIdentities() throws -> [(host: String, username: String?)] {
+        let query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecReturnAttributes as String: true,
+            kSecMatchLimit as String: kSecMatchLimitAll
+        ]
+        var items: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &items)
+        guard status == errSecSuccess, let results = items as? [[String: Any]] else { return [] }
+        return results.compactMap { attrs in
+            guard let host = attrs[kSecAttrAccount as String] as? String else { return nil }
+            return (host: host, username: nil)
+        }.sorted { $0.host < $1.host }
     }
 }
 #endif

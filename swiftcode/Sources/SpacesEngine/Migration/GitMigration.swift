@@ -72,7 +72,12 @@ public struct GitMigration {
                     
                     let treePayload = try convertGitTree(payload, oidMap: oidMap)
                     if let tp = treePayload {
-                        let spacesOID = try repo.objects.write(.tree, value: tp)
+                        let spacesOID: ObjectID
+                        if dryRun {
+                            spacesOID = try computedObjectID(.tree, value: tp)
+                        } else {
+                            spacesOID = try repo.objects.write(.tree, value: tp)
+                        }
                         oidMap[info.oid] = spacesOID
                         report.objectsWritten += 1
                     } else {
@@ -91,7 +96,12 @@ public struct GitMigration {
             for info in pendingTrees {
                 let payload = try catFile(git: git, path: gitPath, oid: info.oid, size: info.size, type: info.type)
                 if let tp = try convertGitTree(payload, oidMap: oidMap) {
-                    let spacesOID = try repo.objects.write(.tree, value: tp)
+                    let spacesOID: ObjectID
+                    if dryRun {
+                        spacesOID = try computedObjectID(.tree, value: tp)
+                    } else {
+                        spacesOID = try repo.objects.write(.tree, value: tp)
+                    }
                     oidMap[info.oid] = spacesOID
                     report.objectsWritten += 1
                 } else {
@@ -124,7 +134,12 @@ public struct GitMigration {
                     progress = true
                     continue
                 }
-                let spacesOID = try repo.objects.write(.commit, value: commitPayload)
+                let spacesOID: ObjectID
+                if dryRun {
+                    spacesOID = try computedObjectID(.commit, value: commitPayload)
+                } else {
+                    spacesOID = try repo.objects.write(.commit, value: commitPayload)
+                }
                 oidMap[info.oid] = spacesOID
                 report.commits += 1
                 report.objectsWritten += 1
@@ -141,7 +156,12 @@ public struct GitMigration {
         for info in infos where info.type == "tag" {
             let payload = try catFile(git: git, path: gitPath, oid: info.oid, size: info.size, type: info.type)
             if let tagPayload = parseGitTagObject(payload, oidMap: oidMap) {
-                let spacesOID = try repo.objects.write(.tag, value: tagPayload)
+                let spacesOID: ObjectID
+                if dryRun {
+                    spacesOID = try computedObjectID(.tag, value: tagPayload)
+                } else {
+                    spacesOID = try repo.objects.write(.tag, value: tagPayload)
+                }
                 oidMap[info.oid] = spacesOID
                 report.objectsWritten += 1
             }
@@ -161,6 +181,7 @@ public struct GitMigration {
                 localName = ref.name
                 report.tags.append(String(ref.name.dropFirst("refs/tags/".count)))
             } else {
+                report.warnings.append("skipped ref \(ref.name) (outside refs/heads/ and refs/tags/)")
                 continue
             }
             if !dryRun {
@@ -263,6 +284,8 @@ public struct GitMigration {
         var parents: [ObjectID] = []
         var author: Signature?
         var committer: Signature?
+        var authorOffset: Int?
+        var committerOffset: Int?
 
         for line in headers {
             if line.hasPrefix("tree ") {
@@ -274,14 +297,57 @@ public struct GitMigration {
                 let hex = String(line.dropFirst(7))
                 if let mapped = oidMap[hex] { parents.append(mapped) }
             } else if line.hasPrefix("author ") {
-                author = parseGitSignature(String(line.dropFirst(7)))
+                let raw = String(line.dropFirst(7))
+                author = parseGitSignature(raw)
+                authorOffset = gitSignatureOffsetMinutes(raw)
             } else if line.hasPrefix("committer ") {
-                committer = parseGitSignature(String(line.dropFirst(10)))
+                let raw = String(line.dropFirst(10))
+                committer = parseGitSignature(raw)
+                committerOffset = gitSignatureOffsetMinutes(raw)
             }
         }
         guard let tree = treeOID, let a = author, let c = committer else { return nil }
+        var metadata = CommitMetadata()
+        if let off = authorOffset {
+            metadata.trailers["X-Spaces-Author-TZ"] = gitOffsetToken(minutes: off)
+        }
+        if let off = committerOffset {
+            metadata.trailers["X-Spaces-Committer-TZ"] = gitOffsetToken(minutes: off)
+        }
         return CommitPayload(tree: tree, parents: parents, author: a, committer: c,
-                             message: message, metadata: CommitMetadata())
+                             message: message, metadata: metadata)
+    }
+
+    private func computedObjectID<T: Encodable>(_ type: ObjectType, value: T) throws -> ObjectID {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return ObjectID.compute(type: type, payload: try encoder.encode(value))
+    }
+
+    private func gitSignatureOffsetMinutes(_ s: String) -> Int? {
+        guard let gt = s.firstIndex(of: ">") else { return nil }
+        let rest = s[s.index(after: gt)...].trimmingCharacters(in: .whitespaces)
+        let parts = rest.split(separator: " ")
+        guard parts.count == 2, let token = parts.last else { return nil }
+        return gitOffsetTokenMinutes(String(token))
+    }
+
+    private func gitOffsetTokenMinutes(_ token: String) -> Int? {
+        guard token.count == 5 else { return nil }
+        let sign = token.first
+        guard sign == "+" || sign == "-" else { return nil }
+        let digits = token.dropFirst()
+        guard digits.count == 4, digits.allSatisfy({ $0.isNumber }),
+              let hh = Int(digits.prefix(2)), let mm = Int(digits.suffix(2)),
+              hh < 24, mm < 60 else { return nil }
+        let total = hh * 60 + mm
+        return sign == "-" ? -total : total
+    }
+
+    private func gitOffsetToken(minutes: Int) -> String {
+        let sign = minutes < 0 ? "-" : "+"
+        let absMinutes = abs(minutes)
+        return String(format: "%@%02d%02d", sign, absMinutes / 60, absMinutes % 60)
     }
 
     
@@ -344,14 +410,28 @@ public struct GitMigration {
     
     
     @discardableResult
-    public func exportGit(to destPath: String, only: [String] = []) throws -> ExportReport {
+    public func exportGit(to destPath: String, only: [String] = [], force: Bool = false) throws -> ExportReport {
         let git = try findGit()
         let dest = URL(fileURLWithPath: destPath)
+        var isDir: ObjCBool = false
+        if FileManager.default.fileExists(atPath: dest.path, isDirectory: &isDir), isDir.boolValue {
+            let contents = try FileManager.default.contentsOfDirectory(atPath: dest.path)
+            if !contents.isEmpty, !force {
+                throw SpacesError.invalidArgument("destination not empty: \(destPath)")
+            }
+        }
         try FileManager.default.createDirectory(at: dest, withIntermediateDirectories: true)
         
         
         _ = try runGitRaw(git, ["-C", destPath, "init", "-q"])
         let gitDir = dest.appendingPathComponent(".git")
+
+        for (name, cfg) in repo.config.remotes.sorted(by: { $0.key < $1.key }) {
+            _ = try runGitRaw(git, ["-C", dest.path, "config", "remote.\(name).url", cfg.url])
+            if let pushURL = cfg.pushURL {
+                _ = try runGitRaw(git, ["-C", dest.path, "config", "remote.\(name).pushurl", pushURL])
+            }
+        }
 
         var report = ExportReport(gitDir: gitDir.path, objectsWritten: 0,
                                   refsWritten: [], warnings: [])
@@ -554,8 +634,12 @@ public struct GitMigration {
             process.arguments!.append(contentsOf: parentGitOIDs.flatMap { ["-p", $0] })
         }
         var env = ProcessInfo.processInfo.environment
-        applyGitIdentity(&env, prefix: "GIT_AUTHOR_", sig: commit.author)
-        applyGitIdentity(&env, prefix: "GIT_COMMITTER_", sig: commit.committer)
+        let authorOffset = commit.metadata.trailers["X-Spaces-Author-TZ"]
+            .flatMap(gitOffsetTokenMinutes)
+        let committerOffset = commit.metadata.trailers["X-Spaces-Committer-TZ"]
+            .flatMap(gitOffsetTokenMinutes)
+        applyGitIdentity(&env, prefix: "GIT_AUTHOR_", sig: commit.author, offsetMinutes: authorOffset)
+        applyGitIdentity(&env, prefix: "GIT_COMMITTER_", sig: commit.committer, offsetMinutes: committerOffset)
         process.environment = env
         let inPipe = Pipe(), outPipe = Pipe()
         process.standardInput = inPipe
@@ -601,13 +685,16 @@ public struct GitMigration {
 
     
     private func applyGitIdentity(_ env: inout [String: String], prefix: String,
-                                  sig: Signature) {
+                                  sig: Signature, offsetMinutes: Int? = nil) {
         env[prefix + "NAME"] = sig.name
         env[prefix + "EMAIL"] = sig.email
-        let tz = TimeZone.current.secondsFromGMT(for: Date(timeIntervalSince1970: TimeInterval(sig.timestamp)))
-        let sign = tz >= 0 ? "+" : "-"
-        let absTz = abs(tz)
-        env[prefix + "DATE"] = "@\(sig.timestamp) \(sign)\(String(format: "%02d%02d", absTz / 3600, (absTz % 3600) / 60))"
+        let minutes: Int
+        if let offsetMinutes {
+            minutes = offsetMinutes
+        } else {
+            minutes = TimeZone.current.secondsFromGMT(for: Date(timeIntervalSince1970: TimeInterval(sig.timestamp))) / 60
+        }
+        env[prefix + "DATE"] = "@\(sig.timestamp) \(gitOffsetToken(minutes: minutes))"
     }
 
     private func gitSignature(_ s: Signature) -> String {

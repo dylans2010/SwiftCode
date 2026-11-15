@@ -72,6 +72,18 @@ public struct RemoteOps {
         }
     }
 
+    private func validateHelloResponse(_ message: [String: Any]) throws {
+        guard let version = message["v"] as? Int, version == RepositoryFormat.protocolVersion else {
+            throw SpacesError.protocolError("unsupported protocol version in hello response")
+        }
+        let caps = (message["caps"] as? [String]) ?? []
+        for required in ["objects-v1", "refs-v1"] {
+            guard caps.contains(required) else {
+                throw SpacesError.protocolError("remote hello missing capability \(required)")
+            }
+        }
+    }
+
     public func cancelRemoteTransfer(_ remote: String) throws {
         let dir = remoteDirectory(remote)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -100,8 +112,8 @@ public struct RemoteOps {
     }
 
     @discardableResult
-    public func resumePush(_ remote: String, refspec: String) throws -> TransferReport {
-        _ = try push(remote, refspec: refspec)
+    public func resumePush(_ remote: String, refspec: String, force: Bool = false) throws -> TransferReport {
+        _ = try push(remote, refspec: refspec, force: force)
         guard let report = try lastTransferReport(remote) else {
             throw SpacesError.internalInconsistency("missing transfer progress for \(remote)")
         }
@@ -209,7 +221,7 @@ public struct RemoteOps {
             var u = url
             if u.hasPrefix("spaces://") { u = "https://" + u.dropFirst("spaces://".count) }
             guard let urlObj = URL(string: u) else {
-                throw SpacesError.invalidArgument("bad remote url: \(url)")
+                throw SpacesError.invalidArgument("bad remote url: \(spacesSanitizedURLString(url))")
             }
             #if os(macOS)
             let store = KeychainCredentialStore()
@@ -242,7 +254,7 @@ public struct RemoteOps {
 
         try conn.send(["v": RepositoryFormat.protocolVersion, "op": "hello",
                        "caps": ["objects-v1", "refs-v1"]])
-        _ = try conn.receive()
+        try validateHelloResponse(try conn.receive())
 
         try conn.send(["v": RepositoryFormat.protocolVersion, "op": "advertise-refs"])
         let refsMsg = try conn.receive()
@@ -256,10 +268,18 @@ public struct RemoteOps {
             remoteRefs.append(Ref(name: name, oid: oid))
         }
 
+        let priorProgress = loadProgress(remote)
+        let priorReceivedIDs: Set<String> = {
+            guard let prior = priorProgress, prior.direction == "fetch",
+                  !prior.completed else { return [] }
+            return Set(prior.objectIDs)
+        }()
+
         let localReachable = try MaintenanceOps(repo: repo).reachableSet()
         var wants: [String] = []
         var haves: [String] = []
         for ref in try repo.refs.allRefs() { haves.append(ref.oid.hex) }
+        haves.append(contentsOf: priorReceivedIDs)
         for r in remoteRefs {
             guard r.name.hasPrefix("refs/heads/") || r.name.hasPrefix("refs/tags/") else { continue }
             if !localReachable.contains(r.oid) {
@@ -269,7 +289,7 @@ public struct RemoteOps {
         guard !wants.isEmpty else {
             let report = try updateTrackingRefs(remote: remote, remoteRefs: remoteRefs, newObjects: 0)
             try saveProgress(TransferProgress(remote: remote, direction: "fetch", transferred: 0,
-                                              alreadyPresent: 0, failed: [], objectIDs: [],
+                                              alreadyPresent: 0, failed: [], objectIDs: Array(priorReceivedIDs),
                                               lastCheckpoint: Int64(Date().timeIntervalSince1970),
                                               completed: true))
             return report
@@ -286,28 +306,45 @@ public struct RemoteOps {
 
         var stored = 0
         var alreadyPresent = 0
-        var receivedIDs: [String] = []
-        for o in objects {
-            guard let hex = o["id"] as? String,
-                  let typeRaw = o["type"] as? String,
-                  let type = ObjectType(rawValue: typeRaw),
-                  let b64 = o["data"] as? String,
-                  let payload = Data(base64Encoded: b64),
-                  let oid = try? ObjectID(validating: hex) else { continue }
-            guard ObjectID.compute(type: type, payload: payload) == oid else {
-                throw SpacesError.objectCorrupt(hex)
+        var receivedIDs: [String] = Array(priorReceivedIDs)
+        var failed: [String] = []
+        do {
+            for o in objects {
+                guard let hex = o["id"] as? String,
+                      let typeRaw = o["type"] as? String,
+                      let type = ObjectType(rawValue: typeRaw),
+                      let b64 = o["data"] as? String,
+                      let payload = Data(base64Encoded: b64),
+                      let oid = try? ObjectID(validating: hex) else { continue }
+                guard ObjectID.compute(type: type, payload: payload) == oid else {
+                    throw SpacesError.objectCorrupt(hex)
+                }
+                receivedIDs.append(hex)
+                if repo.objects.exists(oid) {
+                    alreadyPresent += 1
+                    continue
+                }
+                _ = try repo.objects.write(type: type, payload: payload)
+                stored += 1
+                if stored % 100 == 0 {
+                    try checkCancellation(remote)
+                    try saveProgress(TransferProgress(remote: remote, direction: "fetch", transferred: stored,
+                                                      alreadyPresent: alreadyPresent, failed: failed,
+                                                      objectIDs: receivedIDs,
+                                                      lastCheckpoint: Int64(Date().timeIntervalSince1970),
+                                                      completed: false))
+                }
             }
-            receivedIDs.append(hex)
-            if repo.objects.exists(oid) {
-                alreadyPresent += 1
-                continue
-            }
-            _ = try repo.objects.write(type: type, payload: payload)
-            stored += 1
+        } catch {
+            try? saveProgress(TransferProgress(remote: remote, direction: "fetch", transferred: stored,
+                                               alreadyPresent: alreadyPresent, failed: failed,
+                                               objectIDs: receivedIDs,
+                                               lastCheckpoint: Int64(Date().timeIntervalSince1970),
+                                               completed: false))
+            throw error
         }
 
-        var failed: [String] = []
-        for hex in receivedIDs {
+        for hex in Set(receivedIDs) {
             if let oid = try? ObjectID(validating: hex) {
                 do { _ = try repo.objects.read(oid) } catch { failed.append(hex) }
             }
@@ -406,7 +443,7 @@ public struct RemoteOps {
 
         try conn.send(["v": RepositoryFormat.protocolVersion, "op": "hello",
                        "caps": ["objects-v1", "refs-v1"]])
-        _ = try conn.receive()
+        try validateHelloResponse(try conn.receive())
         try conn.send(["v": RepositoryFormat.protocolVersion, "op": "advertise-refs"])
         let refsMsg = try conn.receive()
         let remoteRefs = (refsMsg["refs"] as? [[String: Any]] ?? [])
@@ -524,14 +561,25 @@ public struct RemoteOps {
     }
 
     
-    public func sync(_ remote: String) throws -> (fetch: FetchReport, push: PushReport?) { return try repo.withLock {
+    public struct SyncReport: Sendable {
+        public var fetch: FetchReport
+        public var push: PushReport?
+        public var pushError: String?
+    }
+
+    public func sync(_ remote: String, force: Bool = false) throws -> SyncReport { return try repo.withLock {
         let f = try fetch(remote)
         var p: PushReport? = nil
+        var pushError: String? = nil
         if let current = try repo.refs.currentBranch(),
            let head = try repo.refs.headOID(objects: repo.objects) {
-            p = try? push(remote, refspec: "\(head.hex):refs/heads/\(current)")
+            do {
+                p = try push(remote, refspec: "\(head.hex):refs/heads/\(current)", force: force)
+            } catch {
+                pushError = error.localizedDescription
+            }
         }
-        return (f, p)
+        return SyncReport(fetch: f, push: p, pushError: pushError)
         }
     }
 }
