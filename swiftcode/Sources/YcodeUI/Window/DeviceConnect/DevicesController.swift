@@ -446,17 +446,21 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
     
     
     
-    public func refreshLocalRows() {
-        Task {
-            let lists = await Task.detached { DevicesList.load() }.value
+    public var discoveryError: String?
+
+    func showDiscoveryErrorBanner() {
+        guard let error = discoveryError else { return }
+        canvas.showBanner("Device discovery failed: \(error)", seconds: 5)
+    }
+
+    public func refreshDevices() async {
+        do {
+            let snapshot = try await DeviceDiscoveryService.shared.discover()
+            discoveryError = nil
             let remoteSims = self.simulators.filter(\.isSwiftCodeRemote)
-            
-            
             let peerRows = self.connectPeers.keys.compactMap { id in self.allRows.first { $0.identifier == id } }
-            self.devices = lists.devices + peerRows.filter { p in !lists.devices.contains { $0.identifier == p.identifier } }
-            self.simulators = lists.simulators + remoteSims
-            
-            
+            self.devices = snapshot.devices + peerRows.filter { p in !snapshot.devices.contains { $0.identifier == p.identifier } }
+            self.simulators = snapshot.simulators + remoteSims
             let bootedLocal = Set(self.simulators.filter { !$0.isSwiftCodeRemote && $0.state == "Booted" }.map(\.identifier))
             for id in self.localLinks.keys where !bootedLocal.contains(id) { self.stopLocalDeviceRuntime(id) }
             for id in self.videoRecordings.keys where !bootedLocal.contains(id) { self.stopLocalDeviceRuntime(id) }
@@ -466,7 +470,14 @@ public final class DevicesController: NSSplitViewController, NSTableViewDataSour
             self.rebuildModel()
             self.reloadSidebar()
             self.showDetails()
+        } catch {
+            discoveryError = error.localizedDescription
+            showDiscoveryErrorBanner()
         }
+    }
+
+    public func refreshLocalRows() {
+        Task { await refreshDevices() }
     }
 
     @discardableResult

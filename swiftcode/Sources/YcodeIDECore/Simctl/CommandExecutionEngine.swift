@@ -1,44 +1,6 @@
 import Foundation
 import os
-
-public final class ProcessExecutor: @unchecked Sendable {
-    private let process = Process()
-    private let lock = NSLock()
-    private var isTerminated = false
-
-    public init(executableURL: URL, arguments: [String], stdoutPipe: Pipe, stderrPipe: Pipe) {
-        process.executableURL = executableURL
-        process.arguments = arguments
-        process.standardOutput = stdoutPipe
-        process.standardError = stderrPipe
-    }
-
-    public func run() throws {
-        try process.run()
-    }
-
-    public func terminate() {
-        lock.lock()
-        defer { lock.unlock() }
-        if !isTerminated && process.isRunning {
-            process.terminate()
-            isTerminated = true
-        }
-    }
-
-    public func runAsync() async throws -> Int32 {
-        try await withCheckedThrowingContinuation { continuation in
-            process.terminationHandler = { proc in
-                continuation.resume(returning: proc.terminationStatus)
-            }
-            do {
-                try process.run()
-            } catch {
-                continuation.resume(throwing: error)
-            }
-        }
-    }
-}
+import YcodeDeviceModel
 
 public actor CommandExecutionEngine {
     public static let shared = CommandExecutionEngine()
@@ -145,85 +107,43 @@ public actor CommandExecutionEngine {
     }
 
     private func runSingleProcessExecution(spec: CommandSpec, recordID: UUID, startedAt: Date) async -> CommandExecutionRecord {
-        let stdoutPipe = Pipe()
-        let stderrPipe = Pipe()
-
-        let executor = ProcessExecutor(
-            executableURL: spec.executableURL,
-            arguments: spec.arguments,
-            stdoutPipe: stdoutPipe,
-            stderrPipe: stderrPipe
-        )
-
-        let stdoutTask = Task.detached {
-            return (try? stdoutPipe.fileHandleForReading.readToEnd()) ?? Data()
-        }
-
-        let stderrTask = Task.detached {
-            return (try? stderrPipe.fileHandleForReading.readToEnd()) ?? Data()
-        }
-
-        return await withTaskCancellationHandler {
-            do {
-                let exitCode = try await withThrowingTaskGroup(of: Int32.self) { group in
-                    group.addTask {
-                        try await executor.runAsync()
-                    }
-
-                    group.addTask {
-                        try await Task.sleep(for: spec.timeout)
-                        executor.terminate()
-                        throw NSError(domain: "CommandExecutionEngine", code: 2, userInfo: [NSLocalizedDescriptionKey: "Command timed out"])
-                    }
-
-                    guard let firstResult = try await group.next() else {
-                        throw NSError(domain: "CommandExecutionEngine", code: 3, userInfo: [NSLocalizedDescriptionKey: "Execution context lost"])
-                    }
-                    group.cancelAll()
-                    return firstResult
-                }
-
-                let duration = Date().timeIntervalSince(startedAt)
-                let durationVal = Duration.seconds(duration)
-
-                let stdoutData = await stdoutTask.value
-                let stderrData = await stderrTask.value
-
-                let outcome: CommandOutcome = (exitCode == 0) ? .success : .nonZeroExit(code: exitCode)
-                return CommandExecutionRecord(
-                    id: recordID,
-                    command: spec,
-                    stdout: stdoutData,
-                    stderr: stderrData,
-                    exitCode: exitCode,
-                    duration: durationVal,
-                    startedAt: startedAt,
-                    outcome: outcome
-                )
-
-            } catch {
-                let duration = Date().timeIntervalSince(startedAt)
-                let durationVal = Duration.seconds(duration)
-                let isTimeout = (error as NSError).domain == "CommandExecutionEngine" && (error as NSError).code == 2
-
-                executor.terminate()
-
-                let stdoutData = await stdoutTask.value
-                let stderrData = await stderrTask.value
-
-                return CommandExecutionRecord(
-                    id: recordID,
-                    command: spec,
-                    stdout: stdoutData,
-                    stderr: stderrData,
-                    exitCode: -1,
-                    duration: durationVal,
-                    startedAt: startedAt,
-                    outcome: isTimeout ? .timedOut : .launchFailed(reason: error.localizedDescription)
-                )
+        let timeoutSeconds = Double(spec.timeout.components.seconds) + Double(spec.timeout.components.attoseconds) / 1_000_000_000_000_000_000
+        do {
+            let result = try await DeviceConnectProcessRunner.shared.run(
+                executableURL: spec.executableURL,
+                arguments: spec.arguments,
+                timeout: timeoutSeconds
+            )
+            let duration = Date().timeIntervalSince(startedAt)
+            let outcome: CommandOutcome = (result.exitCode == 0) ? .success : .nonZeroExit(code: result.exitCode)
+            return CommandExecutionRecord(
+                id: recordID,
+                command: spec,
+                stdout: result.stdout.data(using: .utf8) ?? Data(),
+                stderr: result.stderr.data(using: .utf8) ?? Data(),
+                exitCode: result.exitCode,
+                duration: .seconds(duration),
+                startedAt: startedAt,
+                outcome: outcome
+            )
+        } catch {
+            let duration = Date().timeIntervalSince(startedAt)
+            let isTimeout: Bool
+            if let processError = error as? DeviceConnectProcessError, case .timedOut = processError {
+                isTimeout = true
+            } else {
+                isTimeout = false
             }
-        } onCancel: {
-            executor.terminate()
+            return CommandExecutionRecord(
+                id: recordID,
+                command: spec,
+                stdout: Data(),
+                stderr: error.localizedDescription.data(using: .utf8) ?? Data(),
+                exitCode: -1,
+                duration: .seconds(duration),
+                startedAt: startedAt,
+                outcome: isTimeout ? .timedOut : .launchFailed(reason: error.localizedDescription)
+            )
         }
     }
 }

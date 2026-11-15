@@ -12,23 +12,21 @@ import SwiftCodeConnect
 extension DeviceHubSimctl {
     @discardableResult
     static func runTool(_ executable: String, _ arguments: [String], timeout: TimeInterval = 30) -> (status: Int32, output: String) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = arguments
-        let out = Pipe()
-        process.standardOutput = out
-        process.standardError = out
-        process.standardInput = FileHandle.nullDevice
-        guard (try? process.run()) != nil else { return (-1, "could not launch \(executable)") }
-        let group = DispatchGroup()
-        group.enter()
-        DispatchQueue.global().async { process.waitUntilExit(); group.leave() }
-        if group.wait(timeout: .now() + timeout) == .timedOut {
-            process.terminate()
-            return (-2, "timed out")
+        do {
+            let result = try DeviceConnectProcessRunner.shared.runBlocking(
+                executableURL: URL(fileURLWithPath: executable),
+                arguments: arguments,
+                timeout: timeout
+            )
+            return (result.exitCode, result.stdout + result.stderr)
+        } catch let error as DeviceConnectProcessError {
+            if case .timedOut = error {
+                return (-2, "timed out")
+            }
+            return (-1, error.localizedDescription)
+        } catch {
+            return (-1, error.localizedDescription)
         }
-        let data = out.fileHandleForReading.readDataToEndOfFile()
-        return (process.terminationStatus, String(decoding: data, as: UTF8.self))
     }
 }
 

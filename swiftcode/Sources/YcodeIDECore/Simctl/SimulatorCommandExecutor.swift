@@ -1,5 +1,6 @@
 import Foundation
 import os
+import YcodeDeviceModel
 
 public actor SimulatorCommandExecutor {
     private let logger = Logger(subsystem: "com.swiftcode.simulator", category: "CommandExecutor")
@@ -26,61 +27,22 @@ public actor SimulatorCommandExecutor {
                 output: "Executable not found at '\(command.executable)'. simctl requires macOS with Xcode installed.")
         }
 
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: command.executable)
-        process.arguments = command.arguments
-
-        let outputPipe = Pipe()
-        let errorPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = errorPipe
-
         do {
-            try process.run()
-
-            let exitCode = try await withThrowingTaskGroup(of: Int32.self) { group in
-                group.addTask {
-                    process.waitUntilExit()
-                    return process.terminationStatus
-                }
-
-                group.addTask {
-                    try await Task.sleep(nanoseconds: UInt64(command.timeout * 1_000_000_000))
-                    if process.isRunning {
-                        process.terminate()
-                    }
-                    throw SimulatorError.bootTimeout(udid: command.name)
-                }
-
-                guard let result = try await group.next() else {
-                    process.terminate()
-                    throw SimulatorError.simctlFailed(reason: "Execution context lost")
-                }
-                group.cancelAll()
-                return result
-            }
-
-            let outputData: Data
-            if let data = try? outputPipe.fileHandleForReading.readToEnd() {
-                outputData = data
-            } else {
-                outputData = Data()
-            }
-
-            let errorData: Data
-            if let data = try? errorPipe.fileHandleForReading.readToEnd() {
-                errorData = data
-            } else {
-                errorData = Data()
-            }
-
-            let output = String(data: outputData, encoding: .utf8) ?? ""
-            let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
+            let result = try await DeviceConnectProcessRunner.shared.run(
+                executableURL: URL(fileURLWithPath: command.executable),
+                arguments: command.arguments,
+                timeout: command.timeout
+            )
             let duration = Date().timeIntervalSince(startTime)
-
-            logger.info("[END] Command '\(command.name)' exited with \(exitCode) in \(duration)s")
-            return ExecutionResult(exitCode: exitCode, output: output, errorOutput: errorOutput, duration: duration)
-
+            logger.info("[END] Command '\(command.name)' exited with \(result.exitCode) in \(duration)s")
+            return ExecutionResult(exitCode: result.exitCode, output: result.stdout, errorOutput: result.stderr, duration: duration)
+        } catch let error as DeviceConnectProcessError {
+            let duration = Date().timeIntervalSince(startTime)
+            logger.error("[FAILED] Command '\(command.name)' failed after \(duration)s: \(error.localizedDescription)")
+            if case .timedOut = error {
+                throw SimulatorError.bootTimeout(udid: command.name)
+            }
+            throw SimulatorError.simctlFailed(reason: error.localizedDescription)
         } catch {
             let duration = Date().timeIntervalSince(startTime)
             logger.error("[FAILED] Command '\(command.name)' failed after \(duration)s: \(error.localizedDescription)")

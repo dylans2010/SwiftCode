@@ -1,4 +1,5 @@
 import Foundation
+import YcodeDeviceModel
 
 public struct XcodebuildDownload: Sendable, Equatable {
     public var platform: SimPlatform
@@ -74,7 +75,7 @@ public final class XcodebuildDownloadRun: @unchecked Sendable {
     public let download: XcodebuildDownload
     public let tool: String
     private let lock = NSLock()
-    private var process: Process?
+    private var streamTask: Task<Outcome, Never>?
     private var interrupted = false
 
     public init(_ d: XcodebuildDownload, tool: String = XcodebuildDownload.tool()) {
@@ -89,55 +90,56 @@ public final class XcodebuildDownloadRun: @unchecked Sendable {
     }
 
     public func cancel() {
-        let p: Process? = lock.withLock { interrupted = true; return process }
-        guard let p, p.isRunning else { return }
-        p.interrupt()
-        DispatchQueue.global().asyncAfter(deadline: .now() + 5) { if p.isRunning { p.terminate() } }
+        let task: Task<Outcome, Never>? = lock.withLock {
+            interrupted = true
+            return streamTask
+        }
+        task?.cancel()
     }
 
     public func run(output: @escaping @Sendable (String) -> Void, progress: @escaping @Sendable (XcodebuildProgress) -> Void) async -> Outcome {
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: tool)
-        p.arguments = Array(download.arguments(tool: tool).dropFirst())
-        let pipe = Pipe()
-        p.standardOutput = pipe
-        p.standardError = pipe
-        p.standardInput = FileHandle.nullDevice
-        lock.withLock { process = p }
-        do { try p.run() } catch {
-            return .failed(127, "\(tool): \(error.localizedDescription)")
-        }
-        return await withCheckedContinuation { (k: CheckedContinuation<Outcome, Never>) in
-            Thread.detachNewThread { [self] in
-                let h = pipe.fileHandleForReading
-                var text = Data(), line = Data()
-                func parse(_ bytes: Data) {
-                    if let pr = XcodebuildProgress.parse(String(decoding: bytes, as: UTF8.self)) { progress(pr) }
-                }
-                while true {
-                    let d = h.availableData
-                    if d.isEmpty { break }
-                    text.append(d)
-                    output(String(decoding: d, as: UTF8.self))
-                    for b in d {
-                        if b == UInt8(ascii: "\n") || b == UInt8(ascii: "\r") {
-                            if !line.isEmpty { parse(line) }
-                            line.removeAll(keepingCapacity: true)
-                        } else {
-                            line.append(b)
-                        }
+        let tail = LineTail()
+        let task = Task { () -> Outcome in
+            do {
+                let code = try await DeviceConnectProcessRunner.shared.runStreamingWithExitCode(
+                    executableURL: URL(fileURLWithPath: tool),
+                    arguments: Array(download.arguments(tool: tool).dropFirst()),
+                    onStdout: { line in
+                        tail.append(line)
+                        output(line + "\n")
+                        if let pr = XcodebuildProgress.parse(line) { progress(pr) }
+                    },
+                    onStderr: { line in
+                        tail.append(line)
+                        output(line + "\n")
+                        if let pr = XcodebuildProgress.parse(line) { progress(pr) }
                     }
-                }
-                if !line.isEmpty { parse(line) }
-                p.waitUntilExit()
-                let wasInterrupted = lock.withLock { interrupted }
-                if p.terminationStatus == 0 { k.resume(returning: .finished) }
-                else if wasInterrupted { k.resume(returning: .cancelled) }
-                else {
-                    let tail = String(decoding: text, as: UTF8.self).split(whereSeparator: \.isNewline).suffix(4).joined(separator: "\n")
-                    k.resume(returning: .failed(p.terminationStatus, tail))
-                }
+                )
+                if Task.isCancelled || lock.withLock({ interrupted }) { return .cancelled }
+                if code == 0 { return .finished }
+                return .failed(code, tail.text())
+            } catch {
+                if Task.isCancelled || lock.withLock({ interrupted }) { return .cancelled }
+                return .failed(127, "\(tool): \(error.localizedDescription)")
             }
         }
+        lock.withLock { streamTask = task }
+        return await task.value
+    }
+}
+
+private final class LineTail: @unchecked Sendable {
+    private let lock = NSLock()
+    private var lines: [String] = []
+
+    func append(_ line: String) {
+        lock.withLock {
+            lines.append(line)
+            if lines.count > 4 { lines.removeFirst(lines.count - 4) }
+        }
+    }
+
+    func text() -> String {
+        lock.withLock { lines.joined(separator: "\n") }
     }
 }

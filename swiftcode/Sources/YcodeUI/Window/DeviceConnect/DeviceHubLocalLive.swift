@@ -134,15 +134,11 @@ final class LocalSimPump: @unchecked Sendable {
 
     
     private func capture(to url: URL) -> (png: [UInt8], image: CGImage, width: Int, height: Int)? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-        process.arguments = ["simctl", "io", udid, "screenshot", url.path]
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        process.standardInput = FileHandle.nullDevice
-        guard (try? process.run()) != nil else { return nil }
-        process.waitUntilExit()
-        guard process.terminationStatus == 0, let png = try? Data(contentsOf: url), !png.isEmpty,
+        guard let result = try? DeviceConnectProcessRunner.shared.runBlocking(
+            executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+            arguments: ["simctl", "io", udid, "screenshot", url.path],
+            timeout: 20
+        ), result.exitCode == 0, let png = try? Data(contentsOf: url), !png.isEmpty,
               let source = CGImageSourceCreateWithData(png as CFData, nil),
               let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else { return nil }
         return (Array(png), image, image.width, image.height)
@@ -242,26 +238,21 @@ enum DeviceHubSimctl {
     
     @discardableResult
     static func run(_ arguments: [String], timeout: TimeInterval = 30) -> (status: Int32, output: String) {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-        process.arguments = arguments
-        let out = Pipe()
-        process.standardOutput = out
-        process.standardError = out
-        process.standardInput = FileHandle.nullDevice
-        guard (try? process.run()) != nil else { return (-1, "could not launch xcrun") }
-        let group = DispatchGroup()
-        group.enter()
-        DispatchQueue.global().async {
-            process.waitUntilExit()
-            group.leave()
+        do {
+            let result = try DeviceConnectProcessRunner.shared.runBlocking(
+                executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+                arguments: arguments,
+                timeout: timeout
+            )
+            return (result.exitCode, result.stdout + result.stderr)
+        } catch let error as DeviceConnectProcessError {
+            if case .timedOut = error {
+                return (-2, "timed out")
+            }
+            return (-1, error.localizedDescription)
+        } catch {
+            return (-1, error.localizedDescription)
         }
-        if group.wait(timeout: .now() + timeout) == .timedOut {
-            process.terminate()
-            return (-2, "timed out")
-        }
-        let data = out.fileHandleForReading.readDataToEndOfFile()
-        return (process.terminationStatus, String(decoding: data, as: UTF8.self))
     }
 
     
@@ -271,13 +262,12 @@ enum DeviceHubSimctl {
                                                 formatOptions: [.withYear, .withMonth, .withDay, .withTime, .withDashSeparatorInDate, .withColonSeparatorInTime])
             .replacingOccurrences(of: ":", with: "-")
         let url = directory.appendingPathComponent("\(deviceName) Recording \(stamp).mov")
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-        process.arguments = ["simctl", "io", udid, "recordVideo", "--codec=h264", url.path]
-        process.standardOutput = FileHandle.nullDevice
-        process.standardError = FileHandle.nullDevice
-        process.standardInput = FileHandle.nullDevice
-        try process.run()
+        let process = try DeviceConnectProcessRunner.shared.runStreaming(
+            executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+            arguments: ["simctl", "io", udid, "recordVideo", "--codec=h264", url.path],
+            onStdout: { _ in },
+            onStderr: { _ in }
+        )
         return (process, url)
     }
 
@@ -321,15 +311,12 @@ enum DeviceHubSimctl {
 
     
     static func streamLogs(udid: String) -> (process: Process, output: Pipe)? {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-        process.arguments = ["simctl", "spawn", udid, "log", "stream", "--style", "compact"]
-        let out = Pipe()
-        process.standardOutput = out
-        process.standardError = out
-        process.standardInput = FileHandle.nullDevice
-        guard (try? process.run()) != nil else { return nil }
-        return (process, out)
+        guard let started = try? DeviceConnectProcessRunner.shared.start(
+            executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+            arguments: ["simctl", "spawn", udid, "log", "stream", "--style", "compact"],
+            mergeStderr: true
+        ) else { return nil }
+        return (started.process, started.stdout)
     }
 
     

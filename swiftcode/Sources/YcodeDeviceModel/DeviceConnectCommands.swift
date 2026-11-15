@@ -101,40 +101,44 @@ public struct DeveloperDirectoryCommand {
     }
 }
 
+public enum DeviceConnectDiscoveryError: Error, LocalizedError, Sendable {
+    case commandFailed(exitCode: Int32, output: String)
+    case noOutput(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .commandFailed(let exitCode, let output):
+            return "Device discovery failed with exit code \(exitCode): \(output)"
+        case .noOutput(let message):
+            return message
+        }
+    }
+}
+
 public struct DeviceInfoCommand {
     public init() {}
 
-    public func execute(deviceUDID: String) async throws -> [String: String] {
+    public func execute(deviceUDID: String) async throws -> DeviceInfoDetails {
         let devicectlURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("swiftcode-device-info-\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: file) }
         let args = [
             "devicectl", "device", "info", "details",
-            "--device", deviceUDID
+            "--device", deviceUDID,
+            "--json-output", file.path,
+            "-q"
         ]
-
-        do {
-            let res = try await DeviceConnectProcessRunner.shared.run(
-                executableURL: devicectlURL,
-                arguments: args
-            )
-
-            if res.exitCode == 0 {
-                var info: [String: String] = [:]
-                let lines = res.stdout.components(separatedBy: .newlines)
-                for line in lines {
-                    let parts = line.components(separatedBy: ":")
-                    if parts.count >= 2 {
-                        let key = parts[0].trimmingCharacters(in: .whitespacesAndNewlines)
-                        let val = parts[1...].joined(separator: ":").trimmingCharacters(in: .whitespacesAndNewlines)
-                        info[key] = val
-                    }
-                }
-                return info
-            } else {
-                return ["Error": "Command failed with code \(res.exitCode)"]
-            }
-        } catch {
-            return ["Error": error.localizedDescription]
+        let res = try await DeviceConnectProcessRunner.shared.run(
+            executableURL: devicectlURL,
+            arguments: args
+        )
+        guard res.exitCode == 0 else {
+            throw DeviceConnectDiscoveryError.commandFailed(exitCode: res.exitCode, output: res.stderr.trimmingCharacters(in: .whitespacesAndNewlines))
         }
+        guard let data = try? Data(contentsOf: file) else {
+            throw DeviceConnectDiscoveryError.noOutput("devicectl device info produced no JSON output.")
+        }
+        return try DeviceInfoDetails.parse(data: data, deviceUDID: deviceUDID)
     }
 }
 
@@ -185,20 +189,17 @@ public struct DiscoverDevicesCommand {
         let executable = URL(fileURLWithPath: "/usr/bin/xcrun")
         let args = ["xcdevice", "list"]
 
-        do {
-            let result = try await DeviceConnectProcessRunner.shared.run(
-                executableURL: executable,
-                arguments: args
+        let result = try await DeviceConnectProcessRunner.shared.run(
+            executableURL: executable,
+            arguments: args
+        )
+        guard result.exitCode == 0 else {
+            throw DeviceConnectDiscoveryError.commandFailed(
+                exitCode: result.exitCode,
+                output: result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
             )
-
-            if result.exitCode == 0 {
-                return DeviceParser.parseXCDeviceList(result.stdout)
-            } else {
-                return []
-            }
-        } catch {
-            return []
         }
+        return DeviceParser.parseXCDeviceList(result.stdout)
     }
 }
 

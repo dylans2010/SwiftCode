@@ -17,6 +17,7 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
 
     static let workspace = NSToolbarItem.Identifier("hub.workspace")
     static let bootSimulator = NSToolbarItem.Identifier("hub.bootSimulator")
+    static let refresh = NSToolbarItem.Identifier("hub.refresh")
     static let add = NSToolbarItem.Identifier("hub.addDevice")
     static let filter = NSToolbarItem.Identifier("hub.filter")
     static let captureGroup = NSToolbarItem.Identifier("hub.captureGroup")
@@ -44,7 +45,7 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
     }
 
     static let order: [NSToolbarItem.Identifier] = [.flexibleSpace, add, filter, .toggleSidebar, .sidebarTrackingSeparator, .flexibleSpace,
-                                                    workspace, bootSimulator, headset, captureGroup, zoom, open, more, .inspectorTrackingSeparator, .flexibleSpace, tabs]
+                                                    workspace, bootSimulator, refresh, headset, captureGroup, zoom, open, more, .inspectorTrackingSeparator, .flexibleSpace, tabs]
 
     func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         if #available(macOS 14.0, *) { return Self.order }
@@ -96,6 +97,15 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
             i.action = #selector(bootSimulatorClicked(_:))
             bootSimulatorItem = i
             updateBootSimulator()
+            return i
+        case Self.refresh:
+            let i = NSToolbarItem(itemIdentifier: id)
+            i.image = image("arrow.clockwise", "Refresh Devices")
+            i.label = "Refresh"
+            i.toolTip = "Re-run device discovery"
+            i.isBordered = true
+            i.target = self
+            i.action = #selector(refreshClicked(_:))
             return i
         case Self.captureGroup:
             let labels = ["Capture Keyboard", "Enter resize mode"]
@@ -266,6 +276,10 @@ final class DeviceHubToolbar: NSObject, NSToolbarDelegate, NSMenuDelegate, NSToo
 
     @objc func bootSimulatorClicked(_ sender: Any?) {
         owner.toggleBootSelectedSimulator(sender)
+    }
+
+    @objc func refreshClicked(_ sender: Any?) {
+        Task { await owner.refreshDevices() }
     }
 
     @objc func captureGroupChosen(_ sender: NSToolbarItemGroup) {

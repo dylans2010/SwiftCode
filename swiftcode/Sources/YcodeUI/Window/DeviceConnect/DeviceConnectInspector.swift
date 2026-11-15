@@ -46,7 +46,7 @@ public struct DeviceConnectInspector: View {
                         VStack(spacing: 8) {
                             InspectorRow(label: "Status", value: device.isConnected ? "Connected" : "Disconnected")
                             InspectorRow(label: "Transport", value: device.isWireless ? "Wireless Wi-Fi" : "USB Connection")
-                            InspectorRow(label: "Deployment", value: device.isDeploymentSupported ? "Supported" : "Unsupported")
+                            InspectorRow(label: "Deployment", value: device.isDeploymentSupported == true ? "Supported" : (device.isDeploymentSupported == nil ? "Unknown" : "Unsupported"))
                         }
                     }
                     .padding()

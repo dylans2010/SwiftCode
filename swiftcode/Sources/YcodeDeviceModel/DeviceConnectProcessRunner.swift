@@ -9,6 +9,8 @@ public struct DeviceConnectProcessResult: Sendable {
 public enum DeviceConnectProcessError: Error, LocalizedError, Sendable {
     case executableNotFound(URL)
     case launchFailed(URL, Error)
+    case invalidArguments(URL, String)
+    case timedOut(URL, TimeInterval)
 
     public var errorDescription: String? {
         switch self {
@@ -16,6 +18,10 @@ public enum DeviceConnectProcessError: Error, LocalizedError, Sendable {
             return "Executable not found: \(url.path)"
         case .launchFailed(let url, let error):
             return "Failed to launch \(url.path): \(error.localizedDescription)"
+        case .invalidArguments(let url, let reason):
+            return "Invalid arguments for \(url.path): \(reason)"
+        case .timedOut(let url, let timeout):
+            return "\(url.path) timed out after \(timeout)s."
         }
     }
 }
@@ -29,16 +35,34 @@ public struct DeviceConnectProcessRunner: Sendable {
         executableURL: URL,
         arguments: [String],
         environment: [String: String]? = nil,
-        workingDirectory: URL? = nil
+        workingDirectory: URL? = nil,
+        timeout: TimeInterval? = 60
     ) async throws -> DeviceConnectProcessResult {
         try await Task.detached(priority: .userInitiated) {
             try Self.runSync(
                 executableURL: executableURL,
                 arguments: arguments,
                 environment: environment,
-                workingDirectory: workingDirectory
+                workingDirectory: workingDirectory,
+                timeout: timeout
             )
         }.value
+    }
+
+    public func runBlocking(
+        executableURL: URL,
+        arguments: [String],
+        environment: [String: String]? = nil,
+        workingDirectory: URL? = nil,
+        timeout: TimeInterval? = 60
+    ) throws -> DeviceConnectProcessResult {
+        try Self.runSync(
+            executableURL: executableURL,
+            arguments: arguments,
+            environment: environment,
+            workingDirectory: workingDirectory,
+            timeout: timeout
+        )
     }
 
     public func runStreamingAsync(
@@ -46,9 +70,31 @@ public struct DeviceConnectProcessRunner: Sendable {
         arguments: [String],
         environment: [String: String]? = nil,
         workingDirectory: URL? = nil,
+        timeout: TimeInterval? = nil,
         onStdout: @escaping @Sendable (String) -> Void,
         onStderr: @escaping @Sendable (String) -> Void
     ) async throws -> Bool {
+        let exitCode = try await runStreamingWithExitCode(
+            executableURL: executableURL,
+            arguments: arguments,
+            environment: environment,
+            workingDirectory: workingDirectory,
+            timeout: timeout,
+            onStdout: onStdout,
+            onStderr: onStderr
+        )
+        return exitCode == 0
+    }
+
+    public func runStreamingWithExitCode(
+        executableURL: URL,
+        arguments: [String],
+        environment: [String: String]? = nil,
+        workingDirectory: URL? = nil,
+        timeout: TimeInterval? = nil,
+        onStdout: @escaping @Sendable (String) -> Void,
+        onStderr: @escaping @Sendable (String) -> Void
+    ) async throws -> Int32 {
         let running = try startStreaming(
             executableURL: executableURL,
             arguments: arguments,
@@ -58,15 +104,22 @@ public struct DeviceConnectProcessRunner: Sendable {
             onStderr: onStderr
         )
         let process = running.process
+        let deadline = timeout.map { Date().addingTimeInterval($0) }
         while process.isRunning {
             if Task.isCancelled {
                 process.terminate()
-                return false
+                running.flush()
+                return -1
+            }
+            if let deadline, let timeout, Date() > deadline {
+                process.terminate()
+                running.flush()
+                throw DeviceConnectProcessError.timedOut(executableURL, timeout)
             }
             try await Task.sleep(nanoseconds: 50_000_000)
         }
         running.flush()
-        return process.terminationStatus == 0
+        return process.terminationStatus
     }
 
     public func runStreaming(
@@ -87,11 +140,37 @@ public struct DeviceConnectProcessRunner: Sendable {
         ).process
     }
 
+    public func start(
+        executableURL: URL,
+        arguments: [String],
+        environment: [String: String]? = nil,
+        workingDirectory: URL? = nil,
+        mergeStderr: Bool = false
+    ) throws -> (process: Process, stdout: Pipe, stderr: Pipe) {
+        let process = try Self.makeProcess(
+            executableURL: executableURL,
+            arguments: arguments,
+            environment: environment,
+            workingDirectory: workingDirectory
+        )
+        let stdoutPipe = Pipe()
+        let stderrPipe = mergeStderr ? stdoutPipe : Pipe()
+        process.standardOutput = stdoutPipe
+        process.standardError = stderrPipe
+        do {
+            try process.run()
+        } catch {
+            throw DeviceConnectProcessError.launchFailed(executableURL, error)
+        }
+        return (process, stdoutPipe, stderrPipe)
+    }
+
     private static func runSync(
         executableURL: URL,
         arguments: [String],
         environment: [String: String]?,
-        workingDirectory: URL?
+        workingDirectory: URL?,
+        timeout: TimeInterval?
     ) throws -> DeviceConnectProcessResult {
         let process = try makeProcess(
             executableURL: executableURL,
@@ -118,13 +197,32 @@ public struct DeviceConnectProcessRunner: Sendable {
             group.leave()
         }
 
+        let timeoutState = TimeoutState()
+        var watchdog: DispatchWorkItem?
+        if let timeout {
+            let item = DispatchWorkItem {
+                if process.isRunning {
+                    timeoutState.timedOut = true
+                    process.terminate()
+                }
+            }
+            watchdog = item
+            DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + timeout, execute: item)
+        }
+
         do {
             try process.run()
         } catch {
+            watchdog?.cancel()
             throw DeviceConnectProcessError.launchFailed(executableURL, error)
         }
         process.waitUntilExit()
+        watchdog?.cancel()
         group.wait()
+
+        if timeoutState.timedOut, let timeout {
+            throw DeviceConnectProcessError.timedOut(executableURL, timeout)
+        }
 
         return DeviceConnectProcessResult(
             exitCode: process.terminationStatus,
@@ -184,12 +282,19 @@ public struct DeviceConnectProcessRunner: Sendable {
         environment: [String: String]?,
         workingDirectory: URL?
     ) throws -> Process {
+        guard executableURL.isFileURL, executableURL.path.hasPrefix("/"), !executableURL.path.isEmpty else {
+            throw DeviceConnectProcessError.invalidArguments(executableURL, "Executable must be an absolute file URL.")
+        }
+        for argument in arguments where argument.contains("\0") {
+            throw DeviceConnectProcessError.invalidArguments(executableURL, "Arguments must not contain NUL bytes.")
+        }
         guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
             throw DeviceConnectProcessError.executableNotFound(executableURL)
         }
         let process = Process()
         process.executableURL = executableURL
         process.arguments = arguments
+        process.standardInput = FileHandle.nullDevice
         if let environment {
             process.environment = environment
         }
@@ -197,6 +302,16 @@ public struct DeviceConnectProcessRunner: Sendable {
             process.currentDirectoryURL = workingDirectory
         }
         return process
+    }
+}
+
+private final class TimeoutState: @unchecked Sendable {
+    private let lock = NSLock()
+    private var _timedOut = false
+
+    var timedOut: Bool {
+        get { lock.withLock { _timedOut } }
+        set { lock.withLock { _timedOut = newValue } }
     }
 }
 

@@ -1,5 +1,6 @@
 import Foundation
 import os
+import YcodeDeviceModel
 
 public actor SimctlService {
     private let executor = SimulatorCommandExecutor()
@@ -47,7 +48,14 @@ public actor SimctlService {
                     let identifier = r["identifier"] as? String ?? ""
                     let name = r["name"] as? String ?? ""
                     let version = r["version"] as? String ?? ""
-                    let platform = r["platform"] as? String ?? (name.contains("iOS") ? "iOS" : name.contains("watchOS") ? "watchOS" : name.contains("tvOS") ? "tvOS" : name.contains("visionOS") ? "visionOS" : "macOS")
+                    let declaredPlatform = DevicePlatform(parsing: r["platform"] as? String)
+                    let platform: String
+                    if declaredPlatform != .unknown {
+                        platform = declaredPlatform.rawValue
+                    } else {
+                        let fromName = DevicePlatform(parsing: name)
+                        platform = fromName == .unknown ? DevicePlatform(runtimeIdentifier: identifier).rawValue : fromName.rawValue
+                    }
                     let isAvailable = r["isAvailable"] as? Bool ?? true
 
                     if isAvailable {
@@ -66,13 +74,30 @@ public actor SimctlService {
                 r1.version.compare(r2.version, options: .numeric) == .orderedDescending
             }
 
+            var runtimeVersions: [String: String] = [:]
+            var runtimePlatforms: [String: String] = [:]
+            var runtimeArchitectures: [String: String] = [:]
+            for r in parsedRuntimes {
+                runtimeVersions[r.identifier] = r.version
+                runtimePlatforms[r.identifier] = r.platform
+            }
+            if let runtimesList = json["runtimes"] as? [[String: Any]] {
+                for r in runtimesList {
+                    guard let id = r["identifier"] as? String,
+                          let archs = r["supportedArchitectures"] as? [String],
+                          let first = archs.first else { continue }
+                    runtimeArchitectures[id] = first
+                }
+            }
+
             var parsedDevices: [SimulatorDevice] = []
             if let devicesMap = json["devices"] as? [String: [[String: Any]]] {
                 for (runtimeKey, devList) in devicesMap {
                     let cleanRuntimeID = runtimeKey.replacingOccurrences(of: "com.apple.CoreSimulator.SimRuntime.", with: "")
                     let parts = cleanRuntimeID.split(separator: "-")
-                    let platform = parts.first.map(String.init) ?? "iOS"
-                    let version = parts.dropFirst().joined(separator: ".")
+                    let platform = runtimePlatforms[runtimeKey] ?? DevicePlatform(runtimeIdentifier: runtimeKey).rawValue
+                    let version = runtimeVersions[runtimeKey] ?? parts.dropFirst().joined(separator: ".")
+                    let architecture = runtimeArchitectures[runtimeKey] ?? "Unknown"
 
                     for d in devList {
                         let udid = d["udid"] as? String ?? ""
@@ -96,7 +121,7 @@ public actor SimctlService {
                             runtimeIdentifier: runtimeKey,
                             platform: platform,
                             osVersion: version,
-                            architecture: "arm64",
+                            architecture: architecture,
                             state: state,
                             isAvailable: isAvailable
                         ))

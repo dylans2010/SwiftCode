@@ -30,10 +30,10 @@ public struct ConnectedDevice: Identifiable, Codable, Sendable, Hashable {
     public let isWireless: Bool
     public let isUSB: Bool
 
-    public let isDeveloperModeEnabled: Bool
-    public let isTrusted: Bool
-    public let isDeploymentSupported: Bool
-    public let isSigningCompatible: Bool
+    public let isDeveloperModeEnabled: Bool?
+    public let isTrusted: Bool?
+    public let isDeploymentSupported: Bool?
+    public let isSigningCompatible: Bool?
 
     public init(
         name: String,
@@ -50,10 +50,10 @@ public struct ConnectedDevice: Identifiable, Codable, Sendable, Hashable {
         isOffline: Bool = false,
         isWireless: Bool = false,
         isUSB: Bool = true,
-        isDeveloperModeEnabled: Bool = true,
-        isTrusted: Bool = true,
-        isDeploymentSupported: Bool = true,
-        isSigningCompatible: Bool = true
+        isDeveloperModeEnabled: Bool? = nil,
+        isTrusted: Bool? = nil,
+        isDeploymentSupported: Bool? = nil,
+        isSigningCompatible: Bool? = nil
     ) {
         self.name = name
         self.model = model

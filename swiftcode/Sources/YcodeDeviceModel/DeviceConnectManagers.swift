@@ -219,6 +219,7 @@ public final class DeviceConnectDeviceManager {
     public private(set) var devices: [ConnectedDevice] = []
     public var selectedDevice: ConnectedDevice?
     public var isDiscovering = false
+    public private(set) var discoveryError: String?
 
     private let service = DeviceConnectDeviceService()
 
@@ -231,10 +232,15 @@ public final class DeviceConnectDeviceManager {
         await DeviceConnectEngine.shared.startDiscovery { [weak self] discovered in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
+                self.discoveryError = nil
                 self.devices = discovered
                 if self.selectedDevice == nil, let first = discovered.first {
                     self.selectedDevice = first
                 }
+            }
+        } onError: { [weak self] error in
+            Task { @MainActor [weak self] in
+                self?.discoveryError = error.localizedDescription
             }
         }
     }
@@ -247,12 +253,13 @@ public final class DeviceConnectDeviceManager {
     public func refreshDevices() async {
         do {
             let discovered = try await service.discover()
+            self.discoveryError = nil
             self.devices = discovered
             if self.selectedDevice == nil || !discovered.contains(where: { $0.udid == self.selectedDevice?.udid }) {
                 self.selectedDevice = discovered.first
             }
         } catch {
-            self.devices = []
+            self.discoveryError = error.localizedDescription
         }
     }
 
@@ -308,20 +315,39 @@ public final class DeviceConnectEnvironmentManager {
 public final class DeviceConnectHistoryManager {
     public static let shared = DeviceConnectHistoryManager()
 
+    private static let historyKey = "SwiftCode.DeviceConnect.history"
+    private static let historyLimit = 50
+
     public private(set) var historyItems: [DeploymentHistory] = []
 
-    private init() {}
+    private init() {
+        if let data = UserDefaults.standard.data(forKey: Self.historyKey),
+           let stored = try? JSONDecoder().decode([DeploymentHistory].self, from: data) {
+            historyItems = stored
+        }
+    }
+
+    private func saveHistory() {
+        guard let data = try? JSONEncoder().encode(historyItems) else { return }
+        UserDefaults.standard.set(data, forKey: Self.historyKey)
+    }
 
     public func addHistoryItem(_ item: DeploymentHistory) {
         historyItems.insert(item, at: 0)
+        if historyItems.count > Self.historyLimit {
+            historyItems.removeLast(historyItems.count - Self.historyLimit)
+        }
+        saveHistory()
     }
 
     public func removeHistoryItem(_ item: DeploymentHistory) {
         historyItems.removeAll(where: { $0.id == item.id })
+        saveHistory()
     }
 
     public func clearHistory() {
         historyItems.removeAll()
+        saveHistory()
     }
 }
 
@@ -372,10 +398,23 @@ public final class DeviceConnectPreferencesManager {
 public final class DeviceConnectSessionManager {
     public static let shared = DeviceConnectSessionManager()
 
+    private static let sessionsKey = "SwiftCode.DeviceConnect.sessions"
+    private static let sessionsLimit = 50
+
     public private(set) var activeSession: DeviceSession?
     public private(set) var sessionsHistory: [DeviceSession] = []
 
-    private init() {}
+    private init() {
+        if let data = UserDefaults.standard.data(forKey: Self.sessionsKey),
+           let stored = try? JSONDecoder().decode([DeviceSession].self, from: data) {
+            sessionsHistory = stored
+        }
+    }
+
+    private func saveSessionsHistory() {
+        guard let data = try? JSONEncoder().encode(sessionsHistory) else { return }
+        UserDefaults.standard.set(data, forKey: Self.sessionsKey)
+    }
 
     public func createSession(device: ConnectedDevice, projectName: String, configuration: String) -> DeviceSession {
         let session = DeviceSession(
@@ -386,6 +425,10 @@ public final class DeviceConnectSessionManager {
         )
         activeSession = session
         sessionsHistory.append(session)
+        if sessionsHistory.count > Self.sessionsLimit {
+            sessionsHistory.removeFirst(sessionsHistory.count - Self.sessionsLimit)
+        }
+        saveSessionsHistory()
         return session
     }
 
@@ -396,6 +439,7 @@ public final class DeviceConnectSessionManager {
         } else {
             sessionsHistory.append(session)
         }
+        saveSessionsHistory()
     }
 
     public func endActiveSession(finalStatus: RuntimeStatus) {
@@ -409,6 +453,7 @@ public final class DeviceConnectSessionManager {
 
     public func clearHistory() {
         sessionsHistory.removeAll()
+        saveSessionsHistory()
     }
 }
 

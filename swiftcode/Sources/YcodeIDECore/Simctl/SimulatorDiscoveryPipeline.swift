@@ -1,5 +1,6 @@
 import Foundation
 import os
+import YcodeDeviceModel
 
 public actor SimulatorDiscoveryPipeline {
     public static let shared = SimulatorDiscoveryPipeline()
@@ -90,12 +91,19 @@ public actor SimulatorDiscoveryPipeline {
     private func mergeAndResolve(_ result: SimctlDiscoveryResult, startTime: Date) throws -> SimulatorSnapshot {
         var domainRuntimes: [SimulatorRuntime] = []
         for r in result.runtimes {
-            let platform = r.platform ?? parsePlatform(fromName: r.name, identifier: r.identifier)
+            let platform = DevicePlatform(parsing: r.platform).rawValue
+            let resolvedPlatform: String
+            if platform == DevicePlatform.unknown.rawValue {
+                let fromName = DevicePlatform(parsing: r.name)
+                resolvedPlatform = fromName == .unknown ? DevicePlatform(runtimeIdentifier: r.identifier).rawValue : fromName.rawValue
+            } else {
+                resolvedPlatform = platform
+            }
             domainRuntimes.append(SimulatorRuntime(
                 identifier: r.identifier,
                 name: r.name,
                 version: r.version,
-                platform: platform,
+                platform: resolvedPlatform,
                 isAvailable: r.isAvailable
             ))
         }
@@ -104,14 +112,19 @@ public actor SimulatorDiscoveryPipeline {
             r1.version.compare(r2.version, options: .numeric) == .orderedDescending
         }
 
+        var runtimesByID: [String: RuntimeDTO] = [:]
+        for r in result.runtimes { runtimesByID[r.identifier] = r }
+
         var domainDevices: [SimulatorDevice] = []
         var bootedDeviceIDs = Set<String>()
 
         for (runtimeID, list) in result.devices {
+            let runtime = runtimesByID[runtimeID]
+            let platform = DevicePlatform(runtimeIdentifier: runtimeID).rawValue
             let cleanRuntimeID = runtimeID.replacingOccurrences(of: "com.apple.CoreSimulator.SimRuntime.", with: "")
             let parts = cleanRuntimeID.split(separator: "-")
-            let platform = parts.first.map(String.init) ?? "iOS"
-            let osVersion = parts.dropFirst().joined(separator: ".")
+            let osVersion = runtime?.version ?? parts.dropFirst().joined(separator: ".")
+            let architecture = runtime?.supportedArchitectures?.first ?? "Unknown"
 
             for d in list {
                 let state: SimulatorState = {
@@ -127,8 +140,6 @@ public actor SimulatorDiscoveryPipeline {
                 if state == .booted {
                     bootedDeviceIDs.insert(d.udid)
                 }
-
-                let architecture = "arm64"
 
                 domainDevices.append(SimulatorDevice(
                     udid: d.udid,
@@ -152,23 +163,5 @@ public actor SimulatorDiscoveryPipeline {
             generatedAt: Date(),
             discoveryDuration: duration
         )
-    }
-
-    private func parsePlatform(fromName name: String, identifier: String) -> String {
-        let lowerName = name.lowercased()
-        let lowerId = identifier.lowercased()
-
-        if lowerName.contains("ios") || lowerId.contains("ios") {
-            return "iOS"
-        } else if lowerName.contains("watch") || lowerId.contains("watch") {
-            return "watchOS"
-        } else if lowerName.contains("tv") || lowerId.contains("tv") {
-            return "tvOS"
-        } else if lowerName.contains("vision") || lowerId.contains("vision") {
-            return "visionOS"
-        } else if lowerName.contains("macos") || lowerId.contains("macos") {
-            return "macOS"
-        }
-        return "iOS"
     }
 }

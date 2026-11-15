@@ -1,5 +1,5 @@
 import Foundation
-import YcodeSubprocess
+import YcodeDeviceModel
 
 public enum DeveloperTools {
     public struct Tool: Equatable, Sendable {
@@ -16,19 +16,15 @@ public enum DeveloperTools {
         }
     }
 
-    public static func activeDeveloperDirectory() -> URL? {
+    public static func activeDeveloperDirectory() async -> URL? {
         if let d = ProcessInfo.processInfo.environment["DEVELOPER_DIR"], !d.isEmpty { return URL(fileURLWithPath: d) }
-        MainThreadGuard.blockingCall("xcode-select -p")
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/xcode-select")
-        p.arguments = ["-p"]
-        let out = Pipe()
-        p.standardOutput = out
-        p.standardError = FileHandle.nullDevice
-        guard (try? p.run()) != nil else { return nil }
-        p.waitUntilExit()
-        let s = String(decoding: out.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-        return p.terminationStatus == 0 && !s.isEmpty ? URL(fileURLWithPath: s) : nil
+        guard let result = try? await DeviceConnectProcessRunner.shared.run(
+            executableURL: URL(fileURLWithPath: "/usr/bin/xcode-select"),
+            arguments: ["-p"],
+            timeout: 10
+        ) else { return nil }
+        let s = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        return result.exitCode == 0 && !s.isEmpty ? URL(fileURLWithPath: s) : nil
     }
 
     @MainActor public static var installed: [Tool] {
@@ -39,13 +35,13 @@ public enum DeveloperTools {
 
     @MainActor private static var cached: [Tool]?
 
-    nonisolated static func lookUp() -> [Tool] { activeDeveloperDirectory().map { tools(inDeveloperDirectory: $0) } ?? [] }
+    nonisolated static func lookUp() async -> [Tool] { await activeDeveloperDirectory().map { tools(inDeveloperDirectory: $0) } ?? [] }
 
     @MainActor public static func prefetch() {
         guard cached == nil, !fetching else { return }
         fetching = true
         Task {
-            let list = await Task.detached { lookUp() }.value
+            let list = await lookUp()
             cached = list
             fetching = false
         }

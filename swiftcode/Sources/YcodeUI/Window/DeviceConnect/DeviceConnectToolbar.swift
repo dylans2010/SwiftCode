@@ -32,6 +32,13 @@ public struct DeviceConnectToolbar: View {
             }
             .disabled(deviceManager.isDiscovering)
 
+            if let discoveryError = deviceManager.discoveryError {
+                Text(discoveryError)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .lineLimit(2)
+            }
+
             Button(action: {
                 Task {
                     await environmentManager.validateEnvironment()

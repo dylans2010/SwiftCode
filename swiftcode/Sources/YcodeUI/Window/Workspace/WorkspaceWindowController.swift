@@ -1274,7 +1274,16 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
 
     @discardableResult
     public func presentDevices() async -> DevicesController {
-        let lists = await Task.detached { DevicesList.load() }.value
+        let snapshot: DeviceDiscoverySnapshot?
+        let discoveryError: String?
+        do {
+            snapshot = try await DeviceDiscoveryService.shared.discover()
+            discoveryError = nil
+        } catch {
+            snapshot = nil
+            discoveryError = error.localizedDescription
+        }
+        let lists = (devices: snapshot?.devices ?? [], simulators: snapshot?.simulators ?? [])
         if let c = devices, let w = devicesWindow, w.isVisible {
             configureSwiftCodeRemoteDevice(c)
             w.makeKeyAndOrderFront(nil)
@@ -1282,11 +1291,13 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         }
         devices?.closeLinks()
         let c = DevicesController(devices: lists.devices, simulators: lists.simulators)
+        c.discoveryError = discoveryError
         configureSwiftCodeRemoteDevice(c)
         devices = c
-        guard window?.isVisible == true else { _ = c.view; return c }
+        guard window?.isVisible == true else { _ = c.view; c.showDiscoveryErrorBanner(); return c }
         let w = c.makeWindow()
         c.restoreState()
+        c.showDiscoveryErrorBanner()
         devicesWindow = w
         if let old = devicesWindowCloseObserver { NotificationCenter.default.removeObserver(old) }
         devicesWindowCloseObserver = NotificationCenter.default.addObserver(

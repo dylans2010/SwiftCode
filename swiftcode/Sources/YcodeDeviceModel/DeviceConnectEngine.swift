@@ -81,7 +81,25 @@ public actor DeploymentPipeline {
         onLogUpdate("Setting target destination to: id=\(device.udid)")
 
         onStateUpdate(.resolvingSigning, "Resolving signing configuration...")
-        onLogUpdate("Validating apple developer signing certificates...")
+        onLogUpdate("Validating signing identities with security find-identity...")
+        do {
+            let identities = try await SigningValidationCommand().execute()
+            onLogUpdate("Found \(identities.count) code signing identit\(identities.count == 1 ? "y" : "ies").")
+            if identities.isEmpty {
+                let targetIsSimulator = await isSimulatorDevice(device.udid)
+                if targetIsSimulator {
+                    onLogUpdate("No signing identities found. Simulator targets build without signing, continuing.")
+                } else {
+                    onStateUpdate(.failed, "No signing identities found.")
+                    onLogUpdate("[Error] No code signing identities are available for physical-device deployment. Create a signing identity in Xcode or SwiftCode Accounts settings.")
+                    return false
+                }
+            }
+        } catch {
+            onStateUpdate(.failed, "Signing validation error.")
+            onLogUpdate("[Error] \(error.localizedDescription)")
+            return false
+        }
 
         onStateUpdate(.buildingProject, "Building project...")
         onLogUpdate("Running BuildProjectCommand...")
@@ -152,15 +170,34 @@ public actor DeploymentPipeline {
         }
 
         onStateUpdate(.running, "Application running.")
-        onLogUpdate("Application launched with PID \(actualPID). Starting runtime monitors...")
-
-        onLogUpdate("Streaming syslog Console output...")
+        onLogUpdate("Application launched with PID \(actualPID). Starting syslog stream...")
+        do {
+            let syslogProcess = try RuntimeLogsCommand().execute(
+                deviceUDID: device.udid,
+                pid: actualPID,
+                onLog: onLogUpdate
+            )
+            _ = await DeviceConnectCommandExecutor.shared.registerActiveProcess(syslogProcess)
+            onLogUpdate("Syslog streaming started for PID \(actualPID).")
+        } catch {
+            onLogUpdate("Syslog streaming could not start (\(error.localizedDescription)). Deployment continues without live console output.")
+        }
 
         let end = Date()
         let totalTime = end.timeIntervalSince(start)
         onStateUpdate(.completed, "Deployment completed successfully in \(String(format: "%.1f", totalTime))s.")
 
         return true
+    }
+
+    private func isSimulatorDevice(_ udid: String) async -> Bool {
+        let xcrunURL = URL(fileURLWithPath: "/usr/bin/xcrun")
+        guard let result = try? await DeviceConnectProcessRunner.shared.run(
+            executableURL: xcrunURL,
+            arguments: ["simctl", "list", "devices", "-j"],
+            timeout: 30
+        ), result.exitCode == 0 else { return false }
+        return result.stdout.contains(udid)
     }
 }
 
@@ -173,8 +210,8 @@ public final class DeviceConnectEngine: Sendable {
 
     private init() {}
 
-    public func startDiscovery(onDiscover: @escaping @Sendable ([ConnectedDevice]) -> Void) async {
-        await discovery.startContinuousDiscovery(interval: 10, onDiscover: onDiscover)
+    public func startDiscovery(onDiscover: @escaping @Sendable ([ConnectedDevice]) -> Void, onError: (@Sendable (Error) -> Void)? = nil) async {
+        await discovery.startContinuousDiscovery(interval: 10, onDiscover: onDiscover, onError: onError)
     }
 
     public func stopDiscovery() async {
@@ -214,16 +251,17 @@ public actor DeviceDiscovery {
 
     public init() {}
 
-    public func startContinuousDiscovery(interval: TimeInterval = 10, onDiscover: @escaping @Sendable ([ConnectedDevice]) -> Void) {
+    public func startContinuousDiscovery(interval: TimeInterval = 10, onDiscover: @escaping @Sendable ([ConnectedDevice]) -> Void, onError: (@Sendable (Error) -> Void)? = nil) {
         guard !isDiscovering else { return }
         isDiscovering = true
 
-        timer = Task { [interval, onDiscover] in
+        timer = Task { [interval, onDiscover, onError] in
             while !Task.isCancelled {
                 do {
                     let devices = try await DiscoverDevicesCommand().execute()
                     onDiscover(devices)
                 } catch {
+                    onError?(error)
                 }
 
                 try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
@@ -307,10 +345,23 @@ public actor RuntimeCoordinator {
 public actor SessionCoordinator {
     public static let shared = SessionCoordinator()
 
+    private static let pastSessionsKey = "SwiftCode.DeviceConnect.pastSessions"
+    private static let pastSessionsLimit = 50
+
     private var activeSessions: [UUID: DeviceSession] = [:]
     private var pastSessions: [DeviceSession] = []
 
-    private init() {}
+    private init() {
+        if let data = UserDefaults.standard.data(forKey: Self.pastSessionsKey),
+           let stored = try? JSONDecoder().decode([DeviceSession].self, from: data) {
+            pastSessions = stored
+        }
+    }
+
+    private func savePastSessions() {
+        guard let data = try? JSONEncoder().encode(pastSessions) else { return }
+        UserDefaults.standard.set(data, forKey: Self.pastSessionsKey)
+    }
 
     public func createSession(deviceUDID: String, deviceName: String, projectName: String, configuration: String) -> DeviceSession {
         let session = DeviceSession(
@@ -334,6 +385,10 @@ public actor SessionCoordinator {
         session.deploymentStatus = .completed
         activeSessions.removeValue(forKey: id)
         pastSessions.append(session)
+        if pastSessions.count > Self.pastSessionsLimit {
+            pastSessions.removeFirst(pastSessions.count - Self.pastSessionsLimit)
+        }
+        savePastSessions()
         return session
     }
 

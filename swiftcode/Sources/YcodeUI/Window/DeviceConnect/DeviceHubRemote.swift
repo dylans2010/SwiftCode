@@ -41,13 +41,14 @@ public final class RemoteDisplayLink {
     private func startForward() {
         guard let remote else { return }
         unlink(localSocket)
-        let p = Process()
-        p.executableURL = URL(fileURLWithPath: remote.settings.ssh)
-        p.arguments = remote.displayForwardArguments(localSocket: localSocket)
-        p.standardOutput = FileHandle.nullDevice
-        p.standardError = FileHandle.nullDevice
-        p.standardInput = FileHandle.nullDevice
-        do { try p.run(); forward = p } catch { forward = nil }
+        do {
+            forward = try DeviceConnectProcessRunner.shared.runStreaming(
+                executableURL: URL(fileURLWithPath: remote.settings.ssh),
+                arguments: remote.displayForwardArguments(localSocket: localSocket),
+                onStdout: { _ in },
+                onStderr: { _ in }
+            )
+        } catch { forward = nil }
     }
 
     public func close() {

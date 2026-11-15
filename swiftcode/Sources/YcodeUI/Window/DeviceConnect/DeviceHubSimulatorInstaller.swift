@@ -146,12 +146,18 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
 
     public func fetchAvailableTypesAndRuntimes() {
         Task {
-            let records = await Self.fetchDeviceTypeRecords()
-            let runtimes = await Self.fetchRuntimes()
-            await MainActor.run {
-                self.deviceTypeRecords = records
-                self.availableDeviceTypes = records.map { (name: $0.name, identifier: $0.identifier) }
-                self.availableRuntimes = runtimes
+            do {
+                let records = try await Self.fetchDeviceTypeRecords()
+                let runtimes = try await Self.fetchRuntimes()
+                await MainActor.run {
+                    self.deviceTypeRecords = records
+                    self.availableDeviceTypes = records.map { (name: $0.name, identifier: $0.identifier) }
+                    self.availableRuntimes = runtimes
+                }
+            } catch {
+                await MainActor.run {
+                    self.errorMessage = error.localizedDescription
+                }
             }
         }
     }
@@ -254,59 +260,57 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         }.value
     }
 
-    public static func fetchDeviceTypeRecords() async -> [DeviceTypeRecord] {
-        await Task.detached {
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-            p.arguments = ["simctl", "list", "-j", "devicetypes"]
-            let pipe = Pipe()
-            p.standardOutput = pipe
-            p.standardError = FileHandle.nullDevice
-            guard (try? p.run()) != nil else { return [] }
-            p.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let list = json["devicetypes"] as? [[String: Any]] else { return [] }
-            return list.compactMap { dict in
-                guard let name = dict["name"] as? String,
-                      let id = dict["identifier"] as? String else { return nil }
-                let family = (dict["productFamily"] as? String) ?? {
-                    if name.contains("iPad") { return "iPad" }
-                    if name.contains("iPhone") { return "iPhone" }
-                    if name.contains("Watch") { return "Apple Watch" }
-                    if name.contains("TV") { return "Apple TV" }
-                    if name.contains("Vision") { return "Apple Vision" }
-                    return "iPhone"
-                }()
-                return DeviceTypeRecord(name: name, identifier: id, productFamily: family)
-            }
-        }.value
+    public static func fetchDeviceTypeRecords() async throws -> [DeviceTypeRecord] {
+        let result = try await DeviceConnectProcessRunner.shared.run(
+            executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+            arguments: ["simctl", "list", "-j", "devicetypes"],
+            timeout: 30
+        )
+        guard result.exitCode == 0,
+              let data = result.stdout.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let list = json["devicetypes"] as? [[String: Any]] else {
+            throw NSError(domain: "SimulatorInstaller", code: Int(result.exitCode),
+                          userInfo: [NSLocalizedDescriptionKey: result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
+        return list.compactMap { dict in
+            guard let name = dict["name"] as? String,
+                  let id = dict["identifier"] as? String else { return nil }
+            let family = (dict["productFamily"] as? String) ?? {
+                if name.contains("iPad") { return "iPad" }
+                if name.contains("iPhone") { return "iPhone" }
+                if name.contains("Watch") { return "Apple Watch" }
+                if name.contains("TV") { return "Apple TV" }
+                if name.contains("Vision") { return "Apple Vision" }
+                return "iPhone"
+            }()
+            return DeviceTypeRecord(name: name, identifier: id, productFamily: family)
+        }
     }
 
     public static func fetchDeviceTypes() async -> [(name: String, identifier: String)] {
-        let records = await fetchDeviceTypeRecords()
+        let records = (try? await fetchDeviceTypeRecords()) ?? []
         return records.map { ($0.name, $0.identifier) }
     }
 
-    public static func fetchRuntimes() async -> [(name: String, identifier: String)] {
-        await Task.detached {
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-            p.arguments = ["simctl", "list", "-j", "runtimes"]
-            let pipe = Pipe()
-            p.standardOutput = pipe
-            p.standardError = FileHandle.nullDevice
-            guard (try? p.run()) != nil else { return [] }
-            p.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let list = json["runtimes"] as? [[String: Any]] else { return [] }
-            return list.compactMap { dict in
-                guard let name = dict["name"] as? String,
-                      let id = dict["identifier"] as? String else { return nil }
-                return (name: name, identifier: id)
-            }
-        }.value
+    public static func fetchRuntimes() async throws -> [(name: String, identifier: String)] {
+        let result = try await DeviceConnectProcessRunner.shared.run(
+            executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+            arguments: ["simctl", "list", "-j", "runtimes"],
+            timeout: 30
+        )
+        guard result.exitCode == 0,
+              let data = result.stdout.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let list = json["runtimes"] as? [[String: Any]] else {
+            throw NSError(domain: "SimulatorInstaller", code: Int(result.exitCode),
+                          userInfo: [NSLocalizedDescriptionKey: result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)])
+        }
+        return list.compactMap { dict in
+            guard let name = dict["name"] as? String,
+                  let id = dict["identifier"] as? String else { return nil }
+            return (name: name, identifier: id)
+        }
     }
 
     
@@ -386,16 +390,36 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
         errorMessage = nil
 
         Task.detached {
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcodebuild")
-            p.arguments = ["-downloadAllPlatforms"]
-            let pipe = Pipe()
-            p.standardOutput = pipe
-            p.standardError = pipe
-            p.standardInput = FileHandle.nullDevice
-
+            let code: Int32
             do {
-                try p.run()
+                code = try await DeviceConnectProcessRunner.shared.runStreamingWithExitCode(
+                    executableURL: URL(fileURLWithPath: "/usr/bin/xcodebuild"),
+                    arguments: ["-downloadAllPlatforms"],
+                    onStdout: { line in
+                        Task { @MainActor [weak self] in
+                            guard let self else { return }
+                            self.logLines.append(line)
+                            if self.logLines.count > 1000 { self.logLines.removeFirst(200) }
+                            if let progress = XcodebuildProgress.parse(line) {
+                                if let f = progress.fraction { self.progressFraction = f }
+                                if let s = progress.stage { self.progressStage = s }
+                                self.progressLine = progress.line
+                            }
+                        }
+                    },
+                    onStderr: { line in
+                        Task { @MainActor [weak self] in
+                            guard let self else { return }
+                            self.logLines.append(line)
+                            if self.logLines.count > 1000 { self.logLines.removeFirst(200) }
+                            if let progress = XcodebuildProgress.parse(line) {
+                                if let f = progress.fraction { self.progressFraction = f }
+                                if let s = progress.stage { self.progressStage = s }
+                                self.progressLine = progress.line
+                            }
+                        }
+                    }
+                )
             } catch {
                 await MainActor.run {
                     self.isRunning = false
@@ -406,24 +430,7 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
                 return
             }
 
-            let fileHandle = pipe.fileHandleForReading
-            while p.isRunning {
-                let data = fileHandle.availableData
-                if !data.isEmpty {
-                    let chunk = String(decoding: data, as: UTF8.self)
-                    await MainActor.run {
-                        self.logLines.append(chunk)
-                        if let progress = XcodebuildProgress.parse(chunk) {
-                            if let f = progress.fraction { self.progressFraction = f }
-                            if let s = progress.stage { self.progressStage = s }
-                            self.progressLine = progress.line
-                        }
-                    }
-                }
-            }
-            p.waitUntilExit()
-
-            let exitCode = p.terminationStatus
+            let exitCode = code
             await MainActor.run {
                 self.isRunning = false
                 if exitCode == 0 {
@@ -475,47 +482,37 @@ public final class DeviceHubSimulatorInstaller: ObservableObject {
 
     @discardableResult
     public static func runXcrunProcess(_ args: [String], timeout: TimeInterval = 60) async -> (status: Int32, output: String) {
-        await Task.detached {
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-            p.arguments = args
-            let pipe = Pipe()
-            p.standardOutput = pipe
-            p.standardError = pipe
-            p.standardInput = FileHandle.nullDevice
-            guard (try? p.run()) != nil else { return (-1, "Failed to launch xcrun \(args.first ?? "")") }
-            
-            let watchdog = Task {
-                try? await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
-                if p.isRunning { p.terminate() }
+        do {
+            let result = try await DeviceConnectProcessRunner.shared.run(
+                executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+                arguments: args,
+                timeout: timeout
+            )
+            return (result.exitCode, result.stdout + result.stderr)
+        } catch let error as DeviceConnectProcessError {
+            if case .timedOut = error {
+                return (-2, "timed out")
             }
-            p.waitUntilExit()
-            watchdog.cancel()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            return (p.terminationStatus, String(decoding: data, as: UTF8.self))
-        }.value
+            return (-1, error.localizedDescription)
+        } catch {
+            return (-1, error.localizedDescription)
+        }
     }
 
     
 
     public static func createSimulator(name: String, deviceTypeID: String, runtimeID: String) async throws -> String {
-        try await Task.detached {
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/bin/xcrun")
-            p.arguments = ["simctl", "create", name, deviceTypeID, runtimeID]
-            let outPipe = Pipe()
-            let errPipe = Pipe()
-            p.standardOutput = outPipe
-            p.standardError = errPipe
-            try p.run()
-            p.waitUntilExit()
-            let outStr = String(decoding: outPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-            if p.terminationStatus != 0 {
-                let errStr = String(decoding: errPipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-                throw NSError(domain: "SimulatorInstaller", code: Int(p.terminationStatus), userInfo: [NSLocalizedDescriptionKey: errStr.isEmpty ? "Failed to create simulator" : errStr])
-            }
-            return outStr
-        }.value
+        let result = try await DeviceConnectProcessRunner.shared.run(
+            executableURL: URL(fileURLWithPath: "/usr/bin/xcrun"),
+            arguments: ["simctl", "create", name, deviceTypeID, runtimeID],
+            timeout: 60
+        )
+        let outStr = result.stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+        if result.exitCode != 0 {
+            let errStr = result.stderr.trimmingCharacters(in: .whitespacesAndNewlines)
+            throw NSError(domain: "SimulatorInstaller", code: Int(result.exitCode), userInfo: [NSLocalizedDescriptionKey: errStr.isEmpty ? "Failed to create simulator" : errStr])
+        }
+        return outStr
     }
 
     public static func cloneSimulator(sourceUDID: String, newName: String) async throws -> String {

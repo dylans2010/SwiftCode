@@ -59,6 +59,99 @@ public struct CommandParser {
     }
 }
 
+public struct DeviceInfoDetails: Sendable {
+    public let identifier: String
+    public let name: String?
+    public let platform: String
+    public let osVersion: String?
+    public let buildVersion: String?
+    public let architecture: String?
+    public let model: String?
+    public let developerModeEnabled: Bool?
+    public let trusted: Bool?
+    public let connectionState: String
+
+    public init(
+        identifier: String,
+        name: String?,
+        platform: String,
+        osVersion: String?,
+        buildVersion: String?,
+        architecture: String?,
+        model: String?,
+        developerModeEnabled: Bool?,
+        trusted: Bool?,
+        connectionState: String
+    ) {
+        self.identifier = identifier
+        self.name = name
+        self.platform = platform
+        self.osVersion = osVersion
+        self.buildVersion = buildVersion
+        self.architecture = architecture
+        self.model = model
+        self.developerModeEnabled = developerModeEnabled
+        self.trusted = trusted
+        self.connectionState = connectionState
+    }
+
+    public enum ParsingError: Error, LocalizedError, Sendable {
+        case invalidJSON
+        case missingDevice
+
+        public var errorDescription: String? {
+            switch self {
+            case .invalidJSON:
+                return "devicectl device info output is not valid JSON."
+            case .missingDevice:
+                return "devicectl device info output contains no device."
+            }
+        }
+    }
+
+    public static func parse(data: Data, deviceUDID: String) throws -> DeviceInfoDetails {
+        guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let result = root["result"] as? [String: Any] else {
+            throw ParsingError.invalidJSON
+        }
+        let candidate: [String: Any]
+        if let devices = result["devices"] as? [[String: Any]], let first = devices.first {
+            candidate = first
+        } else if let device = result["device"] as? [String: Any] {
+            candidate = device
+        } else if result["deviceProperties"] != nil || result["hardwareProperties"] != nil {
+            candidate = result
+        } else {
+            throw ParsingError.missingDevice
+        }
+        let hardware = candidate["hardwareProperties"] as? [String: Any] ?? [:]
+        let properties = candidate["deviceProperties"] as? [String: Any] ?? [:]
+        let connection = candidate["connectionProperties"] as? [String: Any] ?? [:]
+        let pairing = connection["pairingState"] as? String
+        let tunnel = connection["tunnelState"] as? String
+        let trusted: Bool?
+        if pairing == "paired" {
+            trusted = true
+        } else if pairing == "unpaired" {
+            trusted = false
+        } else {
+            trusted = nil
+        }
+        return DeviceInfoDetails(
+            identifier: candidate["identifier"] as? String ?? hardware["udid"] as? String ?? deviceUDID,
+            name: properties["name"] as? String,
+            platform: DevicePlatform(parsing: hardware["platform"] as? String).rawValue,
+            osVersion: properties["osVersionNumber"] as? String,
+            buildVersion: properties["buildVersion"] as? String ?? properties["osBuildVersion"] as? String,
+            architecture: hardware["cpuType"] as? String ?? hardware["architecture"] as? String,
+            model: hardware["marketingName"] as? String ?? hardware["productType"] as? String,
+            developerModeEnabled: properties["developerMode"] as? Bool ?? properties["developerModeEnabled"] as? Bool,
+            trusted: trusted,
+            connectionState: [pairing, tunnel].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: ", ")
+        )
+    }
+}
+
 public struct DeviceParser {
     public static func parseXCDeviceList(_ jsonString: String) -> [ConnectedDevice] {
         guard let data = jsonString.data(using: .utf8) else { return [] }
@@ -68,6 +161,8 @@ public struct DeviceParser {
             let model: String?
             let platform: String?
             let operatingSystemVersion: String?
+            let buildVersion: String?
+            let architecture: String?
             let identifier: String?
             let modelUTI: String?
             let isWirelesslyConnected: Bool?
@@ -82,13 +177,13 @@ public struct DeviceParser {
         return items.compactMap { item in
             guard let id = item.identifier else { return nil }
             return ConnectedDevice(
-                name: item.name ?? "Apple Device",
-                model: item.model ?? "Generic",
-                productType: item.modelUTI ?? "com.apple.device",
-                platform: item.platform ?? "iOS",
-                osVersion: item.operatingSystemVersion ?? "1.0",
-                buildVersion: "Release",
-                architecture: "arm64",
+                name: item.name ?? "Unknown",
+                model: item.model ?? "Unknown",
+                productType: item.modelUTI ?? "Unknown",
+                platform: DevicePlatform(parsing: item.platform).rawValue,
+                osVersion: item.operatingSystemVersion ?? "Unknown",
+                buildVersion: item.buildVersion ?? "Unknown",
+                architecture: item.architecture ?? "Unknown",
                 udid: id,
                 isConnected: item.isConnected ?? true,
                 isAvailable: item.isAvailable ?? true,
