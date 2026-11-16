@@ -9,6 +9,8 @@ import SwiftCodePaywall
 import YcodeSettings
 import YcodeWorkspace
 import YcodeSubprocess
+import SwiftCodeSDK
+import YcodeIDEShell
 
 @MainActor
 public class SettingsPane: NSViewController {
@@ -207,6 +209,15 @@ public class SettingsPane: NSViewController {
     }
 
     public func choose(_ item: String, inRow title: String) {
+        if let s = control(NSSegmentedControl.self, inRow: title) {
+            for i in 0..<s.segmentCount {
+                if s.label(forSegment: i) == item {
+                    s.selectedSegment = i
+                    if let a = s.action { _ = (s.target as AnyObject?)?.perform(a, with: s) }
+                    return
+                }
+            }
+        }
         guard let p = control(NSPopUpButton.self, inRow: title) else { return }
         p.selectItem(withTitle: item)
         if let a = p.action { _ = (p.target as AnyObject?)?.perform(a, with: p) }
@@ -1335,6 +1346,83 @@ public final class SourceControlSettingsPane: SettingsPane {
     override func build() {
         row("", check("Enable source control", prefs.sourceControlEnabled) { [prefs] in prefs.sourceControlEnabled = $0 })
 
+        let systemSeg = NSSegmentedControl(labels: ["Git", "Spaces"], trackingMode: .selectOne, target: self, action: #selector(systemSegmentChanged(_:)))
+        systemSeg.selectedSegment = prefs.usesSpacesSourceControl ? 1 : 0
+        systemSeg.segmentDistribution = .fit
+        row("Source control system:", systemSeg)
+
+        row("", check("Use Spaces as source control system", prefs.usesSpacesSourceControl) { [weak self, prefs] on in
+            prefs.sourceControlSystem = on ? "spaces" : "git"
+            self?.rebuild()
+        })
+        note("Choose whether to use Git (/usr/bin/git) or native Spaces (.spaces/) as the source control system.")
+
+        heading("Space Settings")
+
+        let branchField = ClosureField(string: prefs.spacesDefaultBranch)
+        branchField.placeholderString = "main"
+        branchField.onChange = { [prefs] in
+            prefs.spacesDefaultBranch = $0.isEmpty ? "main" : $0
+        }
+        branchField.widthAnchor.constraint(equalToConstant: 220).isActive = true
+        row("Default initial branch:", branchField)
+        note("Used when a new native Spaces repository (.spaces/) is initialized.")
+
+        let effectiveSpacesAuthorName = prefs.spacesAuthorName.isEmpty ? (prefs.customGitAuthorName.isEmpty ? authorName : prefs.customGitAuthorName) : prefs.spacesAuthorName
+        let effectiveSpacesAuthorEmail = prefs.spacesAuthorEmail.isEmpty ? (prefs.customGitAuthorEmail.isEmpty ? authorEmail : prefs.customGitAuthorEmail) : prefs.spacesAuthorEmail
+
+        let spacesNameField = ClosureField(string: effectiveSpacesAuthorName)
+        spacesNameField.placeholderString = "Author Name"
+        spacesNameField.onChange = { [prefs] in prefs.spacesAuthorName = $0 }
+        spacesNameField.widthAnchor.constraint(equalToConstant: 220).isActive = true
+        row("Spaces Author Name:", spacesNameField)
+
+        let spacesEmailField = ClosureField(string: effectiveSpacesAuthorEmail)
+        spacesEmailField.placeholderString = "author@example.com"
+        spacesEmailField.onChange = { [prefs] in prefs.spacesAuthorEmail = $0 }
+        spacesEmailField.widthAnchor.constraint(equalToConstant: 220).isActive = true
+        row("Spaces Author Email:", spacesEmailField)
+        note("Identity recorded in native Spaces commits (.spaces/config). Leave empty to inherit Git identity.")
+
+        row("", check("Enable Large File Storage (LFS)", prefs.spacesLFSEnabled) { [prefs] in prefs.spacesLFSEnabled = $0 })
+        row("LFS threshold (MB):", number(prefs.spacesLFSThresholdMB) { [prefs] in prefs.spacesLFSThresholdMB = max(1, $0) })
+        row("", check("Preserve POSIX file permissions (fileMode)", prefs.spacesPreserveFileMode) { [prefs] in prefs.spacesPreserveFileMode = $0 })
+        row("", check("Allow symbolic links in repository", prefs.spacesAllowSymlinks) { [prefs] in prefs.spacesAllowSymlinks = $0 })
+        row("", check("Auto-convert CRLF line endings", prefs.spacesAutoCRLF) { [prefs] in prefs.spacesAutoCRLF = $0 })
+        row("", check("Background integrity verification", prefs.spacesIntegrityCheck) { [prefs] in prefs.spacesIntegrityCheck = $0 })
+
+        if let wsURL = activeWorkspaceFolder {
+            let hasGit = FileManager.default.fileExists(atPath: wsURL.appendingPathComponent(".git").path)
+            var isDir: ObjCBool = false
+            let hasSpaces = FileManager.default.fileExists(atPath: wsURL.appendingPathComponent(".spaces").path, isDirectory: &isDir) && isDir.boolValue
+            let currentOverride = GitViewModel.providerOverride(for: wsURL) ?? "auto"
+
+            let repoPop = ClosurePopUp(frame: .zero, pullsDown: false)
+            repoPop.addItems(withTitles: ["Automatic", "Git", "Spaces"])
+            let selectedTitle = currentOverride == "spaces" ? "Spaces" : (currentOverride == "git" ? "Git" : "Automatic")
+            repoPop.selectItem(withTitle: selectedTitle)
+            repoPop.onChange = { [weak self] chosen in
+                let val: String? = chosen == "Spaces" ? "spaces" : (chosen == "Git" ? "git" : nil)
+                GitViewModel.setProviderOverride(val, for: wsURL)
+                self?.rebuild()
+            }
+            row("Current repository provider:", repoPop)
+            note("Configure source control provider override for the open workspace (\(wsURL.lastPathComponent)).")
+
+            let activeProvider = GitViewModel.resolveProvider(for: wsURL)
+            row("Active provider:", value(activeProvider == .spaces ? "Spaces (.spaces/)" : "Git (.git/)"))
+            row("Spaces repository:", value(hasSpaces ? "Initialized" : "Not initialized"))
+
+            if !hasSpaces {
+                let initBtn = ClosureButton(title: "Initialize Spaces Repository", target: nil, action: nil)
+                initBtn.bezelStyle = .rounded
+                initBtn.onChange = { [weak self] _ in
+                    self?.initializeSpacesInActiveWorkspace()
+                }
+                row("", initBtn)
+            }
+        }
+
         heading("Git Executable")
         let gitField = ClosureField(string: AppSettings.shared.gitPath)
         gitField.placeholderString = "/usr/bin/git"
@@ -1493,6 +1581,48 @@ public final class SourceControlSettingsPane: SettingsPane {
         guard let idString = sender.identifier?.rawValue, let id = UUID(uuidString: idString) else { return }
         AppSettings.shared.savedRepositories.removeAll { $0.id == id }
         rebuild()
+    }
+
+    @objc func systemSegmentChanged(_ sender: NSSegmentedControl) {
+        prefs.sourceControlSystem = sender.selectedSegment == 1 ? "spaces" : "git"
+        rebuild()
+    }
+
+    private var activeWorkspaceFolder: URL? {
+        if let wc = NSApp.keyWindow?.windowController as? WorkspaceWindowController {
+            return wc.workspaceFolder
+        }
+        if let wc = NSApp.mainWindow?.windowController as? WorkspaceWindowController {
+            return wc.workspaceFolder
+        }
+        for doc in NSDocumentController.shared.documents {
+            for wc in doc.windowControllers {
+                if let wwc = wc as? WorkspaceWindowController {
+                    return wwc.workspaceFolder
+                }
+            }
+        }
+        return nil
+    }
+
+    private func initializeSpacesInActiveWorkspace() {
+        guard let wsURL = activeWorkspaceFolder else { return }
+        Task {
+            do {
+                _ = try await SpacesService.shared.initialize(at: wsURL, defaultBranch: prefs.spacesDefaultBranch)
+                await MainActor.run {
+                    self.rebuild()
+                }
+            } catch {
+                await MainActor.run {
+                    let alert = NSAlert()
+                    alert.messageText = "Failed to initialize Spaces repository"
+                    alert.informativeText = error.localizedDescription
+                    alert.alertStyle = .warning
+                    alert.runModal()
+                }
+            }
+        }
     }
 }
 

@@ -161,7 +161,19 @@ private let swiftcodeDir = URL(fileURLWithPath: #filePath).deletingLastPathCompo
             acc.addClicked()
             #expect(acc.appleAccountHosting != nil)
             let sc = SourceControlSettingsPane(prefs: p) { $0 == "user.name" ? "Test Author" : nil }
+            _ = sc.view
             #expect(sc.authorName == "Test Author" && sc.authorEmail == "Not set")
+            #expect(sc.rowTitles.contains("Source control system"))
+            #expect(sc.rowTitles.contains("Use Spaces as source control system"))
+            #expect(sc.rowTitles.contains("# Space Settings"))
+            #expect(sc.rowTitles.contains("Default initial branch"))
+            #expect(sc.rowTitles.contains("Spaces Author Name"))
+            #expect(sc.rowTitles.contains("Spaces Author Email"))
+            #expect(sc.rowTitles.contains("Enable Large File Storage (LFS)"))
+            sc.choose("Spaces", inRow: "Source control system")
+            #expect(p.usesSpacesSourceControl)
+            sc.choose("Git", inRow: "Source control system")
+            #expect(!p.usesSpacesSourceControl)
             let rt = ComponentsSettingsPane.runtimes(fromSimctlJSON: Data("""
             {"runtimes": [{"name": "iOS 30.0", "version": "30.0", "isAvailable": true}, {"name": "tvOS 30.0", "version": "30.0", "isAvailable": false}]}
             """.utf8))

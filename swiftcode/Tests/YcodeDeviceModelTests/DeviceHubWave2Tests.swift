@@ -18,7 +18,7 @@ import Testing
         #expect(again.loadGroups()[0].name == "Test Rig")
     }
 
-    @Test func groupEncodeDecodeRoundTrip() {
+    @Test func groupEncodeDecodeRoundTrip() throws {
         let group = DeviceGroup(name: "Evening", deviceIDs: ["udid-1", "udid-2"])
         let data = try #require(DeviceGroupStore.encodeGroups([group]))
         let decoded = DeviceGroupStore.decodeGroups(from: data)
@@ -184,14 +184,14 @@ import Testing
         #expect(unscanned.toolchainSummary.contains("not been scanned"))
         #expect(unscanned.xcodeDisplay == "Not installed")
         #expect(unscanned.developerDirectoryDisplay == "Unknown")
-        let missing = DeviceHubOverviewSnapshot(hasScanned: true, isXcodeInstalled: false)
+        let missing = DeviceHubOverviewSnapshot(isXcodeInstalled: false, hasScanned: true)
         #expect(missing.toolchainSummary.contains("not installed"))
-        let cltOnly = DeviceHubOverviewSnapshot(hasScanned: true, isXcodeInstalled: true, isCommandLineToolsOnly: true)
+        let cltOnly = DeviceHubOverviewSnapshot(isXcodeInstalled: true, isCommandLineToolsOnly: true, hasScanned: true)
         #expect(cltOnly.toolchainSummary.contains("Command Line Tools"))
         #expect(cltOnly.toolchainHealthy == false)
         let healthy = DeviceHubOverviewSnapshot(
-            hasScanned: true, xcodeVersion: "27.1", xcodeBuild: "27A123",
-            developerDirectory: "/Applications/Xcode.app/Contents/Developer", isXcodeInstalled: true)
+            xcodeVersion: "27.1", xcodeBuild: "27A123",
+            developerDirectory: "/Applications/Xcode.app/Contents/Developer", isXcodeInstalled: true, hasScanned: true)
         #expect(healthy.toolchainHealthy == true)
         #expect(healthy.xcodeDisplay == "Xcode 27.1 (27A123)")
         #expect(healthy.developerDirectoryDisplay == "/Applications/Xcode.app/Contents/Developer")

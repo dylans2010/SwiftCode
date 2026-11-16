@@ -324,6 +324,46 @@ public final class Preferences {
     public var sourceControlSystem: String { get { get("sourceControlSystem", "git") } set { set("sourceControlSystem", newValue) } }
     public var usesSpacesSourceControl: Bool { sourceControlSystem == "spaces" }
 
+    public var spacesDefaultBranch: String {
+        get { get("spacesDefaultBranch", "main") }
+        set {
+            set("spacesDefaultBranch", newValue)
+            UserDefaults.standard.set(newValue, forKey: "spacesDefaultBranch")
+        }
+    }
+    public var spacesAuthorName: String {
+        get { get("spacesAuthorName", "") }
+        set { set("spacesAuthorName", newValue) }
+    }
+    public var spacesAuthorEmail: String {
+        get { get("spacesAuthorEmail", "") }
+        set { set("spacesAuthorEmail", newValue) }
+    }
+    public var spacesLFSEnabled: Bool {
+        get { get("spacesLFSEnabled", true) }
+        set { set("spacesLFSEnabled", newValue) }
+    }
+    public var spacesLFSThresholdMB: Int {
+        get { get("spacesLFSThresholdMB", 10) }
+        set { set("spacesLFSThresholdMB", newValue) }
+    }
+    public var spacesPreserveFileMode: Bool {
+        get { get("spacesPreserveFileMode", true) }
+        set { set("spacesPreserveFileMode", newValue) }
+    }
+    public var spacesAllowSymlinks: Bool {
+        get { get("spacesAllowSymlinks", true) }
+        set { set("spacesAllowSymlinks", newValue) }
+    }
+    public var spacesAutoCRLF: Bool {
+        get { get("spacesAutoCRLF", false) }
+        set { set("spacesAutoCRLF", newValue) }
+    }
+    public var spacesIntegrityCheck: Bool {
+        get { get("spacesIntegrityCheck", true) }
+        set { set("spacesIntegrityCheck", newValue) }
+    }
+
     public var showRegisters: Bool { get { get("showRegisters", false) } set { set("showRegisters", newValue) } }
 
     public var themeName: String {

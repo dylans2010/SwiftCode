@@ -520,7 +520,25 @@ public struct NativeSourceControlSettingsView: View {
                     Text("Git").tag("git")
                     Text("Spaces (native)").tag("spaces")
                 }
+                Toggle("Use Spaces as source control system", isOn: Binding(
+                    get: { prefs.usesSpacesSourceControl },
+                    set: { prefs.sourceControlSystem = $0 ? "spaces" : "git" }
+                ))
                 Text("Spaces uses SwiftCode's built-in repository engine (.spaces/) — no git executable required. Git remains the default.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Space Settings") {
+                TextField("Default initial branch", text: pref(\.spacesDefaultBranch))
+                TextField("Spaces Author Name", text: pref(\.spacesAuthorName))
+                TextField("Spaces Author Email", text: pref(\.spacesAuthorEmail))
+                Toggle("Enable Large File Storage (LFS)", isOn: pref(\.spacesLFSEnabled))
+                Toggle("Preserve POSIX file permissions (fileMode)", isOn: pref(\.spacesPreserveFileMode))
+                Toggle("Allow symbolic links in repository", isOn: pref(\.spacesAllowSymlinks))
+                Toggle("Auto-convert CRLF line endings", isOn: pref(\.spacesAutoCRLF))
+                Toggle("Background integrity verification", isOn: pref(\.spacesIntegrityCheck))
+                Text("Configuration for native Spaces (.spaces/) repositories and engine.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

@@ -54,6 +54,24 @@ struct SourceControlSettingsPane: View {
         SettingsForm {
             SettingsSection {
                 CheckRow(title: "Enable source control", isOn: setting(\.sourceControlEnabled), target: "settings source control")
+                PickerRow(title: "Source control system", selection: prefString(\.sourceControlSystem),
+                          options: [("git", "Git"), ("spaces", "Spaces")], target: "settings source control system")
+                CheckRow(title: "Use Spaces as source control system", isOn: Binding(
+                    get: { Preferences.shared.usesSpacesSourceControl },
+                    set: { Preferences.shared.sourceControlSystem = $0 ? "spaces" : "git" }
+                ), target: "settings use spaces source control")
+            }
+            SettingsSection("Space Settings") {
+                textField("Default initial branch", prefString(\.spacesDefaultBranch))
+                textField("Spaces Author Name", prefString(\.spacesAuthorName))
+                textField("Spaces Author Email", prefString(\.spacesAuthorEmail))
+                CheckRow(title: "Enable Large File Storage (LFS)", isOn: prefBool(\.spacesLFSEnabled), target: "settings spaces lfs")
+                CheckRow(title: "Preserve POSIX file permissions (fileMode)", isOn: prefBool(\.spacesPreserveFileMode), target: "settings spaces file mode")
+                CheckRow(title: "Allow symbolic links in repository", isOn: prefBool(\.spacesAllowSymlinks), target: "settings spaces symlinks")
+                CheckRow(title: "Auto-convert CRLF line endings", isOn: prefBool(\.spacesAutoCRLF), target: "settings spaces autocrlf")
+                CheckRow(title: "Background integrity verification", isOn: prefBool(\.spacesIntegrityCheck), target: "settings spaces integrity")
+            } footer: {
+                FootNote(text: "Spaces uses SwiftCode's built-in repository engine (.spaces/) without requiring git.")
             }
             SettingsSection("Git Executable") {
                 textField("Git executable path", appSetting(\.gitPath))

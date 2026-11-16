@@ -209,23 +209,23 @@ import Testing
         #expect(SimulatorCreateValidation.duplicateExistingName("iphone 17 pro", existingNames: ["iPhone 17 Pro"]) == "iPhone 17 Pro")
     }
 
-    @Test func parseExistingSimulatorNamesCollectsNamesAcrossRuntimes() {
+    @Test @MainActor func parseExistingSimulatorNamesCollectsNamesAcrossRuntimes() {
         let data = Data("{\"devices\": {\"com.apple.CoreSimulator.SimRuntime.iOS-27-0\": [{\"name\": \"iPhone 17 Pro\", \"udid\": \"AAAAAAAA-0000-0000-0000-000000000001\"}, {\"name\": \"iPhone 17\", \"udid\": \"AAAAAAAA-0000-0000-0000-000000000002\"}], \"com.apple.CoreSimulator.SimRuntime.watchOS-11-0\": [{\"name\": \"Apple Watch Series 10 (46mm)\", \"udid\": \"AAAAAAAA-0000-0000-0000-000000000003\"}]}}".utf8)
         let names = DeviceHubSimulatorInstaller.parseExistingSimulatorNames(from: data)
         #expect(Set(names) == ["iPhone 17 Pro", "iPhone 17", "Apple Watch Series 10 (46mm)"])
     }
 
-    @Test func parseExistingSimulatorNamesReturnsEmptyForEmptyDevices() {
+    @Test @MainActor func parseExistingSimulatorNamesReturnsEmptyForEmptyDevices() {
         let data = Data("{\"devices\": {}}".utf8)
         #expect(DeviceHubSimulatorInstaller.parseExistingSimulatorNames(from: data).isEmpty)
     }
 
-    @Test func parseExistingSimulatorNamesReturnsEmptyForMalformedJSON() {
+    @Test @MainActor func parseExistingSimulatorNamesReturnsEmptyForMalformedJSON() {
         let data = Data("not json".utf8)
         #expect(DeviceHubSimulatorInstaller.parseExistingSimulatorNames(from: data).isEmpty)
     }
 
-    @Test func parseExistingSimulatorNamesSkipsEntriesWithoutNames() {
+    @Test @MainActor func parseExistingSimulatorNamesSkipsEntriesWithoutNames() {
         let data = Data("{\"devices\": {\"com.apple.CoreSimulator.SimRuntime.iOS-27-0\": [{\"udid\": \"AAAAAAAA-0000-0000-0000-000000000001\"}, {\"name\": \"iPhone 17 Pro\", \"udid\": \"AAAAAAAA-0000-0000-0000-000000000002\"}]}}".utf8)
         #expect(DeviceHubSimulatorInstaller.parseExistingSimulatorNames(from: data) == ["iPhone 17 Pro"])
     }

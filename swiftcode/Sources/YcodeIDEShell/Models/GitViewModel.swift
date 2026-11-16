@@ -52,7 +52,10 @@ public class GitViewModel {
         if hasSpaces {
             return .spaces
         }
-        return .git
+        if hasGit {
+            return .git
+        }
+        return Preferences.shared.usesSpacesSourceControl ? .spaces : .git
     }
 
     public var usesSpaces: Bool {
