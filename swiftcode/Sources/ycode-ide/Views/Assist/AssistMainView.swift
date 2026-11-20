@@ -319,12 +319,7 @@ public struct AssistMainView: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
-            .background(.ultraThinMaterial)
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(Color.primary.opacity(0.08))
-                    .frame(height: 1)
-            }
+            .liquidGlass(style: .standard, cornerRadius: 0)
 
             if manager.messages.isEmpty {
                 VStack(spacing: 12) {
@@ -592,12 +587,7 @@ public struct AssistMainView: View {
                     }
                 }
                 .padding(16)
-                .background(.ultraThinMaterial)
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(isDestructive ? Color.red.opacity(0.3) : Color.green.opacity(0.3), lineWidth: 1)
-                )
+                .liquidGlass(style: .standard, cornerRadius: 12, tint: isDestructive ? Color.red : Color.green)
                 .padding(.horizontal, 12)
                 .padding(.bottom, 12)
                 .transition(.move(edge: .bottom))
@@ -639,12 +629,7 @@ public struct AssistMainView: View {
                 inputArea
             }
             .padding(12)
-            .background(.ultraThinMaterial)
-            .overlay(alignment: .top) {
-                Rectangle()
-                    .fill(Color.primary.opacity(0.08))
-                    .frame(height: 1)
-            }
+            .liquidGlass(style: .floatingBar, cornerRadius: 0)
         }
         .background(.windowBackground)
         .overlay {
@@ -1217,17 +1202,7 @@ public struct AssistMainView: View {
                     let placeholder = isBusy ? "Queue next message..." : "Message \(modelName)"
                     TextField(placeholder, text: $inputText, axis: .vertical)
                         .padding(9)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(.regularMaterial)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .strokeBorder(
-                                    isEnhancingPrompt ? Color.accentColor.opacity(0.6) : Color.white.opacity(0.12),
-                                    lineWidth: 1
-                                )
-                        )
+                        .liquidGlass(style: .subtle, cornerRadius: 10, tint: isEnhancingPrompt ? Color.accentColor : nil)
                         .lineLimit(1...5)
                         .disabled(isEnhancingPrompt || isProcessingFiles)
                         .onSubmit {
@@ -1837,8 +1812,7 @@ private struct AssistNoticeView: View {
         }
         .padding(10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(tint.opacity(0.35), lineWidth: 1))
+        .liquidGlass(style: .subtle, cornerRadius: 8, tint: tint)
         .sheet(isPresented: $showingServerError) {
             if let detail = message.serverError {
                 ServerErrorDialog(detail: detail)
@@ -1991,7 +1965,7 @@ private struct AssistChatBubble: View {
                                     }
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 3)
-                                    .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 4))
+                                    .liquidGlass(style: .subtle, cornerRadius: 4)
                                 }
                             }
                             .padding(.top, 2)
@@ -2027,8 +2001,8 @@ private struct AssistChatBubble: View {
 
                     Text(message.content)
                         .font(.system(size: 12, design: .monospaced))
-                        .padding(10)
-                        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                        .padding(.horizontal, 2)
+                        .padding(.vertical, 2)
                         .foregroundStyle(.secondary)
                 } else {
                     HStack(spacing: 6) {
@@ -2064,7 +2038,6 @@ private struct AssistChatBubble: View {
                     }
 
                     VStack(alignment: .leading, spacing: 8) {
-                        // Tool calls & tool outputs in sleek modern glass containers
                         if let memoryTool = message.activityGroup?.tools.first(where: { $0.toolId == "save_to_memory" || $0.toolId == "manage_memory" }) {
                             AssistMemoryUI(
                                 key: memoryTool.purpose.isEmpty ? "Context Stored in Memory" : memoryTool.purpose,
@@ -2101,7 +2074,6 @@ private struct AssistChatBubble: View {
                             }
                         }
 
-                        // Direct AI text rendering - NO card background, NO box, NO border
                         if !message.content.isEmpty {
                             let blocks = YcodeUI.MarkdownParser.shared.parse(message.content)
                             VStack(alignment: .leading, spacing: 4) {
@@ -2768,11 +2740,7 @@ private struct AssistLiveActivityFeed: View {
                                     .padding(6)
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 6))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color.primary.opacity(0.08), lineWidth: 1)
-                            )
+                            .liquidGlass(style: .subtle, cornerRadius: 6)
                         }
                         .padding(.leading, 20)
                         .padding(.top, 2)
@@ -3090,6 +3058,7 @@ struct SDKModelProviderList: View {
     @State private var hermesModels: [HermesProvider.HermesDiscoveredModel] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var searchText = ""
 
     private var provider: AssistModelProvider {
         AssistModelProvider(rawValue: AssistProviderSelection.persistedProvider.rawValue) ?? .openRouter
@@ -3097,9 +3066,14 @@ struct SDKModelProviderList: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("\(provider.rawValue) Models")
-                    .font(.headline)
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Choose Model")
+                        .font(.headline)
+                    Text("\(filteredRows.count) model\(filteredRows.count == 1 ? "" : "s")")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 Button {
                     dismiss()
@@ -3109,7 +3083,36 @@ struct SDKModelProviderList: View {
                 }
                 .buttonStyle(.borderless)
             }
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.top, 14)
+            .padding(.bottom, 10)
+
+            HStack(spacing: 6) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                TextField("Search models...", text: $searchText)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 12))
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .liquidGlass(style: .subtle, cornerRadius: 8)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
+
+            Divider()
+                .opacity(0.3)
 
             if isLoading {
                 ProgressView()
@@ -3119,33 +3122,33 @@ struct SDKModelProviderList: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding()
-            } else {
-                List {
-                    ForEach(rows, id: \.id) { row in
-                        Button {
-                            settings.selectedAssistModelID = row.id
-                            dismiss()
-                        } label: {
-                            HStack {
-                                Text(row.name)
-                                    .font(.subheadline)
-                                Spacer()
-                                if settings.selectedAssistModelID == row.id {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.accentColor)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                    }
+            } else if filteredRows.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.secondary)
+                    Text(searchText.isEmpty ? "No models available." : "No matching models found")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
-                .overlay {
-                    if rows.isEmpty {
-                        Text("No models returned by \(provider.rawValue).")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
+            } else {
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        ForEach(filteredRows, id: \.id) { row in
+                            SDKModelPickerRow(
+                                name: row.name,
+                                isSelected: settings.selectedAssistModelID == row.id,
+                                onSelect: {
+                                    settings.selectedAssistModelID = row.id
+                                    dismiss()
+                                }
+                            )
+                        }
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
                 }
             }
         }
@@ -3161,6 +3164,16 @@ struct SDKModelProviderList: View {
             return hermesModels.map { ($0.storedID, $0.displayName) }
         default:
             return openRouterModels.map { ($0.id, $0.name) }
+        }
+    }
+
+    private var filteredRows: [(id: String, name: String)] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        guard !query.isEmpty else { return rows }
+        return rows.filter { row in
+            row.name.lowercased().contains(query) ||
+            row.id.lowercased().contains(query) ||
+            provider.rawValue.lowercased().contains(query)
         }
     }
 
@@ -3181,6 +3194,48 @@ struct SDKModelProviderList: View {
             }
         } catch {
             errorMessage = error.localizedDescription
+        }
+    }
+}
+
+private struct SDKModelPickerRow: View {
+    let name: String
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    @State private var isHovered: Bool = false
+
+    var body: some View {
+        Button {
+            onSelect()
+        } label: {
+            HStack(spacing: 8) {
+                Text(name)
+                    .font(.system(size: 12.5, weight: isSelected ? .semibold : .regular))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? Color.accentColor.opacity(0.10) : (isHovered ? Color.primary.opacity(0.04) : Color.clear))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(isSelected ? Color.accentColor.opacity(0.22) : (isHovered ? Color.primary.opacity(0.06) : Color.clear), lineWidth: 0.8)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering in
+            isHovered = hovering
         }
     }
 }
@@ -3315,7 +3370,7 @@ struct DiagnosticsSheet: View {
                                 }
                             }
                             .padding(6)
-                            .background(Color.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                            .liquidGlass(style: .subtle, cornerRadius: 6)
                             .padding(.bottom, 4)
 
                             let grouped = filteredEventsGrouped
@@ -3371,8 +3426,7 @@ struct DiagnosticsSheet: View {
                                     }
                                 }
                                 .frame(height: 250)
-                                .background(Color.black.opacity(0.05))
-                                .cornerRadius(6)
+                                .liquidGlass(style: .subtle, cornerRadius: 6)
                             }
                         }
                         .padding(4)

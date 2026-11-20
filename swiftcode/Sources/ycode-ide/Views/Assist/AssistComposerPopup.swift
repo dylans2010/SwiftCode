@@ -164,11 +164,7 @@ public struct AssistComposerChipsBar: View {
         .padding(.leading, 7)
         .padding(.trailing, 5)
         .padding(.vertical, 3)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .stroke(Color.primary.opacity(0.10), lineWidth: 0.75)
-        )
+        .liquidGlass(style: .subtle, cornerRadius: 6)
     }
 }
 
@@ -246,7 +242,6 @@ public struct AssistComposerPopupView: View {
 
         var list: [ComposerResourceItem] = []
 
-        // 1. Conversations
         let convos = AssistConversationHistory.shared.listConversations()
         for c in convos {
             if trimmed.isEmpty || c.title.lowercased().contains(trimmed) || "conversation".contains(trimmed) || "history".contains(trimmed) {
@@ -261,7 +256,6 @@ public struct AssistComposerPopupView: View {
             }
         }
 
-        // 2. Plugins & MCP
         for p in PluginManager.shared.installedPlugins {
             if trimmed.isEmpty || p.name.lowercased().contains(trimmed) || "plugin".contains(trimmed) || p.description.lowercased().contains(trimmed) {
                 list.append(ComposerResourceItem(
@@ -290,7 +284,6 @@ public struct AssistComposerPopupView: View {
             }
         }
 
-        // 3. Files & Images
         let codeMatches = ["code", "context", "active", "file", "selection"]
         if trimmed.isEmpty || codeMatches.contains(where: { $0.contains(trimmed) || trimmed.contains($0) }) {
             list.append(ComposerResourceItem(
@@ -327,7 +320,6 @@ public struct AssistComposerPopupView: View {
             }
         }
 
-        // 4. Rules
         for entry in UserMemoryManager.shared.entries {
             if trimmed.isEmpty || entry.key.lowercased().contains(trimmed) || entry.value.lowercased().contains(trimmed) || "rule".contains(trimmed) {
                 list.append(ComposerResourceItem(
@@ -383,7 +375,6 @@ public struct AssistComposerPopupView: View {
             ))
         }
 
-        // Filter by selected category
         if selectedCategory != "All" {
             list = list.filter { $0.category == selectedCategory }
         }
