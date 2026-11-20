@@ -496,7 +496,18 @@ public final class CodingAssistantModel {
             return .handled(fresh.id)
         }
         let id = selected.map(\.id) ?? newConversation().id
+        if let mode = outcome.assistMode {
+            setMode(mode, for: id)
+        }
+        if let rule = outcome.learnedRule {
+            let key = rule.components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
+            let safeKey = String(key.prefix(28)).isEmpty ? "LearnedRule_\(UUID().uuidString.prefix(6))" : String(key.prefix(28))
+            _ = UserMemoryManager.shared.saveEntry(key: safeKey, value: rule, category: "Rules")
+        }
         postSlashCommandResult(commandText: trimmed, result: outcome.message, in: id)
+        if let prompt = outcome.promptToSend {
+            _ = send(prompt, in: id)
+        }
         return .handled(id)
     }
 
