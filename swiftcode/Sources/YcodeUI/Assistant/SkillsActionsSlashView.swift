@@ -104,7 +104,7 @@ public struct SkillsActionsSlashView: View {
             command: "/teamwork",
             title: "Teamwork & Subagents",
             subtitle: "Mandates using the native workers system (subagents) for parallel scoped execution",
-            iconName: "person.3.sequence.fill",
+            iconName: "person.3.fill",
             iconColor: .blue,
             badgeText: "Workers",
             badgeColor: Color.blue.opacity(0.12),
@@ -126,7 +126,7 @@ public struct SkillsActionsSlashView: View {
             command: "/learn",
             title: "Learn & Remember",
             subtitle: "Reflect on recent successes or corrections to capture reusable skills or persistent rules",
-            iconName: "brain.head.profile",
+            iconName: "graduationcap.fill",
             iconColor: .purple,
             badgeText: "Memory",
             badgeColor: Color.purple.opacity(0.12),
@@ -395,8 +395,12 @@ public struct SkillsActionsSlashView: View {
             HStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(item.iconColor.opacity(0.12))
+                        .fill(item.kind == .builtIn ? item.iconColor.opacity(0.18) : Color.primary.opacity(0.06))
                         .frame(width: 22, height: 22)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .stroke(item.kind == .builtIn ? item.iconColor.opacity(0.5) : Color.clear, lineWidth: 1)
+                        )
 
                     Image(systemName: item.iconName)
                         .font(.system(size: 11, weight: .semibold))
@@ -416,12 +420,16 @@ public struct SkillsActionsSlashView: View {
 
                         Spacer()
 
-                        Text(item.badgeText)
+                        Text(item.kind == .builtIn ? item.badgeText.uppercased() : item.badgeText)
                             .font(.system(size: 8.5, weight: .semibold))
                             .foregroundColor(item.kind == .builtIn ? item.iconColor : .secondary)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 1.5)
-                            .background(item.badgeColor, in: Capsule())
+                            .background(item.kind == .builtIn ? item.iconColor.opacity(0.16) : item.badgeColor, in: Capsule())
+                            .overlay(
+                                Capsule()
+                                    .stroke(item.kind == .builtIn ? item.iconColor.opacity(0.45) : Color.clear, lineWidth: 0.75)
+                            )
                     }
 
                     Text(item.subtitle)

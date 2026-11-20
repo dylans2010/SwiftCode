@@ -73,7 +73,7 @@ public enum BuiltInActionCatalog {
                       workflow: ["Describe the package (swiftpm_describe_package) and its resolved tree (swiftpm_dependency_tree).", "For each direct dependency check activity, license and latest release (github_repository_info).", "Find dependencies never imported in sources using the imports below.", "Flag branch/revision pins and outdated majors.", "Produce a table: dependency, version, license, status, recommendation."],
                       systemAssets: ["ThirdPartyDependencyAudit", "SPMConfigurationDeepDive"]),
         BuiltInAction(id: "cleanup", title: "Cleanup Pass", subtitle: "Remove debug prints, empty files, stale TODOs and dead code safely",
-                      icon: "sparkles", category: "Quality", argumentPlaceholder: "Optional path...",
+                      icon: "eraser.fill", category: "Quality", argumentPlaceholder: "Optional path...",
                       preflight: [.init("scan_print_statements"), .init("workspace_empty_files"), .init("scan_todo_fixme_markers")],
                       workflow: ["Classify each finding: remove, keep (with reason) or convert (print → Logger).", "Confirm declarations are unused with swift_symbol_references before deleting.", "Apply changes in small steps; build after each step.", "Run tests.", "List everything removed and everything intentionally kept."],
                       systemAssets: ["RefactoringLegacyCode"]),

@@ -4,7 +4,7 @@ import Foundation
 extension BuiltInActionCatalog {
     public static let extendedActions: [BuiltInAction] = [
         BuiltInAction(id: "lint", title: "Lint & Fix", subtitle: "Run swift-format lint and fix every reported style violation in scope",
-                      icon: "text.badge.checkmark", category: "Quality", argumentPlaceholder: "Optional path...",
+                      icon: "wand.and.stars", category: "Quality", argumentPlaceholder: "Optional path...",
                       preflight: [.init("scan_trailing_whitespace"), .init("scan_long_lines"), .init("scan_tab_indentation")],
                       workflow: ["Run swift_format_lint_check on the scope and group diagnostics by rule.", "Fix violations in touched or requested files only; use swift_format_apply when the project has a swift-format config.", "Re-run the lint check to prove zero remaining violations in scope.", "Build the affected target to confirm formatting did not break code.", "Report rules fixed and any rule you intentionally left (with reason)."],
                       systemAssets: ["CodeWritingStandards"]),
@@ -34,7 +34,7 @@ extension BuiltInActionCatalog {
                       workflow: ["Classify each use: hashing, encryption, signing, randomness, password storage.", "Replace MD5/SHA-1 for security uses with SHA-256 or better; replace custom ciphers with AES-GCM or ChaChaPoly.", "Use SecRandomCopyBytes or SystemRandomNumberGenerator for secrets.", "Keep legacy algorithms only for non-security interop and document why.", "Build, run tests, and report each migration."],
                       systemAssets: ["DataSanitizationAndValidation"]),
         BuiltInAction(id: "concurrency", title: "Concurrency Audit", subtitle: "Find data races, blocking calls and isolation problems",
-                      icon: "arrow.triangle.branch", category: "Swift", argumentPlaceholder: "Optional path...",
+                      icon: "arrow.2.circlepath", category: "Swift", argumentPlaceholder: "Optional path...",
                       preflight: [.init("scan_dispatch_semaphores"), .init("scan_lock_usage"), .init("scan_task_detached"), .init("scan_global_mutable_state")],
                       workflow: ["Rank findings: semaphores bridging async code, locks held across await, detached tasks, global mutable state.", "Fix with actors, @MainActor isolation, structured concurrency or immutable values.", "Make sure continuations resume exactly once and cancellation is honored.", "Build with strict concurrency checking and fix new diagnostics.", "Report each hazard, the fix, and remaining risks."],
                       systemAssets: ["Swift6Concurrency", "ConcurrencyDebugging"]),
@@ -84,7 +84,7 @@ extension BuiltInActionCatalog {
                       workflow: ["List current dependency versions (swiftpm_dependency_tree) and the latest releases (github_repository_info).", "Read release notes for breaking changes.", "Upgrade one dependency at a time; resolve and build after each.", "Run tests and fix breakages.", "Report old → new versions and any code changes required."],
                       systemAssets: ["SPMConfigurationDeepDive", "ThirdPartyDependencyAudit"]),
         BuiltInAction(id: "license", title: "License Audit", subtitle: "Check dependency and vendored-code licenses for compatibility",
-                      icon: "doc.text.magnifyingglass", category: "Security", argumentPlaceholder: "Distribution model (app store, open source)...",
+                      icon: "scale.3d", category: "Security", argumentPlaceholder: "Distribution model (app store, open source)...",
                       preflight: [.init("workspace_find_by_glob", ["pattern": "**/LICENSE*"])],
                       workflow: ["List direct and transitive dependencies with their licenses (github_repository_info for each).", "Check compatibility with the stated distribution model.", "Flag copyleft, missing or unknown licenses.", "Check that required attributions are shipped.", "Produce a table and the required follow-ups."],
                       systemAssets: ["ThirdPartyDependencyAudit"]),
