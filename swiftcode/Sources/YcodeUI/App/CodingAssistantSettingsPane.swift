@@ -174,7 +174,7 @@ public final class CodingAssistantSettingsPane: SettingsPane {
         heading("GitHub")
         row("Personal access token:", secretRow(SecretAccount.githubToken, placeholder: "ghp_…"))
         note("A personal access token for the GitHub tools (issues, pull requests, file reads). The token is kept in the keychain and is never shown again. Without a token, public repositories still work at GitHub's lower rate limit.")
-        row("Account:", githubValidationRow())
+        row("GitHub account:", githubValidationRow())
 
         heading("Agent Tools")
         note("SwiftCode runs these tools in the workspace folder with their own editing turned off; in agent mode (below) they change files through SwiftCode's tools, each change reviewed by you. SwiftCode never reads their sign-in or settings. Sign in to each tool once in Terminal.")
@@ -228,6 +228,29 @@ public final class CodingAssistantSettingsPane: SettingsPane {
         }
         row("SwiftCode skill:", install)
         note("Writes a short skill file describing SwiftCode's tools and the build-and-run workflow into the front workspace (.claude/skills/swiftcode/SKILL.md and .agents/skills/swiftcode/SKILL.md), for agents that read skills.")
+
+        heading("System Skills")
+        let systemSkills = SystemSkillInstallManager.shared
+        systemSkills.refreshInstalledState()
+        let availableSystemSkills = systemSkills.availableSkills()
+        let skillsStatus = NSTextField(labelWithString: "\(systemSkills.installedCount())/\(availableSystemSkills.count) installed")
+        skillsStatus.font = .systemFont(ofSize: 11)
+        skillsStatus.textColor = systemSkills.installedCount() == 0 ? .secondaryLabelColor : .systemTeal
+        let installSystemSkills = ClosureButton(title: systemSkills.allInstalled ? "Reinstall System Skills" : "Install System Skills", target: nil, action: nil)
+        installSystemSkills.bezelStyle = .rounded
+        installSystemSkills.image = NSImage(systemSymbolName: "arrow.down.circle", accessibilityDescription: nil)
+        installSystemSkills.isEnabled = !systemSkills.isWorking && !availableSystemSkills.isEmpty
+        installSystemSkills.onChange = { [weak self, weak installSystemSkills] _ in
+            installSystemSkills?.isEnabled = false
+            Task { [weak self] in
+                _ = await SystemSkillInstallManager.shared.installAll()
+                self?.rebuild()
+            }
+        }
+        let systemSkillsControls = NSStackView(views: [skillsStatus, installSystemSkills])
+        systemSkillsControls.spacing = 8
+        row("System Skills:", systemSkillsControls)
+        note("Installs SwiftCode's bundled, provider-independent coding skills into your local skill library. Type “/” in Assist to search and activate installed skills.")
 
         heading("Context")
         row("Context limit (tokens):", number(s.contextLimit) { [weak self] n in self?.settings.contextLimit = max(1024, n) })

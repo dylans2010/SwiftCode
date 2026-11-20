@@ -19,18 +19,26 @@ public struct AssistModePicker: View {
                 Button {
                     onSelect(mode)
                 } label: {
-                    HStack(spacing: 5) {
+                    HStack(spacing: 4) {
                         Image(systemName: mode.iconName)
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: 9, weight: .semibold))
                         Text(mode.displayName)
-                            .font(.system(size: 11, weight: selected ? .semibold : .regular))
+                            .font(.system(size: 10.5, weight: selected ? .semibold : .medium))
                     }
-                    .foregroundStyle(selected ? Color.primary : Color.secondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
+                    .foregroundStyle(selected ? Color.white : Color.secondary)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
                     .background {
                         if selected {
-                            Capsule().fill(Color.accentColor.opacity(0.22))
+                            Capsule(style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.accentColor, Color.accentColor.opacity(0.82)],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .shadow(color: Color.accentColor.opacity(0.22), radius: 5, y: 2)
                         }
                     }
                     .contentShape(Capsule())
@@ -43,8 +51,13 @@ public struct AssistModePicker: View {
             }
         }
         .padding(2)
-        .background(.quaternary.opacity(0.6), in: Capsule())
-        .opacity(isEnabled ? 1 : 0.55)
+        .background(Color.primary.opacity(0.055), in: Capsule(style: .continuous))
+        .overlay(
+            Capsule(style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+        )
+        .opacity(isEnabled ? 1 : 0.52)
         .fixedSize()
+        .animation(.spring(duration: 0.18), value: selection)
     }
 }

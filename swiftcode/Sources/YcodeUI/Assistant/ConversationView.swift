@@ -30,6 +30,7 @@ public final class ConversationView: NSView {
     let workersStrip = WorkersStripView()
     public private(set) var pendingAttachments: [Attachment] = []
     private var slashPopup: SlashCommandPopupController?
+    var skillsActionsPopup: SkillsActionsSlashPopupController?
     private var isApplyingSlashCommit = false
     private var renderedID: UUID?
     private var renderedCount = 0
@@ -65,8 +66,8 @@ public final class ConversationView: NSView {
 
         transcript.orientation = .vertical
         transcript.alignment = .leading
-        transcript.spacing = 14
-        transcript.edgeInsets = NSEdgeInsets(top: 12, left: 12, bottom: 12, right: 12)
+        transcript.spacing = 16
+        transcript.edgeInsets = NSEdgeInsets(top: 14, left: 14, bottom: 14, right: 14)
         transcript.translatesAutoresizingMaskIntoConstraints = false
         let doc = FlippedView()
         doc.translatesAutoresizingMaskIntoConstraints = false
@@ -102,9 +103,9 @@ public final class ConversationView: NSView {
         AttachMenu.configure(attachButton, target: self, action: #selector(attachChosen(_:)))
         attachButton.controlSize = .small
 
-        providerButton.bezelStyle = .rounded
+        GlassBars.style(providerButton)
         providerButton.isBordered = true
-        providerButton.font = .systemFont(ofSize: 11, weight: .medium)
+        providerButton.font = .systemFont(ofSize: 11, weight: .semibold)
         providerButton.controlSize = .small
         providerButton.image = NSImage(systemSymbolName: "chevron.up.chevron.down", accessibilityDescription: nil)
         providerButton.imagePosition = .imageTrailing
@@ -147,13 +148,7 @@ public final class ConversationView: NSView {
         bottom.spacing = 6
         bottom.alignment = .centerY
 
-        let composerBg = NSView()
-        composerBg.wantsLayer = true
-        composerBg.layer?.cornerRadius = 14
-        composerBg.layer?.cornerCurve = .continuous
-        composerBg.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.65).cgColor
-        composerBg.layer?.borderWidth = 1
-        composerBg.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.65).cgColor
+        let composerBg = GlassBars.surface(cornerRadius: 20)
         composerBg.translatesAutoresizingMaskIntoConstraints = false
 
         let innerDivider = NSBox()
@@ -162,8 +157,8 @@ public final class ConversationView: NSView {
         let composerStack = NSStackView(views: [chips, workersStrip, modeRow, messageScroll, innerDivider, bottom, planLabel])
         composerStack.orientation = .vertical
         composerStack.alignment = .leading
-        composerStack.spacing = 6
-        composerStack.edgeInsets = NSEdgeInsets(top: 9, left: 10, bottom: 9, right: 10)
+        composerStack.spacing = 8
+        composerStack.edgeInsets = NSEdgeInsets(top: 11, left: 12, bottom: 11, right: 12)
         composerStack.translatesAutoresizingMaskIntoConstraints = false
         composerBg.addSubview(composerStack)
 
@@ -173,7 +168,7 @@ public final class ConversationView: NSView {
         }
         for full in [workersStrip, modeRow, messageScroll, innerDivider, bottom, planLabel] as [NSView] {
             full.translatesAutoresizingMaskIntoConstraints = false
-            full.widthAnchor.constraint(equalTo: composerStack.widthAnchor, constant: -20).isActive = true
+            full.widthAnchor.constraint(equalTo: composerStack.widthAnchor, constant: -24).isActive = true
         }
         NSLayoutConstraint.activate([
             statusBox.topAnchor.constraint(equalTo: topAnchor),
@@ -182,7 +177,7 @@ public final class ConversationView: NSView {
             transcriptScroll.topAnchor.constraint(equalTo: statusBox.bottomAnchor),
             transcriptScroll.leadingAnchor.constraint(equalTo: leadingAnchor),
             transcriptScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
-            transcriptScroll.bottomAnchor.constraint(equalTo: composerBg.topAnchor, constant: -6),
+            transcriptScroll.bottomAnchor.constraint(equalTo: composerBg.topAnchor, constant: -8),
             doc.topAnchor.constraint(equalTo: transcriptScroll.contentView.topAnchor),
             doc.leadingAnchor.constraint(equalTo: transcriptScroll.contentView.leadingAnchor),
             doc.widthAnchor.constraint(equalTo: transcriptScroll.contentView.widthAnchor),
@@ -190,15 +185,15 @@ public final class ConversationView: NSView {
             transcript.leadingAnchor.constraint(equalTo: doc.leadingAnchor),
             transcript.trailingAnchor.constraint(equalTo: doc.trailingAnchor),
             transcript.bottomAnchor.constraint(equalTo: doc.bottomAnchor),
-            composerBg.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-            composerBg.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
-            composerBg.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            composerBg.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 10),
+            composerBg.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -10),
+            composerBg.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
             composerStack.topAnchor.constraint(equalTo: composerBg.topAnchor),
             composerStack.leadingAnchor.constraint(equalTo: composerBg.leadingAnchor),
             composerStack.trailingAnchor.constraint(equalTo: composerBg.trailingAnchor),
             composerStack.bottomAnchor.constraint(equalTo: composerBg.bottomAnchor),
-            messageScroll.heightAnchor.constraint(equalToConstant: 56),
-            modePicker.heightAnchor.constraint(equalToConstant: 26),
+            messageScroll.heightAnchor.constraint(equalToConstant: 62),
+            modePicker.heightAnchor.constraint(equalToConstant: 28),
             sendButton.widthAnchor.constraint(equalToConstant: 28),
             sendButton.heightAnchor.constraint(equalToConstant: 28),
         ])
@@ -362,26 +357,35 @@ public final class ConversationView: NSView {
     func emptyState(title: String, detail: String, showStarters: Bool = false) -> NSView {
         let badge = NSView()
         badge.wantsLayer = true
-        badge.layer?.backgroundColor = NSColor.systemIndigo.withAlphaComponent(0.14).cgColor
-        badge.layer?.cornerRadius = 20
-        badge.layer?.cornerCurve = .continuous
+        let gradient = CAGradientLayer()
+        gradient.frame = NSRect(x: 0, y: 0, width: 48, height: 48)
+        gradient.cornerRadius = 24
+        gradient.cornerCurve = .continuous
+        gradient.colors = [NSColor.controlAccentColor.cgColor, NSColor.systemIndigo.withAlphaComponent(0.88).cgColor]
+        gradient.startPoint = CGPoint(x: 0, y: 0)
+        gradient.endPoint = CGPoint(x: 1, y: 1)
+        badge.layer?.addSublayer(gradient)
+        badge.layer?.shadowColor = NSColor.controlAccentColor.cgColor
+        badge.layer?.shadowOpacity = 0.18
+        badge.layer?.shadowRadius = 10
+        badge.layer?.shadowOffset = CGSize(width: 0, height: 3)
         let icon = NSImageView(image: NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Assist") ?? NSImage())
-        icon.symbolConfiguration = .init(pointSize: 17, weight: .semibold)
-        icon.contentTintColor = .systemIndigo
+        icon.symbolConfiguration = .init(pointSize: 18, weight: .semibold)
+        icon.contentTintColor = .white
         icon.translatesAutoresizingMaskIntoConstraints = false
         badge.addSubview(icon)
         NSLayoutConstraint.activate([
-            badge.widthAnchor.constraint(equalToConstant: 40),
-            badge.heightAnchor.constraint(equalToConstant: 40),
+            badge.widthAnchor.constraint(equalToConstant: 48),
+            badge.heightAnchor.constraint(equalToConstant: 48),
             icon.centerXAnchor.constraint(equalTo: badge.centerXAnchor),
             icon.centerYAnchor.constraint(equalTo: badge.centerYAnchor),
         ])
 
         let heading = NSTextField(labelWithString: title)
-        heading.font = .systemFont(ofSize: 13.5, weight: .semibold)
+        heading.font = .systemFont(ofSize: 15, weight: .semibold)
         heading.textColor = .labelColor
         let hint = NSTextField(wrappingLabelWithString: detail)
-        hint.font = .systemFont(ofSize: 11)
+        hint.font = .systemFont(ofSize: 11.5)
         hint.textColor = .secondaryLabelColor
         hint.alignment = .center
         hint.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
@@ -389,19 +393,26 @@ public final class ConversationView: NSView {
         var views: [NSView] = [badge, heading, hint]
         if showStarters {
             let prompts = [
-                ("Explain current file", "Explain what the current file does and how it fits into the project."),
-                ("Find & fix bugs", "Inspect the current file and open build issues for potential bugs and propose fixes."),
-                ("Write unit tests", "Write thorough unit tests for the active file."),
+                ("doc.text.magnifyingglass", "Explain current file", "Explain what the current file does and how it fits into the project."),
+                ("ladybug", "Find & fix bugs", "Inspect the current file and open build issues for potential bugs and propose fixes."),
+                ("checklist", "Write unit tests", "Write thorough unit tests for the active file."),
             ]
             let promptCol = NSStackView()
             promptCol.orientation = .vertical
             promptCol.alignment = .centerX
-            promptCol.spacing = 5
-            for (label, promptText) in prompts {
+            promptCol.spacing = 7
+            for (symbol, label, promptText) in prompts {
                 let btn = ClosureButton(title: label, target: nil, action: nil)
-                btn.bezelStyle = .rounded
-                btn.controlSize = .small
-                btn.font = .systemFont(ofSize: 11)
+                btn.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
+                btn.imagePosition = .imageLeading
+                GlassBars.style(btn)
+                btn.controlSize = .regular
+                btn.font = .systemFont(ofSize: 11.5, weight: .medium)
+                btn.alignment = .left
+                btn.toolTip = promptText
+                btn.translatesAutoresizingMaskIntoConstraints = false
+                btn.widthAnchor.constraint(equalToConstant: 228).isActive = true
+                btn.heightAnchor.constraint(equalToConstant: 31).isActive = true
                 btn.onChange = { [weak self] _ in
                     guard let self else { return }
                     self.messageView.string = promptText
@@ -415,8 +426,8 @@ public final class ConversationView: NSView {
         let stack = NSStackView(views: views)
         stack.orientation = .vertical
         stack.alignment = .centerX
-        stack.spacing = 8
-        stack.edgeInsets = NSEdgeInsets(top: 24, left: 14, bottom: 20, right: 14)
+        stack.spacing = 11
+        stack.edgeInsets = NSEdgeInsets(top: 28, left: 16, bottom: 24, right: 16)
         stack.translatesAutoresizingMaskIntoConstraints = false
         return stack
     }
@@ -476,25 +487,41 @@ public final class ConversationView: NSView {
         return String(token)
     }
 
-    private func slashTextChanged() {
-        guard !isApplyingSlashCommit, slashCommandsEnabled,
-              let query = slashQuery else {
+    func slashTextChanged() {
+        guard !isApplyingSlashCommit, let query = slashQuery else {
             slashPopup?.hide()
+            skillsActionsPopup?.hide()
             return
         }
-        if let popup = slashPopup, popup.isVisible {
+        if slashCommandsEnabled && query.hasPrefix("/") {
+            skillsActionsPopup?.hide()
+            if let popup = slashPopup, popup.isVisible {
+                popup.update(query: query)
+            } else {
+                let popup = SlashCommandPopupController(model: model, anchorView: messageView)
+                popup.onCommit = { [weak self] text, send in self?.slashCommit(text: text, sendImmediately: send) }
+                popup.onDismiss = { [weak self] in self?.slashPopup = nil }
+                slashPopup = popup
+                popup.show(query: query)
+            }
+            return
+        }
+
+        slashPopup?.hide()
+        if let popup = skillsActionsPopup, popup.isVisible {
             popup.update(query: query)
         } else {
-            let popup = SlashCommandPopupController(model: model, anchorView: messageView)
-            popup.onCommit = { [weak self] text, send in self?.slashCommit(text: text, sendImmediately: send) }
-            popup.onDismiss = { [weak self] in self?.slashPopup = nil }
-            slashPopup = popup
+            let popup = SkillsActionsSlashPopupController(anchorView: messageView)
+            popup.onSelect = { [weak self] item in self?.slashPaletteItemSelected(item) }
+            popup.onDismiss = { [weak self] in self?.skillsActionsPopup = nil }
+            skillsActionsPopup = popup
             popup.show(query: query)
         }
     }
 
     private func slashKeyDown(_ event: NSEvent) -> Bool {
-        slashPopup?.handleKeyDown(event) ?? false
+        if let popup = skillsActionsPopup, popup.isVisible { return popup.handleKeyDown(event) }
+        return slashPopup?.handleKeyDown(event) ?? false
     }
 
     private func slashCommit(text: String, sendImmediately: Bool) {
@@ -502,6 +529,40 @@ public final class ConversationView: NSView {
         messageView.string = text
         isApplyingSlashCommit = false
         if sendImmediately { sendClicked() }
+    }
+
+    private func slashPaletteItemSelected(_ item: SlashPaletteItem) {
+        consumeTrailingTrigger()
+        focusMessageField()
+        Task { [weak self] in
+            let execution = await SlashCommandExecutionEngine.shared.execute(command: item.command)
+            guard let self else { return }
+            var insertion = execution.messageToInsert
+            if item.kind == .skill, let skill = item.skillDescriptor, let content = skill.skillMarkdownContent, !content.isEmpty {
+                insertion = """
+                ### SKILL ACTIVE: \(skill.name)
+                Description: \(skill.description)
+
+                ```markdown
+                \(content)
+                ```
+                """
+            }
+            if let insertion {
+                let existing = messageView.string.trimmingCharacters(in: .whitespacesAndNewlines)
+                messageView.string = existing.isEmpty ? insertion : existing + "\n\n" + insertion
+            }
+            if execution.shouldSubmitImmediately { sendClicked() }
+        }
+    }
+
+    private func consumeTrailingTrigger() {
+        var words = messageView.string.split(whereSeparator: \.isWhitespace).map(String.init)
+        if let last = words.last, last.hasPrefix("/") || last.hasPrefix("@") {
+            words.removeLast()
+        }
+        let text = words.joined(separator: " ")
+        messageView.string = text.isEmpty ? "" : text + " "
     }
 
     @objc public func sendClicked() {
@@ -747,10 +808,10 @@ public final class MessageView: NSStackView {
         if message.role == .user {
             let bubble = NSView()
             bubble.wantsLayer = true
-            bubble.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.16).cgColor
-            bubble.layer?.borderColor = NSColor.controlAccentColor.withAlphaComponent(0.28).cgColor
+            bubble.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.15).cgColor
+            bubble.layer?.borderColor = NSColor.controlAccentColor.withAlphaComponent(0.22).cgColor
             bubble.layer?.borderWidth = 1
-            bubble.layer?.cornerRadius = 13
+            bubble.layer?.cornerRadius = 16
             bubble.layer?.cornerCurve = .continuous
             let p = prose(message.text, markdown: false)
             p.translatesAutoresizingMaskIntoConstraints = false
@@ -758,16 +819,16 @@ public final class MessageView: NSStackView {
             bubble.addSubview(p)
             bubble.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                p.topAnchor.constraint(equalTo: bubble.topAnchor, constant: 8),
-                p.leadingAnchor.constraint(equalTo: bubble.leadingAnchor, constant: 12),
-                p.trailingAnchor.constraint(equalTo: bubble.trailingAnchor, constant: -12),
-                p.bottomAnchor.constraint(equalTo: bubble.bottomAnchor, constant: -8),
+                p.topAnchor.constraint(equalTo: bubble.topAnchor, constant: 9),
+                p.leadingAnchor.constraint(equalTo: bubble.leadingAnchor, constant: 14),
+                p.trailingAnchor.constraint(equalTo: bubble.trailingAnchor, constant: -14),
+                p.bottomAnchor.constraint(equalTo: bubble.bottomAnchor, constant: -9),
             ])
             let bubbleRow = NSStackView(views: [NSView(), bubble])
             bubbleRow.orientation = .horizontal
             bubbleRow.alignment = .top
             addArrangedSubview(bubbleRow)
-            bubble.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.88).isActive = true
+            bubble.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.82).isActive = true
         } else {
             var codeIndex = 0
             for block in MarkdownBlocks.parse(message.text) {
@@ -914,9 +975,9 @@ public final class MessageView: NSStackView {
         ])
         box.wantsLayer = true
         box.layer?.borderWidth = 1
-        box.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.65).cgColor
-        box.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.35).cgColor
-        box.layer?.cornerRadius = 10
+        box.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.32).cgColor
+        box.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.42).cgColor
+        box.layer?.cornerRadius = 12
         box.layer?.cornerCurve = .continuous
         box.edgeInsets = NSEdgeInsets(top: 8, left: 8, bottom: 8, right: 8)
         return box

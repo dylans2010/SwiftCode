@@ -6,6 +6,8 @@ public struct WorkersMainView: View {
     @Bindable var runtimeState: WorkerRuntimeState
     @Environment(\.dismiss) private var dismiss
 
+    private let closeAction: (() -> Void)?
+
     @State private var filterMode: FilterMode = .all
     @State private var selectedWorkerForDetails: Worker? = nil
     @State private var workerToStop: Worker? = nil
@@ -19,8 +21,17 @@ public struct WorkersMainView: View {
         public var id: String { rawValue }
     }
 
-    public init(runtimeState: WorkerRuntimeState = .shared) {
+    public init(runtimeState: WorkerRuntimeState = .shared, onClose: (() -> Void)? = nil) {
         self.runtimeState = runtimeState
+        self.closeAction = onClose
+    }
+
+    private func close() {
+        if let closeAction {
+            closeAction()
+        } else {
+            dismiss()
+        }
     }
 
     public var body: some View {
@@ -69,6 +80,7 @@ public struct WorkersMainView: View {
                 workerToStop = nil
             }
         }
+        .onExitCommand { close() }
     }
 
     private var headerBar: some View {
@@ -114,13 +126,22 @@ public struct WorkersMainView: View {
             Spacer()
 
             Button {
-                dismiss()
+                close()
             } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 18))
-                    .foregroundStyle(.secondary)
+                Text("Done")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .background(Color.primary.opacity(0.08), in: Capsule())
+                    .overlay(
+                        Capsule()
+                            .strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                    )
             }
             .buttonStyle(.plain)
+            .keyboardShortcut(.cancelAction)
+            .help("Close the Workers dashboard (Esc)")
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 12)

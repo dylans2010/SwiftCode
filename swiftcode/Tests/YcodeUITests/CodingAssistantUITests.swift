@@ -308,7 +308,7 @@ final class FakeProvider: AssistantProvider, @unchecked Sendable {
         _ = pane.view
         for t in ["# Model Provider", "Use", "# Local Models", "Ollama address", "llama.cpp address", "# OpenAI", "Sign-in method", "Account",
                   "# Agent Tools", "Claude Code", "Codex", "Antigravity", "# Context", "Context limit (tokens)", "# Output", "Most output tokens", "Temperature", "Top P", "Top K",
-                  "Repeat penalty", "# Privacy"] {
+                  "Repeat penalty", "# System Skills", "System Skills", "# Privacy"] {
             #expect(pane.rowTitles.contains(t), "missing row \(t)")
         }
         pane.choose("API key", inRow: "Sign-in method")

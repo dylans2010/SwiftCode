@@ -46,21 +46,40 @@ public struct SlashPaletteItem: Identifiable, Hashable, Sendable {
     }
 }
 
+public struct SlashPaletteKeyboardCommand: Identifiable, Equatable, Sendable {
+    public enum Kind: Sendable {
+        case previous
+        case next
+        case commit
+    }
+
+    public let id = UUID()
+    public let kind: Kind
+
+    public init(kind: Kind) {
+        self.kind = kind
+    }
+}
+
 public struct SkillsActionsSlashView: View {
     public let query: String
+    public let command: SlashPaletteKeyboardCommand?
     public var onSelectAction: (SlashPaletteItem) -> Void
     public var onDismiss: () -> Void
 
     @State private var selectedIndex: Int = 0
     @State private var selectedCategory: String = "All"
+    @State private var handledCommandID: UUID?
     @State private var skillIndex = SkillIndex.shared
 
     public init(
         query: String = "",
+        command: SlashPaletteKeyboardCommand? = nil,
         onSelectAction: @escaping (SlashPaletteItem) -> Void,
         onDismiss: @escaping () -> Void
     ) {
         self.query = query
+        self.command = command
         self.onSelectAction = onSelectAction
         self.onDismiss = onDismiss
     }
@@ -166,7 +185,7 @@ public struct SkillsActionsSlashView: View {
             ? SkillDiscoveryService.shared.allDiscoveredSkills
             : AgentSkillManager.shared.installedSkills
 
-        for skill in installed {
+        for skill in installed where skill.isEnabled {
             list.append(
                 SlashPaletteItem(
                     id: "skill-\(skill.id)",
@@ -353,6 +372,9 @@ public struct SkillsActionsSlashView: View {
         .frame(width: 480)
         .liquidGlass(style: .sheet, cornerRadius: 12)
         .onExitCommand(perform: onDismiss)
+        .onAppear { apply(command) }
+        .onChange(of: query) { _, _ in selectedIndex = 0 }
+        .onChange(of: command) { _, newCommand in apply(newCommand) }
         .background(
             VStack {
                 Button("") { selectPrevious() }
@@ -367,6 +389,19 @@ public struct SkillsActionsSlashView: View {
             .opacity(0.001)
             .frame(width: 0, height: 0)
         )
+    }
+
+    private func apply(_ command: SlashPaletteKeyboardCommand?) {
+        guard let command, handledCommandID != command.id else { return }
+        handledCommandID = command.id
+        switch command.kind {
+        case .previous:
+            selectPrevious()
+        case .next:
+            selectNext()
+        case .commit:
+            commitSelected()
+        }
     }
 
     private var selectedItem: SlashPaletteItem? {

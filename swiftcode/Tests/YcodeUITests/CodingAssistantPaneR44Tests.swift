@@ -50,6 +50,44 @@ import YcodeAssistant
         #expect(pane.listRows.first == "Ideas")
     }
 
+    @Test func slashAndMentionTriggersOpenActionsPalette() throws {
+        let env = try Env("r44-slash-actions")
+        defer { env.restore() }
+        let wc = try env.window()
+        wc.showCodingAssistant(nil)
+        let window = try #require(wc.window)
+        window.makeKeyAndOrderFront(nil)
+        let pane = wc.codingAssistant.conversationView
+        pane.messageView.string = "/"
+        pane.slashTextChanged()
+        let popup = try #require(pane.skillsActionsPopup)
+        #expect(popup.isVisible)
+        pane.messageView.string = "@"
+        pane.slashTextChanged()
+        #expect(popup.isVisible)
+        pane.messageView.string = "Done"
+        pane.slashTextChanged()
+        #expect(!popup.isVisible)
+    }
+
+    @Test func workersDashboardCanBeClosedAndReopened() throws {
+        let env = try Env("r44-workers-close")
+        defer { env.restore() }
+        let wc = try env.window()
+        wc.showCodingAssistant(nil)
+        let window = try #require(wc.window)
+        window.makeKeyAndOrderFront(nil)
+        wc.codingAssistant.workersClicked()
+        var host = try #require(window.contentViewController?.presentedViewControllers?.last)
+        #expect(window.attachedSheet != nil)
+        host.cancelOperation(nil)
+        #expect(window.contentViewController?.presentedViewControllers?.isEmpty == true)
+        wc.codingAssistant.workersClicked()
+        host = try #require(window.contentViewController?.presentedViewControllers?.last)
+        host.cancelOperation(nil)
+        #expect(window.contentViewController?.presentedViewControllers?.isEmpty == true)
+    }
+
     func isVisible(_ v: NSView) -> Bool {
         var view: NSView? = v
         while let x = view { if x.isHidden { return false }; view = x.superview }

@@ -58,7 +58,7 @@ public final class CodingAssistantViewController: NSViewController, NSOutlineVie
         newGroupButton.title = ""
         newGroupButton.image = NSImage(systemSymbolName: "folder.badge.plus", accessibilityDescription: "New Group")
         newGroupButton.imagePosition = .imageOnly
-        newGroupButton.bezelStyle = .rounded
+        GlassBars.style(newGroupButton)
         newGroupButton.controlSize = .small
         newGroupButton.target = self
         newGroupButton.action = #selector(newGroupClicked)
@@ -66,19 +66,21 @@ public final class CodingAssistantViewController: NSViewController, NSOutlineVie
         newGroupButton.setAccessibilityLabel("New Group")
 
         workersButton.title = WorkersPanel.buttonTitle()
-        workersButton.bezelStyle = .rounded
+        workersButton.image = NSImage(systemSymbolName: "person.3.sequence", accessibilityDescription: nil)
+        workersButton.imagePosition = .imageLeading
+        GlassBars.style(workersButton)
         workersButton.controlSize = .small
-        workersButton.font = .systemFont(ofSize: 11, weight: .medium)
+        workersButton.font = .systemFont(ofSize: 11, weight: .semibold)
         workersButton.target = self
         workersButton.action = #selector(workersClicked)
         workersButton.toolTip = "Open the Assist Workers dashboard"
         workersButton.setAccessibilityLabel("Workers")
 
         let titleIcon = NSImageView(image: NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Assist") ?? NSImage())
-        titleIcon.symbolConfiguration = .init(pointSize: 12, weight: .semibold)
+        titleIcon.symbolConfiguration = .init(pointSize: 13, weight: .semibold)
         titleIcon.contentTintColor = .systemIndigo
         let titleLabel = NSTextField(labelWithString: "Assist")
-        titleLabel.font = .systemFont(ofSize: 12.5, weight: .semibold)
+        titleLabel.font = .systemFont(ofSize: 13, weight: .semibold)
         let titleStack = NSStackView(views: [titleIcon, titleLabel])
         titleStack.orientation = .horizontal
         titleStack.spacing = 5
@@ -103,7 +105,9 @@ public final class CodingAssistantViewController: NSViewController, NSOutlineVie
         list.outlineTableColumn = col
         list.headerView = nil
         list.style = .sourceList
-        list.rowSizeStyle = .small
+        list.selectionHighlightStyle = .regular
+        list.rowSizeStyle = .medium
+        list.intercellSpacing = NSSize(width: 0, height: 2)
         list.dataSource = self
         list.delegate = self
         list.target = self
@@ -319,22 +323,25 @@ public final class CodingAssistantViewController: NSViewController, NSOutlineVie
         let cell = NSTableCellView()
         let label = NSTextField(labelWithString: item.title)
         label.lineBreakMode = .byTruncatingTail
+        label.font = .systemFont(ofSize: 11.5, weight: item.isContainer ? .semibold : .medium)
         let icon = NSImageView(image: NSImage(systemSymbolName: Self.glyph(item),
                                               accessibilityDescription: item.isActive ? "Responding" : nil) ?? NSImage())
+        icon.symbolConfiguration = .init(pointSize: 10.5, weight: .semibold)
         switch item.kind {
         case .group: icon.contentTintColor = .systemBlue
         case .archive: icon.contentTintColor = .secondaryLabelColor
         case .conversation: icon.contentTintColor = item.isActive ? Theme.accentColor : .secondaryLabelColor
         }
         let stack = NSStackView(views: [icon, label])
-        stack.spacing = 4
+        stack.spacing = 6
+        stack.alignment = .centerY
         stack.translatesAutoresizingMaskIntoConstraints = false
         cell.addSubview(stack)
         cell.textField = label
         cell.imageView = icon
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 2),
-            stack.trailingAnchor.constraint(lessThanOrEqualTo: cell.trailingAnchor, constant: -4),
+            stack.leadingAnchor.constraint(equalTo: cell.leadingAnchor, constant: 3),
+            stack.trailingAnchor.constraint(lessThanOrEqualTo: cell.trailingAnchor, constant: -6),
             stack.centerYAnchor.constraint(equalTo: cell.centerYAnchor),
         ])
         return cell

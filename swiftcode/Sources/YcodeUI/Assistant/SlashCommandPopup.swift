@@ -1,4 +1,5 @@
 import AppKit
+import SwiftUI
 import YcodeAssistant
 import YcodeIDECore
 
@@ -94,6 +95,109 @@ public final class SlashCommandPopupController: NSObject {
 }
 
 extension SlashCommandPopupController: NSPopoverDelegate {
+    public func popoverDidClose(_ notification: Notification) {
+        onDismiss?()
+    }
+}
+
+@MainActor
+public final class SkillsActionsSlashPopupController: NSObject {
+    public weak var anchorView: NSView?
+
+    public var onSelect: ((SlashPaletteItem) -> Void)?
+    public var onDismiss: (() -> Void)?
+
+    private let popover = NSPopover()
+    private let hosting: NSHostingController<SkillsActionsSlashView>
+    private var query = ""
+    private var pendingCommand: SlashPaletteKeyboardCommand?
+
+    public init(anchorView: NSView) {
+        self.anchorView = anchorView
+        hosting = NSHostingController(rootView: SkillsActionsSlashView(query: "", onSelectAction: { _ in }, onDismiss: {}))
+        super.init()
+        hosting.rootView = makeView()
+        hosting.sizingOptions = [.preferredContentSize]
+        popover.contentViewController = hosting
+        popover.behavior = .transient
+        popover.animates = false
+        popover.delegate = self
+    }
+
+    public var isVisible: Bool { popover.isShown }
+
+    private func makeView() -> SkillsActionsSlashView {
+        SkillsActionsSlashView(
+            query: query,
+            command: pendingCommand,
+            onSelectAction: { [weak self] item in
+                self?.select(item)
+            },
+            onDismiss: { [weak self] in
+                self?.hide()
+            }
+        )
+    }
+
+    public func show(query: String) {
+        self.query = query
+        pendingCommand = nil
+        hosting.rootView = makeView()
+        if SkillIndex.shared.skills.isEmpty && !SkillIndex.shared.isIndexing {
+            Task { [weak self] in
+                await SkillIndex.shared.rebuildIndex()
+                guard let self else { return }
+                self.hosting.rootView = self.makeView()
+            }
+        }
+        guard let anchorView, anchorView.window != nil else { return }
+        if !popover.isShown {
+            popover.show(relativeTo: anchorView.bounds, of: anchorView, preferredEdge: .maxY)
+        }
+    }
+
+    public func update(query: String) {
+        self.query = query
+        pendingCommand = nil
+        hosting.rootView = makeView()
+    }
+
+    public func hide() {
+        popover.close()
+    }
+
+    public func handleKeyDown(_ event: NSEvent) -> Bool {
+        guard popover.isShown else { return false }
+        switch event.keyCode {
+        case 126:
+            dispatch(.previous)
+            return true
+        case 125:
+            dispatch(.next)
+            return true
+        case 36, 76:
+            dispatch(.commit)
+            return true
+        case 53:
+            hide()
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func dispatch(_ kind: SlashPaletteKeyboardCommand.Kind) {
+        pendingCommand = SlashPaletteKeyboardCommand(kind: kind)
+        hosting.rootView = makeView()
+    }
+
+    private func select(_ item: SlashPaletteItem) {
+        hide()
+        onSelect?(item)
+    }
+}
+
+extension SkillsActionsSlashPopupController: NSPopoverDelegate {
     public func popoverDidClose(_ notification: Notification) {
         onDismiss?()
     }
