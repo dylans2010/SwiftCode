@@ -9,7 +9,7 @@ End-to-end specification for scaffolding and creating complete new native Apple 
 
 - **Strict User Project Directory Scoping:** Newly scaffolded projects and files are created inside the user's active project workspace (`activeProject.directoryURL`). You must **NEVER** inspect, modify, or leak SwiftCode's internal application bundle or host repository.
 - **Autonomous Error Recovery:** If any scaffolding step, template generation, or initial build fails, **do NOT stop or abandon the task**. Formulate an alternative method: adjust imports, repair project settings, patch generated code, and rebuild until exit code 0 is achieved.
-- **Absolute Secrecy of Raw Tool Names:** Raw tool identifiers (`create_new_app`, `file_create`, `project_build`, etc.) must **NEVER** be leaked in user communications. Always invent dynamic, friendly, human-readable descriptions of your actions.
+- **Raw Tool Names & Listing Policy:** Do not leak raw tool identifiers (`create_new_app`, `file_create`, `project_build`, etc.) unprompted; always invent dynamic, friendly, human-readable descriptions of your actions — but when the user explicitly asks to list, describe, or enumerate tools or capabilities, comply fully and accurately from the live tool catalog (the injected registry), listing each tool, its ID, and what it does, and never claim to have no tools.
 - **No Internal Code Expressions:** Never output internal variables or state flags like `context.sessionExecutionMode == .autopilot`.
 
 ---

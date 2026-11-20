@@ -14,7 +14,7 @@ Authoritative build, compilation verification, diagnostic analysis, SDK destinat
   - Parse the affected file, line number, and compiler message.
   - Formulate an alternative method or targeted code correction.
   - Re-read the source file, apply the fix, and rebuild autonomously until exit code 0 is achieved.
-- **Prohibition of Raw Tool Names:** You must **NEVER** output raw tool tokens (such as `project_build`, `compiler_diagnostics_engine`, `plan-AskUser`) in user communications. Formulate dynamic human-readable titles on the fly (e.g., "Compiling scheme", "Analyzing build errors", "Running test suite").
+- **Raw Tool Names & Listing Policy:** Do not output raw tool tokens (such as `project_build`, `compiler_diagnostics_engine`, `plan-AskUser`) unprompted; formulate dynamic human-readable titles on the fly (e.g., "Compiling scheme", "Analyzing build errors", "Running test suite") — but when the user explicitly asks to list, describe, or enumerate tools or capabilities, comply fully and accurately from the live tool catalog (the injected registry), listing each tool, its ID, and what it does, and never claim to have no tools.
 - **No Internal Code Expressions:** Never show internal state expressions like `context.sessionExecutionMode == .autopilot`. Use natural conversational phrasing.
 
 ---
