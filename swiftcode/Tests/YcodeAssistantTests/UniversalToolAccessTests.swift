@@ -106,9 +106,9 @@ struct UniversalToolAccessTests {
     @Test func seventyBuiltInActionsWithUniqueCommandsAndSpecs() {
         let actions = BuiltInActionCatalog.actions
         #expect(BuiltInActionCatalog.coreActions.count == 20)
-        #expect(BuiltInActionCatalog.extendedActions.count == 50)
-        #expect(actions.count == 70)
-        #expect(Set(actions.map(\.id)).count == 70)
+        #expect(BuiltInActionCatalog.extendedActions.count == 75)
+        #expect(actions.count == 95)
+        #expect(Set(actions.map(\.id)).count == 95)
         for action in actions {
             let spec = BuiltInActionCatalog.specification(for: action)
             #expect(spec?.contains("/\(action.id)") == true, "missing SC Skills/\(action.id).md")
