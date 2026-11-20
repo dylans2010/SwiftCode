@@ -1,6 +1,6 @@
 import Foundation
 
-/// A built-in Assist action (slash command) that gathers real workspace evidence with
+/// A built-in Assist action that gathers real workspace evidence with
 /// read-only tools, then hands the model a precise, verifiable workflow.
 public struct BuiltInAction: Identifiable, Sendable, Hashable {
     public struct Preflight: Sendable, Hashable {
@@ -13,7 +13,7 @@ public struct BuiltInAction: Identifiable, Sendable, Hashable {
     }
 
     public let id: String
-    public var command: String { "/" + id }
+    public var command: String { "@" + id }
     public let title: String
     public let subtitle: String
     public let icon: String
@@ -31,7 +31,7 @@ public enum BuiltInActionCatalogData {
     public static var entries: [BuiltInAction] { BuiltInActionCatalog.actions }
 
     public static func basePrompt(id: String, argument: String?) -> String {
-        guard let action = BuiltInActionCatalog.action(for: id) else { return "/" + id + " " + (argument ?? "") }
+        guard let action = BuiltInActionCatalog.action(for: id) else { return "@" + id + " " + (argument ?? "") }
         return BuiltInActionCatalog.basePrompt(for: action, argument: argument)
     }
 }
@@ -148,7 +148,7 @@ public enum BuiltInActionCatalog {
 
     public static func action(for command: String) -> BuiltInAction? {
         let key = command.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let id = key.hasPrefix("/") ? String(key.dropFirst()) : key
+        let id = (key.hasPrefix("/") || key.hasPrefix("@")) ? String(key.dropFirst()) : key
         return actions.first { $0.id == id }
     }
 

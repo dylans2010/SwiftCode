@@ -472,8 +472,8 @@ public final class ConversationView: NSView {
 
     private var slashQuery: String? {
         guard let token = messageView.string.split(whereSeparator: \.isWhitespace).last,
-              token.hasPrefix("/") else { return nil }
-        return String(token.dropFirst())
+              token.hasPrefix("/") || token.hasPrefix("@") else { return nil }
+        return String(token)
     }
 
     private func slashTextChanged() {

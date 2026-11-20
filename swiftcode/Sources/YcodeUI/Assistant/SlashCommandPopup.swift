@@ -170,7 +170,8 @@ final class SlashCommandPopupContent: NSViewController, NSTableViewDataSource, N
             tableView.deselectAll(nil)
         }
         let count = state.filtered.count
-        footerLabel.stringValue = "\(count) command\(count == 1 ? "" : "s") · Navigate with ↑↓ and Return ↵"
+        let scope = state.query.hasPrefix("@") ? " · @ actions" : state.query.hasPrefix("/") ? " · / commands & skills" : ""
+        footerLabel.stringValue = "\(count) command\(count == 1 ? "" : "s")\(scope) · Navigate with ↑↓ and Return ↵"
         updateArgumentField()
     }
 

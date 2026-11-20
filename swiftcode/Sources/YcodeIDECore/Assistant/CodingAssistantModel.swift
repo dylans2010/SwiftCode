@@ -456,7 +456,7 @@ public final class CodingAssistantModel {
         guard settings.useMetaSlashCommands else { return .notACommand }
         guard providerKind == .metaAssist else { return .notACommand }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.hasPrefix("/") else { return .notACommand }
+        guard trimmed.hasPrefix("/") || trimmed.hasPrefix("@") else { return .notACommand }
         let firstSpace = trimmed.firstIndex(where: { $0.isWhitespace }) ?? trimmed.endIndex
         let name = String(trimmed[..<firstSpace]).lowercased()
         guard let command = metaSlashCommands.commands.first(where: { $0.name.lowercased() == name }) else {

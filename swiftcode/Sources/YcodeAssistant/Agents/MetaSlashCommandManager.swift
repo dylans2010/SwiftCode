@@ -98,8 +98,8 @@ public struct MetaSlashCommandManager: Sendable {
     public static var builtInActionCommands: [MetaSlashCommand] {
         let existing = Set(builtInCommands.map(\.id))
         return BuiltInActionCatalogData.entries.filter { !existing.contains($0.id) }.map {
-            MetaSlashCommand(id: $0.id, name: "/" + $0.id, title: $0.title, description: $0.subtitle,
-                             syntax: "/\($0.id) [\($0.placeholder)]", icon: $0.icon, category: "Actions",
+            MetaSlashCommand(id: $0.id, name: "@" + $0.id, title: $0.title, description: $0.subtitle,
+                             syntax: "@\($0.id) [\($0.placeholder)]", icon: $0.icon, category: "Actions",
                              arguments: [.text(name: "Input", placeholder: $0.placeholder, isOptional: true)])
         }
     }
@@ -531,9 +531,13 @@ public struct MetaSlashCommandManager: Sendable {
     public func searchCommands(query: String) -> [MetaSlashCommand] {
         let trimmed = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return commands }
-        let cleanQuery = trimmed.hasPrefix("/") ? String(trimmed.dropFirst()) : trimmed
+        let actionsOnly = trimmed.hasPrefix("@")
+        let slashOnly = trimmed.hasPrefix("/")
+        let cleanQuery = (actionsOnly || slashOnly) ? String(trimmed.dropFirst()) : trimmed
         return commands.filter { cmd in
-            let cmdNameClean = cmd.name.hasPrefix("/") ? String(cmd.name.dropFirst()).lowercased() : cmd.name.lowercased()
+            if actionsOnly && !cmd.name.hasPrefix("@") { return false }
+            if slashOnly && cmd.name.hasPrefix("@") { return false }
+            let cmdNameClean = (cmd.name.hasPrefix("@") || cmd.name.hasPrefix("/")) ? String(cmd.name.dropFirst()).lowercased() : cmd.name.lowercased()
             return cmdNameClean.contains(cleanQuery) ||
                 cmd.title.lowercased().contains(cleanQuery) ||
                 cmd.description.lowercased().contains(cleanQuery) ||

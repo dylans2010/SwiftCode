@@ -36,50 +36,58 @@ public final class SlashCommandExecutionEngine: Sendable {
         let cleanCommand = command.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let arg = argument?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        logger.info("Executing slash command '\(cleanCommand)' with argument: \(arg ?? "none")")
+        logger.info("Executing command '\(cleanCommand)' with argument: \(arg ?? "none")")
 
         switch cleanCommand {
-        case "/schedule", "schedule":
+        case "@schedule", "schedule":
             return await executeSchedule(argument: arg)
 
-        case "/compact", "compact":
+        case "@compact", "compact":
             return await executeCompact(focusInstructions: arg)
 
-        case "/goal", "goal":
+        case "@goal", "goal":
             return executeGoal(objective: arg)
 
-        case "/teamwork", "teamwork":
+        case "@teamwork", "teamwork":
             return executeTeamwork(task: arg)
 
-        case "/interview", "interview":
+        case "@interview", "interview":
             return executeInterview(topic: arg)
 
-        case "/learn", "learn":
+        case "@learn", "learn":
             return await executeLearn(topicOrRule: arg)
 
-        case "/boost", "boost":
+        case "@boost", "boost":
             return executeBoost(objective: arg)
 
         default:
-            if let action = await BuiltInActionCatalog.execute(command: cleanCommand, argument: arg) {
-                return action
-            }
-            // Check if it matches an installed skill
-            let skillName = cleanCommand.hasPrefix("/") ? String(cleanCommand.dropFirst()) : cleanCommand
-            if let skill = SkillIndex.shared.skills.first(where: { $0.name.lowercased() == skillName || $0.id.lowercased() == skillName }) {
-                return executeSkill(skill, argument: arg)
+            if cleanCommand.hasPrefix("@") {
+                if let action = await BuiltInActionCatalog.execute(command: String(cleanCommand.dropFirst()), argument: arg) {
+                    return action
+                }
+            } else if cleanCommand.hasPrefix("/") {
+                let skillName = String(cleanCommand.dropFirst())
+                if let skill = SkillIndex.shared.skills.first(where: { $0.name.lowercased() == skillName || $0.id.lowercased() == skillName }) {
+                    return executeSkill(skill, argument: arg)
+                }
+            } else {
+                if let action = await BuiltInActionCatalog.execute(command: cleanCommand, argument: arg) {
+                    return action
+                }
+                if let skill = SkillIndex.shared.skills.first(where: { $0.name.lowercased() == cleanCommand || $0.id.lowercased() == cleanCommand }) {
+                    return executeSkill(skill, argument: arg)
+                }
             }
 
             return SlashExecutionResult(
                 command: cleanCommand,
                 messageToInsert: nil,
-                feedbackText: "Unknown slash command: \(cleanCommand)",
+                feedbackText: "Unknown command: \(cleanCommand)",
                 shouldSubmitImmediately: false
             )
         }
     }
 
-    // MARK: - /compact
     private func executeCompact(focusInstructions: String?) async -> SlashExecutionResult {
         let result = await AssistConversationCompactor.shared.compactCurrentSession(focusInstructions: focusInstructions)
         let percentStr = String(format: "%.1f", result.percentageSaved)
@@ -90,23 +98,22 @@ public final class SlashCommandExecutionEngine: Sendable {
         AssistManager.shared.messages.append(notifyMsg)
 
         return SlashExecutionResult(
-            command: "/compact",
+            command: "@compact",
             messageToInsert: nil,
             feedbackText: feedback,
             shouldSubmitImmediately: false
         )
     }
 
-    // MARK: - /schedule
     private func executeSchedule(argument: String?) async -> SlashExecutionResult {
         guard let arg = argument, !arg.isEmpty else {
-            let usage = "Usage: `/schedule <duration|cron> <task-prompt>`\nExample: `/schedule 15m Run build and test suite` or `/schedule 3600 Check git repo`"
-            return SlashExecutionResult(command: "/schedule", messageToInsert: nil, feedbackText: usage, shouldSubmitImmediately: false)
+            let usage = "Usage: `@schedule <duration|cron> <task-prompt>`\nExample: `@schedule 15m Run build and test suite` or `@schedule 3600 Check git repo`"
+            return SlashExecutionResult(command: "@schedule", messageToInsert: nil, feedbackText: usage, shouldSubmitImmediately: false)
         }
 
         let parts = arg.split(separator: " ", maxSplits: 1).map(String.init)
         guard let timingPart = parts.first, !timingPart.isEmpty else {
-            return SlashExecutionResult(command: "/schedule", messageToInsert: nil, feedbackText: "Please specify duration (e.g. 10m, 1h) or cron expression.", shouldSubmitImmediately: false)
+            return SlashExecutionResult(command: "@schedule", messageToInsert: nil, feedbackText: "Please specify duration (e.g. 10m, 1h) or cron expression.", shouldSubmitImmediately: false)
         }
 
         let taskPrompt = parts.count > 1 ? parts[1] : "Scheduled Task: \(timingPart)"
@@ -114,20 +121,19 @@ public final class SlashCommandExecutionEngine: Sendable {
         if let seconds = AssistScheduledTaskManager.shared.parseDuration(timingPart) {
             let task = AssistScheduledTaskManager.shared.scheduleOneShot(delaySeconds: seconds, prompt: taskPrompt)
             let feedback = "⏰ **Task Scheduled**: Fires in \(seconds)s at \(task.nextFireDate.formatted(date: .omitted, time: .standard)).\nPrompt: _\"\(taskPrompt)\"_"
-            return SlashExecutionResult(command: "/schedule", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
+            return SlashExecutionResult(command: "@schedule", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
         } else if timingPart.contains("*") || timingPart.contains("/") {
             let task = AssistScheduledTaskManager.shared.scheduleCron(expression: timingPart, prompt: taskPrompt)
             let feedback = "⏰ **Recurring Cron Scheduled**: [\(timingPart)] Fires periodically.\nPrompt: _\"\(taskPrompt)\"_"
-            return SlashExecutionResult(command: "/schedule", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
+            return SlashExecutionResult(command: "@schedule", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
         } else {
             let fallbackSeconds = 300
             let task = AssistScheduledTaskManager.shared.scheduleOneShot(delaySeconds: fallbackSeconds, prompt: arg)
             let feedback = "⏰ **Task Scheduled**: Fires in 5 minutes (\(task.nextFireDate.formatted(date: .omitted, time: .standard))).\nPrompt: _\"\(arg)\"_"
-            return SlashExecutionResult(command: "/schedule", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
+            return SlashExecutionResult(command: "@schedule", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
         }
     }
 
-    // MARK: - /goal
     private func executeGoal(objective: String?) -> SlashExecutionResult {
         UserDefaults.standard.set(ExecutionMode.autopilot.rawValue, forKey: "com.swiftcode.assist.executionMode")
 
@@ -149,14 +155,13 @@ public final class SlashCommandExecutionEngine: Sendable {
         let feedback = "🎯 **Autonomous Goal Mode Activated**: Autopilot engaged. Pursuing objective end-to-end without interruption."
 
         return SlashExecutionResult(
-            command: "/goal",
+            command: "@goal",
             messageToInsert: promptPayload,
             feedbackText: feedback,
             shouldSubmitImmediately: objective != nil
         )
     }
 
-    // MARK: - /teamwork
     private func executeTeamwork(task: String?) -> SlashExecutionResult {
         let taskText = task ?? "Execute current architectural work using parallel subagents."
 
@@ -173,14 +178,13 @@ public final class SlashCommandExecutionEngine: Sendable {
         let feedback = "👥 **Teamwork Mode Activated**: Workers and subagents execution policy mandated for this session."
 
         return SlashExecutionResult(
-            command: "/teamwork",
+            command: "@teamwork",
             messageToInsert: promptPayload,
             feedbackText: feedback,
             shouldSubmitImmediately: task != nil
         )
     }
 
-    // MARK: - /interview
     private func executeInterview(topic: String?) -> SlashExecutionResult {
         UserDefaults.standard.set(ExecutionMode.plan.rawValue, forKey: "com.swiftcode.assist.executionMode")
 
@@ -197,19 +201,17 @@ public final class SlashCommandExecutionEngine: Sendable {
         let feedback = "📋 **Interactive Interview Activated**: Plan mode engaged. The Assistant will ask clarifying questions via decision prompts before implementing changes."
 
         return SlashExecutionResult(
-            command: "/interview",
+            command: "@interview",
             messageToInsert: promptPayload,
             feedbackText: feedback,
             shouldSubmitImmediately: topic != nil
         )
     }
 
-    // MARK: - /learn
     private func executeLearn(topicOrRule: String?) async -> SlashExecutionResult {
         let text = topicOrRule ?? ""
 
         if text.isEmpty {
-            // Reflect on recent messages
             let messages = AssistManager.shared.messages
             let lastUserMessages = messages.filter { $0.role == .user }.suffix(3)
             let summary = lastUserMessages.map { $0.content }.joined(separator: " | ")
@@ -218,18 +220,16 @@ public final class SlashCommandExecutionEngine: Sendable {
 
             UserMemoryManager.shared.saveEntry(key: key, value: value, category: "Rules")
             let feedback = "🧠 **Learned & Remembered**: Captured key session rules into User Memory (`\(key)`)."
-            return SlashExecutionResult(command: "/learn", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
+            return SlashExecutionResult(command: "@learn", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
         } else {
-            // Direct rule or guideline
             let key = text.components(separatedBy: CharacterSet.alphanumerics.inverted).joined()
             let safeKey = String(key.prefix(28)).isEmpty ? "LearnedRule_\(UUID().uuidString.prefix(6))" : String(key.prefix(28))
             UserMemoryManager.shared.saveEntry(key: safeKey, value: text, category: "Rules")
             let feedback = "🧠 **Rule Captured**: Saved `\(safeKey)` to User Memory under Rules:\n_\"\(text)\"_"
-            return SlashExecutionResult(command: "/learn", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
+            return SlashExecutionResult(command: "@learn", messageToInsert: nil, feedbackText: feedback, shouldSubmitImmediately: false)
         }
     }
 
-    // MARK: - /boost
     private func executeBoost(objective: String?) -> SlashExecutionResult {
         UserDefaults.standard.set("Extended", forKey: "com.swiftcode.assist.reasoningLevel")
 
@@ -249,14 +249,13 @@ public final class SlashCommandExecutionEngine: Sendable {
         let feedback = "⚡️ **Boost Master Orchestrator Activated**: Deep reasoning enabled. The model will command and boss around subagents to conquer this task."
 
         return SlashExecutionResult(
-            command: "/boost",
+            command: "@boost",
             messageToInsert: promptPayload,
             feedbackText: feedback,
             shouldSubmitImmediately: objective != nil
         )
     }
 
-    // MARK: - Installed Skill Execution
     private func executeSkill(_ skill: SkillDescriptor, argument: String?) -> SlashExecutionResult {
         var promptPayload = "### SKILL ACTIVE: \(skill.name)\n"
         if let arg = argument, !arg.isEmpty {

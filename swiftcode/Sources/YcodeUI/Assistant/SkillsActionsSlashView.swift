@@ -68,7 +68,7 @@ public struct SkillsActionsSlashView: View {
     public static let builtInActions: [SlashPaletteItem] = [
         SlashPaletteItem(
             id: "action-schedule",
-            command: "/schedule",
+            command: "@schedule",
             title: "Schedule Task",
             subtitle: "Schedule delayed background tasks, one-shot timers or recurring cron routines",
             iconName: "clock.badge.checkmark",
@@ -79,7 +79,7 @@ public struct SkillsActionsSlashView: View {
         ),
         SlashPaletteItem(
             id: "action-compact",
-            command: "/compact",
+            command: "@compact",
             title: "Compact Conversation",
             subtitle: "Fully compact long session conversation, summarizing history into memory to free context tokens",
             iconName: "arrow.triangle.merge",
@@ -90,7 +90,7 @@ public struct SkillsActionsSlashView: View {
         ),
         SlashPaletteItem(
             id: "action-goal",
-            command: "/goal",
+            command: "@goal",
             title: "Autonomous Goal Mode",
             subtitle: "Sets autonomous goal mode to accomplish the task end-to-end without routine confirmation",
             iconName: "target",
@@ -101,7 +101,7 @@ public struct SkillsActionsSlashView: View {
         ),
         SlashPaletteItem(
             id: "action-teamwork",
-            command: "/teamwork",
+            command: "@teamwork",
             title: "Teamwork & Subagents",
             subtitle: "Mandates using the native workers system (subagents) for parallel scoped execution",
             iconName: "person.3.fill",
@@ -112,7 +112,7 @@ public struct SkillsActionsSlashView: View {
         ),
         SlashPaletteItem(
             id: "action-interview",
-            command: "/interview",
+            command: "@interview",
             title: "Interactive Interview",
             subtitle: "Interactive interview asking user questions before getting to work using the plan-AskUser decision tool",
             iconName: "questionmark.bubble.fill",
@@ -123,7 +123,7 @@ public struct SkillsActionsSlashView: View {
         ),
         SlashPaletteItem(
             id: "action-learn",
-            command: "/learn",
+            command: "@learn",
             title: "Learn & Remember",
             subtitle: "Reflect on recent successes or corrections to capture reusable skills or persistent rules",
             iconName: "graduationcap.fill",
@@ -134,7 +134,7 @@ public struct SkillsActionsSlashView: View {
         ),
         SlashPaletteItem(
             id: "action-boost",
-            command: "/boost",
+            command: "@boost",
             title: "Boost Master Orchestrator",
             subtitle: "Invokes the model as a master orchestrator commanding workers to boss them around and complete the user task",
             iconName: "bolt.badge.automatic.fill",
@@ -195,9 +195,11 @@ public struct SkillsActionsSlashView: View {
 
     private var filteredItems: [SlashPaletteItem] {
         let cleanQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let stripped = cleanQuery.hasPrefix("/") ? String(cleanQuery.dropFirst()) : cleanQuery
+        let stripped = (cleanQuery.hasPrefix("/") || cleanQuery.hasPrefix("@")) ? String(cleanQuery.dropFirst()) : cleanQuery
 
         return allItems.filter { item in
+            if cleanQuery.hasPrefix("@") && item.kind != .builtIn { return false }
+            if cleanQuery.hasPrefix("/") && item.kind != .skill { return false }
             // Category filter
             if selectedCategory == "Actions" && item.kind != .builtIn { return false }
             if selectedCategory == "Skills" && item.kind != .skill { return false }
@@ -225,14 +227,14 @@ public struct SkillsActionsSlashView: View {
                         .fill(Color.primary.opacity(0.08))
                         .frame(width: 24, height: 24)
 
-                    Image(systemName: "slash.circle.fill")
+                    Image(systemName: "at.circle.fill")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundColor(.accentColor)
                 }
 
                 VStack(alignment: .leading, spacing: 1) {
                     HStack(spacing: 6) {
-                        Text("Slash Commands & Skills")
+                        Text("Actions & Skills")
                             .font(.system(size: 12.5, weight: .semibold))
                             .foregroundColor(.primary)
 

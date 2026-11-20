@@ -1408,11 +1408,11 @@ public struct AssistMainView: View {
         }
         guard !text.isEmpty && !isProcessingFiles else { return }
 
-        if text.hasPrefix("/") {
+        if text.hasPrefix("@") {
             let parts = text.split(separator: " ", maxSplits: 1).map(String.init)
             let cmd = parts[0].lowercased()
             let arg = parts.count > 1 ? parts[1] : nil
-            if ["/schedule", "/compact", "/goal", "/teamwork", "/interview", "/learn", "/boost"].contains(cmd) || BuiltInActionCatalog.action(for: cmd) != nil {
+            if ["@schedule", "@compact", "@goal", "@teamwork", "@interview", "@learn", "@boost"].contains(cmd) || BuiltInActionCatalog.action(for: cmd) != nil {
                 inputText = ""
                 attachedFiles = []
                 selectedExplicitSkills = []
@@ -1427,7 +1427,7 @@ public struct AssistMainView: View {
                                 self.submitMessage()
                             }
                         } else {
-                            logger.info("Direct slash command executed: \(execution.feedbackText)")
+                            logger.info("Direct action executed: \(execution.feedbackText)")
                         }
                     }
                 }
@@ -1469,17 +1469,27 @@ public struct AssistMainView: View {
 
         if lastWord.hasPrefix("@") {
             let query = String(lastWord.dropFirst())
-            composerTriggerMode = .resource(query: query)
+            if matchesBuiltInAction(query) {
+                composerTriggerMode = .slashAction(query: lastWord)
+            } else {
+                composerTriggerMode = .resource(query: query)
+            }
         } else if lastWord.hasPrefix("/") {
-            let query = String(lastWord.dropFirst())
-            composerTriggerMode = .slashAction(query: query)
+            composerTriggerMode = .slashAction(query: lastWord)
         } else {
             composerTriggerMode = nil
         }
     }
 
+    private func matchesBuiltInAction(_ query: String) -> Bool {
+        let lowered = query.lowercased()
+        guard !lowered.isEmpty else { return false }
+        let ids = ["schedule", "compact", "goal", "teamwork", "interview", "learn", "boost"] + BuiltInActionCatalog.actions.map(\.id)
+        return ids.contains { $0.hasPrefix(lowered) }
+    }
+
     private func selectSlashAction(_ item: SlashPaletteItem) {
-        consumeTrailingToken(prefix: "/")
+        consumeTrailingToken(prefix: item.kind == .builtIn ? "@" : "/")
         composerTriggerMode = nil
 
         switch item.kind {
