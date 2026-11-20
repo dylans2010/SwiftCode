@@ -39,7 +39,7 @@ public enum BuiltInActionCatalogData {
 public enum BuiltInActionCatalog {
 
     /// Every built-in action: the 20 core actions plus `extendedActions`.
-    public static let actions: [BuiltInAction] = coreActions + extendedActions
+    public static let actions: [BuiltInAction] = coreActions + extendedActions + extendedActionsRound2
 
     public static let coreActions: [BuiltInAction] = [
         BuiltInAction(id: "verify", title: "Verify Changes", subtitle: "Build, test and review every uncommitted change before calling the work done",

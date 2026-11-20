@@ -103,12 +103,13 @@ struct UniversalToolAccessTests {
         #expect(meta["description"] == "Hello: world")
     }
 
-    @Test func seventyBuiltInActionsWithUniqueCommandsAndSpecs() {
+    @Test func oneHundredTwentyBuiltInActionsWithUniqueCommandsAndSpecs() {
         let actions = BuiltInActionCatalog.actions
         #expect(BuiltInActionCatalog.coreActions.count == 20)
         #expect(BuiltInActionCatalog.extendedActions.count == 75)
-        #expect(actions.count == 95)
-        #expect(Set(actions.map(\.id)).count == 95)
+        #expect(BuiltInActionCatalog.extendedActionsRound2.count == 25)
+        #expect(actions.count == 120)
+        #expect(Set(actions.map(\.id)).count == 120)
         for action in actions {
             let spec = BuiltInActionCatalog.specification(for: action)
             #expect(spec?.contains("/\(action.id)") == true, "missing SC Skills/\(action.id).md")

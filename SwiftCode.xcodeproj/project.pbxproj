@@ -3984,6 +3984,7 @@
 		338A16B49EF9FECFE112D4CB /* System Skills in Resources */ = {isa = PBXBuildFile; fileRef = D39046508BFBADECFDCABCBB /* System Skills */; };
 		831661061FC74A43AB286C4B /* libSpacesEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B4EFE9D4286A46C43BBDA5E /* libSpacesEngine.a */; };
 		FFD23324775428186CB8B7F2 /* BuiltInActionCatalog+Extended.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45DFB90A0A0BD735AB302A92 /* BuiltInActionCatalog+Extended.swift */; };
+		1C74741482F4470C91ED1BA1 /* BuiltInActionCatalog+Round2.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD19F2C888A34C3792818432 /* BuiltInActionCatalog+Round2.swift */; };
 		2F7FE8048D4EDC270E56306F /* a11y.md in Resources */ = {isa = PBXBuildFile; fileRef = 42C8EC60848BD6E3F0A7447A /* a11y.md */; };
 		4C353573A38FAE683C4A45D3 /* adr.md in Resources */ = {isa = PBXBuildFile; fileRef = DD64FF6C7F975115B1930F4E /* adr.md */; };
 		1921C630AD4A7ED0008E99E4 /* api.md in Resources */ = {isa = PBXBuildFile; fileRef = 9869FD5A64961E61A4B89010 /* api.md */; };
@@ -4102,6 +4103,31 @@
 		1B49D3D6C7F51DDB36A331EF /* leaks.md in Resources */ = {isa = PBXBuildFile; fileRef = 40994A282E3E9B4191FA79F7 /* leaks.md */; };
 		828962747BEEBF3F7DE01CA1 /* license.md in Resources */ = {isa = PBXBuildFile; fileRef = 2E91D208E8EB95F54592F7BE /* license.md */; };
 		C6F6FA48930B5E92B1A5F074 /* lint.md in Resources */ = {isa = PBXBuildFile; fileRef = 2CCED5666127E1F6A6810FCA /* lint.md */; };
+		74D5440169ED43CE8B15C75C /* rebase-plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 53399AB2540F4FB69351B9A8 /* rebase-plan.md */; };
+		30B30854A2854DC1BB453DA6 /* stash-report.md in Resources */ = {isa = PBXBuildFile; fileRef = 9CB6C90483EC4F82B26F6569 /* stash-report.md */; };
+		F4DCFC8EF1FF4EE28ED8E5BE /* tag-release.md in Resources */ = {isa = PBXBuildFile; fileRef = 15AF821993584D209B028084 /* tag-release.md */; };
+		F5B90E378834492C88ECA468 /* cherry-pick.md in Resources */ = {isa = PBXBuildFile; fileRef = 406FF7FBF79B4885B679F177 /* cherry-pick.md */; };
+		E3AC69D6E41C4EA0853D2982 /* merge-plan.md in Resources */ = {isa = PBXBuildFile; fileRef = FD050CB3F7F943F79DE97A67 /* merge-plan.md */; };
+		F9CF442366F74DE58CF4C7A7 /* worktree-setup.md in Resources */ = {isa = PBXBuildFile; fileRef = A7A40133CE524C5F9E6A211F /* worktree-setup.md */; };
+		2309EEF664AF4E509C449F04 /* gitignore-audit.md in Resources */ = {isa = PBXBuildFile; fileRef = E0D9255FCE7C4CF5A39D81FF /* gitignore-audit.md */; };
+		F8D85A9274F34BEC8C2CB0E4 /* hooks-audit.md in Resources */ = {isa = PBXBuildFile; fileRef = 2AA8A1D5088D4B9B9FE6C362 /* hooks-audit.md */; };
+		E13CA05F014649F19342BAE0 /* docs-coverage.md in Resources */ = {isa = PBXBuildFile; fileRef = C81A4582D40A4FBBB771EF9A /* docs-coverage.md */; };
+		BF78AAA92D0A4A78BD856EBF /* readme-audit.md in Resources */ = {isa = PBXBuildFile; fileRef = 8D879E6ED7BC483995830E57 /* readme-audit.md */; };
+		C31075883E1547A686B11400 /* onboarding-doc.md in Resources */ = {isa = PBXBuildFile; fileRef = 6120D841C8B0449598F6A7A4 /* onboarding-doc.md */; };
+		ED9B1ECFCFF648318997ED0C /* decision-log.md in Resources */ = {isa = PBXBuildFile; fileRef = 01D9968B81254838B70B2063 /* decision-log.md */; };
+		F335FDF760A5477EA5BA689D /* glossary.md in Resources */ = {isa = PBXBuildFile; fileRef = CCC71684B01C4839BAE76D5D /* glossary.md */; };
+		DECDB2FBB8D6426D919512FC /* api-diff.md in Resources */ = {isa = PBXBuildFile; fileRef = A74C45246C0C4E6DBD3B0ABE /* api-diff.md */; };
+		CB13EEB109834F8E8FEACBFF /* roadmap.md in Resources */ = {isa = PBXBuildFile; fileRef = 02A1B542411748CB8616BE06 /* roadmap.md */; };
+		2AAC14A7E42942269B7CACFB /* milestone-plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 4084EAB41B91426B9D66C829 /* milestone-plan.md */; };
+		2FC3DD3A552E4A259D70AB07 /* scope-cut.md in Resources */ = {isa = PBXBuildFile; fileRef = C46ACB312D6446EF991A572A /* scope-cut.md */; };
+		5C67DD52D4AC408AAFDADA61 /* spike-plan.md in Resources */ = {isa = PBXBuildFile; fileRef = 675CF12874BB489CAC755BFD /* spike-plan.md */; };
+		383805571CA9445D82600804 /* layering-audit.md in Resources */ = {isa = PBXBuildFile; fileRef = 2DC59141F4774BAE93DEECB0 /* layering-audit.md */; };
+		E0FAE8087F3D4064B24A7375 /* dependency-graph.md in Resources */ = {isa = PBXBuildFile; fileRef = 0C5872A97B1743D881E9CF5D /* dependency-graph.md */; };
+		3A02CB1F5EAA46869246A4F2 /* module-split.md in Resources */ = {isa = PBXBuildFile; fileRef = C249CDF29CD44E7CB7864975 /* module-split.md */; };
+		714CEC7C90164C3082455F45 /* schema-diff.md in Resources */ = {isa = PBXBuildFile; fileRef = 0E9368359A3446EE86ABAAE3 /* schema-diff.md */; };
+		18CA9F77F4274067A010D43F /* migration-check.md in Resources */ = {isa = PBXBuildFile; fileRef = 6BE6DB9A917C4F42AF23AB36 /* migration-check.md */; };
+		22EF789BD2CA4AF7AB6B8961 /* scheme-audit.md in Resources */ = {isa = PBXBuildFile; fileRef = D5F496D07DA7439AB3019B79 /* scheme-audit.md */; };
+		554BF3270EED4229A1ADCAE1 /* build-settings.md in Resources */ = {isa = PBXBuildFile; fileRef = A346E0A6A58D4549BFB353B1 /* build-settings.md */; };
 		4D034281CFB7478C8C47AD87 /* mutation.md in Resources */ = {isa = PBXBuildFile; fileRef = 5C0EF073890647D3B3225637 /* mutation.md */; };
 		9FA6601208674BA892D27F0C /* coveragereport.md in Resources */ = {isa = PBXBuildFile; fileRef = 5A157B3ADE1844F9903E25B3 /* coveragereport.md */; };
 		E59C390956024F8D9B138B50 /* assertion.md in Resources */ = {isa = PBXBuildFile; fileRef = A252DFF29BED46919FE61153 /* assertion.md */; };
@@ -9498,6 +9524,7 @@
 		199843852ECEB9E81B5043BB /* UserInteractionPlaybook.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UserInteractionPlaybook.md; sourceTree = "<group>"; };
 		D39046508BFBADECFDCABCBB /* System Skills */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "System Skills"; sourceTree = "<group>"; };
 		45DFB90A0A0BD735AB302A92 /* BuiltInActionCatalog+Extended.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BuiltInActionCatalog+Extended.swift"; sourceTree = "<group>"; };
+		BD19F2C888A34C3792818432 /* BuiltInActionCatalog+Round2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BuiltInActionCatalog+Round2.swift"; sourceTree = "<group>"; };
 		42C8EC60848BD6E3F0A7447A /* a11y.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = a11y.md; sourceTree = "<group>"; };
 		DD64FF6C7F975115B1930F4E /* adr.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = adr.md; sourceTree = "<group>"; };
 		9869FD5A64961E61A4B89010 /* api.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = api.md; sourceTree = "<group>"; };
@@ -9616,6 +9643,31 @@
 		40994A282E3E9B4191FA79F7 /* leaks.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = leaks.md; sourceTree = "<group>"; };
 		2E91D208E8EB95F54592F7BE /* license.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = license.md; sourceTree = "<group>"; };
 		2CCED5666127E1F6A6810FCA /* lint.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = lint.md; sourceTree = "<group>"; };
+		53399AB2540F4FB69351B9A8 /* rebase-plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = rebase-plan.md; sourceTree = "<group>"; };
+		9CB6C90483EC4F82B26F6569 /* stash-report.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = stash-report.md; sourceTree = "<group>"; };
+		15AF821993584D209B028084 /* tag-release.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = tag-release.md; sourceTree = "<group>"; };
+		406FF7FBF79B4885B679F177 /* cherry-pick.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = cherry-pick.md; sourceTree = "<group>"; };
+		FD050CB3F7F943F79DE97A67 /* merge-plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = merge-plan.md; sourceTree = "<group>"; };
+		A7A40133CE524C5F9E6A211F /* worktree-setup.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = worktree-setup.md; sourceTree = "<group>"; };
+		E0D9255FCE7C4CF5A39D81FF /* gitignore-audit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = gitignore-audit.md; sourceTree = "<group>"; };
+		2AA8A1D5088D4B9B9FE6C362 /* hooks-audit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = hooks-audit.md; sourceTree = "<group>"; };
+		C81A4582D40A4FBBB771EF9A /* docs-coverage.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = docs-coverage.md; sourceTree = "<group>"; };
+		8D879E6ED7BC483995830E57 /* readme-audit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme-audit.md; sourceTree = "<group>"; };
+		6120D841C8B0449598F6A7A4 /* onboarding-doc.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = onboarding-doc.md; sourceTree = "<group>"; };
+		01D9968B81254838B70B2063 /* decision-log.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = decision-log.md; sourceTree = "<group>"; };
+		CCC71684B01C4839BAE76D5D /* glossary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = glossary.md; sourceTree = "<group>"; };
+		A74C45246C0C4E6DBD3B0ABE /* api-diff.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = api-diff.md; sourceTree = "<group>"; };
+		02A1B542411748CB8616BE06 /* roadmap.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = roadmap.md; sourceTree = "<group>"; };
+		4084EAB41B91426B9D66C829 /* milestone-plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = milestone-plan.md; sourceTree = "<group>"; };
+		C46ACB312D6446EF991A572A /* scope-cut.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = scope-cut.md; sourceTree = "<group>"; };
+		675CF12874BB489CAC755BFD /* spike-plan.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spike-plan.md; sourceTree = "<group>"; };
+		2DC59141F4774BAE93DEECB0 /* layering-audit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = layering-audit.md; sourceTree = "<group>"; };
+		0C5872A97B1743D881E9CF5D /* dependency-graph.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = dependency-graph.md; sourceTree = "<group>"; };
+		C249CDF29CD44E7CB7864975 /* module-split.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = module-split.md; sourceTree = "<group>"; };
+		0E9368359A3446EE86ABAAE3 /* schema-diff.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = schema-diff.md; sourceTree = "<group>"; };
+		6BE6DB9A917C4F42AF23AB36 /* migration-check.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = migration-check.md; sourceTree = "<group>"; };
+		D5F496D07DA7439AB3019B79 /* scheme-audit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = scheme-audit.md; sourceTree = "<group>"; };
+		A346E0A6A58D4549BFB353B1 /* build-settings.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = build-settings.md; sourceTree = "<group>"; };
 		5C0EF073890647D3B3225637 /* mutation.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = mutation.md; sourceTree = "<group>"; };
 		5A157B3ADE1844F9903E25B3 /* coveragereport.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = coveragereport.md; sourceTree = "<group>"; };
 		A252DFF29BED46919FE61153 /* assertion.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = assertion.md; sourceTree = "<group>"; };
@@ -11224,6 +11276,31 @@
 				ABCF349C21201B0845059BB3 /* logging.md */,
 				134ACD71D3F17C44E430C0F2 /* localize.md */,
 				2CCED5666127E1F6A6810FCA /* lint.md */,
+				53399AB2540F4FB69351B9A8 /* rebase-plan.md */,
+				9CB6C90483EC4F82B26F6569 /* stash-report.md */,
+				15AF821993584D209B028084 /* tag-release.md */,
+				406FF7FBF79B4885B679F177 /* cherry-pick.md */,
+				FD050CB3F7F943F79DE97A67 /* merge-plan.md */,
+				A7A40133CE524C5F9E6A211F /* worktree-setup.md */,
+				E0D9255FCE7C4CF5A39D81FF /* gitignore-audit.md */,
+				2AA8A1D5088D4B9B9FE6C362 /* hooks-audit.md */,
+				C81A4582D40A4FBBB771EF9A /* docs-coverage.md */,
+				8D879E6ED7BC483995830E57 /* readme-audit.md */,
+				6120D841C8B0449598F6A7A4 /* onboarding-doc.md */,
+				01D9968B81254838B70B2063 /* decision-log.md */,
+				CCC71684B01C4839BAE76D5D /* glossary.md */,
+				A74C45246C0C4E6DBD3B0ABE /* api-diff.md */,
+				02A1B542411748CB8616BE06 /* roadmap.md */,
+				4084EAB41B91426B9D66C829 /* milestone-plan.md */,
+				C46ACB312D6446EF991A572A /* scope-cut.md */,
+				675CF12874BB489CAC755BFD /* spike-plan.md */,
+				2DC59141F4774BAE93DEECB0 /* layering-audit.md */,
+				0C5872A97B1743D881E9CF5D /* dependency-graph.md */,
+				C249CDF29CD44E7CB7864975 /* module-split.md */,
+				0E9368359A3446EE86ABAAE3 /* schema-diff.md */,
+				6BE6DB9A917C4F42AF23AB36 /* migration-check.md */,
+				D5F496D07DA7439AB3019B79 /* scheme-audit.md */,
+				A346E0A6A58D4549BFB353B1 /* build-settings.md */,
 				5C0EF073890647D3B3225637 /* mutation.md */,
 				5A157B3ADE1844F9903E25B3 /* coveragereport.md */,
 				A252DFF29BED46919FE61153 /* assertion.md */,
@@ -16199,6 +16276,7 @@
 				416128B13A9331FDD26FEB40 /* SlashCommandExecutionEngine.swift */,
 				CBB89568E886ABE4BDBAA7A9 /* BuiltInActionCatalog.swift */,
 				45DFB90A0A0BD735AB302A92 /* BuiltInActionCatalog+Extended.swift */,
+				BD19F2C888A34C3792818432 /* BuiltInActionCatalog+Round2.swift */,
 			);
 			path = SlashCommands;
 			sourceTree = "<group>";
@@ -18115,6 +18193,31 @@
 				DC81426FCB1640200B5CA5C8 /* logging.md in Resources */,
 				10F77B564A07BE2A19E9605C /* localize.md in Resources */,
 				C6F6FA48930B5E92B1A5F074 /* lint.md in Resources */,
+				74D5440169ED43CE8B15C75C /* rebase-plan.md in Resources */,
+				30B30854A2854DC1BB453DA6 /* stash-report.md in Resources */,
+				F4DCFC8EF1FF4EE28ED8E5BE /* tag-release.md in Resources */,
+				F5B90E378834492C88ECA468 /* cherry-pick.md in Resources */,
+				E3AC69D6E41C4EA0853D2982 /* merge-plan.md in Resources */,
+				F9CF442366F74DE58CF4C7A7 /* worktree-setup.md in Resources */,
+				2309EEF664AF4E509C449F04 /* gitignore-audit.md in Resources */,
+				F8D85A9274F34BEC8C2CB0E4 /* hooks-audit.md in Resources */,
+				E13CA05F014649F19342BAE0 /* docs-coverage.md in Resources */,
+				BF78AAA92D0A4A78BD856EBF /* readme-audit.md in Resources */,
+				C31075883E1547A686B11400 /* onboarding-doc.md in Resources */,
+				ED9B1ECFCFF648318997ED0C /* decision-log.md in Resources */,
+				F335FDF760A5477EA5BA689D /* glossary.md in Resources */,
+				DECDB2FBB8D6426D919512FC /* api-diff.md in Resources */,
+				CB13EEB109834F8E8FEACBFF /* roadmap.md in Resources */,
+				2AAC14A7E42942269B7CACFB /* milestone-plan.md in Resources */,
+				2FC3DD3A552E4A259D70AB07 /* scope-cut.md in Resources */,
+				5C67DD52D4AC408AAFDADA61 /* spike-plan.md in Resources */,
+				383805571CA9445D82600804 /* layering-audit.md in Resources */,
+				E0FAE8087F3D4064B24A7375 /* dependency-graph.md in Resources */,
+				3A02CB1F5EAA46869246A4F2 /* module-split.md in Resources */,
+				714CEC7C90164C3082455F45 /* schema-diff.md in Resources */,
+				18CA9F77F4274067A010D43F /* migration-check.md in Resources */,
+				22EF789BD2CA4AF7AB6B8961 /* scheme-audit.md in Resources */,
+				554BF3270EED4229A1ADCAE1 /* build-settings.md in Resources */,
 				4D034281CFB7478C8C47AD87 /* mutation.md in Resources */,
 				9FA6601208674BA892D27F0C /* coveragereport.md in Resources */,
 				E59C390956024F8D9B138B50 /* assertion.md in Resources */,
@@ -23002,6 +23105,7 @@
 				75734EADA10F2AFD9FA6C491 /* SlashCommandExecutionEngine.swift in Sources */,
 				51A056AC6812E91E64B54ACE /* BuiltInActionCatalog.swift in Sources */,
 				FFD23324775428186CB8B7F2 /* BuiltInActionCatalog+Extended.swift in Sources */,
+				1C74741482F4470C91ED1BA1 /* BuiltInActionCatalog+Round2.swift in Sources */,
 				FCE398B6943F18545D224916 /* SystemIndex.swift in Sources */,
 				7898BC95365992E8E0A6F73B /* SystemIndexTestSuite.swift in Sources */,
 				6B899998754B100F848ACC89 /* TasksAIPlanner.swift in Sources */,
