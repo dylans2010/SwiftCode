@@ -1545,6 +1545,8 @@ public final class AssistManager {
             var attempts = 0
             let maxFailoverAttempts = 3
             var protocolCorrectionAttempts = 0
+            var textToolRounds = 0
+            let maxTextToolRounds = 8
             var totalIdleTimeoutUsed: TimeInterval = 0
             var didAttemptScopeReauth = false
 
@@ -1569,6 +1571,7 @@ public final class AssistManager {
                 var turnError: String? = nil
                 var turnCompletedSuccessfully = false
                 var invalidToolPayload = false
+                var rawModelResponse = ""
                 var outputFilter = AssistToolPayloadStreamFilter()
                 let watchdog = AssistSDKTurnWatchdog()
 
@@ -1659,6 +1662,7 @@ public final class AssistManager {
                                 self.messages[idx].thinkingDuration = Date().timeIntervalSince(start)
                             }
 
+                            rawModelResponse = response.isEmpty ? self.messages[idx].content : response
                             let safeRemainder = outputFilter.finish(fallbackResponse: response)
                             if outputFilter.didSuppressToolPayload {
                                 invalidToolPayload = true
@@ -1789,6 +1793,37 @@ public final class AssistManager {
                             self.messages[idx].activityGroup = activity
                         }
                     }
+                }
+
+                // Universal text tool protocol: models without native function calling emit
+                // ```tool_call``` blocks; execute them against the real registry and continue.
+                let textToolCalls = AssistUniversalModelContext.parseToolCalls(in: rawModelResponse)
+                if (turnCompletedSuccessfully || invalidToolPayload), !textToolCalls.isEmpty, textToolRounds < maxTextToolRounds {
+                    textToolRounds += 1
+                    attempts -= 1
+                    await MainActor.run {
+                        self.isProcessing = true
+                        self.setRequestPhase(.executingTool)
+                        self.currentActivityStatus = "Running \(textToolCalls.map(\.tool).joined(separator: ", "))…"
+                    }
+                    let toolContext = await MainActor.run { self.buildContext() }
+                    let toolResults = await AssistUniversalModelContext.executeToolCalls(
+                        textToolCalls, context: toolContext, allowMutations: activeMode != .plan)
+                    currentPrompt = """
+                    SwiftCode executed your tool_call request(s) against the real workspace. Results:
+
+                    \(toolResults)
+
+                    Continue the user's original request using these results. Request more tools with tool_call blocks if needed; otherwise give the final answer with no tool_call blocks.
+                    """
+                    currentAttachments = []
+                    await MainActor.run {
+                        if let idx = self.messages.indices.last {
+                            self.messages[idx].content = ""
+                            self.messages[idx].activityGroup?.isExecuting = true
+                        }
+                    }
+                    continue executionLoop
                 }
 
                 if turnCompletedSuccessfully {

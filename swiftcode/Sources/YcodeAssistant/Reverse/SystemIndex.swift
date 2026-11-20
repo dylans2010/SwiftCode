@@ -268,7 +268,9 @@ public actor SystemIndexService {
         "CleanArchitectureSwift.md", "MVVMAndStateManagement.md", "UnitTestingBestPractices.md",
         "XcodebuildMastery.md", "AppSandboxSecurity.md", "KeychainSecurityArchitecture.md",
         "SwiftDataArchitecture.md", "SubagentOrchestration.md", "ToolExecutionProtocols.md",
-        "SelfHealingCodePipelines.md", "MultiTurnPlanningStrategy.md", "AutonomousVerificationProtocols.md"
+        "SelfHealingCodePipelines.md", "MultiTurnPlanningStrategy.md", "AutonomousVerificationProtocols.md",
+        "UniversalToolAccess.md", "UserInteractionPlaybook.md", "CodeWritingStandards.md",
+        "TestingPlaybook.md", "AgentBehaviorCharter.md", "SystemSkillsAndActions.md"
     ]
 
     public var rankingWeights = SystemIndexRankingWeights()

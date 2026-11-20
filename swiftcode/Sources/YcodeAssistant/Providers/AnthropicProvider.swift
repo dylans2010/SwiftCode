@@ -129,6 +129,7 @@ public struct AnthropicProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         let provider = self
         return eventStream { out in
             guard let key = provider.resolvedKey(), !key.isEmpty else {

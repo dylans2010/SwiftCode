@@ -849,6 +849,7 @@ public struct MetaAssistAssistantProvider: AssistantProvider, AgentAttachable, S
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         let prompt = request.flattenedPrompt
         let workspaceRoot = request.workingDirectory?.path
             ?? FileManager.default.homeDirectoryForCurrentUser.path

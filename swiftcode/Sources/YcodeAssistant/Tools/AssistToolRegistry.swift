@@ -63,6 +63,9 @@ public final class AssistToolRegistry {
     }
 
     private func registerAllTools() {
+        for tool in AssistExpansionToolkit.makeTools() {
+            register(tool)
+        }
         register(AssistReadFileTool())
         register(AssistWriteFileTool())
         register(AssistAppendFileTool())
@@ -387,6 +390,7 @@ public final class AssistToolRegistry {
         schemaCache.removeAll()
         cachedToolSchemas = nil
         registryVersion += 1
+        AssistUniversalModelContext.updateToolIndex(tools.values.map { (id: $0.id, capability: "\($0.capability)", risk: "\($0.riskLevel)") })
     }
 
     public func unregister(_ toolId: String) {

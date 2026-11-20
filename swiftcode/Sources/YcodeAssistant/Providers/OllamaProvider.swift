@@ -88,6 +88,7 @@ public struct OllamaProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         let base = baseURL
         let hint = notRunningHint
         let model = Self.canonicalModelID(request.model)

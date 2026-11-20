@@ -147,6 +147,19 @@ public struct SkillsActionsSlashView: View {
 
     private var allItems: [SlashPaletteItem] {
         var list: [SlashPaletteItem] = Self.builtInActions
+        list += BuiltInActionCatalog.actions.map { action in
+            SlashPaletteItem(
+                id: "action-\(action.id)",
+                command: action.command,
+                title: action.title,
+                subtitle: action.subtitle,
+                iconName: action.icon,
+                iconColor: .teal,
+                badgeText: action.category,
+                badgeColor: Color.teal.opacity(0.12),
+                kind: .builtIn
+            )
+        }
 
         // Installed skills from authoritative store
         let installed = AgentSkillManager.shared.installedSkills.isEmpty

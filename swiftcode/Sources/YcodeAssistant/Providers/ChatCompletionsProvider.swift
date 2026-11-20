@@ -119,6 +119,7 @@ public struct ChatCompletionsProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         let provider = self
         return eventStream { out in
             guard var req = provider.request(provider.prefixed("chat/completions")) else { throw AssistantError.failed("The \(provider.serviceName) address is not a valid URL.") }

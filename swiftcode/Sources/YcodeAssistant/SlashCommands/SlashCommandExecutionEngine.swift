@@ -61,6 +61,9 @@ public final class SlashCommandExecutionEngine: Sendable {
             return executeBoost(objective: arg)
 
         default:
+            if let action = await BuiltInActionCatalog.execute(command: cleanCommand, argument: arg) {
+                return action
+            }
             // Check if it matches an installed skill
             let skillName = cleanCommand.hasPrefix("/") ? String(cleanCommand.dropFirst()) : cleanCommand
             if let skill = SkillIndex.shared.skills.first(where: { $0.name.lowercased() == skillName || $0.id.lowercased() == skillName }) {

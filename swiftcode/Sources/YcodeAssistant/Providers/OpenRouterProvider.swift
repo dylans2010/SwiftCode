@@ -155,6 +155,7 @@ public struct OpenRouterProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         let provider = self
         return eventStream { out in
             guard let key = await provider.resolvedKey(), !key.isEmpty else { throw AssistantError.notSignedIn(hint: Self.signedOutHint) }

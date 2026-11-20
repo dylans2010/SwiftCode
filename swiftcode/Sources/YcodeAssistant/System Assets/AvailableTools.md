@@ -473,6 +473,305 @@ Not build artifacts: these tools manage Markdown deliverables (reports, analyses
 
 ---
 
+## Expansion Toolkit (279 functional tools, available to every model)
+
+These tools are registered through `AssistExpansionToolkit.makeTools()` in `AssistToolRegistry.registerAllTools()`. They operate on the real workspace (scoped, no mock data), run external programs only through fixed argument vectors (never shell strings), and report honest failures. Models without native function calling invoke them with the `tool_call` block described in `UniversalToolAccess.md`. Use `tool_catalog_search` to get any tool's full JSON schema.
+
+### CodeScan
+- `scan_print_statements` (safeRead) — Scans the workspace (or `path`) for Print Statement occurrences and returns file:line findings with remediation guidance. Replace print() with Logger/os_log or remove before shipping. Params: optional `path`, `max_results`, `extensions`.
+- `scan_debug_print_dump` (safeRead) — Scans the workspace (or `path`) for Debug Print/Dump occurrences and returns file:line findings with remediation guidance. Remove debugPrint()/dump() from production paths. Params: optional `path`, `max_results`, `extensions`.
+- `scan_nslog_usage` (safeRead) — Scans the workspace (or `path`) for NSLog Usage occurrences and returns file:line findings with remediation guidance. Prefer unified logging (Logger) with privacy annotations. Params: optional `path`, `max_results`, `extensions`.
+- `scan_fatal_error_calls` (safeRead) — Scans the workspace (or `path`) for fatalError occurrences and returns file:line findings with remediation guidance. Each fatalError crashes the app; replace with thrown errors where recovery is possible. Params: optional `path`, `max_results`, `extensions`.
+- `scan_precondition_calls` (safeRead) — Scans the workspace (or `path`) for Precondition occurrences and returns file:line findings with remediation guidance. Preconditions trap in release builds; confirm each is a true invariant. Params: optional `path`, `max_results`, `extensions`.
+- `scan_assert_calls` (safeRead) — Scans the workspace (or `path`) for Assertion occurrences and returns file:line findings with remediation guidance. Assertions are stripped in release builds; do not rely on them for validation. Params: optional `path`, `max_results`, `extensions`.
+- `scan_force_try` (safeRead) — Scans the workspace (or `path`) for Force-Try occurrences and returns file:line findings with remediation guidance. Replace try! with do/catch or try? plus explicit handling. Params: optional `path`, `max_results`, `extensions`.
+- `scan_force_cast` (safeRead) — Scans the workspace (or `path`) for Force-Cast occurrences and returns file:line findings with remediation guidance. Replace as! with conditional casting (as?) and handle failure. Params: optional `path`, `max_results`, `extensions`.
+- `scan_force_unwrap` (safeRead) — Scans the workspace (or `path`) for Force-Unwrap occurrences and returns file:line findings with remediation guidance. Replace force unwraps with guard let / if let / nil-coalescing. Params: optional `path`, `max_results`, `extensions`.
+- `scan_implicitly_unwrapped_optionals` (safeRead) — Scans the workspace (or `path`) for Implicitly Unwrapped Optional occurrences and returns file:line findings with remediation guidance. Prefer real optionals or non-optional initialization over IUOs. Params: optional `path`, `max_results`, `extensions`.
+- `scan_unowned_references` (safeRead) — Scans the workspace (or `path`) for Unowned Reference occurrences and returns file:line findings with remediation guidance. Unowned references crash if the referent is deallocated; verify lifetimes or use weak. Params: optional `path`, `max_results`, `extensions`.
+- `scan_closure_self_capture` (safeRead) — Scans the workspace (or `path`) for Closure Strong-Self Capture occurrences and returns file:line findings with remediation guidance. Escaping closures that capture self strongly may create retain cycles; consider [weak self]. Params: optional `path`, `max_results`, `extensions`.
+- `scan_dispatch_main_queue` (safeRead) — Scans the workspace (or `path`) for DispatchQueue.main occurrences and returns file:line findings with remediation guidance. In Swift concurrency code prefer @MainActor / MainActor.run over DispatchQueue.main. Params: optional `path`, `max_results`, `extensions`.
+- `scan_dispatch_global_queue` (safeRead) — Scans the workspace (or `path`) for Global Dispatch Queue occurrences and returns file:line findings with remediation guidance. Consider structured concurrency (Task / async let) instead of global queues. Params: optional `path`, `max_results`, `extensions`.
+- `scan_dispatch_semaphores` (safeRead) — Scans the workspace (or `path`) for DispatchSemaphore occurrences and returns file:line findings with remediation guidance. Semaphores that block threads can deadlock with Swift concurrency; prefer async APIs. Params: optional `path`, `max_results`, `extensions`.
+- `scan_task_detached` (safeRead) — Scans the workspace (or `path`) for Task.detached occurrences and returns file:line findings with remediation guidance. Detached tasks lose priority, task-locals and cancellation; prefer Task {} or structured concurrency. Params: optional `path`, `max_results`, `extensions`.
+- `scan_unchecked_sendable` (safeRead) — Scans the workspace (or `path`) for @unchecked Sendable occurrences and returns file:line findings with remediation guidance. Each @unchecked Sendable must be backed by real synchronization; audit them. Params: optional `path`, `max_results`, `extensions`.
+- `scan_nonisolated_unsafe` (safeRead) — Scans the workspace (or `path`) for nonisolated(unsafe) occurrences and returns file:line findings with remediation guidance. nonisolated(unsafe) disables data-race checking; ensure external synchronization. Params: optional `path`, `max_results`, `extensions`.
+- `scan_main_actor_annotations` (safeRead) — Scans the workspace (or `path`) for @MainActor Annotation occurrences and returns file:line findings with remediation guidance. Review @MainActor usage to keep UI state isolated and heavy work off the main actor. Params: optional `path`, `max_results`, `extensions`.
+- `scan_thread_sleep` (safeRead) — Scans the workspace (or `path`) for Thread Sleep occurrences and returns file:line findings with remediation guidance. Blocking sleeps stall threads; use Task.sleep(for:) in async code. Params: optional `path`, `max_results`, `extensions`.
+- `scan_notification_center` (safeRead) — Scans the workspace (or `path`) for NotificationCenter Usage occurrences and returns file:line findings with remediation guidance. Check observers are removed or use async notification sequences. Params: optional `path`, `max_results`, `extensions`.
+- `scan_userdefaults_usage` (safeRead) — Scans the workspace (or `path`) for UserDefaults Usage occurrences and returns file:line findings with remediation guidance. Centralize keys; never store secrets in UserDefaults (use Keychain). Params: optional `path`, `max_results`, `extensions`.
+- `scan_hardcoded_urls` (safeRead) — Scans the workspace (or `path`) for Hardcoded URL occurrences and returns file:line findings with remediation guidance. Move environment-specific URLs into configuration. Params: optional `path`, `max_results`, `extensions`.
+- `scan_insecure_http_urls` (safeRead) — Scans the workspace (or `path`) for Insecure HTTP URL occurrences and returns file:line findings with remediation guidance. Plain HTTP is blocked by ATS and insecure; use HTTPS. Params: optional `path`, `max_results`, `extensions`.
+- `scan_hardcoded_secrets` (safeRead) — Scans the workspace (or `path`) for Hardcoded Secret occurrences and returns file:line findings with remediation guidance. Move secrets to Keychain or server-side configuration and rotate exposed values. Params: optional `path`, `max_results`, `extensions`.
+- `scan_private_key_material` (safeRead) — Scans the workspace (or `path`) for Private Key Material occurrences and returns file:line findings with remediation guidance. Remove private keys from the repository and rotate them. Params: optional `path`, `max_results`, `extensions`.
+- `scan_weak_crypto` (safeRead) — Scans the workspace (or `path`) for Weak Cryptography occurrences and returns file:line findings with remediation guidance. Use SHA-256+ and AES-GCM / ChaChaPoly from CryptoKit. Params: optional `path`, `max_results`, `extensions`.
+- `scan_insecure_random` (safeRead) — Scans the workspace (or `path`) for Insecure Randomness occurrences and returns file:line findings with remediation guidance. Use SystemRandomNumberGenerator or SecRandomCopyBytes for security-sensitive randomness. Params: optional `path`, `max_results`, `extensions`.
+- `scan_unsafe_pointers` (safeRead) — Scans the workspace (or `path`) for Unsafe Pointer occurrences and returns file:line findings with remediation guidance. Unsafe pointers bypass memory safety; keep them tightly scoped. Params: optional `path`, `max_results`, `extensions`.
+- `scan_objc_attributes` (safeRead) — Scans the workspace (or `path`) for @objc Attribute occurrences and returns file:line findings with remediation guidance. Audit @objc exposure; remove where Objective-C interop is not needed. Params: optional `path`, `max_results`, `extensions`.
+- `scan_dynamic_attributes` (safeRead) — Scans the workspace (or `path`) for Dynamic Lookup Attribute occurrences and returns file:line findings with remediation guidance. Dynamic dispatch hides type errors; confirm usage is intentional. Params: optional `path`, `max_results`, `extensions`.
+- `scan_singletons` (safeRead) — Scans the workspace (or `path`) for Singleton occurrences and returns file:line findings with remediation guidance. Singletons hinder testing; consider dependency injection. Params: optional `path`, `max_results`, `extensions`.
+- `scan_global_mutable_state` (safeRead) — Scans the workspace (or `path`) for Global Mutable State occurrences and returns file:line findings with remediation guidance. Top-level mutable globals are not concurrency-safe; isolate them. Params: optional `path`, `max_results`, `extensions`.
+- `scan_timer_usage` (safeRead) — Scans the workspace (or `path`) for Timer Usage occurrences and returns file:line findings with remediation guidance. Invalidate timers and avoid retain cycles; consider AsyncTimerSequence/Task.sleep loops. Params: optional `path`, `max_results`, `extensions`.
+- `scan_any_type_usage` (safeRead) — Scans the workspace (or `path`) for Any Type Usage occurrences and returns file:line findings with remediation guidance. Replace Any with concrete types or Codable models where feasible. Params: optional `path`, `max_results`, `extensions`.
+- `scan_anyobject_usage` (safeRead) — Scans the workspace (or `path`) for AnyObject Usage occurrences and returns file:line findings with remediation guidance. Ensure AnyObject constraints are required (e.g. weak delegates). Params: optional `path`, `max_results`, `extensions`.
+- `scan_long_lines` (safeRead) — Scans the workspace (or `path`) for Long Line occurrences and returns file:line findings with remediation guidance. Wrap lines longer than 120 characters for readability. Params: optional `path`, `max_results`, `extensions`.
+- `scan_trailing_whitespace` (safeRead) — Scans the workspace (or `path`) for Trailing Whitespace occurrences and returns file:line findings with remediation guidance. Strip trailing whitespace (file_strip_trailing_whitespace). Params: optional `path`, `max_results`, `extensions`.
+- `scan_tab_indentation` (safeRead) — Scans the workspace (or `path`) for Tab Indentation occurrences and returns file:line findings with remediation guidance. Convert tabs to spaces for consistency (file_tabs_to_spaces). Params: optional `path`, `max_results`, `extensions`.
+- `scan_todo_fixme_markers` (safeRead) — Scans the workspace (or `path`) for TODO/FIXME Marker occurrences and returns file:line findings with remediation guidance. Resolve or ticket each marker before release. Params: optional `path`, `max_results`, `extensions`.
+- `scan_swiftlint_disables` (safeRead) — Scans the workspace (or `path`) for SwiftLint Disable occurrences and returns file:line findings with remediation guidance. Each lint suppression should be justified; remove stale ones. Params: optional `path`, `max_results`, `extensions`.
+- `scan_deprecated_declarations` (safeRead) — Scans the workspace (or `path`) for Deprecated Declaration occurrences and returns file:line findings with remediation guidance. Migrate callers away from deprecated declarations. Params: optional `path`, `max_results`, `extensions`.
+- `scan_availability_checks` (safeRead) — Scans the workspace (or `path`) for Availability Check occurrences and returns file:line findings with remediation guidance. Remove availability checks below the deployment target. Params: optional `path`, `max_results`, `extensions`.
+- `scan_compiler_directives` (safeRead) — Scans the workspace (or `path`) for Compiler Directive occurrences and returns file:line findings with remediation guidance. Review conditional compilation for dead branches. Params: optional `path`, `max_results`, `extensions`.
+- `scan_empty_catch_blocks` (safeRead) — Scans the workspace (or `path`) for Empty Catch Block occurrences and returns file:line findings with remediation guidance. Never swallow errors silently; log or propagate them. Params: optional `path`, `max_results`, `extensions`.
+- `scan_try_optional` (safeRead) — Scans the workspace (or `path`) for try? Usage occurrences and returns file:line findings with remediation guidance. try? discards error information; confirm failure is truly ignorable. Params: optional `path`, `max_results`, `extensions`.
+- `scan_empty_functions` (safeRead) — Scans the workspace (or `path`) for Empty Function occurrences and returns file:line findings with remediation guidance. Empty functions may be unfinished; implement or document why they are empty. Params: optional `path`, `max_results`, `extensions`.
+- `scan_magic_numbers` (safeRead) — Scans the workspace (or `path`) for Magic Number occurrences and returns file:line findings with remediation guidance. Extract repeated numeric literals into named constants. Params: optional `path`, `max_results`, `extensions`.
+- `scan_sql_string_interpolation` (safeRead) — Scans the workspace (or `path`) for SQL String Interpolation occurrences and returns file:line findings with remediation guidance. Use bound parameters instead of interpolating values into SQL. Params: optional `path`, `max_results`, `extensions`.
+- `scan_webview_usage` (safeRead) — Scans the workspace (or `path`) for Web View Usage occurrences and returns file:line findings with remediation guidance. Audit web content loading, JavaScript bridges and navigation policies. Params: optional `path`, `max_results`, `extensions`.
+- `scan_keychain_usage` (safeRead) — Scans the workspace (or `path`) for Keychain API Usage occurrences and returns file:line findings with remediation guidance. Check accessibility classes (kSecAttrAccessible...) and error handling. Params: optional `path`, `max_results`, `extensions`.
+- `scan_file_protection` (safeRead) — Scans the workspace (or `path`) for File Protection occurrences and returns file:line findings with remediation guidance. Sensitive files should use complete file protection. Params: optional `path`, `max_results`, `extensions`.
+- `scan_combine_sinks` (safeRead) — Scans the workspace (or `path`) for Combine Sink occurrences and returns file:line findings with remediation guidance. Store cancellables and capture self weakly inside sinks. Params: optional `path`, `max_results`, `extensions`.
+- `scan_observable_state` (safeRead) — Scans the workspace (or `path`) for Observable State occurrences and returns file:line findings with remediation guidance. Prefer the Observation framework (@Observable) on modern deployment targets. Params: optional `path`, `max_results`, `extensions`.
+- `scan_swiftui_property_wrappers` (safeRead) — Scans the workspace (or `path`) for SwiftUI Property Wrapper occurrences and returns file:line findings with remediation guidance. Verify ownership: @State/@StateObject own, @Binding/@ObservedObject borrow. Params: optional `path`, `max_results`, `extensions`.
+- `scan_anyview_usage` (safeRead) — Scans the workspace (or `path`) for AnyView Usage occurrences and returns file:line findings with remediation guidance. AnyView erases identity and hurts diffing; prefer @ViewBuilder or generics. Params: optional `path`, `max_results`, `extensions`.
+- `scan_geometry_reader` (safeRead) — Scans the workspace (or `path`) for GeometryReader occurrences and returns file:line findings with remediation guidance. GeometryReader is greedy; prefer containerRelativeFrame/onGeometryChange where possible. Params: optional `path`, `max_results`, `extensions`.
+- `scan_view_lifecycle_tasks` (safeRead) — Scans the workspace (or `path`) for View Lifecycle Task occurrences and returns file:line findings with remediation guidance. Prefer .task for async work so it is cancelled automatically. Params: optional `path`, `max_results`, `extensions`.
+- `scan_navigation_view_deprecated` (safeRead) — Scans the workspace (or `path`) for NavigationView occurrences and returns file:line findings with remediation guidance. NavigationView is deprecated; migrate to NavigationStack / NavigationSplitView. Params: optional `path`, `max_results`, `extensions`.
+- `scan_hardcoded_colors` (safeRead) — Scans the workspace (or `path`) for Hardcoded Color occurrences and returns file:line findings with remediation guidance. Use asset catalog or semantic colors for dark mode and accessibility. Params: optional `path`, `max_results`, `extensions`.
+- `scan_fixed_font_sizes` (safeRead) — Scans the workspace (or `path`) for Fixed Font Size occurrences and returns file:line findings with remediation guidance. Fixed sizes ignore Dynamic Type; prefer text styles. Params: optional `path`, `max_results`, `extensions`.
+- `scan_accessibility_modifiers` (safeRead) — Scans the workspace (or `path`) for Accessibility Modifier occurrences and returns file:line findings with remediation guidance. Confirm interactive controls carry labels and identifiers. Params: optional `path`, `max_results`, `extensions`.
+- `scan_sf_symbol_images` (safeRead) — Scans the workspace (or `path`) for SF Symbol Image occurrences and returns file:line findings with remediation guidance. Icon-only buttons need accessibility labels. Params: optional `path`, `max_results`, `extensions`.
+- `scan_test_skips` (safeRead) — Scans the workspace (or `path`) for Skipped/Disabled Test occurrences and returns file:line findings with remediation guidance. Re-enable or justify skipped tests. Params: optional `path`, `max_results`, `extensions`.
+- `scan_test_expectations` (safeRead) — Scans the workspace (or `path`) for Test Expectation occurrences and returns file:line findings with remediation guidance. Prefer async tests with await over expectation waits where possible. Params: optional `path`, `max_results`, `extensions`.
+- `scan_swift_testing_macros` (safeRead) — Scans the workspace (or `path`) for Swift Testing Macro occurrences and returns file:line findings with remediation guidance. Inventory of Swift Testing usage. Params: optional `path`, `max_results`, `extensions`.
+- `scan_xctassert_usage` (safeRead) — Scans the workspace (or `path`) for XCTAssert Usage occurrences and returns file:line findings with remediation guidance. Inventory of XCTest assertions; consider migrating to #expect. Params: optional `path`, `max_results`, `extensions`.
+- `scan_environment_variable_reads` (safeRead) — Scans the workspace (or `path`) for Environment Variable Read occurrences and returns file:line findings with remediation guidance. Document every environment variable the code depends on. Params: optional `path`, `max_results`, `extensions`.
+- `scan_process_launches` (safeRead) — Scans the workspace (or `path`) for Process Launch occurrences and returns file:line findings with remediation guidance. Avoid shell interpolation; pass fixed argv arrays. Params: optional `path`, `max_results`, `extensions`.
+- `scan_file_manager_mutations` (safeRead) — Scans the workspace (or `path`) for FileManager Mutation occurrences and returns file:line findings with remediation guidance. Check destructive file operations are scoped and error-handled. Params: optional `path`, `max_results`, `extensions`.
+- `scan_url_session_usage` (safeRead) — Scans the workspace (or `path`) for URLSession Usage occurrences and returns file:line findings with remediation guidance. Verify timeouts, cancellation and status-code handling. Params: optional `path`, `max_results`, `extensions`.
+- `scan_json_decoding` (safeRead) — Scans the workspace (or `path`) for JSON Decoding occurrences and returns file:line findings with remediation guidance. Prefer Codable models; surface decoding errors. Params: optional `path`, `max_results`, `extensions`.
+- `scan_core_data_usage` (safeRead) — Scans the workspace (or `path`) for Core Data Usage occurrences and returns file:line findings with remediation guidance. Ensure contexts are used on their own queues. Params: optional `path`, `max_results`, `extensions`.
+- `scan_swiftdata_usage` (safeRead) — Scans the workspace (or `path`) for SwiftData Usage occurrences and returns file:line findings with remediation guidance. Inventory of SwiftData models and queries. Params: optional `path`, `max_results`, `extensions`.
+- `scan_main_thread_checks` (safeRead) — Scans the workspace (or `path`) for Main Thread Check occurrences and returns file:line findings with remediation guidance. Prefer compile-time isolation over runtime main-thread checks. Params: optional `path`, `max_results`, `extensions`.
+- `scan_lock_usage` (safeRead) — Scans the workspace (or `path`) for Lock Usage occurrences and returns file:line findings with remediation guidance. Hold locks briefly and never across await. Params: optional `path`, `max_results`, `extensions`.
+- `scan_strong_delegates` (safeRead) — Scans the workspace (or `path`) for Strong Delegate Property occurrences and returns file:line findings with remediation guidance. Delegates should usually be weak to avoid retain cycles. Params: optional `path`, `max_results`, `extensions`.
+- `scan_string_format_calls` (safeRead) — Scans the workspace (or `path`) for String(format:) occurrences and returns file:line findings with remediation guidance. Prefer string interpolation or FormatStyle; check specifiers match argument types. Params: optional `path`, `max_results`, `extensions`.
+- `scan_formatter_allocations` (safeRead) — Scans the workspace (or `path`) for Formatter Allocation occurrences and returns file:line findings with remediation guidance. Formatters are expensive; cache them or use FormatStyle. Params: optional `path`, `max_results`, `extensions`.
+- `scan_logger_usage` (safeRead) — Scans the workspace (or `path`) for Unified Logging Usage occurrences and returns file:line findings with remediation guidance. Inventory of unified logging; confirm privacy levels on dynamic values. Params: optional `path`, `max_results`, `extensions`.
+- `scan_preview_declarations` (safeRead) — Scans the workspace (or `path`) for SwiftUI Preview occurrences and returns file:line findings with remediation guidance. Inventory of previews; every reusable view should have one. Params: optional `path`, `max_results`, `extensions`.
+
+### TextData
+- `text_base64_encode` (safeRead) — Encodes UTF-8 `text` as standard Base64 (set `url_safe` true for Base64URL without padding). Params: `text` (required); optional `url_safe`.
+- `text_base64_decode` (safeRead) — Decodes standard or URL-safe Base64 `text` and returns the UTF-8 string (or hex when the payload is binary). Params: `text` (required).
+- `text_url_encode` (safeRead) — Percent-encodes `text` for use in a URL query component. Params: `text` (required).
+- `text_url_decode` (safeRead) — Decodes percent-encoded `text` (treats '+' as space). Params: `text` (required).
+- `text_hex_encode` (safeRead) — Encodes UTF-8 `text` bytes as lowercase hexadecimal. Params: `text` (required).
+- `text_hex_decode` (safeRead) — Decodes hexadecimal `text` (whitespace and 0x prefix allowed) into UTF-8 text. Params: `text` (required).
+- `text_hash_digest` (safeRead) — Computes a cryptographic digest of UTF-8 `text`. `algorithm`: sha256 (default), sha384, sha512, sha1, md5. Params: `text` (required); optional `algorithm`.
+- `text_uuid_generate` (safeRead) — Generates `count` (default 1, max 100) random RFC 4122 UUIDs. Set `lowercase` for lowercase output. Params: optional `count`, `lowercase`.
+- `text_case_convert` (safeRead) — Converts `text` into `style`: camel, pascal, snake, kebab, upper_snake, title, lower, upper. Splits on camelCase boundaries and punctuation. Params: `text` (required); optional `style`.
+- `text_slugify` (safeRead) — Converts `text` into a lowercase ASCII URL/file slug (diacritics removed, words joined by '-'). Params: `text` (required).
+- `text_statistics` (safeRead) — Counts characters, bytes, words, lines, sentences and paragraphs in `text`, and gives an approximate token estimate (chars/4). Params: `text` (required).
+- `text_sort_lines` (safeRead) — Sorts the lines of `text`. Options: `unique`, `reverse`, `numeric`, `case_insensitive`. Params: `text` (required); optional `unique`, `reverse`, `numeric`, `case_insensitive`.
+- `text_dedupe_lines` (safeRead) — Removes duplicate lines from `text` while preserving first-occurrence order; reports how many were removed. Params: `text` (required).
+- `text_html_escape` (safeRead) — Escapes ampersands, angle brackets, double and single quotes in `text` as HTML entities. Params: `text` (required).
+- `text_html_unescape` (safeRead) — Decodes named (&amp; &lt; &gt; &quot; &apos; &nbsp;) and numeric (&#NN; &#xHH;) HTML entities in `text`. Params: `text` (required).
+- `text_swift_string_literal` (safeRead) — Converts `text` into a valid Swift string literal (escaped single-line, or multi-line when `multiline` is true). Params: `text` (required); optional `multiline`.
+- `text_regex_test` (safeRead) — Runs regular expression `pattern` against `text` and returns every match with capture groups and ranges. Params: `text` (required), `pattern` (required); optional `case_insensitive`.
+- `text_regex_replace` (safeRead) — Replaces every match of `pattern` in `text` with `template` ($1, $2 for groups) and returns the result. Params: `text` (required), `pattern` (required); optional `template`.
+- `text_line_diff` (safeRead) — Computes a unified-style line diff between `old_text` and `new_text` (lines prefixed with -, +, or space). Params: `old_text` (required), `new_text` (required).
+- `text_wrap` (safeRead) — Re-wraps `text` to `width` columns (default 80) at word boundaries, preserving blank-line paragraph breaks. Params: `text` (required); optional `width`.
+- `text_indent` (safeRead) — Indents every non-empty line of `text` by `spaces` (negative values outdent). Params: `text` (required); optional `spaces`.
+- `text_extract_urls` (safeRead) — Extracts every URL found in `text` using NSDataDetector (deduplicated, in order). Params: `text` (required).
+- `text_extract_emails` (safeRead) — Extracts unique email addresses from `text`. Params: `text` (required).
+- `text_levenshtein_distance` (safeRead) — Computes the edit distance and similarity ratio between strings `a` and `b`. Params: `a` (required), `b` (required).
+- `number_base_convert` (safeRead) — Converts integer `value` from base `from` (default 10) to base `to` (default 16). Bases 2-36; 0x/0b/0o prefixes accepted. Params: `value` (required); optional `from`, `to`.
+- `unix_timestamp_convert` (safeRead) — Converts a Unix timestamp `value` (seconds or milliseconds) to ISO-8601 UTC and local time, or an ISO-8601 date to Unix seconds. Omit `value` for the current time. Params: optional `value`.
+- `date_format_convert` (safeRead) — Parses `date` with `from_format` (ICU pattern, default ISO-8601) and renders it with `to_format` (ICU pattern). Uses en_US_POSIX and optional `timezone`. Params: `date` (required), `to_format` (required); optional `from_format`, `timezone`.
+- `semver_compare` (safeRead) — Compares semantic versions `a` and `b` (MAJOR.MINOR.PATCH[-prerelease]) following SemVer 2.0 precedence. Params: `a` (required), `b` (required).
+- `semver_bump` (safeRead) — Bumps `version` by `part` (major, minor, patch) and optionally appends `prerelease`. Params: `version` (required); optional `part`, `prerelease`.
+- `color_hex_to_swift` (safeRead) — Converts a hex color (#RGB, #RRGGBB, #RRGGBBAA) to RGBA components plus SwiftUI Color, UIColor and NSColor initializer code. Params: `hex` (required).
+- `color_contrast_ratio` (safeRead) — Computes the WCAG 2.x contrast ratio between `foreground` and `background` hex colors and reports AA/AAA pass/fail for normal and large text. Params: `foreground` (required), `background` (required).
+- `json_format` (safeRead) — Validates `text` as JSON and returns it pretty-printed with sorted keys (or minified when `minify` is true). Params: `text` (required); optional `minify`.
+- `json_structure_validate` (safeRead) — Validates `text` as JSON and reports the top-level type, element counts, depth, or the exact parse error. Params: `text` (required).
+- `json_query` (safeRead) — Extracts a value from JSON `text` using a dot/bracket `query` such as `items[0].name` or `meta.tags[*]`. Params: `text` (required), `query` (required).
+- `json_list_keys` (safeRead) — Lists every key path in JSON `text` with its value type (arrays summarized by first element), useful for designing Codable models. Params: `text` (required).
+- `json_to_swift_codable` (safeRead) — Generates Swift Codable structs (with CodingKeys for snake_case keys) from sample JSON `text`. `root_name` names the top-level type (default Root). Params: `text` (required); optional `root_name`.
+- `convert_json_to_plist_xml` (safeRead) — Converts JSON `text` into an XML property list. Params: `text` (required).
+- `convert_plist_text_to_json` (safeRead) — Converts XML/OpenStep property list `text` into pretty JSON (dates as ISO-8601, data as Base64). Params: `text` (required).
+- `convert_csv_text_to_json` (safeRead) — Parses CSV `text` (RFC 4180 quoting, custom `delimiter`) using the first row as headers and returns a JSON array of objects. Params: `text` (required); optional `delimiter`.
+- `convert_json_text_to_csv` (safeRead) — Converts a JSON array of flat objects in `text` into CSV with a header row (union of keys, RFC 4180 quoting). Params: `text` (required).
+- `jwt_decode` (safeRead) — Decodes (without verifying) a JSON Web Token's header and payload, and explains exp/iat/nbf claims relative to now. Never use this as authentication. Params: `token` (required).
+- `markdown_toc` (safeRead) — Generates a nested Markdown table of contents with GitHub-style anchors from the headings in `text` (code fences ignored). Params: `text` (required).
+- `csv_to_markdown_table` (safeRead) — Converts simple CSV/TSV `text` (first row = header) into a GitHub-flavored Markdown table. Params: `text` (required); optional `delimiter`.
+- `text_filter_lines` (safeRead) — Keeps (or with `invert` removes) lines of `text` matching regex `pattern`; returns matching lines with original line numbers. Params: `text` (required), `pattern` (required); optional `invert`.
+- `text_extract_column` (safeRead) — Extracts column `index` (0-based) from each line of `text` split by `delimiter` (default whitespace). Params: `text` (required); optional `index`, `delimiter`.
+- `text_number_summary` (safeRead) — Extracts all numbers from `text` and returns count, sum, min, max, mean, median and standard deviation. Params: `text` (required).
+- `url_parse` (safeRead) — Parses `url` into scheme, user, host, port, path, query items and fragment. Params: `url` (required).
+- `cron_expression_explain` (safeRead) — Explains a 5-field cron expression (`expression`) field by field and lists the next 5 run times computed from now (local time). Params: `expression` (required).
+
+### Workspace
+- `workspace_extension_stats` (safeRead) — Counts files, total bytes and total lines per file extension under `path`, sorted by file count. Params: optional `path`.
+- `workspace_largest_files` (safeRead) — Lists the largest files under `path` (default top 25) with human-readable sizes. Params: optional `path`, `limit`.
+- `workspace_recent_files` (safeRead) — Lists files under `path` modified within the last `days` (default 7), newest first. Params: optional `path`, `days`, `limit`.
+- `workspace_find_by_glob` (safeRead) — Finds files whose name (or relative path when the pattern contains '/') matches shell glob `pattern` (e.g. `*View.swift`, `Sources/**/*.json`). Params: `pattern` (required); optional `path`, `limit`.
+- `workspace_empty_files` (safeRead) — Lists zero-byte files under `path`. Params: optional `path`.
+- `workspace_empty_directories` (safeRead) — Lists directories under `path` that contain no files (ignoring .DS_Store). Params: optional `path`.
+- `workspace_duplicate_files` (safeRead) — Finds files with byte-identical content under `path` (SHA-256), grouped, ignoring files above 20 MB. Params: optional `path`.
+- `workspace_symlinks` (safeRead) — Lists symbolic links under `path` with their targets and whether the target exists. Params: optional `path`.
+- `workspace_binary_files` (safeRead) — Lists files under `path` that contain NUL bytes in their first 8 KB (binary), with sizes. Params: optional `path`.
+- `file_head_lines` (safeRead) — Returns the first `lines` lines (default 40) of a file with line numbers. Params: `path` (required); optional `lines`.
+- `file_tail_lines` (safeRead) — Returns the last `lines` lines (default 40) of a file with line numbers (useful for logs). Params: `path` (required); optional `lines`.
+- `file_line_statistics` (safeRead) — Counts total, code, blank and comment lines (// and /* */ styles, # for scripts) in a file or every source file under a directory. Params: optional `path`.
+- `file_line_endings_report` (safeRead) — Reports LF / CRLF / CR line-ending counts and mixed-ending files under `path`. Params: optional `path`.
+- `file_encoding_report` (safeRead) — Checks text files under `path` for invalid UTF-8, UTF-8 BOMs and UTF-16 BOMs. Params: optional `path`.
+- `file_metadata_info` (safeRead) — Returns size, creation/modification dates, POSIX permissions, owner and type for a file or directory. Params: `path` (required).
+- `file_identifier_frequency` (safeRead) — Counts the most frequent identifiers (words of 3+ chars, excluding Swift keywords) in a file or directory; useful for naming and domain discovery. Params: optional `path`, `limit`.
+- `file_duplicate_lines` (safeRead) — Finds non-trivial lines (trimmed length >= `min_length`, default 30) that repeat across Swift files, a cheap copy-paste detector. Params: optional `path`, `min_length`.
+- `workspace_term_count` (safeRead) — Counts literal occurrences of `term` per file under `path` (optionally `case_insensitive`), sorted by count. Params: `term` (required); optional `path`, `case_insensitive`.
+- `workspace_directory_sizes` (safeRead) — Reports total size and file count of each immediate subdirectory of `path`, largest first. Params: optional `path`.
+- `file_compare` (safeRead) — Line-diffs workspace files `path_a` and `path_b` and reports added/removed line counts plus the diff (truncated). Params: `path_a` (required), `path_b` (required).
+- `file_hash_digest` (safeRead) — Computes the SHA-256 (or `algorithm`: sha1, sha384, sha512, md5) digest of a workspace file. Params: `path` (required); optional `algorithm`.
+- `file_long_functions_report` (safeRead) — Measures every Swift function body under `path` via brace matching and lists those longer than `threshold` lines (default 50) with branch counts. Params: optional `path`, `threshold`.
+- `file_nesting_depth_report` (safeRead) — Reports the maximum brace nesting depth per Swift file under `path` (deep nesting signals refactoring opportunities). Params: optional `path`, `limit`.
+- `file_strip_trailing_whitespace` (safeMutation) — Removes trailing spaces and tabs from every line of a file (writes atomically, verifies, supports `dry_run`). Params: `path` (required); optional `dry_run`.
+- `file_tabs_to_spaces` (safeMutation) — Replaces leading tab indentation with `width` spaces (default 4) on every line of a file. Params: `path` (required); optional `dry_run`, `width`.
+- `file_ensure_final_newline` (safeMutation) — Ensures a file ends with exactly one trailing newline. Params: `path` (required); optional `dry_run`.
+- `file_normalize_line_endings` (safeMutation) — Converts all CRLF/CR line endings in a file to LF (or to CRLF when `style` is crlf). Params: `path` (required); optional `dry_run`, `style`.
+- `file_collapse_blank_lines` (safeMutation) — Collapses runs of more than `max_blank` consecutive blank lines (default 1) in a file. Params: `path` (required); optional `dry_run`, `max_blank`.
+- `file_sort_swift_imports` (safeMutation) — Sorts and deduplicates the contiguous top-of-file `import` block of a Swift file (keeps @testable/@_exported attributes). Params: `path` (required); optional `dry_run`.
+- `file_add_header_comment` (safeMutation) — Prepends `header` (each line prefixed with `// ` unless already a comment) to a file if the file does not already start with it. Params: `path` (required); optional `dry_run`, `header`.
+- `file_regex_replace` (safeMutation) — Replaces every match of regex `pattern` with `template` ($1 groups) in one file. Use `dry_run` first; returns change summary. Params: `path` (required); optional `dry_run`, `pattern`, `template`.
+- `file_rename_identifier` (safeMutation) — Renames whole-word occurrences of identifier `from` to `to` in a single file (word-boundary safe, skips partial matches). Params: `path` (required); optional `dry_run`, `from`, `to`.
+- `file_remove_print_statements` (safeMutation) — Deletes lines in a Swift file that consist solely of a print(...)/debugPrint(...) call. Params: `path` (required); optional `dry_run`.
+- `file_backup_copy` (safeMutation) — Copies a workspace file to `<path>.bak` (or `destination`) before risky edits; refuses to overwrite unless `overwrite` is true. Params: `path` (required); optional `destination`, `overwrite`.
+
+### SwiftSource
+- `swift_list_types` (safeRead) — Lists every struct, class, enum, protocol and actor declared under `path` with file:line and signature. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_structs` (safeRead) — Lists struct declarations under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_classes` (safeRead) — Lists class declarations under `path` (excludes `class func`/`class var`). Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_enums` (safeRead) — Lists enum declarations under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_protocols` (safeRead) — Lists protocol declarations under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_actors` (safeRead) — Lists actor declarations under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_extensions` (safeRead) — Lists extension declarations under `path` (what types are extended, where). Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_functions` (safeRead) — Lists function declarations under `path` with signatures. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_initializers` (safeRead) — Lists init declarations under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_typealiases` (safeRead) — Lists typealias declarations under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_enum_cases` (safeRead) — Lists enum `case` declarations under `path` (switch `case` labels are excluded by the declaration pattern only when indented as members). Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_properties` (safeRead) — Lists var/let property declarations under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_public_api` (safeRead) — Lists public and open declarations under `path` — the module's API surface. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_async_functions` (safeRead) — Lists functions declared `async` under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_throwing_functions` (safeRead) — Lists functions declared `throws`/`rethrows` under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_static_members` (safeRead) — Lists static functions and properties under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_overrides` (safeRead) — Lists `override` declarations under `path` (subclass customization points). Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_private_members` (safeRead) — Lists private/fileprivate declarations under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_macros` (safeRead) — Lists macro declarations under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_mutating_functions` (safeRead) — Lists `mutating` methods under `path`. Params: optional `path`, `name_contains`, `max_results`.
+- `swift_list_swiftui_views` (safeRead) — Lists types conforming to SwiftUI `View` under `path`. Params: optional `path`, `max_results`.
+- `swift_list_test_functions` (safeRead) — Lists XCTest `func test…` methods and Swift Testing `@Test` functions under `path`. Params: optional `path`, `max_results`.
+- `swift_list_codable_types` (safeRead) — Lists types that declare Codable/Encodable/Decodable conformance under `path`. Params: optional `path`, `max_results`.
+- `swift_list_sendable_types` (safeRead) — Lists types that declare Sendable conformance under `path`. Params: optional `path`, `max_results`.
+- `swift_list_imports` (safeRead) — Counts `import` statements per module across Swift files under `path` and lists files per module (optionally only `module`). Params: optional `path`, `module`.
+- `swift_find_conformers` (safeRead) — Finds types and extensions that adopt `protocol_name` (in their inheritance clause) under `path`. Params: `protocol_name` (required); optional `path`, `max_results`.
+- `swift_symbol_references` (safeRead) — Finds whole-word references to `symbol` across Swift files under `path` (excluding comment lines). Params: `symbol` (required); optional `path`, `max_results`.
+- `swift_file_outline` (safeRead) — Produces an indented outline (types, extensions, functions, properties, cases) of a Swift file using brace depth. Params: `path` (required).
+- `swift_undocumented_public_api` (safeRead) — Lists public/open declarations under `path` that have no `///` or `/** */` doc comment directly above them. Params: optional `path`, `max_results`.
+- `swift_generate_memberwise_init` (safeRead) — Reads the real stored properties of `type_name` and generates an explicit (optionally public) memberwise initializer, respecting default values. Returns code; does not write. Params: `path` (required), `type_name` (required); optional `public`.
+- `swift_generate_coding_keys` (safeRead) — Generates a CodingKeys enum for the stored properties of `type_name`, mapping camelCase to snake_case when `snake_case` is true (default). Params: `path` (required), `type_name` (required); optional `snake_case`.
+- `swift_generate_equatable_hashable` (safeRead) — Generates explicit Equatable `==` and Hashable `hash(into:)` implementations over the stored properties of `type_name`. Params: `path` (required), `type_name` (required).
+- `swift_generate_protocol_from_type` (safeRead) — Generates a protocol declaring the non-private method signatures and stored/computed property requirements of `type_name`, for dependency injection and test doubles. Params: `path` (required), `type_name` (required); optional `protocol_name`.
+- `swift_generate_test_skeleton` (safeRead) — Generates a Swift Testing (default) or XCTest suite for `type_name` with one test per real method found, each with Arrange/Act/Assert sections the agent must fill with real assertions. Params: `path` (required), `type_name` (required); optional `module`, `framework`.
+- `swift_type_summary` (safeRead) — Summarizes `type_name`: kind, inheritance clause, stored properties with types, method signatures, and nested type count, read from source. Params: `path` (required), `type_name` (required).
+- `swift_generate_builder` (safeRead) — Generates a fluent builder type for `type_name` from its stored properties (useful for constructing complex values in tests with real values). Params: `path` (required), `type_name` (required).
+
+### Process
+- `git_contributor_summary` (safeRead) — Lists commit counts per author (git shortlog -sne) for the repository or `rev` range. Params: optional `rev`.
+- `git_tag_list` (safeRead) — Lists tags sorted by version with their dates and subjects.
+- `git_remote_list` (safeRead) — Lists configured remotes with fetch/push URLs.
+- `git_branch_overview` (safeRead) — Lists local and remote branches with last commit date, upstream tracking and ahead/behind status.
+- `git_stash_overview` (safeRead) — Lists stash entries with dates and messages.
+- `git_reflog_recent` (safeRead) — Shows the last `count` reflog entries (default 30) — the safety net for recovering lost commits. Params: optional `count`.
+- `git_file_history` (safeRead) — Shows the commit history of one file (following renames) with authors, dates and subjects. Params: `path` (required); optional `count`.
+- `git_show_commit_summary` (safeRead) — Shows a commit's metadata and per-file change statistics (`rev`, default HEAD). Params: optional `rev`.
+- `git_diff_stat_range` (safeRead) — Summarizes changed files and line counts between `base` (default HEAD) and the working tree, or between `base` and `head` when given. Params: optional `base`, `head`.
+- `git_staged_diff_stat` (safeRead) — Summarizes staged (index) changes with per-file line counts.
+- `git_untracked_files` (safeRead) — Lists untracked files not covered by .gitignore.
+- `git_ignored_files` (safeRead) — Lists ignored files and directories present in the working tree.
+- `git_check_ignore` (safeRead) — Explains whether `path` is ignored and which .gitignore rule matches. Params: `path` (required).
+- `git_local_config` (safeRead) — Lists repository-local git configuration (git config --local --list).
+- `git_commit_count` (safeRead) — Counts commits reachable from `rev` (default HEAD), plus merge commit count. Params: optional `rev`.
+- `git_last_commit` (safeRead) — Shows the most recent commit's hash, author, relative date and subject.
+- `git_merge_base` (safeRead) — Finds the common ancestor commit of revisions `a` and `b`. Params: `a` (required), `b` (required).
+- `git_ahead_behind` (safeRead) — Counts commits the current branch is ahead/behind `upstream` (default @{u}). Params: optional `upstream`.
+- `git_changed_files_since` (safeRead) — Lists files changed between `rev` and HEAD with status letters (A/M/D/R). Params: `rev` (required).
+- `git_grep_tracked` (safeRead) — Searches tracked files for `pattern` (extended regex) with line numbers using git grep. Params: `pattern` (required).
+- `git_blame_authors` (safeRead) — Shows per-line authorship of a file condensed to author line counts (git blame --line-porcelain). Params: `path` (required).
+- `git_log_search_messages` (safeRead) — Searches commit messages for `term` (case-insensitive) and lists matching commits. Params: `term` (required).
+- `git_log_pickaxe` (safeRead) — Finds commits that added or removed the string `term` in code (git log -S), showing when a symbol appeared or vanished. Params: `term` (required).
+- `git_log_by_author` (safeRead) — Lists recent commits by `author` (name or email substring). Params: `author` (required).
+- `git_tree_at_revision` (safeRead) — Lists files in `path` (default root) as they exist at revision `rev`. Params: optional `rev`, `path`.
+- `git_show_file_at_revision` (safeRead) — Prints the contents of `path` at revision `rev` without checking it out. Params: `path` (required); optional `rev`.
+- `git_describe_version` (safeRead) — Describes HEAD relative to the nearest tag (git describe --tags --always --dirty).
+- `git_worktree_overview` (safeRead) — Lists git worktrees attached to this repository.
+- `git_submodule_overview` (safeRead) — Shows submodule status (commit, path, described ref).
+- `git_repository_size` (safeRead) — Reports object counts and pack sizes (git count-objects -vH).
+- `git_whitespace_check` (safeRead) — Detects whitespace errors and conflict markers in uncommitted changes (git diff --check).
+- `git_conflict_files` (safeRead) — Lists files with unresolved merge conflicts.
+- `swift_toolchain_info` (safeRead) — Reports the active Swift compiler version and target triple.
+- `swiftpm_describe_package` (safeRead) — Describes the Swift package at the workspace root (targets, products, dependencies, platforms) as JSON via `swift package describe --type json`.
+- `swiftpm_dependency_tree` (safeRead) — Shows the resolved dependency graph of the Swift package (`swift package show-dependencies`).
+- `swiftpm_dump_manifest` (safeRead) — Evaluates Package.swift and prints the manifest as JSON (`swift package dump-package`).
+- `swiftpm_resolve_dependencies` (execution) — Resolves and fetches package dependencies, updating Package.resolved if needed (network access).
+- `swiftpm_list_tests` (execution) — Builds test targets and lists every discovered test identifier (`swift test list`).
+- `swiftpm_build_target` (execution) — Builds a single SwiftPM `target` (or the whole package when omitted) in debug and returns compiler output. Params: optional `target`.
+- `swiftpm_run_filtered_tests` (execution) — Runs `swift test --filter <filter>` and returns the full test output (pass/fail per test). Params: `filter` (required).
+- `swift_format_lint_check` (safeRead) — Lints Swift sources at `path` with `swift format lint --recursive` and returns diagnostics. Params: optional `path`.
+- `swift_format_apply` (safeMutation) — Formats Swift sources at `path` in place with `swift format --in-place --recursive`. Params: `path` (required).
+- `swift_typecheck_file` (execution) — Type-checks a standalone Swift file with `swiftc -typecheck` (for scripts and files without package dependencies). Params: `path` (required).
+- `xcode_developer_dir` (safeRead) — Prints the active developer directory (xcode-select -p).
+- `xcodebuild_version_info` (safeRead) — Prints the installed Xcode toolchain version and build number.
+- `xcodebuild_list_json` (safeRead) — Lists targets, configurations and schemes of the project/workspace in the workspace root as JSON.
+- `xcodebuild_sdk_list` (safeRead) — Lists installed SDKs as JSON (xcodebuild -showsdks -json).
+- `xcodebuild_build_settings` (safeRead) — Shows resolved build settings for `scheme` as JSON (optionally filtered by `setting_filter`). Params: `scheme` (required).
+- `simctl_device_list` (safeRead) — Lists simulator devices and their states as JSON (xcrun simctl list devices --json).
+- `simctl_runtime_list` (safeRead) — Lists installed simulator runtimes (xcrun simctl list runtimes).
+- `xcrun_find_tool` (safeRead) — Locates a developer tool inside the active toolchain (xcrun --find <tool>). Params: `tool` (required).
+- `plist_lint_file` (safeRead) — Validates a property list file's syntax with plutil -lint. Params: `path` (required).
+- `plist_print_file` (safeRead) — Prints a property list (XML or binary) in human-readable form with plutil -p. Params: `path` (required).
+- `codesign_inspect` (safeRead) — Shows code signature details (identity, team, entitlements summary) of an app/binary at `path`. Params: `path` (required).
+- `codesign_identities` (safeRead) — Lists valid code-signing identities in the keychain (security find-identity -v -p codesigning).
+- `binary_architectures` (safeRead) — Lists CPU architectures in a Mach-O binary or library (lipo -info). Params: `path` (required).
+- `binary_linked_libraries` (safeRead) — Lists dynamic libraries a Mach-O binary links against (otool -L). Params: `path` (required).
+- `binary_exported_symbols` (safeRead) — Lists external defined symbols of a binary/object (nm -gU), demangled. Params: `path` (required).
+- `file_type_detect` (safeRead) — Identifies a file's real type from its contents (file -b). Params: `path` (required).
+- `system_os_version` (safeRead) — Reports macOS product name, version and build (sw_vers).
+- `system_hardware_summary` (safeRead) — Reports machine model, CPU brand, core count and memory (sysctl).
+- `system_disk_free` (safeRead) — Reports free/used space for mounted volumes (df -h).
+- `system_uptime_load` (safeRead) — Reports uptime and load averages.
+- `system_top_processes` (safeRead) — Lists processes sorted by CPU usage (ps) with PID, CPU%, memory% and command.
+- `system_listening_ports` (safeRead) — Lists processes listening on TCP ports (lsof -nP -iTCP -sTCP:LISTEN) — find dev servers and port conflicts.
+- `system_locate_executable` (safeRead) — Finds every executable named `tool` on PATH (which -a). Params: `tool` (required).
+- `system_directory_usage` (safeRead) — Reports disk usage of `path` and its immediate children (du -sh). Params: optional `path`.
+- `homebrew_installed_packages` (safeRead) — Lists installed Homebrew formulae with versions (brew list --versions).
+
+### Network
+- `http_get_request` (externalSideEffect) — Performs a real HTTP GET to `url` (optional `headers` object) and returns status, key headers and the body (truncated). Use for docs/API checks. Params: `url` (required); optional `headers`.
+- `http_head_request` (externalSideEffect) — Sends an HTTP HEAD request to `url` and returns the status code and all response headers. Params: `url` (required).
+- `http_post_json` (externalSideEffect) — Sends a JSON `body` (string or object) via HTTP POST to `url` and returns the status and response. Has external side effects — only call when the user asked for it. Params: `url` (required), `body` (required); optional `headers`.
+- `http_status_check` (externalSideEffect) — Checks a list of `urls` concurrently (HEAD, falling back to GET) and reports status code and latency for each — useful for verifying links in docs. Params: `urls` (required).
+- `dns_lookup` (safeRead) — Resolves `host` to its IPv4/IPv6 addresses using the system resolver (getaddrinfo). Params: `host` (required).
+- `http_download_file` (safeMutation) — Downloads `url` into the workspace at `destination` (refuses to overwrite unless `overwrite`), reporting size and SHA-256. Params: `url` (required), `destination` (required); optional `overwrite`.
+- `github_repository_info` (externalSideEffect) — Fetches public metadata for GitHub repository `repo` (owner/name): description, stars, default branch, license, topics, latest release. Params: `repo` (required).
+
+### Knowledge
+- `system_asset_list` (safeRead) — Lists every System Assets training/guidance document bundled with SwiftCode (plus user custom assets) with sizes. Every model can read them via system_asset_read.
+- `system_asset_read` (safeRead) — Returns the full text of a System Assets document by `name` (e.g. `UnitTestingBestPractices` or `Authentication.md`). Use it to load the authoritative SwiftCode guidance for a task. Params: `name` (required).
+- `system_asset_search` (safeRead) — Ranks System Assets documents and paragraphs by relevance to `query` (term frequency) and returns the best excerpts, so any model can pull SwiftCode training guidance on demand. Params: `query` (required); optional `limit`.
+- `tool_catalog_search` (safeRead) — Searches every registered SwiftCode tool by `query` (id, name, description) and returns matching ids with descriptions and parameter schemas, so models with compact catalogs can discover the right tool. Params: `query` (required); optional `limit`.
+- `system_skill_catalog` (safeRead) — Lists SwiftCode System Skills (bundled SKILL.md playbooks) with install status, or returns one skill's full instructions when `name` is given. Params: optional `name`.
+
+---
+
 ## Cloud Toolkit (Antigravity SDK Built-ins — Cloud Mode ONLY)
 
 When the **"Cloud"** toolkit is active, the session uses Google Antigravity SDK's built-in cloud runtime tools instead of the System tools above. These IDs are **not** in the local system registry; they are provided by the Antigravity cloud runtime and may only be called in Cloud mode:

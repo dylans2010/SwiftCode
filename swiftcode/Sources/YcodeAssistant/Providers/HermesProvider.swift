@@ -662,6 +662,7 @@ public struct HermesAssistantProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         return eventStream { continuation in
             guard let _ = HermesProvider.resolveExecutable() else {
                 throw AssistantError.failed("Hermes CLI is not installed or not found on PATH.")

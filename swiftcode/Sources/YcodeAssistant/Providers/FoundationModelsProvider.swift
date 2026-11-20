@@ -39,6 +39,7 @@ public struct FoundationModelsProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request, compact: true)
         eventStream { out in
             let prompt = Self.promptText(request)
             guard !prompt.isEmpty else { throw AssistantError.failed("There is no message to send.") }

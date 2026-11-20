@@ -353,6 +353,7 @@ public struct CLIAgentProvider: AgentAttachable {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         let provider = self
         return eventStream { out in
             guard let exe = provider.executable else {

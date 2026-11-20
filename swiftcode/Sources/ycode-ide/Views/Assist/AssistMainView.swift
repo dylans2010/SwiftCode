@@ -1412,7 +1412,7 @@ public struct AssistMainView: View {
             let parts = text.split(separator: " ", maxSplits: 1).map(String.init)
             let cmd = parts[0].lowercased()
             let arg = parts.count > 1 ? parts[1] : nil
-            if ["/schedule", "/compact", "/goal", "/teamwork", "/interview", "/learn", "/boost"].contains(cmd) {
+            if ["/schedule", "/compact", "/goal", "/teamwork", "/interview", "/learn", "/boost"].contains(cmd) || BuiltInActionCatalog.action(for: cmd) != nil {
                 inputText = ""
                 attachedFiles = []
                 selectedExplicitSkills = []

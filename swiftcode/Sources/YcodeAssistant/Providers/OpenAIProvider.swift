@@ -172,6 +172,7 @@ public struct OpenAIProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         let provider = self
         return eventStream { out in
             let useChatCompletions = !provider.usesPlan

@@ -488,6 +488,7 @@ public final class LLMService: Sendable {
     }
 
     public func sendChatRequest(model: String, messages: [AIMessage], key: String? = nil, providerOverride: LLMProvider? = nil) async throws -> LLMResponse {
+        let messages = AssistUniversalModelContext.augment(messages)
         if SCCloudConfiguration.isCloudModelID(model) {
             let endpointName = SCCloudConfiguration.endpointName(forInternalID: model)
             let prompt = messages.last?.content ?? ""

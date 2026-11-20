@@ -140,6 +140,7 @@ public struct OpenCodeProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         let provider = self
         return eventStream { out in
             guard let model = Self.parseStoredID(request.model) else {

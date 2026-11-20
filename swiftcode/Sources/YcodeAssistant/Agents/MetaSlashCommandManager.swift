@@ -95,7 +95,16 @@ public struct MetaSlashCommandManager: Sendable {
     public private(set) var isCapturing: Bool = false
     public private(set) var lastCapturedAt: Date?
 
-    public init(commands: [MetaSlashCommand] = Self.builtInCommands) {
+    public static var builtInActionCommands: [MetaSlashCommand] {
+        let existing = Set(builtInCommands.map(\.id))
+        return BuiltInActionCatalogData.entries.filter { !existing.contains($0.id) }.map {
+            MetaSlashCommand(id: $0.id, name: "/" + $0.id, title: $0.title, description: $0.subtitle,
+                             syntax: "/\($0.id) [\($0.placeholder)]", icon: $0.icon, category: "Actions",
+                             arguments: [.text(name: "Input", placeholder: $0.placeholder, isOptional: true)])
+        }
+    }
+
+    public init(commands: [MetaSlashCommand] = Self.builtInCommands + Self.builtInActionCommands) {
         self.commands = commands
     }
 
@@ -587,7 +596,9 @@ public struct MetaSlashCommandManager: Sendable {
         case "fix":
             return ("Diagnosing and fixing errors.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .fix, target: argString)))
         default:
-            break
+            if let entry = BuiltInActionCatalogData.entries.first(where: { $0.id == command.id }) {
+                return ("\(entry.title) started.", .sendAgentPrompt(BuiltInActionCatalogData.basePrompt(id: entry.id, argument: argString)))
+            }
         }
 
         if argString.isEmpty {

@@ -36,6 +36,7 @@ public struct OfflineModelsProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request, compact: true)
         let rawName = request.model ?? ""
         let requested = Self.canonicalModelName(rawName)
         return eventStream { out in

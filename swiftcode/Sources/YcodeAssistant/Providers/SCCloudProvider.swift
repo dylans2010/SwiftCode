@@ -91,6 +91,7 @@ public struct SCCloudProvider: AssistantProvider {
     }
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
+        let request = AssistUniversalModelContext.augment(request)
         let provider = self
         return eventStream { out in
             guard provider.isConfigured, let url = HTTP.url(provider.baseURL, "v1/chat/completions") else {

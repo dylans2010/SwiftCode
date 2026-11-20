@@ -3420,6 +3420,8 @@ public struct AssistSettingsView: View {
                         }
                         .padding(10)
                         .background(Color.primary.opacity(0.02), in: RoundedRectangle(cornerRadius: 10))
+
+                        SystemSkillsInstallSection()
                     }
                     .padding()
                 }
