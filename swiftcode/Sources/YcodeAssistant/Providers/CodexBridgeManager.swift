@@ -491,7 +491,7 @@ public final class CodexBridgeManager: Sendable {
         bridgeStatus = .running
 
         onProgress(.sendTestPrompt, "Sending verification prompt...")
-        let testResponse = try await sendPrompt("Respond with VALID")
+        let testResponse = try await sendPrompt("Respond with VALID", includeToolCatalog: false)
         if !testResponse.contains("VALID") && !testResponse.isEmpty {
             appendLog("Handshake verified with warning: unexpected response payload.")
         }
@@ -501,7 +501,17 @@ public final class CodexBridgeManager: Sendable {
         UserDefaults.standard.set("Codex", forKey: "assist.selectedProvider")
     }
 
-    public func sendPrompt(_ prompt: String) async throws -> String {
+    private func promptWithToolCatalog(_ prompt: String, includeToolCatalog: Bool) -> String {
+        guard includeToolCatalog else { return prompt }
+        let trimmedPrompt = prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmedPrompt != "Respond with VALID" else { return prompt }
+        guard trimmedPrompt != "Respond with 'Codex Connection Success'" else { return prompt }
+        guard !prompt.contains("# AVAILABLE REGISTERED TOOLS & CAPABILITIES") else { return prompt }
+        let catalog = AssistToolRegistry.shared.formattedToolCatalog()
+        return "The following SwiftCode tool catalog is for reference only. The Codex CLI uses its own tools and cannot execute SwiftCode registry tools directly.\n\n\(catalog)\n\n\(prompt)"
+    }
+
+    public func sendPrompt(_ prompt: String, includeToolCatalog: Bool = true) async throws -> String {
         guard let path = discoverCLIPath() else {
             throw CodexAPIError.networkError("Codex CLI is not installed. Open setup flow.")
         }
@@ -509,9 +519,10 @@ public final class CodexBridgeManager: Sendable {
         activeRequests += 1
         defer { activeRequests -= 1 }
 
+        let effectivePrompt = promptWithToolCatalog(prompt, includeToolCatalog: includeToolCatalog)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = ["exec", prompt, "--sandbox", "workspace-write"]
+        process.arguments = ["exec", effectivePrompt, "--sandbox", "workspace-write"]
 
         if let apiKey = secretStore.readString(CodexManager.userKeyAccount) {
             var env = ProcessInfo.processInfo.environment
@@ -541,7 +552,7 @@ public final class CodexBridgeManager: Sendable {
         }
     }
 
-    public func streamPrompt(_ prompt: String, onToken: @escaping @Sendable (String) async -> Void) async throws {
+    public func streamPrompt(_ prompt: String, includeToolCatalog: Bool = true, onToken: @escaping @Sendable (String) async -> Void) async throws {
         guard let path = discoverCLIPath() else {
             throw CodexAPIError.networkError("Codex CLI is not installed. Open setup flow.")
         }
@@ -555,9 +566,10 @@ public final class CodexBridgeManager: Sendable {
             activeToolDetails = ""
         }
 
+        let effectivePrompt = promptWithToolCatalog(prompt, includeToolCatalog: includeToolCatalog)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: path)
-        process.arguments = ["exec", prompt, "--json", "--sandbox", "workspace-write"]
+        process.arguments = ["exec", effectivePrompt, "--json", "--sandbox", "workspace-write"]
 
         if let apiKey = secretStore.readString(CodexManager.userKeyAccount) {
             var env = ProcessInfo.processInfo.environment
