@@ -4005,6 +4005,84 @@
 		0CEFBD06438CA607BB08C3FE /* darkmode.md in Resources */ = {isa = PBXBuildFile; fileRef = 8D7D416A9C1826C1EBF7535A /* darkmode.md */; };
 		6947B5CC532B2A70BAC8D27D /* deadcode.md in Resources */ = {isa = PBXBuildFile; fileRef = 46B47AE2EAE414CACA540EC9 /* deadcode.md */; };
 		F87649E72F28F14E44770EF0 /* debug.md in Resources */ = {isa = PBXBuildFile; fileRef = BEF5DA2CD96641AA1AD86578 /* debug.md */; };
+		38D8D6E58268DCB666283138 /* apns.md in Resources */ = {isa = PBXBuildFile; fileRef = DDEBECA2FCAFF3599B11CF3A /* apns.md */; };
+		0CA4B462F8F7253DDDCEA2CB /* app-thinning.md in Resources */ = {isa = PBXBuildFile; fileRef = C52524697BD6ED88D61F7A3F /* app-thinning.md */; };
+		32BD48E8638C68B5C81F4FAE /* appclips.md in Resources */ = {isa = PBXBuildFile; fileRef = 046A5F7F1F341FF134891A3B /* appclips.md */; };
+		9EFF698FD3EBB24AA074429B /* appreview.md in Resources */ = {isa = PBXBuildFile; fileRef = 53619821823B3FDAA28F806E /* appreview.md */; };
+		9E1CC2AE5C13373EEF348140 /* arkit.md in Resources */ = {isa = PBXBuildFile; fileRef = F045749C04D956A90CAD1272 /* arkit.md */; };
+		715008DA5141FFB6600D14C9 /* avfoundation.md in Resources */ = {isa = PBXBuildFile; fileRef = 9F493AD10EDA60679F88642B /* avfoundation.md */; };
+		B3AC98151A41C77DF58A6473 /* background-transfer.md in Resources */ = {isa = PBXBuildFile; fileRef = BB47D4CB6189DFF5D67BEFDC /* background-transfer.md */; };
+		0388FCBBEC1F519A55C57F24 /* capabilities.md in Resources */ = {isa = PBXBuildFile; fileRef = 4477165DC6729FC00618E559 /* capabilities.md */; };
+		62B78F651E8A3F669F6D8F86 /* carplay.md in Resources */ = {isa = PBXBuildFile; fileRef = FE42BC8CB24421D45BAEF7AE /* carplay.md */; };
+		E543609C4590F653BC42831A /* cert-pinning.md in Resources */ = {isa = PBXBuildFile; fileRef = E04C8137D1D19931A02A10CE /* cert-pinning.md */; };
+		F7C63B2F071BE6D855F9B3B9 /* clitool.md in Resources */ = {isa = PBXBuildFile; fileRef = 550F6D8420A7CA1D0E77906B /* clitool.md */; };
+		2AA4358C44256A0A698E85ED /* cloudkit-sharing.md in Resources */ = {isa = PBXBuildFile; fileRef = D97701C8D931D50982B4AB5E /* cloudkit-sharing.md */; };
+		A44B40E8624F6FDAA0D10584 /* codegen.md in Resources */ = {isa = PBXBuildFile; fileRef = 217CCE8DC30D35755A5F1612 /* codegen.md */; };
+		A123EF482EBF441890D1608E /* complications.md in Resources */ = {isa = PBXBuildFile; fileRef = 94F03D31C11A3E685B48DEE7 /* complications.md */; };
+		CB4B8F36674420A433C3D9B4 /* contacts.md in Resources */ = {isa = PBXBuildFile; fileRef = 286B9BB3068630579DFDF811 /* contacts.md */; };
+		5903237481EFC569B48C4AA4 /* controlcenter.md in Resources */ = {isa = PBXBuildFile; fileRef = 1FEB4142C4D52FC5682077BE /* controlcenter.md */; };
+		3C7D70D7BDF19EEDE84F4AA3 /* core-bluetooth.md in Resources */ = {isa = PBXBuildFile; fileRef = 992647BD6B9862D44208E241 /* core-bluetooth.md */; };
+		FF368A536272E935F2695C92 /* core-haptics.md in Resources */ = {isa = PBXBuildFile; fileRef = 25945887BA89EC3E7B055A6B /* core-haptics.md */; };
+		38CD830F6E3B6C770E88A554 /* core-motion.md in Resources */ = {isa = PBXBuildFile; fileRef = 181882F9E57D2D625288E0F4 /* core-motion.md */; };
+		48BA80F99F2721266706EA4A /* coreanimation.md in Resources */ = {isa = PBXBuildFile; fileRef = 698E8244D0829D42B9B3497E /* coreanimation.md */; };
+		F05064571ECCAE422D0E2ECD /* coredata-cloudkit.md in Resources */ = {isa = PBXBuildFile; fileRef = 082A18B90C519C152BCFE34A /* coredata-cloudkit.md */; };
+		D114F3EB85913A8A3B943FDC /* coreml-convert.md in Resources */ = {isa = PBXBuildFile; fileRef = B2AD1AF59FB7A62781FBB267 /* coreml-convert.md */; };
+		C0C443C421B9275260258F68 /* create-ml.md in Resources */ = {isa = PBXBuildFile; fileRef = 0DAEBFB45D8DE4BB0BF075C1 /* create-ml.md */; };
+		51E4C81E3A0DBFBAA8EF0DC4 /* devicectl.md in Resources */ = {isa = PBXBuildFile; fileRef = B40AAE63AE6F3BAAFF8A3787 /* devicectl.md */; };
+		21FE730EE101BB7B01237AF3 /* dynamic-type.md in Resources */ = {isa = PBXBuildFile; fileRef = 622897E5A35A4DEEE8295E0F /* dynamic-type.md */; };
+		FB7B825CF608A7A8E67C3AD9 /* eventkit.md in Resources */ = {isa = PBXBuildFile; fileRef = 09D38A7EA4FC83AA17657473 /* eventkit.md */; };
+		76DDD1716C7C066DD34A62EE /* gamekit.md in Resources */ = {isa = PBXBuildFile; fileRef = 979008F7A948CFC055F1884B /* gamekit.md */; };
+		89C88FB78E37665119A1B39D /* geofencing.md in Resources */ = {isa = PBXBuildFile; fileRef = 105C600F1E6E7A620C47B9B6 /* geofencing.md */; };
+		3A6F68E0E523C08A9B594B16 /* homekit.md in Resources */ = {isa = PBXBuildFile; fileRef = 63FCC20AE87FF56CFB25FD20 /* homekit.md */; };
+		030F7F89D7FCE005620476BC /* metal.md in Resources */ = {isa = PBXBuildFile; fileRef = 9C148DAA37CCEA1A6FE5AA3F /* metal.md */; };
+		42C31A12BEB273726F069984 /* metrickit.md in Resources */ = {isa = PBXBuildFile; fileRef = B23C6FD3FDE1F7A168D2AD8A /* metrickit.md */; };
+		B8964D55D5A02D25C14D2332 /* natural-language.md in Resources */ = {isa = PBXBuildFile; fileRef = 422806F3DD89F52411A559AB /* natural-language.md */; };
+		808CD06EDBFF83F0BE8F0C7E /* nfc.md in Resources */ = {isa = PBXBuildFile; fileRef = 67B274B95F94BAE931175469 /* nfc.md */; };
+		5DD37128D5B54F3C3AB00495 /* notarize.md in Resources */ = {isa = PBXBuildFile; fileRef = 0848ECAB63D5FEABEBE12A51 /* notarize.md */; };
+		AFFECC778BB7D9C220166E1B /* pbxproj.md in Resources */ = {isa = PBXBuildFile; fileRef = 376F7F0AAA1BD92AAC05FAC7 /* pbxproj.md */; };
+		9C25E7D16B6E835AC6E0F994 /* pdfkit.md in Resources */ = {isa = PBXBuildFile; fileRef = 3138A96B3A9A8A69776D7A21 /* pdfkit.md */; };
+		2D34CA47A4F0D01225E076D7 /* pencilkit.md in Resources */ = {isa = PBXBuildFile; fileRef = 452CB328572D353672107898 /* pencilkit.md */; };
+		8658AB2FC844A23B503C75E1 /* playgrounds.md in Resources */ = {isa = PBXBuildFile; fileRef = 4802E7EFD97C800146FC889F /* playgrounds.md */; };
+		F5E3FCEEDA72A73484F0FAF1 /* pluralization.md in Resources */ = {isa = PBXBuildFile; fileRef = 799EC6A4B970AD775E7C90BE /* pluralization.md */; };
+		59C116F2A394291A4170534B /* quicklook.md in Resources */ = {isa = PBXBuildFile; fileRef = 7B1358006E7778F3C51E940E /* quicklook.md */; };
+		927FAD27E0312424D4E6849D /* receipt-validation.md in Resources */ = {isa = PBXBuildFile; fileRef = 7BC7A5FD0AEA382BDC9B13F3 /* receipt-validation.md */; };
+		0CC32307AB0D6B20D00E7524 /* scenekit.md in Resources */ = {isa = PBXBuildFile; fileRef = 3D9857BD821A69BC212BC7F5 /* scenekit.md */; };
+		CC15FF29EAF32A6749870D05 /* schemes.md in Resources */ = {isa = PBXBuildFile; fileRef = 98A4BA9057381721FBF59D45 /* schemes.md */; };
+		84B9BB8322DF051AA0D8FFFF /* simctl.md in Resources */ = {isa = PBXBuildFile; fileRef = D14AA5CEBD3ABE59F2DE1D4B /* simctl.md */; };
+		DD350010643E5BB41B71B389 /* spaces-branch.md in Resources */ = {isa = PBXBuildFile; fileRef = DA40403D01AE715706223C31 /* spaces-branch.md */; };
+		107A8430655DE8AC29A5EE59 /* spaces-clone.md in Resources */ = {isa = PBXBuildFile; fileRef = 4B80501ACDE08407B1530E34 /* spaces-clone.md */; };
+		348FB67073247F0AC29AE850 /* spaces-export.md in Resources */ = {isa = PBXBuildFile; fileRef = 0C7BC972E321940C068D5C87 /* spaces-export.md */; };
+		DBB5247292ED862F82B1B6CF /* spaces-hooks.md in Resources */ = {isa = PBXBuildFile; fileRef = D8087BE22B92DA8E00311877 /* spaces-hooks.md */; };
+		FA5204FE31F565B0AC60A455 /* spaces-import.md in Resources */ = {isa = PBXBuildFile; fileRef = 70030CC78A73180EF5D582D5 /* spaces-import.md */; };
+		466A196026862870617AF6CC /* spaces-lfs.md in Resources */ = {isa = PBXBuildFile; fileRef = D57766B6C9713B607AB6153F /* spaces-lfs.md */; };
+		0A6C6AE5823BA694C900F134 /* spaces-merge.md in Resources */ = {isa = PBXBuildFile; fileRef = 4DE351F52E4A3026889ED9E1 /* spaces-merge.md */; };
+		89D62CFE85A7A0FE76EE0C1E /* spaces-serve.md in Resources */ = {isa = PBXBuildFile; fileRef = 2C951DF9FFAC335F74259E44 /* spaces-serve.md */; };
+		DDB9C1520A3A515F0926BD65 /* spaces-sign.md in Resources */ = {isa = PBXBuildFile; fileRef = F19829754BA909B77188E204 /* spaces-sign.md */; };
+		61DDFF7CF081EB122F431573 /* spaces-stash.md in Resources */ = {isa = PBXBuildFile; fileRef = C6C810A6A7BD1254186393B3 /* spaces-stash.md */; };
+		332CD409934207046640E212 /* spaces-status.md in Resources */ = {isa = PBXBuildFile; fileRef = 9763AF70231E3D6999189DFF /* spaces-status.md */; };
+		B120D90A0E838F4CCD7F5E4B /* spaces-sync.md in Resources */ = {isa = PBXBuildFile; fileRef = 5E723E36836A162F1BAC829D /* spaces-sync.md */; };
+		E9649508143D6326DDD72988 /* speech.md in Resources */ = {isa = PBXBuildFile; fileRef = BD3CDB2ACA0CF0A1306227EF /* speech.md */; };
+		C14C4EE7C529926A81880D95 /* spm-binary.md in Resources */ = {isa = PBXBuildFile; fileRef = 80AC42FC6F96F1CE962AE720 /* spm-binary.md */; };
+		C7C2EEB0705AC17ED64179DF /* spm-plugin.md in Resources */ = {isa = PBXBuildFile; fileRef = 4F10C0DFCB1D918440DCB929 /* spm-plugin.md */; };
+		40205FA6D3E4D3ED1E241B2D /* spritekit.md in Resources */ = {isa = PBXBuildFile; fileRef = 4A3A9A5FB75A99F383408EB9 /* spritekit.md */; };
+		4299184A3241CFBA062B6D9F /* storekit-config.md in Resources */ = {isa = PBXBuildFile; fileRef = F3C44CF887BD680D727A28EF /* storekit-config.md */; };
+		54898D83FB491098AFE09175 /* stringcatalog.md in Resources */ = {isa = PBXBuildFile; fileRef = 25DEF98024947041C3936F21 /* stringcatalog.md */; };
+		1A3FDFBE1378B13663063028 /* subscriptions.md in Resources */ = {isa = PBXBuildFile; fileRef = 5D1B7D8B5387656C03C7E16D /* subscriptions.md */; };
+		E432C07C8E05904D8D24644B /* symbolicate.md in Resources */ = {isa = PBXBuildFile; fileRef = 9333CE1A159677D42D12FE83 /* symbolicate.md */; };
+		A25D5091AE7270A054B8C7E7 /* targets.md in Resources */ = {isa = PBXBuildFile; fileRef = B7E125ABE9B971B64785BEAA /* targets.md */; };
+		D9C609FBBEA1211C58F95903 /* testflight.md in Resources */ = {isa = PBXBuildFile; fileRef = 7E978A30147521315B72029F /* testflight.md */; };
+		3589CCE6A617007347B8C2FE /* tipkit.md in Resources */ = {isa = PBXBuildFile; fileRef = 8B5BF0C5CE956F296D3433A3 /* tipkit.md */; };
+		4F0FB68D06A317CF3941BEF9 /* translation.md in Resources */ = {isa = PBXBuildFile; fileRef = CF9253841507E0973629041F /* translation.md */; };
+		C64EA1B302F534214FECA3FB /* tvos.md in Resources */ = {isa = PBXBuildFile; fileRef = B611FBE3710ACB0409296FC1 /* tvos.md */; };
+		92A971F38F359C4AD4D48338 /* vision-framework.md in Resources */ = {isa = PBXBuildFile; fileRef = BD97B316A64F36D6ADB736AF /* vision-framework.md */; };
+		A9534DA6323ACA312280AE37 /* watch-connectivity.md in Resources */ = {isa = PBXBuildFile; fileRef = 10231BBEF03CD4C1D285A447 /* watch-connectivity.md */; };
+		2676176FEE4271A8F801CA7B /* webkit.md in Resources */ = {isa = PBXBuildFile; fileRef = 6BEFBFA488988B035E462260 /* webkit.md */; };
+		F6CB25F854FC41E85709FFAC /* workspaces.md in Resources */ = {isa = PBXBuildFile; fileRef = 5DF000EA62E795EF2FB58865 /* workspaces.md */; };
+		FFC1650C5DD093969777FDE3 /* xcconfig.md in Resources */ = {isa = PBXBuildFile; fileRef = 6A7609D30F5AE6D5F04A2A66 /* xcconfig.md */; };
+		780EBAA78E51C69BEA170E18 /* xcodebuild.md in Resources */ = {isa = PBXBuildFile; fileRef = 4FA3A928D019AC9C457A77DA /* xcodebuild.md */; };
+		1568F07C1397D9A6DFA87DDC /* xcresult.md in Resources */ = {isa = PBXBuildFile; fileRef = AE2E3B8B4ED54B854921E2C1 /* xcresult.md */; };
+		8C20D97F63E095EA3174ADBF /* xctemplate.md in Resources */ = {isa = PBXBuildFile; fileRef = 87BE033345265F5314D3D433 /* xctemplate.md */; };
+		6CD866CBF05EEA8724B2306A /* xctrace.md in Resources */ = {isa = PBXBuildFile; fileRef = EE0305CB040B2D03A407327F /* xctrace.md */; };
 		70B01CF1A3303C1C03315443 /* deps.md in Resources */ = {isa = PBXBuildFile; fileRef = 61CD065DE343EF1265EF7970 /* deps.md */; };
 		CBB97A3339C2ECAA6ABB06C6 /* design.md in Resources */ = {isa = PBXBuildFile; fileRef = 6154531835BB3A69697A5466 /* design.md */; };
 		D6538DE915FBBE8FAC747F9D /* diagram.md in Resources */ = {isa = PBXBuildFile; fileRef = 146AE8DCB57D2E6DE6CBD768 /* diagram.md */; };
@@ -9416,6 +9494,84 @@
 		8D7D416A9C1826C1EBF7535A /* darkmode.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = darkmode.md; sourceTree = "<group>"; };
 		46B47AE2EAE414CACA540EC9 /* deadcode.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = deadcode.md; sourceTree = "<group>"; };
 		BEF5DA2CD96641AA1AD86578 /* debug.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = debug.md; sourceTree = "<group>"; };
+		DDEBECA2FCAFF3599B11CF3A /* apns.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = apns.md; sourceTree = "<group>"; };
+		C52524697BD6ED88D61F7A3F /* app-thinning.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = app-thinning.md; sourceTree = "<group>"; };
+		046A5F7F1F341FF134891A3B /* appclips.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = appclips.md; sourceTree = "<group>"; };
+		53619821823B3FDAA28F806E /* appreview.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = appreview.md; sourceTree = "<group>"; };
+		F045749C04D956A90CAD1272 /* arkit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = arkit.md; sourceTree = "<group>"; };
+		9F493AD10EDA60679F88642B /* avfoundation.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = avfoundation.md; sourceTree = "<group>"; };
+		BB47D4CB6189DFF5D67BEFDC /* background-transfer.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = background-transfer.md; sourceTree = "<group>"; };
+		4477165DC6729FC00618E559 /* capabilities.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = capabilities.md; sourceTree = "<group>"; };
+		FE42BC8CB24421D45BAEF7AE /* carplay.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = carplay.md; sourceTree = "<group>"; };
+		E04C8137D1D19931A02A10CE /* cert-pinning.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = cert-pinning.md; sourceTree = "<group>"; };
+		550F6D8420A7CA1D0E77906B /* clitool.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = clitool.md; sourceTree = "<group>"; };
+		D97701C8D931D50982B4AB5E /* cloudkit-sharing.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = cloudkit-sharing.md; sourceTree = "<group>"; };
+		217CCE8DC30D35755A5F1612 /* codegen.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = codegen.md; sourceTree = "<group>"; };
+		94F03D31C11A3E685B48DEE7 /* complications.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = complications.md; sourceTree = "<group>"; };
+		286B9BB3068630579DFDF811 /* contacts.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = contacts.md; sourceTree = "<group>"; };
+		1FEB4142C4D52FC5682077BE /* controlcenter.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = controlcenter.md; sourceTree = "<group>"; };
+		992647BD6B9862D44208E241 /* core-bluetooth.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = core-bluetooth.md; sourceTree = "<group>"; };
+		25945887BA89EC3E7B055A6B /* core-haptics.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = core-haptics.md; sourceTree = "<group>"; };
+		181882F9E57D2D625288E0F4 /* core-motion.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = core-motion.md; sourceTree = "<group>"; };
+		698E8244D0829D42B9B3497E /* coreanimation.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = coreanimation.md; sourceTree = "<group>"; };
+		082A18B90C519C152BCFE34A /* coredata-cloudkit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = coredata-cloudkit.md; sourceTree = "<group>"; };
+		B2AD1AF59FB7A62781FBB267 /* coreml-convert.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = coreml-convert.md; sourceTree = "<group>"; };
+		0DAEBFB45D8DE4BB0BF075C1 /* create-ml.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = create-ml.md; sourceTree = "<group>"; };
+		B40AAE63AE6F3BAAFF8A3787 /* devicectl.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = devicectl.md; sourceTree = "<group>"; };
+		622897E5A35A4DEEE8295E0F /* dynamic-type.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = dynamic-type.md; sourceTree = "<group>"; };
+		09D38A7EA4FC83AA17657473 /* eventkit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = eventkit.md; sourceTree = "<group>"; };
+		979008F7A948CFC055F1884B /* gamekit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = gamekit.md; sourceTree = "<group>"; };
+		105C600F1E6E7A620C47B9B6 /* geofencing.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = geofencing.md; sourceTree = "<group>"; };
+		63FCC20AE87FF56CFB25FD20 /* homekit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = homekit.md; sourceTree = "<group>"; };
+		9C148DAA37CCEA1A6FE5AA3F /* metal.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = metal.md; sourceTree = "<group>"; };
+		B23C6FD3FDE1F7A168D2AD8A /* metrickit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = metrickit.md; sourceTree = "<group>"; };
+		422806F3DD89F52411A559AB /* natural-language.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = natural-language.md; sourceTree = "<group>"; };
+		67B274B95F94BAE931175469 /* nfc.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = nfc.md; sourceTree = "<group>"; };
+		0848ECAB63D5FEABEBE12A51 /* notarize.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = notarize.md; sourceTree = "<group>"; };
+		376F7F0AAA1BD92AAC05FAC7 /* pbxproj.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = pbxproj.md; sourceTree = "<group>"; };
+		3138A96B3A9A8A69776D7A21 /* pdfkit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = pdfkit.md; sourceTree = "<group>"; };
+		452CB328572D353672107898 /* pencilkit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = pencilkit.md; sourceTree = "<group>"; };
+		4802E7EFD97C800146FC889F /* playgrounds.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = playgrounds.md; sourceTree = "<group>"; };
+		799EC6A4B970AD775E7C90BE /* pluralization.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = pluralization.md; sourceTree = "<group>"; };
+		7B1358006E7778F3C51E940E /* quicklook.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = quicklook.md; sourceTree = "<group>"; };
+		7BC7A5FD0AEA382BDC9B13F3 /* receipt-validation.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = receipt-validation.md; sourceTree = "<group>"; };
+		3D9857BD821A69BC212BC7F5 /* scenekit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = scenekit.md; sourceTree = "<group>"; };
+		98A4BA9057381721FBF59D45 /* schemes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = schemes.md; sourceTree = "<group>"; };
+		D14AA5CEBD3ABE59F2DE1D4B /* simctl.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = simctl.md; sourceTree = "<group>"; };
+		DA40403D01AE715706223C31 /* spaces-branch.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-branch.md; sourceTree = "<group>"; };
+		4B80501ACDE08407B1530E34 /* spaces-clone.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-clone.md; sourceTree = "<group>"; };
+		0C7BC972E321940C068D5C87 /* spaces-export.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-export.md; sourceTree = "<group>"; };
+		D8087BE22B92DA8E00311877 /* spaces-hooks.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-hooks.md; sourceTree = "<group>"; };
+		70030CC78A73180EF5D582D5 /* spaces-import.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-import.md; sourceTree = "<group>"; };
+		D57766B6C9713B607AB6153F /* spaces-lfs.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-lfs.md; sourceTree = "<group>"; };
+		4DE351F52E4A3026889ED9E1 /* spaces-merge.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-merge.md; sourceTree = "<group>"; };
+		2C951DF9FFAC335F74259E44 /* spaces-serve.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-serve.md; sourceTree = "<group>"; };
+		F19829754BA909B77188E204 /* spaces-sign.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-sign.md; sourceTree = "<group>"; };
+		C6C810A6A7BD1254186393B3 /* spaces-stash.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-stash.md; sourceTree = "<group>"; };
+		9763AF70231E3D6999189DFF /* spaces-status.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-status.md; sourceTree = "<group>"; };
+		5E723E36836A162F1BAC829D /* spaces-sync.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spaces-sync.md; sourceTree = "<group>"; };
+		BD3CDB2ACA0CF0A1306227EF /* speech.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = speech.md; sourceTree = "<group>"; };
+		80AC42FC6F96F1CE962AE720 /* spm-binary.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spm-binary.md; sourceTree = "<group>"; };
+		4F10C0DFCB1D918440DCB929 /* spm-plugin.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spm-plugin.md; sourceTree = "<group>"; };
+		4A3A9A5FB75A99F383408EB9 /* spritekit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spritekit.md; sourceTree = "<group>"; };
+		F3C44CF887BD680D727A28EF /* storekit-config.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = storekit-config.md; sourceTree = "<group>"; };
+		25DEF98024947041C3936F21 /* stringcatalog.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = stringcatalog.md; sourceTree = "<group>"; };
+		5D1B7D8B5387656C03C7E16D /* subscriptions.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = subscriptions.md; sourceTree = "<group>"; };
+		9333CE1A159677D42D12FE83 /* symbolicate.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = symbolicate.md; sourceTree = "<group>"; };
+		B7E125ABE9B971B64785BEAA /* targets.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = targets.md; sourceTree = "<group>"; };
+		7E978A30147521315B72029F /* testflight.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = testflight.md; sourceTree = "<group>"; };
+		8B5BF0C5CE956F296D3433A3 /* tipkit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = tipkit.md; sourceTree = "<group>"; };
+		CF9253841507E0973629041F /* translation.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = translation.md; sourceTree = "<group>"; };
+		B611FBE3710ACB0409296FC1 /* tvos.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = tvos.md; sourceTree = "<group>"; };
+		BD97B316A64F36D6ADB736AF /* vision-framework.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = vision-framework.md; sourceTree = "<group>"; };
+		10231BBEF03CD4C1D285A447 /* watch-connectivity.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = watch-connectivity.md; sourceTree = "<group>"; };
+		6BEFBFA488988B035E462260 /* webkit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = webkit.md; sourceTree = "<group>"; };
+		5DF000EA62E795EF2FB58865 /* workspaces.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = workspaces.md; sourceTree = "<group>"; };
+		6A7609D30F5AE6D5F04A2A66 /* xcconfig.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = xcconfig.md; sourceTree = "<group>"; };
+		4FA3A928D019AC9C457A77DA /* xcodebuild.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = xcodebuild.md; sourceTree = "<group>"; };
+		AE2E3B8B4ED54B854921E2C1 /* xcresult.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = xcresult.md; sourceTree = "<group>"; };
+		87BE033345265F5314D3D433 /* xctemplate.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = xctemplate.md; sourceTree = "<group>"; };
+		EE0305CB040B2D03A407327F /* xctrace.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = xctrace.md; sourceTree = "<group>"; };
 		61CD065DE343EF1265EF7970 /* deps.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = deps.md; sourceTree = "<group>"; };
 		6154531835BB3A69697A5466 /* design.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = design.md; sourceTree = "<group>"; };
 		146AE8DCB57D2E6DE6CBD768 /* diagram.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = diagram.md; sourceTree = "<group>"; };
@@ -11058,6 +11214,84 @@
 				DD64FF6C7F975115B1930F4E /* adr.md */,
 				42C8EC60848BD6E3F0A7447A /* a11y.md */,
 				D39046508BFBADECFDCABCBB /* System Skills */,
+				DDEBECA2FCAFF3599B11CF3A /* apns.md */,
+				C52524697BD6ED88D61F7A3F /* app-thinning.md */,
+				046A5F7F1F341FF134891A3B /* appclips.md */,
+				53619821823B3FDAA28F806E /* appreview.md */,
+				F045749C04D956A90CAD1272 /* arkit.md */,
+				9F493AD10EDA60679F88642B /* avfoundation.md */,
+				BB47D4CB6189DFF5D67BEFDC /* background-transfer.md */,
+				4477165DC6729FC00618E559 /* capabilities.md */,
+				FE42BC8CB24421D45BAEF7AE /* carplay.md */,
+				E04C8137D1D19931A02A10CE /* cert-pinning.md */,
+				550F6D8420A7CA1D0E77906B /* clitool.md */,
+				D97701C8D931D50982B4AB5E /* cloudkit-sharing.md */,
+				217CCE8DC30D35755A5F1612 /* codegen.md */,
+				94F03D31C11A3E685B48DEE7 /* complications.md */,
+				286B9BB3068630579DFDF811 /* contacts.md */,
+				1FEB4142C4D52FC5682077BE /* controlcenter.md */,
+				992647BD6B9862D44208E241 /* core-bluetooth.md */,
+				25945887BA89EC3E7B055A6B /* core-haptics.md */,
+				181882F9E57D2D625288E0F4 /* core-motion.md */,
+				698E8244D0829D42B9B3497E /* coreanimation.md */,
+				082A18B90C519C152BCFE34A /* coredata-cloudkit.md */,
+				B2AD1AF59FB7A62781FBB267 /* coreml-convert.md */,
+				0DAEBFB45D8DE4BB0BF075C1 /* create-ml.md */,
+				B40AAE63AE6F3BAAFF8A3787 /* devicectl.md */,
+				622897E5A35A4DEEE8295E0F /* dynamic-type.md */,
+				09D38A7EA4FC83AA17657473 /* eventkit.md */,
+				979008F7A948CFC055F1884B /* gamekit.md */,
+				105C600F1E6E7A620C47B9B6 /* geofencing.md */,
+				63FCC20AE87FF56CFB25FD20 /* homekit.md */,
+				9C148DAA37CCEA1A6FE5AA3F /* metal.md */,
+				B23C6FD3FDE1F7A168D2AD8A /* metrickit.md */,
+				422806F3DD89F52411A559AB /* natural-language.md */,
+				67B274B95F94BAE931175469 /* nfc.md */,
+				0848ECAB63D5FEABEBE12A51 /* notarize.md */,
+				376F7F0AAA1BD92AAC05FAC7 /* pbxproj.md */,
+				3138A96B3A9A8A69776D7A21 /* pdfkit.md */,
+				452CB328572D353672107898 /* pencilkit.md */,
+				4802E7EFD97C800146FC889F /* playgrounds.md */,
+				799EC6A4B970AD775E7C90BE /* pluralization.md */,
+				7B1358006E7778F3C51E940E /* quicklook.md */,
+				7BC7A5FD0AEA382BDC9B13F3 /* receipt-validation.md */,
+				3D9857BD821A69BC212BC7F5 /* scenekit.md */,
+				98A4BA9057381721FBF59D45 /* schemes.md */,
+				D14AA5CEBD3ABE59F2DE1D4B /* simctl.md */,
+				DA40403D01AE715706223C31 /* spaces-branch.md */,
+				4B80501ACDE08407B1530E34 /* spaces-clone.md */,
+				0C7BC972E321940C068D5C87 /* spaces-export.md */,
+				D8087BE22B92DA8E00311877 /* spaces-hooks.md */,
+				70030CC78A73180EF5D582D5 /* spaces-import.md */,
+				D57766B6C9713B607AB6153F /* spaces-lfs.md */,
+				4DE351F52E4A3026889ED9E1 /* spaces-merge.md */,
+				2C951DF9FFAC335F74259E44 /* spaces-serve.md */,
+				F19829754BA909B77188E204 /* spaces-sign.md */,
+				C6C810A6A7BD1254186393B3 /* spaces-stash.md */,
+				9763AF70231E3D6999189DFF /* spaces-status.md */,
+				5E723E36836A162F1BAC829D /* spaces-sync.md */,
+				BD3CDB2ACA0CF0A1306227EF /* speech.md */,
+				80AC42FC6F96F1CE962AE720 /* spm-binary.md */,
+				4F10C0DFCB1D918440DCB929 /* spm-plugin.md */,
+				4A3A9A5FB75A99F383408EB9 /* spritekit.md */,
+				F3C44CF887BD680D727A28EF /* storekit-config.md */,
+				25DEF98024947041C3936F21 /* stringcatalog.md */,
+				5D1B7D8B5387656C03C7E16D /* subscriptions.md */,
+				9333CE1A159677D42D12FE83 /* symbolicate.md */,
+				B7E125ABE9B971B64785BEAA /* targets.md */,
+				7E978A30147521315B72029F /* testflight.md */,
+				8B5BF0C5CE956F296D3433A3 /* tipkit.md */,
+				CF9253841507E0973629041F /* translation.md */,
+				B611FBE3710ACB0409296FC1 /* tvos.md */,
+				BD97B316A64F36D6ADB736AF /* vision-framework.md */,
+				10231BBEF03CD4C1D285A447 /* watch-connectivity.md */,
+				6BEFBFA488988B035E462260 /* webkit.md */,
+				5DF000EA62E795EF2FB58865 /* workspaces.md */,
+				6A7609D30F5AE6D5F04A2A66 /* xcconfig.md */,
+				4FA3A928D019AC9C457A77DA /* xcodebuild.md */,
+				AE2E3B8B4ED54B854921E2C1 /* xcresult.md */,
+				87BE033345265F5314D3D433 /* xctemplate.md */,
+				EE0305CB040B2D03A407327F /* xctrace.md */,
 			);
 			path = "SC Skills";
 			sourceTree = "<group>";
@@ -17825,6 +18059,84 @@
 				CBB97A3339C2ECAA6ABB06C6 /* design.md in Resources */,
 				70B01CF1A3303C1C03315443 /* deps.md in Resources */,
 				F87649E72F28F14E44770EF0 /* debug.md in Resources */,
+				38D8D6E58268DCB666283138 /* apns.md in Resources */,
+				0CA4B462F8F7253DDDCEA2CB /* app-thinning.md in Resources */,
+				32BD48E8638C68B5C81F4FAE /* appclips.md in Resources */,
+				9EFF698FD3EBB24AA074429B /* appreview.md in Resources */,
+				9E1CC2AE5C13373EEF348140 /* arkit.md in Resources */,
+				715008DA5141FFB6600D14C9 /* avfoundation.md in Resources */,
+				B3AC98151A41C77DF58A6473 /* background-transfer.md in Resources */,
+				0388FCBBEC1F519A55C57F24 /* capabilities.md in Resources */,
+				62B78F651E8A3F669F6D8F86 /* carplay.md in Resources */,
+				E543609C4590F653BC42831A /* cert-pinning.md in Resources */,
+				F7C63B2F071BE6D855F9B3B9 /* clitool.md in Resources */,
+				2AA4358C44256A0A698E85ED /* cloudkit-sharing.md in Resources */,
+				A44B40E8624F6FDAA0D10584 /* codegen.md in Resources */,
+				A123EF482EBF441890D1608E /* complications.md in Resources */,
+				CB4B8F36674420A433C3D9B4 /* contacts.md in Resources */,
+				5903237481EFC569B48C4AA4 /* controlcenter.md in Resources */,
+				3C7D70D7BDF19EEDE84F4AA3 /* core-bluetooth.md in Resources */,
+				FF368A536272E935F2695C92 /* core-haptics.md in Resources */,
+				38CD830F6E3B6C770E88A554 /* core-motion.md in Resources */,
+				48BA80F99F2721266706EA4A /* coreanimation.md in Resources */,
+				F05064571ECCAE422D0E2ECD /* coredata-cloudkit.md in Resources */,
+				D114F3EB85913A8A3B943FDC /* coreml-convert.md in Resources */,
+				C0C443C421B9275260258F68 /* create-ml.md in Resources */,
+				51E4C81E3A0DBFBAA8EF0DC4 /* devicectl.md in Resources */,
+				21FE730EE101BB7B01237AF3 /* dynamic-type.md in Resources */,
+				FB7B825CF608A7A8E67C3AD9 /* eventkit.md in Resources */,
+				76DDD1716C7C066DD34A62EE /* gamekit.md in Resources */,
+				89C88FB78E37665119A1B39D /* geofencing.md in Resources */,
+				3A6F68E0E523C08A9B594B16 /* homekit.md in Resources */,
+				030F7F89D7FCE005620476BC /* metal.md in Resources */,
+				42C31A12BEB273726F069984 /* metrickit.md in Resources */,
+				B8964D55D5A02D25C14D2332 /* natural-language.md in Resources */,
+				808CD06EDBFF83F0BE8F0C7E /* nfc.md in Resources */,
+				5DD37128D5B54F3C3AB00495 /* notarize.md in Resources */,
+				AFFECC778BB7D9C220166E1B /* pbxproj.md in Resources */,
+				9C25E7D16B6E835AC6E0F994 /* pdfkit.md in Resources */,
+				2D34CA47A4F0D01225E076D7 /* pencilkit.md in Resources */,
+				8658AB2FC844A23B503C75E1 /* playgrounds.md in Resources */,
+				F5E3FCEEDA72A73484F0FAF1 /* pluralization.md in Resources */,
+				59C116F2A394291A4170534B /* quicklook.md in Resources */,
+				927FAD27E0312424D4E6849D /* receipt-validation.md in Resources */,
+				0CC32307AB0D6B20D00E7524 /* scenekit.md in Resources */,
+				CC15FF29EAF32A6749870D05 /* schemes.md in Resources */,
+				84B9BB8322DF051AA0D8FFFF /* simctl.md in Resources */,
+				DD350010643E5BB41B71B389 /* spaces-branch.md in Resources */,
+				107A8430655DE8AC29A5EE59 /* spaces-clone.md in Resources */,
+				348FB67073247F0AC29AE850 /* spaces-export.md in Resources */,
+				DBB5247292ED862F82B1B6CF /* spaces-hooks.md in Resources */,
+				FA5204FE31F565B0AC60A455 /* spaces-import.md in Resources */,
+				466A196026862870617AF6CC /* spaces-lfs.md in Resources */,
+				0A6C6AE5823BA694C900F134 /* spaces-merge.md in Resources */,
+				89D62CFE85A7A0FE76EE0C1E /* spaces-serve.md in Resources */,
+				DDB9C1520A3A515F0926BD65 /* spaces-sign.md in Resources */,
+				61DDFF7CF081EB122F431573 /* spaces-stash.md in Resources */,
+				332CD409934207046640E212 /* spaces-status.md in Resources */,
+				B120D90A0E838F4CCD7F5E4B /* spaces-sync.md in Resources */,
+				E9649508143D6326DDD72988 /* speech.md in Resources */,
+				C14C4EE7C529926A81880D95 /* spm-binary.md in Resources */,
+				C7C2EEB0705AC17ED64179DF /* spm-plugin.md in Resources */,
+				40205FA6D3E4D3ED1E241B2D /* spritekit.md in Resources */,
+				4299184A3241CFBA062B6D9F /* storekit-config.md in Resources */,
+				54898D83FB491098AFE09175 /* stringcatalog.md in Resources */,
+				1A3FDFBE1378B13663063028 /* subscriptions.md in Resources */,
+				E432C07C8E05904D8D24644B /* symbolicate.md in Resources */,
+				A25D5091AE7270A054B8C7E7 /* targets.md in Resources */,
+				D9C609FBBEA1211C58F95903 /* testflight.md in Resources */,
+				3589CCE6A617007347B8C2FE /* tipkit.md in Resources */,
+				4F0FB68D06A317CF3941BEF9 /* translation.md in Resources */,
+				C64EA1B302F534214FECA3FB /* tvos.md in Resources */,
+				92A971F38F359C4AD4D48338 /* vision-framework.md in Resources */,
+				A9534DA6323ACA312280AE37 /* watch-connectivity.md in Resources */,
+				2676176FEE4271A8F801CA7B /* webkit.md in Resources */,
+				F6CB25F854FC41E85709FFAC /* workspaces.md in Resources */,
+				FFC1650C5DD093969777FDE3 /* xcconfig.md in Resources */,
+				780EBAA78E51C69BEA170E18 /* xcodebuild.md in Resources */,
+				1568F07C1397D9A6DFA87DDC /* xcresult.md in Resources */,
+				8C20D97F63E095EA3174ADBF /* xctemplate.md in Resources */,
+				6CD866CBF05EEA8724B2306A /* xctrace.md in Resources */,
 				6947B5CC532B2A70BAC8D27D /* deadcode.md in Resources */,
 				0CEFBD06438CA607BB08C3FE /* darkmode.md in Resources */,
 				386D79FAA5434AFC9ECAFD1B /* crypto.md in Resources */,
