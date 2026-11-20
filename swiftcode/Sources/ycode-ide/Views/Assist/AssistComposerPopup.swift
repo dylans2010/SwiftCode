@@ -9,12 +9,15 @@ public enum ComposerTriggerMode: Equatable {
     case resource(query: String)
     case skill(query: String)
     case metaCommand(query: String)
+    case slashAction(query: String)
 }
 
 public struct ComposerResourceItem: Identifiable, Hashable {
     public enum Kind: String, Codable {
         case mcp
+        case plugin
         case file
+        case image
         case conversation
         case codeContext
         case rule
@@ -32,12 +35,24 @@ public struct ComposerResourceItem: Identifiable, Hashable {
     public var badgeText: String {
         switch kind {
         case .mcp: return "MCP"
+        case .plugin: return "Plugin"
         case .file: return "File"
+        case .image: return "Image"
         case .conversation: return "Conversation"
         case .codeContext: return "Code"
         case .rule: return "Rule"
         case .terminal: return "Terminal"
         case .reverse: return "Reverse"
+        }
+    }
+
+    public var category: String {
+        switch kind {
+        case .mcp, .plugin: return "Plugins"
+        case .conversation: return "Conversations"
+        case .file, .image, .codeContext: return "Files & Images"
+        case .rule: return "Rules"
+        case .terminal, .reverse: return "Plugins"
         }
     }
 }
@@ -194,6 +209,15 @@ public struct AssistComposerPopupView: View {
         self.onDismiss = onDismiss
     }
 
+    private var resourceCategories: [String] {
+        ["All", "Plugins", "Conversations", "Files & Images", "Rules"]
+    }
+
+    private var isResourceMode: Bool {
+        if case .resource = mode { return true }
+        return false
+    }
+
     private var metaCommandCategories: [String] {
         var cats = ["All"]
         let allCategories = Set(metaCommandManager.commands.map { $0.category })
@@ -222,6 +246,7 @@ public struct AssistComposerPopupView: View {
 
         var list: [ComposerResourceItem] = []
 
+        // 1. Conversations
         let convos = AssistConversationHistory.shared.listConversations()
         for c in convos {
             if trimmed.isEmpty || c.title.lowercased().contains(trimmed) || "conversation".contains(trimmed) || "history".contains(trimmed) {
@@ -236,6 +261,36 @@ public struct AssistComposerPopupView: View {
             }
         }
 
+        // 2. Plugins & MCP
+        for p in PluginManager.shared.installedPlugins {
+            if trimmed.isEmpty || p.name.lowercased().contains(trimmed) || "plugin".contains(trimmed) || p.description.lowercased().contains(trimmed) {
+                list.append(ComposerResourceItem(
+                    id: "plugin-\(p.id)",
+                    kind: .plugin,
+                    title: p.name,
+                    subtitle: "Installed Plugin · \(p.description)",
+                    iconName: "puzzlepiece.extension",
+                    fileURL: nil
+                ))
+            }
+        }
+
+        for s in mcpServers {
+            let serverName = s.displayName
+            if trimmed.isEmpty || serverName.lowercased().contains(trimmed) || "mcp".contains(trimmed) {
+                let sub = s.executablePath ?? (s.urlString.isEmpty ? "Configured" : s.urlString)
+                list.append(ComposerResourceItem(
+                    id: "mcp-\(s.id)",
+                    kind: .mcp,
+                    title: serverName,
+                    subtitle: "MCP Server · \(sub)",
+                    iconName: "network",
+                    fileURL: nil
+                ))
+            }
+        }
+
+        // 3. Files & Images
         let codeMatches = ["code", "context", "active", "file", "selection"]
         if trimmed.isEmpty || codeMatches.contains(where: { $0.contains(trimmed) || trimmed.contains($0) }) {
             list.append(ComposerResourceItem(
@@ -256,11 +311,42 @@ public struct AssistComposerPopupView: View {
             ))
         }
 
+        for url in projectFiles {
+            let name = url.lastPathComponent
+            if trimmed.isEmpty || name.lowercased().contains(trimmed) || url.path.lowercased().contains(trimmed) || "file".contains(trimmed) || "image".contains(trimmed) {
+                let ext = url.pathExtension.lowercased()
+                let isImage = ["png", "jpg", "jpeg", "webp", "icns", "svg"].contains(ext)
+                list.append(ComposerResourceItem(
+                    id: "file-\(url.path)",
+                    kind: isImage ? .image : .file,
+                    title: name,
+                    subtitle: url.path,
+                    iconName: isImage ? "photo" : "doc.text",
+                    fileURL: url
+                ))
+            }
+        }
+
+        // 4. Rules
+        for entry in UserMemoryManager.shared.entries {
+            if trimmed.isEmpty || entry.key.lowercased().contains(trimmed) || entry.value.lowercased().contains(trimmed) || "rule".contains(trimmed) {
+                list.append(ComposerResourceItem(
+                    id: "rule-mem-\(entry.key)",
+                    kind: .rule,
+                    title: entry.key,
+                    subtitle: "User Memory Rule · \(entry.value)",
+                    iconName: "shield.lefthalf.filled",
+                    fileURL: nil
+                ))
+            }
+        }
+
         let standardRules = [
             ("Strict Concurrency Rule", "Enforce Swift 6 Sendable and actor isolation boundaries", "rules-concurrency"),
             ("Clean Architecture Rule", "Enforce clean separation of concerns and MVVM / services", "rules-arch"),
             ("Zero Breaking Changes", "Preserve existing APIs and backward compatibility", "rules-compat"),
-            ("A11y & Dynamic Type First", "Ensure VoiceOver traits, dynamic type, and high contrast", "rules-a11y")
+            ("A11y & Dynamic Type First", "Ensure VoiceOver traits, dynamic type, and high contrast", "rules-a11y"),
+            ("Autonomous Autopilot Rule", "Start to finish execution without stalling on routine choices", "rules-autopilot")
         ]
         for (ruleName, ruleDesc, ruleId) in standardRules {
             if trimmed.isEmpty || ruleName.lowercased().contains(trimmed) || "rule".contains(trimmed) {
@@ -297,36 +383,12 @@ public struct AssistComposerPopupView: View {
             ))
         }
 
-        for s in mcpServers {
-            let serverName = s.displayName
-            if trimmed.isEmpty || serverName.lowercased().contains(trimmed) || "mcp".contains(trimmed) {
-                let sub = s.executablePath ?? (s.urlString.isEmpty ? "Configured" : s.urlString)
-                list.append(ComposerResourceItem(
-                    id: "mcp-\(s.id)",
-                    kind: .mcp,
-                    title: serverName,
-                    subtitle: "MCP Server · \(sub)",
-                    iconName: "network",
-                    fileURL: nil
-                ))
-            }
+        // Filter by selected category
+        if selectedCategory != "All" {
+            list = list.filter { $0.category == selectedCategory }
         }
 
-        for url in projectFiles {
-            let name = url.lastPathComponent
-            if trimmed.isEmpty || name.lowercased().contains(trimmed) || url.path.lowercased().contains(trimmed) || "file".contains(trimmed) {
-                list.append(ComposerResourceItem(
-                    id: "file-\(url.path)",
-                    kind: .file,
-                    title: name,
-                    subtitle: url.path,
-                    iconName: "doc.text",
-                    fileURL: url
-                ))
-            }
-        }
-
-        return Array(list.prefix(18))
+        return Array(list.prefix(24))
     }
 
     public var body: some View {
@@ -344,7 +406,7 @@ public struct AssistComposerPopupView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(isMetaCommandMode ? "Meta Slash Commands" : (isSkillMode ? "Agent Skills" : "Resources"))
+                        Text(isMetaCommandMode ? "Meta Slash Commands" : (isSkillMode ? "Agent Skills" : "Context Mentions (@)"))
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(.primary)
 
@@ -352,8 +414,12 @@ public struct AssistComposerPopupView: View {
                             Text("\(metaCommandItems.count) commands · Navigate with ↑↓ and Return ↵")
                                 .font(.system(size: 9.5))
                                 .foregroundColor(.secondary)
-                        } else if !isSkillMode {
-                            Text("Conversations, files, rules, code context & terminal buffer")
+                        } else if isSkillMode {
+                            Text("\(skillItems.count) skills · Navigate with ↑↓ and Return ↵")
+                                .font(.system(size: 9.5))
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("Plugins, Conversations, Files & Images, Rules")
                                 .font(.system(size: 9.5))
                                 .foregroundColor(.secondary)
                         }
@@ -375,10 +441,10 @@ public struct AssistComposerPopupView: View {
             .padding(.vertical, 8)
             .background(.ultraThinMaterial)
 
-            if isMetaCommandMode {
+            if isMetaCommandMode || isResourceMode {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 5) {
-                        ForEach(metaCommandCategories, id: \.self) { cat in
+                        ForEach(isMetaCommandMode ? metaCommandCategories : resourceCategories, id: \.self) { cat in
                             Button {
                                 selectedCategory = cat
                                 selectedIndex = 0
@@ -514,9 +580,17 @@ public struct AssistComposerPopupView: View {
             switch item.kind {
             case .mcp:
                 onSelectMCP(item.title)
+            case .plugin:
+                onSelectMCP("@plugin: \(item.title)")
             case .file:
                 if let url = item.fileURL {
                     onSelectFile(url)
+                }
+            case .image:
+                if let url = item.fileURL {
+                    onSelectFile(url)
+                } else {
+                    onSelectMCP("@image: \(item.title)")
                 }
             case .conversation:
                 if let url = item.fileURL {
@@ -700,9 +774,17 @@ public struct AssistComposerPopupView: View {
             switch item.kind {
             case .mcp:
                 onSelectMCP(item.title)
+            case .plugin:
+                onSelectMCP("@plugin: \(item.title)")
             case .file:
                 if let url = item.fileURL {
                     onSelectFile(url)
+                }
+            case .image:
+                if let url = item.fileURL {
+                    onSelectFile(url)
+                } else {
+                    onSelectMCP("@image: \(item.title)")
                 }
             case .conversation:
                 if let url = item.fileURL {
@@ -775,7 +857,7 @@ public struct AssistComposerPopupView: View {
                     while let fileURL = enumerator.nextObject() as? URL {
                         if found.count >= 60 { break }
                         let ext = fileURL.pathExtension.lowercased()
-                        if ["swift", "md", "json", "yml", "yaml", "toml", "txt", "sh", "py", "js", "ts", "html", "css"].contains(ext) {
+                        if ["swift", "md", "json", "yml", "yaml", "toml", "txt", "sh", "py", "js", "ts", "html", "css", "png", "jpg", "jpeg", "webp", "icns", "svg"].contains(ext) {
                             found.append(fileURL)
                         }
                     }

@@ -14,6 +14,10 @@ public final class AgentSkillManager: ObservableObject {
 
     @Published public var allSkills: [AgentSkillBundle] = []
 
+    public var installedSkills: [SkillDescriptor] {
+        SkillIndex.shared.skills
+    }
+
     private init() {
         Task {
             uploadedSkills = await SkillsRuntime.shared.getAllSkills()

@@ -22,6 +22,10 @@ public final class SkillDiscoveryService {
     public private(set) var importedSkillsCount: Int = 0
     public private(set) var discoveryLogs: [String] = []
 
+    public var allDiscoveredSkills: [SkillDescriptor] {
+        SkillIndex.shared.skills
+    }
+
     private let fileManager = FileManager.default
 
     private init() {
@@ -251,6 +255,10 @@ private struct SkillDiscoveryScanner: Sendable {
             results.append(contentsOf: scanDirectory(url, sourceKind: .other, sourceName: "Agent Ecosystem Skills"))
         }
 
+        if let scSkillsURL = Bundle.module.url(forResource: "SC Skills", withExtension: nil) {
+            results.append(contentsOf: scanDirectory(scSkillsURL, sourceKind: .swiftcode, sourceName: "SwiftCode Built-in Skills"))
+        }
+
         return results
     }
 
@@ -313,6 +321,9 @@ private struct SkillDiscoveryScanner: Sendable {
             } else if item.lastPathComponent.hasSuffix(".SKILL.md") || item.lastPathComponent.hasSuffix(".SKILLS.md") {
                 let name = item.lastPathComponent.replacingOccurrences(of: ".SKILL.md", with: "").replacingOccurrences(of: ".SKILLS.md", with: "")
                 candidates.append(DiscoveredSkillCandidate(name: name, sourceKind: sourceKind, sourceDescription: sourceName, rootDirectoryURL: item, skillFileURL: item))
+            } else if item.pathExtension.lowercased() == "md" && !item.lastPathComponent.hasPrefix("README") {
+                let name = item.deletingPathExtension().lastPathComponent
+                candidates.append(DiscoveredSkillCandidate(name: name, sourceKind: sourceKind, sourceDescription: sourceName, rootDirectoryURL: directoryURL, skillFileURL: item))
             }
         }
 

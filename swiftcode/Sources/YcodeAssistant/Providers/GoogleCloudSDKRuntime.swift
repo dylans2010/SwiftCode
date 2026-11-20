@@ -135,6 +135,11 @@ public final class GoogleCloudSDKRuntime: Sendable {
     }
 
     public func createSession(id: String = UUID().uuidString, config: GoogleCloudSDKConfiguration) async throws -> GoogleCloudSDKSession {
+        try await ensureStarted()
+
+        let resp = try await bridge.createSession(sessionId: id, config: config)
+        let convId = resp.conversationId
+
         let providerKind: ProviderKind = (config.provider == "anthropic" || config.provider == "claude") ? .anthropic : .gemini
         let sessionConfig = SDKSessionConfiguration(
             model: config.model,
@@ -146,7 +151,12 @@ public final class GoogleCloudSDKRuntime: Sendable {
             isOAuthAuthenticated: config.oauthToken != nil && !(config.oauthToken?.isEmpty ?? true),
             baseURL: config.baseURL
         )
-        return try await createSession(id: id, config: sessionConfig)
+        let session = GoogleCloudSDKSession(id: id, config: sessionConfig, bridge: bridge, conversationId: convId)
+        self.activeSessions[id] = session
+        self.activeSessionsCount = activeSessions.count
+
+        appendLog("Created session '\(id)' (Conversation ID: \(convId ?? "N/A"))")
+        return session
     }
 
     public func getSession(id: String) -> GoogleCloudSDKSession? {

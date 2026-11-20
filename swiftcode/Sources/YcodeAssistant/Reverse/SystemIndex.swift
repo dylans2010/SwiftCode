@@ -257,13 +257,18 @@ public actor SystemIndexService {
     public static let resourcesSubdirectory = "System Assets"
 
     public static let expectedDocumentNames: Set<String> = [
-        "AgentSystemAsset.md", "Identity.md", "AvailableTools.md", "CallTool.md",
+        "AgentSystemAsset.md", "AgentMode.md", "Identity.md", "AvailableTools.md", "CallTool.md",
         "Safeguards.md", "Contexts.md", "SwiftUsage.md", "AgenticLoop.md",
         "ModelProviders.md", "Streaming.md", "ErrorHandling.md", "Authentication.md",
         "ExecutionPlans.md", "Skills.md", "ProjectContext.md", "ResponseFormatting.md",
         "ContextBudgeting.md", "FileOperations.md", "BuildAndTesting.md", "SystemIndex.md",
         "ToolRoutingPolicy.md", "UsingSystem.md", "TakeScreenshot.md", "TakeScreenrecord.md", "UseApp.md",
-        "DocumentationWithGitHub.md", "LocalizingApps.md"
+        "DocumentationWithGitHub.md", "LocalizingApps.md",
+        "SwiftUIArchitecture.md", "Swift6Concurrency.md", "ActorsAndIsolation.md",
+        "CleanArchitectureSwift.md", "MVVMAndStateManagement.md", "UnitTestingBestPractices.md",
+        "XcodebuildMastery.md", "AppSandboxSecurity.md", "KeychainSecurityArchitecture.md",
+        "SwiftDataArchitecture.md", "SubagentOrchestration.md", "ToolExecutionProtocols.md",
+        "SelfHealingCodePipelines.md", "MultiTurnPlanningStrategy.md", "AutonomousVerificationProtocols.md"
     ]
 
     public var rankingWeights = SystemIndexRankingWeights()
@@ -333,6 +338,16 @@ public actor SystemIndexService {
                     if !fm.fileExists(atPath: destURL.path) {
                         try? fm.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
                         try? fm.copyItem(at: srcURL, to: destURL)
+                    } else if let srcAttr = try? fm.attributesOfItem(atPath: srcURL.path),
+                              let destAttr = try? fm.attributesOfItem(atPath: destURL.path) {
+                        let srcMod = (srcAttr[.modificationDate] as? Date) ?? Date.distantPast
+                        let destMod = (destAttr[.modificationDate] as? Date) ?? Date.distantPast
+                        let srcSize = (srcAttr[.size] as? Int64) ?? 0
+                        let destSize = (destAttr[.size] as? Int64) ?? 0
+                        if srcMod > destMod || srcSize != destSize {
+                            try? fm.removeItem(at: destURL)
+                            try? fm.copyItem(at: srcURL, to: destURL)
+                        }
                     }
                 }
             }
@@ -444,6 +459,10 @@ public actor SystemIndexService {
 
         let currentDir = fm.currentDirectoryPath
         var candidatePaths: [String] = [
+            currentDir + "/swiftcode/Sources/YcodeAssistant/System Assets",
+            currentDir + "/Sources/YcodeAssistant/System Assets",
+            currentDir + "/swiftcode/Sources/YcodeAssistant/Resources/System Assets",
+            currentDir + "/SwiftCode/swiftcode/Sources/YcodeAssistant/System Assets",
             currentDir + "/SwiftCode/Backend/Assist/Functions/System Assets",
             currentDir + "/Backend/Assist/Functions/System Assets",
             currentDir + "/System Assets"
@@ -456,6 +475,10 @@ public actor SystemIndexService {
         for anchor in anchorURLs {
             var dir = anchor.deletingLastPathComponent()
             for _ in 0..<8 {
+                candidatePaths.append(dir.appendingPathComponent("swiftcode/Sources/YcodeAssistant/System Assets").path)
+                candidatePaths.append(dir.appendingPathComponent("Sources/YcodeAssistant/System Assets").path)
+                candidatePaths.append(dir.appendingPathComponent("swiftcode/Sources/YcodeAssistant/Resources/System Assets").path)
+                candidatePaths.append(dir.appendingPathComponent("SwiftCode/swiftcode/Sources/YcodeAssistant/System Assets").path)
                 candidatePaths.append(dir.appendingPathComponent("SwiftCode/Backend/Assist/Functions/System Assets").path)
                 candidatePaths.append(dir.appendingPathComponent("Backend/Assist/Functions/System Assets").path)
                 candidatePaths.append(dir.appendingPathComponent("System Assets").path)
@@ -798,7 +821,7 @@ public actor SystemIndexService {
 
     public nonisolated func baselinePrompt() -> String {
         var parts: [String] = []
-        for name in ["AgentSystemAsset.md", "Identity.md", "Safeguards.md", "TaskCompletion.md", "ToolRoutingPolicy.md"] {
+        for name in ["AgentSystemAsset.md", "AgentMode.md", "Identity.md", "Safeguards.md", "AvailableTools.md", "TaskCompletion.md", "ToolRoutingPolicy.md"] {
             if let text = assetText(forRelativePath: name), !text.isEmpty {
                 parts.append(text)
             }
@@ -808,7 +831,7 @@ public actor SystemIndexService {
 
     private func fallbackBaselineSections() -> [SystemIndexRetrieval] {
         var out: [SystemIndexRetrieval] = []
-        for name in ["Identity.md", "Safeguards.md", "AgentSystemAsset.md", "TaskCompletion.md", "ToolRoutingPolicy.md"] {
+        for name in ["Identity.md", "Safeguards.md", "AgentSystemAsset.md", "AgentMode.md", "AvailableTools.md", "TaskCompletion.md", "ToolRoutingPolicy.md"] {
             guard let text = Self.shared.assetText(forRelativePath: name), !text.isEmpty else { continue }
             out.append(SystemIndexRetrieval(
                 sectionID: "bundle-fallback#\(name)", documentPath: name,
@@ -989,7 +1012,7 @@ public actor SystemIndexService {
         case .authentication:
             return ["auth", "oauth", "signin", "login", "token", "credential", "apikey", "secret", "session"]
         case .toolUse:
-            return ["tool", "execute", "terminal", "command", "shell", "call", "screenshot", "screenrecord", "capture", "window", "display", "navigate", "interact", "click", "app"]
+            return ["tool", "tools", "registry", "capabilities", "catalog", "execute", "terminal", "command", "shell", "call", "screenshot", "screenrecord", "capture", "window", "display", "navigate", "interact", "click", "app", "available"]
         case .planning:
             return ["plan", "steps", "task", "execute", "workflow"]
         case .streaming:

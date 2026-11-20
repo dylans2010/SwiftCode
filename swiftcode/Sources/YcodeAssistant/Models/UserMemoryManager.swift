@@ -71,6 +71,10 @@ public final class UserMemoryManager {
     }
 
     @discardableResult
+    public func saveEntry(key: String, value: String, category: String = "General") -> Bool {
+        saveMemory(key: key, value: value, category: category)
+    }
+
     public func saveMemory(key: String, value: String, category: String = "General") -> Bool {
         guard AppSettings.shared.enableUserMemory else {
             logger.info("UserMemory is disabled in settings; rejecting write for key '\(key)'.")

@@ -30,6 +30,24 @@ struct PluginConfigField: Codable, Hashable, Identifiable {
     var isRequired: Bool
 }
 
+public struct InstalledPluginInfo: Identifiable, Hashable, Sendable {
+    public let id: String
+    public let name: String
+    public let version: String
+    public let description: String
+    public let author: String
+    public let isEnabled: Bool
+
+    public init(id: String, name: String, version: String, description: String, author: String, isEnabled: Bool) {
+        self.id = id
+        self.name = name
+        self.version = version
+        self.description = description
+        self.author = author
+        self.isEnabled = isEnabled
+    }
+}
+
 struct PluginManifest: Identifiable, Codable {
     var id: String
     var name: String
@@ -37,7 +55,7 @@ struct PluginManifest: Identifiable, Codable {
     var description: String
     var author: String
     var entryPoint: String
-    var capabilities: [Capability]
+    var capabilities: [Capability] = []
     var isEnabled: Bool = true
 
     var tags: [String] = []
@@ -46,7 +64,7 @@ struct PluginManifest: Identifiable, Codable {
     var automationSteps: [PluginAutomationStep] = []
     var configurationSchema: [PluginConfigField] = []
 
-    enum Capability: String, Codable, CaseIterable {
+    public enum Capability: String, Codable, CaseIterable {
         case codeCompletion
         case syntaxHighlight
         case buildTool
@@ -111,12 +129,29 @@ struct PluginManifest: Identifiable, Codable {
 }
 
 @MainActor
-final class PluginManager: ObservableObject {
-    static let shared = PluginManager()
+public final class PluginManager: ObservableObject {
+    public static let shared = PluginManager()
 
-    @Published var plugins: [PluginManifest] = []
-    @Published var isLoading = false
-    @Published var errorMessage: String?
+    var plugins: [PluginManifest] = [] {
+        willSet {
+            objectWillChange.send()
+        }
+    }
+    @Published public var isLoading = false
+    @Published public var errorMessage: String?
+
+    public var installedPlugins: [InstalledPluginInfo] {
+        plugins.map {
+            InstalledPluginInfo(
+                id: $0.id,
+                name: $0.name,
+                version: $0.version,
+                description: $0.description,
+                author: $0.author,
+                isEnabled: $0.isEnabled
+            )
+        }
+    }
 
     private var pluginsDirectory: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]

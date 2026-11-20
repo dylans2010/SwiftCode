@@ -2,16 +2,14 @@ import AppKit
 import SwiftUI
 import YcodeAssistant
 
-
-
-
 @MainActor
 public enum WorkersPanel {
-    
-    
-    public static func present(from presenter: NSViewController?) {
+    /// Presents the full Assist Workers dashboard as a modal sheet from the current view controller or key window.
+    public static func present(from presenter: NSViewController? = nil) {
         let host = NSHostingController(rootView: WorkersMainView())
+        host.preferredContentSize = CGSize(width: 620, height: 540)
         host.sizingOptions = [.preferredContentSize]
+
         if let presenter, presenter.view.window != nil {
             presenter.presentAsSheet(host)
         } else if let content = NSApp.keyWindow?.contentViewController {
@@ -19,7 +17,7 @@ public enum WorkersPanel {
         }
     }
 
-    
+    /// Returns a localized, concise title for toolbar or status buttons representing the current worker runtime state.
     public static func buttonTitle() -> String {
         let state = WorkerRuntimeState.shared
         let active = state.activeWorkers.count
@@ -29,8 +27,6 @@ public enum WorkersPanel {
     }
 }
 
-
-
 @MainActor
 public final class WorkersStripView: NSView {
     private let hosting: NSHostingView<WorkersOnAssistView>
@@ -39,6 +35,7 @@ public final class WorkersStripView: NSView {
         hosting = NSHostingView(rootView: WorkersOnAssistView())
         hosting.sizingOptions = [.intrinsicContentSize]
         super.init(frame: .zero)
+        wantsLayer = true
         hosting.translatesAutoresizingMaskIntoConstraints = false
         addSubview(hosting)
         NSLayoutConstraint.activate([
@@ -52,7 +49,7 @@ public final class WorkersStripView: NSView {
     }
 
     @available(*, unavailable)
-    required init?(coder: NSCoder) { fatalError() }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     private func observe() {
         withObservationTracking {

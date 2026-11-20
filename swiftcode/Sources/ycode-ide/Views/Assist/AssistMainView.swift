@@ -4,6 +4,7 @@ import AppKit
 #endif
 import os
 import YcodeAssistant
+import YcodeUI
 
 private let logger = Logger(subsystem: "com.swiftcode.app", category: "AssistMainView")
 
@@ -126,8 +127,12 @@ public struct AssistMainView: View {
                     }
                 } label: {
                     HStack(spacing: 5) {
+                        Image(systemName: "bubble.left.and.bubble.right.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Color.accentColor)
+
                         Text(currentTaskTitle)
-                            .font(.system(size: 13, weight: .bold))
+                            .font(.system(size: 12.5, weight: .semibold))
                             .foregroundStyle(.primary)
                             .lineLimit(1)
 
@@ -135,6 +140,9 @@ public struct AssistMainView: View {
                             .font(.system(size: 8, weight: .bold))
                             .foregroundStyle(.secondary)
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .liquidGlass(style: .subtle, cornerRadius: 8)
                     .contentShape(Rectangle())
                 }
                 .menuStyle(.borderlessButton)
@@ -163,10 +171,7 @@ public struct AssistMainView: View {
                     }
                     .padding(.horizontal, 9)
                     .padding(.vertical, 5)
-                    .background(Color.primary.opacity(0.06), in: Capsule())
-                    .overlay(
-                        Capsule().stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
-                    )
+                    .liquidGlass(style: .subtle, cornerRadius: 10)
                 }
                 .buttonStyle(.plain)
                 .help("Select Model (Anthropic, OpenAI, Gemini, Ollama, HuggingFace Offline)")
@@ -206,15 +211,15 @@ public struct AssistMainView: View {
                     Circle()
                         .fill(isOfflineActive ? Color.purple : (isProviderReady ? Color.green : Color.orange))
                         .frame(width: 6, height: 6)
-                        .shadow(color: (isOfflineActive ? Color.purple : (isProviderReady ? Color.green : Color.orange)).opacity(0.6), radius: 3)
+                        .shadow(color: (isOfflineActive ? Color.purple : (isProviderReady ? Color.green : Color.orange)).opacity(0.8), radius: 3)
 
                     Text(isOfflineActive ? "Offline" : (isProviderReady ? "Online" : "Key Needed"))
-                        .font(.system(size: 9, weight: .bold))
+                        .font(.system(size: 9.5, weight: .bold))
                         .foregroundStyle(isOfflineActive ? Color.purple : (isProviderReady ? Color.green : Color.orange))
                 }
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background((isOfflineActive ? Color.purple : (isProviderReady ? Color.green : Color.orange)).opacity(0.12), in: Capsule())
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3.5)
+                .liquidGlass(style: .subtle, cornerRadius: 10, tint: isOfflineActive ? Color.purple : (isProviderReady ? Color.green : Color.orange))
 
                 Spacer()
 
@@ -312,11 +317,14 @@ public struct AssistMainView: View {
                 .buttonStyle(.plain)
                 .help("System Diagnostics")
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(.thinMaterial)
-
-            Divider()
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.08))
+                    .frame(height: 1)
+            }
 
             if manager.messages.isEmpty {
                 VStack(spacing: 12) {
@@ -346,22 +354,26 @@ public struct AssistMainView: View {
                     ScrollViewReader { proxy in
                         ScrollView {
                             LazyVStack(spacing: 16) {
-                                HStack {
+                                HStack(spacing: 8) {
                                     Image(systemName: "magnifyingglass")
+                                        .font(.system(size: 11))
                                         .foregroundStyle(.secondary)
                                     TextField("Search chats...", text: $searchConversationText)
-                                            .textFieldStyle(.plain)
+                                        .textFieldStyle(.plain)
+                                        .font(.system(size: 12))
                                     if !searchConversationText.isEmpty {
                                         Button {
                                             searchConversationText = ""
                                         } label: {
                                             Image(systemName: "xmark.circle.fill")
+                                                .font(.system(size: 11))
                                                 .foregroundStyle(.secondary)
                                         }
                                         .buttonStyle(.plain)
                                     }
                                 }
-                                .padding(6)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
                                 .liquidGlass(style: .subtle, cornerRadius: 8)
                                 .padding(.horizontal, 12)
                                 .padding(.top, 8)
@@ -374,7 +386,9 @@ public struct AssistMainView: View {
                                     } else if message.noticeLevel != nil {
                                         AssistNoticeView(message: message)
                                     } else {
-                                        AssistChatBubble(message: message)
+                                        AssistChatBubble(message: message, onEditUserMessage: { text in
+                                            inputText = text
+                                        })
                                     }
                                 }
 
@@ -625,7 +639,12 @@ public struct AssistMainView: View {
                 inputArea
             }
             .padding(12)
-            .background(.thinMaterial)
+            .background(.ultraThinMaterial)
+            .overlay(alignment: .top) {
+                Rectangle()
+                    .fill(Color.primary.opacity(0.08))
+                    .frame(height: 1)
+            }
         }
         .background(.windowBackground)
         .overlay {
@@ -918,14 +937,7 @@ public struct AssistMainView: View {
                 }
             }
             .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.secondary.opacity(0.08))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.accentColor.opacity(0.25), lineWidth: 1)
-            )
+            .liquidGlass(style: .standard, cornerRadius: 12, tint: .accentColor)
             .padding(.horizontal, 4)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
@@ -948,10 +960,7 @@ public struct AssistMainView: View {
                         .textFieldStyle(.plain)
                         .font(.system(size: 12))
                         .padding(6)
-                        .background(
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(Color.secondary.opacity(0.12))
-                        )
+                        .liquidGlass(style: .subtle, cornerRadius: 6)
                         .lineLimit(1...4)
                         .onSubmit {
                             saveEditedQueueItem(id: item.id)
@@ -1080,10 +1089,7 @@ public struct AssistMainView: View {
             }
         }
         .padding(8)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: .controlBackgroundColor).opacity(0.7))
-        )
+        .liquidGlass(style: .subtle, cornerRadius: 8)
     }
 
     private func saveEditedQueueItem(id: UUID) {
@@ -1210,10 +1216,17 @@ public struct AssistMainView: View {
                     let modelName = currentActiveModelShortName.isEmpty ? "Claude Agent" : currentActiveModelShortName
                     let placeholder = isBusy ? "Queue next message..." : "Message \(modelName)"
                     TextField(placeholder, text: $inputText, axis: .vertical)
-                        .padding(8)
+                        .padding(9)
                         .background(
-                            RoundedRectangle(cornerRadius: 10)
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
                                 .fill(.regularMaterial)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .strokeBorder(
+                                    isEnhancingPrompt ? Color.accentColor.opacity(0.6) : Color.white.opacity(0.12),
+                                    lineWidth: 1
+                                )
                         )
                         .lineLimit(1...5)
                         .disabled(isEnhancingPrompt || isProcessingFiles)
@@ -1226,7 +1239,7 @@ public struct AssistMainView: View {
                 }
                 .overlay {
                     if isEnhancingPrompt {
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .stroke(Color.accentColor.opacity(0.4), lineWidth: 1)
                     }
                 }
@@ -1346,7 +1359,7 @@ public struct AssistMainView: View {
             .padding(.horizontal, 4)
         }
         .padding(10)
-        .liquidGlass(style: .standard, cornerRadius: 16)
+        .liquidGlass(style: .floatingBar, cornerRadius: 16)
         .popover(isPresented: $showReverseFillOut, arrowEdge: .top) {
             ReverseFillOutView(
                 isPresented: $showReverseFillOut,
@@ -1361,22 +1374,39 @@ public struct AssistMainView: View {
         }
         .overlay(alignment: .bottomLeading) {
             if let mode = composerTriggerMode {
-                AssistComposerPopupView(
-                    mode: mode,
-                    onSelectSkill: { skill in selectSkill(skill) },
-                    onSelectMCP: { server in selectMCP(server) },
-                    onSelectFile: { url in selectFile(url) },
-                    onSelectMetaCommand: { command, arg in selectMetaCommand(command, argument: arg) },
-                    onRequestCommandArguments: { command in
-                        selectedMetaCommandForArgs = command
-                        composerTriggerMode = nil
-                    },
-                    onSelectReverse: { selectReverse() },
-                    onDismiss: { composerTriggerMode = nil }
-                )
-                .padding(.bottom, 60)
-                .padding(.leading, 8)
-                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                switch mode {
+                case .slashAction(let query):
+                    SkillsActionsSlashView(
+                        query: query,
+                        onSelectAction: { item in
+                            selectSlashAction(item)
+                        },
+                        onDismiss: {
+                            composerTriggerMode = nil
+                        }
+                    )
+                    .padding(.bottom, 60)
+                    .padding(.leading, 8)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+
+                case .resource, .skill, .metaCommand:
+                    AssistComposerPopupView(
+                        mode: mode,
+                        onSelectSkill: { skill in selectSkill(skill) },
+                        onSelectMCP: { server in selectMCP(server) },
+                        onSelectFile: { url in selectFile(url) },
+                        onSelectMetaCommand: { command, arg in selectMetaCommand(command, argument: arg) },
+                        onRequestCommandArguments: { command in
+                            selectedMetaCommandForArgs = command
+                            composerTriggerMode = nil
+                        },
+                        onSelectReverse: { selectReverse() },
+                        onDismiss: { composerTriggerMode = nil }
+                    )
+                    .padding(.bottom, 60)
+                    .padding(.leading, 8)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                }
             } else if let command = selectedMetaCommandForArgs {
                 MetaCommandArgumentPickerView(
                     command: command,
@@ -1402,6 +1432,33 @@ public struct AssistMainView: View {
             return
         }
         guard !text.isEmpty && !isProcessingFiles else { return }
+
+        if text.hasPrefix("/") {
+            let parts = text.split(separator: " ", maxSplits: 1).map(String.init)
+            let cmd = parts[0].lowercased()
+            let arg = parts.count > 1 ? parts[1] : nil
+            if ["/schedule", "/compact", "/goal", "/teamwork", "/interview", "/learn", "/boost"].contains(cmd) {
+                inputText = ""
+                attachedFiles = []
+                selectedExplicitSkills = []
+                selectedExplicitMCPServers = []
+                selectedExplicitFiles = []
+                Task {
+                    let execution = await SlashCommandExecutionEngine.shared.execute(command: cmd, argument: arg)
+                    await MainActor.run {
+                        if let msg = execution.messageToInsert {
+                            self.inputText = msg
+                            if execution.shouldSubmitImmediately {
+                                self.submitMessage()
+                            }
+                        } else {
+                            logger.info("Direct slash command executed: \(execution.feedbackText)")
+                        }
+                    }
+                }
+                return
+            }
+        }
 
         let filesToSend = attachedFiles
         let envelope = AssistTaskEnvelope(
@@ -1440,13 +1497,37 @@ public struct AssistMainView: View {
             composerTriggerMode = .resource(query: query)
         } else if lastWord.hasPrefix("/") {
             let query = String(lastWord.dropFirst())
-            if settings.isMetaAssist && settings.useMetaSlashCommands {
-                composerTriggerMode = .metaCommand(query: query)
-            } else {
-                composerTriggerMode = .skill(query: query)
-            }
+            composerTriggerMode = .slashAction(query: query)
         } else {
             composerTriggerMode = nil
+        }
+    }
+
+    private func selectSlashAction(_ item: SlashPaletteItem) {
+        consumeTrailingToken(prefix: "/")
+        composerTriggerMode = nil
+
+        switch item.kind {
+        case .builtIn:
+            Task {
+                let execution = await SlashCommandExecutionEngine.shared.execute(command: item.command)
+                await MainActor.run {
+                    if let msg = execution.messageToInsert {
+                        self.inputText = msg
+                        if execution.shouldSubmitImmediately {
+                            self.submitMessage()
+                        }
+                    } else {
+                        logger.info("Slash command executed: \(execution.feedbackText)")
+                    }
+                }
+            }
+        case .skill:
+            if let skill = item.skillDescriptor {
+                selectSkill(skill)
+            } else {
+                inputText += "\(item.command) "
+            }
         }
     }
 
@@ -1843,20 +1924,13 @@ private struct ServerErrorDialog: View {
 
 private struct AssistChatBubble: View {
     let message: AssistMessage
+    var onEditUserMessage: ((String) -> Void)? = nil
     @State private var manager = AssistManager.shared
     @State private var settings = AppSettings.shared
     @State private var sdkEventStore = SDKToolEventStore.shared
 
     private var alignment: HorizontalAlignment {
         message.role == .user ? .trailing : .leading
-    }
-
-    private var bubbleColor: Color {
-        switch message.role {
-        case .user: return Color.primary.opacity(0.06)
-        case .assistant: return Color.secondary.opacity(0.06)
-        case .system: return Color.secondary.opacity(0.08)
-        }
     }
 
     private var isCurrentlyThinking: Bool {
@@ -1888,6 +1962,58 @@ private struct AssistChatBubble: View {
                             .font(.system(size: 13))
                             .foregroundStyle(Color.accentColor)
                     }
+
+                    if let envelope = message.envelope {
+                        AssistInfoView(envelope: envelope, messageText: message.content)
+                    }
+
+                    VStack(alignment: .trailing, spacing: 6) {
+                        Text(message.content)
+                            .font(.body)
+                            .lineSpacing(3)
+                            .textSelection(.enabled)
+                            .foregroundStyle(.primary)
+
+                        if let attachments = message.attachments, !attachments.isEmpty {
+                            VStack(alignment: .trailing, spacing: 4) {
+                                ForEach(attachments) { file in
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "doc.fill")
+                                            .font(.caption2)
+                                            .foregroundStyle(Color.accentColor)
+                                        Text(file.filename)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        Text(ByteCountFormatter.string(fromByteCount: file.size, countStyle: .file))
+                                            .font(.system(size: 9))
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 4))
+                                }
+                            }
+                            .padding(.top, 2)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(Color.accentColor.opacity(0.12))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .strokeBorder(Color.accentColor.opacity(0.24), lineWidth: 1)
+                    )
+
+                    AssistUserMessageActionBar(
+                        content: message.content,
+                        onEdit: {
+                            onEditUserMessage?(message.content)
+                        }
+                    )
                 } else if message.role == .system {
                     HStack(spacing: 5) {
                         Image(systemName: "gearshape.fill")
@@ -1898,6 +2024,12 @@ private struct AssistChatBubble: View {
                             .foregroundStyle(.secondary)
                         Spacer()
                     }
+
+                    Text(message.content)
+                        .font(.system(size: 12, design: .monospaced))
+                        .padding(10)
+                        .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+                        .foregroundStyle(.secondary)
                 } else {
                     HStack(spacing: 6) {
                         ZStack {
@@ -1922,122 +2054,185 @@ private struct AssistChatBubble: View {
                         }
                         Spacer()
                     }
-                }
 
-                if message.role == .user {
-                    AssistInfoView(envelope: message.envelope, messageText: message.content)
-                }
-
-                if let thinking = message.thinkingContent, !thinking.isEmpty {
-                    MetaAssistThinkingUI(
-                        thinkingContent: thinking,
-                        duration: message.thinkingDuration,
-                        isStreaming: isCurrentlyThinking
-                    )
-                }
-
-                if hasContent || hasActivity || hasAttachments {
-
-                VStack(alignment: .leading, spacing: 8) {
-                    if let memoryTool = message.activityGroup?.tools.first(where: { $0.toolId == "save_to_memory" || $0.toolId == "manage_memory" }) {
-                        AssistMemoryUI(
-                            key: memoryTool.purpose.isEmpty ? "Context Stored in Memory" : memoryTool.purpose,
-                            value: memoryTool.result.isEmpty ? "Saved to Application Support/SwiftCode/UserMemory.md" : memoryTool.result,
-                            category: "Developer Memory"
+                    if let thinking = message.thinkingContent, !thinking.isEmpty {
+                        MetaAssistThinkingUI(
+                            thinkingContent: thinking,
+                            duration: message.thinkingDuration,
+                            isStreaming: isCurrentlyThinking
                         )
                     }
 
-                    if let activity = message.activityGroup, activity.hasContent {
-                        MuseCallsNativeToolsUI(activityGroup: activity)
-                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        // Tool calls & tool outputs in sleek modern glass containers
+                        if let memoryTool = message.activityGroup?.tools.first(where: { $0.toolId == "save_to_memory" || $0.toolId == "manage_memory" }) {
+                            AssistMemoryUI(
+                                key: memoryTool.purpose.isEmpty ? "Context Stored in Memory" : memoryTool.purpose,
+                                value: memoryTool.result.isEmpty ? "Saved to Application Support/SwiftCode/UserMemory.md" : memoryTool.result,
+                                category: "Developer Memory"
+                            )
+                            .padding(8)
+                            .liquidGlass(style: .subtle, cornerRadius: 10)
+                        }
 
-                    if message.id == manager.agentSession.sdkMessageId,
-                       let sdkSessionId = manager.agentSession.sdkSessionId,
-                       let sdkKind = manager.agentSession.sdkSessionKind {
-                        let sdkEvents = sdkEventStore.events(for: sdkSessionId)
-                        if !sdkEvents.isEmpty {
-                            switch sdkKind {
-                            case .openRouter:
-                                ORToolsUIView(events: sdkEvents)
-                            case .hermes:
-                                HermesToolsUIView(events: sdkEvents)
-                            case .openCode:
-                                OCToolsUIView(events: sdkEvents)
+                        if let activity = message.activityGroup, activity.hasContent {
+                            MuseCallsNativeToolsUI(activityGroup: activity)
+                                .padding(8)
+                                .liquidGlass(style: .subtle, cornerRadius: 10)
+                        }
+
+                        if message.id == manager.agentSession.sdkMessageId,
+                           let sdkSessionId = manager.agentSession.sdkSessionId,
+                           let sdkKind = manager.agentSession.sdkSessionKind {
+                            let sdkEvents = sdkEventStore.events(for: sdkSessionId)
+                            if !sdkEvents.isEmpty {
+                                Group {
+                                    switch sdkKind {
+                                    case .openRouter:
+                                        ORToolsUIView(events: sdkEvents)
+                                    case .hermes:
+                                        HermesToolsUIView(events: sdkEvents)
+                                    case .openCode:
+                                        OCToolsUIView(events: sdkEvents)
+                                    }
+                                }
+                                .padding(8)
+                                .liquidGlass(style: .subtle, cornerRadius: 10)
                             }
                         }
-                    }
 
-                    if !message.content.isEmpty {
-                        let blocks = YcodeUI.MarkdownParser.shared.parse(message.content)
-                        if blocks.isEmpty {
-                            Text(message.content)
-                                .font(.body)
-                                .lineSpacing(4)
-                                .textSelection(.enabled)
-                        } else {
-                            MarkdownBlockListView(blocks: blocks)
-                                .textSelection(.enabled)
+                        // Direct AI text rendering - NO card background, NO box, NO border
+                        if !message.content.isEmpty {
+                            let blocks = YcodeUI.MarkdownParser.shared.parse(message.content)
+                            VStack(alignment: .leading, spacing: 4) {
+                                if blocks.isEmpty {
+                                    Text(message.content)
+                                        .font(.body)
+                                        .lineSpacing(4)
+                                        .textSelection(.enabled)
+                                } else {
+                                    MarkdownBlockListView(blocks: blocks)
+                                        .textSelection(.enabled)
+                                }
+
+                                if message.id == manager.messages.last?.id && manager.isProcessing {
+                                    HStack(spacing: 4) {
+                                        Circle()
+                                            .fill(Color.accentColor)
+                                            .frame(width: 6, height: 6)
+                                            .opacity(0.8)
+                                    }
+                                    .padding(.top, 2)
+                                }
+                            }
+                            .padding(.horizontal, 2)
+                            .padding(.vertical, 2)
                         }
 
-                        if message.id == manager.messages.last?.id && manager.isProcessing {
-                            HStack(spacing: 4) {
-                                Circle()
-                                    .fill(Color.accentColor)
-                                    .frame(width: 6, height: 6)
-                                    .opacity(0.8)
+                        if let activity = message.activityGroup, !activity.files.isEmpty {
+                            if !isMetaMessage {
+                                AssistActivityView(activityGroup: activity)
+                                    .padding(8)
+                                    .liquidGlass(style: .subtle, cornerRadius: 10)
+                            }
+                        }
+
+                        if let attachments = message.attachments, !attachments.isEmpty {
+                            VStack(alignment: .leading, spacing: 4) {
+                                ForEach(attachments) { file in
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "doc")
+                                            .font(.caption2)
+                                            .foregroundStyle(.tertiary)
+                                        Text(file.filename)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                        Spacer()
+                                        Text(ByteCountFormatter.string(fromByteCount: file.size, countStyle: .file))
+                                            .font(.system(size: 9))
+                                            .foregroundStyle(.tertiary)
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .liquidGlass(style: .subtle, cornerRadius: 6)
+                                }
                             }
                             .padding(.top, 2)
                         }
                     }
 
-                    if let activity = message.activityGroup, !activity.files.isEmpty {
-                        if !isMetaMessage {
-                            AssistActivityView(activityGroup: activity)
-                                .padding(.top, 2)
-                        }
+                    if !isCurrentlyThinking && (!message.content.isEmpty || message.activityGroup?.hasContent == true) {
+                        AssistMessageActionBar(message: message)
                     }
-
-                    if let attachments = message.attachments, !attachments.isEmpty {
-                        VStack(alignment: .leading, spacing: 4) {
-                            ForEach(attachments) { file in
-                                HStack(spacing: 6) {
-                                    Image(systemName: "doc")
-                                        .font(.caption2)
-                                        .foregroundStyle(.tertiary)
-                                    Text(file.filename)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Spacer()
-                                    Text(ByteCountFormatter.string(fromByteCount: file.size, countStyle: .file))
-                                        .font(.system(size: 9))
-                                        .foregroundStyle(.tertiary)
-                                }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 4))
-                            }
-                        }
-                        .padding(.top, 4)
-                    }
-                }
-                .padding(12)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(message.role == .user ? Color.accentColor.opacity(0.12) : Color(NSColor.controlBackgroundColor).opacity(0.65))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(message.role == .user ? Color.accentColor.opacity(0.22) : Color.primary.opacity(0.08), lineWidth: 1)
-                )
-                }
-
-                if message.role == .assistant && !isCurrentlyThinking && (!message.content.isEmpty || message.activityGroup?.hasContent == true) {
-                    AssistMessageActionBar(message: message)
                 }
             }
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, alignment: message.role == .user ? .trailing : .leading)
         }
+    }
+}
+
+private struct AssistUserMessageActionBar: View {
+    let content: String
+    let onEdit: () -> Void
+
+    @State private var isCopied: Bool = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Button {
+                let pasteboard = NSPasteboard.general
+                pasteboard.clearContents()
+                pasteboard.setString(content, forType: .string)
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    isCopied = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isCopied = false
+                    }
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text(isCopied ? "Copied" : "Copy")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundStyle(isCopied ? Color.green : Color.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3.5)
+                .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                )
+            }
+            .buttonStyle(.plain)
+            .help("Copy prompt to clipboard")
+
+            Button {
+                onEdit()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 10, weight: .semibold))
+                    Text("Edit")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundStyle(Color.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3.5)
+                .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                )
+            }
+            .buttonStyle(.plain)
+            .help("Edit prompt and re-submit")
+        }
+        .padding(.top, 2)
     }
 }
 
@@ -2053,7 +2248,7 @@ private struct AssistMessageActionBar: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Button {
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
@@ -2075,12 +2270,16 @@ private struct AssistMessageActionBar: View {
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundStyle(isCopied ? Color.green : Color.secondary)
-                    .padding(.horizontal, 7)
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 3.5)
-                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
+                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                    )
                 }
                 .buttonStyle(.plain)
-                .help("Copy message content to clipboard")
+                .help("Copy message markdown to clipboard")
 
                 Button {
                     retryMessage()
@@ -2092,9 +2291,13 @@ private struct AssistMessageActionBar: View {
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundStyle(Color.secondary)
-                    .padding(.horizontal, 7)
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 3.5)
-                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
+                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                    )
                 }
                 .buttonStyle(.plain)
                 .disabled(manager.isProcessing)
@@ -2132,9 +2335,13 @@ private struct AssistMessageActionBar: View {
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundStyle(didThumbsUp ? Color.green : Color.secondary)
-                    .padding(.horizontal, 7)
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 3.5)
-                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
+                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                    )
                 }
                 .buttonStyle(.plain)
                 .help("Mark this response as helpful")
@@ -2149,9 +2356,13 @@ private struct AssistMessageActionBar: View {
                             .font(.system(size: 11, weight: .medium))
                     }
                     .foregroundStyle(isGeneratingFeedback ? Color.accentColor : Color.secondary)
-                    .padding(.horizontal, 7)
+                    .padding(.horizontal, 8)
                     .padding(.vertical, 3.5)
-                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
+                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+                    )
                 }
                 .buttonStyle(.plain)
                 .disabled(isGeneratingFeedback)
@@ -2168,9 +2379,13 @@ private struct AssistMessageActionBar: View {
                                 .font(.system(size: 11, weight: .semibold))
                         }
                         .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 7)
+                        .padding(.horizontal, 8)
                         .padding(.vertical, 3.5)
-                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 5))
+                        .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(Color.accentColor.opacity(0.25), lineWidth: 0.8)
+                        )
                     }
                     .buttonStyle(.plain)
                     .transition(.opacity.combined(with: .scale))
@@ -3288,12 +3503,40 @@ struct AssistCustomModelPickerPopover: View {
         }
     }
 
+    private var allDiscoveredModels: [AssistAvailableModel] {
+        var seen = Set<String>()
+        var list: [AssistAvailableModel] = []
+        for group in discoveryService.modelsByProvider {
+            for model in group.models {
+                if !seen.contains(model.modelIdentifier) {
+                    seen.insert(model.modelIdentifier)
+                    list.append(model)
+                }
+            }
+        }
+        return list
+    }
+
+    private var filteredModels: [AssistAvailableModel] {
+        allDiscoveredModels.filter { model in
+            if searchText.isEmpty { return true }
+            let query = searchText.lowercased()
+            return model.displayName.lowercased().contains(query) ||
+                   model.modelIdentifier.lowercased().contains(query) ||
+                   model.providerName.lowercased().contains(query)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Label("Available Models", systemImage: "sparkles")
+                Image(systemName: "sparkles")
                     .font(.system(size: 13, weight: .bold))
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
+
+                Text("Available Models")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(.primary)
 
                 if discoveryService.isDiscovering {
                     ProgressView()
@@ -3309,7 +3552,7 @@ struct AssistCustomModelPickerPopover: View {
                     }
                 } label: {
                     Image(systemName: "arrow.clockwise")
-                        .font(.system(size: 11))
+                        .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
@@ -3325,9 +3568,8 @@ struct AssistCustomModelPickerPopover: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Color.primary.opacity(0.04))
 
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
@@ -3347,17 +3589,15 @@ struct AssistCustomModelPickerPopover: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
-            .background(Color.primary.opacity(0.03), in: RoundedRectangle(cornerRadius: 6))
             .padding(.horizontal, 10)
-            .padding(.top, 8)
-            .padding(.bottom, 6)
+            .padding(.vertical, 6)
+            .liquidGlass(style: .subtle, cornerRadius: 8)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 8)
 
             Divider()
 
-            let groups = discoveryService.modelsByProvider
-            if groups.isEmpty {
+            if allDiscoveredModels.isEmpty {
                 VStack(spacing: 8) {
                     if discoveryService.isDiscovering {
                         ProgressView().scaleEffect(0.8)
@@ -3373,45 +3613,29 @@ struct AssistCustomModelPickerPopover: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding()
+            } else if filteredModels.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: 18))
+                        .foregroundStyle(.secondary)
+                    Text("No matching models found")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
             } else {
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 10) {
-                        ForEach(groups, id: \.providerName) { group in
-                            let filteredModels = group.models.filter { model in
-                                if searchText.isEmpty { return true }
-                                let query = searchText.lowercased()
-                                return model.displayName.lowercased().contains(query) ||
-                                       model.modelIdentifier.lowercased().contains(query) ||
-                                       model.providerName.lowercased().contains(query)
-                            }
-
-                            if !filteredModels.isEmpty {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
-                                        Text(group.providerName)
-                                            .font(.system(size: 10, weight: .bold))
-                                            .foregroundStyle(.secondary)
-                                            .textCase(.uppercase)
-                                        Spacer()
-                                        Text("\(filteredModels.count)")
-                                            .font(.system(size: 9, weight: .semibold))
-                                            .foregroundStyle(.secondary)
-                                    }
-                                    .padding(.horizontal, 8)
-                                    .padding(.top, 4)
-
-                                    ForEach(filteredModels) { model in
-                                        AssistModelPickerRow(
-                                            model: model,
-                                            isSelected: selectedModelID == model.modelIdentifier,
-                                            statusColor: modelColor(model),
-                                            onSelect: {
-                                                onSelect(model)
-                                            }
-                                        )
-                                    }
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        ForEach(filteredModels) { model in
+                            AssistModelPickerRow(
+                                model: model,
+                                isSelected: selectedModelID == model.modelIdentifier,
+                                statusColor: modelColor(model),
+                                onSelect: {
+                                    onSelect(model)
                                 }
-                            }
+                            )
                         }
                     }
                     .padding(.horizontal, 8)
@@ -3435,13 +3659,14 @@ struct AssistCustomModelPickerPopover: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Color.accentColor)
+
                 Spacer()
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
-            .background(Color.primary.opacity(0.02))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
         }
-        .frame(width: 320, height: 410)
+        .frame(width: 340, height: 420)
+        .liquidGlass(style: .sheet, cornerRadius: 16)
         .task {
             if discoveryService.discoveredModels.isEmpty {
                 await discoveryService.discoverAllModels()
@@ -3463,62 +3688,79 @@ private struct AssistModelPickerRow: View {
             onSelect()
         } label: {
             HStack(spacing: 8) {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 6, height: 6)
+                ZStack {
+                    Circle()
+                        .fill(statusColor.opacity(0.2))
+                        .frame(width: 10, height: 10)
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 6, height: 6)
+                        .shadow(color: statusColor.opacity(0.7), radius: 2)
+                }
 
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(model.displayName)
-                            .font(.system(size: 12, weight: isSelected ? .bold : .medium))
-                            .foregroundStyle(.primary)
+                Text(model.displayName)
+                    .font(.system(size: 12.5, weight: isSelected ? .bold : .medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
 
-                        if model.supportsToolCalling {
+                HStack(spacing: 4) {
+                    if model.supportsToolCalling {
+                        HStack(spacing: 2) {
+                            Image(systemName: "wrench.and.screwdriver.fill")
+                                .font(.system(size: 7))
                             Text("Tools")
                                 .font(.system(size: 8, weight: .bold))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Color.blue.opacity(0.12))
-                                .foregroundStyle(.blue)
-                                .cornerRadius(3)
                         }
-
-                        if model.supportsVision {
-                            Image(systemName: "eye.fill")
-                                .font(.system(size: 8))
-                                .foregroundStyle(.secondary)
-                        }
-
-                        if model.supportsSubagents {
-                            Text("Subagents")
-                                .font(.system(size: 8, weight: .bold))
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 1)
-                                .background(Color.indigo.opacity(0.12))
-                                .foregroundStyle(.indigo)
-                                .cornerRadius(3)
-                        }
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.12), in: Capsule())
+                        .foregroundStyle(.blue)
                     }
 
-                    Text(model.modelIdentifier)
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    if model.supportsVision {
+                        HStack(spacing: 2) {
+                            Image(systemName: "eye.fill")
+                                .font(.system(size: 7))
+                            Text("Vision")
+                                .font(.system(size: 8, weight: .bold))
+                        }
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.teal.opacity(0.12), in: Capsule())
+                        .foregroundStyle(.teal)
+                    }
+
+                    if model.supportsSubagents {
+                        HStack(spacing: 2) {
+                            Image(systemName: "person.2.fill")
+                                .font(.system(size: 7))
+                            Text("Agents")
+                                .font(.system(size: 8, weight: .bold))
+                        }
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.purple.opacity(0.12), in: Capsule())
+                        .foregroundStyle(.purple)
+                    }
                 }
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.green)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
                 }
             }
             .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? Color.accentColor.opacity(0.08) : (isHovered ? Color.primary.opacity(0.04) : Color.clear))
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? Color.accentColor.opacity(0.10) : (isHovered ? Color.primary.opacity(0.04) : Color.clear))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(isSelected ? Color.accentColor.opacity(0.22) : (isHovered ? Color.primary.opacity(0.06) : Color.clear), lineWidth: 0.8)
             )
             .contentShape(Rectangle())
         }

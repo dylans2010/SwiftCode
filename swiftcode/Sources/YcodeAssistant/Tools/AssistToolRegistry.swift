@@ -564,6 +564,17 @@ public final class AssistToolRegistry {
         return Array(tools.values).sorted(by: { $0.id < $1.id })
     }
 
+    public func formattedToolCatalog() -> String {
+        var lines: [String] = []
+        lines.append("# AVAILABLE REGISTERED TOOLS & CAPABILITIES")
+        lines.append("The assistant has full access to the SwiftCode native tool registry. You can inspect, list, describe, and invoke the following registered tools:")
+        lines.append("")
+        for tool in allTools {
+            lines.append("- **`\(tool.id)`**: \(tool.description)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
     public func getToolSchemas() -> [[String: Any]] {
         if let cached = cachedToolSchemas {
             return cached

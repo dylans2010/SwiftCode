@@ -99,7 +99,7 @@ let package = Package(
         
         .target(name: "YcodeAssistant", dependencies: ["YcodeSubprocess", "YcodeBuild", "SwiftCodeExtensions", .product(name: "Crypto", package: "swift-crypto")],
                 exclude: ["Tools/validate_tools.py", "Resources/System Assets", "Reverse/ReverseBridge.mjs"],
-                resources: [.copy("System Assets"), .copy("Resources/SDKHosts"), .copy("Resources/ReverseBridge.mjs"), .copy("Resources/Codex")]),
+                resources: [.copy("System Assets"), .copy("Resources/SDKHosts"), .copy("Resources/ReverseBridge.mjs"), .copy("Resources/Codex"), .copy("SC Skills")]),
         .testTarget(name: "YcodeAssistantTests", dependencies: ["YcodeAssistant", "YcodeSubprocess"]),
         
         .target(name: "SwiftCodeGitHub"),

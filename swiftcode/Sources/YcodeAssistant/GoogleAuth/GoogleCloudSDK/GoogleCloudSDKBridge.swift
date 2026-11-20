@@ -78,6 +78,26 @@ public actor GoogleCloudSDKBridge {
         await transport.subscribeEvents()
     }
 
+    private func sessionParamsData(sessionId: String, config: GoogleCloudSDKConfiguration) async -> Data {
+        var params = config.toDictionary()
+        params["sessionId"] = sessionId
+        if config.executionMode == "antigravity",
+           let oauthToken = await GoogleAccountAuthService.shared.getValidAccessToken(),
+           !oauthToken.isEmpty {
+            params["oauthToken"] = oauthToken
+        }
+        if params["tools"] == nil {
+            let toolsData = await MainActor.run { () -> Data? in
+                let tools = AssistToolRegistry.shared.getToolSchemas()
+                return try? JSONSerialization.data(withJSONObject: tools)
+            }
+            if let toolsData, let toolsObj = try? JSONSerialization.jsonObject(with: toolsData) {
+                params["tools"] = toolsObj
+            }
+        }
+        return (try? JSONSerialization.data(withJSONObject: params)) ?? Data("{}".utf8)
+    }
+
     private func sessionParamsData(sessionId: String, config: SDKSessionConfiguration) async -> Data {
         var params: [String: Any] = [
             "sessionId": sessionId,
@@ -99,6 +119,13 @@ public actor GoogleCloudSDKBridge {
            !oauthToken.isEmpty {
             params["oauthToken"] = oauthToken
         }
+        let toolsData = await MainActor.run { () -> Data? in
+            let tools = AssistToolRegistry.shared.getToolSchemas()
+            return try? JSONSerialization.data(withJSONObject: tools)
+        }
+        if let toolsData, let toolsObj = try? JSONSerialization.jsonObject(with: toolsData) {
+            params["tools"] = toolsObj
+        }
         return (try? JSONSerialization.data(withJSONObject: params)) ?? Data("{}".utf8)
     }
 
@@ -109,18 +136,15 @@ public actor GoogleCloudSDKBridge {
     }
 
     public func createSession(sessionId: String, config: GoogleCloudSDKConfiguration) async throws -> GoogleCloudSDKResponse {
-        let providerKind: ProviderKind = (config.provider == "anthropic" || config.provider == "claude") ? .anthropic : .gemini
-        let sessionConfig = SDKSessionConfiguration(
-            model: config.model,
-            provider: providerKind,
-            thinkingLevel: config.thinkingLevel,
-            enableSubagents: config.enableSubagents,
-            executionMode: config.executionMode,
-            hasAPIKey: config.apiKey != nil && !(config.apiKey?.isEmpty ?? true),
-            isOAuthAuthenticated: config.oauthToken != nil && !(config.oauthToken?.isEmpty ?? true),
-            baseURL: config.baseURL
-        )
-        return try await createSession(sessionId: sessionId, config: sessionConfig)
+        try await start()
+        let data = await sessionParamsData(sessionId: sessionId, config: config)
+        return try await transport.sendRequest(method: "session.create", paramsData: data, timeout: 60.0)
+    }
+
+    public func resumeSession(sessionId: String, config: GoogleCloudSDKConfiguration) async throws -> GoogleCloudSDKResponse {
+        try await start()
+        let data = await sessionParamsData(sessionId: sessionId, config: config)
+        return try await transport.sendRequest(method: "session.resume", paramsData: data, timeout: 60.0)
     }
 
     public func resumeSession(sessionId: String, config: SDKSessionConfiguration) async throws -> GoogleCloudSDKResponse {

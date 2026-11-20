@@ -28,10 +28,15 @@ public struct WorkerStopConfirmationSheet: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 10) {
-                Image(systemName: "exclamationmark.octagon.fill")
-                    .font(.title2)
-                    .foregroundStyle(.red)
+            HStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Color.red.opacity(0.15))
+                        .frame(width: 40, height: 40)
+                    Image(systemName: "exclamationmark.octagon.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(.red)
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Stop \"\(worker.name)\"?")
@@ -44,6 +49,7 @@ public struct WorkerStopConfirmationSheet: View {
             }
 
             Divider()
+                .opacity(0.4)
 
             VStack(alignment: .leading, spacing: 6) {
                 Text("Why are you stopping this Worker? (Required)")
@@ -64,13 +70,15 @@ public struct WorkerStopConfirmationSheet: View {
                 Text("What should happen to its work?")
                     .font(.subheadline.bold())
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     Button {
                         selectedMode = .preserve
                     } label: {
-                        HStack(alignment: .top, spacing: 8) {
+                        HStack(alignment: .top, spacing: 10) {
                             Image(systemName: selectedMode == .preserve ? "largecircle.fill.circle" : "circle")
+                                .font(.system(size: 15))
                                 .foregroundStyle(selectedMode == .preserve ? Color.accentColor : Color.secondary)
+                                .padding(.top, 1)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Keep the work with the current task")
@@ -84,12 +92,16 @@ public struct WorkerStopConfirmationSheet: View {
                     }
                     .buttonStyle(.plain)
 
+                    Divider().opacity(0.3)
+
                     Button {
                         selectedMode = .reassign
                     } label: {
-                        HStack(alignment: .top, spacing: 8) {
+                        HStack(alignment: .top, spacing: 10) {
                             Image(systemName: selectedMode == .reassign ? "largecircle.fill.circle" : "circle")
+                                .font(.system(size: 15))
                                 .foregroundStyle(selectedMode == .reassign ? Color.accentColor : Color.secondary)
+                                .padding(.top, 1)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Hand remaining work to another Worker")
@@ -103,11 +115,16 @@ public struct WorkerStopConfirmationSheet: View {
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(10)
-                .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                .padding(12)
+                .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1.0)
+                )
             }
 
             Divider()
+                .opacity(0.4)
 
             HStack {
                 Spacer()
@@ -122,7 +139,8 @@ public struct WorkerStopConfirmationSheet: View {
                 } label: {
                     if isSubmitting {
                         ProgressView()
-                            .scaleEffect(0.5)
+                            .scaleEffect(0.6)
+                            .tint(.white)
                     } else {
                         Text("Stop Worker")
                     }
@@ -133,8 +151,12 @@ public struct WorkerStopConfirmationSheet: View {
                 .keyboardShortcut(.defaultAction)
             }
         }
-        .padding(20)
-        .frame(minWidth: 440, maxWidth: 500)
+        .padding(24)
+        .frame(minWidth: 460, maxWidth: 520)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            SpecularBorder(cornerRadius: 14, lineWidth: 1.0, intensity: 0.7)
+        )
     }
 
     private func executeStop() {

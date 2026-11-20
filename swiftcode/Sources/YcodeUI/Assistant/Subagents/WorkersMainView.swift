@@ -27,37 +27,40 @@ public struct WorkersMainView: View {
         VStack(spacing: 0) {
             headerBar
 
-            Divider()
-
             metricsBar
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
 
-            Divider()
-
             filterBar
                 .padding(.horizontal, 16)
-                .padding(.vertical, 6)
+                .padding(.bottom, 8)
 
             Divider()
+                .opacity(0.4)
 
             ScrollView {
                 if filteredWorkers.isEmpty {
                     emptyState
                 } else {
-                    LazyVStack(spacing: 8) {
+                    LazyVStack(spacing: 10) {
                         ForEach(filteredWorkers) { worker in
-                            workerRow(worker)
-                                .padding(12)
-                                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+                            WorkerCardView(
+                                worker: worker,
+                                onSelectDetails: {
+                                    selectedWorkerForDetails = worker
+                                },
+                                onStop: {
+                                    workerToStop = worker
+                                }
+                            )
                         }
                     }
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(14)
                 }
             }
+            .background(Color(NSColor.windowBackgroundColor).opacity(0.4))
         }
-        .frame(minWidth: 460, idealWidth: 500, maxWidth: 540, minHeight: 380, idealHeight: 440, maxHeight: 520)
+        .frame(minWidth: 540, idealWidth: 620, maxWidth: 720, minHeight: 460, idealHeight: 540, maxHeight: 680)
         .sheet(item: $selectedWorkerForDetails) { worker in
             WorkersInfoView(workerID: worker.id, runtimeState: runtimeState)
         }
@@ -69,15 +72,41 @@ public struct WorkersMainView: View {
     }
 
     private var headerBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "person.3.sequence.fill")
-                .font(.title3)
-                .foregroundStyle(.blue)
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(LinearGradient(colors: [.blue.opacity(0.2), .indigo.opacity(0.12)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 38, height: 38)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .strokeBorder(Color.blue.opacity(0.25), lineWidth: 1)
+                    )
+                Image(systemName: "person.3.sequence.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.blue)
+            }
 
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Assist Workers")
-                    .font(.headline)
-                Text("\(runtimeState.allWorkers.count) total · \(runtimeState.activeWorkers.count) active")
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text("Assist Workers")
+                        .font(.system(.title3, weight: .bold))
+
+                    if !runtimeState.activeWorkers.isEmpty {
+                        HStack(spacing: 4) {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 6, height: 6)
+                            Text("\(runtimeState.activeWorkers.count) Running")
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.green)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.green.opacity(0.12), in: Capsule())
+                    }
+                }
+
+                Text("\(runtimeState.allWorkers.count) total registered · Parallel subagent execution system")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -88,238 +117,124 @@ public struct WorkersMainView: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 18))
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 18)
         .padding(.vertical, 12)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .bottom) {
+            Divider().opacity(0.4)
+        }
     }
 
     private var metricsBar: some View {
-        HStack(spacing: 16) {
-            Spacer()
-            metricItem(label: "Active", value: runtimeState.activeWorkers.count, color: .blue)
-            metricItem(label: "Completed", value: runtimeState.completedWorkers.count, color: .green)
-            metricItem(label: "Failed", value: runtimeState.failedWorkers.count, color: .red)
-            metricItem(label: "Standby", value: runtimeState.standbyWorkers.count, color: .orange)
-            Spacer()
+        HStack(spacing: 10) {
+            metricTile(label: "Active", count: runtimeState.activeWorkers.count, color: .blue, icon: "bolt.fill")
+            metricTile(label: "Completed", count: runtimeState.completedWorkers.count, color: .green, icon: "checkmark.circle.fill")
+            metricTile(label: "Attention", count: attentionCount, color: .red, icon: "exclamationmark.triangle.fill")
+            metricTile(label: "Standby", count: runtimeState.standbyWorkers.count, color: .orange, icon: "pause.circle.fill")
         }
     }
 
-    private func metricItem(label: String, value: Int, color: Color) -> some View {
-        HStack(spacing: 4) {
-            Text("\(value)")
-                .font(.system(.title3, design: .monospaced, weight: .bold))
-                .foregroundStyle(color)
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+    private func metricTile(label: String, count: Int, color: Color, icon: String) -> some View {
+        HStack(spacing: 8) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 24, height: 24)
+                Image(systemName: icon)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(color)
+            }
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(count)")
+                    .font(.system(size: 14, weight: .bold, design: .monospaced))
+                    .foregroundStyle(color)
+                Text(label)
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            SpecularBorder(cornerRadius: 10, lineWidth: 1.0, intensity: 0.5)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(color.opacity(0.2), lineWidth: 1)
+        )
     }
 
     private var filterBar: some View {
         HStack {
-            Spacer()
-            Picker("Filter", selection: $filterMode) {
+            Picker("Filter Mode", selection: $filterMode) {
                 ForEach(FilterMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
+                    Text(filterTitle(for: mode)).tag(mode)
                 }
             }
             .pickerStyle(.segmented)
-            .frame(maxWidth: 320)
+            .labelsHidden()
+            .frame(maxWidth: 420)
+
             Spacer()
         }
+    }
+
+    private func filterTitle(for mode: FilterMode) -> String {
+        switch mode {
+        case .all:
+            return "All (\(runtimeState.allWorkers.count))"
+        case .active:
+            return "Active (\(runtimeState.activeWorkers.count))"
+        case .completed:
+            return "Done (\(runtimeState.completedWorkers.count))"
+        case .attention:
+            return "Attention (\(attentionCount))"
+        }
+    }
+
+    private var attentionCount: Int {
+        runtimeState.allWorkers.filter {
+            $0.status == .failed || $0.status == .blocked || $0.status == .reassigning || $0.reviewState == .rejected || $0.reviewState == .repairRequired
+        }.count
     }
 
     private var emptyState: some View {
-        Group {
-            if runtimeState.allWorkers.isEmpty {
-                ContentUnavailableView(
-                    "No workers are running",
-                    systemImage: "person.3.sequence",
-                    description: Text("Assist has not started any workers for this task yet.")
-                )
-            } else {
-                VStack(spacing: 8) {
-                    Image(systemName: "tray")
-                        .font(.system(size: 28))
-                        .foregroundStyle(.secondary)
-                    Text("No workers match the selected filter.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .center)
-        .padding(.vertical, 48)
-    }
-
-    @ViewBuilder
-    private func workerRow(_ worker: Worker) -> some View {
-        DisclosureGroup {
-            VStack(alignment: .leading, spacing: 8) {
-                detailContent(worker)
-            }
-            .padding(.top, 6)
-        } label: {
-            labelContent(worker)
-        }
-    }
-
-    @ViewBuilder
-    private func labelContent(_ worker: Worker) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: worker.status.sfSymbolName)
-                .font(.caption)
-                .foregroundStyle(statusColor(for: worker.status))
-                .frame(width: 16)
-
-            Text(worker.name)
-                .font(.system(.subheadline, weight: .semibold))
-
-            Text(worker.role)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-
-            Text("\(Int(worker.progressFraction * 100))%")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundStyle(.secondary)
-
-            if worker.status.isActive || worker.status == .standby {
-                Button {
-                    workerToStop = worker
-                } label: {
-                    Image(systemName: "stop.circle")
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-                .buttonStyle(.plain)
-                .help("Stop this worker")
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func detailContent(_ worker: Worker) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Task")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-                    Text(worker.task)
-                        .font(.system(size: 11))
-                        .lineLimit(2)
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Scope")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-                    Text(worker.scope)
-                        .font(.system(size: 10, design: .monospaced))
-                        .lineLimit(2)
-                }
+        VStack(spacing: 14) {
+            ZStack {
+                Circle()
+                    .fill(Color.secondary.opacity(0.1))
+                    .frame(width: 56, height: 56)
+                Image(systemName: runtimeState.allWorkers.isEmpty ? "person.3.sequence" : "tray")
+                    .font(.system(size: 26))
+                    .foregroundStyle(Color.accentColor)
             }
 
-            HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Current Action")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-                    Text(worker.currentAction.isEmpty ? "Idle" : worker.currentAction)
-                        .font(.system(size: 10, design: .monospaced))
-                        .lineLimit(1)
-                }
+            VStack(spacing: 4) {
+                Text(runtimeState.allWorkers.isEmpty ? "No Workers Active" : "No Matching Workers")
+                    .font(.headline)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Phase")
-                        .font(.caption.bold())
-                        .foregroundStyle(.secondary)
-                    Text(worker.currentPhase.rawValue)
-                        .font(.system(size: 10, design: .monospaced))
-                }
-            }
-
-            ProgressView(value: worker.progressFraction)
-                .tint(worker.status == .failed ? .red : .blue)
-
-            HStack(spacing: 12) {
-                Label("\(worker.fileChanges.count) files", systemImage: "doc.text")
-                    .font(.caption2)
+                Text(runtimeState.allWorkers.isEmpty ? "Assist automatically launches parallel subagents to complete tasks, run tests, and verify code." : "No workers match the \"\(filterMode.rawValue)\" filter criteria.")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                Label("+\(worker.totalLinesAdded) / -\(worker.totalLinesRemoved)", systemImage: "plusminus")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Label("\(worker.testsRun.count) tests", systemImage: "checkmark.seal")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(worker.reviewState.rawValue)
-                    .font(.system(size: 9, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(reviewColor(for: worker.reviewState))
-            }
-
-            if !worker.dependencies.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.triangle.branch")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                    Text("Depends on: \(worker.dependencies.count) worker(s)")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            if let error = worker.errorState {
-                HStack(spacing: 4) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.red)
-                    Text(error.message)
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.red)
-                        .lineLimit(1)
-                }
-            }
-
-            if let result = worker.result {
-                HStack(spacing: 4) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.green)
-                    Text("Build: \(result.buildResult) · Verification: \(result.verificationResult)")
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            HStack {
-                Button {
-                    selectedWorkerForDetails = worker
-                } label: {
-                    Label("Details", systemImage: "info.circle")
-                        .font(.caption)
-                }
-                .buttonStyle(.bordered)
-
-                if worker.status.isActive || worker.status == .standby {
-                    Button(role: .destructive) {
-                        workerToStop = worker
-                    } label: {
-                        Label("Stop / Reassign", systemImage: "stop.circle")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
-                    .tint(.red)
-                }
-
-                Spacer()
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 320)
             }
         }
+        .padding(36)
+        .frame(maxWidth: .infinity)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(SpecularBorder(cornerRadius: 14, lineWidth: 1.0, intensity: 0.6))
+        .padding(.vertical, 40)
+        .padding(.horizontal, 24)
     }
 
     private var filteredWorkers: [Worker] {
@@ -333,6 +248,234 @@ public struct WorkersMainView: View {
         case .attention:
             return runtimeState.allWorkers.filter {
                 $0.status == .failed || $0.status == .blocked || $0.status == .reassigning || $0.reviewState == .rejected || $0.reviewState == .repairRequired
+            }
+        }
+    }
+}
+
+// MARK: - Worker Card Row View
+
+@MainActor
+private struct WorkerCardView: View {
+    let worker: Worker
+    let onSelectDetails: () -> Void
+    let onStop: () -> Void
+
+    @State private var isHovered: Bool = false
+    @State private var isExpanded: Bool = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Main clickable row header
+            HStack(spacing: 10) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        isExpanded.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(.secondary)
+                            .frame(width: 12)
+
+                        ZStack {
+                            Circle()
+                                .fill(statusColor(for: worker.status).opacity(0.15))
+                                .frame(width: 28, height: 28)
+                            Image(systemName: worker.status.sfSymbolName)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(statusColor(for: worker.status))
+                        }
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            HStack(spacing: 6) {
+                                Text(worker.name)
+                                    .font(.system(.subheadline, weight: .bold))
+                                    .foregroundStyle(.primary)
+
+                                Text(worker.role)
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 1)
+                                    .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+                            }
+
+                            Text(worker.task)
+                                .font(.system(size: 11))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+
+                        Spacer()
+
+                        Text("\(Int(worker.progressFraction * 100))%")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundStyle(worker.status == .failed ? .red : .blue)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.08), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+
+                        Text(worker.status.rawValue)
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundStyle(statusColor(for: worker.status))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 2.5)
+                            .background(statusColor(for: worker.status).opacity(0.12), in: Capsule())
+                    }
+                }
+                .buttonStyle(.plain)
+
+                if worker.status.isActive || worker.status == .standby {
+                    Button {
+                        onStop()
+                    } label: {
+                        Image(systemName: "stop.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.red.opacity(0.85))
+                    }
+                    .buttonStyle(.plain)
+                    .help("Stop or reassign worker")
+                }
+
+                Button {
+                    onSelectDetails()
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Open detailed inspector")
+            }
+            .padding(12)
+
+            // Expanded details
+            if isExpanded {
+                Divider()
+                    .opacity(0.35)
+                    .padding(.horizontal, 12)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    if !worker.currentAction.isEmpty {
+                        HStack(spacing: 6) {
+                            Image(systemName: "terminal.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text(worker.currentAction)
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                        }
+                        .padding(6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    }
+
+                    ProgressView(value: worker.progressFraction)
+                        .tint(worker.status == .failed ? .red : (worker.status == .completed ? .green : .blue))
+
+                    HStack(spacing: 8) {
+                        Label("\(worker.fileChanges.count) files", systemImage: "doc.text")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+
+                        if worker.totalLinesAdded > 0 || worker.totalLinesRemoved > 0 {
+                            Text("+\(worker.totalLinesAdded) / -\(worker.totalLinesRemoved)")
+                                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.green)
+                        }
+
+                        Label("\(worker.testsRun.count) tests", systemImage: "checkmark.seal")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+
+                        Spacer()
+
+                        Text(worker.reviewState.rawValue)
+                            .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(reviewColor(for: worker.reviewState))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(reviewColor(for: worker.reviewState).opacity(0.1), in: Capsule())
+                    }
+
+                    if let error = worker.errorState {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.octagon.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.red)
+                            Text(error.message)
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.red)
+                                .lineLimit(1)
+                        }
+                        .padding(6)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.red.opacity(0.06), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    }
+
+                    if let result = worker.result {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.green)
+                            Text("Build: \(result.buildResult) · Verify: \(result.verificationResult)")
+                                .font(.system(size: 10, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+
+                    HStack(spacing: 8) {
+                        Button {
+                            onSelectDetails()
+                        } label: {
+                            Label("Full Inspector", systemImage: "arrow.up.right.and.arrow.down.left.rectangle")
+                                .font(.system(size: 11, weight: .medium))
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+
+                        if worker.status.isActive || worker.status == .standby {
+                            Button(role: .destructive) {
+                                onStop()
+                            } label: {
+                                Label("Stop / Reassign", systemImage: "stop.circle")
+                                    .font(.system(size: 11, weight: .medium))
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(.red)
+                            .controlSize(.small)
+                        }
+
+                        Spacer()
+
+                        if !worker.scope.isEmpty {
+                            Text("Scope: \(worker.scope)")
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
+                        }
+                    }
+                    .padding(.top, 2)
+                }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 12)
+            }
+        }
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            SpecularBorder(cornerRadius: 12, lineWidth: 1.0, intensity: isHovered ? 0.9 : 0.6)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(isHovered ? Color.accentColor.opacity(0.35) : Color.primary.opacity(0.06), lineWidth: 1.0)
+        )
+        .shadow(color: Color.black.opacity(isHovered ? 0.06 : 0.02), radius: isHovered ? 5 : 2, x: 0, y: isHovered ? 2 : 1)
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                isHovered = hovering
             }
         }
     }

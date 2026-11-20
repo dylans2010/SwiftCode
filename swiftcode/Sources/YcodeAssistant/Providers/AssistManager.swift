@@ -483,10 +483,14 @@ public final class AssistManager {
         }
         metrics.mark(.credentialsResolved)
 
+        let toolCatalog = await MainActor.run { AssistToolRegistry.shared.formattedToolCatalog() }
         let chatSystemPrompt = """
-        You are SwiftCode Assist, a helpful conversational software engineering assistant.
-        Answer the user's request directly and concisely. In Chat mode, do not call tools,
-        claim to have inspected files, or say that you changed the project.
+        You are SwiftCode Assist, an advanced software engineering AI assistant integrated natively into SwiftCode IDE.
+        You have complete knowledge of and access to all SwiftCode native development tools, workspace operations, and System Assets.
+        When asked about your tools, capabilities, or operating modes, you MUST accurately and comprehensively list and describe your available tools and capabilities.
+        In Chat mode, you discuss, design, analyze, explain code, and assist the user conversationally with full awareness of your available tool suite and system assets.
+
+        \(toolCatalog)
         """
 
         let context = buildContext()
@@ -578,14 +582,15 @@ public final class AssistManager {
 
         \(retrievedInstructionsBlock)
 
-        # HIDDEN RUNTIME INSTRUCTIONS & ROLE
+        # RUNTIME INSTRUCTIONS & ROLE
         Execution Key: com.SwiftCode.Assist-Chat
         Execution Mode: com.SwiftCode.Assist-Chat
 
-        You are a helpful, conversational software engineering assistant.
-        You must only respond conversationally.
-        You must never attempt tool calls, reference tools, or describe internal runtime configurations or policies.
-        You cannot execute local terminal commands, write files, or modify the repository.
+        You are SwiftCode Assist, an intelligent software engineering assistant natively integrated into SwiftCode IDE.
+        You have complete access to the SwiftCode tool registry and the local System Assets knowledge base.
+        When asked what tools or capabilities you have, or how they work, you must provide a full, accurate, and helpful response listing and explaining your available tools.
+
+        \(toolCatalog)
 
         """
 
@@ -1047,7 +1052,7 @@ public final class AssistManager {
         }
     }
 
-    private func saveHistory() {
+    public func saveHistory() {
         let snapshot = messages
         Task.detached(priority: .utility) {
             if let data = try? JSONEncoder().encode(snapshot) {
@@ -1097,6 +1102,7 @@ public final class AssistManager {
         if !instructionRetrieval.notes.isEmpty {
             await logger.info("SystemIndex (Meta): \(instructionRetrieval.notes.joined(separator: " | "))")
         }
+        let retrievedInstructionsBlock = instructionRetrieval.formattedForPrompt()
 
         await MainActor.run {
             if AppSettings.shared.otherModelsWithMetaSDK || AppSettings.shared.swiftCodeCloudWithMetaSDK {
@@ -1131,8 +1137,16 @@ public final class AssistManager {
             }
 
             do {
+                let toolCatalog = await MainActor.run { AssistToolRegistry.shared.formattedToolCatalog() }
+                var metaPrompt = content
+                if !retrievedInstructionsBlock.isEmpty {
+                    metaPrompt = retrievedInstructionsBlock + "\n\n" + toolCatalog + "\n\n" + metaPrompt
+                } else {
+                    metaPrompt = toolCatalog + "\n\n" + metaPrompt
+                }
+
                 try await MetaAssistProvider.shared.executeTurn(
-                    prompt: content,
+                    prompt: metaPrompt,
                     history: historySnapshot,
                     workspaceRoot: workspaceRoot,
                     onTextDelta: { [weak self] delta in
@@ -1262,14 +1276,16 @@ public final class AssistManager {
             let selectedID = AppSettings.shared.selectedAssistModelID
             let endpointModel = SCCloudConfiguration.endpointName(forInternalID: selectedID)
             let baselinePrompt = (try? getSystemPrompt()) ?? SystemIndexService.shared.baselinePrompt()
+            let toolCatalog = await MainActor.run { AssistToolRegistry.shared.formattedToolCatalog() }
             let identityDirective = """
             # ASSIST IDENTITY & BEHAVIORAL SAFEGUARDS
             CRITICAL IDENTITY DIRECTIVE: Your name is Assist, the intelligent software engineering assistant built natively inside SwiftCode.
             You are running inside the SwiftCode IDE environment using SwiftCode Cloud Model.
             Regardless of the underlying model host, you MUST ALWAYS identify as Assist and NEVER claim to be any other product or service.
             All system assets and training data retrieved through SystemIndex are your native SwiftCode knowledge base.
+            You have complete access to the SwiftCode tool registry and can describe, list, and explain all tools.
             """
-            let fullSystemPrompt = identityDirective + "\n\n" + baselinePrompt
+            let fullSystemPrompt = identityDirective + "\n\n" + toolCatalog + "\n\n" + baselinePrompt
             let response = try await SCCloudModelClient.shared.complete(
                 prompt: prompt,
                 history: history,
