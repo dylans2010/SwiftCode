@@ -194,7 +194,7 @@ import YcodePreviews
 
     @Test func parseListAppsRejectsInvalidPlist() async {
         let service = SimctlService()
-        #expect(throws: SimulatorError.self) {
+        await #expect(throws: SimulatorError.self) {
             try await service.parseInstalledApplications(data: Data("not a plist".utf8), platform: "iOS")
         }
     }
@@ -270,4 +270,3 @@ import YcodePreviews
         }
     }
 }
-

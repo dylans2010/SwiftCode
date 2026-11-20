@@ -3983,6 +3983,88 @@
 		2A9887E075E6401AAB3BB371 /* UserInteractionPlaybook.md in Resources */ = {isa = PBXBuildFile; fileRef = 199843852ECEB9E81B5043BB /* UserInteractionPlaybook.md */; };
 		338A16B49EF9FECFE112D4CB /* System Skills in Resources */ = {isa = PBXBuildFile; fileRef = D39046508BFBADECFDCABCBB /* System Skills */; };
 		831661061FC74A43AB286C4B /* libSpacesEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B4EFE9D4286A46C43BBDA5E /* libSpacesEngine.a */; };
+		FFD23324775428186CB8B7F2 /* BuiltInActionCatalog+Extended.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45DFB90A0A0BD735AB302A92 /* BuiltInActionCatalog+Extended.swift */; };
+		2F7FE8048D4EDC270E56306F /* a11y.md in Resources */ = {isa = PBXBuildFile; fileRef = 42C8EC60848BD6E3F0A7447A /* a11y.md */; };
+		4C353573A38FAE683C4A45D3 /* adr.md in Resources */ = {isa = PBXBuildFile; fileRef = DD64FF6C7F975115B1930F4E /* adr.md */; };
+		1921C630AD4A7ED0008E99E4 /* api.md in Resources */ = {isa = PBXBuildFile; fileRef = 9869FD5A64961E61A4B89010 /* api.md */; };
+		584A5A8F5C1C56B649F2F910 /* architecture.md in Resources */ = {isa = PBXBuildFile; fileRef = 5A752343BE03F1429BC77EAD /* architecture.md */; };
+		BDFB9ACD25E6EC81B7E07C21 /* audit.md in Resources */ = {isa = PBXBuildFile; fileRef = 5A51B96EE2DBEBBEB484E9F6 /* audit.md */; };
+		99F0E5F441F44A8D5A91CBD3 /* auth.md in Resources */ = {isa = PBXBuildFile; fileRef = B824F12ECC245FB21FC138CE /* auth.md */; };
+		1AC967C632B197E30CECFF6E /* benchmark.md in Resources */ = {isa = PBXBuildFile; fileRef = F0D3E68191450E1D6E07F73D /* benchmark.md */; };
+		D4CDB6934DCE2A2733B726AD /* branches.md in Resources */ = {isa = PBXBuildFile; fileRef = A5380E5D0B7A133D43F86108 /* branches.md */; };
+		4FEA35BB15770BF886F52CEF /* buildfix.md in Resources */ = {isa = PBXBuildFile; fileRef = 0105CF512D29B4231BBB98DC /* buildfix.md */; };
+		FACF53BD5990D6D6408852AB /* changelog.md in Resources */ = {isa = PBXBuildFile; fileRef = E08447332A03081909A1C67E /* changelog.md */; };
+		4D542E6F4A47C0457AF0CE4C /* ci.md in Resources */ = {isa = PBXBuildFile; fileRef = 8F698D98A37D959382F1FCC3 /* ci.md */; };
+		427EB5BFDA1EFF503E560911 /* cleanup.md in Resources */ = {isa = PBXBuildFile; fileRef = E84000B8FC23BF164221C29A /* cleanup.md */; };
+		F48F30D48A82BE6827A16884 /* commit.md in Resources */ = {isa = PBXBuildFile; fileRef = 94C617F7A1B044D66B91D01A /* commit.md */; };
+		1B6273415C454013B89D6706 /* concurrency.md in Resources */ = {isa = PBXBuildFile; fileRef = DF70643F7E1AD5EE46D35958 /* concurrency.md */; };
+		18D60ED8923EBF82E6710F6A /* conflicts.md in Resources */ = {isa = PBXBuildFile; fileRef = 127702B1B3C93F3135889E4C /* conflicts.md */; };
+		3B00E3F76876EE90FF570B43 /* coredata.md in Resources */ = {isa = PBXBuildFile; fileRef = CF1BBE6D7EE9A81475ECA883 /* coredata.md */; };
+		7CE9DE06FCF92816612D112B /* coverage.md in Resources */ = {isa = PBXBuildFile; fileRef = 8215647264FF6084EEDEC435 /* coverage.md */; };
+		386D79FAA5434AFC9ECAFD1B /* crypto.md in Resources */ = {isa = PBXBuildFile; fileRef = E31ED884B537AC850C30E946 /* crypto.md */; };
+		0CEFBD06438CA607BB08C3FE /* darkmode.md in Resources */ = {isa = PBXBuildFile; fileRef = 8D7D416A9C1826C1EBF7535A /* darkmode.md */; };
+		6947B5CC532B2A70BAC8D27D /* deadcode.md in Resources */ = {isa = PBXBuildFile; fileRef = 46B47AE2EAE414CACA540EC9 /* deadcode.md */; };
+		F87649E72F28F14E44770EF0 /* debug.md in Resources */ = {isa = PBXBuildFile; fileRef = BEF5DA2CD96641AA1AD86578 /* debug.md */; };
+		70B01CF1A3303C1C03315443 /* deps.md in Resources */ = {isa = PBXBuildFile; fileRef = 61CD065DE343EF1265EF7970 /* deps.md */; };
+		CBB97A3339C2ECAA6ABB06C6 /* design.md in Resources */ = {isa = PBXBuildFile; fileRef = 6154531835BB3A69697A5466 /* design.md */; };
+		D6538DE915FBBE8FAC747F9D /* diagram.md in Resources */ = {isa = PBXBuildFile; fileRef = 146AE8DCB57D2E6DE6CBD768 /* diagram.md */; };
+		DA98291039D6FE8E086EDF39 /* docc.md in Resources */ = {isa = PBXBuildFile; fileRef = 61EF17F1C754527A87CEAAC4 /* docc.md */; };
+		1C316C456F23968EB54D509E /* docs.md in Resources */ = {isa = PBXBuildFile; fileRef = 6A49491CD8D6BE6AEAC72C85 /* docs.md */; };
+		4A04D54797A063EBF5127CA0 /* entitlements.md in Resources */ = {isa = PBXBuildFile; fileRef = 56366A99C00809AE50DBB1F5 /* entitlements.md */; };
+		42F12D0BCB8805EBB5E290FB /* errors.md in Resources */ = {isa = PBXBuildFile; fileRef = 5EBD91E977C23D51CCE56690 /* errors.md */; };
+		AE055D263CC120EFA171FB0A /* estimate.md in Resources */ = {isa = PBXBuildFile; fileRef = B47921F91746104BD34C9915 /* estimate.md */; };
+		A381E2BBA3F6334C9E2569DA /* explain.md in Resources */ = {isa = PBXBuildFile; fileRef = 792595CA895C38EE885DDA7C /* explain.md */; };
+		7AB805789251536899EA1E5A /* fakes.md in Resources */ = {isa = PBXBuildFile; fileRef = EF52FD50E8DDD6FABE0C3823 /* fakes.md */; };
+		206D76FD5B54977EA63AD397 /* fix.md in Resources */ = {isa = PBXBuildFile; fileRef = 60313B47CF547855EF09A088 /* fix.md */; };
+		A6186CA0A2CEB784D07120E6 /* flaky.md in Resources */ = {isa = PBXBuildFile; fileRef = 53514126EE355505C22433F1 /* flaky.md */; };
+		195E29DDAB9C7F20D2F07138 /* format.md in Resources */ = {isa = PBXBuildFile; fileRef = 116AFC2D2544152E303FD084 /* format.md */; };
+		3CCD811DD5C63B767319A241 /* harden.md in Resources */ = {isa = PBXBuildFile; fileRef = C00519425F36666669667652 /* harden.md */; };
+		EA5A92DACA86491A72E3E205 /* history.md in Resources */ = {isa = PBXBuildFile; fileRef = FB1B5C7503FAB7442B22E4EF /* history.md */; };
+		4FCC065986F51B60874DA065 /* launch.md in Resources */ = {isa = PBXBuildFile; fileRef = 6ACD2C2063B5F7D40ADABA4F /* launch.md */; };
+		1B49D3D6C7F51DDB36A331EF /* leaks.md in Resources */ = {isa = PBXBuildFile; fileRef = 40994A282E3E9B4191FA79F7 /* leaks.md */; };
+		828962747BEEBF3F7DE01CA1 /* license.md in Resources */ = {isa = PBXBuildFile; fileRef = 2E91D208E8EB95F54592F7BE /* license.md */; };
+		C6F6FA48930B5E92B1A5F074 /* lint.md in Resources */ = {isa = PBXBuildFile; fileRef = 2CCED5666127E1F6A6810FCA /* lint.md */; };
+		10F77B564A07BE2A19E9605C /* localize.md in Resources */ = {isa = PBXBuildFile; fileRef = 134ACD71D3F17C44E430C0F2 /* localize.md */; };
+		DC81426FCB1640200B5CA5C8 /* logging.md in Resources */ = {isa = PBXBuildFile; fileRef = ABCF349C21201B0845059BB3 /* logging.md */; };
+		F2EDDC8EC637ADA661AC031A /* modernize.md in Resources */ = {isa = PBXBuildFile; fileRef = A883A0A61CE093384546B8BA /* modernize.md */; };
+		E62C9097AED6794316DEF805 /* modules.md in Resources */ = {isa = PBXBuildFile; fileRef = 06ED8F3996CFB5AFD21105FD /* modules.md */; };
+		D7860B2DC6C47A6194F36EFC /* navigation.md in Resources */ = {isa = PBXBuildFile; fileRef = 4ECC9C8187812B25DC914EE9 /* navigation.md */; };
+		8751E3CA6896B7E9C8223128 /* networking.md in Resources */ = {isa = PBXBuildFile; fileRef = A6C7A9D7C040E4BADA5D2AB0 /* networking.md */; };
+		C8415E32A72DF88B68D0353D /* onboard.md in Resources */ = {isa = PBXBuildFile; fileRef = 5CE0A9E1D5F060148EF83F07 /* onboard.md */; };
+		2413A1175690FB41A9EA5D7C /* optimize.md in Resources */ = {isa = PBXBuildFile; fileRef = 9B435BC7D0F6701D6F57FC28 /* optimize.md */; };
+		8501521E704296AF46648286 /* postmortem.md in Resources */ = {isa = PBXBuildFile; fileRef = 7A95DDBEB1D44C4A35301C8B /* postmortem.md */; };
+		8F11C00DE3A62EB2928230ED /* pr.md in Resources */ = {isa = PBXBuildFile; fileRef = 2BD9F8519BA41A7B9A9B7E33 /* pr.md */; };
+		93D5F4C1C8CEFA8FDA421F58 /* privacy.md in Resources */ = {isa = PBXBuildFile; fileRef = FA4DF08423779EA5650CBC78 /* privacy.md */; };
+		0ADED9FD1BE6D34BF8C37C36 /* profile.md in Resources */ = {isa = PBXBuildFile; fileRef = 1CA13A75F2BFD15F6A7990DF /* profile.md */; };
+		5D1C1C9577BE7048711E3935 /* readme.md in Resources */ = {isa = PBXBuildFile; fileRef = 61E4F5F09AAD7A8B6F0988A4 /* readme.md */; };
+		32BA5D1D777A75731B480D24 /* refactor.md in Resources */ = {isa = PBXBuildFile; fileRef = 29C33D4678951F1FF260BD09 /* refactor.md */; };
+		4D980424610773949A8DBD59 /* release.md in Resources */ = {isa = PBXBuildFile; fileRef = 4ABE2FED2639E3E71D73C8A5 /* release.md */; };
+		34C2EE8549377218E4C14162 /* rerender.md in Resources */ = {isa = PBXBuildFile; fileRef = AAB57454975CFDF73F105C3B /* rerender.md */; };
+		51D8106B608BD9FEBFD4BAEA /* review.md in Resources */ = {isa = PBXBuildFile; fileRef = 0BC56CEC08639DC0D5418616 /* review.md */; };
+		840B6B5B5F6BC61D9903733B /* risk.md in Resources */ = {isa = PBXBuildFile; fileRef = 903D292901983802349B59C5 /* risk.md */; };
+		6CFDC22CD29DB2D7ABCD585C /* secrets.md in Resources */ = {isa = PBXBuildFile; fileRef = 4AB9FAF5A8D7FE325DE6ABD3 /* secrets.md */; };
+		1751BF9E012146E24E8D6BDF /* shellsafe.md in Resources */ = {isa = PBXBuildFile; fileRef = 5B382666682571CBAFAB80E2 /* shellsafe.md */; };
+		E2C790AF02F94AFC629ED8B0 /* signing.md in Resources */ = {isa = PBXBuildFile; fileRef = CDCBD986860FB52D938A297F /* signing.md */; };
+		4167722F28CA921796EAABA7 /* snapshot.md in Resources */ = {isa = PBXBuildFile; fileRef = 756AFB311D4466EE80EA6573 /* snapshot.md */; };
+		9A53FE7FA08E60DAA013DCF5 /* spec.md in Resources */ = {isa = PBXBuildFile; fileRef = BD5FCAD35390CFBFEF408153 /* spec.md */; };
+		D3720EB0B0E26994B1094DA9 /* sql.md in Resources */ = {isa = PBXBuildFile; fileRef = F58CB4B1B49092EE58D02B8B /* sql.md */; };
+		FA6BCAE50782CDCC08BFDA54 /* standup.md in Resources */ = {isa = PBXBuildFile; fileRef = 36DD567A772CC02D0C3D6F93 /* standup.md */; };
+		534D9196BE5151D5BB887C7D /* states.md in Resources */ = {isa = PBXBuildFile; fileRef = A0202408403EE952E30843A2 /* states.md */; };
+		A62531CBF85D432FE8E60066 /* summarize.md in Resources */ = {isa = PBXBuildFile; fileRef = EBC57A449A32501A24CF5BD3 /* summarize.md */; };
+		2F86184D89F93EFC2CC46531 /* swift6.md in Resources */ = {isa = PBXBuildFile; fileRef = 0A5EA0AD8FD9FE15B8405443 /* swift6.md */; };
+		DF40F31A5CB9976B1E0399F9 /* swiftdata.md in Resources */ = {isa = PBXBuildFile; fileRef = 84EDE867080655C745EC7E8F /* swiftdata.md */; };
+		EB84FE487D901D4537A4FCBC /* tdd.md in Resources */ = {isa = PBXBuildFile; fileRef = 959FBC0A5B57FECCF5919309 /* tdd.md */; };
+		6CAAE0179A18B9988E0E592D /* test.md in Resources */ = {isa = PBXBuildFile; fileRef = DFA98205BD27E18485295CB3 /* test.md */; };
+		6B09FB380A5D7C3703212640 /* testgen.md in Resources */ = {isa = PBXBuildFile; fileRef = 5C6571D69711A8C7ED51115F /* testgen.md */; };
+		9DA2D719FAD0BD4C9C4B5A71 /* todos.md in Resources */ = {isa = PBXBuildFile; fileRef = 1F1F3DA7792692165B16C134 /* todos.md */; };
+		6DD339548CA4C522807516ED /* triage.md in Resources */ = {isa = PBXBuildFile; fileRef = EF5D73BC927FFA6CE3BD071F /* triage.md */; };
+		F44FC536BA3FC85A273DB73B /* typography.md in Resources */ = {isa = PBXBuildFile; fileRef = 489476371A5D2FC98A9BB25E /* typography.md */; };
+		8471B684C5A295881A06B048 /* uitest.md in Resources */ = {isa = PBXBuildFile; fileRef = 46A3BAE37F4E82BD395694CF /* uitest.md */; };
+		5F376976F9BFF8742A6B9096 /* unwrap.md in Resources */ = {isa = PBXBuildFile; fileRef = 43991C832A1426DEBAE541C7 /* unwrap.md */; };
+		CB1EBA8CFE716F3DB40D1830 /* upgrade.md in Resources */ = {isa = PBXBuildFile; fileRef = 6D3A10847343F5D226C42580 /* upgrade.md */; };
+		F85159A6F9126B13A8F033E8 /* ux-copy.md in Resources */ = {isa = PBXBuildFile; fileRef = F8E07CFDED62619633E252EB /* ux-copy.md */; };
+		48C783D3A96C4572D6D2D823 /* verify.md in Resources */ = {isa = PBXBuildFile; fileRef = E5F51BF81FD092D363789FA2 /* verify.md */; };
+		0BA3E24094689D5E04E5B8A5 /* warnings.md in Resources */ = {isa = PBXBuildFile; fileRef = 22CE4B318CEB893B29B5F3BA /* warnings.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -9312,6 +9394,88 @@
 		066C9FEA12408E88BD1F974A /* UniversalToolAccess.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UniversalToolAccess.md; sourceTree = "<group>"; };
 		199843852ECEB9E81B5043BB /* UserInteractionPlaybook.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UserInteractionPlaybook.md; sourceTree = "<group>"; };
 		D39046508BFBADECFDCABCBB /* System Skills */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "System Skills"; sourceTree = "<group>"; };
+		45DFB90A0A0BD735AB302A92 /* BuiltInActionCatalog+Extended.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BuiltInActionCatalog+Extended.swift"; sourceTree = "<group>"; };
+		42C8EC60848BD6E3F0A7447A /* a11y.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = a11y.md; sourceTree = "<group>"; };
+		DD64FF6C7F975115B1930F4E /* adr.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = adr.md; sourceTree = "<group>"; };
+		9869FD5A64961E61A4B89010 /* api.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = api.md; sourceTree = "<group>"; };
+		5A752343BE03F1429BC77EAD /* architecture.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = architecture.md; sourceTree = "<group>"; };
+		5A51B96EE2DBEBBEB484E9F6 /* audit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = audit.md; sourceTree = "<group>"; };
+		B824F12ECC245FB21FC138CE /* auth.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = auth.md; sourceTree = "<group>"; };
+		F0D3E68191450E1D6E07F73D /* benchmark.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = benchmark.md; sourceTree = "<group>"; };
+		A5380E5D0B7A133D43F86108 /* branches.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = branches.md; sourceTree = "<group>"; };
+		0105CF512D29B4231BBB98DC /* buildfix.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = buildfix.md; sourceTree = "<group>"; };
+		E08447332A03081909A1C67E /* changelog.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = changelog.md; sourceTree = "<group>"; };
+		8F698D98A37D959382F1FCC3 /* ci.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ci.md; sourceTree = "<group>"; };
+		E84000B8FC23BF164221C29A /* cleanup.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = cleanup.md; sourceTree = "<group>"; };
+		94C617F7A1B044D66B91D01A /* commit.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = commit.md; sourceTree = "<group>"; };
+		DF70643F7E1AD5EE46D35958 /* concurrency.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = concurrency.md; sourceTree = "<group>"; };
+		127702B1B3C93F3135889E4C /* conflicts.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = conflicts.md; sourceTree = "<group>"; };
+		CF1BBE6D7EE9A81475ECA883 /* coredata.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = coredata.md; sourceTree = "<group>"; };
+		8215647264FF6084EEDEC435 /* coverage.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = coverage.md; sourceTree = "<group>"; };
+		E31ED884B537AC850C30E946 /* crypto.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = crypto.md; sourceTree = "<group>"; };
+		8D7D416A9C1826C1EBF7535A /* darkmode.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = darkmode.md; sourceTree = "<group>"; };
+		46B47AE2EAE414CACA540EC9 /* deadcode.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = deadcode.md; sourceTree = "<group>"; };
+		BEF5DA2CD96641AA1AD86578 /* debug.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = debug.md; sourceTree = "<group>"; };
+		61CD065DE343EF1265EF7970 /* deps.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = deps.md; sourceTree = "<group>"; };
+		6154531835BB3A69697A5466 /* design.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = design.md; sourceTree = "<group>"; };
+		146AE8DCB57D2E6DE6CBD768 /* diagram.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = diagram.md; sourceTree = "<group>"; };
+		61EF17F1C754527A87CEAAC4 /* docc.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = docc.md; sourceTree = "<group>"; };
+		6A49491CD8D6BE6AEAC72C85 /* docs.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = docs.md; sourceTree = "<group>"; };
+		56366A99C00809AE50DBB1F5 /* entitlements.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = entitlements.md; sourceTree = "<group>"; };
+		5EBD91E977C23D51CCE56690 /* errors.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = errors.md; sourceTree = "<group>"; };
+		B47921F91746104BD34C9915 /* estimate.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = estimate.md; sourceTree = "<group>"; };
+		792595CA895C38EE885DDA7C /* explain.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = explain.md; sourceTree = "<group>"; };
+		EF52FD50E8DDD6FABE0C3823 /* fakes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = fakes.md; sourceTree = "<group>"; };
+		60313B47CF547855EF09A088 /* fix.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = fix.md; sourceTree = "<group>"; };
+		53514126EE355505C22433F1 /* flaky.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = flaky.md; sourceTree = "<group>"; };
+		116AFC2D2544152E303FD084 /* format.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = format.md; sourceTree = "<group>"; };
+		C00519425F36666669667652 /* harden.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = harden.md; sourceTree = "<group>"; };
+		FB1B5C7503FAB7442B22E4EF /* history.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = history.md; sourceTree = "<group>"; };
+		6ACD2C2063B5F7D40ADABA4F /* launch.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = launch.md; sourceTree = "<group>"; };
+		40994A282E3E9B4191FA79F7 /* leaks.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = leaks.md; sourceTree = "<group>"; };
+		2E91D208E8EB95F54592F7BE /* license.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = license.md; sourceTree = "<group>"; };
+		2CCED5666127E1F6A6810FCA /* lint.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = lint.md; sourceTree = "<group>"; };
+		134ACD71D3F17C44E430C0F2 /* localize.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = localize.md; sourceTree = "<group>"; };
+		ABCF349C21201B0845059BB3 /* logging.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = logging.md; sourceTree = "<group>"; };
+		A883A0A61CE093384546B8BA /* modernize.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = modernize.md; sourceTree = "<group>"; };
+		06ED8F3996CFB5AFD21105FD /* modules.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = modules.md; sourceTree = "<group>"; };
+		4ECC9C8187812B25DC914EE9 /* navigation.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = navigation.md; sourceTree = "<group>"; };
+		A6C7A9D7C040E4BADA5D2AB0 /* networking.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = networking.md; sourceTree = "<group>"; };
+		5CE0A9E1D5F060148EF83F07 /* onboard.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = onboard.md; sourceTree = "<group>"; };
+		9B435BC7D0F6701D6F57FC28 /* optimize.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = optimize.md; sourceTree = "<group>"; };
+		7A95DDBEB1D44C4A35301C8B /* postmortem.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = postmortem.md; sourceTree = "<group>"; };
+		2BD9F8519BA41A7B9A9B7E33 /* pr.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = pr.md; sourceTree = "<group>"; };
+		FA4DF08423779EA5650CBC78 /* privacy.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = privacy.md; sourceTree = "<group>"; };
+		1CA13A75F2BFD15F6A7990DF /* profile.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = profile.md; sourceTree = "<group>"; };
+		61E4F5F09AAD7A8B6F0988A4 /* readme.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = readme.md; sourceTree = "<group>"; };
+		29C33D4678951F1FF260BD09 /* refactor.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = refactor.md; sourceTree = "<group>"; };
+		4ABE2FED2639E3E71D73C8A5 /* release.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = release.md; sourceTree = "<group>"; };
+		AAB57454975CFDF73F105C3B /* rerender.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = rerender.md; sourceTree = "<group>"; };
+		0BC56CEC08639DC0D5418616 /* review.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = review.md; sourceTree = "<group>"; };
+		903D292901983802349B59C5 /* risk.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = risk.md; sourceTree = "<group>"; };
+		4AB9FAF5A8D7FE325DE6ABD3 /* secrets.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = secrets.md; sourceTree = "<group>"; };
+		5B382666682571CBAFAB80E2 /* shellsafe.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = shellsafe.md; sourceTree = "<group>"; };
+		CDCBD986860FB52D938A297F /* signing.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = signing.md; sourceTree = "<group>"; };
+		756AFB311D4466EE80EA6573 /* snapshot.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = snapshot.md; sourceTree = "<group>"; };
+		BD5FCAD35390CFBFEF408153 /* spec.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = spec.md; sourceTree = "<group>"; };
+		F58CB4B1B49092EE58D02B8B /* sql.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = sql.md; sourceTree = "<group>"; };
+		36DD567A772CC02D0C3D6F93 /* standup.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = standup.md; sourceTree = "<group>"; };
+		A0202408403EE952E30843A2 /* states.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = states.md; sourceTree = "<group>"; };
+		EBC57A449A32501A24CF5BD3 /* summarize.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = summarize.md; sourceTree = "<group>"; };
+		0A5EA0AD8FD9FE15B8405443 /* swift6.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = swift6.md; sourceTree = "<group>"; };
+		84EDE867080655C745EC7E8F /* swiftdata.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = swiftdata.md; sourceTree = "<group>"; };
+		959FBC0A5B57FECCF5919309 /* tdd.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = tdd.md; sourceTree = "<group>"; };
+		DFA98205BD27E18485295CB3 /* test.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = test.md; sourceTree = "<group>"; };
+		5C6571D69711A8C7ED51115F /* testgen.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = testgen.md; sourceTree = "<group>"; };
+		1F1F3DA7792692165B16C134 /* todos.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = todos.md; sourceTree = "<group>"; };
+		EF5D73BC927FFA6CE3BD071F /* triage.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = triage.md; sourceTree = "<group>"; };
+		489476371A5D2FC98A9BB25E /* typography.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = typography.md; sourceTree = "<group>"; };
+		46A3BAE37F4E82BD395694CF /* uitest.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = uitest.md; sourceTree = "<group>"; };
+		43991C832A1426DEBAE541C7 /* unwrap.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = unwrap.md; sourceTree = "<group>"; };
+		6D3A10847343F5D226C42580 /* upgrade.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = upgrade.md; sourceTree = "<group>"; };
+		F8E07CFDED62619633E252EB /* ux-copy.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = ux-copy.md; sourceTree = "<group>"; };
+		E5F51BF81FD092D363789FA2 /* verify.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = verify.md; sourceTree = "<group>"; };
+		22CE4B318CEB893B29B5F3BA /* warnings.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = warnings.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -10812,6 +10976,87 @@
 				9F8E4CDBEF122B223380E804 /* learn.md */,
 				82E6D72CA16B7B6CD3FC9286 /* schedule.md */,
 				0D9C29CECFE3ADAD92616C2F /* teamwork.md */,
+				22CE4B318CEB893B29B5F3BA /* warnings.md */,
+				E5F51BF81FD092D363789FA2 /* verify.md */,
+				F8E07CFDED62619633E252EB /* ux-copy.md */,
+				6D3A10847343F5D226C42580 /* upgrade.md */,
+				43991C832A1426DEBAE541C7 /* unwrap.md */,
+				46A3BAE37F4E82BD395694CF /* uitest.md */,
+				489476371A5D2FC98A9BB25E /* typography.md */,
+				EF5D73BC927FFA6CE3BD071F /* triage.md */,
+				1F1F3DA7792692165B16C134 /* todos.md */,
+				5C6571D69711A8C7ED51115F /* testgen.md */,
+				DFA98205BD27E18485295CB3 /* test.md */,
+				959FBC0A5B57FECCF5919309 /* tdd.md */,
+				84EDE867080655C745EC7E8F /* swiftdata.md */,
+				0A5EA0AD8FD9FE15B8405443 /* swift6.md */,
+				EBC57A449A32501A24CF5BD3 /* summarize.md */,
+				A0202408403EE952E30843A2 /* states.md */,
+				36DD567A772CC02D0C3D6F93 /* standup.md */,
+				F58CB4B1B49092EE58D02B8B /* sql.md */,
+				BD5FCAD35390CFBFEF408153 /* spec.md */,
+				756AFB311D4466EE80EA6573 /* snapshot.md */,
+				CDCBD986860FB52D938A297F /* signing.md */,
+				5B382666682571CBAFAB80E2 /* shellsafe.md */,
+				4AB9FAF5A8D7FE325DE6ABD3 /* secrets.md */,
+				903D292901983802349B59C5 /* risk.md */,
+				0BC56CEC08639DC0D5418616 /* review.md */,
+				AAB57454975CFDF73F105C3B /* rerender.md */,
+				4ABE2FED2639E3E71D73C8A5 /* release.md */,
+				29C33D4678951F1FF260BD09 /* refactor.md */,
+				61E4F5F09AAD7A8B6F0988A4 /* readme.md */,
+				1CA13A75F2BFD15F6A7990DF /* profile.md */,
+				FA4DF08423779EA5650CBC78 /* privacy.md */,
+				2BD9F8519BA41A7B9A9B7E33 /* pr.md */,
+				7A95DDBEB1D44C4A35301C8B /* postmortem.md */,
+				9B435BC7D0F6701D6F57FC28 /* optimize.md */,
+				5CE0A9E1D5F060148EF83F07 /* onboard.md */,
+				A6C7A9D7C040E4BADA5D2AB0 /* networking.md */,
+				4ECC9C8187812B25DC914EE9 /* navigation.md */,
+				06ED8F3996CFB5AFD21105FD /* modules.md */,
+				A883A0A61CE093384546B8BA /* modernize.md */,
+				ABCF349C21201B0845059BB3 /* logging.md */,
+				134ACD71D3F17C44E430C0F2 /* localize.md */,
+				2CCED5666127E1F6A6810FCA /* lint.md */,
+				2E91D208E8EB95F54592F7BE /* license.md */,
+				40994A282E3E9B4191FA79F7 /* leaks.md */,
+				6ACD2C2063B5F7D40ADABA4F /* launch.md */,
+				FB1B5C7503FAB7442B22E4EF /* history.md */,
+				C00519425F36666669667652 /* harden.md */,
+				116AFC2D2544152E303FD084 /* format.md */,
+				53514126EE355505C22433F1 /* flaky.md */,
+				60313B47CF547855EF09A088 /* fix.md */,
+				EF52FD50E8DDD6FABE0C3823 /* fakes.md */,
+				792595CA895C38EE885DDA7C /* explain.md */,
+				B47921F91746104BD34C9915 /* estimate.md */,
+				5EBD91E977C23D51CCE56690 /* errors.md */,
+				56366A99C00809AE50DBB1F5 /* entitlements.md */,
+				6A49491CD8D6BE6AEAC72C85 /* docs.md */,
+				61EF17F1C754527A87CEAAC4 /* docc.md */,
+				146AE8DCB57D2E6DE6CBD768 /* diagram.md */,
+				6154531835BB3A69697A5466 /* design.md */,
+				61CD065DE343EF1265EF7970 /* deps.md */,
+				BEF5DA2CD96641AA1AD86578 /* debug.md */,
+				46B47AE2EAE414CACA540EC9 /* deadcode.md */,
+				8D7D416A9C1826C1EBF7535A /* darkmode.md */,
+				E31ED884B537AC850C30E946 /* crypto.md */,
+				8215647264FF6084EEDEC435 /* coverage.md */,
+				CF1BBE6D7EE9A81475ECA883 /* coredata.md */,
+				127702B1B3C93F3135889E4C /* conflicts.md */,
+				DF70643F7E1AD5EE46D35958 /* concurrency.md */,
+				94C617F7A1B044D66B91D01A /* commit.md */,
+				E84000B8FC23BF164221C29A /* cleanup.md */,
+				8F698D98A37D959382F1FCC3 /* ci.md */,
+				E08447332A03081909A1C67E /* changelog.md */,
+				0105CF512D29B4231BBB98DC /* buildfix.md */,
+				A5380E5D0B7A133D43F86108 /* branches.md */,
+				F0D3E68191450E1D6E07F73D /* benchmark.md */,
+				B824F12ECC245FB21FC138CE /* auth.md */,
+				5A51B96EE2DBEBBEB484E9F6 /* audit.md */,
+				5A752343BE03F1429BC77EAD /* architecture.md */,
+				9869FD5A64961E61A4B89010 /* api.md */,
+				DD64FF6C7F975115B1930F4E /* adr.md */,
+				42C8EC60848BD6E3F0A7447A /* a11y.md */,
 				D39046508BFBADECFDCABCBB /* System Skills */,
 			);
 			path = "SC Skills";
@@ -15644,6 +15889,7 @@
 				6238437162731CB88B3ED613 /* AssistScheduledTaskManager.swift */,
 				416128B13A9331FDD26FEB40 /* SlashCommandExecutionEngine.swift */,
 				CBB89568E886ABE4BDBAA7A9 /* BuiltInActionCatalog.swift */,
+				45DFB90A0A0BD735AB302A92 /* BuiltInActionCatalog+Extended.swift */,
 			);
 			path = SlashCommands;
 			sourceTree = "<group>";
@@ -17518,6 +17764,87 @@
 				97A93070856BD189598960AF /* learn.md in Resources */,
 				FE450B6F519E4898E6EBC4C6 /* schedule.md in Resources */,
 				653B52B060F8E50CAE5CAC0B /* teamwork.md in Resources */,
+				0BA3E24094689D5E04E5B8A5 /* warnings.md in Resources */,
+				48C783D3A96C4572D6D2D823 /* verify.md in Resources */,
+				F85159A6F9126B13A8F033E8 /* ux-copy.md in Resources */,
+				CB1EBA8CFE716F3DB40D1830 /* upgrade.md in Resources */,
+				5F376976F9BFF8742A6B9096 /* unwrap.md in Resources */,
+				8471B684C5A295881A06B048 /* uitest.md in Resources */,
+				F44FC536BA3FC85A273DB73B /* typography.md in Resources */,
+				6DD339548CA4C522807516ED /* triage.md in Resources */,
+				9DA2D719FAD0BD4C9C4B5A71 /* todos.md in Resources */,
+				6B09FB380A5D7C3703212640 /* testgen.md in Resources */,
+				6CAAE0179A18B9988E0E592D /* test.md in Resources */,
+				EB84FE487D901D4537A4FCBC /* tdd.md in Resources */,
+				DF40F31A5CB9976B1E0399F9 /* swiftdata.md in Resources */,
+				2F86184D89F93EFC2CC46531 /* swift6.md in Resources */,
+				A62531CBF85D432FE8E60066 /* summarize.md in Resources */,
+				534D9196BE5151D5BB887C7D /* states.md in Resources */,
+				FA6BCAE50782CDCC08BFDA54 /* standup.md in Resources */,
+				D3720EB0B0E26994B1094DA9 /* sql.md in Resources */,
+				9A53FE7FA08E60DAA013DCF5 /* spec.md in Resources */,
+				4167722F28CA921796EAABA7 /* snapshot.md in Resources */,
+				E2C790AF02F94AFC629ED8B0 /* signing.md in Resources */,
+				1751BF9E012146E24E8D6BDF /* shellsafe.md in Resources */,
+				6CFDC22CD29DB2D7ABCD585C /* secrets.md in Resources */,
+				840B6B5B5F6BC61D9903733B /* risk.md in Resources */,
+				51D8106B608BD9FEBFD4BAEA /* review.md in Resources */,
+				34C2EE8549377218E4C14162 /* rerender.md in Resources */,
+				4D980424610773949A8DBD59 /* release.md in Resources */,
+				32BA5D1D777A75731B480D24 /* refactor.md in Resources */,
+				5D1C1C9577BE7048711E3935 /* readme.md in Resources */,
+				0ADED9FD1BE6D34BF8C37C36 /* profile.md in Resources */,
+				93D5F4C1C8CEFA8FDA421F58 /* privacy.md in Resources */,
+				8F11C00DE3A62EB2928230ED /* pr.md in Resources */,
+				8501521E704296AF46648286 /* postmortem.md in Resources */,
+				2413A1175690FB41A9EA5D7C /* optimize.md in Resources */,
+				C8415E32A72DF88B68D0353D /* onboard.md in Resources */,
+				8751E3CA6896B7E9C8223128 /* networking.md in Resources */,
+				D7860B2DC6C47A6194F36EFC /* navigation.md in Resources */,
+				E62C9097AED6794316DEF805 /* modules.md in Resources */,
+				F2EDDC8EC637ADA661AC031A /* modernize.md in Resources */,
+				DC81426FCB1640200B5CA5C8 /* logging.md in Resources */,
+				10F77B564A07BE2A19E9605C /* localize.md in Resources */,
+				C6F6FA48930B5E92B1A5F074 /* lint.md in Resources */,
+				828962747BEEBF3F7DE01CA1 /* license.md in Resources */,
+				1B49D3D6C7F51DDB36A331EF /* leaks.md in Resources */,
+				4FCC065986F51B60874DA065 /* launch.md in Resources */,
+				EA5A92DACA86491A72E3E205 /* history.md in Resources */,
+				3CCD811DD5C63B767319A241 /* harden.md in Resources */,
+				195E29DDAB9C7F20D2F07138 /* format.md in Resources */,
+				A6186CA0A2CEB784D07120E6 /* flaky.md in Resources */,
+				206D76FD5B54977EA63AD397 /* fix.md in Resources */,
+				7AB805789251536899EA1E5A /* fakes.md in Resources */,
+				A381E2BBA3F6334C9E2569DA /* explain.md in Resources */,
+				AE055D263CC120EFA171FB0A /* estimate.md in Resources */,
+				42F12D0BCB8805EBB5E290FB /* errors.md in Resources */,
+				4A04D54797A063EBF5127CA0 /* entitlements.md in Resources */,
+				1C316C456F23968EB54D509E /* docs.md in Resources */,
+				DA98291039D6FE8E086EDF39 /* docc.md in Resources */,
+				D6538DE915FBBE8FAC747F9D /* diagram.md in Resources */,
+				CBB97A3339C2ECAA6ABB06C6 /* design.md in Resources */,
+				70B01CF1A3303C1C03315443 /* deps.md in Resources */,
+				F87649E72F28F14E44770EF0 /* debug.md in Resources */,
+				6947B5CC532B2A70BAC8D27D /* deadcode.md in Resources */,
+				0CEFBD06438CA607BB08C3FE /* darkmode.md in Resources */,
+				386D79FAA5434AFC9ECAFD1B /* crypto.md in Resources */,
+				7CE9DE06FCF92816612D112B /* coverage.md in Resources */,
+				3B00E3F76876EE90FF570B43 /* coredata.md in Resources */,
+				18D60ED8923EBF82E6710F6A /* conflicts.md in Resources */,
+				1B6273415C454013B89D6706 /* concurrency.md in Resources */,
+				F48F30D48A82BE6827A16884 /* commit.md in Resources */,
+				427EB5BFDA1EFF503E560911 /* cleanup.md in Resources */,
+				4D542E6F4A47C0457AF0CE4C /* ci.md in Resources */,
+				FACF53BD5990D6D6408852AB /* changelog.md in Resources */,
+				4FEA35BB15770BF886F52CEF /* buildfix.md in Resources */,
+				D4CDB6934DCE2A2733B726AD /* branches.md in Resources */,
+				1AC967C632B197E30CECFF6E /* benchmark.md in Resources */,
+				99F0E5F441F44A8D5A91CBD3 /* auth.md in Resources */,
+				BDFB9ACD25E6EC81B7E07C21 /* audit.md in Resources */,
+				584A5A8F5C1C56B649F2F910 /* architecture.md in Resources */,
+				1921C630AD4A7ED0008E99E4 /* api.md in Resources */,
+				4C353573A38FAE683C4A45D3 /* adr.md in Resources */,
+				2F7FE8048D4EDC270E56306F /* a11y.md in Resources */,
 				338A16B49EF9FECFE112D4CB /* System Skills in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -22262,6 +22589,7 @@
 				B18552E70B819D62CADB1379 /* SkillsValidator.swift in Sources */,
 				75734EADA10F2AFD9FA6C491 /* SlashCommandExecutionEngine.swift in Sources */,
 				51A056AC6812E91E64B54ACE /* BuiltInActionCatalog.swift in Sources */,
+				FFD23324775428186CB8B7F2 /* BuiltInActionCatalog+Extended.swift in Sources */,
 				FCE398B6943F18545D224916 /* SystemIndex.swift in Sources */,
 				7898BC95365992E8E0A6F73B /* SystemIndexTestSuite.swift in Sources */,
 				6B899998754B100F848ACC89 /* TasksAIPlanner.swift in Sources */,

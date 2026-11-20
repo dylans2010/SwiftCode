@@ -2,7 +2,7 @@
 # SystemSkillsAndActions — Bundled Skills and Built-in Actions
 
 ## System Skills
-SwiftCode ships 156 System Skills under `SC Skills/System Skills/<name>/SKILL.md`. They cover authentication (Keychain, OAuth PKCE, Sign in with Apple, biometrics), UI design (SwiftUI layout, design systems, accessibility, navigation), documentation (DocC, README, ADRs, changelogs), testing (Swift Testing, XCTest, UI tests, TDD, flaky tests), concurrency, networking, persistence, security, performance, architecture, platforms, debugging, Git collaboration, product work and agent behavior.
+SwiftCode ships 196 System Skills under `SC Skills/System Skills/<name>/SKILL.md`. They cover authentication (Keychain, OAuth PKCE, Sign in with Apple, biometrics), UI design (SwiftUI layout, design systems, accessibility, navigation), documentation (DocC, README, ADRs, changelogs), testing (Swift Testing, XCTest, UI tests, TDD, flaky tests), concurrency, networking, persistence, security, performance, architecture, platforms, debugging, Git collaboration, product work and agent behavior.
 
 - Users install them from **Assist Settings → System Skills → Install System Skills**. They can uninstall all of them or individual skills there.
 - Installation copies the skill folders into the SwiftCode skills library, which makes them discoverable by the skill index, the slash palette and every model.
@@ -32,5 +32,11 @@ SwiftCode ships 156 System Skills under `SC Skills/System Skills/<name>/SKILL.md
 | `/triage` | Reproduce and localize a bug before fixing |
 | `/modernize` | Migrate legacy APIs to modern Swift |
 | `/release` | Release readiness checklist |
+
+### Extended actions (50)
+`/lint` `/format` `/deadcode` `/todos` `/secrets` `/crypto` `/concurrency` `/leaks` `/unwrap` `/errors` `/logging` `/api` `/docc` `/adr` `/diagram` `/upgrade` `/license` `/privacy` `/entitlements` `/signing` `/ci` `/buildfix` `/warnings` `/flaky` `/tdd` `/fakes` `/uitest` `/snapshot` `/benchmark` `/launch` `/rerender` `/darkmode` `/typography` `/ux-copy` `/states` `/navigation` `/swiftdata` `/coredata` `/networking` `/auth` `/sql` `/shellsafe` `/branches` `/history` `/conflicts` `/pr` `/risk` `/estimate` `/postmortem` `/modules`
+
+### Action specifications
+Every built-in action has a specification file in `SC Skills/<command>.md` (for example `SC Skills/verify.md`, `SC Skills/goal.md`). The spec describes syntax, preflight evidence, the ordered workflow, guidance to load, operational rules and the completion report. SwiftCode appends the spec to the action prompt, and the files are also indexed as built-in skills so any model can read them.
 
 Each action runs read-only preflight tools (for example scans or git summaries), attaches their real output as workspace evidence, and then gives the model a numbered workflow and the System Assets to load. These actions complement `/goal`, `/interview`, `/learn`, `/boost`, `/teamwork`, `/compact` and `/schedule`.

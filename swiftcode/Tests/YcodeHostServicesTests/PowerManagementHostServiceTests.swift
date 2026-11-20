@@ -13,9 +13,16 @@ import Testing
     }
 
     func words(_ b: [UInt8]) -> [Int32] {
-        stride(from: 8, to: b.count, by: 4).map { i in
-            Int32(bitPattern: UInt32(b[i]) | UInt32(b[i + 1]) << 8 | UInt32(b[i + 2]) << 16 | UInt32(b[i + 3]) << 24)
+        var result: [Int32] = []
+        for i in stride(from: 8, to: b.count, by: 4) {
+            let byte0 = UInt32(b[i])
+            let byte1 = UInt32(b[i + 1])
+            let byte2 = UInt32(b[i + 2])
+            let byte3 = UInt32(b[i + 3])
+            let word = byte0 | (byte1 << 8) | (byte2 << 16) | (byte3 << 24)
+            result.append(Int32(bitPattern: word))
         }
+        return result
     }
 
     @Test func assertionsAreGranted() throws {

@@ -186,13 +186,22 @@ struct DeviceLayout {
     var child: [String: String] {
         let rr = runtimeRoot
         let (version, build) = runtimeVersion()
+        let runtimeName = runtimePlatform().displayName
+        let versionInfo = "SwiftCode - Device: \(Self.deviceName) (\(udid)) - Runtime: \(runtimeName) \(version) (\(build)) - DeviceType: \(deviceType.modelIdentifier)"
         func decimal(_ v: Double) -> String { String(format: "%f", v) }
+        let path = [
+            "\(rr)/usr/bin",
+            "\(rr)/bin",
+            "\(rr)/usr/sbin",
+            "\(rr)/sbin",
+            "\(rr)/usr/local/bin",
+        ].joined(separator: ":")
         var env = [
             "DYLD_ROOT_PATH": rr,
             "IPHONE_SIMULATOR_ROOT": rr,
             "SIMULATOR_ROOT": rr,
             "DYLD_SHARED_CACHE_DIR": rr + "/System/Library/Caches/com.apple.dyld",
-            "PATH": "\(rr)/usr/bin:\(rr)/bin:\(rr)/usr/sbin:\(rr)/sbin:\(rr)/usr/local/bin",
+            "PATH": path,
             "IPHONE_SHARED_RESOURCES_DIRECTORY": guestData,
             "SIMULATOR_SHARED_RESOURCES_DIRECTORY": guestData,
             "XPC_SIMULATOR_LAUNCHD_NAME": launchdName,
@@ -210,7 +219,7 @@ struct DeviceLayout {
             "SIMULATOR_RUNTIME_VERSION": version,
             "SIMULATOR_RUNTIME_BUILD_VERSION": build,
             "SIMULATOR_ARCHS": "arm64",
-            "SIMULATOR_VERSION_INFO": "SwiftCode - Device: \(Self.deviceName) (\(udid)) - Runtime: \(runtimePlatform().displayName) \(version) (\(build)) - DeviceType: \(deviceType.modelIdentifier)",
+            "SIMULATOR_VERSION_INFO": versionInfo,
             "SIMULATOR_BOOT_TIME": String(bootTime),
             "SIMULATOR_HOST_HOME": guestDev,
             "SIMULATOR_LOG_ROOT": guestPath(logRoot),

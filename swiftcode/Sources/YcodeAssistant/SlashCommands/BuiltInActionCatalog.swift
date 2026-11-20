@@ -38,7 +38,10 @@ public enum BuiltInActionCatalogData {
 
 public enum BuiltInActionCatalog {
 
-    public static let actions: [BuiltInAction] = [
+    /// Every built-in action: the 20 core actions plus `extendedActions`.
+    public static let actions: [BuiltInAction] = coreActions + extendedActions
+
+    public static let coreActions: [BuiltInAction] = [
         BuiltInAction(id: "verify", title: "Verify Changes", subtitle: "Build, test and review every uncommitted change before calling the work done",
                       icon: "checkmark.seal.fill", category: "Quality", argumentPlaceholder: "Optional scope (target or path)...",
                       preflight: [.init("git_diff_stat_range"), .init("git_untracked_files")],
@@ -150,6 +153,22 @@ public enum BuiltInActionCatalog {
     }
 
     /// Prompt without evidence (for synchronous callers such as the Meta palette).
+    /// The action's specification markdown bundled in `SC Skills/<id>.md`
+    /// (SwiftPM keeps the folder; Xcode app builds flatten it into Resources).
+    public static func specification(for action: BuiltInAction) -> String? {
+        let name = action.id + ".md"
+        let bases = [Bundle.module.resourceURL, Bundle.main.resourceURL].compactMap { $0 }
+        for base in bases {
+            for url in [base.appendingPathComponent("SC Skills", isDirectory: true).appendingPathComponent(name),
+                        base.appendingPathComponent(name)] {
+                if let text = try? String(contentsOf: url, encoding: .utf8), !text.isEmpty {
+                    return text
+                }
+            }
+        }
+        return nil
+    }
+
     public static func basePrompt(for action: BuiltInAction, argument: String?) -> String {
         let target = argument?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         var lines = ["### BUILT-IN ACTION: \(action.command) — \(action.title)"]
@@ -161,6 +180,11 @@ public enum BuiltInActionCatalog {
         lines.append("")
         lines.append("Before starting, load guidance with system_asset_read for: \(action.systemAssets.joined(separator: ", ")).")
         lines.append("Use real SwiftCode tools for every step (tool_catalog_search finds them). Never fabricate results; verify before reporting.")
+        if let spec = specification(for: action) {
+            lines.append("")
+            lines.append("### Action specification (SC Skills/\(action.id).md)")
+            lines.append(spec)
+        }
         return lines.joined(separator: "\n")
     }
 

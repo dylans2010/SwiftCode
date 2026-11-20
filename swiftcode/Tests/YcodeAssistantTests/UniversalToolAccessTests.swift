@@ -88,7 +88,7 @@ struct UniversalToolAccessTests {
 
     @Test func bundledSystemSkillsAreValid() {
         let skills = SystemSkillInstallManager.shared.availableSkills()
-        #expect(skills.count >= 150)
+        #expect(skills.count >= 190)
         for skill in skills {
             #expect(skill.name == skill.directoryName, "front matter name must match folder for \(skill.directoryName)")
             #expect(!skill.description.isEmpty)
@@ -103,10 +103,16 @@ struct UniversalToolAccessTests {
         #expect(meta["description"] == "Hello: world")
     }
 
-    @Test func twentyBuiltInActionsWithUniqueCommands() {
+    @Test func seventyBuiltInActionsWithUniqueCommandsAndSpecs() {
         let actions = BuiltInActionCatalog.actions
-        #expect(actions.count == 20)
-        #expect(Set(actions.map(\.id)).count == 20)
+        #expect(BuiltInActionCatalog.coreActions.count == 20)
+        #expect(BuiltInActionCatalog.extendedActions.count == 50)
+        #expect(actions.count == 70)
+        #expect(Set(actions.map(\.id)).count == 70)
+        for action in actions {
+            let spec = BuiltInActionCatalog.specification(for: action)
+            #expect(spec?.contains("/\(action.id)") == true, "missing SC Skills/\(action.id).md")
+        }
         let legacy: Set<String> = ["goal", "interview", "learn", "boost", "teamwork", "compact", "schedule"]
         #expect(actions.allSatisfy { !legacy.contains($0.id) })
         let registered = Set(AssistToolRegistry.shared.allTools.map(\.id))

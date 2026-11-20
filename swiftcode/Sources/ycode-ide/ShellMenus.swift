@@ -13,6 +13,12 @@ struct ShellMenus: Commands {
     }
 
     var body: some Commands {
+        standardCommands
+        navigationCommands
+    }
+
+    @CommandsBuilder
+    private var standardCommands: some Commands {
         CommandGroup(replacing: .appInfo) {
             MenuSpecItems(app: app, items: Self.items("SwiftCode").filter { if case .command(let c) = $0 { return c.action != "terminate:" }; return true })
         }
@@ -36,6 +42,10 @@ struct ShellMenus: Commands {
         }
         CommandGroup(replacing: .toolbar) {}
         CommandGroup(replacing: .sidebar) { MenuSpecItems(app: app, items: Self.items("View")) }
+    }
+
+    @CommandsBuilder
+    private var navigationCommands: some Commands {
         CommandMenu("Find") { MenuSpecItems(app: app, items: Self.items("Find")) }
         CommandMenu("Navigate") { MenuSpecItems(app: app, items: Self.items("Navigate")) }
         CommandMenu("Editor") { MenuSpecItems(app: app, items: EditorMenu.items(for: app.workspace?.editorKind ?? .source)) }
