@@ -3233,7 +3233,6 @@ public struct AssistSettingsView: View {
         cachedModels = discoveryService.discoveredModels.map { CachedModel(modelID: $0.modelIdentifier, providerName: $0.providerName) }
     }
 
-    @ViewBuilder
     private var modelsSearchQuery: String {
         availableModelsSearchText.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }

@@ -3961,6 +3961,28 @@
 		FFDCC06EEDE8A2C62F840143 /* DeviceConnectEnvironmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0789A05A7B628AFDE916415 /* DeviceConnectEnvironmentView.swift */; };
 		FFDF60ABD9354A83A5E41E6B /* CC-BY-SA-2.0-UK.txt in Resources */ = {isa = PBXBuildFile; fileRef = 03660BECEF401EFDC2F13E25 /* CC-BY-SA-2.0-UK.txt */; };
 		FFF470A127F3C635B0106EDB /* AssistXcodeProjectResolver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 368DE2B5454D45F1AC647E0E /* AssistXcodeProjectResolver.swift */; };
+		34CAD782C41DDBA214AB05A1 /* AssistExpansionToolkit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 399C63F718E7B75B5AEA0B72 /* AssistExpansionToolkit.swift */; };
+		10C5FE53DCF02AFEA3D6B360 /* AssistToolKitEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D8E776E19ED01BD03F519AD /* AssistToolKitEngine.swift */; };
+		0ACAE698FD709EB5D1BFAD43 /* AssistToolKitSwiftSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37B56ABCE0B4EF9C0C67488 /* AssistToolKitSwiftSource.swift */; };
+		0FF2E4AE1BEFACAD110FBAA7 /* AssistUniversalModelContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FE7699FB068DD1385AB0B7 /* AssistUniversalModelContext.swift */; };
+		45B0A93FB596B6720BAA9112 /* AssistXKCodeScanTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB01F0AC4DE82E725EE42259 /* AssistXKCodeScanTools.swift */; };
+		38797B9553D1A6A727DD2256 /* AssistXKKnowledgeTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C44A04F605C9B1563FA38C4 /* AssistXKKnowledgeTools.swift */; };
+		80D447E36AB9C613CD301FD6 /* AssistXKNetworkTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7952D790B8E2CD983165813 /* AssistXKNetworkTools.swift */; };
+		5C614D4BD0DA8F768A4C6204 /* AssistXKProcessTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0767616927A7536C98ACCECE /* AssistXKProcessTools.swift */; };
+		93772D665EFF9B8906720395 /* AssistXKSwiftSourceTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 811052C90BE715A575305B3A /* AssistXKSwiftSourceTools.swift */; };
+		C75C81A030F8D4CFFE8414DD /* AssistXKTextDataTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0874AD38DCDE24ADDF2428 /* AssistXKTextDataTools.swift */; };
+		5234A300DBBDCC36F1533D5F /* AssistXKWorkspaceTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18201C7107CD22AA78F0D4D1 /* AssistXKWorkspaceTools.swift */; };
+		CDAD24B89267DB8BC0CB005B /* SystemSkillInstall.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21AC7D571D0EE202C920F7EF /* SystemSkillInstall.swift */; };
+		51A056AC6812E91E64B54ACE /* BuiltInActionCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB89568E886ABE4BDBAA7A9 /* BuiltInActionCatalog.swift */; };
+		B3E857B8C5D38C88E85C7DB8 /* SystemSkillsInstallSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A78972AC20BE58BAF983A5AD /* SystemSkillsInstallSection.swift */; };
+		447010A38BA6FAA2F679F111 /* AgentBehaviorCharter.md in Resources */ = {isa = PBXBuildFile; fileRef = 72AF81689A41D99E6E55A9C5 /* AgentBehaviorCharter.md */; };
+		C64A4670659CEE1F134D9FF8 /* CodeWritingStandards.md in Resources */ = {isa = PBXBuildFile; fileRef = 60DA514A6035A6D3C9973189 /* CodeWritingStandards.md */; };
+		6951053DBE925EF9DE1BCD92 /* SystemSkillsAndActions.md in Resources */ = {isa = PBXBuildFile; fileRef = A0CE4D91881505F17B9F3AF2 /* SystemSkillsAndActions.md */; };
+		883A560754BE3582664CE94C /* TestingPlaybook.md in Resources */ = {isa = PBXBuildFile; fileRef = 1B9A991EA311098CB0C0EEAB /* TestingPlaybook.md */; };
+		B931F47CC43C52635286B7CC /* UniversalToolAccess.md in Resources */ = {isa = PBXBuildFile; fileRef = 066C9FEA12408E88BD1F974A /* UniversalToolAccess.md */; };
+		2A9887E075E6401AAB3BB371 /* UserInteractionPlaybook.md in Resources */ = {isa = PBXBuildFile; fileRef = 199843852ECEB9E81B5043BB /* UserInteractionPlaybook.md */; };
+		338A16B49EF9FECFE112D4CB /* System Skills in Resources */ = {isa = PBXBuildFile; fileRef = D39046508BFBADECFDCABCBB /* System Skills */; };
+		831661061FC74A43AB286C4B /* libSpacesEngine.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B4EFE9D4286A46C43BBDA5E /* libSpacesEngine.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -9269,6 +9291,27 @@
 		FFCC69C564E99D39646CDB27 /* KVMVirtualizationDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KVMVirtualizationDashboardView.swift; sourceTree = "<group>"; };
 		FFCCC5BC9A7EA67BE107E0A0 /* DiffOps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiffOps.swift; sourceTree = "<group>"; };
 		FFD6A6856A6C5AD8D9459A32 /* radvd.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = radvd.txt; sourceTree = "<group>"; };
+		399C63F718E7B75B5AEA0B72 /* AssistExpansionToolkit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistExpansionToolkit.swift; sourceTree = "<group>"; };
+		1D8E776E19ED01BD03F519AD /* AssistToolKitEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistToolKitEngine.swift; sourceTree = "<group>"; };
+		A37B56ABCE0B4EF9C0C67488 /* AssistToolKitSwiftSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistToolKitSwiftSource.swift; sourceTree = "<group>"; };
+		88FE7699FB068DD1385AB0B7 /* AssistUniversalModelContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistUniversalModelContext.swift; sourceTree = "<group>"; };
+		AB01F0AC4DE82E725EE42259 /* AssistXKCodeScanTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistXKCodeScanTools.swift; sourceTree = "<group>"; };
+		4C44A04F605C9B1563FA38C4 /* AssistXKKnowledgeTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistXKKnowledgeTools.swift; sourceTree = "<group>"; };
+		C7952D790B8E2CD983165813 /* AssistXKNetworkTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistXKNetworkTools.swift; sourceTree = "<group>"; };
+		0767616927A7536C98ACCECE /* AssistXKProcessTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistXKProcessTools.swift; sourceTree = "<group>"; };
+		811052C90BE715A575305B3A /* AssistXKSwiftSourceTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistXKSwiftSourceTools.swift; sourceTree = "<group>"; };
+		BF0874AD38DCDE24ADDF2428 /* AssistXKTextDataTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistXKTextDataTools.swift; sourceTree = "<group>"; };
+		18201C7107CD22AA78F0D4D1 /* AssistXKWorkspaceTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistXKWorkspaceTools.swift; sourceTree = "<group>"; };
+		21AC7D571D0EE202C920F7EF /* SystemSkillInstall.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSkillInstall.swift; sourceTree = "<group>"; };
+		CBB89568E886ABE4BDBAA7A9 /* BuiltInActionCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BuiltInActionCatalog.swift; sourceTree = "<group>"; };
+		A78972AC20BE58BAF983A5AD /* SystemSkillsInstallSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemSkillsInstallSection.swift; sourceTree = "<group>"; };
+		72AF81689A41D99E6E55A9C5 /* AgentBehaviorCharter.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AgentBehaviorCharter.md; sourceTree = "<group>"; };
+		60DA514A6035A6D3C9973189 /* CodeWritingStandards.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CodeWritingStandards.md; sourceTree = "<group>"; };
+		A0CE4D91881505F17B9F3AF2 /* SystemSkillsAndActions.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = SystemSkillsAndActions.md; sourceTree = "<group>"; };
+		1B9A991EA311098CB0C0EEAB /* TestingPlaybook.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TestingPlaybook.md; sourceTree = "<group>"; };
+		066C9FEA12408E88BD1F974A /* UniversalToolAccess.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UniversalToolAccess.md; sourceTree = "<group>"; };
+		199843852ECEB9E81B5043BB /* UserInteractionPlaybook.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = UserInteractionPlaybook.md; sourceTree = "<group>"; };
+		D39046508BFBADECFDCABCBB /* System Skills */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "System Skills"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -9357,6 +9400,7 @@
 				A2E9699AD4F4DCF25E6374CF /* libSwiftCodeConnect.a in Frameworks */,
 				987DEE7F4EC9F0AFC2AFF1E2 /* libSwiftCodeCollaboration.a in Frameworks */,
 				E1B495D628BBB0A0E7119334 /* libYcodeDecompiler.a in Frameworks */,
+				831661061FC74A43AB286C4B /* libSpacesEngine.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -9403,6 +9447,7 @@
 				E4FA3E6FE107DD53BB9CE0C9 /* AppIconSelectView.swift */,
 				25B6CFE62F0D6CAA4EE3934B /* AppSupport.swift */,
 				D6188ED1915D8E0E76825C42 /* AssistSettingsView.swift */,
+				A78972AC20BE58BAF983A5AD /* SystemSkillsInstallSection.swift */,
 				B6F46022851CD8C2B410F0E8 /* BackupDetailsView.swift */,
 				B01A85F2DAC9E455A1E5AEA0 /* CloudAccountsSettings.swift */,
 				4F02FAB224A392F0BF575AD5 /* CodeSuggestionsView.swift */,
@@ -10027,6 +10072,17 @@
 				13F6C3F2DB2FCA88FA8782C0 /* AssistToolingSupport.swift */,
 				366A69230088192282929719 /* AssistToolKnowledgeValidator.swift */,
 				6005F914DB7B9E75ECF528E3 /* AssistToolRegistry.swift */,
+				18201C7107CD22AA78F0D4D1 /* AssistXKWorkspaceTools.swift */,
+				BF0874AD38DCDE24ADDF2428 /* AssistXKTextDataTools.swift */,
+				811052C90BE715A575305B3A /* AssistXKSwiftSourceTools.swift */,
+				0767616927A7536C98ACCECE /* AssistXKProcessTools.swift */,
+				C7952D790B8E2CD983165813 /* AssistXKNetworkTools.swift */,
+				4C44A04F605C9B1563FA38C4 /* AssistXKKnowledgeTools.swift */,
+				AB01F0AC4DE82E725EE42259 /* AssistXKCodeScanTools.swift */,
+				88FE7699FB068DD1385AB0B7 /* AssistUniversalModelContext.swift */,
+				A37B56ABCE0B4EF9C0C67488 /* AssistToolKitSwiftSource.swift */,
+				1D8E776E19ED01BD03F519AD /* AssistToolKitEngine.swift */,
+				399C63F718E7B75B5AEA0B72 /* AssistExpansionToolkit.swift */,
 				3728870FB2ACFACF6DE9E074 /* AssistToolResultFormatter.swift */,
 				3091C498030F29B6883B621B /* AssistToolRouter.swift */,
 				617FC3BBFED1ED263BAC43C6 /* AssistToolSharedHelpers.swift */,
@@ -10210,6 +10266,12 @@
 				38E466B42D7115307BCE038C /* ArtifactsGuidelines.md */,
 				5E37D5B924BDF976DAD0414D /* AssetCatalogManagement.md */,
 				D28A4E65DC963CB6AE153CB4 /* Authentication.md */,
+				199843852ECEB9E81B5043BB /* UserInteractionPlaybook.md */,
+				066C9FEA12408E88BD1F974A /* UniversalToolAccess.md */,
+				1B9A991EA311098CB0C0EEAB /* TestingPlaybook.md */,
+				A0CE4D91881505F17B9F3AF2 /* SystemSkillsAndActions.md */,
+				60DA514A6035A6D3C9973189 /* CodeWritingStandards.md */,
+				72AF81689A41D99E6E55A9C5 /* AgentBehaviorCharter.md */,
 				F0E1B7FFE8A1E66278A43B4E /* AutonomousVerificationProtocols.md */,
 				1D56B22FBE9BDCE122BF982B /* AvailableTools.md */,
 				2A4E59F001FF58E84084299A /* BackgroundTasksMacOS.md */,
@@ -10750,6 +10812,7 @@
 				9F8E4CDBEF122B223380E804 /* learn.md */,
 				82E6D72CA16B7B6CD3FC9286 /* schedule.md */,
 				0D9C29CECFE3ADAD92616C2F /* teamwork.md */,
+				D39046508BFBADECFDCABCBB /* System Skills */,
 			);
 			path = "SC Skills";
 			sourceTree = "<group>";
@@ -13803,6 +13866,7 @@
 				DEDA67CF4870BB65C1FC6E06 /* SkillDescriptor.swift */,
 				9363AFB3AFA2B82F812ACE25 /* SkillDiscoveryService.swift */,
 				825B71E3A21617BC3D4CE500 /* SkillIndex.swift */,
+				21AC7D571D0EE202C920F7EF /* SystemSkillInstall.swift */,
 				0D224156CEF481CA13EDDCBD /* SkillsParser.swift */,
 				7BFB72A9C597F075A9CBCE28 /* SkillsRuntime.swift */,
 				A9BA5DE6274A7308509653AC /* SkillsValidator.swift */,
@@ -15579,6 +15643,7 @@
 				BD5E9D03C8D5A110F17CDF2F /* AssistConversationCompactor.swift */,
 				6238437162731CB88B3ED613 /* AssistScheduledTaskManager.swift */,
 				416128B13A9331FDD26FEB40 /* SlashCommandExecutionEngine.swift */,
+				CBB89568E886ABE4BDBAA7A9 /* BuiltInActionCatalog.swift */,
 			);
 			path = SlashCommands;
 			sourceTree = "<group>";
@@ -17453,6 +17518,7 @@
 				97A93070856BD189598960AF /* learn.md in Resources */,
 				FE450B6F519E4898E6EBC4C6 /* schedule.md in Resources */,
 				653B52B060F8E50CAE5CAC0B /* teamwork.md in Resources */,
+				338A16B49EF9FECFE112D4CB /* System Skills in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -17527,6 +17593,12 @@
 				D1271AEA371129DE80878EE9 /* Asterisk-exception.txt in Resources */,
 				469D679C4E72467405746C39 /* Asterisk-linking-protocols-exception.txt in Resources */,
 				A65BB038C14B53374ECE57BF /* Authentication.md in Resources */,
+				2A9887E075E6401AAB3BB371 /* UserInteractionPlaybook.md in Resources */,
+				B931F47CC43C52635286B7CC /* UniversalToolAccess.md in Resources */,
+				883A560754BE3582664CE94C /* TestingPlaybook.md in Resources */,
+				6951053DBE925EF9DE1BCD92 /* SystemSkillsAndActions.md in Resources */,
+				C64A4670659CEE1F134D9FF8 /* CodeWritingStandards.md in Resources */,
+				447010A38BA6FAA2F679F111 /* AgentBehaviorCharter.md in Resources */,
 				B5DF446D22C1B37FC7A176D0 /* Autoconf-exception-2.0.txt in Resources */,
 				E787E9438273F16ECFAB1440 /* Autoconf-exception-3.0.txt in Resources */,
 				E91C0030A8834A583B0C6A4E /* Autoconf-exception-generic-3.0.txt in Resources */,
@@ -20098,6 +20170,7 @@
 				09D2128178C740F4A5F72811 /* AssistModelPickerView.swift in Sources */,
 				1FACC2499CCDEC3FD72B4B03 /* AssistNavigationRouter.swift in Sources */,
 				C823817E51B257101C877B41 /* AssistSettingsView.swift in Sources */,
+				B3E857B8C5D38C88E85C7DB8 /* SystemSkillsInstallSection.swift in Sources */,
 				431D22D8286C4B852BF2ABB6 /* AssistSpeechUI.swift in Sources */,
 				275B5C7956439C1C9FCE0AD2 /* AttachmentPicker.swift in Sources */,
 				2677BAC36EBA4E20F01A75E5 /* BackupDetailsView.swift in Sources */,
@@ -22006,6 +22079,17 @@
 				B2591B367FD702E60A3F9200 /* AssistToolCapabilityLookupTool.swift in Sources */,
 				8A5740BD768B180638E93BED /* AssistToolKnowledgeValidator.swift in Sources */,
 				DFB4BC1C375FEDA7BD742155 /* AssistToolRegistry.swift in Sources */,
+				5234A300DBBDCC36F1533D5F /* AssistXKWorkspaceTools.swift in Sources */,
+				C75C81A030F8D4CFFE8414DD /* AssistXKTextDataTools.swift in Sources */,
+				93772D665EFF9B8906720395 /* AssistXKSwiftSourceTools.swift in Sources */,
+				5C614D4BD0DA8F768A4C6204 /* AssistXKProcessTools.swift in Sources */,
+				80D447E36AB9C613CD301FD6 /* AssistXKNetworkTools.swift in Sources */,
+				38797B9553D1A6A727DD2256 /* AssistXKKnowledgeTools.swift in Sources */,
+				45B0A93FB596B6720BAA9112 /* AssistXKCodeScanTools.swift in Sources */,
+				0FF2E4AE1BEFACAD110FBAA7 /* AssistUniversalModelContext.swift in Sources */,
+				0ACAE698FD709EB5D1BFAD43 /* AssistToolKitSwiftSource.swift in Sources */,
+				10C5FE53DCF02AFEA3D6B360 /* AssistToolKitEngine.swift in Sources */,
+				34CAD782C41DDBA214AB05A1 /* AssistExpansionToolkit.swift in Sources */,
 				E378DD1E533AEDF1C29DA86A /* AssistToolResultFormatter.swift in Sources */,
 				1EEB1958754612B647517B21 /* AssistToolRouter.swift in Sources */,
 				218E77D68BE65E7F32BD7CBF /* AssistToolSharedHelpers.swift in Sources */,
@@ -22172,10 +22256,12 @@
 				E41DA12245156B26A7D73221 /* SkillDescriptor.swift in Sources */,
 				34B43DE500384EDF8F6A016B /* SkillDiscoveryService.swift in Sources */,
 				C47667873BF3A0CB4EDDDE94 /* SkillIndex.swift in Sources */,
+				CDAD24B89267DB8BC0CB005B /* SystemSkillInstall.swift in Sources */,
 				5A5858F91E299B2C6DEBC770 /* SkillsParser.swift in Sources */,
 				6DEA1A87E34C107B117DC2AC /* SkillsRuntime.swift in Sources */,
 				B18552E70B819D62CADB1379 /* SkillsValidator.swift in Sources */,
 				75734EADA10F2AFD9FA6C491 /* SlashCommandExecutionEngine.swift in Sources */,
+				51A056AC6812E91E64B54ACE /* BuiltInActionCatalog.swift in Sources */,
 				FCE398B6943F18545D224916 /* SystemIndex.swift in Sources */,
 				7898BC95365992E8E0A6F73B /* SystemIndexTestSuite.swift in Sources */,
 				6B899998754B100F848ACC89 /* TasksAIPlanner.swift in Sources */,

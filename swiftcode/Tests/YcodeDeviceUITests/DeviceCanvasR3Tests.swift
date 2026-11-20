@@ -46,7 +46,9 @@ import YcodeDisplayStream
         let xs = order.compactMap { c.controls.button(for: $0) }.map { $0.convert($0.bounds, to: c).midX }
         #expect(xs.count == order.count && zip(xs, xs.dropFirst()).allSatisfy { $1 > $0 })
         let steps = zip(xs, xs.dropFirst()).map { $1 - $0 }
-        #expect(steps == [34, 34, 7.5 + 20 + 20, 37.5, 34, 34])
+        let groupGap: CGFloat = 7.5 + 20 + 20
+        let expectedSteps: [CGFloat] = [34, 34, groupGap, 37.5, 34, 34]
+        #expect(steps == expectedSteps)
         #expect(c.controls.highlightedPose == .poseClosed)
         var got: [DeviceCommand] = []
         c.commandFallback = { got.append($0); return true }

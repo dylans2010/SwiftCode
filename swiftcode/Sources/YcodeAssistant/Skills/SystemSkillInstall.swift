@@ -45,8 +45,11 @@ public final class SystemSkillInstallManager {
     public nonisolated static func bundledSkillsDirectory() -> URL? {
         let candidates = [Bundle.module.resourceURL, Bundle.main.resourceURL].compactMap { $0 }
         for base in candidates {
-            let url = base.appendingPathComponent("SC Skills", isDirectory: true).appendingPathComponent(resourceDirectoryName, isDirectory: true)
-            if FileManager.default.fileExists(atPath: url.path) { return url }
+            let nested = base.appendingPathComponent("SC Skills", isDirectory: true).appendingPathComponent(resourceDirectoryName, isDirectory: true)
+            if FileManager.default.fileExists(atPath: nested.path) { return nested }
+            // Xcode app builds copy the folder reference to the Resources root.
+            let flat = base.appendingPathComponent(resourceDirectoryName, isDirectory: true)
+            if FileManager.default.fileExists(atPath: flat.path) { return flat }
         }
         return nil
     }

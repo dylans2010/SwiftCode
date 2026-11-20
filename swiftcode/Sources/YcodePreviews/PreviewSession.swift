@@ -170,13 +170,9 @@ public final class RuntimeSession: Identifiable, Sendable {
             let compiler = PreviewCompiler(platform: .macOS, deploymentTarget: target, moduleName: "Preview", moduleCache: payloadDir)
             do {
                 try compiler.compilePayload(sources, output: output)
-            } catch let failure as PreviewFailure {
-                stopBuildTimer()
-                status = "Compilation Failed"
-                isExecuting = false
-                diagnostics = Self.diagnostics(from: failure)
-                for diag in diagnostics { logs.append("[COMPILER ERROR] \(diag.description)") }
-                logs.append("[PIPELINE] Compilation failed.")
+            } catch {
+                guard let failure = error as? PreviewFailure else { throw error }
+                reportCompileFailure(failure)
                 return
             }
 
@@ -211,6 +207,15 @@ public final class RuntimeSession: Identifiable, Sendable {
             ]
             logs.append("[PIPELINE ERROR] Setup failed: \(error.localizedDescription)")
         }
+    }
+
+    private func reportCompileFailure(_ failure: PreviewFailure) {
+        stopBuildTimer()
+        status = "Compilation Failed"
+        isExecuting = false
+        diagnostics = Self.diagnostics(from: failure)
+        for diag in diagnostics { logs.append("[COMPILER ERROR] \(diag.description)") }
+        logs.append("[PIPELINE] Compilation failed.")
     }
 
     private static func diagnostics(from failure: PreviewFailure) -> [PreviewDiagnosticModel] {

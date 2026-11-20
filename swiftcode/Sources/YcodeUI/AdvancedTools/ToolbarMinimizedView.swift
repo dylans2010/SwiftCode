@@ -26,6 +26,10 @@ struct ToolbarExpandedPanelView: View {
     @Binding var isPresented: Bool
     private var toolbarManager = ToolbarManager.shared
 
+    init(isPresented: Binding<Bool>) {
+        self._isPresented = isPresented
+    }
+
     private var groupedTools: [String: [ToolbarTool]] {
         Dictionary(grouping: toolbarManager.tools, by: { $0.category })
     }

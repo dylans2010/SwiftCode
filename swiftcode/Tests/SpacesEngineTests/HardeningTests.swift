@@ -271,7 +271,7 @@ import Testing
         _ = try SpacesTestSupport.commitFiles(apiA, ["f": "1"], message: "push me")
         let (_, apiB, urlB) = try SpacesTestSupport.makeRepo()
         try apiA.addRemote("origin", url: urlB.path)
-        try apiA.cancelRemoteTransfer(remote: "origin")
+        try apiA.cancelRemoteTransfer("origin")
         var cancelled = false
         do {
             _ = try apiA.push("origin", refspec: "main")

@@ -25,6 +25,10 @@ struct BackupDetailsView: View {
 
     private var backupEngine = BackupEngine.shared
 
+    init(manifest: BackupManifest) {
+        self.manifest = manifest
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {

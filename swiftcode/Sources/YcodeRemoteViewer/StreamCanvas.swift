@@ -248,7 +248,10 @@ public final class StreamCanvas: @unchecked Sendable {
             for c in 0..<columns {
                 let x = min(width - 1, (2 * c + 1) * width / (2 * columns))
                 let p = src + y * bytesPerRow + x * 4
-                out.append(UInt8((UInt32(p[0]) * 29 + UInt32(p[1]) * 150 + UInt32(p[2]) * 77) >> 8))
+                let blue: UInt32 = UInt32(p[0]) * 29
+                let green: UInt32 = UInt32(p[1]) * 150
+                let red: UInt32 = UInt32(p[2]) * 77
+                out.append(UInt8((blue + green + red) >> 8))
             }
         }
         return out

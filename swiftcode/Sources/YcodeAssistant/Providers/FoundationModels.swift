@@ -18,7 +18,7 @@ public enum FoundationModelsError: Error, LocalizedError {
 }
 
 @propertyWrapper
-public struct Generable<T>: Sendable where T: Sendable {
+public struct AssistGenerableValue<T>: Sendable where T: Sendable {
     public var wrappedValue: T
     public init(wrappedValue: T) {
         self.wrappedValue = wrappedValue

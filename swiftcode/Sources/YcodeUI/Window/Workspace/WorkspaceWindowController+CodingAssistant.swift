@@ -68,7 +68,7 @@ extension WorkspaceWindowController {
                 MainActor.assumeIsolated { self?.codingAssistantSettingsChanged() }
             },
             center.addObserver(forName: CodingAssistantSettingsPane.credentialsDidChange, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.codingAssistantHolder.controller?.model.refreshAvailability() }
+                MainActor.assumeIsolated { _ = self?.codingAssistantHolder.controller?.model.refreshAvailability() }
             },
         ]
         model.refreshAvailability()

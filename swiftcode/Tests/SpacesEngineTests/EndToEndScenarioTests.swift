@@ -39,7 +39,8 @@ import Testing
         try await runStep(1, "init") {
             #expect(Repository.isRepository(at: url))
             #expect(try api.validate().isEmpty)
-            #expect(try api.info().branch == "main")
+            let info = try api.info()
+            #expect(info.branch == "main")
         }
 
         try await runStep(2, "add files") {
@@ -230,9 +231,11 @@ import Testing
         }
 
         try await runStep(22, "fsck clean") {
-            #expect(try api.fsck().isEmpty)
+            let fsckIssues = try api.fsck()
+            #expect(fsckIssues.isEmpty)
             #expect(try api.validate().isEmpty)
-            #expect(try api.diagnose().allSatisfy { $0.level != .error })
+            let diagnostics = try api.diagnose()
+            #expect(diagnostics.allSatisfy { $0.level != .error })
         }
 
         try await runStep(23, "export bundle") {

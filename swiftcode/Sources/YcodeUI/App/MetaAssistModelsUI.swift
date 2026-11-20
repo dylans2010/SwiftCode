@@ -499,52 +499,9 @@ public struct MetaAssistModelsUI: View {
                                 }
                             }
 
-                            let customEndpoints = CustomEndpointManager.shared.endpoints
-                            if !customEndpoints.isEmpty {
-                                Section("Custom Model Setups") {
-                                    ForEach(customEndpoints) { endpoint in
-                                        let eligibleModels = AssistModelEligibilityPolicy.filterEligibleModelIDs(endpoint.models, onlyUseFreeModels: settings.onlyUseFreeModels)
-                                        ForEach(eligibleModels, id: \.self) { modelID in
-                                            Button {
-                                                settings.metaSelectedOtherModelID = modelID
-                                                settings.metaSelectedOtherModelProvider = endpoint.name
-                                                settings.selectedAssistModelID = modelID
-                                            } label: {
-                                                HStack {
-                                                    Text("\(endpoint.name): \(modelID)")
-                                                    if settings.metaSelectedOtherModelID == modelID {
-                                                        Image(systemName: "checkmark")
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            customEndpointModelsSection
                         } label: {
-                            HStack {
-                                Image(systemName: "sparkles")
-                                    .foregroundStyle(.purple)
-                                    .font(.system(size: 10))
-                                Text(activeModel.displayName)
-                                    .font(.system(size: 10.5, weight: .medium))
-                                    .lineLimit(1)
-                                Spacer()
-                                Text(activeModel.provider)
-                                    .font(.system(size: 8.5, weight: .bold))
-                                    .padding(.horizontal, 5)
-                                    .padding(.vertical, 1.5)
-                                    .background(Color.purple.opacity(0.12), in: Capsule())
-                                    .foregroundStyle(.purple)
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(.system(size: 9))
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.horizontal, 7)
-                            .padding(.vertical, 4)
-                            .background(Color(NSColor.controlBackgroundColor))
-                            .clipShape(RoundedRectangle(cornerRadius: 5))
-                            .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.primary.opacity(0.1), lineWidth: 1))
+                            bridgedModelSelectorLabel(displayName: activeModel.displayName, provider: activeModel.provider)
                         }
                         .menuStyle(.borderlessButton)
                     }
@@ -557,6 +514,63 @@ public struct MetaAssistModelsUI: View {
         .padding(8)
         .background(Color.secondary.opacity(0.04), in: RoundedRectangle(cornerRadius: 7))
         .overlay(RoundedRectangle(cornerRadius: 7).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+    }
+
+    @ViewBuilder
+    private var customEndpointModelsSection: some View {
+        let endpoints = CustomEndpointManager.shared.endpoints
+        if !endpoints.isEmpty {
+            Section("Custom Model Setups") {
+                ForEach(endpoints) { endpoint in
+                    let eligibleModels = AssistModelEligibilityPolicy.filterEligibleModelIDs(endpoint.models, onlyUseFreeModels: settings.onlyUseFreeModels)
+                    ForEach(eligibleModels, id: \.self) { modelID in
+                        customEndpointModelButton(endpointName: endpoint.name, modelID: modelID)
+                    }
+                }
+            }
+        }
+    }
+
+    private func customEndpointModelButton(endpointName: String, modelID: String) -> some View {
+        let isSelected = settings.metaSelectedOtherModelID == modelID
+        return Button {
+            settings.metaSelectedOtherModelID = modelID
+            settings.metaSelectedOtherModelProvider = endpointName
+            settings.selectedAssistModelID = modelID
+        } label: {
+            HStack {
+                Text("\(endpointName): \(modelID)")
+                if isSelected {
+                    Image(systemName: "checkmark")
+                }
+            }
+        }
+    }
+
+    private func bridgedModelSelectorLabel(displayName: String, provider: String) -> some View {
+        HStack {
+            Image(systemName: "sparkles")
+                .foregroundStyle(.purple)
+                .font(.system(size: 10))
+            Text(displayName)
+                .font(.system(size: 10.5, weight: .medium))
+                .lineLimit(1)
+            Spacer()
+            Text(provider)
+                .font(.system(size: 8.5, weight: .bold))
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1.5)
+                .background(Color.purple.opacity(0.12), in: Capsule())
+                .foregroundStyle(.purple)
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 4)
+        .background(Color(NSColor.controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 5))
+        .overlay(RoundedRectangle(cornerRadius: 5).stroke(Color.primary.opacity(0.1), lineWidth: 1))
     }
 
     @ViewBuilder

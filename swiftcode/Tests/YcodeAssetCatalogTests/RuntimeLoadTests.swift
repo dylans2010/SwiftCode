@@ -88,7 +88,12 @@ struct RuntimeLoadTests {
                                     space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
                 ctx.draw(cg, in: CGRect(x: 0, y: 0, width: 1024, height: 1024))
             }
-            let differing = stride(from: 0, to: px.count, by: 4).filter { px[$0] != b.rgba[$0] || px[$0 + 1] != b.rgba[$0 + 1] || px[$0 + 2] != b.rgba[$0 + 2] }.count
+            var differing = 0
+            for index in stride(from: 0, to: px.count, by: 4) {
+                if px[index] != b.rgba[index] || px[index + 1] != b.rgba[index + 1] || px[index + 2] != b.rgba[index + 2] {
+                    differing += 1
+                }
+            }
             #expect(differing == 0, "\(name) \(compression): \(differing) pixels differ")
         }
     }

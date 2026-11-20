@@ -2,7 +2,6 @@ import ArgumentParser
 import Foundation
 import SpacesEngine
 
-@main
 struct SpacesCLI: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "spaces",
@@ -224,3 +223,5 @@ func printStatus(_ report: WorktreeScanner.StatusReport, json: Bool) {
     }
     if report.isClean { print("nothing to commit, working tree clean") }
 }
+
+await SpacesCLI.main()

@@ -40,7 +40,7 @@ public struct FoundationModelsProvider: AssistantProvider {
 
     public func send(_ request: ChatRequest) -> AsyncThrowingStream<ChatEvent, Error> {
         let request = AssistUniversalModelContext.augment(request, compact: true)
-        eventStream { out in
+        return eventStream { out in
             let prompt = Self.promptText(request)
             guard !prompt.isEmpty else { throw AssistantError.failed("There is no message to send.") }
 #if canImport(FoundationModels)
@@ -83,12 +83,32 @@ public struct FoundationModelsProvider: AssistantProvider {
         let workspaceRoot: URL
         let sessionId: UUID
 
-        @Generable
-        struct Arguments {
-            @Guide(description: "The exact registered SwiftCode tool id to invoke, for example file_read.")
+        // Hand-written Generable conformance: the @Generable macro expands to
+        // `FoundationModels.X`, which this module's `FoundationModels` class shadows.
+        struct Arguments: Generable {
             var toolName: String
-            @Guide(description: "A JSON object string holding the arguments for the named tool.")
             var argumentsJSON: String
+
+            init(toolName: String, argumentsJSON: String) {
+                self.toolName = toolName
+                self.argumentsJSON = argumentsJSON
+            }
+
+            static var generationSchema: GenerationSchema {
+                GenerationSchema(type: Self.self, description: "Arguments for invoking a SwiftCode tool.", properties: [
+                    GenerationSchema.Property(name: "toolName", description: "The exact registered SwiftCode tool id to invoke, for example file_read.", type: String.self),
+                    GenerationSchema.Property(name: "argumentsJSON", description: "A JSON object string holding the arguments for the named tool.", type: String.self),
+                ])
+            }
+
+            init(_ content: GeneratedContent) throws {
+                self.toolName = try content.value(String.self, forProperty: "toolName")
+                self.argumentsJSON = try content.value(String.self, forProperty: "argumentsJSON")
+            }
+
+            var generatedContent: GeneratedContent {
+                GeneratedContent(properties: ["toolName": toolName, "argumentsJSON": argumentsJSON])
+            }
         }
 
         func call(arguments: Arguments) async throws -> String {
