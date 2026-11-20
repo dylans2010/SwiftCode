@@ -66,13 +66,13 @@ public final class AssistModelRouter: Sendable {
                 isConfigured: true,
                 isAvailable: true,
                 supportsStreaming: true,
-                supportsToolCalling: false,
+                supportsToolCalling: true,
                 supportsVision: preferredID.contains("Advanced"),
                 supportsStructuredOutput: true,
-                supportsAgenticUse: false,
+                supportsAgenticUse: true,
                 supportsSubagents: false,
                 priority: 90,
-                statusDescription: "On-Device Available (Chat Mode Only)",
+                statusDescription: "On-Device Available",
                 status: .available,
                 contextWindow: 16_000
             )

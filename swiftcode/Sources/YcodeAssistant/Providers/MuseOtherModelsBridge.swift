@@ -427,12 +427,10 @@ public final class MuseOtherModelsBridge: @unchecked Sendable {
 
         var results: [ToolExecutionSummary] = []
 
-        for match in matches {
-            guard match.numberOfRanges > 1 else { continue }
-            let callJson = nsText.substring(with: match.range(at: 1))
+        func executeCallJSON(_ callJson: String) async {
             guard let data = callJson.data(using: .utf8),
                   let dict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let rawTool = dict["name"] as? String else { continue }
+                  let rawTool = dict["name"] as? String else { return }
 
             let toolName = MetaAssistProvider.normalizeToolName(rawTool)
             let args = dict["arguments"] as? [String: Any] ?? [:]
@@ -464,6 +462,19 @@ public final class MuseOtherModelsBridge: @unchecked Sendable {
                 let unavailStr = "Tool '\(toolName)' is not registered in SwiftCode Assist."
                 AssistManager.shared.reportToolCompleted(callId: callId, toolName: toolName, output: unavailStr, arguments: args)
                 results.append(ToolExecutionSummary(toolName: toolName, output: unavailStr))
+            }
+        }
+
+        for match in matches {
+            guard match.numberOfRanges > 1 else { continue }
+            await executeCallJSON(nsText.substring(with: match.range(at: 1)))
+        }
+        let anglePattern = "<tool_call>\\s*([\\s\\S]*?)\\s*</tool_call>"
+        if let angleRegex = try? NSRegularExpression(pattern: anglePattern, options: []) {
+            let angleMatches = angleRegex.matches(in: text, options: [], range: NSRange(location: 0, length: nsText.length))
+            for match in angleMatches {
+                guard match.numberOfRanges > 1 else { continue }
+                await executeCallJSON(nsText.substring(with: match.range(at: 1)))
             }
         }
         return results

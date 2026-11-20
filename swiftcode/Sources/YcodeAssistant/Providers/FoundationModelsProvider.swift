@@ -76,6 +76,65 @@ public struct FoundationModelsProvider: AssistantProvider {
 
 #if canImport(FoundationModels)
     @available(macOS 26.0, iOS 26.0, *)
+    struct AssistFoundationModelsTool: Tool, Sendable {
+        let name = "swiftcode_tool"
+        let description = "Invoke any registered SwiftCode native tool by its exact tool id. Use this whenever the task needs workspace files, code, builds, tests, diagnostics, or any other capability listed in the tool catalog. Pass the tool id in toolName and a JSON object of its arguments in argumentsJSON."
+        let workspaceRoot: URL
+        let sessionId: UUID
+
+        @Generable
+        struct Arguments {
+            @Guide(description: "The exact registered SwiftCode tool id to invoke, for example file_read.")
+            var toolName: String
+            @Guide(description: "A JSON object string holding the arguments for the named tool.")
+            var argumentsJSON: String
+        }
+
+        func call(arguments: Arguments) async throws -> String {
+            await Self.execute(toolName: arguments.toolName, argumentsJSON: arguments.argumentsJSON, workspaceRoot: workspaceRoot, sessionId: sessionId)
+        }
+
+        @MainActor
+        static func execute(toolName: String, argumentsJSON: String, workspaceRoot: URL, sessionId: UUID) async -> String {
+            let registry = AssistToolRegistry.shared
+            guard let data = argumentsJSON.data(using: .utf8),
+                  let arguments = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return "Tool call rejected: arguments were not a JSON object. Pass the tool arguments as a JSON object string."
+            }
+            guard let tool = registry.resolve(toolId: toolName) else {
+                return "Tool '\(toolName)' is not registered in SwiftCode Assist. Pick a tool id from the tool catalog."
+            }
+            guard AssistToolRegistry.allowsExecution(toolId: tool.id) else {
+                return AssistToolRegistry.executionRefusal(toolId: tool.id)
+            }
+            let validation = registry.validate(toolId: tool.id, arguments: arguments)
+            guard validation.isValid else {
+                return "Tool '\(tool.id)' failed validation: \(validation.issue ?? "invalid arguments"). Nothing was executed."
+            }
+            let builder = AssistContextBuilder(
+                logger: AssistLogger(),
+                permissions: AssistPermissionsManager(),
+                memory: AssistMemoryGraph(),
+                fileSystem: AssistFileSystem(workspaceRoot: workspaceRoot),
+                git: AssistGitManager(project: ProjectSessionStore.shared.activeProject)
+            )
+            let context = builder.buildContext(sessionId: sessionId)
+            let result: AssistToolResult
+            do {
+                result = try await tool.execute(input: validation.correctedInput ?? arguments, context: context)
+            } catch {
+                return "Tool '\(tool.id)' failed: \(error.localizedDescription)"
+            }
+            if result.success {
+                registry.markUsed(tool.id)
+            } else {
+                registry.markError(tool.id, error: result.error ?? result.output)
+            }
+            return AssistToolResultFormatter.modelFacingPayload(toolId: tool.id, result: result)
+        }
+    }
+
+    @available(macOS 26.0, iOS 26.0, *)
     private func realAvailability() async -> ProviderAvailability {
         switch SystemLanguageModel.default.availability {
         case .available:
@@ -117,8 +176,23 @@ public struct FoundationModelsProvider: AssistantProvider {
             }
             throw AssistantError.failed(Self.unavailableHint)
         }
-        let instructions: Instructions? = request.instructions.isEmpty ? nil : Instructions(request.instructions)
-        let session = LanguageModelSession(model: SystemLanguageModel.default, instructions: instructions)
+        let workspaceRoot = await MainActor.run {
+            request.workingDirectory
+                ?? ProjectSessionStore.shared.activeProject?.directoryURL
+                ?? FileManager.default.homeDirectoryForCurrentUser
+        }
+        let toolCatalog = await MainActor.run { AssistToolRegistry.shared.formattedToolCatalog() }
+        let toolProtocol = """
+        You have a native tool named swiftcode_tool that invokes any registered SwiftCode tool. To use a tool, call swiftcode_tool with the exact tool id from the catalog below in toolName and a JSON object of its arguments in argumentsJSON. Never claim you have no tools. The full registered tool catalog follows:
+
+        \(toolCatalog)
+        """
+        let combinedInstructions = request.instructions.isEmpty
+            ? toolProtocol
+            : "\(request.instructions)\n\n\(toolProtocol)"
+        let instructions: Instructions? = Instructions(combinedInstructions)
+        let tool = AssistFoundationModelsTool(workspaceRoot: workspaceRoot, sessionId: UUID())
+        let session = LanguageModelSession(model: SystemLanguageModel.default, tools: [tool], instructions: instructions)
         var emitted = ""
         do {
             for try await snapshot in session.streamResponse(to: prompt) {
@@ -131,6 +205,8 @@ public struct FoundationModelsProvider: AssistantProvider {
             }
         } catch let error as LanguageModelSession.GenerationError {
             throw Self.mapGenerationError(error)
+        } catch is LanguageModelSession.ToolCallError {
+            throw AssistantError.failed("Apple Foundation Models failed while calling a SwiftCode tool. The tool itself reported the failure in the conversation; retry the request or pick a different tool.")
         }
         out.yield(.finished(nil))
     }

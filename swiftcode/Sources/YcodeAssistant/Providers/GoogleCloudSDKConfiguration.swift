@@ -242,12 +242,13 @@ public struct GoogleCloudSDKConfiguration: Codable, @unchecked Sendable {
         }
 
         let systemPrompt = (try? AssistManager.shared.getSystemPrompt()) ?? ""
+        let toolCatalog = AssistToolRegistry.shared.formattedToolCatalog()
         let effectiveInstructions = AssistSystemPromptSections.runtimeInstructions(
             from: systemPrompt,
             repositoryInstructions: repositoryInstructions,
             toolkit: AppSettings.shared.assistToolkit,
             objective: objective
-        )
+        ) + "\n\n" + toolCatalog
 
         if let bundledResource = Bundle.main.resourceURL?.appendingPathComponent("Google Cloud SDK/skills") {
             if FileManager.default.fileExists(atPath: bundledResource.path) {

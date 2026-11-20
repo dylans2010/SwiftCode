@@ -619,6 +619,18 @@ public final class AssistToolRegistry {
         return health.values.sorted { $0.toolId < $1.toolId }
     }
 
+    public static func allowsExecution(toolId: String) -> Bool {
+        let raw = UserDefaults.standard.string(forKey: "com.swiftcode.assist.executionMode") ?? ""
+        let mode: AssistMode = raw.lowercased() == ExecutionMode.plan.rawValue.lowercased() ? .plan : .agent
+        return AssistModeGate.allows(toolId: toolId, mode: mode)
+    }
+
+    public static func executionRefusal(toolId: String) -> String {
+        let raw = UserDefaults.standard.string(forKey: "com.swiftcode.assist.executionMode") ?? ""
+        let mode: AssistMode = raw.lowercased() == ExecutionMode.plan.rawValue.lowercased() ? .plan : .agent
+        return AssistModeGate.refusalMessage(toolId: toolId, mode: mode)
+    }
+
     public func markUsed(_ toolId: String) {
         health[toolId]?.lastUsedAt = Date()
         health[toolId]?.useCount += 1

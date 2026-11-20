@@ -369,7 +369,7 @@ public final class AssistModelDiscoveryService: Sendable {
                 isConfigured: true,
                 isAvailable: true,
                 supportsStreaming: true,
-                supportsToolCalling: false,
+                supportsToolCalling: true,
                 supportsVision: model == .afm3CoreAdvanced,
                 supportsStructuredOutput: true,
                 supportsAgenticUse: true,

@@ -30,7 +30,7 @@ public struct ModelCapabilities: OptionSet, Sendable, Codable, Hashable {
     ]
 
     public static let localFoundation: ModelCapabilities = [
-        .codeGeneration, .structuredOutput
+        .toolCalling, .streaming, .codeGeneration, .structuredOutput
     ]
 }
 

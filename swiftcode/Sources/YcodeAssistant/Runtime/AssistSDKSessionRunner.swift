@@ -182,9 +182,11 @@ public final class AssistSDKSessionRunner {
         let instructionRetrieval = await SystemIndexService.shared.retrieve(for: instructionQuery)
         AssistManager.shared.recordRetrieval(instructionRetrieval)
         let retrievedBlock = instructionRetrieval.formattedForPrompt()
-        return retrievedBlock.isEmpty
-            ? baselinePrompt
-            : "\(baselinePrompt)\n\n\(retrievedBlock)"
+        let toolCatalog = AssistToolRegistry.shared.formattedToolCatalog()
+        let promptWithTools = retrievedBlock.isEmpty
+            ? "\(baselinePrompt)\n\n\(toolCatalog)"
+            : "\(baselinePrompt)\n\n\(retrievedBlock)\n\n\(toolCatalog)"
+        return promptWithTools
     }
 
     private static func ensureBridgeScript(provider: SDKProvider, fileName: String) async throws -> String {
