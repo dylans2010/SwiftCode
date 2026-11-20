@@ -173,6 +173,40 @@ final class FakeProvider: AssistantProvider, @unchecked Sendable {
         #expect(env.fakes[.ollama]?.requests.last?.messages.map(\.role) == [.user, .assistant, .user])
     }
 
+    @Test func selectedSkillSendsAReferenceNotItsFullContent() async throws {
+        let env = try Env("skill-reference", reply: "Skill used.")
+        defer { env.restore() }
+        let skillDirectory = env.dir.appendingPathComponent("Local Skills/demo-skill", isDirectory: true)
+        try FileManager.default.createDirectory(at: skillDirectory, withIntermediateDirectories: true)
+        let sentinel = "FULL-SKILL-BODY-MUST-NOT-BE-SENT"
+        try "---\nname: demo-skill\ndescription: Demonstrates compact skill references\n---\n\(sentinel)\n"
+            .write(to: skillDirectory.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+        let skill = SkillDescriptor(id: "demo-skill", name: "demo-skill", description: "Demonstrates compact skill references", path: skillDirectory.path)
+        let wc = try env.window()
+        wc.showCodingAssistant(nil)
+        let pane = wc.codingAssistant.conversationView
+        await pane.model.refreshAvailability().value
+        var assistantSettings = env.prefs.codingAssistant
+        assistantSettings.agentMode = true
+        env.prefs.codingAssistant = assistantSettings
+        pane.addSkill(skill)
+        let action = AssistActionReference(command: "@demo-action", title: "Demo Action", summary: "Use a compact local action reference.", category: "Demo")
+        pane.addAction(action)
+        pane.messageView.string = "Use this skill."
+        pane.sendClicked()
+        let id = try #require(pane.model.selectedID)
+        await pane.model.response(id)?.value
+        let request = try #require(env.fakes[.ollama]?.requests.last)
+        let outgoing = request.messages.last?.content ?? ""
+        #expect(outgoing.contains("Active Agent Skills (references only)"))
+        #expect(outgoing.contains("demo-skill") && outgoing.contains(skillDirectory.path))
+        #expect(outgoing.contains("Active Assist Actions (references only)"))
+        #expect(outgoing.contains("@demo-action") && outgoing.contains("Use a compact local action reference."))
+        #expect(outgoing.contains("If local retrieval tools are unavailable"))
+        #expect(!outgoing.contains(sentinel))
+        #expect(pane.pendingSkills.isEmpty && pane.pendingActions.isEmpty)
+    }
+
     @Test func cutOffReplyOffersContinue() async throws {
         let env = try Env("cutoff", reply: "The first half")
         defer { env.restore() }

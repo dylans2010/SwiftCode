@@ -212,7 +212,7 @@ public final class CodingAssistantModel {
     }
 
     @discardableResult
-    public func send(_ text: String, attachments: [Attachment] = [], newConversationTitle: String? = nil, in target: UUID? = nil) -> UUID? {
+    public func send(_ text: String, attachments: [Attachment] = [], skills: [SkillDescriptor] = [], actions: [AssistActionReference] = [], newConversationTitle: String? = nil, in target: UUID? = nil) -> UUID? {
         let prompt = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !prompt.isEmpty else { return nil }
         switch handleMetaSlashCommand(prompt) {
@@ -255,14 +255,13 @@ public final class CodingAssistantModel {
             provider = meta
         }
         var instructions = PromptBuilder.instructions
-        
-        
-        
+        var localReferencesRetrievable = false
         if mode != .plan, settings.agentMode, let attachable = provider as? AgentAttachable, let (attachment, cleanup) = agentAttachment?(id) {
             let attached = attachable.attaching(attachment)
             if (attached as? AgentAttachable)?.isAttached == true {
                 provider = attached
                 instructions = PromptBuilder.agentInstructions
+                localReferencesRetrievable = true
                 attachmentCleanups[id] = cleanup
                 if kind == .metaAssist {
                     appendActivity(id, "Agent mode: Meta runs its own tools in the Muse host; SwiftCode's tools are named, not executed, and its file edits are not reviewed as proposals")
@@ -273,8 +272,17 @@ public final class CodingAssistantModel {
                 cleanup()
             }
         }
-        if mode != .agent { instructions += "\n\n" + mode.systemPromptAddendum }
-        if mode == .turbo { appendActivity(id, "Turbo mode: autonomous run with parallel Workers and minimal confirmations; progress reports back here.") }
+        if mode != .agent {
+            if mode == .turbo && !localReferencesRetrievable {
+                instructions += """
+
+                # MODE: TURBO — AUTONOMOUS
+                Work autonomously and efficiently. Continue through multi-step work without pausing on routine decisions, but use only interfaces that are actually available in this session. Never invent or emit raw tool-call payloads. Present file changes as complete proposals for user review.
+                """
+            } else {
+                instructions += "\n\n" + mode.systemPromptAddendum
+            }
+        }
         let limit = settings.contextLimit, options = settings.context, root = workspaceRoot, generation = settings.generation
         running[id] = Task { [weak self] in
             var effectiveProvider = provider
@@ -350,7 +358,8 @@ public final class CodingAssistantModel {
                 if window == nil, let attemptModel { window = await attemptProvider.contextWindow(model: attemptModel) }
                 let budget = min(limit, window ?? limit)
                 let built = PromptBuilder.build(history: history, prompt: attemptPrompt, attachments: attachments, context: context,
-                                                options: options, contextTokens: budget, instructions: instructions)
+                                                options: options, contextTokens: budget, instructions: instructions,
+                                                activeSkills: skills, activeActions: actions, referencesRetrievable: localReferencesRetrievable)
                 let request = ChatRequest(model: attemptModel, instructions: built.instructions, messages: built.messages,
                                           contextTokens: attemptKind == .ollama ? budget : nil, workingDirectory: root, generation: generation)
                 if !built.omitted.isEmpty {

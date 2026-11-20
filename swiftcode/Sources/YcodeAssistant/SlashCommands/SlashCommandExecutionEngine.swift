@@ -4,6 +4,20 @@ import os
 
 private let logger = Logger(subsystem: "com.swiftcode.app", category: "SlashCommandExecutionEngine")
 
+public struct AssistActionReference: Sendable, Hashable {
+    public let command: String
+    public let title: String
+    public let summary: String
+    public let category: String
+
+    public init(command: String, title: String, summary: String, category: String) {
+        self.command = command
+        self.title = title
+        self.summary = summary
+        self.category = category
+    }
+}
+
 public struct SlashExecutionResult: Sendable {
     public let command: String
     public let messageToInsert: String?

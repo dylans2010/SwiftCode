@@ -103,6 +103,59 @@ public struct XKToolCatalogSearchTool: AssistTool {
 }
 
 
+public struct XKAssistActionCatalogTool: AssistTool {
+    public init() {}
+    public var id: String { "assist_action_catalog" }
+    public var name: String { "Assist Action Catalog" }
+    public var description: String { "Lists built-in action references, or returns one selected action's local workflow and behavior when `name` is given." }
+    public var capability: ToolCapability { .memory }
+    public var riskLevel: ToolRiskLevel { .safeRead }
+    public var isReadOnly: Bool { true }
+    public var isMutating: Bool { false }
+    public var parametersSchema: JSONSchema {
+        JSONSchema(type: "object", description: "Lists built-in actions, or returns one selected action's details.", properties: ["name": JSONSchema(type: "string", description: "Optional action command or id, such as @verify or verify.")], required: [])
+    }
+
+    public func execute(input: [String: Any], context: AssistContext) async throws -> AssistToolResult {
+        let interactive: [AssistActionReference] = [
+            .init(command: "@schedule", title: "Schedule Task", summary: "Schedule delayed background tasks, one-shot timers or recurring cron routines.", category: "Schedule"),
+            .init(command: "@compact", title: "Compact Conversation", summary: "Compact a long conversation into memory to free context.", category: "Context"),
+            .init(command: "@goal", title: "Autonomous Goal Mode", summary: "Work toward the current goal end-to-end with autonomous continuation.", category: "Autonomous"),
+            .init(command: "@teamwork", title: "Teamwork & Subagents", summary: "Coordinate parallel workers using SwiftCode's worker system.", category: "Workers"),
+            .init(command: "@interview", title: "Interactive Interview", summary: "Ask structured questions before implementation.", category: "Planning"),
+            .init(command: "@learn", title: "Learn & Remember", summary: "Capture reusable user rules and session lessons.", category: "Memory"),
+            .init(command: "@boost", title: "Boost Master Orchestrator", summary: "Coordinate workers and verification for complex autonomous work.", category: "Orchestrator"),
+        ]
+        let query = AssistToolKit.string(input, "name")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !query.isEmpty {
+            let normalized = query.hasPrefix("@") ? String(query.dropFirst()) : query
+            if let action = interactive.first(where: { $0.command == query }) {
+                return .success("""
+                Action: \(action.command)
+                Title: \(action.title)
+                Category: \(action.category)
+                Behavior: \(action.summary)
+                Activation: The user already invoked this action; execute its behavior in this turn. Its implementation is local to SwiftCode and is intentionally omitted from conversation history.
+                """)
+            }
+            guard let action = BuiltInActionCatalog.action(for: normalized) else { return AssistToolKit.notFound("No Assist action named '\(query)'.") }
+            let workflow = action.workflow.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+            return .success("""
+            Action: \(action.command)
+            Title: \(action.title)
+            Category: \(action.category)
+            Behavior: \(action.subtitle)
+            Workflow:
+            \(workflow)
+            System guidance: \(action.systemAssets.joined(separator: ", "))
+            """)
+        }
+        let rows = interactive.map { "- \($0.command) [\($0.category)] — \($0.summary)" }
+            + BuiltInActionCatalog.actions.map { "- \($0.command) [\($0.category)] — \($0.subtitle)" }
+        return .success("\(interactive.count + BuiltInActionCatalog.actions.count) Assist Actions:\n" + rows.joined(separator: "\n"), data: ["count": String(rows.count)])
+    }
+}
+
 public struct XKSystemSkillCatalogTool: AssistTool {
     public init() {}
     public var id: String { "system_skill_catalog" }

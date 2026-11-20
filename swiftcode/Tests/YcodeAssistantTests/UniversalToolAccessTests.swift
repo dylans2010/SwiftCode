@@ -86,6 +86,23 @@ struct UniversalToolAccessTests {
         #expect(output.contains("Unknown tool id"))
     }
 
+    @Test func actionCatalogRetrievesOnlyTheSelectedAction() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("action-catalog-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let builder = AssistContextBuilder(
+            logger: AssistLogger(), permissions: AssistPermissionsManager(), memory: AssistMemoryGraph(),
+            fileSystem: AssistFileSystem(workspaceRoot: root), git: AssistGitManager(project: nil, workspaceRoot: root))
+        let context = builder.buildContext(sessionId: UUID())
+        let tool = XKAssistActionCatalogTool()
+        let listing = try await tool.execute(input: [:], context: context)
+        #expect(listing.output.contains("@verify"))
+        let result = try await tool.execute(input: ["name": "verify"], context: context)
+        #expect(result.output.contains("Action: @verify"))
+        #expect(result.output.contains("Build, test and review every uncommitted change"))
+        #expect(!result.output.contains("BuiltInAction"))
+    }
+
     @Test func bundledSystemSkillsAreValid() {
         let skills = SystemSkillInstallManager.shared.availableSkills()
         #expect(skills.count >= 190)

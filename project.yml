@@ -403,6 +403,7 @@ targets:
           - "Tools/validate_tools.py"
           - "Resources/**"
           - "System Assets/**"
+          - "SC Skills/**"
           - "Reverse/ReverseBridge.mjs"
     dependencies:
       - target: YcodeSubprocess
@@ -757,6 +758,9 @@ targets:
       - path: swiftcode/Sources/YcodeApp
       - path: swiftcode/Sources/YcodeAssistant/System Assets
       - path: swiftcode/Sources/YcodeAssistant/Resources/Codex
+      - path: swiftcode/Sources/YcodeAssistant/SC Skills/System Skills
+        buildPhase: resources
+        type: folder
       - path: swiftcode/Sources/SwiftCodeExtensions/Resources
       - path: swiftcode/Sources/SwiftCodeSDK/Resources
       - path: swiftcode/Sources/YcodeIDECore/Resources
@@ -869,6 +873,7 @@ targets:
       - target: SwiftCodeConnect
       - target: SwiftCodeCollaboration
       - target: YcodeDecompiler
+      - target: SpacesEngine
 
   swiftcode-cli:
     type: tool

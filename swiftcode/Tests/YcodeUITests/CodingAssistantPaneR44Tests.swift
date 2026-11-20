@@ -88,6 +88,28 @@ import YcodeAssistant
         #expect(window.contentViewController?.presentedViewControllers?.isEmpty == true)
     }
 
+    @Test func toolCallBlocksRenderAsCompactCards() throws {
+        let text = """
+        ```tool_call
+        {"tool":"tool_catalog_search","arguments":{"query":"tree_view file_read"}}
+        ```
+        """
+        let view = MessageView(message: ConversationMessage(role: .assistant, text: text, isComplete: true), proposals: [])
+        let strings = textFields(view).map(\.stringValue).joined(separator: "\n")
+        #expect(strings.contains("Tool call"))
+        #expect(strings.contains("Tool Catalog Search"))
+        #expect(strings.contains("Query: tree_view file_read"))
+        #expect(!strings.contains("\"tool\""))
+        #expect(!strings.contains("arguments"))
+    }
+
+    private func textFields(_ view: NSView) -> [NSTextField] {
+        view.subviews.flatMap { child in
+            if let field = child as? NSTextField { return [field] }
+            return textFields(child)
+        }
+    }
+
     func isVisible(_ v: NSView) -> Bool {
         var view: NSView? = v
         while let x = view { if x.isHidden { return false }; view = x.superview }

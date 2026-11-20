@@ -110,9 +110,40 @@ public enum PromptBuilder {
     workspace folder.
     """
 
+    static func skillContext(_ skills: [SkillDescriptor], retrievable: Bool) -> String {
+        let lines = skills.map { skill in
+            "- \(skill.name) (id: \(skill.id), source: \(skill.sourceKind.rawValue), path: \(skill.path)) — \(skill.description)"
+        }.joined(separator: "\n")
+        let retrieval = retrievable
+            ? "Retrieve the exact instructions locally before acting: use `system_skill_catalog` with the skill name for SwiftCode System Skills, or `search_skills` and the appropriate read-file tool for other skills."
+            : "If local retrieval tools are unavailable, follow only the listed name, description and metadata; never fabricate missing skill instructions."
+        return """
+        Active Agent Skills (references only):
+        \(lines)
+
+        The complete skill prompt/instruction content is intentionally not embedded in this message. This is mandatory to keep selected skills compact and out of conversation history. \(retrieval)
+        """
+    }
+
+    static func actionContext(_ actions: [AssistActionReference], retrievable: Bool) -> String {
+        let lines = actions.map { action in
+            "- \(action.command) [\(action.category)] — \(action.title): \(action.summary)"
+        }.joined(separator: "\n")
+        let retrieval = retrievable
+            ? "Retrieve exact local action behavior with `assist_action_catalog` before applying it. Pass the command with or without `@`."
+            : "If local retrieval tools are unavailable, apply the listed action's title, category and summary exactly; do not invent omitted action instructions."
+        return """
+        Active Assist Actions (references only):
+        \(lines)
+
+        Action implementation details and any files they need are intentionally not embedded in this message. This is mandatory to avoid spending context on static playbooks. \(retrieval)
+        """
+    }
+
     public static func build(history: [ChatMessage], prompt: String, attachments: [Attachment], context: WorkspaceContext,
                              options: ContextOptions = .init(), contextTokens: Int, reservedOutput: Int? = nil,
-                             instructions: String = Self.instructions) -> BuiltPrompt {
+                             instructions: String = Self.instructions, activeSkills: [SkillDescriptor] = [],
+                             activeActions: [AssistActionReference] = [], referencesRetrievable: Bool = false) -> BuiltPrompt {
         let reserve = reservedOutput ?? min(4096, max(256, contextTokens / 4))
         var budget = contextTokens - reserve - TokenEstimator.estimate(instructions) - 16
         var included: [String] = []
@@ -144,6 +175,8 @@ public enum PromptBuilder {
             return "\(ticks)\(lang)\(info)\n\(text)\(text.hasSuffix("\n") ? "" : "\n")\(ticks)"
         }
 
+        if !activeSkills.isEmpty { _ = take("Active skills", skillContext(activeSkills, retrievable: referencesRetrievable)) }
+        if !activeActions.isEmpty { _ = take("Selected actions", actionContext(activeActions, retrievable: referencesRetrievable)) }
         if !context.workspaceName.isEmpty { _ = take("Workspace", "Workspace: \(context.workspaceName)") }
         var sent = Set<String>()
         for a in attachments {

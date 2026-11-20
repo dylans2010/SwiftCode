@@ -29,6 +29,8 @@ public final class ConversationView: NSView {
     let chips = NSStackView()
     let workersStrip = WorkersStripView()
     public private(set) var pendingAttachments: [Attachment] = []
+    public private(set) var pendingSkills: [SkillDescriptor] = []
+    public private(set) var pendingActions: [AssistActionReference] = []
     private var slashPopup: SlashCommandPopupController?
     var skillsActionsPopup: SkillsActionsSlashPopupController?
     private var isApplyingSlashCommit = false
@@ -534,25 +536,14 @@ public final class ConversationView: NSView {
     private func slashPaletteItemSelected(_ item: SlashPaletteItem) {
         consumeTrailingTrigger()
         focusMessageField()
-        Task { [weak self] in
-            let execution = await SlashCommandExecutionEngine.shared.execute(command: item.command)
-            guard let self else { return }
-            var insertion = execution.messageToInsert
-            if item.kind == .skill, let skill = item.skillDescriptor, let content = skill.skillMarkdownContent, !content.isEmpty {
-                insertion = """
-                ### SKILL ACTIVE: \(skill.name)
-                Description: \(skill.description)
-
-                ```markdown
-                \(content)
-                ```
-                """
-            }
-            if let insertion {
-                let existing = messageView.string.trimmingCharacters(in: .whitespacesAndNewlines)
-                messageView.string = existing.isEmpty ? insertion : existing + "\n\n" + insertion
-            }
-            if execution.shouldSubmitImmediately { sendClicked() }
+        if item.kind == .skill {
+            guard let skill = item.skillDescriptor else { return }
+            addSkill(skill)
+            return
+        }
+        addAction(AssistActionReference(command: item.command, title: item.title, summary: item.subtitle, category: item.badgeText))
+        Task {
+            _ = await SlashCommandExecutionEngine.shared.execute(command: item.command)
         }
     }
 
@@ -573,9 +564,11 @@ public final class ConversationView: NSView {
         if fixedID != nil && conversation == nil { return NSSound.beep() }
         let text = messageView.string
         guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        if model.send(text, attachments: pendingAttachments, in: fixedID) != nil {
+        if model.send(text, attachments: pendingAttachments, skills: pendingSkills, actions: pendingActions, in: fixedID) != nil {
             messageView.string = ""
             pendingAttachments = []
+            pendingSkills = []
+            pendingActions = []
             renderChips()
         }
     }
@@ -602,8 +595,21 @@ public final class ConversationView: NSView {
         renderChips()
     }
 
-    func renderChips() {
+    public func addSkill(_ skill: SkillDescriptor) {
+        guard !pendingSkills.contains(where: { $0.id == skill.id }) else { return }
+        pendingSkills.append(skill)
+        renderChips(animated: true)
+    }
+
+    public func addAction(_ action: AssistActionReference) {
+        guard !pendingActions.contains(where: { $0.command == action.command }) else { return }
+        pendingActions.append(action)
+        renderChips(animated: true)
+    }
+
+    func renderChips(animated: Bool = false) {
         chips.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        var animatedViews: [NSView] = []
         for (i, a) in pendingAttachments.enumerated() {
             let b = ClosureButton(title: a.label + "  ✕", target: nil, action: nil)
             b.bezelStyle = .inline
@@ -616,7 +622,41 @@ public final class ConversationView: NSView {
             }
             chips.addArrangedSubview(b)
         }
-        chips.isHidden = pendingAttachments.isEmpty
+        for (i, skill) in pendingSkills.enumerated() {
+            let b = ClosureButton(title: "/\(skill.name)  ✕", target: nil, action: nil)
+            b.controlSize = .small
+            GlassBars.style(b)
+            b.toolTip = "Remove the \(skill.name) skill reference. The full skill is never embedded in the message."
+            b.onChange = { [weak self] _ in
+                guard let self, i < pendingSkills.count else { return }
+                pendingSkills.remove(at: i)
+                renderChips()
+            }
+            chips.addArrangedSubview(b)
+            animatedViews.append(b)
+        }
+        for (i, action) in pendingActions.enumerated() {
+            let b = ClosureButton(title: action.command + "  ✕", target: nil, action: nil)
+            b.controlSize = .small
+            GlassBars.style(b)
+            b.contentTintColor = .systemBlue
+            b.toolTip = "Remove \(action.title). Full action details are retrieved locally and are never embedded in the message."
+            b.onChange = { [weak self] _ in
+                guard let self, i < pendingActions.count else { return }
+                pendingActions.remove(at: i)
+                renderChips()
+            }
+            chips.addArrangedSubview(b)
+            animatedViews.append(b)
+        }
+        chips.isHidden = pendingAttachments.isEmpty && pendingSkills.isEmpty && pendingActions.isEmpty
+        if animated, !animatedViews.isEmpty {
+            for view in animatedViews { view.alphaValue = 0 }
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.18
+                for view in animatedViews { view.animator().alphaValue = 1 }
+            }
+        }
     }
 
     public func focusMessageField() { window?.makeFirstResponder(messageView) }
@@ -754,6 +794,39 @@ public final class ComposerTextView: NSTextView {
     }
 }
 
+private struct AssistantThinkingIndicator: View {
+    @State private var isAnimating = false
+    private let palette: [Color] = [.indigo, .cyan, .purple, .orange]
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Text("Generating")
+                .font(.system(size: 10.5, weight: .semibold))
+                .foregroundStyle(
+                    LinearGradient(colors: [.indigo, .cyan, .purple, .orange], startPoint: .leading, endPoint: .trailing)
+                )
+            ForEach(0..<3, id: \.self) { index in
+                Circle()
+                    .fill(palette[index % palette.count])
+                    .frame(width: 4.5, height: 4.5)
+                    .scaleEffect(isAnimating ? 1.0 : 0.55)
+                    .opacity(isAnimating ? 1.0 : 0.35)
+                    .animation(
+                        .easeInOut(duration: 0.62)
+                            .repeatForever(autoreverses: true)
+                            .delay(Double(index) * 0.14),
+                        value: isAnimating
+                    )
+            }
+        }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(Color.primary.opacity(0.055), in: Capsule(style: .continuous))
+        .accessibilityLabel("Assistant is generating a response")
+        .onAppear { isAnimating = true }
+    }
+}
+
 public final class MessageView: NSStackView {
     public let message: ConversationMessage
     public let proposals: [ChangeProposal]
@@ -835,16 +908,18 @@ public final class MessageView: NSStackView {
                 switch block {
                 case .prose(let p): addArrangedSubview(prose(p, markdown: true))
                 case .code(let info, let text, _):
-                    addArrangedSubview(codeBlock(info: info, text: text, proposal: proposals.first { $0.blockIndex == codeIndex }, index: codeIndex))
+                    if info.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() == "tool_call" {
+                        addArrangedSubview(toolCallCard(text: text))
+                    } else {
+                        addArrangedSubview(codeBlock(info: info, text: text, proposal: proposals.first { $0.blockIndex == codeIndex }, index: codeIndex))
+                    }
                     codeIndex += 1
                 }
             }
             if !message.isComplete && message.text.isEmpty {
-                let p = NSProgressIndicator()
-                p.style = .spinning
-                p.controlSize = .small
-                p.startAnimation(nil)
-                addArrangedSubview(p)
+                let indicator = NSHostingView(rootView: AssistantThinkingIndicator())
+                indicator.sizingOptions = [.intrinsicContentSize]
+                addArrangedSubview(indicator)
             }
         }
         if message.isCutOff == true {
@@ -909,6 +984,84 @@ public final class MessageView: NSStackView {
         l.allowsEditingTextAttributes = true
         l.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return l
+    }
+
+    func toolCallCard(text: String) -> NSView {
+        let object = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any]
+        let toolName = (object?["tool"] as? String) ?? (object?["toolName"] as? String) ?? "Tool request"
+        let displayName = toolName
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+            .capitalized
+        let arguments = object?["arguments"] as? [String: Any] ?? [:]
+        let preferredKeys = ["query", "path", "prompt", "title", "command", "objective"]
+        let firstMatchKey = preferredKeys.first { arguments[$0] != nil } ?? arguments.keys.sorted().first
+        let detailText: String
+        if let key = firstMatchKey, let value = arguments[key] {
+            let summary = String(describing: value)
+                .replacingOccurrences(of: "\n", with: " · ")
+            detailText = "\(key.capitalized): \(String(summary.prefix(160)))"
+        } else if object != nil {
+            detailText = "No arguments"
+        } else {
+            detailText = "SwiftCode could not decode the model's tool request."
+        }
+
+        let iconWrap = NSView()
+        iconWrap.wantsLayer = true
+        iconWrap.layer?.backgroundColor = NSColor.systemBlue.withAlphaComponent(0.14).cgColor
+        iconWrap.layer?.cornerRadius = 8
+        iconWrap.layer?.cornerCurve = .continuous
+        let icon = NSImageView(image: NSImage(systemSymbolName: "wrench.and.screwdriver", accessibilityDescription: "Tool call") ?? NSImage())
+        icon.symbolConfiguration = .init(pointSize: 11, weight: .semibold)
+        icon.contentTintColor = .systemBlue
+        icon.translatesAutoresizingMaskIntoConstraints = false
+        iconWrap.addSubview(icon)
+
+        let eyebrow = NSTextField(labelWithString: "Tool call")
+        eyebrow.font = .systemFont(ofSize: 9, weight: .bold)
+        eyebrow.textColor = .systemBlue
+        let title = NSTextField(labelWithString: displayName)
+        title.font = .systemFont(ofSize: 12, weight: .semibold)
+        title.lineBreakMode = .byTruncatingTail
+        let detail = NSTextField(wrappingLabelWithString: detailText)
+        detail.font = .systemFont(ofSize: 10.5)
+        detail.textColor = .secondaryLabelColor
+        detail.lineBreakMode = .byTruncatingTail
+        detail.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        let status = NSTextField(labelWithString: object == nil ? "Invalid" : "Requested")
+        status.font = .systemFont(ofSize: 9, weight: .bold)
+        status.textColor = object == nil ? .systemOrange : .systemBlue
+        status.wantsLayer = true
+        status.layer?.backgroundColor = (object == nil ? NSColor.systemOrange : NSColor.systemBlue).withAlphaComponent(0.1).cgColor
+        status.layer?.cornerRadius = 10
+        status.layer?.cornerCurve = .continuous
+        status.bounds = NSRect(x: 0, y: 0, width: status.intrinsicContentSize.width + 12, height: 20)
+
+        let textStack = NSStackView(views: [eyebrow, title, detail])
+        textStack.orientation = .vertical
+        textStack.alignment = .leading
+        textStack.spacing = 2
+        let content = NSStackView(views: [iconWrap, textStack, NSView(), status])
+        content.orientation = .horizontal
+        content.spacing = 10
+        content.alignment = .centerY
+        content.edgeInsets = NSEdgeInsets(top: 8, left: 10, bottom: 8, right: 10)
+        content.wantsLayer = true
+        content.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.45).cgColor
+        content.layer?.borderColor = NSColor.systemBlue.withAlphaComponent(0.16).cgColor
+        content.layer?.borderWidth = 1
+        content.layer?.cornerRadius = 12
+        content.layer?.cornerCurve = .continuous
+        NSLayoutConstraint.activate([
+            iconWrap.widthAnchor.constraint(equalToConstant: 28),
+            iconWrap.heightAnchor.constraint(equalToConstant: 28),
+            icon.centerXAnchor.constraint(equalTo: iconWrap.centerXAnchor),
+            icon.centerYAnchor.constraint(equalTo: iconWrap.centerYAnchor),
+            textStack.trailingAnchor.constraint(lessThanOrEqualTo: status.leadingAnchor, constant: -8),
+        ])
+        return content
     }
 
     func codeBlock(info: String, text: String, proposal: ChangeProposal?, index: Int) -> NSView {

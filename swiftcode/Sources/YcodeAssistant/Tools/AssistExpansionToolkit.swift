@@ -282,9 +282,10 @@ public enum AssistExpansionToolkit {
             XKSystemAssetReadTool(),
             XKSystemAssetSearchTool(),
             XKToolCatalogSearchTool(),
+            XKAssistActionCatalogTool(),
             XKSystemSkillCatalogTool(),
         ]
     }
 
-    public static let toolCount = 279
+    public static let toolCount = 280
 }
