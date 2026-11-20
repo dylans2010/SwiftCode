@@ -704,6 +704,7 @@
 		2CC71F346326D41F6E2D94FC /* TaskCompletion.md in Resources */ = {isa = PBXBuildFile; fileRef = 69283084767C075697B0A400 /* TaskCompletion.md */; };
 		2CE8BFF881F17CC186E67C5C /* IOSDiscoveryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44E6BB90DBF76EC788C1C5CE /* IOSDiscoveryService.swift */; };
 		2D1568B9A7BC707CF52E02F8 /* RepositoryContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4F8CE2704EE05855FC0A38D /* RepositoryContext.swift */; };
+		43728B49B3CEB5759F82BC6A /* NativeStructuralDecompiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77D6F21D90490363B692896 /* NativeStructuralDecompiler.swift */; };
 		2D224CFF489FA44771B0DA23 /* GhidraDecompiler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4911A359EBC7D16A5B14461 /* GhidraDecompiler.swift */; };
 		2D4AF92913751E6FDE9A89EC /* ExtensionSidebarRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2210C9D86483F3A30470231D /* ExtensionSidebarRow.swift */; };
 		2D753D898CFD03A10F41A88D /* IRFunction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65BAF1BA626525D5166610DA /* IRFunction.swift */; };
@@ -1569,6 +1570,7 @@
 		67767779BE438981835E9DF7 /* PHP-3.0.txt in Resources */ = {isa = PBXBuildFile; fileRef = C930455E84EE3CB27837E3EB /* PHP-3.0.txt */; };
 		67932B773AC2E2FAD9D1D9ED /* WorkflowsCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B841FFCF9F3E233E814B651 /* WorkflowsCreateView.swift */; };
 		6796E0424FAC92DE9835A137 /* CodexUsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686565385972EB93A4E30694 /* CodexUsageTracker.swift */; };
+		5A6207B4C39774785935CF56 /* IconComposerStudioTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A0B08D0FA91C0B9EAB2C4AC /* IconComposerStudioTools.swift */; };
 		67A72DDBFAA39AD45430ADC9 /* IconComposerShapes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2164BCD5329A0BDC2E2E4C63 /* IconComposerShapes.swift */; };
 		67B665BEFB5DCE4B033AF96D /* BonjourAdvertiser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89916BF8398DB613DFE9715E /* BonjourAdvertiser.swift */; };
 		67CC979B33EB41943F5F34E0 /* TTYP0.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3B0BC1E2B14C97A6E24CE583 /* TTYP0.txt */; };
@@ -1611,6 +1613,11 @@
 		6A4883943882853C39DC8218 /* HP-1989.txt in Resources */ = {isa = PBXBuildFile; fileRef = 088AB91F71680459F57ADCC5 /* HP-1989.txt */; };
 		6A6B266AAFA8FDCA350990F0 /* libYcodeEditorKit.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D76635F3CFE3E022C5462612 /* libYcodeEditorKit.a */; };
 		6A8F37386EFEBEF9A63B41BD /* Diagnostic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C661285673C160F7DCEC2D4 /* Diagnostic.swift */; };
+		C83F5DCF5E0AD6ADEB34C419 /* TerminalEmulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D603A5B6E55DC761C701EC50 /* TerminalEmulator.swift */; };
+		28253F7911C4DECB17E64D68 /* PseudoTerminalProcess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EDBF4B7B02A4B03B849826F /* PseudoTerminalProcess.swift */; };
+		B0DCB07BF0EFE440E258BE08 /* TerminalSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D21781EEFCFB5B601CE5F8F8 /* TerminalSettings.swift */; };
+		42F6EAE484FFD380785CE1AD /* TerminalScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20FC09C52456EE4B18B3AA94 /* TerminalScreenView.swift */; };
+		05CF956F26009D85B3C83DFD /* TerminalPanelController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 665638D7B540074BE97D019F /* TerminalPanelController.swift */; };
 		6A9C00B3E1BB832108329B42 /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D2F01A702C7C17C70E13025 /* TerminalView.swift */; };
 		6AAC961A7A6C57A7EF01D604 /* CreateBackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 938F9018B88610C3CB4E3851 /* CreateBackupView.swift */; };
 		6AB12CD8516562911D53F0AA /* TreeSitterGo in Frameworks */ = {isa = PBXBuildFile; productRef = 4E77C9DCD6AA8AE166288F8F /* TreeSitterGo */; };
@@ -1948,7 +1955,6 @@
 		805B9119BEA6651AB29C3AF6 /* DiagnosticEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95920962708CAFAB48DB56E9 /* DiagnosticEngine.swift */; };
 		807058954DFFCB92B2FFBAC0 /* IconComposerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5929C43757741C3A0A9DA54D /* IconComposerModel.swift */; };
 		80CC8D6D1567F7750160AFC3 /* ProjectOptions+Form.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EC49A91AAC99845ECAD5DBF /* ProjectOptions+Form.swift */; };
-		80CFD5677D7B3B177ADA4EE7 /* AngrDecompile.cpython-315.pyc in Resources */ = {isa = PBXBuildFile; fileRef = 37EE415F83F4416AFBD3709F /* AngrDecompile.cpython-315.pyc */; };
 		80D232CB05B3806A9799C39F /* GitHubInspector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FE33FF4F1561908E50E86C /* GitHubInspector.swift */; };
 		80D8230BA0A6B59198A48A4F /* SDKExampleManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBE3782CBA2E24A9EBBCC579 /* SDKExampleManager.swift */; };
 		80ED439E512311EAB2A36262 /* SuggestionCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546949E8F2B808EC16C0B4C6 /* SuggestionCache.swift */; };
@@ -2504,6 +2510,7 @@
 		A5DBF588BD83B35D1935ADE1 /* DatabaseConnectionWizard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3CBE8C8EB3581A8174A6438 /* DatabaseConnectionWizard.swift */; };
 		A60AD08D6E941B0099FC4082 /* NSPushView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 138206C491AE0B35CED735BD /* NSPushView.swift */; };
 		A61EE9714C621AA21C9F3E38 /* AssistantModeCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD13AF31A03DA5B516CE66B /* AssistantModeCatalog.swift */; };
+		255C87D7B133F232110B5239 /* WorkspaceWindowController+Terminal.swift in Sources */ = {isa = PBXBuildFile; fileRef = B701013BF999B1C825C244A9 /* WorkspaceWindowController+Terminal.swift */; };
 		A628F85CD1807FF060B2B32C /* WorkspaceWindowController+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B222168202EEEC70FDF1197F /* WorkspaceWindowController+Extensions.swift */; };
 		A62D4E2E9ADC5CC9A0901848 /* SwiftCode_Error_C.aiff in Resources */ = {isa = PBXBuildFile; fileRef = EA5A814A6E5FE3C8C6B19BAB /* SwiftCode_Error_C.aiff */; };
 		A65BB038C14B53374ECE57BF /* Authentication.md in Resources */ = {isa = PBXBuildFile; fileRef = D28A4E65DC963CB6AE153CB4 /* Authentication.md */; };
@@ -3286,6 +3293,7 @@
 		DB7E2DF0392A6AB33EBE2F57 /* XRCamera.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80DB7A68387A2F653F6EF7A0 /* XRCamera.swift */; };
 		DB86F4E9507AC09F30097924 /* TORQUE-1.1.txt in Resources */ = {isa = PBXBuildFile; fileRef = 2CA90A933A567E4F4AAA4CEB /* TORQUE-1.1.txt */; };
 		DB8C264B28F5EACEF2F01F06 /* FSFAP.txt in Resources */ = {isa = PBXBuildFile; fileRef = D198212DE653E80B1D36F446 /* FSFAP.txt */; };
+		E2898129C8CCBD55CFE2300B /* AdvancedDecompilerTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = A885E74DCE995ADD038E8CC9 /* AdvancedDecompilerTools.swift */; };
 		DB8C77E391AC735A8FAAAF24 /* MasterEditors.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7835A3E77F59E38DEAD5DB0 /* MasterEditors.swift */; };
 		DB9BE09FFAF307F874F4D06E /* RemoteTestHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8BFB792CE920BF4AE507F01 /* RemoteTestHost.swift */; };
 		DBAFECC45D5722CB1465FF30 /* BSD-3-Clause-acpica.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3B63B184B97EE73B1421D7F9 /* BSD-3-Clause-acpica.txt */; };
@@ -3634,6 +3642,8 @@
 		F1825255DE9F2EC1CC92207B /* HealthWatchApps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1DFB35F929AE006A9614E7 /* HealthWatchApps.swift */; };
 		F1917E0EC7F546B5615A5D02 /* PreviewConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8417B6A81A13E0CBD66C5CEF /* PreviewConfiguration.swift */; };
 		F1BF9AADA384622347DF6A07 /* BSD-Source-beginning-file.txt in Resources */ = {isa = PBXBuildFile; fileRef = 8A2DFBB82D13E17D002205D5 /* BSD-Source-beginning-file.txt */; };
+		F37C1C4EF030E8E2024A2287 /* VisualUICodeGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC47C19D88E8D7478CDC1C84 /* VisualUICodeGenerator.swift */; };
+		D27F1791C288A0F568A0AB96 /* VisualUIStudioTools.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E894C72DC058A140D70817B /* VisualUIStudioTools.swift */; };
 		F1DD3FCA265840F3B60A87DC /* VisualUICodePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075BEF99D079B51D86FA1B80 /* VisualUICodePanel.swift */; };
 		F1DF5EA67FADE8EE79DB48A0 /* GaugeModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C049DBE278510D33FBFBB54 /* GaugeModel.swift */; };
 		F1F06EB60CEB1B6CC159FEFE /* Artistic-1.0-Perl.txt in Resources */ = {isa = PBXBuildFile; fileRef = F8984C6A73CB58C3AF7CDEB7 /* Artistic-1.0-Perl.txt */; };
@@ -5316,6 +5326,8 @@
 		0719D51D13B4A6856E82ABA1 /* ResolvePackages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResolvePackages.swift; sourceTree = "<group>"; };
 		0729E94F843CBB2BC35FDF2D /* LoggingTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoggingTool.swift; sourceTree = "<group>"; };
 		0749527EB5CCBCEF12DDA2C6 /* ExtensionsPanelViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionsPanelViewController.swift; sourceTree = "<group>"; };
+		BC47C19D88E8D7478CDC1C84 /* VisualUICodeGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualUICodeGenerator.swift; sourceTree = "<group>"; };
+		3E894C72DC058A140D70817B /* VisualUIStudioTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualUIStudioTools.swift; sourceTree = "<group>"; };
 		075BEF99D079B51D86FA1B80 /* VisualUICodePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisualUICodePanel.swift; sourceTree = "<group>"; };
 		075F337D2B2D8506CB64F87B /* WorkspaceShellModel+Assistant.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceShellModel+Assistant.swift"; sourceTree = "<group>"; };
 		076BC0BE4090E3FFD644DC89 /* ReverseToolAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReverseToolAdapter.swift; sourceTree = "<group>"; };
@@ -5684,6 +5696,7 @@
 		214805AA51DB2A0F1B6D1ADD /* AssistTaskRunnerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistTaskRunnerTool.swift; sourceTree = "<group>"; };
 		214D45BFC8BE99BDD90F4C54 /* LaunchArguments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchArguments.swift; sourceTree = "<group>"; };
 		21510EF3563EB6F53F95FD1A /* QPL-1.0.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "QPL-1.0.txt"; sourceTree = "<group>"; };
+		1A0B08D0FA91C0B9EAB2C4AC /* IconComposerStudioTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconComposerStudioTools.swift; sourceTree = "<group>"; };
 		2164BCD5329A0BDC2E2E4C63 /* IconComposerShapes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconComposerShapes.swift; sourceTree = "<group>"; };
 		21760B371FCE921A19546441 /* AssistTreeViewTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistTreeViewTool.swift; sourceTree = "<group>"; };
 		218EF95C304F6B2D3C38975F /* CFamilyLexer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CFamilyLexer.swift; sourceTree = "<group>"; };
@@ -6015,7 +6028,6 @@
 		37E367976CBDA56BD736425E /* IBEditorSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IBEditorSession.swift; sourceTree = "<group>"; };
 		37E4B4A758AAC92B926D0E7B /* AttachmentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentPicker.swift; sourceTree = "<group>"; };
 		37E757027B8A1F8D36852333 /* SimulatorRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimulatorRuntime.swift; sourceTree = "<group>"; };
-		37EE415F83F4416AFBD3709F /* AngrDecompile.cpython-315.pyc */ = {isa = PBXFileReference; path = "AngrDecompile.cpython-315.pyc"; sourceTree = "<group>"; };
 		37F1900B2C426C7AA48759D2 /* SDKExtensionRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDKExtensionRegistry.swift; sourceTree = "<group>"; };
 		3803C52F63AD8327245AF26D /* TraceCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraceCodec.swift; sourceTree = "<group>"; };
 		382CE28550D4382D9D7BF0B2 /* CC-BY-NC-SA-3.0-DE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "CC-BY-NC-SA-3.0-DE.txt"; sourceTree = "<group>"; };
@@ -7543,6 +7555,11 @@
 		9CC09AE5A2C1B469C7871129 /* CodeSearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeSearchView.swift; sourceTree = "<group>"; };
 		9D044A7813AAF6E8547C7DBD /* SwiftCodeTools+TerminalSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SwiftCodeTools+TerminalSupport.swift"; sourceTree = "<group>"; };
 		9D28536FA29DA132A025A492 /* ActivityLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityLogView.swift; sourceTree = "<group>"; };
+		D603A5B6E55DC761C701EC50 /* TerminalEmulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalEmulator.swift; sourceTree = "<group>"; };
+		6EDBF4B7B02A4B03B849826F /* PseudoTerminalProcess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PseudoTerminalProcess.swift; sourceTree = "<group>"; };
+		D21781EEFCFB5B601CE5F8F8 /* TerminalSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalSettings.swift; sourceTree = "<group>"; };
+		20FC09C52456EE4B18B3AA94 /* TerminalScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalScreenView.swift; sourceTree = "<group>"; };
+		665638D7B540074BE97D019F /* TerminalPanelController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalPanelController.swift; sourceTree = "<group>"; };
 		9D2F01A702C7C17C70E13025 /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalView.swift; sourceTree = "<group>"; };
 		9D3DC725557A35E6A23F19BB /* CodingAssistantSidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodingAssistantSidebarView.swift; sourceTree = "<group>"; };
 		9D5AF7F37F87865E0B3A2B9A /* ProjectEditorModel+Controls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProjectEditorModel+Controls.swift"; sourceTree = "<group>"; };
@@ -7699,6 +7716,7 @@
 		A73761BF7DCCDA5BC5BE13E8 /* AssistSwiftFormatLintTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSwiftFormatLintTool.swift; sourceTree = "<group>"; };
 		A737B61AAB719BA8D7E22745 /* SDKLivePreviewViewOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SDKLivePreviewViewOpener.swift; sourceTree = "<group>"; };
 		A77084644DCB7A401D362394 /* package.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = package.json; sourceTree = "<group>"; };
+		A885E74DCE995ADD038E8CC9 /* AdvancedDecompilerTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedDecompilerTools.swift; sourceTree = "<group>"; };
 		A7835A3E77F59E38DEAD5DB0 /* MasterEditors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterEditors.swift; sourceTree = "<group>"; };
 		A79CC288BC6849120FF3BAED /* NewFileComment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewFileComment.swift; sourceTree = "<group>"; };
 		A7AB424450B174EA09DBE532 /* ICNS.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ICNS.swift; sourceTree = "<group>"; };
@@ -7841,6 +7859,7 @@
 		B19DF0221BE5926F814D39F7 /* ExtV2HostScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtV2HostScript.swift; sourceTree = "<group>"; };
 		B1A6CF715C07CC44162BA3EE /* StringAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StringAnalysis.swift; sourceTree = "<group>"; };
 		B1EBAF7C6DE11885C7E3C9C8 /* SourceEditorController+FindCommands.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SourceEditorController+FindCommands.swift"; sourceTree = "<group>"; };
+		B701013BF999B1C825C244A9 /* WorkspaceWindowController+Terminal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceWindowController+Terminal.swift"; sourceTree = "<group>"; };
 		B222168202EEEC70FDF1197F /* WorkspaceWindowController+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkspaceWindowController+Extensions.swift"; sourceTree = "<group>"; };
 		B2276CE9C338993AA8877FD3 /* TPDL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = TPDL.txt; sourceTree = "<group>"; };
 		B2288013DF989AB0F03FAFA0 /* SwiftCodeTools.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftCodeTools.swift; sourceTree = "<group>"; };
@@ -8325,6 +8344,7 @@
 		D4778DCDE1B7D3D694DEAB58 /* BlockedReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockedReport.swift; sourceTree = "<group>"; };
 		D47FE8A23C48FB2EF57ED97F /* CC-BY-SA-2.5.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "CC-BY-SA-2.5.txt"; sourceTree = "<group>"; };
 		D48BA0CF35B16FAFE1CA138C /* AssistArtboardBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistArtboardBridge.swift; sourceTree = "<group>"; };
+		D77D6F21D90490363B692896 /* NativeStructuralDecompiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStructuralDecompiler.swift; sourceTree = "<group>"; };
 		D4911A359EBC7D16A5B14461 /* GhidraDecompiler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhidraDecompiler.swift; sourceTree = "<group>"; };
 		D49CE2DAADCBE3ABB605D1C2 /* AssistSDKSessionRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistSDKSessionRunner.swift; sourceTree = "<group>"; };
 		D4A2A1D56FE9EBA49C7F241F /* ImportAnalysis.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportAnalysis.swift; sourceTree = "<group>"; };
@@ -9319,7 +9339,6 @@
 			children = (
 				139EFC2A4FA84519D92725C0 /* AngrDecompile.py */,
 				BE9CFC6BC0147C37616F58C7 /* DecompileDump.py */,
-				E37DA64EA2EB4B8BB1D208B4 /* __pycache__ */,
 			);
 			path = EngineScripts;
 			sourceTree = "<group>";
@@ -10287,6 +10306,7 @@
 				E6FF66CC7B161A098B1F974B /* IconComposerExporter.swift */,
 				5929C43757741C3A0A9DA54D /* IconComposerModel.swift */,
 				0F403456609A724CEE0F0960 /* IconComposerRenderer.swift */,
+				1A0B08D0FA91C0B9EAB2C4AC /* IconComposerStudioTools.swift */,
 				2164BCD5329A0BDC2E2E4C63 /* IconComposerShapes.swift */,
 				1FE19FB9112D07813F64431E /* IconComposerView.swift */,
 				EE390E5DB30C8E80E2B4D283 /* IconComposerWindowManager.swift */,
@@ -12076,6 +12096,7 @@
 				DA475AF94814B32EDD800393 /* WorkspaceWindowController+EditorCommands.swift */,
 				38459FF35F2DDEA810BEBB99 /* WorkspaceWindowController+EditorExtras.swift */,
 				1D4B89F75486C0D0EC6EC014 /* WorkspaceWindowController+EditorMenu.swift */,
+				B701013BF999B1C825C244A9 /* WorkspaceWindowController+Terminal.swift */,
 				B222168202EEEC70FDF1197F /* WorkspaceWindowController+Extensions.swift */,
 				FA5B3C44D61518C28331B598 /* WorkspaceWindowController+Find.swift */,
 				44A2DC4CDDFC161163F03D8C /* WorkspaceWindowController+ImageViewer.swift */,
@@ -12309,6 +12330,8 @@
 				C3CB2F06494010A99D2B3B12 /* VisualUIBuilderWindowController.swift */,
 				47C7E889E92391F0EE682B2B /* VisualUIBuilderWindowManager.swift */,
 				8495B6E8793293E69B745398 /* VisualUICanvasView.swift */,
+				BC47C19D88E8D7478CDC1C84 /* VisualUICodeGenerator.swift */,
+				3E894C72DC058A140D70817B /* VisualUIStudioTools.swift */,
 				075BEF99D079B51D86FA1B80 /* VisualUICodePanel.swift */,
 				107DFDA4DC67D8D73162C662 /* VisualUIComponentLibrary.swift */,
 				296A45E93972CA5B8F062E3D /* VisualUIDocument.swift */,
@@ -13499,6 +13522,7 @@
 			isa = PBXGroup;
 			children = (
 				2F8DDFA55AD17132BBA7F7B5 /* AngrDecompiler.swift */,
+				D77D6F21D90490363B692896 /* NativeStructuralDecompiler.swift */,
 				D4911A359EBC7D16A5B14461 /* GhidraDecompiler.swift */,
 			);
 			path = Backends;
@@ -15112,18 +15136,15 @@
 			children = (
 				A07EE9AFAFA515BA653BF26C /* SandboxedCommandRunner.swift */,
 				28FA770B67A60E1D53A4C1B4 /* SandboxTerminalWindowController.swift */,
+				D603A5B6E55DC761C701EC50 /* TerminalEmulator.swift */,
+				6EDBF4B7B02A4B03B849826F /* PseudoTerminalProcess.swift */,
+				D21781EEFCFB5B601CE5F8F8 /* TerminalSettings.swift */,
+				20FC09C52456EE4B18B3AA94 /* TerminalScreenView.swift */,
+				665638D7B540074BE97D019F /* TerminalPanelController.swift */,
 				9D2F01A702C7C17C70E13025 /* TerminalView.swift */,
 				1A1A003DBB3835A3B2B91A70 /* TerminalWindowController.swift */,
 			);
 			path = Terminal;
-			sourceTree = "<group>";
-		};
-		E37DA64EA2EB4B8BB1D208B4 /* __pycache__ */ = {
-			isa = PBXGroup;
-			children = (
-				37EE415F83F4416AFBD3709F /* AngrDecompile.cpython-315.pyc */,
-			);
-			path = __pycache__;
 			sourceTree = "<group>";
 		};
 		E7E40585B3D29D2D5CB905CA /* Authorization */ = {
@@ -15435,6 +15456,7 @@
 			isa = PBXGroup;
 			children = (
 				2B62E8027B72760EDE6B5FB0 /* MasterBrowsers.swift */,
+				A885E74DCE995ADD038E8CC9 /* AdvancedDecompilerTools.swift */,
 				A7835A3E77F59E38DEAD5DB0 /* MasterEditors.swift */,
 				D27027DC17F3772EA309E329 /* MasterWorkspaceView.swift */,
 			);
@@ -15907,6 +15929,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				5A7C0E11D3B24F6E9A1C77E0 /* PBXTargetDependency */,
 			);
 			name = SpacesEngine;
 			packageProductDependencies = (
@@ -16967,7 +16990,6 @@
 				3654F2A9F1C0EEE63E933BA5 /* AgentSystemAsset.md in Resources */,
 				2B87E892A5C968651FEAE3BD /* AgenticLoop.md in Resources */,
 				04CA2113BE8FB2C4177C6E47 /* Aladdin.txt in Resources */,
-				80CFD5677D7B3B177ADA4EE7 /* AngrDecompile.cpython-315.pyc in Resources */,
 				9D2996AA2B62F8B0F024232F /* AngrDecompile.py in Resources */,
 				C85570C9534DE81F4D4EB50C /* Apache-1.0.txt in Resources */,
 				B39C9862784A4AA0E8A9BF5C /* Apache-1.1.txt in Resources */,
@@ -19859,6 +19881,7 @@
 				182A912794B146AC54F7C37C /* IconComposerExporter.swift in Sources */,
 				807058954DFFCB92B2FFBAC0 /* IconComposerModel.swift in Sources */,
 				47FFCC04CB4270E30A88D20E /* IconComposerRenderer.swift in Sources */,
+				5A6207B4C39774785935CF56 /* IconComposerStudioTools.swift in Sources */,
 				67A72DDBFAA39AD45430ADC9 /* IconComposerShapes.swift in Sources */,
 				18B8491DB0CF9DA4E18D3126 /* IconComposerView.swift in Sources */,
 				4A691638E04FB34A4FB2E0DB /* IconComposerWindowManager.swift in Sources */,
@@ -20127,6 +20150,11 @@
 				6A45EB2456FF5CC7FF9EE335 /* SyntaxHighlighter.swift in Sources */,
 				66DCA673D4485080F02FA618 /* TagsView.swift in Sources */,
 				E3025EDA055D08E26E1E6B97 /* TechnicalSpecificationEditor.swift in Sources */,
+				C83F5DCF5E0AD6ADEB34C419 /* TerminalEmulator.swift in Sources */,
+				28253F7911C4DECB17E64D68 /* PseudoTerminalProcess.swift in Sources */,
+				B0DCB07BF0EFE440E258BE08 /* TerminalSettings.swift in Sources */,
+				42F6EAE484FFD380785CE1AD /* TerminalScreenView.swift in Sources */,
+				05CF956F26009D85B3C83DFD /* TerminalPanelController.swift in Sources */,
 				6A9C00B3E1BB832108329B42 /* TerminalView.swift in Sources */,
 				F8D6AE21F04E27CB5CC1BC90 /* TerminalWindowController.swift in Sources */,
 				8413AF3588DB450617795952 /* TestToolsView.swift in Sources */,
@@ -20182,6 +20210,8 @@
 				39F7AB77997785E83A1105CC /* VisualUIBuilderWindowController.swift in Sources */,
 				72490980DD59719D7BB90848 /* VisualUIBuilderWindowManager.swift in Sources */,
 				630308BAD6B98773D37C57D1 /* VisualUICanvasView.swift in Sources */,
+				F37C1C4EF030E8E2024A2287 /* VisualUICodeGenerator.swift in Sources */,
+				D27F1791C288A0F568A0AB96 /* VisualUIStudioTools.swift in Sources */,
 				F1DD3FCA265840F3B60A87DC /* VisualUICodePanel.swift in Sources */,
 				E47753D4824801D49FA3B091 /* VisualUIComponentLibrary.swift in Sources */,
 				2E785B81C6F37BF3604CCA6A /* VisualUIDocument+Bridge.swift in Sources */,
@@ -20232,6 +20262,7 @@
 				0A1260A5DFE3D34E5313502A /* WorkspaceWindowController+EditorCommands.swift in Sources */,
 				BA4B62587641684847129FCC /* WorkspaceWindowController+EditorExtras.swift in Sources */,
 				E78BCC6994A8A61E48AF3DFC /* WorkspaceWindowController+EditorMenu.swift in Sources */,
+				255C87D7B133F232110B5239 /* WorkspaceWindowController+Terminal.swift in Sources */,
 				A628F85CD1807FF060B2B32C /* WorkspaceWindowController+Extensions.swift in Sources */,
 				FE1FB0F873E171095E988E2A /* WorkspaceWindowController+Find.swift in Sources */,
 				634FB9EC6D26B06CD92A4B5C /* WorkspaceWindowController+ImageViewer.swift in Sources */,
@@ -20418,6 +20449,7 @@
 				7BDE2B72245CF44F7D0A04B1 /* Function.swift in Sources */,
 				6BBA43B856FA893B33EA92D3 /* FunctionDiscovery.swift in Sources */,
 				882F4DE7C698346A18BB27C4 /* FunctionTools.swift in Sources */,
+				43728B49B3CEB5759F82BC6A /* NativeStructuralDecompiler.swift in Sources */,
 				2D224CFF489FA44771B0DA23 /* GhidraDecompiler.swift in Sources */,
 				491B64B9C9AF6E09F7844AF0 /* GoBackend.swift in Sources */,
 				6246228548F9E28938522E5F /* GraphExporter.swift in Sources */,
@@ -20439,6 +20471,7 @@
 				4CDDF31F1C0E6A47A186A9D0 /* LuaBackend.swift in Sources */,
 				DD89058CFA7AD6FBB2D0FEA4 /* MachOParser.swift in Sources */,
 				F5B2BD917798227FF9B3D2CA /* MasterBrowsers.swift in Sources */,
+				E2898129C8CCBD55CFE2300B /* AdvancedDecompilerTools.swift in Sources */,
 				DB8C77E391AC735A8FAAAF24 /* MasterEditors.swift in Sources */,
 				ABFB719E32EC7FB8FDC281BD /* MasterWorkspaceView.swift in Sources */,
 				AFD3A83C5E2CD6C4304A6112 /* NativeBackends.swift in Sources */,
@@ -22128,6 +22161,10 @@
 			isa = PBXTargetDependency;
 			target = D019EDDCB89C49708DD787FB /* YcodeHealthStore */;
 			targetProxy = B953D3BA7D1AC9C34D2A4A9F /* PBXContainerItemProxy */;
+		};
+		5A7C0E11D3B24F6E9A1C77E0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 4039F080CA814A768E07A8F9 /* Crypto */;
 		};
 		569CE24B34863523C5E18DBD /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;

@@ -7,6 +7,8 @@ public struct VisualUIToolbar: View {
 
     @State private var showingExportSheet = false
     @State private var showingAIAssistantSheet = false
+    @State private var showingTemplatesSheet = false
+    @State private var showingPrototypeSheet = false
 
     @State private var availableDevices: [String] = []
 
@@ -90,11 +92,58 @@ public struct VisualUIToolbar: View {
                 .buttonStyle(.bordered)
                 .controlSize(.small)
                 .help("Toggle Device Bezels & Safe Areas")
+
+                Button {
+                    settings.showWireframeBounds.toggle()
+                } label: {
+                    Image(systemName: "square.dashed")
+                        .foregroundColor(settings.showWireframeBounds ? .accentColor : .secondary)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Toggle Wireframe X-Ray Bounds")
+
+                Button {
+                    settings.showResponsiveMatrix.toggle()
+                } label: {
+                    Image(systemName: "rectangle.3.group")
+                        .foregroundColor(settings.showResponsiveMatrix ? .accentColor : .secondary)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Toggle Multi-Device Responsive Matrix")
+
+                Button {
+                    settings.showLiveCodeSplit.toggle()
+                } label: {
+                    Image(systemName: "curlybraces.square")
+                        .foregroundColor(settings.showLiveCodeSplit ? .accentColor : .secondary)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Toggle Live Code Dock")
             }
 
             Spacer()
 
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Button {
+                    showingTemplatesSheet = true
+                } label: {
+                    Label("Templates", systemImage: "rectangle.stack.badge.plus")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+
+                Button {
+                    showingPrototypeSheet = true
+                } label: {
+                    Label("Play", systemImage: "play.fill")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .help("Interactive Prototype Player")
+
                 HStack(spacing: 4) {
                     Button {
                         document.undo()
@@ -148,6 +197,12 @@ public struct VisualUIToolbar: View {
         }
         .sheet(isPresented: $showingAIAssistantSheet) {
             VisualUIAIAssistant(document: document)
+        }
+        .sheet(isPresented: $showingTemplatesSheet) {
+            VisualUITemplatesView(document: document)
+        }
+        .sheet(isPresented: $showingPrototypeSheet) {
+            VisualUIPrototypeSheet(document: document)
         }
     }
 

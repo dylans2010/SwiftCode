@@ -2,7 +2,7 @@ import SwiftUI
 
 
 public enum FriendlySection: String, CaseIterable, Identifiable, Sendable {
-    case overview, functions, code, strings, dependencies, symbols, binaryInfo, history
+    case overview, functions, code, callGraph, types, security, patternSearch, strings, dependencies, symbols, binaryInfo, history
 
     public var id: String { rawValue }
 
@@ -11,6 +11,10 @@ public enum FriendlySection: String, CaseIterable, Identifiable, Sendable {
         case .overview: return "Overview"
         case .functions: return "Functions"
         case .code: return "Decompiled Code"
+        case .callGraph: return "Call Graph"
+        case .types: return "Types & Headers"
+        case .security: return "Security & Entropy"
+        case .patternSearch: return "Signature Scanner"
         case .strings: return "Strings"
         case .dependencies: return "Dependencies"
         case .symbols: return "Symbols"
@@ -24,6 +28,10 @@ public enum FriendlySection: String, CaseIterable, Identifiable, Sendable {
         case .overview: return "square.grid.2x2"
         case .functions: return "function"
         case .code: return "chevron.left.forwardslash.chevron.right"
+        case .callGraph: return "point.3.connected.trianglepath.dotted"
+        case .types: return "curlybraces"
+        case .security: return "lock.shield"
+        case .patternSearch: return "magnifyingglass.circle"
         case .strings: return "textformat"
         case .dependencies: return "shippingbox"
         case .symbols: return "tag"
@@ -181,6 +189,14 @@ public struct FriendlyWorkspaceView: View {
             FriendlyFunctionBrowser(state: state, searchText: $searchText)
         case .code:
             FriendlyCodeViewer(state: state)
+        case .callGraph:
+            CallGraphExplorerView(state: state)
+        case .types:
+            MetadataTypeBrowserView(state: state)
+        case .security:
+            BinarySecurityScannerView(state: state)
+        case .patternSearch:
+            BytePatternScannerView(state: state)
         case .strings:
             StringsBrowser(state: state, searchText: $searchText)
         case .dependencies:

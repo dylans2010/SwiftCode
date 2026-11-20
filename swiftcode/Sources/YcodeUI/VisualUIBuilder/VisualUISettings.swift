@@ -16,6 +16,11 @@ public final class VisualUISettings {
     public var isDarkMode: Bool = false
     public var localizationCode: String = "en"
     public var dynamicTypeSize: String = "Medium"
+    public var showWireframeBounds: Bool = false
+    public var showRulers: Bool = false
+    public var showLiveCodeSplit: Bool = false
+    public var showResponsiveMatrix: Bool = false
+    public var pseudoLocaleMode: String = "Standard"
 
     public var showCompiledView: Bool {
         get {

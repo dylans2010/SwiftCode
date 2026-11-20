@@ -84,7 +84,7 @@ public func entitlementSummary(_ value: EntitlementValue) -> String {
 @MainActor
 @Observable
 public final class EntitlementsEditorModel {
-    public let url: URL?
+    public private(set) var url: URL?
     public private(set) var entitlements: Entitlements
     public private(set) var isDirty = false
     public private(set) var problem: String?
@@ -131,10 +131,16 @@ public final class EntitlementsEditorModel {
     }
 
     public func save(to newURL: URL) throws {
+        try FileManager.default.createDirectory(at: newURL.deletingLastPathComponent(), withIntermediateDirectories: true)
         let data = try xmlData()
         try data.write(to: newURL, options: .atomic)
         isDirty = false
         lastModified = Self.modifiedDate(of: newURL)
+    }
+
+    public func bindAndSave(to newURL: URL) throws {
+        url = newURL
+        try save()
     }
 
     public func revert() throws {

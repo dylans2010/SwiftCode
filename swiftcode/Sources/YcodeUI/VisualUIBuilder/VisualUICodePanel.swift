@@ -4,15 +4,37 @@ public struct VisualUICodePanel: View {
     let document: VisualUIDocument
 
     @State private var showingCopiedLabel = false
+    @State private var editableDraft = ""
+    @State private var editingSource = false
 
     public var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text("DOCUMENT SOURCE CODE")
+            HStack(spacing: 10) {
+                Text("LIVE GENERATED CODE (\(document.scene.currentFramework.rawValue))")
                     .font(.caption.bold())
                     .foregroundStyle(.secondary)
 
                 Spacer()
+
+                Toggle("Edit & Sync", isOn: $editingSource)
+                    .toggleStyle(.checkbox)
+                    .font(.caption)
+                    .onChange(of: editingSource) { _, on in
+                        if on { editableDraft = generatedCode }
+                    }
+
+                if editingSource {
+                    Button("Apply to Canvas") {
+                        if let artboard = document.scene.artboards.first(where: { $0.id == document.scene.activeArtboardID })
+                            ?? document.scene.artboards.first {
+                            document.checkpoint()
+                            VisualUICodeGenerator.applySwiftUISource(editableDraft, to: artboard)
+                            editingSource = false
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.mini)
+                }
 
                 Button {
                     copyCodeToClipboard()
@@ -27,24 +49,25 @@ public struct VisualUICodePanel: View {
 
             Divider()
 
-            ScrollView {
-                Text(generatedCode)
+            if editingSource {
+                TextEditor(text: $editableDraft)
                     .font(.system(.caption, design: .monospaced))
-                    .padding(12)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(6)
+            } else {
+                ScrollView {
+                    Text(generatedCode)
+                        .font(.system(.caption, design: .monospaced))
+                        .textSelection(.enabled)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .background(Color.secondary.opacity(0.01))
             }
-            .background(Color.secondary.opacity(0.01))
         }
     }
 
     private var generatedCode: String {
-        if let path = document.filePath, let content = try? String(contentsOfFile: path) {
-            return content
-        }
-        if let activeDoc = DocumentCoordinator.shared.activeDocument {
-            return activeDoc.content
-        }
-        return "// @SwiftCodeVisualUIBuilderDocument\n// Author your premium SwiftUI view here."
+        VisualUICodeGenerator.generate(document: document)
     }
 
     private func copyCodeToClipboard() {

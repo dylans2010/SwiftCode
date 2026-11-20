@@ -1,22 +1,38 @@
+import Darwin
 import Foundation
 
-
+@_silgen_name("swift_demangle")
+private func _swiftRuntimeDemangle(
+    _ mangledName: UnsafePointer<CChar>?,
+    _ mangledNameLength: Int,
+    _ outputBuffer: UnsafeMutablePointer<CChar>?,
+    _ outputBufferSize: UnsafeMutablePointer<Int>?,
+    _ flags: UInt32
+) -> UnsafeMutablePointer<CChar>?
 
 public enum SymbolDemangler {
-    
     public static func demangle(_ name: String) -> String {
-        if name.hasPrefix("_$s") || name.hasPrefix("$s") {
+        if name.hasPrefix("_$s") || name.hasPrefix("$s") || name.hasPrefix("_$e") || name.hasPrefix("$e") {
+            let clean = name.hasPrefix("_") ? String(name.dropFirst()) : name
+            if let fast = inProcessSwiftDemangle(clean) { return fast }
             if let out = swiftDemangle(name) { return out }
         }
         if name.hasPrefix("__Z") || name.hasPrefix("_Z") {
-            
             if let out = cxxfiltDemangle(name) { return out }
         }
-        
         if name.hasPrefix("_") && !name.hasPrefix("__") {
             return String(name.dropFirst())
         }
         return name
+    }
+
+    private static func inProcessSwiftDemangle(_ mangled: String) -> String? {
+        mangled.withCString { ptr in
+            guard let buf = _swiftRuntimeDemangle(ptr, strlen(ptr), nil, nil, 0) else { return nil }
+            defer { free(buf) }
+            let s = String(cString: buf)
+            return s.isEmpty || s == mangled ? nil : s
+        }
     }
 
     private static func swiftDemangle(_ name: String) -> String? {

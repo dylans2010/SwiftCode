@@ -366,11 +366,14 @@ public final class DecompilerObservableState {
 
     
     @discardableResult
-    public func decompileSelected() async throws -> DecompilationResult? {
+    public func decompileSelected(
+        force: Bool = false,
+        dialect: NativeStructuralDecompiler.Dialect = .c
+    ) async throws -> DecompilationResult? {
         guard let address = selectedFunctionAddress else { return nil }
         log("Decompiling \(selectedFunction?.displayName ?? address.hexString)…")
         do {
-            let result = try await session.decompileFunction(at: address)
+            let result = try await session.decompileFunction(at: address, force: force, dialect: dialect)
             await refresh()
             log("Decompiled \(result.functionName): \(result.pseudocode.components(separatedBy: .newlines).count) lines",
                 kind: .engine)
@@ -379,6 +382,19 @@ public final class DecompilerObservableState {
             log("Decompile failed: \(error.localizedDescription)", kind: .error)
             throw error
         }
+    }
+
+    public func decompileAllFunctionsBatch() async throws {
+        log("Batch decompiling all functions…")
+        _ = try await session.decompileAllFunctions()
+        await refresh()
+        log("Decompiled \(pseudocode.count) functions", kind: .engine)
+    }
+
+    public func renameFunction(_ fn: DecompilerFunction, to newName: String) async {
+        _ = await session.renameFunction(at: fn.address, to: newName)
+        _ = try? await session.decompileFunction(at: fn.address, force: true)
+        await refresh()
     }
 
     public func pseudocode(for function: DecompilerFunction) -> DecompilationResult? {

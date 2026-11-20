@@ -36,6 +36,32 @@ public enum JSONValue: Codable, Hashable, Sendable {
         .object(Dictionary(uniqueKeysWithValues: dict.map { ($0.key, .string($0.value)) }))
     }
 
+    public static func fromFoundation(_ any: Any) -> JSONValue? {
+        if any is NSNull { return .null }
+        if let str = any as? String { return .string(str) }
+        if let num = any as? NSNumber {
+            if CFGetTypeID(num) == CFBooleanGetTypeID() {
+                return .bool(num.boolValue)
+            }
+            let d = num.doubleValue
+            if d.isFinite && d.truncatingRemainder(dividingBy: 1) == 0 && d >= Double(Int.min) && d <= Double(Int.max) {
+                return .int(num.intValue)
+            }
+            return .double(d)
+        }
+        if let arr = any as? [Any] {
+            return .array(arr.compactMap { fromFoundation($0) })
+        }
+        if let dict = any as? [String: Any] {
+            var out: [String: JSONValue] = [:]
+            for (k, v) in dict {
+                if let converted = fromFoundation(v) { out[k] = converted }
+            }
+            return .object(out)
+        }
+        return nil
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         if container.decodeNil() {

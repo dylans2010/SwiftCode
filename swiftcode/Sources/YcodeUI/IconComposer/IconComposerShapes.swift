@@ -9,6 +9,11 @@ public enum IconComposerShapes {
         case roundedSquare = "rounded-square"
         case squircle
         case star
+        case hexagon
+        case diamond
+        case shield
+        case capsule
+        case concentricRings = "concentric-rings"
         case diagonalGradient = "diagonal-gradient"
         case ring
     }
@@ -23,10 +28,10 @@ public enum IconComposerShapes {
         ctx.scaleBy(x: 1, y: -1)
         let rect = CGRect(x: 0, y: 0, width: p, height: p)
         switch shape {
-        case .circle, .squircle, .roundedSquare, .star, .ring:
-            drawThemedShape(shape, in: ctx, rect: rect)
         case .diagonalGradient:
             drawDiagonalGradient(in: ctx, rect: rect)
+        default:
+            drawThemedShape(shape, in: ctx, rect: rect)
         }
         return ctx.makeImage()
     }
@@ -64,6 +69,36 @@ public enum IconComposerShapes {
             path.appendOval(in: outer)
             let innerRect = outer.insetBy(dx: p * 0.16, dy: p * 0.16)
             path.appendOval(in: innerRect)
+        case .hexagon:
+            let c = CGPoint(x: rect.midX, y: rect.midY)
+            let r = p * 0.42
+            for i in 0..<6 {
+                let a = -.pi / 2 + CGFloat(i) * .pi / 3
+                let pt = CGPoint(x: c.x + cos(a) * r, y: c.y + sin(a) * r)
+                if i == 0 { path.move(to: pt) } else { path.line(to: pt) }
+            }
+            path.close()
+        case .diamond:
+            path.move(to: CGPoint(x: rect.midX, y: p * 0.08))
+            path.line(to: CGPoint(x: p * 0.92, y: rect.midY))
+            path.line(to: CGPoint(x: rect.midX, y: p * 0.92))
+            path.line(to: CGPoint(x: p * 0.08, y: rect.midY))
+            path.close()
+        case .shield:
+            path.move(to: CGPoint(x: rect.midX, y: p * 0.08))
+            path.line(to: CGPoint(x: p * 0.86, y: p * 0.22))
+            path.line(to: CGPoint(x: p * 0.82, y: p * 0.60))
+            path.line(to: CGPoint(x: rect.midX, y: p * 0.92))
+            path.line(to: CGPoint(x: p * 0.18, y: p * 0.60))
+            path.line(to: CGPoint(x: p * 0.14, y: p * 0.22))
+            path.close()
+        case .capsule:
+            let inset = CGRect(x: p * 0.10, y: p * 0.24, width: p * 0.80, height: p * 0.52)
+            path.appendRoundedRect(inset, xRadius: inset.height / 2, yRadius: inset.height / 2)
+        case .concentricRings:
+            for frac in [0.06, 0.20, 0.34] {
+                path.appendOval(in: rect.insetBy(dx: p * frac, dy: p * frac))
+            }
         case .diagonalGradient:
             drawDiagonalGradient(in: ctx, rect: rect)
             return

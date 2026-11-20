@@ -82,11 +82,11 @@ public final class AppCommands: NSObject {
     }
 
     @objc public func openTerminal(_ sender: Any?) {
-        TerminalWindowManager.shared.showWindow(workspaceFolder: activeWorkspaceURL)
+        IntegratedTerminal.toggle(fallbackFolder: activeWorkspaceURL)
     }
 
     @objc public func openTerminalAtLocation(_ sender: Any?) {
-        TerminalWindowManager.shared.showWindow(workspaceFolder: activeWorkspaceURL)
+        IntegratedTerminal.showAtCurrentLocation(fallbackFolder: activeWorkspaceURL)
     }
 
     @objc public func openRepositoryExplorer(_ sender: Any?) {

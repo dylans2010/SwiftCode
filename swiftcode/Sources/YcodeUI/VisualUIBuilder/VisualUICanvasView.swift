@@ -120,7 +120,13 @@ public struct VisualUICanvasView: View {
                     SmartGuidesOverlay(document: document, settings: settings)
                 }
 
+                if settings.showRulers {
+                    VisualUICanvasRulersOverlay(scale: document.scene.zoomScale)
+                }
+
                 VStack {
+                    VisualUICanvasQuickToolsBar(document: document, settings: settings)
+                        .padding(.top, 12)
                     Spacer()
                     HStack {
                         Spacer()

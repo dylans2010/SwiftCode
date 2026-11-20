@@ -24,6 +24,35 @@ public final class IconComposerModel: ObservableObject {
     @Published public private(set) var appIconSetURL: URL?
     @Published public private(set) var statusMessage: String?
     @Published public private(set) var revision = 0
+    private var undoSnapshots: [IconDocument] = []
+    private var redoSnapshots: [IconDocument] = []
+
+    public var canUndo: Bool { !undoSnapshots.isEmpty }
+    public var canRedo: Bool { !redoSnapshots.isEmpty }
+
+    public func recordUndo() {
+        undoSnapshots.append(document)
+        if undoSnapshots.count > 40 { undoSnapshots.removeFirst() }
+        redoSnapshots.removeAll()
+    }
+
+    public func undo() {
+        guard let prev = undoSnapshots.popLast() else { return }
+        redoSnapshots.append(document)
+        document = prev
+        clampSelection()
+        changed()
+        save()
+    }
+
+    public func redo() {
+        guard let next = redoSnapshots.popLast() else { return }
+        undoSnapshots.append(document)
+        document = next
+        clampSelection()
+        changed()
+        save()
+    }
 
     public var iconPackageURL: URL { package.url }
     public var document: IconDocument {
@@ -198,6 +227,7 @@ public final class IconComposerModel: ObservableObject {
     }
 
     public func addShapeLayer(_ shape: IconComposerShapes.Shape) {
+        recordUndo()
         guard let image = IconComposerShapes.image(shape, pixels: 512),
               let name = Self.writeAsset(image, named: shape.rawValue, in: package) else {
             statusMessage = "Could not generate shape"
@@ -210,6 +240,103 @@ public final class IconComposerModel: ObservableObject {
         selectedLayer = document.groups[selectedGroup].layers.count - 1
         changed()
         save()
+    }
+
+    public func addSFSymbolLayer(symbolName: String, weight: NSFont.Weight = .semibold, color: NSColor = .white) {
+        recordUndo()
+        guard let cg = IconComposerAssetGenerator.renderSFSymbol(symbolName: symbolName, weight: weight, color: color),
+              let assetName = Self.writeAsset(cg, named: symbolName.replacingOccurrences(of: ".", with: "-"), in: package) else {
+            statusMessage = "Unknown SF Symbol '\(symbolName)'"
+            return
+        }
+        var layer = IconLayer(name: symbolName, imageName: assetName)
+        layer.glass = IconSpecialized(true)
+        layer.extra[IconComposerRenderer.shadowRadiusKey] = .number(16)
+        ensureGroup()
+        document.groups[selectedGroup].layers.append(layer)
+        selectedLayer = document.groups[selectedGroup].layers.count - 1
+        changed()
+        save()
+    }
+
+    public func addMonogramLayer(text: String, design: NSFontDescriptor.SystemDesign = .rounded, color: NSColor = .white) {
+        recordUndo()
+        guard let cg = IconComposerAssetGenerator.renderMonogram(text: text, design: design, color: color),
+              let assetName = Self.writeAsset(cg, named: "monogram", in: package) else {
+            statusMessage = "Could not render monogram"
+            return
+        }
+        var layer = IconLayer(name: "Badge \(text)", imageName: assetName)
+        layer.glass = IconSpecialized(true)
+        layer.extra[IconComposerRenderer.shadowRadiusKey] = .number(14)
+        ensureGroup()
+        document.groups[selectedGroup].layers.append(layer)
+        selectedLayer = document.groups[selectedGroup].layers.count - 1
+        changed()
+        save()
+    }
+
+    public func duplicateSelectedLayer() {
+        guard let l = selectedLayer, document.groups.indices.contains(selectedGroup),
+              document.groups[selectedGroup].layers.indices.contains(l) else { return }
+        recordUndo()
+        var copy = document.groups[selectedGroup].layers[l]
+        copy.name = (copy.name ?? "Layer") + " Copy"
+        document.groups[selectedGroup].layers.insert(copy, at: l + 1)
+        selectedLayer = l + 1
+        changed()
+        save()
+    }
+
+    public func resetSelectedTransform() {
+        recordUndo()
+        updateSelectedLayer {
+            $0.position.value = .identity
+            $0.position.specializations = nil
+        }
+        save()
+    }
+
+    public func layerShadowRadius(_ l: IconLayer) -> Double {
+        l.extra[IconComposerRenderer.shadowRadiusKey]?.numberValue ?? 0
+    }
+
+    public func setLayerShadowRadius(_ v: Double) {
+        updateSelectedLayer { $0.extra[IconComposerRenderer.shadowRadiusKey] = .number(v) }
+        save()
+    }
+
+    public func applyStarterTemplate(_ template: String) {
+        recordUndo()
+        document.groups = [IconGroup(name: "Background Motif"), IconGroup(name: "Foreground Symbol")]
+        selectedGroup = 0
+        switch template {
+        case "Developer Terminal":
+            setDocumentFill(.linearGradient(IconColor.srgb(0.08, 0.10, 0.16), IconColor.srgb(0.16, 0.24, 0.38), orientation: nil))
+            addShapeLayer(.roundedSquare)
+            setLayerScale(0.76); setLayerOpacity(0.28)
+            selectedGroup = 1
+            addSFSymbolLayer(symbolName: "terminal.fill", weight: .bold, color: .white)
+        case "AI Sparkle Glass":
+            setDocumentFill(.linearGradient(IconColor.srgb(0.32, 0.14, 0.82), IconColor.srgb(0.86, 0.26, 0.68), orientation: nil))
+            addShapeLayer(.ring)
+            setLayerScale(0.84); setLayerOpacity(0.35)
+            selectedGroup = 1
+            addSFSymbolLayer(symbolName: "sparkles", weight: .bold, color: .white)
+        case "Shield Security":
+            setDocumentFill(.linearGradient(IconColor.srgb(0.05, 0.42, 0.38), IconColor.srgb(0.12, 0.72, 0.56), orientation: nil))
+            addShapeLayer(.hexagon)
+            setLayerScale(0.82); setLayerOpacity(0.25)
+            selectedGroup = 1
+            addSFSymbolLayer(symbolName: "lock.shield.fill", weight: .bold, color: .white)
+        default:
+            setDocumentFill(.linearGradient(IconColor.srgb(0.07, 0.38, 0.92), IconColor.srgb(0.16, 0.76, 0.96), orientation: nil))
+            addShapeLayer(.concentricRings)
+            setLayerScale(0.85); setLayerOpacity(0.22)
+            selectedGroup = 1
+            addSFSymbolLayer(symbolName: "swift", weight: .bold, color: .white)
+        }
+        statusMessage = "Applied '\(template)' template"
     }
 
     public func removeSelected() {

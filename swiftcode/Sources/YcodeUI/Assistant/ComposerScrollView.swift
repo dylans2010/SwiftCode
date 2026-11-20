@@ -18,7 +18,7 @@ final class ComposerScrollView: NSScrollView {
         layer?.masksToBounds = true
         contrastObserver = NSWorkspace.shared.notificationCenter.addObserver(
             forName: NSWorkspace.accessibilityDisplayOptionsDidChangeNotification, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.updateStroke() }
+            Task { @MainActor in self?.updateStroke() }
         }
         updateStroke()
     }

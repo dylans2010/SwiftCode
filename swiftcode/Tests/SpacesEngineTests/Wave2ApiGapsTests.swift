@@ -63,7 +63,7 @@ import Testing
         tar.append(Data(repeating: 0, count: 1024))
         try tar.write(to: archive)
         let dest = dir.appendingPathComponent("out")
-        let extracted = try BundleOps.extract(archive: archive.path, to: dest.path)
+        let extracted = try ArchiveOps.extract(archive: archive.path, to: dest.path)
         #expect(extracted.contains("nested/renamed.txt"))
         #expect(!extracted.contains("old.txt"))
         #expect(!FileManager.default.fileExists(atPath: dest.appendingPathComponent("old.txt").path))
@@ -85,7 +85,7 @@ import Testing
         tar.append(Data(repeating: 0, count: 1024))
         try tar.write(to: archive)
         let dest = dir.appendingPathComponent("out")
-        let extracted = try BundleOps.extract(archive: archive.path, to: dest.path)
+        let extracted = try ArchiveOps.extract(archive: archive.path, to: dest.path)
         #expect(extracted.contains("global/renamed.txt"))
         #expect(!FileManager.default.fileExists(atPath: dest.appendingPathComponent("a.txt").path))
         #expect(try String(contentsOf: dest.appendingPathComponent("global/renamed.txt"),

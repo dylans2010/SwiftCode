@@ -49,6 +49,8 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
     let inspectorSlideBox = InspectorSlideState()
     let codingAssistantHolder = CodingAssistantHolder()
     let extensionsPanelHolder = ExtensionsPanelHolder()
+    let terminalHolder = TerminalPanelHolder()
+    let menuContextBox = MenuContextBox()
     let agentModeHolder = AgentModeHolder()
     final class BehaviorStore {
         var tracker = BehaviorEventTracker()
@@ -82,6 +84,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
     var navigatorItem: NSSplitViewItem!
     var inspectorItem: NSSplitViewItem!
     var debugItem: NSSplitViewItem!
+    var terminalItem: NSSplitViewItem!
     let schemePopUp = NSPopUpButton(frame: .zero, pullsDown: false)
     let destinationPopUp: NSPopUpButton = DestinationPopUpButton(frame: .zero, pullsDown: false)
     private var issueCursor = -1
@@ -227,6 +230,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         debugItem.holdingPriority = NSLayoutConstraint.Priority(rawValue: 260)
         centerSplit.addSplitViewItem(editorItem)
         centerSplit.addSplitViewItem(debugItem)
+        installTerminalPanel()
 
         navigatorItem = FlushSidebar.item(for: navigator, overhang: 1)
         navigatorItem.minimumThickness = 180
@@ -258,13 +262,14 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         toolbar.allowsUserCustomization = true
         toolbar.autosavesConfiguration = true
         window?.toolbar = toolbar
+        FlushSidebar.repairSavedSeparator(in: toolbar)
         styleToolbarToggles()
         labelSchemePill()
         observeLeftArea()
         leftAreaObservation.tokens.append(NotificationCenter.default.addObserver(forName: NSSplitView.didResizeSubviewsNotification,
                                                                                 object: centerSplit.splitView, queue: .main) { [weak self] n in
             guard n.userInfo?["NSSplitViewDividerIndex"] != nil else { return }
-            MainActor.assumeIsolated {
+            Task { @MainActor in
                 guard let self, !self.debugItem.isCollapsed, self.debugArea.view.frame.height >= self.debugItem.minimumThickness else { return }
                 self.userState.debugAreaHeight = Double(self.debugArea.view.frame.height)
             }
@@ -287,7 +292,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         navigator.setSnippets(LibraryCodeSnippetStore.load())
         installFindHooks()
         prefsObserver = NotificationCenter.default.addObserver(forName: Preferences.didChange, object: nil, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.applyPreferences() }
+            Task { @MainActor in self?.applyPreferences() }
         }
         wire(editor)
         editorArea.configure = { [weak self] e in self?.wire(e) }
@@ -586,7 +591,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
     @discardableResult
     @objc public func addPackageDependencies(_ sender: Any?) -> AddPackageController? {
         guard var pm = packageModel(), let path = packageProjectPath else { NSSound.beep(); return nil }
-        let sheet = AddPackageController(targets: pm.proj.targets.compactMap { $0.string("name") })
+        let sheet = AddPackageController(targets: pm.proj.targets.compactMap { $0.string("name") }, projectDirectory: pm.projectDirectory)
         var packageID: String?
         sheet.onFetch = { location, requirement in
             let start = pm
@@ -604,6 +609,15 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         sheet.onLink = { [weak self] products, target in
             guard let self, let packageID else { return }
             pm.link(products, package: packageID, target: target)
+            self.projectChanged(path: path, pm.proj)
+            self.resolvePackages()
+            self.projectEditor?.reload(proj: pm.proj)
+        }
+        sheet.onLinkProductTargets = { [weak self] pairs in
+            guard let self, let packageID else { return }
+            for (product, target) in pairs {
+                pm.link([product], package: packageID, target: target)
+            }
             self.projectChanged(path: path, pm.proj)
             self.resolvePackages()
             self.projectEditor?.reload(proj: pm.proj)
@@ -2170,7 +2184,7 @@ public final class WorkspaceWindowController: NSWindowController, NSToolbarDeleg
         if show {
             let split = centerSplit.splitView
             centerSplit.view.layoutSubtreeIfNeeded()
-            split.setPosition(split.bounds.height - debugAreaOpeningHeight - split.dividerThickness, ofDividerAt: 0)
+            split.setPosition(split.bounds.height - debugAreaOpeningHeight - split.dividerThickness - terminalPanelOccupiedHeight, ofDividerAt: 0)
             centerSplit.view.layoutSubtreeIfNeeded()
         }
     }

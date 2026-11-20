@@ -398,23 +398,46 @@ public struct VisualUIRenderer: View {
             }
         }
 
+        let radius = CGFloat(Double(node.properties["cornerRadius"] ?? "0") ?? 0)
+        let borderW = CGFloat(Double(node.properties["borderWidth"] ?? "0") ?? 0)
+        let shadowR = CGFloat(Double(node.properties["shadowRadius"] ?? "0") ?? 0)
+        let opacityVal = Double(node.properties["opacity"] ?? "1.0") ?? 1.0
+        let rotationVal = Double(node.properties["rotation"] ?? "0") ?? 0
+        let wireframe = VisualUISettings.shared.showWireframeBounds
+        let isSelected = document.scene.selectedNodeIDs.contains(node.id)
+
+        let strokeColor: Color = if isSelected {
+            Color.accentColor
+        } else if borderW > 0 {
+            Color.secondary.opacity(0.45)
+        } else if wireframe {
+            Color.cyan.opacity(0.55)
+        } else {
+            Color.clear
+        }
+        let strokeWidth: CGFloat = isSelected ? 2 : max(borderW, wireframe ? 1 : 0)
+        let dashPattern: [CGFloat] = (wireframe && !isSelected && borderW == 0) ? [4, 3] : []
+        let padVal = CGFloat(Double(node.properties["padding"] ?? "0") ?? 0)
+        let wVal = node.properties["width"].flatMap { Double($0) }.map { CGFloat($0) }
+        let hVal = node.properties["height"].flatMap { Double($0) }.map { CGFloat($0) }
+
+        let styled = baseView
+            .padding(padVal)
+            .foregroundColor(node.properties["foregroundColor"].map { Color(hex: $0) })
+            .background(node.properties["backgroundColor"].map { Color(hex: $0) })
+            .frame(width: wVal, height: hVal)
+            .cornerRadius(radius)
+            .overlay(
+                RoundedRectangle(cornerRadius: radius)
+                    .stroke(strokeColor, style: StrokeStyle(lineWidth: strokeWidth, dash: dashPattern))
+            )
+
         return AnyView(
-            baseView
-                .padding(CGFloat(Double(node.properties["padding"] ?? "0") ?? 0))
-                .foregroundColor(node.properties["foregroundColor"].map { Color(hex: $0) })
-                .background(node.properties["backgroundColor"].map { Color(hex: $0) })
-                .frame(
-                    width: node.properties["width"].flatMap { Double($0) }.map { CGFloat($0) },
-                    height: node.properties["height"].flatMap { Double($0) }.map { CGFloat($0) }
-                )
-                .cornerRadius(CGFloat(Double(node.properties["cornerRadius"] ?? "0") ?? 0))
-                .overlay(
-                    RoundedRectangle(cornerRadius: CGFloat(Double(node.properties["cornerRadius"] ?? "0") ?? 0))
-                        .stroke(
-                            document.scene.selectedNodeIDs.contains(node.id) ? Color.accentColor : Color.clear,
-                            lineWidth: 2
-                        )
-                )
+            styled
+                .shadow(radius: shadowR)
+                .opacity(opacityVal)
+                .rotationEffect(.degrees(rotationVal))
+                .accessibilityLabel(node.properties["accessibilityLabel"] ?? node.name)
                 .offset(dragOffsets[node.id] ?? .zero)
                 .gesture(
                     DragGesture()

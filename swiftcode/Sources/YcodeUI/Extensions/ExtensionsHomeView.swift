@@ -18,59 +18,76 @@ public struct ExtensionsHomeView: View {
                 splitView
             }
         }
-        .task {
-            await manager.ensureReady()
+        .onAppear {
+            Task { await manager.ensureReady() }
         }
     }
 
     private var splitView: some View {
-        NavigationSplitView {
+        HStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     ForEach(ExtV2HomeSection.allCases) { section in
                         Button {
                             viewModel.section = section
                         } label: {
                             Label(section.title, systemImage: section.icon)
+                                .font(.callout.weight(viewModel.section == section ? .semibold : .regular))
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .buttonStyle(.plain)
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
+                        .padding(.vertical, 7)
                         .background(
                             viewModel.section == section
-                                ? Color.accentColor.opacity(0.15)
+                                ? Color.accentColor.opacity(0.16)
                                 : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 6))
+                            in: RoundedRectangle(cornerRadius: 7))
                     }
                 }
-                .padding(8)
+                .padding(10)
             }
-            .navigationTitle("Extensions")
-        } detail: {
-            Group {
-                switch viewModel.section {
-                case .discover:
-                    ExtensionsSearchView()
-                case .installed:
-                    ExtensionsInstalledView()
-                case .updates:
-                    ExtensionUpdatesView()
-                case .enabled, .disabled:
-                    installedList
-                case .native:
-                    nativeSection
-                case .xcode:
-                    xcodeSection
-                case .permissions:
-                    ExtensionPermissionsView()
-                case .settings:
-                    ExtensionSettingsView()
-                case .diagnostics:
-                    ExtensionDiagnosticsView()
+            .frame(width: 210)
+            .background(Color(NSColor.windowBackgroundColor))
+
+            Divider()
+
+            VStack(spacing: 0) {
+                HStack {
+                    Label(viewModel.section.title, systemImage: viewModel.section.icon)
+                        .font(.headline)
+                    Spacer()
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color(NSColor.windowBackgroundColor))
+
+                Divider()
+
+                Group {
+                    switch viewModel.section {
+                    case .discover:
+                        ExtensionsSearchView()
+                    case .installed:
+                        ExtensionsInstalledView()
+                    case .updates:
+                        ExtensionUpdatesView()
+                    case .enabled, .disabled:
+                        installedList
+                    case .native:
+                        nativeSection
+                    case .xcode:
+                        xcodeSection
+                    case .permissions:
+                        ExtensionPermissionsView()
+                    case .settings:
+                        ExtensionSettingsView()
+                    case .diagnostics:
+                        ExtensionDiagnosticsView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .navigationTitle(viewModel.section.title)
         }
     }
 

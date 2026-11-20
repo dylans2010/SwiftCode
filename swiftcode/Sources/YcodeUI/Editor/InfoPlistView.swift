@@ -69,7 +69,24 @@ public struct InfoPlistTemplate: Identifiable {
 }
 
 public enum InfoPlistTemplateCatalog {
-    public static let categories = ["All", "Identity", "Display & Scene", "Network & Security", "Behavior & Lifecycle", "Hardware & Capabilities", "Fonts & Assets", "URL Types", "Orientations", "Privacy"]
+    public static let categories = ["Popular", "Privacy", "Identity", "Display & Scene", "URL Types", "Behavior & Lifecycle", "Network & Security", "Hardware & Capabilities", "Fonts & Assets", "Orientations", "All"]
+
+    public static let popularKeys: [String] = [
+        "CFBundleDisplayName",
+        "LSApplicationCategoryType",
+        "LSMinimumSystemVersion",
+        "LSUIElement",
+        "ITSAppUsesNonExemptEncryption",
+        "NSCameraUsageDescription",
+        "NSPhotoLibraryUsageDescription",
+        "NSMicrophoneUsageDescription",
+        "NSLocationWhenInUseUsageDescription",
+        "NSLocalNetworkUsageDescription",
+        "CFBundleURLTypes",
+        "UIBackgroundModes",
+        "UIAppFonts",
+        "CADisableMinimumFrameDurationOnPhone",
+    ]
 
     nonisolated(unsafe) public static let all: [InfoPlistTemplate] = {
         var list: [InfoPlistTemplate] = [
@@ -180,6 +197,11 @@ public enum InfoPlistTemplateCatalog {
     public static func templates(in category: String) -> [InfoPlistTemplate] {
         if category == "All" {
             return all
+        }
+        if category == "Popular" {
+            let map = Dictionary(all.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+            let picked = popularKeys.compactMap { map[$0] }
+            return picked.isEmpty ? Array(all.prefix(14)) : picked
         }
         return all.filter { $0.category == category }
     }
@@ -321,13 +343,18 @@ public struct InfoPlistView: View {
     @State private var editor: InfoPlistEditor
     @State private var searchQuery = ""
     @State private var selectedKey: String? = nil
-    @State private var selectedSection: PlistSidebarSection? = .identity
+    @State private var selectedSection: PlistSidebarSection? = .allKeys
     @State private var validationExpanded = false
     @State private var showingAddKeySheet = false
     @State private var newCustomKey = ""
     @State private var newCustomType: PlistValueKind = .string
-    @State private var templateCategory = "All"
+    @State private var templateCategory = "Popular"
     @State private var addKeySearchQuery = ""
+    @State private var selectedTemplateKey: String? = nil
+    @State private var draftStringValue = ""
+    @State private var draftBoolValue = true
+    @State private var keepAddSheetOpen = false
+    @FocusState private var addKeySearchFocused: Bool
     @State private var showingInspectorSheet = false
     @State private var toolStatus: String? = nil
 
@@ -422,10 +449,12 @@ public struct InfoPlistView: View {
     }
 
     private var filteredTemplates: [InfoPlistTemplate] {
-        let base = InfoPlistTemplateCatalog.templates(in: templateCategory)
-        guard !addKeySearchQuery.isEmpty else { return base }
-        let query = addKeySearchQuery.lowercased()
-        return base.filter {
+        let trimmed = addKeySearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            return InfoPlistTemplateCatalog.templates(in: templateCategory)
+        }
+        let query = trimmed.lowercased()
+        return InfoPlistTemplateCatalog.all.filter {
             $0.name.lowercased().contains(query) ||
             $0.key.lowercased().contains(query) ||
             $0.category.lowercased().contains(query)
@@ -848,34 +877,56 @@ public struct InfoPlistView: View {
         .listStyle(.inset)
     }
 
-    private var addKeySheetView: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Add Info.plist Key")
-                        .font(.headline)
-                    Text("Select a standard Apple configuration key, privacy description, or define a custom property.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
-                Button {
-                    showingAddKeySheet = false
-                    newCustomKey = ""
-                    addKeySearchQuery = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-            }
+    private func addTemplate(_ template: InfoPlistTemplate, customValue: Any? = nil) {
+        let value = customValue ?? template.defaultValue
+        editor.set(key: template.key, value: value)
+        if fileURL != nil { try? editor.save() }
+        toolStatus = "Added \(template.key)"
+        if !keepAddSheetOpen {
+            showingAddKeySheet = false
+            addKeySearchQuery = ""
+        }
+    }
 
-            HStack(spacing: 8) {
+    private func selectTemplateForPreview(_ template: InfoPlistTemplate) {
+        selectedTemplateKey = template.key
+        if let s = template.defaultValue as? String {
+            draftStringValue = s
+        } else {
+            draftStringValue = ""
+        }
+        if let b = template.defaultValue as? Bool {
+            draftBoolValue = b
+        }
+    }
+
+    private var addKeySheetView: some View {
+        let trimmedSearch = addKeySearchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        let exactExists = !trimmedSearch.isEmpty && editor.entries[trimmedSearch] != nil
+        let isTemplateMatch = InfoPlistTemplateCatalog.all.contains { $0.key.caseInsensitiveCompare(trimmedSearch) == .orderedSame }
+        let showQuickCustom = !trimmedSearch.isEmpty && !trimmedSearch.contains(" ") && !exactExists && !isTemplateMatch
+        let activeTemplate = filteredTemplates.first { $0.key == selectedTemplateKey } ?? filteredTemplates.first
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                TextField("Search keys by name or identifier...", text: $addKeySearchQuery)
+                TextField("Search keys (Camera, Display Name, LSUIElement) or type a custom key…", text: $addKeySearchQuery)
                     .textFieldStyle(.plain)
+                    .font(.body)
+                    .focused($addKeySearchFocused)
+                    .onSubmit {
+                        if let t = activeTemplate, editor.entries[t.key] == nil {
+                            let val: Any? = t.kind == .string ? draftStringValue : (t.kind == .boolean ? draftBoolValue : nil)
+                            addTemplate(t, customValue: val)
+                        } else if showQuickCustom {
+                            editor.set(key: trimmedSearch, value: defaultPlistValue(for: newCustomType))
+                            if fileURL != nil { try? editor.save() }
+                            toolStatus = "Added \(trimmedSearch)"
+                            if !keepAddSheetOpen { showingAddKeySheet = false }
+                            addKeySearchQuery = ""
+                        }
+                    }
                 if !addKeySearchQuery.isEmpty {
                     Button { addKeySearchQuery = "" } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -883,58 +934,106 @@ public struct InfoPlistView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                Toggle("Keep open", isOn: $keepAddSheetOpen)
+                    .toggleStyle(.checkbox)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("Done") {
+                    showingAddKeySheet = false
+                    addKeySearchQuery = ""
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .keyboardShortcut(.cancelAction)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 9))
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     ForEach(InfoPlistTemplateCatalog.categories, id: \.self) { category in
-                        let isSelected = templateCategory == category
-                        let count = category == "All" ? InfoPlistTemplateCatalog.all.count : InfoPlistTemplateCatalog.templates(in: category).count
+                        let isSelected = templateCategory == category && trimmedSearch.isEmpty
                         Button {
                             templateCategory = category
+                            addKeySearchQuery = ""
                         } label: {
-                            HStack(spacing: 4) {
-                                Text(category)
-                                Text("(\(count))")
-                                    .font(.caption2)
-                                    .opacity(isSelected ? 0.9 : 0.6)
-                            }
-                            .font(.system(size: 11, weight: isSelected ? .semibold : .regular))
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(
-                                isSelected ? Color.accentColor : Color(NSColor.controlBackgroundColor),
-                                in: Capsule()
-                            )
-                            .foregroundColor(isSelected ? .white : .primary)
+                            Text(category)
+                                .font(.system(size: 11.5, weight: isSelected ? .semibold : .regular))
+                                .padding(.horizontal, 11)
+                                .padding(.vertical, 5)
+                                .background(
+                                    isSelected ? Color.accentColor : Color.secondary.opacity(0.12),
+                                    in: Capsule()
+                                )
+                                .foregroundStyle(isSelected ? .white : .primary)
                         }
                         .buttonStyle(.plain)
                     }
                 }
             }
 
-            Text("Standard Templates (\(filteredTemplates.count))")
-                .font(.caption.bold())
-                .foregroundStyle(.secondary)
-
-            List(filteredTemplates) { template in
-                let exists = editor.entries[template.key] != nil
-                HStack(spacing: 12) {
+            if showQuickCustom {
+                HStack(spacing: 10) {
                     ZStack {
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.secondary.opacity(0.12))
-                        Image(systemName: template.symbol)
-                            .font(.system(size: 14))
+                            .fill(Color.accentColor.opacity(0.15))
+                        Image(systemName: "plus.square.fill")
                             .foregroundStyle(Color.accentColor)
                     }
                     .frame(width: 28, height: 28)
 
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Create custom key")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(trimmedSearch)
+                            .font(.system(.callout, design: .monospaced).weight(.semibold))
+                    }
+                    Spacer()
+                    Picker("", selection: $newCustomType) {
+                        ForEach(PlistValueKind.allCases, id: \.self) { kind in
+                            Text(kind.rawValue).tag(kind)
+                        }
+                    }
+                    .labelsHidden()
+                    .frame(width: 110)
+
+                    Button("Add Key") {
+                        editor.set(key: trimmedSearch, value: defaultPlistValue(for: newCustomType))
+                        if fileURL != nil { try? editor.save() }
+                        toolStatus = "Added \(trimmedSearch) (\(newCustomType.rawValue))"
+                        addKeySearchQuery = ""
+                        if !keepAddSheetOpen { showingAddKeySheet = false }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+                .padding(10)
+                .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+            }
+
+            List(filteredTemplates) { template in
+                let exists = editor.entries[template.key] != nil
+                let isSelected = activeTemplate?.key == template.key
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill((exists ? Color.green : Color.accentColor).opacity(0.12))
+                        Image(systemName: exists ? "checkmark" : template.symbol)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(exists ? .green : Color.accentColor)
+                    }
+                    .frame(width: 28, height: 28)
+
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(template.name)
-                            .font(.body.weight(.medium))
+                        HStack(spacing: 6) {
+                            Text(template.name)
+                                .font(.body.weight(.medium))
+                            Text(template.category)
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
                         Text(template.key)
                             .font(.system(size: 11, design: .monospaced))
                             .foregroundStyle(.secondary)
@@ -942,80 +1041,75 @@ public struct InfoPlistView: View {
                     Spacer()
                     PlistTypeBadge(kind: template.kind)
                     if exists {
-                        HStack(spacing: 4) {
-                            Image(systemName: "checkmark")
-                                .font(.caption.bold())
-                            Text("Added")
-                                .font(.caption)
+                        Button("Remove") {
+                            editor.remove(key: template.key)
+                            if fileURL != nil { try? editor.save() }
+                            toolStatus = "Removed \(template.key)"
                         }
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color(NSColor.controlBackgroundColor), in: Capsule())
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
                     } else {
                         Button("Add") {
-                            editor.set(key: template.key, value: template.defaultValue)
-                            toolStatus = "Added \(template.key)"
-                            showingAddKeySheet = false
-                            addKeySearchQuery = ""
+                            let val: Any? = isSelected && template.kind == .string ? draftStringValue
+                                : (isSelected && template.kind == .boolean ? draftBoolValue : nil)
+                            addTemplate(template, customValue: val)
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, 3)
+                .padding(.horizontal, 4)
+                .background(isSelected ? Color.accentColor.opacity(0.08) : Color.clear, in: RoundedRectangle(cornerRadius: 6))
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    selectTemplateForPreview(template)
+                }
             }
             .listStyle(.inset)
-            .frame(minHeight: 220)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            Divider()
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Custom Key Definition")
-                    .font(.caption.bold())
-                    .foregroundStyle(.secondary)
-
-                HStack(spacing: 8) {
-                    TextField("Key name (e.g. MyCustomProperty)", text: $newCustomKey)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.system(.body, design: .monospaced))
-
-                    Picker("", selection: $newCustomType) {
-                        ForEach(PlistValueKind.allCases, id: \.self) { kind in
-                            Label(kind.rawValue, systemImage: kind.symbol).tag(kind)
-                        }
+            if let t = activeTemplate, editor.entries[t.key] == nil, (t.kind == .string || t.kind == .boolean) {
+                HStack(spacing: 10) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(t.name)
+                            .font(.caption.weight(.semibold))
+                        Text(t.key)
+                            .font(.system(size: 10.5, design: .monospaced))
+                            .foregroundStyle(.secondary)
                     }
-                    .pickerStyle(.menu)
-                    .frame(width: 140)
+                    .frame(width: 185, alignment: .leading)
 
-                    let trimmedKey = newCustomKey.trimmingCharacters(in: .whitespaces)
-                    let keyExists = !trimmedKey.isEmpty && editor.entries[trimmedKey] != nil
-
-                    Button("Add Custom") {
-                        editor.set(key: trimmedKey, value: defaultPlistValue(for: newCustomType))
-                        toolStatus = "Added \(trimmedKey) (\(newCustomType.rawValue))"
-                        showingAddKeySheet = false
-                        newCustomKey = ""
-                        addKeySearchQuery = ""
+                    if t.kind == .string {
+                        TextField("Initial value (optional)…", text: $draftStringValue)
+                            .textFieldStyle(.roundedBorder)
+                            .font(.callout)
+                    } else {
+                        Toggle(draftBoolValue ? "YES (true)" : "NO (false)", isOn: $draftBoolValue)
+                            .toggleStyle(.switch)
+                            .controlSize(.small)
+                        Spacer()
                     }
-                    .buttonStyle(.bordered)
-                    .disabled(trimmedKey.isEmpty || keyExists)
+
+                    Button("Add with Value") {
+                        addTemplate(t, customValue: t.kind == .string ? draftStringValue : draftBoolValue)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
                 }
-
-                let trimmedKey = newCustomKey.trimmingCharacters(in: .whitespaces)
-                let keyExists = !trimmedKey.isEmpty && editor.entries[trimmedKey] != nil
-                if keyExists {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle")
-                        Text("A key named '\(trimmedKey)' already exists. Choose a different name.")
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.red)
-                }
+                .padding(10)
+                .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
             }
         }
-        .padding(18)
-        .frame(width: 620, height: 600)
+        .padding(16)
+        .frame(width: 640, height: 540)
+        .onAppear {
+            addKeySearchFocused = true
+            if let first = filteredTemplates.first { selectTemplateForPreview(first) }
+        }
+        .onChange(of: templateCategory) { _, _ in
+            if let first = filteredTemplates.first { selectTemplateForPreview(first) }
+        }
     }
 
     private var inspectorSheetView: some View {

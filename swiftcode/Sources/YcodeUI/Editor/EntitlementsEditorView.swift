@@ -6,114 +6,174 @@ import YcodeIDEShell
 import YcodeSigning
 
 struct EntitlementsEditorView: View {
+    private enum DisplayMode: String, CaseIterable, Identifiable {
+        case enabled = "Enabled"
+        case catalog = "All Capabilities"
+        case xml = "Raw XML"
+        var id: String { rawValue }
+    }
+
     @Bindable var model: EntitlementsEditorModel
+    var defaultCreateURL: URL?
+    var onFileCreated: ((URL) -> Void)?
+
     @Environment(\.colorScheme) private var scheme
     @Environment(WorkspaceViewModel.self) private var workspaceViewModel: WorkspaceViewModel?
+    @State private var mode: DisplayMode = .enabled
     @State private var status: String?
     @State private var customKey = ""
     @State private var customKeyType = "Boolean"
     @State private var rawText = ""
-    @State private var showingRaw = false
     @State private var showingAddSheet = false
     @State private var showingInspectorSheet = false
     @State private var addSheetSearch = ""
     @State private var addSheetSection: EntitlementCapabilitySection = .all
     @State private var addSheetCustomKey = ""
     @State private var addSheetCustomKeyType = "boolean"
-    @State private var isCreating = false
-    @State private var creationError: String?
+    @FocusState private var addSearchFocused: Bool
 
-    init(model: EntitlementsEditorModel) {
+    private static let starterKeys = [
+        "com.apple.security.app-sandbox",
+        "com.apple.security.network.client",
+        "aps-environment",
+        "com.apple.developer.applesignin",
+        "com.apple.developer.icloud-services",
+        "com.apple.security.application-groups",
+        "com.apple.developer.associated-domains",
+        "keychain-access-groups",
+    ]
+
+    init(model: EntitlementsEditorModel, defaultCreateURL: URL? = nil, onFileCreated: ((URL) -> Void)? = nil) {
         self._model = Bindable(wrappedValue: model)
+        self.defaultCreateURL = defaultCreateURL
+        self.onFileCreated = onFileCreated
     }
 
-    init(fileURL: URL?) {
+    init(fileURL: URL?, defaultCreateURL: URL? = nil, onFileCreated: ((URL) -> Void)? = nil) {
         let m = (try? EntitlementsEditorModel(url: fileURL)) ?? EntitlementsEditorModel(entitlements: [:])
         self._model = Bindable(wrappedValue: m)
+        self.defaultCreateURL = defaultCreateURL
+        self.onFileCreated = onFileCreated
+    }
+
+    private var enabledDefinitions: [CapabilityDefinition] {
+        EntitlementCapabilityCatalog.definitions.filter { model.isCapabilityOn($0) && model.capabilityMatchesSearch($0) }
+    }
+
+    private var totalEnabledCount: Int {
+        EntitlementCapabilityCatalog.definitions.filter { model.isCapabilityOn($0) }.count + model.uncoveredKeys.count
     }
 
     var body: some View {
         let c = ShellColors(scheme)
-        if model.url == nil {
-            VStack(spacing: 20) {
-                ContentUnavailableView {
-                    Label("No Entitlements Configured", systemImage: "lock.shield")
-                } description: {
-                    Text("The currently selected target does not contain an Entitlements configuration file.\n\nYou can create a standard entitlements file in your project workspace.")
-                }
-
-                if let error = creationError {
-                    Text(error)
-                        .foregroundStyle(.secondary)
-                        .font(.callout)
-                }
-
-                Button {
-                    createEntitlements()
-                } label: {
-                    Label(isCreating ? "Creating..." : "Create Entitlements", systemImage: "plus")
-                        .font(.headline)
-                        .frame(minWidth: 160)
-                }
-                .buttonStyle(.bordered)
-                .disabled(isCreating)
+        VStack(spacing: 0) {
+            toolbar(c)
+            Hairline(color: c.separator)
+            if let p = model.problem { ProblemBanner(message: p) { model.clearProblem() } }
+            if model.url == nil { unconfiguredBanner(c) }
+            switch mode {
+            case .enabled:
+                enabledWorkspace(c)
+            case .catalog:
+                catalogWorkspace(c)
+            case .xml:
+                rawXMLWorkspace(c)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(c.content)
-        } else {
-            VStack(spacing: 0) {
-                toolbar(c)
-                Hairline(color: c.separator)
-                if let p = model.problem { ProblemBanner(message: p) { model.clearProblem() } }
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 16) {
-                        fileStatusCard(c)
-                        validationPanel(c)
-                        ForEach(model.visibleSections) { section in
-                            capabilitySection(section, c)
-                        }
-                        uncoveredKeysSection(c)
-                        if showingRaw { rawXMLSection(c) }
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-            }
-            .background(c.content)
-            .shellTarget("entitlements editor")
-            .sheet(isPresented: $showingAddSheet) {
-                addCapabilitySheet
-            }
-            .sheet(isPresented: $showingInspectorSheet) {
-                inspectorSheetView
-            }
+        }
+        .background(c.content)
+        .shellTarget("entitlements editor")
+        .sheet(isPresented: $showingAddSheet) {
+            addCapabilitySheet
+        }
+        .sheet(isPresented: $showingInspectorSheet) {
+            inspectorSheetView
+        }
+        .onChange(of: mode) { _, next in
+            if next == .xml { rawText = model.xmlText() }
         }
     }
 
-    private func createEntitlements() {
-        guard let project = ProjectSessionStore.shared.activeProject else {
-            creationError = "No active project found in session."
+    private func persistChange(_ message: String? = nil) {
+        if model.url == nil {
+            let candidate = defaultCreateURL ?? ProjectSessionStore.shared.activeProject.map {
+                EntitlementsFileTemplate.defaultURL(in: $0.directoryURL, projectName: $0.name)
+            }
+            if let candidate {
+                do {
+                    try model.bindAndSave(to: candidate)
+                    onFileCreated?(candidate)
+                    status = message ?? "Created \(candidate.lastPathComponent)"
+                } catch {
+                    model.setProblem("Could not create entitlements file: \(error.localizedDescription)")
+                }
+                return
+            }
+        }
+        if model.url != nil {
+            do {
+                try model.save()
+                if let message { status = message }
+            } catch {
+                model.setProblem("Could not save entitlements: \(error.localizedDescription)")
+            }
+        } else if let message {
+            status = message
+        }
+    }
+
+    private func toggleCapability(_ def: CapabilityDefinition, on: Bool) {
+        model.setCapability(def, on: on)
+        persistChange(on ? "Enabled \(def.name)" : "Removed \(def.name)")
+    }
+
+    private func unconfiguredBanner(_ c: ShellColors) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "sparkles")
+                .foregroundStyle(.teal)
+            Text(defaultCreateURL.map { "Toggle any capability below to create \($0.lastPathComponent) automatically." }
+                 ?? "Toggle capabilities below to configure entitlements, then save to a .entitlements file.")
+                .font(.callout)
+                .foregroundStyle(c.secondaryLabel)
+            Spacer()
+            Button(defaultCreateURL != nil ? "Create File Now" : "Save As…") {
+                createOrSaveAs()
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color.teal.opacity(0.08))
+    }
+
+    private func createOrSaveAs() {
+        if let targetURL = defaultCreateURL ?? ProjectSessionStore.shared.activeProject.map({
+            EntitlementsFileTemplate.defaultURL(in: $0.directoryURL, projectName: $0.name)
+        }) {
+            do {
+                try model.bindAndSave(to: targetURL)
+                onFileCreated?(targetURL)
+                status = "Created \(targetURL.lastPathComponent)"
+                if let project = ProjectSessionStore.shared.activeProject {
+                    ProjectSessionStore.shared.refreshFileTree(for: project)
+                    Task {
+                        await workspaceViewModel?.editor.updateActiveConfigurationURLs(for: project)
+                    }
+                }
+            } catch {
+                model.setProblem("Failed to create entitlements: \(error.localizedDescription)")
+            }
             return
         }
-
-        isCreating = true
-        creationError = nil
-
-        let targetURL = EntitlementsFileTemplate.defaultURL(in: project.directoryURL, projectName: project.name)
-
-        Task {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "App.entitlements"
+        if panel.runModal() == .OK, let u = panel.url {
             do {
-                try EntitlementsFileTemplate.writeDefaultEntitlements(to: targetURL)
-                ProjectSessionStore.shared.refreshFileTree(for: project)
-                if let workspaceViewModel {
-                    await workspaceViewModel.editor.openFile(url: targetURL)
-                    await workspaceViewModel.editor.updateActiveConfigurationURLs(for: project)
-                }
-                isCreating = false
+                try model.bindAndSave(to: u)
+                onFileCreated?(u)
+                status = "Saved \(u.lastPathComponent)"
             } catch {
-                isCreating = false
-                creationError = "Failed to create Entitlements: \(error.localizedDescription)"
+                model.setProblem("Failed to save entitlements: \(error.localizedDescription)")
             }
         }
     }
@@ -122,8 +182,9 @@ struct EntitlementsEditorView: View {
         HStack(spacing: 10) {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
+                    .font(.caption)
                     .foregroundStyle(c.secondaryLabel)
-                TextField("Search capabilities", text: $model.searchText)
+                TextField("Filter capabilities or keys…", text: $model.searchText)
                     .textFieldStyle(.plain)
                 if !model.searchText.isEmpty {
                     Button { model.searchText = "" } label: {
@@ -134,197 +195,380 @@ struct EntitlementsEditorView: View {
                 }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(c.content, in: RoundedRectangle(cornerRadius: 8))
-            .frame(width: 260)
-            Picker("Section", selection: $model.selectedSection) {
-                ForEach(EntitlementCapabilitySection.allCases) { section in
-                    Text(section.fullTitle).tag(section)
-                }
+            .padding(.vertical, 5)
+            .background(c.content, in: RoundedRectangle(cornerRadius: 7))
+            .frame(width: 230)
+
+            Picker("", selection: $mode) {
+                Text("Enabled (\(totalEnabledCount))").tag(DisplayMode.enabled)
+                Text("All (\(EntitlementCapabilityCatalog.definitions.count))").tag(DisplayMode.catalog)
+                Text("XML").tag(DisplayMode.xml)
             }
-            .frame(width: 200)
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .frame(width: 250)
+
             Spacer()
+
             if let status {
                 Text(status)
                     .font(.caption)
                     .foregroundStyle(c.secondaryLabel)
                     .lineLimit(1)
-            }
-            Menu {
-                Menu("Presets") {
-                    ForEach(EntitlementsPreset.allCases, id: \.rawValue) { preset in
-                        Button(preset.rawValue) {
-                            model.applyPreset(preset)
-                            status = "Applied \(preset.rawValue)"
-                        }
-                    }
-                }
-                Button("Validate") {
-                    let issues = model.validate()
-                    status = issues.isEmpty ? "All capabilities are valid."
-                        : "Validation: \(issues.map(\.message).joined(separator: "; "))"
-                }
-                Button("Copy Raw XML") {
-                    status = "Raw XML is shown below."
-                    showingRaw = true
-                    rawText = model.xmlText()
-                }
-                Divider()
-                Button("Revert") {
-                    do {
-                        try model.revert()
-                        status = "Reverted unsaved changes."
-                    } catch {
-                        model.setProblem("Could not re-read entitlements file: \(error.localizedDescription)")
-                    }
-                }
-                .disabled(!model.isDirty)
-            } label: {
-                Label("More", systemImage: "ellipsis.circle")
-            }
-            .menuStyle(.borderlessButton)
-            Button("Add Capability") {
-                showingAddSheet = true
-            }
-            .buttonStyle(.bordered)
-            Button("Save") {
-                do {
-                    try model.save()
-                    status = "Successfully saved entitlements to disk."
-                } catch {
-                    model.setProblem("Error saving entitlements: \(error.localizedDescription)")
-                }
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(!model.isDirty)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(c.sidebar)
-    }
-
-    private func fileStatusCard(_ c: ShellColors) -> some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.teal.opacity(0.12))
-                Image(systemName: "checkmark.seal.fill")
-                    .font(.title3)
-                    .foregroundStyle(.teal)
-            }
-            .frame(width: 36, height: 36)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(model.url?.lastPathComponent ?? "Entitlements")
-                    .font(.headline)
-                    .lineLimit(1)
-                Text(model.url?.path ?? "")
-                    .font(.caption)
-                    .foregroundStyle(c.secondaryLabel)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 4) {
-                Text("\(model.entitlements.count) active")
-                    .font(.subheadline.weight(.medium))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 2)
-                    .background(c.content, in: Capsule())
-                if let date = model.lastModified {
-                    Text("Modified \(date, style: .date)")
+            } else if let url = model.url {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(model.isDirty ? Color.orange : Color.green)
+                        .frame(width: 6, height: 6)
+                    Text(url.lastPathComponent)
                         .font(.caption)
                         .foregroundStyle(c.secondaryLabel)
                 }
-                Text(model.sandboxIsOn ? "Sandbox on" : "Sandbox off")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(model.sandboxIsOn ? .green : c.secondaryLabel)
+            }
+
+            Menu {
+                Section("Quick Presets") {
+                    ForEach(EntitlementsPreset.allCases, id: \.rawValue) { preset in
+                        Button(preset.rawValue) {
+                            model.applyPreset(preset)
+                            persistChange("Applied \(preset.rawValue)")
+                        }
+                    }
+                }
+                Divider()
+                Button("Copy Raw XML") {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString(model.xmlText(), forType: .string)
+                    status = "Copied XML"
+                }
+                if let url = model.url {
+                    Button("Reveal in Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([url])
+                    }
+                    Button("Revert from Disk") {
+                        try? model.revert()
+                        status = "Reverted"
+                    }
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+            }
+            .menuStyle(.borderlessButton)
+            .frame(width: 26)
+
+            Button {
+                showingAddSheet = true
+            } label: {
+                Label("Capability", systemImage: "plus")
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(.accentColor)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 9)
+        .background(c.sidebar)
+    }
+
+    private func enabledWorkspace(_ c: ShellColors) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                validationPanel(c)
+
+                if totalEnabledCount == 0 && model.searchText.isEmpty {
+                    quickStarterGrid(c)
+                } else {
+                    let active = enabledDefinitions
+                    if active.isEmpty && model.uncoveredKeys.isEmpty {
+                        ContentUnavailableView(
+                            "No Matching Capabilities",
+                            systemImage: "magnifyingglass",
+                            description: Text("Try searching All Capabilities or click + Capability.")
+                        )
+                        .padding(.vertical, 32)
+                    } else {
+                        ForEach(active) { def in
+                            capabilityCard(def, c)
+                        }
+                    }
+
+                    if !model.uncoveredKeys.isEmpty {
+                        uncoveredKeysSection(c)
+                    }
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func quickStarterGrid(_ c: ShellColors) -> some View {
+        let starters = Self.starterKeys.compactMap { EntitlementCapabilityCatalog.definition(for: $0) }
+            + EntitlementCapabilityCatalog.definitions.prefix(8).filter { d in !Self.starterKeys.contains(d.rawKey) }
+        let items = Array(starters.prefix(8))
+        return VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Get Straight Into Capabilities")
+                    .font(.title3.weight(.semibold))
+                Text("Turn on common capabilities in one click, or browse all \(EntitlementCapabilityCatalog.definitions.count) entitlements.")
+                    .font(.callout)
+                    .foregroundStyle(c.secondaryLabel)
+            }
+
+            LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
+                ForEach(items) { def in
+                    Button {
+                        toggleCapability(def, on: true)
+                    } label: {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.accentColor.opacity(0.12))
+                                Image(systemName: def.symbol)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(Color.accentColor)
+                            }
+                            .frame(width: 32, height: 32)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(def.name)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Text(def.explanation)
+                                    .font(.caption)
+                                    .foregroundStyle(c.secondaryLabel)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            Image(systemName: "plus.circle.fill")
+                                .foregroundStyle(Color.accentColor)
+                        }
+                        .padding(11)
+                        .background(c.sidebar, in: RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).stroke(c.separator.opacity(0.6), lineWidth: 0.5))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            HStack(spacing: 10) {
+                Button {
+                    showingAddSheet = true
+                } label: {
+                    Label("Search & Add Capabilities…", systemImage: "magnifyingglass")
+                }
+                .buttonStyle(.bordered)
+
+                ForEach(EntitlementsPreset.allCases, id: \.rawValue) { preset in
+                    Button(preset.rawValue) {
+                        model.applyPreset(preset)
+                        persistChange("Applied \(preset.rawValue)")
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                }
+            }
+            .padding(.top, 2)
+        }
+    }
+
+    private func catalogWorkspace(_ c: ShellColors) -> some View {
+        VStack(spacing: 0) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(EntitlementCapabilitySection.allCases.filter { $0 != .other }) { sec in
+                        let selected = model.selectedSection == sec
+                        Button {
+                            model.selectedSection = sec
+                        } label: {
+                            HStack(spacing: 5) {
+                                Image(systemName: sec.icon)
+                                    .font(.caption2)
+                                Text(sec.rawValue)
+                                    .font(.caption.weight(selected ? .semibold : .regular))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(selected ? Color.accentColor : Color.secondary.opacity(0.12), in: Capsule())
+                            .foregroundStyle(selected ? Color.white : Color.primary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+            Hairline(color: c.separator)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    ForEach(model.visibleSections) { section in
+                        let defs = EntitlementCapabilityCatalog.definitions(in: section)
+                            .filter { model.capabilityMatchesSearch($0) }
+                        if !defs.isEmpty {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(section.fullTitle)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(c.secondaryLabel)
+                                    .padding(.top, 4)
+                                VStack(spacing: 1) {
+                                    ForEach(defs) { def in
+                                        compactCapabilityRow(def, c)
+                                    }
+                                }
+                                .background(c.sidebar, in: RoundedRectangle(cornerRadius: 10))
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 14)
             }
         }
-        .padding(16)
-        .background(c.sidebar, in: RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func compactCapabilityRow(_ def: CapabilityDefinition, _ c: ShellColors) -> some View {
+        let isOn = model.isCapabilityOn(def)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: def.symbol)
+                    .frame(width: 20)
+                    .foregroundStyle(isOn ? Color.accentColor : c.secondaryLabel)
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 6) {
+                        Text(def.name)
+                            .font(.body.weight(.medium))
+                        if def.requiresSpecialApproval {
+                            Text("Approval")
+                                .font(.caption2.weight(.medium))
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(Color.orange.opacity(0.15), in: Capsule())
+                                .foregroundStyle(.orange)
+                        }
+                    }
+                    Text(def.explanation)
+                        .font(.caption)
+                        .foregroundStyle(c.secondaryLabel)
+                        .lineLimit(1)
+                }
+                Spacer()
+                Button {
+                    model.selectedKey = def.rawKey
+                    showingInspectorSheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(c.secondaryLabel)
+                }
+                .buttonStyle(.plain)
+                Toggle("", isOn: Binding(
+                    get: { isOn },
+                    set: { toggleCapability(def, on: $0) }
+                ))
+                .toggleStyle(.switch)
+                .controlSize(.small)
+                .labelsHidden()
+            }
+            if isOn {
+                capabilityPayloadEditor(def, c)
+                    .padding(.leading, 30)
+                    .padding(.top, 2)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
     }
 
     private func validationPanel(_ c: ShellColors) -> some View {
         let issues = model.validate()
         return Group {
             if !issues.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundStyle(.orange)
-                        Text("Entitlement Issues (\(issues.count))")
-                            .font(.headline)
-                        Spacer()
-                        Text("Fix the entries below or remove the conflicting key.")
-                            .font(.caption)
-                            .foregroundStyle(c.secondaryLabel)
+                        Text("\(issues.count) Validation Issue\(issues.count == 1 ? "" : "s")")
+                            .font(.subheadline.weight(.semibold))
                     }
                     ForEach(issues) { issue in
-                        HStack(alignment: .top, spacing: 10) {
-                            Image(systemName: issue.severity == .error ? "xmark.octagon.fill" : "exclamationmark.triangle.fill")
-                                .foregroundStyle(issue.severity == .error ? c.error : c.warning)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(issue.message)
-                                    .font(.callout)
-                                Text(issue.rawKey)
-                                    .font(.system(.caption, design: .monospaced))
-                                    .foregroundStyle(c.secondaryLabel)
-                            }
+                        HStack(alignment: .firstTextBaseline, spacing: 8) {
+                            Circle()
+                                .fill(issue.severity == .error ? c.error : c.warning)
+                                .frame(width: 6, height: 6)
+                            Text(issue.message)
+                                .font(.caption)
+                            Spacer()
+                            Text(issue.rawKey)
+                                .font(.system(.caption2, design: .monospaced))
+                                .foregroundStyle(c.secondaryLabel)
                         }
-                        .padding(.vertical, 2)
                     }
                 }
-                .padding(14)
+                .padding(12)
                 .background(Color.orange.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
             }
         }
     }
 
-    private func capabilitySection(_ section: EntitlementCapabilitySection, _ c: ShellColors) -> some View {
-        let defs = EntitlementCapabilityCatalog.definitions(in: section)
-            .filter { model.capabilityMatchesSearch($0) }
-        return Group {
-            if !defs.isEmpty {
-                Text(section.fullTitle).font(.headline)
-                ForEach(defs) { def in
-                    capabilityCard(def, c)
-                }
-            }
-        }
-    }
-
     private func capabilityCard(_ def: CapabilityDefinition, _ c: ShellColors) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: def.symbol)
-                    .foregroundStyle(c.secondaryLabel)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(def.name).font(.headline)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 7)
+                        .fill(Color.accentColor.opacity(0.12))
+                    Image(systemName: def.symbol)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Color.accentColor)
+                }
+                .frame(width: 28, height: 28)
+
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 6) {
+                        Text(def.name).font(.subheadline.weight(.semibold))
+                        if def.requiresSpecialApproval {
+                            Text("Special approval")
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 1)
+                                .background(Color.orange.opacity(0.14), in: Capsule())
+                                .foregroundStyle(c.warning)
+                        }
+                    }
                     Text(def.rawKey)
-                        .font(.caption)
+                        .font(.system(.caption2, design: .monospaced))
                         .foregroundStyle(c.secondaryLabel)
                 }
                 Spacer()
-                if def.requiresSpecialApproval {
-                    Text("Special approval")
-                        .font(.caption)
-                        .foregroundStyle(c.warning)
+                Button {
+                    model.selectedKey = def.rawKey
+                    showingInspectorSheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(c.secondaryLabel)
                 }
+                .buttonStyle(.plain)
+                .help(def.explanation)
+
                 Toggle("", isOn: Binding(
                     get: { model.isCapabilityOn(def) },
-                    set: { model.setCapability(def, on: $0) }
+                    set: { toggleCapability(def, on: $0) }
                 ))
+                .toggleStyle(.switch)
+                .controlSize(.small)
                 .labelsHidden()
             }
-            Text(def.explanation)
-                .font(.callout)
-                .foregroundStyle(c.secondaryLabel)
-            if model.isCapabilityOn(def) {
+            if case .none = def.payload {
+                Text(def.explanation)
+                    .font(.caption)
+                    .foregroundStyle(c.secondaryLabel)
+            } else if model.isCapabilityOn(def) {
                 capabilityPayloadEditor(def, c)
             }
         }
-        .padding(14)
+        .padding(13)
         .background(c.sidebar, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(c.separator.opacity(0.5), lineWidth: 0.5))
     }
 
     @ViewBuilder
@@ -335,30 +579,32 @@ struct EntitlementsEditorView: View {
         case .idList(let placeholder):
             IDListEditor(ids: Binding(
                 get: { model.stringArray(forKey: def.rawKey) },
-                set: { model.setStringArray($0, forKey: def.rawKey) }
+                set: { model.setStringArray($0, forKey: def.rawKey); persistChange() }
             ), placeholder: placeholder)
         case .fixedValueList(let allowed):
             FixedValueListEditor(values: Binding(
                 get: { model.stringArray(forKey: def.rawKey) },
-                set: { model.setStringArray($0, forKey: def.rawKey) }
+                set: { model.setStringArray($0, forKey: def.rawKey); persistChange() }
             ), allowed: allowed)
         case .choice(let options):
-            Picker("Value", selection: Binding(
+            Picker("Environment", selection: Binding(
                 get: { model.string(forKey: def.rawKey, fallback: options.first ?? "") },
-                set: { model.setString($0, forKey: def.rawKey) }
+                set: { model.setString($0, forKey: def.rawKey); persistChange() }
             )) {
                 ForEach(options, id: \.self) { option in Text(option).tag(option) }
             }
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 320)
         case .stringValue(let placeholder):
             TextField(placeholder, text: Binding(
                 get: { model.string(forKey: def.rawKey, fallback: "") },
-                set: { model.setString($0, forKey: def.rawKey) }
+                set: { model.setString($0, forKey: def.rawKey); persistChange() }
             ))
             .textFieldStyle(.roundedBorder)
         case .prefixedList(let prefixes, let placeholder):
             AssociatedDomainsEditor(domains: Binding(
                 get: { model.stringArray(forKey: def.rawKey) },
-                set: { model.setStringArray($0, forKey: def.rawKey) }
+                set: { model.setStringArray($0, forKey: def.rawKey); persistChange() }
             ), prefixes: prefixes, placeholder: placeholder)
         case .iCloudComposite:
             ICloudCompositeEditor(model: model)
@@ -367,17 +613,9 @@ struct EntitlementsEditorView: View {
 
     private func uncoveredKeysSection(_ c: ShellColors) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(EntitlementCapabilitySection.other.fullTitle, systemImage: EntitlementCapabilitySection.other.icon)
-                .font(.headline)
+            Text("Custom Entitlement Keys")
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(c.secondaryLabel)
-            Text("Entitlement keys present in the file that no capability toggle manages. Select one to inspect it, edit it in place, duplicate it, or remove it.")
-                .font(.callout)
-                .foregroundStyle(c.secondaryLabel)
-            if model.uncoveredKeys.isEmpty {
-                Text("No unmanaged keys.")
-                    .font(.caption)
-                    .foregroundStyle(c.secondaryLabel)
-            }
             ForEach(model.uncoveredKeys, id: \.self) { key in
                 EntitlementRowView(
                     key: key,
@@ -395,92 +633,87 @@ struct EntitlementsEditorView: View {
                             n += 1
                         }
                         model.set(val, forKey: copyKey)
-                        status = "Duplicated to \(copyKey)"
+                        persistChange("Duplicated to \(copyKey)")
                     },
                     onDelete: {
                         model.set(nil, forKey: key)
                         if model.selectedKey == key { model.selectedKey = nil }
+                        persistChange("Removed \(key)")
                     },
                     onValueChange: { newVal in
-                        guard let converted = EntitlementValue(propertyList: newVal) else {
-                            status = "Could not store that value for \(key)."
-                            return
-                        }
+                        guard let converted = EntitlementValue(propertyList: newVal) else { return }
                         model.set(converted, forKey: key)
+                        persistChange()
                     }
                 )
-                .padding(.vertical, 2)
-            }
-            HStack {
-                TextField("Add a key, e.g. com.example.custom", text: $customKey)
-                    .textFieldStyle(.roundedBorder)
-                Picker("Type", selection: $customKeyType) {
-                    ForEach(["Boolean", "String", "Array"], id: \.self) { Text($0).tag($0) }
-                }
-                .frame(width: 110)
-                Button("Add") {
-                    let key = customKey.trimmingCharacters(in: .whitespaces)
-                    guard !key.isEmpty, model.entitlements[key] == nil else { return }
-                    switch customKeyType {
-                    case "String": model.setString("", forKey: key)
-                    case "Array": model.setStringArray([], forKey: key)
-                    default: model.setBool(false, forKey: key)
-                    }
-                    customKey = ""
-                }
-                .disabled(customKey.trimmingCharacters(in: .whitespaces).isEmpty)
+                .background(c.sidebar, in: RoundedRectangle(cornerRadius: 8))
             }
         }
     }
 
-    private func rawXMLSection(_ c: ShellColors) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private func rawXMLWorkspace(_ c: ShellColors) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Raw XML").font(.headline)
+                Text("Entitlements Property List XML")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(c.secondaryLabel)
                 Spacer()
                 Button("Copy XML") {
                     NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString(model.xmlText(), forType: .string)
-                    status = "Copied entitlements XML to clipboard"
+                    NSPasteboard.general.setString(rawText, forType: .string)
+                    status = "Copied XML"
                 }
-                Button("Apply XML") {
+                .controlSize(.small)
+                Button("Format & Reload") { rawText = model.xmlText() }
+                    .controlSize(.small)
+                Button("Apply Changes") {
                     do {
                         try model.setXMLText(rawText)
-                        status = "Applied raw XML."
+                        persistChange("Applied XML")
                     } catch {
-                        model.setProblem("Raw XML is not a valid entitlements dictionary: \(error.localizedDescription)")
+                        model.setProblem("Invalid entitlements XML: \(error.localizedDescription)")
                     }
                 }
-                Button("Reload") { rawText = model.xmlText() }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
             }
             TextEditor(text: $rawText)
-                .font(.system(.body, design: .monospaced))
-                .frame(height: 220)
-                .border(c.separator)
+                .font(.system(.callout, design: .monospaced))
+                .scrollContentBackground(.hidden)
+                .padding(8)
+                .background(c.sidebar, in: RoundedRectangle(cornerRadius: 8))
+                .overlay(RoundedRectangle(cornerRadius: 8).stroke(c.separator, lineWidth: 0.5))
         }
+        .padding(16)
     }
 
     private var addCapabilitySheet: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Label("Add Capability to Entitlements", systemImage: "plus.circle.fill")
-                    .font(.title3.bold())
-                Spacer()
-                Button {
-                    showingAddSheet = false
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundStyle(.secondary)
-                        .font(.title3)
-                }
-                .buttonStyle(.plain)
+        let query = addSheetSearch.trimmingCharacters(in: .whitespaces)
+        let matching = EntitlementCapabilityCatalog.definitions.filter { def in
+            if addSheetSection != .all && query.isEmpty && def.section != addSheetSection {
+                return false
             }
+            guard !query.isEmpty else { return true }
+            let q = query.lowercased()
+            return def.name.lowercased().contains(q) || def.rawKey.lowercased().contains(q) || def.explanation.lowercased().contains(q)
+        }
+        let sortedMatching = matching.sorted { a, b in
+            let aStarter = Self.starterKeys.contains(a.rawKey)
+            let bStarter = Self.starterKeys.contains(b.rawKey)
+            if aStarter != bStarter && query.isEmpty && addSheetSection == .all { return aStarter }
+            return a.name < b.name
+        }
+        let canAddCustom = !query.isEmpty && query.contains(".") && model.entitlements[query] == nil
+            && !EntitlementCapabilityCatalog.definitions.contains(where: { $0.rawKey == query })
 
-            HStack(spacing: 6) {
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                TextField("Search capabilities by name, key, or category...", text: $addSheetSearch)
+                TextField("Search capabilities or type a custom key (com.example.feature)…", text: $addSheetSearch)
                     .textFieldStyle(.plain)
+                    .font(.body)
+                    .focused($addSearchFocused)
                 if !addSheetSearch.isEmpty {
                     Button { addSheetSearch = "" } label: {
                         Image(systemName: "xmark.circle.fill")
@@ -488,26 +721,35 @@ struct EntitlementsEditorView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                Button("Done") {
+                    showingAddSheet = false
+                    addSheetSearch = ""
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .keyboardShortcut(.cancelAction)
             }
-            .padding(8)
-            .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 8))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 9)
+            .background(Color(NSColor.controlBackgroundColor), in: RoundedRectangle(cornerRadius: 9))
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     ForEach(EntitlementCapabilitySection.allCases.filter { $0 != .other }) { cat in
-                        let isSelected = addSheetSection == cat
+                        let isSelected = addSheetSection == cat && query.isEmpty
                         Button {
                             addSheetSection = cat
+                            addSheetSearch = ""
                         } label: {
                             HStack(spacing: 4) {
                                 Image(systemName: cat.icon)
                                     .font(.caption2)
                                 Text(cat.rawValue)
-                                    .font(.caption)
+                                    .font(.caption.weight(isSelected ? .semibold : .regular))
                             }
                             .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(isSelected ? Color.teal : Color.secondary.opacity(0.12), in: Capsule())
+                            .padding(.vertical, 5)
+                            .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.12), in: Capsule())
                             .foregroundStyle(isSelected ? Color.white : Color.primary)
                         }
                         .buttonStyle(.plain)
@@ -515,115 +757,88 @@ struct EntitlementsEditorView: View {
                 }
             }
 
-            let available = EntitlementCapabilityCatalog.definitions
-                .filter { !model.isCapabilityOn($0) }
-                .filter { def in
-                    if addSheetSection != .all && def.section != addSheetSection {
-                        return false
+            if canAddCustom {
+                HStack(spacing: 10) {
+                    Image(systemName: "key.fill")
+                        .foregroundStyle(Color.accentColor)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Add custom key")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(query)
+                            .font(.system(.callout, design: .monospaced).weight(.semibold))
                     }
-                    if addSheetSearch.isEmpty { return true }
-                    let query = addSheetSearch.lowercased()
-                    return def.name.lowercased().contains(query)
-                        || def.rawKey.lowercased().contains(query)
-                        || def.explanation.lowercased().contains(query)
-                }
-
-            if available.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle")
-                        .font(.largeTitle)
-                        .foregroundStyle(.secondary)
-                    Text("No matching capabilities found")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, minHeight: 220)
-            } else {
-                List(available) { def in
-                    HStack(spacing: 12) {
-                        Image(systemName: def.symbol)
-                            .font(.title3)
-                            .foregroundStyle(.teal)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(def.name)
-                                .font(.body.weight(.medium))
-                            Text(def.explanation)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                                .lineLimit(2)
-                            Text(def.rawKey)
-                                .font(.system(.caption2, design: .monospaced))
-                                .foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        Button("Add") {
-                            model.setCapability(def, on: true)
-                            showingAddSheet = false
-                            status = "Added \(def.name)"
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.teal)
-                        .controlSize(.small)
-                    }
-                    .padding(.vertical, 6)
-                }
-                .listStyle(.inset)
-                .frame(minHeight: 240)
-            }
-
-            Divider()
-
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Custom Entitlement Key")
-                    .font(.subheadline.bold())
-                    .foregroundStyle(.secondary)
-
-                HStack {
-                    TextField("e.g. com.example.custom-capability", text: $addSheetCustomKey)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.system(.body, design: .monospaced))
-                    Picker("Type", selection: $addSheetCustomKeyType) {
+                    Spacer()
+                    Picker("", selection: $addSheetCustomKeyType) {
                         Text("Boolean").tag("boolean")
                         Text("String").tag("string")
                         Text("Array").tag("array")
-                        Text("Dictionary").tag("dictionary")
                     }
-                    .pickerStyle(.menu)
-                    .frame(width: 120)
+                    .labelsHidden()
+                    .frame(width: 96)
                     Button("Add Custom") {
-                        let trimmed = addSheetCustomKey.trimmingCharacters(in: .whitespaces)
-                        guard !trimmed.isEmpty, model.entitlements[trimmed] == nil else { return }
                         switch addSheetCustomKeyType {
-                        case "string":
-                            model.setString("", forKey: trimmed)
-                        case "array":
-                            model.setStringArray([], forKey: trimmed)
-                        case "dictionary":
-                            model.set(.dictionary([:]), forKey: trimmed)
-                        default:
-                            model.setBool(true, forKey: trimmed)
+                        case "string": model.setString("", forKey: query)
+                        case "array": model.setStringArray([], forKey: query)
+                        default: model.setBool(true, forKey: query)
                         }
-                        addSheetCustomKey = ""
-                        showingAddSheet = false
-                        status = "Added custom key \(trimmed)"
+                        persistChange("Added \(query)")
+                        addSheetSearch = ""
                     }
-                    .buttonStyle(.bordered)
-                    .disabled(addSheetCustomKey.trimmingCharacters(in: .whitespaces).isEmpty || model.entitlements[addSheetCustomKey.trimmingCharacters(in: .whitespaces)] != nil)
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
                 }
+                .padding(10)
+                .background(Color.accentColor.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
             }
 
-            HStack {
-                Spacer()
-                Button("Done") {
-                    showingAddSheet = false
+            List(sortedMatching) { def in
+                let isOn = model.isCapabilityOn(def)
+                HStack(spacing: 12) {
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill((isOn ? Color.accentColor : Color.secondary).opacity(0.12))
+                        Image(systemName: def.symbol)
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundStyle(isOn ? Color.accentColor : .secondary)
+                    }
+                    .frame(width: 28, height: 28)
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(def.name)
+                                .font(.body.weight(.medium))
+                            if def.requiresSpecialApproval {
+                                Text("Approval")
+                                    .font(.caption2)
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+                        Text(def.explanation)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                        Text(def.rawKey)
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundStyle(.tertiary)
+                    }
+                    Spacer()
+                    Toggle("", isOn: Binding(
+                        get: { isOn },
+                        set: { toggleCapability(def, on: $0) }
+                    ))
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+                    .labelsHidden()
                 }
-                .buttonStyle(.bordered)
-                .keyboardShortcut(.cancelAction)
+                .padding(.vertical, 3)
             }
+            .listStyle(.inset)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
-        .padding(20)
-        .frame(minWidth: 640, minHeight: 620)
+        .padding(16)
+        .frame(width: 620, height: 520)
+        .onAppear { addSearchFocused = true }
     }
 
     private var inspectorSheetView: some View {

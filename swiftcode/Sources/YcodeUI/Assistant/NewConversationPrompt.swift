@@ -108,7 +108,7 @@ public final class NewConversationPromptController: NSViewController, NSTextView
         view.window?.makeFirstResponder(promptView)
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: Self.hintInterval, repeats: true) { [weak self] _ in
-            MainActor.assumeIsolated { self?.advanceHint() }
+            Task { @MainActor in self?.advanceHint() }
         }
     }
 

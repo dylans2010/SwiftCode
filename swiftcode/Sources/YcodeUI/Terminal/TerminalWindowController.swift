@@ -31,6 +31,7 @@ public final class TerminalWindowManager: NSObject {
 extension TerminalWindowManager: NSWindowDelegate {
     public func windowWillClose(_ notification: Notification) {
         if notification.object as? NSWindow === controller?.window {
+            controller?.panel.shutdown()
             controller = nil
         }
     }
@@ -38,7 +39,7 @@ extension TerminalWindowManager: NSWindowDelegate {
 
 @MainActor
 public final class TerminalWindowController: NSWindowController {
-    public static let size = NSSize(width: 1100, height: 720)
+    public static let size = NSSize(width: 900, height: 520)
 
     public let workspaceFolder: URL?
 
@@ -51,11 +52,28 @@ public final class TerminalWindowController: NSWindowController {
             defer: false
         )
         window.title = workspaceFolder.map { "Terminal — \($0.lastPathComponent)" } ?? "Integrated Terminal"
-        window.minSize = NSSize(width: 800, height: 500)
         window.setFrameAutosaveName("SwiftCodeTerminalWindow")
         window.isReleasedWhenClosed = false
-        window.contentView = NSHostingView(rootView: TerminalView())
+        window.minSize = NSSize(width: 480, height: 260)
+        let panel = TerminalPanelController(workspaceFolder: workspaceFolder)
+        panel.showsPanelControls = false
+        self.panel = panel
         super.init(window: window)
+        window.contentViewController = panel
+        window.setContentSize(Self.size)
+        panel.onOpenPath = { path, line in
+            guard let wc = NSApp.windows.lazy.compactMap({ $0.windowController as? WorkspaceWindowController }).first else { return false }
+            wc.window?.makeKeyAndOrderFront(nil)
+            wc.open(path: path, line: line)
+            return true
+        }
+    }
+
+    public let panel: TerminalPanelController
+
+    public override func close() {
+        panel.shutdown()
+        super.close()
     }
 
     @available(*, unavailable)

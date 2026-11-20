@@ -254,7 +254,7 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
         }
     }
 
-    public func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    public nonisolated func toolbarDefaultItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         [
             NSToolbarItem.Identifier(DecompilerToolbarItem.modePicker.rawValue),
             .flexibleSpace,
@@ -279,13 +279,13 @@ public final class DecompilerWindowController: NSWindowController, NSToolbarDele
         ]
     }
 
-    public func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
+    public nonisolated func toolbarAllowedItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier] {
         toolbarDefaultItemIdentifiers(toolbar) + [
             NSToolbarItem.Identifier(NSToolbarItem.Identifier.flexibleSpace.rawValue)
         ]
     }
 
-    public func toolbarFullScreenItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier]? {
+    public nonisolated func toolbarFullScreenItemIdentifiers(_ toolbar: NSToolbar) -> [NSToolbarItem.Identifier]? {
         toolbarDefaultItemIdentifiers(toolbar)
     }
 

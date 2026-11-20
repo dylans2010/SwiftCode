@@ -5,7 +5,7 @@ enum FlushSidebar {
     nonisolated(unsafe) static var forced: Bool?
 
     nonisolated static var isActive: Bool {
-        forced ?? (ProcessInfo.processInfo.operatingSystemVersion.majorVersion == 26)
+        forced ?? (ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 26)
     }
 
     static let holdingPriority = NSLayoutConstraint.Priority(rawValue: 260)
@@ -27,8 +27,22 @@ enum FlushSidebar {
     nonisolated static let trackingSeparatorID = NSToolbarItem.Identifier("SwiftCodeSidebarTrackingSeparator")
 
     static func trackingSeparator(_ id: NSToolbarItem.Identifier, splitView: NSSplitView) -> NSToolbarItem? {
-        guard id == trackingSeparatorID else { return nil }
+        guard id == trackingSeparatorID || (isActive && id == .sidebarTrackingSeparator) else { return nil }
         return NSTrackingSeparatorToolbarItem(identifier: id, splitView: splitView, dividerIndex: 0)
+    }
+
+    static func repairSavedSeparator(in toolbar: NSToolbar) {
+        guard isActive else { return }
+        var indices: [Int] = []
+        for (index, item) in toolbar.items.enumerated() where item.itemIdentifier == .sidebarTrackingSeparator {
+            indices.append(index)
+        }
+        guard !indices.isEmpty else { return }
+        let hasCustom = toolbar.items.contains { $0.itemIdentifier == trackingSeparatorID }
+        for index in indices.reversed() { toolbar.removeItem(at: index) }
+        if !hasCustom, let first = indices.first {
+            toolbar.insertItem(withItemIdentifier: trackingSeparatorID, at: min(first, toolbar.items.count))
+        }
     }
 }
 

@@ -233,6 +233,8 @@ public struct DisassemblyEditor: View {
 public struct PseudocodeEditor: View {
     @Bindable var state: DecompilerObservableState
     @State private var errorMessage: String?
+    @State private var dialect: NativeStructuralDecompiler.Dialect = .c
+    @State private var showSideBySideAssembly = false
 
     public init(state: DecompilerObservableState) { self.state = state }
 
@@ -245,7 +247,29 @@ public struct PseudocodeEditor: View {
         VStack(spacing: 0) {
             header
             Divider()
-            content
+            if showSideBySideAssembly {
+                HSplitView {
+                    DisassemblyEditor(state: state)
+                        .frame(minWidth: 260)
+                    content
+                        .frame(minWidth: 320)
+                }
+            } else {
+                content
+            }
+        }
+        .onChange(of: state.selectedFunctionAddress) { _, addr in
+            guard addr != nil else { return }
+            Task { _ = try? await state.decompileSelected(force: dialect != .c, dialect: dialect) }
+        }
+        .onChange(of: dialect) { _, newDialect in
+            guard state.selectedFunctionAddress != nil else { return }
+            Task { _ = try? await state.decompileSelected(force: true, dialect: newDialect) }
+        }
+        .onAppear {
+            if state.selectedFunction != nil && result == nil {
+                Task { _ = try? await state.decompileSelected(dialect: dialect) }
+            }
         }
         .alert("Decompilation failed", isPresented: Binding(
             get: { errorMessage != nil },
@@ -258,25 +282,60 @@ public struct PseudocodeEditor: View {
     }
 
     private var header: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             if let fn = state.selectedFunction {
-                Text(fn.displayName)
+                Text(SymbolDemangler.demangle(fn.displayName))
                     .font(.system(.callout, design: .monospaced).weight(.medium))
+                    .lineLimit(1)
                 if let r = result {
-                    Text("\(r.engineID)\(r.engineVersion.map { " \($0)" } ?? "")")
-                        .font(.caption).foregroundStyle(.secondary)
+                    Text(r.engineID)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.accentColor.opacity(0.14), in: Capsule())
+                        .foregroundStyle(.secondary)
                 }
             } else {
                 Text("No function selected").font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
+            Picker("", selection: $dialect) {
+                ForEach(NativeStructuralDecompiler.Dialect.allCases, id: \.self) { d in
+                    Text(d.rawValue).tag(d)
+                }
+            }
+            .pickerStyle(.segmented)
+            .controlSize(.small)
+            .labelsHidden()
+            .frame(width: 215)
+
+            Toggle("Split ASM", isOn: $showSideBySideAssembly)
+                .toggleStyle(.button)
+                .controlSize(.small)
+
+            if let fn = state.selectedFunction {
+                Button("Rename…") { promptRename(fn) }
+                    .controlSize(.small)
+            }
+
             Button("Decompile") {
                 Task {
-                    do { _ = try await state.decompileSelected() }
+                    do { _ = try await state.decompileSelected(force: true, dialect: dialect) }
                     catch { errorMessage = error.localizedDescription }
                 }
             }
+            .controlSize(.small)
             .disabled(state.selectedFunctionAddress == nil || state.isAnalyzing)
+
+            Button("Decompile All") {
+                Task {
+                    do { try await state.decompileAllFunctionsBatch() }
+                    catch { errorMessage = error.localizedDescription }
+                }
+            }
+            .controlSize(.small)
+            .disabled(state.binary == nil || state.isAnalyzing)
+
             if let r = result {
                 CopyButton(r.pseudocode, label: "Copy")
             }
@@ -284,6 +343,23 @@ public struct PseudocodeEditor: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(.bar)
+    }
+
+    private func promptRename(_ fn: DecompilerFunction) {
+        let alert = NSAlert()
+        alert.messageText = "Rename Function"
+        alert.informativeText = "Enter a new identifier for \(fn.address.hexString)"
+        let field = NSTextField(string: fn.name)
+        field.frame = NSRect(x: 0, y: 0, width: 280, height: 24)
+        alert.accessoryView = field
+        alert.addButton(withTitle: "Rename")
+        alert.addButton(withTitle: "Cancel")
+        if alert.runModal() == .alertFirstButtonReturn {
+            let trimmed = field.stringValue.trimmingCharacters(in: .whitespaces)
+            if !trimmed.isEmpty {
+                Task { await state.renameFunction(fn, to: trimmed) }
+            }
+        }
     }
 
     @ViewBuilder

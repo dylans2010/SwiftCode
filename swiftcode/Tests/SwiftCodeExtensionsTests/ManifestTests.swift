@@ -33,6 +33,28 @@ final class ManifestTests: XCTestCase {
         XCTAssertEqual(manifest.declaredAPIs, ["commands", "TreeDataProvider"])
     }
 
+    func testScalarConfigurationDefaultsParse() throws {
+        let contributes: [String: Any] = [
+            "configuration": ["properties": [
+                "acme.enabled": ["type": "boolean", "default": true],
+                "acme.name": ["type": "string", "default": "hello"],
+                "acme.count": ["type": "number", "default": 3],
+                "acme.list": ["type": "array", "default": ["a", "b"]],
+                "acme.none": ["type": "null", "default": NSNull()],
+                "acme.plain": ["type": "string"],
+            ]],
+        ]
+        let manifest = try VSCodeManifestParser.parse(data: packageJSON(["contributes": contributes]))
+        let properties = manifest.configurationProperties
+        XCTAssertEqual(properties["acme.enabled"]?.defaultValue, .bool(true))
+        XCTAssertEqual(properties["acme.name"]?.defaultValue, .string("hello"))
+        XCTAssertEqual(properties["acme.count"]?.defaultValue, .int(3))
+        XCTAssertEqual(properties["acme.list"]?.defaultValue, .array([.string("a"), .string("b")]))
+        XCTAssertEqual(properties["acme.none"]?.defaultValue, .null)
+        XCTAssertNil(properties["acme.plain"]?.defaultValue)
+        XCTAssertEqual(properties.count, 6)
+    }
+
     func testMissingNameIsRejected() {
         XCTAssertThrowsError(try VSCodeManifestParser.parse(data: packageJSON(["name": ""])))
     }

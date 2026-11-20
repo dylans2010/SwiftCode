@@ -390,9 +390,30 @@ extension ProjectEditorController {
     
     
     func entitlementsView(_ t: String) -> NSView {
-        let url = model.entitlementsURL(target: t, configuration: signingConfiguration)
+        let existingURL = model.entitlementsURL(target: t, configuration: signingConfiguration)
             ?? model.entitlementsURL(target: t, configuration: configuration)
-        let host = NSHostingView(rootView: EntitlementsEditorView(fileURL: url))
+        let defaultURL: URL? = {
+            guard let dir = model.projectDirectoryURL() else { return nil }
+            let subdir = dir.appendingPathComponent(t)
+            var isDir: ObjCBool = false
+            if FileManager.default.fileExists(atPath: subdir.path, isDirectory: &isDir), isDir.boolValue {
+                return subdir.appendingPathComponent("\(t).entitlements")
+            }
+            return dir.appendingPathComponent("\(t).entitlements")
+        }()
+        let host = NSHostingView(rootView: EntitlementsEditorView(
+            fileURL: existingURL,
+            defaultCreateURL: defaultURL,
+            onFileCreated: { [weak self] createdURL in
+                guard let self else { return }
+                let base = (self.model.projectDirectoryURL()?.standardizedFileURL.path ?? "") + "/"
+                let full = createdURL.standardizedFileURL.path
+                let rel = full.hasPrefix(base) ? String(full.dropFirst(base.count)) : createdURL.lastPathComponent
+                if self.signingResolved("CODE_SIGN_ENTITLEMENTS", target: t).isEmpty {
+                    self.setSetting("CODE_SIGN_ENTITLEMENTS", rel)
+                }
+            }
+        ))
         host.translatesAutoresizingMaskIntoConstraints = false
         return host
     }

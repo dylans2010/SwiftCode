@@ -59,7 +59,13 @@ public struct IconComposerView: View {
     @ObservedObject public var model: IconComposerModel
     @StateObject private var previews = IconComposerPreviewStore()
     @State private var exportError: String?
+    @State private var showingSymbolSheet = false
+    @State private var showingMonogramSheet = false
+    @State private var customStartColor = Color(red: 0.08, green: 0.36, blue: 0.90)
+    @State private var customEndColor = Color(red: 0.45, green: 0.20, blue: 0.92)
     @AppStorage("iconComposer.showGrid") private var showGrid = true
+    @AppStorage("iconComposer.showKeylines") private var showKeylines = true
+    @AppStorage("iconComposer.maskSquircle") private var maskSquircle = true
 
     public init(model: IconComposerModel) {
         self.model = model
@@ -88,13 +94,38 @@ public struct IconComposerView: View {
         } message: {
             Text(exportError ?? "")
         }
+        .sheet(isPresented: $showingSymbolSheet) {
+            IconSymbolLayerSheet(model: model)
+        }
+        .sheet(isPresented: $showingMonogramSheet) {
+            IconMonogramLayerSheet(model: model)
+        }
     }
 
     var toolbar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             Image(systemName: "app.badge")
                 .font(.title3)
             Text(model.package.name).font(.headline)
+
+            HStack(spacing: 2) {
+                Button { model.undo() } label: { Image(systemName: "arrow.uturn.backward") }
+                    .disabled(!model.canUndo)
+                    .help("Undo")
+                Button { model.redo() } label: { Image(systemName: "arrow.uturn.forward") }
+                    .disabled(!model.canRedo)
+                    .help("Redo")
+            }
+            .controlSize(.small)
+
+            Menu("Templates") {
+                ForEach(["Swift Prism", "Developer Terminal", "AI Sparkle Glass", "Shield Security"], id: \.self) { t in
+                    Button(t) { model.applyStarterTemplate(t) }
+                }
+            }
+            .controlSize(.small)
+            .fixedSize()
+
             Spacer()
             Picker("Platform", selection: $model.selectedPlatform) {
                 Text("iOS").tag(IconPlatform.iOS)
@@ -102,20 +133,26 @@ public struct IconComposerView: View {
                 Text("watchOS").tag(IconPlatform.watchOS)
             }
             .pickerStyle(.segmented)
-            .frame(width: 190)
+            .frame(width: 175)
             Picker("Appearance", selection: $model.selectedAppearance) {
                 Text("Light").tag(IconAppearance.light)
                 Text("Dark").tag(IconAppearance.dark)
                 Text("Tinted").tag(IconAppearance.tinted)
             }
             .pickerStyle(.segmented)
-            .frame(width: 190)
-            Button("Save") { model.save() }
-                .help("Write icon.json and assets")
-            Button("Export to App Icon Set") { export() }
-                .buttonStyle(.borderedProminent)
-                .disabled(model.appIconSetURL == nil)
-                .help(model.appIconSetURL == nil ? "Choose an .appiconset first" : "Render all slots into \(model.appIconSetURL?.lastPathComponent ?? "")")
+            .frame(width: 175)
+
+            Menu("Export") {
+                Button("Export to .appiconset") { export() }
+                    .disabled(model.appIconSetURL == nil)
+                Divider()
+                Button("Export 1024×1024 PNG…") { exportStandalonePNG() }
+                Button("Export macOS .icns…") { exportStandaloneICNS() }
+                Divider()
+                Button("Save .icon Package") { model.save() }
+            }
+            .buttonStyle(.borderedProminent)
+            .fixedSize()
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
@@ -126,9 +163,23 @@ public struct IconComposerView: View {
             HStack {
                 Text("Layers").font(.headline)
                 Spacer()
+                Button { showingSymbolSheet = true } label: {
+                    Image(systemName: "sparkles")
+                }
+                .buttonStyle(.borderless)
+                .help("Add SF Symbol Layer")
+
+                Button { showingMonogramSheet = true } label: {
+                    Image(systemName: "textformat")
+                }
+                .buttonStyle(.borderless)
+                .help("Add Monogram / Text Layer")
+
                 Menu {
+                    Button("Add SF Symbol Layer…") { showingSymbolSheet = true }
+                    Button("Add Monogram / Badge…") { showingMonogramSheet = true }
                     Button("Add Image Layer…") { chooseImages() }
-                    Menu("Add Shape Layer") {
+                    Menu("Add Vector Shape") {
                         ForEach(IconComposerShapes.Shape.allCases, id: \.self) { s in
                             Button(s.rawValue.replacingOccurrences(of: "-", with: " ").capitalized) {
                                 model.addShapeLayer(s)
@@ -136,6 +187,8 @@ public struct IconComposerView: View {
                         }
                     }
                     Divider()
+                    Button("Duplicate Selected Layer") { model.duplicateSelectedLayer() }
+                        .disabled(model.selectedLayer == nil)
                     Button("Add Group") { model.addGroup() }
                 } label: {
                     Image(systemName: "plus")
@@ -245,6 +298,7 @@ public struct IconComposerView: View {
         ScrollView([.horizontal, .vertical]) {
             VStack(spacing: 24) {
                 heroPreview
+                IconContextPreviewStrip(model: model)
                 sizesGrid
             }
             .padding(24)
@@ -255,13 +309,31 @@ public struct IconComposerView: View {
 
     var heroPreview: some View {
         VStack(spacing: 8) {
-            HStack {
+            HStack(spacing: 12) {
                 Spacer()
                 Toggle("Grid", isOn: $showGrid).controlSize(.small).toggleStyle(.checkbox)
+                Toggle("Keylines", isOn: $showKeylines).controlSize(.small).toggleStyle(.checkbox)
+                Toggle("Squircle Mask", isOn: $maskSquircle).controlSize(.small).toggleStyle(.checkbox)
             }
-            IconCanvasDragView(model: model, image: previews.images[1024], showGrid: showGrid)
-                .frame(width: 320, height: 320)
-            Text("1024 × 1024").font(.caption).foregroundStyle(.secondary)
+            ZStack {
+                IconCanvasDragView(model: model, image: previews.images[1024], showGrid: showGrid)
+                    .frame(width: 320, height: 320)
+                    .clipShape(RoundedRectangle(cornerRadius: maskSquircle ? 71.5 : 8, style: .continuous))
+                if showKeylines {
+                    ZStack {
+                        Circle().stroke(Color.cyan.opacity(0.45), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                            .frame(width: 268, height: 268)
+                        RoundedRectangle(cornerRadius: 56).stroke(Color.cyan.opacity(0.35), lineWidth: 1)
+                            .frame(width: 256, height: 256)
+                    }
+                    .allowsHitTesting(false)
+                }
+            }
+            if let msg = model.statusMessage {
+                Text(msg).font(.caption).foregroundStyle(.secondary)
+            } else {
+                Text("1024 × 1024 · Drag canvas to position selected layer").font(.caption).foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -312,15 +384,26 @@ public struct IconComposerView: View {
     }
 
     var backgroundSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Canvas").font(.headline)
-            Picker("Fill", selection: Binding(
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Canvas Background").font(.headline)
+            Picker("Preset", selection: Binding(
                 get: { backgroundPreset(for: model.document.fill.resolve(model.selectedAppearance, model.selectedPlatform) ?? .automatic) },
                 set: { model.setDocumentFill($0) }
             )) {
                 ForEach(Self.backgroundPresets.indices, id: \.self) { i in
                     Text(Self.backgroundPresets[i].name).tag(Self.backgroundPresets[i].fill)
                 }
+            }
+            HStack {
+                ColorPicker("Start", selection: $customStartColor)
+                ColorPicker("End", selection: $customEndColor)
+                Button("Apply") {
+                    let s = Self.iconColor(from: customStartColor)
+                    let e = Self.iconColor(from: customEndColor)
+                    model.recordUndo()
+                    model.setDocumentFill(.linearGradient(s, e, orientation: nil))
+                }
+                .controlSize(.small)
             }
         }
     }
@@ -354,6 +437,15 @@ public struct IconComposerView: View {
                 }
                 inspectorRow("Blur") {
                     Slider(value: Binding(get: { model.layerBlur(layer) }, set: { model.setLayerBlur($0) }), in: 0...40)
+                }
+                inspectorRow("Drop Shadow") {
+                    Slider(value: Binding(get: { model.layerShadowRadius(layer) }, set: { model.setLayerShadowRadius($0) }), in: 0...40)
+                }
+                HStack {
+                    Button("Center & Reset") { model.resetSelectedTransform() }
+                        .controlSize(.small)
+                    Button("Duplicate") { model.duplicateSelectedLayer() }
+                        .controlSize(.small)
                 }
                 Toggle("Glass", isOn: Binding(get: { model.layerGlass(layer) }, set: { model.setLayerGlass($0) }))
                 Toggle("Hidden", isOn: Binding(get: { model.layerHidden(layer) }, set: { model.setLayerHidden($0) }))
@@ -458,6 +550,36 @@ public struct IconComposerView: View {
     func chooseAppIconSet() {
         guard let url = model.chooseAppIconSet() else { return }
         model.attach(appIconSet: url)
+    }
+
+    static func iconColor(from color: Color) -> IconColor {
+        let ns = NSColor(color).usingColorSpace(.sRGB) ?? .white
+        return IconColor.srgb(Double(ns.redComponent), Double(ns.greenComponent), Double(ns.blueComponent))
+    }
+
+    func exportStandalonePNG() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "\(model.package.name)-1024.png"
+        panel.allowedContentTypes = [.png]
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        if let cg = IconComposerRenderer.render(
+            document: model.document, package: model.package,
+            appearance: model.selectedAppearance, platform: model.selectedPlatform,
+            pixels: 1024, mask: maskSquircle ? .squircle : .none
+        ), let data = IconComposerRenderer.pngData(cg) {
+            try? data.write(to: url)
+        }
+    }
+
+    func exportStandaloneICNS() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "\(model.package.name).icns"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try IconComposerAssetGenerator.exportICNS(model: model, destination: url)
+        } catch {
+            exportError = error.localizedDescription
+        }
     }
 
     func export() {

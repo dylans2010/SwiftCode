@@ -15,6 +15,8 @@ public enum IconComposerMask: Sendable {
 public enum IconComposerRenderer {
     public static let rotationKey = "rotation-degrees"
     public static let blurKey = "blur-radius"
+    public static let shadowRadiusKey = "shadow-radius"
+    public static let shadowOpacityKey = "shadow-opacity"
 
     public static func cgColor(_ c: IconColor) -> CGColor {
         let (r, g, b, a) = c.rgba
@@ -133,7 +135,14 @@ public enum IconComposerRenderer {
         }
         let cx = CGFloat(frame.x * k) + w / 2
         let cy = side - (CGFloat(frame.y * k) + h / 2)
+        let layerShadowRadius = raw.flatMap { $0.extra[shadowRadiusKey]?.numberValue } ?? 0
+        let layerShadowOpacity = raw.flatMap { $0.extra[shadowOpacityKey]?.numberValue } ?? 0.35
         ctx.saveGState()
+        if layerShadowRadius > 0 && layerShadowOpacity > 0 {
+            ctx.setShadow(offset: CGSize(width: 0, height: CGFloat(-6 * k)),
+                          blur: CGFloat(layerShadowRadius * k),
+                          color: CGColor(gray: 0, alpha: layerShadowOpacity))
+        }
         ctx.translateBy(x: cx, y: cy)
         if rotation != 0 { ctx.rotate(by: -CGFloat(rotation) * .pi / 180) }
         ctx.setAlpha(CGFloat(min(max(rl.opacity, 0), 1)))

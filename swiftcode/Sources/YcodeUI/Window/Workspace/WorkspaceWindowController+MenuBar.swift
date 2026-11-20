@@ -1,8 +1,18 @@
 import AppKit
 import YcodeIDECore
 
+final class MenuContextBox {
+    var context: (context: MenuContext, at: Date)?
+}
+
 extension WorkspaceWindowController {
+    var menuContextCache: (context: MenuContext, at: Date)? {
+        get { menuContextBox.context }
+        set { menuContextBox.context = newValue }
+    }
+
     public var menuContext: MenuContext {
+        if let cached = menuContextCache, Date().timeIntervalSince(cached.at) < 0.5 { return cached.context }
         var c = MenuContext()
         c.containerKind = session.model.kind
         c.workspaceName = session.model.displayName
@@ -38,6 +48,7 @@ extension WorkspaceWindowController {
         c.hasNavigatorFileSelection = selected != nil
         c.selectedFileIsUntracked = selected.map { sourceControl.lastStatus[$0] == .untracked } ?? false
         fillMenuCleanUpContext(&c)
+        menuContextCache = (context: c, at: Date())
         return c
     }
 

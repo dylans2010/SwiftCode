@@ -17,7 +17,7 @@ enum SpacesValidationSupport {
 
     static func requireGit() throws -> String {
         if let git = gitExecutable() { return git }
-        try Test.skip("git executable not found; Git import and export cannot be validated in this environment")
+        try Test.cancel("git executable not found; Git import and export cannot be validated in this environment")
         throw SpacesError.migrationError("git executable not found")
     }
 

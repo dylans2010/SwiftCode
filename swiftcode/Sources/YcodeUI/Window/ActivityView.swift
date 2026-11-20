@@ -56,7 +56,7 @@ public final class ActivityView: NSView {
         for name in [NSWindow.didBecomeKeyNotification, NSWindow.didResignKeyNotification, NSWindow.didBecomeMainNotification,
                      NSWindow.didResignMainNotification] {
             keyObservers.append(NotificationCenter.default.addObserver(forName: name, object: w, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.needsDisplay = true }
+                Task { @MainActor in self?.needsDisplay = true }
             })
         }
     }

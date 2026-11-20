@@ -78,7 +78,7 @@ public struct ExtensionsSearchView: View {
                 .listStyle(.plain)
             }
         }
-        .task {
+        .onAppear {
             if manager.searchResults.isEmpty && !manager.isSearching {
                 manager.search(query: query)
             }

@@ -86,22 +86,25 @@ public final class ConversationView: NSView {
         messageView.onTextChange = { [weak self] in self?.slashTextChanged() }
         messageView.onKeyDown = { [weak self] event in self?.slashKeyDown(event) ?? false }
         messageView.setAccessibilityLabel("Message")
-        messageView.textContainerInset = NSSize(width: 8, height: 8)
-        let messageScroll = ComposerScrollView()
+        messageView.textContainerInset = NSSize(width: 4, height: 6)
+        let messageScroll = NSScrollView()
         messageScroll.documentView = messageView
         messageScroll.hasVerticalScroller = true
+        messageScroll.autohidesScrollers = true
+        messageScroll.drawsBackground = false
+        messageScroll.borderType = .noBorder
         messageView.isVerticallyResizable = true
         messageView.minSize = NSSize(width: 0, height: 0)
         messageView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         messageView.autoresizingMask = [.width]
         messageView.textContainer?.widthTracksTextView = true
+
         AttachMenu.configure(attachButton, target: self, action: #selector(attachChosen(_:)))
-        if GlassBars.enabled {
-            GlassBars.style(attachButton)
-        }
-        providerButton.bezelStyle = .inline
-        providerButton.isBordered = false
-        providerButton.font = .systemFont(ofSize: NSFont.smallSystemFontSize)
+        attachButton.controlSize = .small
+
+        providerButton.bezelStyle = .rounded
+        providerButton.isBordered = true
+        providerButton.font = .systemFont(ofSize: 11, weight: .medium)
         providerButton.controlSize = .small
         providerButton.image = NSImage(systemSymbolName: "chevron.up.chevron.down", accessibilityDescription: nil)
         providerButton.imagePosition = .imageTrailing
@@ -109,58 +112,77 @@ public final class ConversationView: NSView {
         providerButton.action = #selector(providerButtonClicked)
         providerButton.setAccessibilityLabel("Model")
         providerButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        if GlassBars.enabled {
-            providerButton.isBordered = true
-            GlassBars.style(providerButton)
-        }
-        sendButton.bezelStyle = .rounded
+
+        sendButton.bezelStyle = .circular
+        sendButton.isBordered = false
         sendButton.controlSize = .regular
-        if GlassBars.enabled {
-            GlassBars.style(sendButton, primary: true)
-        }
         sendButton.target = self
         sendButton.action = #selector(sendClicked)
         sendButton.keyEquivalent = ""
+
         planLabel.font = .systemFont(ofSize: 10)
-        planLabel.textColor = .secondaryLabelColor
+        planLabel.textColor = .tertiaryLabelColor
         planLabel.lineBreakMode = .byTruncatingTail
         planLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         chips.orientation = .horizontal
         chips.spacing = 6
+        chips.isHidden = true
+
         modePicker.sizingOptions = [.intrinsicContentSize]
         modePicker.setAccessibilityLabel("Assist mode: Plan, Agent or Turbo")
         modeDescriptionLabel.font = .systemFont(ofSize: 10)
-        modeDescriptionLabel.textColor = .secondaryLabelColor
+        modeDescriptionLabel.textColor = .tertiaryLabelColor
         modeDescriptionLabel.lineBreakMode = .byTruncatingTail
         modeDescriptionLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        let modeRow = NSStackView(views: [modePicker, modeDescriptionLabel])
+        modeDescriptionLabel.isHidden = true
+
+        let modeRow = NSStackView(views: [modePicker, NSView()])
         modeRow.orientation = .horizontal
-        modeRow.spacing = 10
+        modeRow.spacing = 6
         modeRow.alignment = .centerY
+
         let bottom = NSStackView(views: [attachButton, providerButton, NSView(), sendButton])
         bottom.orientation = .horizontal
-        bottom.spacing = 8
+        bottom.spacing = 6
+        bottom.alignment = .centerY
 
-        let composerBg = GlassBars.surface(cornerRadius: 18)
+        let composerBg = NSView()
+        composerBg.wantsLayer = true
+        composerBg.layer?.cornerRadius = 14
+        composerBg.layer?.cornerCurve = .continuous
+        composerBg.layer?.backgroundColor = NSColor.controlBackgroundColor.withAlphaComponent(0.65).cgColor
+        composerBg.layer?.borderWidth = 1
+        composerBg.layer?.borderColor = NSColor.separatorColor.withAlphaComponent(0.65).cgColor
         composerBg.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(composerBg)
 
-        for v in [statusBox, transcriptScroll, chips, workersStrip, modeRow, messageScroll, bottom, planLabel] as [NSView] {
+        let innerDivider = NSBox()
+        innerDivider.boxType = .separator
+
+        let composerStack = NSStackView(views: [chips, workersStrip, modeRow, messageScroll, innerDivider, bottom, planLabel])
+        composerStack.orientation = .vertical
+        composerStack.alignment = .leading
+        composerStack.spacing = 6
+        composerStack.edgeInsets = NSEdgeInsets(top: 9, left: 10, bottom: 9, right: 10)
+        composerStack.translatesAutoresizingMaskIntoConstraints = false
+        composerBg.addSubview(composerStack)
+
+        for v in [statusBox, transcriptScroll, composerBg] as [NSView] {
             v.translatesAutoresizingMaskIntoConstraints = false
             addSubview(v)
         }
-        let planGap = planLabel.topAnchor.constraint(equalTo: bottom.bottomAnchor, constant: 2)
+        for full in [workersStrip, modeRow, messageScroll, innerDivider, bottom, planLabel] as [NSView] {
+            full.translatesAutoresizingMaskIntoConstraints = false
+            full.widthAnchor.constraint(equalTo: composerStack.widthAnchor, constant: -20).isActive = true
+        }
         NSLayoutConstraint.activate([
-            composerBg.topAnchor.constraint(equalTo: chips.topAnchor, constant: -8),
-            composerBg.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 6),
-            composerBg.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -6),
-            composerBg.bottomAnchor.constraint(equalTo: bottom.bottomAnchor, constant: 8),
             statusBox.topAnchor.constraint(equalTo: topAnchor),
             statusBox.leadingAnchor.constraint(equalTo: leadingAnchor),
             statusBox.trailingAnchor.constraint(equalTo: trailingAnchor),
             transcriptScroll.topAnchor.constraint(equalTo: statusBox.bottomAnchor),
             transcriptScroll.leadingAnchor.constraint(equalTo: leadingAnchor),
             transcriptScroll.trailingAnchor.constraint(equalTo: trailingAnchor),
+            transcriptScroll.bottomAnchor.constraint(equalTo: composerBg.topAnchor, constant: -6),
             doc.topAnchor.constraint(equalTo: transcriptScroll.contentView.topAnchor),
             doc.leadingAnchor.constraint(equalTo: transcriptScroll.contentView.leadingAnchor),
             doc.widthAnchor.constraint(equalTo: transcriptScroll.contentView.widthAnchor),
@@ -168,29 +190,17 @@ public final class ConversationView: NSView {
             transcript.leadingAnchor.constraint(equalTo: doc.leadingAnchor),
             transcript.trailingAnchor.constraint(equalTo: doc.trailingAnchor),
             transcript.bottomAnchor.constraint(equalTo: doc.bottomAnchor),
-            chips.topAnchor.constraint(equalTo: transcriptScroll.bottomAnchor, constant: 4),
-            chips.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            chips.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -12),
-            workersStrip.topAnchor.constraint(equalTo: chips.bottomAnchor, constant: 4),
-            workersStrip.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            workersStrip.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            modeRow.topAnchor.constraint(equalTo: workersStrip.bottomAnchor, constant: 4),
-            modeRow.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            modeRow.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -12),
-            messageScroll.topAnchor.constraint(equalTo: modeRow.bottomAnchor, constant: 6),
-            messageScroll.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            messageScroll.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            messageScroll.heightAnchor.constraint(equalToConstant: 72),
-            modePicker.heightAnchor.constraint(equalToConstant: 30),
-            bottom.topAnchor.constraint(equalTo: messageScroll.bottomAnchor, constant: 6),
-            bottom.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            bottom.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
-            sendButton.widthAnchor.constraint(equalToConstant: 34),
-            sendButton.heightAnchor.constraint(equalToConstant: 34),
-            planGap,
-            planLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 12),
-            planLabel.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -12),
-            planLabel.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            composerBg.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+            composerBg.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+            composerBg.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -8),
+            composerStack.topAnchor.constraint(equalTo: composerBg.topAnchor),
+            composerStack.leadingAnchor.constraint(equalTo: composerBg.leadingAnchor),
+            composerStack.trailingAnchor.constraint(equalTo: composerBg.trailingAnchor),
+            composerStack.bottomAnchor.constraint(equalTo: composerBg.bottomAnchor),
+            messageScroll.heightAnchor.constraint(equalToConstant: 56),
+            modePicker.heightAnchor.constraint(equalToConstant: 26),
+            sendButton.widthAnchor.constraint(equalToConstant: 28),
+            sendButton.heightAnchor.constraint(equalToConstant: 28),
         ])
     }
 
@@ -206,6 +216,9 @@ public final class ConversationView: NSView {
         case .status:
             reloadProviderButton()
             updateStatus()
+            if (conversation?.messages ?? []).isEmpty {
+                renderTranscript(force: true)
+            }
             updateComposer()
         }
     }
@@ -312,54 +325,60 @@ public final class ConversationView: NSView {
         if force || conv?.id != renderedID || messages.count != renderedCount {
             transcript.arrangedSubviews.forEach { $0.removeFromSuperview() }
             if messages.isEmpty {
+                let backendReady = model.hasUsableBackend || model.usesChatGPTPlan || model.isSurveying || model.availability.isEmpty
                 let text: String
                 if fixedID != nil && conv == nil {
                     text = "This conversation was deleted."
-                } else if model.hasUsableBackend || model.availability.isEmpty {
-                    text = "Ask a question about your code, or select code and choose Editor ▸ Show Coding Tools."
+                } else if backendReady {
+                    text = "Ask a question about your project, attach files, or pick a quick action below."
                 } else {
                     text = AssistantBackends.noBackendText
                 }
                 let heading: String
                 if fixedID != nil && conv == nil {
                     heading = "Conversation unavailable"
-                } else if model.hasUsableBackend {
-                    heading = "Ready when you are"
+                } else if backendReady {
+                    heading = "What would you like to build?"
                 } else {
                     heading = "Connect a provider to begin"
                 }
-                transcript.addArrangedSubview(emptyState(title: heading, detail: text))
+                let empty = emptyState(title: heading, detail: text, showStarters: backendReady && !(fixedID != nil && conv == nil))
+                transcript.addArrangedSubview(empty)
+                let insets = transcript.edgeInsets
+                empty.widthAnchor.constraint(equalTo: transcript.widthAnchor, constant: -(insets.left + insets.right)).isActive = true
             }
-            for m in messages { addMessageView(m, conversation: conv!.id) }
-        } else if let last = messages.last, let lastView = transcript.arrangedSubviews.last {
+            if let convID = conv?.id {
+                for m in messages { addMessageView(m, conversation: convID) }
+            }
+        } else if let last = messages.last, let convID = conv?.id, let lastView = transcript.arrangedSubviews.last {
             lastView.removeFromSuperview()
-            addMessageView(last, conversation: conv!.id)
+            addMessageView(last, conversation: convID)
         }
         renderedID = conv?.id
         renderedCount = messages.count
         scrollToEnd()
     }
 
-    func emptyState(title: String, detail: String) -> NSView {
+    func emptyState(title: String, detail: String, showStarters: Bool = false) -> NSView {
         let badge = NSView()
         badge.wantsLayer = true
-        badge.layer?.backgroundColor = Theme.accentColor.withAlphaComponent(0.12).cgColor
-        badge.layer?.cornerRadius = 22
+        badge.layer?.backgroundColor = NSColor.systemIndigo.withAlphaComponent(0.14).cgColor
+        badge.layer?.cornerRadius = 20
         badge.layer?.cornerCurve = .continuous
         let icon = NSImageView(image: NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Assist") ?? NSImage())
-        icon.symbolConfiguration = .init(pointSize: 19, weight: .medium)
-        icon.contentTintColor = Theme.accentColor
+        icon.symbolConfiguration = .init(pointSize: 17, weight: .semibold)
+        icon.contentTintColor = .systemIndigo
         icon.translatesAutoresizingMaskIntoConstraints = false
         badge.addSubview(icon)
         NSLayoutConstraint.activate([
-            badge.widthAnchor.constraint(equalToConstant: 44),
-            badge.heightAnchor.constraint(equalToConstant: 44),
+            badge.widthAnchor.constraint(equalToConstant: 40),
+            badge.heightAnchor.constraint(equalToConstant: 40),
             icon.centerXAnchor.constraint(equalTo: badge.centerXAnchor),
             icon.centerYAnchor.constraint(equalTo: badge.centerYAnchor),
         ])
 
         let heading = NSTextField(labelWithString: title)
-        heading.font = .systemFont(ofSize: 14, weight: .semibold)
+        heading.font = .systemFont(ofSize: 13.5, weight: .semibold)
         heading.textColor = .labelColor
         let hint = NSTextField(wrappingLabelWithString: detail)
         hint.font = .systemFont(ofSize: 11)
@@ -367,13 +386,38 @@ public final class ConversationView: NSView {
         hint.alignment = .center
         hint.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
-        let stack = NSStackView(views: [badge, heading, hint])
+        var views: [NSView] = [badge, heading, hint]
+        if showStarters {
+            let prompts = [
+                ("Explain current file", "Explain what the current file does and how it fits into the project."),
+                ("Find & fix bugs", "Inspect the current file and open build issues for potential bugs and propose fixes."),
+                ("Write unit tests", "Write thorough unit tests for the active file."),
+            ]
+            let promptCol = NSStackView()
+            promptCol.orientation = .vertical
+            promptCol.alignment = .centerX
+            promptCol.spacing = 5
+            for (label, promptText) in prompts {
+                let btn = ClosureButton(title: label, target: nil, action: nil)
+                btn.bezelStyle = .rounded
+                btn.controlSize = .small
+                btn.font = .systemFont(ofSize: 11)
+                btn.onChange = { [weak self] _ in
+                    guard let self else { return }
+                    self.messageView.string = promptText
+                    self.focusMessageField()
+                }
+                promptCol.addArrangedSubview(btn)
+            }
+            views.append(promptCol)
+        }
+
+        let stack = NSStackView(views: views)
         stack.orientation = .vertical
         stack.alignment = .centerX
         stack.spacing = 8
-        stack.edgeInsets = NSEdgeInsets(top: 20, left: 18, bottom: 20, right: 18)
+        stack.edgeInsets = NSEdgeInsets(top: 24, left: 14, bottom: 20, right: 14)
         stack.translatesAutoresizingMaskIntoConstraints = false
-        stack.widthAnchor.constraint(equalTo: transcript.widthAnchor).isActive = true
         return stack
     }
 
@@ -392,7 +436,8 @@ public final class ConversationView: NSView {
         v.onContinue = { [weak self] in self?.model.continueReply(in: conversation) }
         v.translatesAutoresizingMaskIntoConstraints = false
         transcript.addArrangedSubview(v)
-        v.widthAnchor.constraint(equalTo: transcript.widthAnchor, constant: -16).isActive = true
+        let insets = transcript.edgeInsets
+        v.widthAnchor.constraint(equalTo: transcript.widthAnchor, constant: -(insets.left + insets.right)).isActive = true
     }
 
     public var messageViews: [MessageView] { transcript.arrangedSubviews.compactMap { $0 as? MessageView } }
@@ -400,11 +445,12 @@ public final class ConversationView: NSView {
     func updateComposer() {
         let running = conversationID.map(model.isRunning) ?? false
         sendButton.title = running ? "Stop" : "Send"
-        sendButton.image = NSImage(systemSymbolName: running ? "stop.fill" : "arrow.up", accessibilityDescription: nil)
+        let symbol = running ? "stop.circle.fill" : "arrow.up.circle.fill"
+        sendButton.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(.init(pointSize: 22, weight: .semibold))
         sendButton.imagePosition = .imageOnly
         sendButton.setAccessibilityLabel(running ? "Stop response" : "Send message")
-        sendButton.bezelColor = running ? .systemOrange : Theme.accentColor
-        sendButton.contentTintColor = .white
+        sendButton.contentTintColor = running ? .systemOrange : .controlAccentColor
         sendButton.toolTip = running ? "Stop the response" : "Send (Return)"
         sendButton.isEnabled = !(fixedID != nil && conversation == nil)
         let mode = conversationID.map(model.mode(for:)) ?? .agent
@@ -415,7 +461,8 @@ public final class ConversationView: NSView {
         modeDescriptionLabel.stringValue = mode.shortDescription
         modeDescriptionLabel.toolTip = "\(mode.displayName) mode — \(mode.shortDescription)"
         planLabel.isHidden = !model.usesChatGPTPlan
-        messageView.placeholder = "Message \(model.sourceLabel)"
+        workersStrip.isHidden = WorkerRuntimeState.shared.allWorkers.isEmpty
+        messageView.placeholder = "Message \(model.sourceLabel)…"
         messageView.needsDisplay = true
     }
 
@@ -508,6 +555,7 @@ public final class ConversationView: NSView {
             }
             chips.addArrangedSubview(b)
         }
+        chips.isHidden = pendingAttachments.isEmpty
     }
 
     public func focusMessageField() { window?.makeFirstResponder(messageView) }
@@ -693,38 +741,33 @@ public final class MessageView: NSStackView {
         }
         if !message.activity.isEmpty {
             let card = ActivityCardView(lines: message.activity)
-            card.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
             addArrangedSubview(card)
+            card.widthAnchor.constraint(equalTo: widthAnchor).isActive = true
         }
         if message.role == .user {
-            
-            let bubble: NSView
-            if GlassBars.enabled {
-                bubble = GlassBars.surface(cornerRadius: 14)
-            } else {
-                let fallback = NSView()
-                fallback.wantsLayer = true
-                fallback.layer?.backgroundColor = Theme.accentColor.withAlphaComponent(0.12).cgColor
-                fallback.layer?.cornerRadius = 14
-                fallback.layer?.cornerCurve = .continuous
-                bubble = fallback
-            }
+            let bubble = NSView()
+            bubble.wantsLayer = true
+            bubble.layer?.backgroundColor = NSColor.controlAccentColor.withAlphaComponent(0.16).cgColor
+            bubble.layer?.borderColor = NSColor.controlAccentColor.withAlphaComponent(0.28).cgColor
+            bubble.layer?.borderWidth = 1
+            bubble.layer?.cornerRadius = 13
+            bubble.layer?.cornerCurve = .continuous
             let p = prose(message.text, markdown: false)
             p.translatesAutoresizingMaskIntoConstraints = false
             p.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
             bubble.addSubview(p)
             bubble.translatesAutoresizingMaskIntoConstraints = false
             NSLayoutConstraint.activate([
-                p.topAnchor.constraint(equalTo: bubble.topAnchor, constant: 9),
+                p.topAnchor.constraint(equalTo: bubble.topAnchor, constant: 8),
                 p.leadingAnchor.constraint(equalTo: bubble.leadingAnchor, constant: 12),
                 p.trailingAnchor.constraint(equalTo: bubble.trailingAnchor, constant: -12),
-                p.bottomAnchor.constraint(equalTo: bubble.bottomAnchor, constant: -9),
-                bubble.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.88),
+                p.bottomAnchor.constraint(equalTo: bubble.bottomAnchor, constant: -8),
             ])
             let bubbleRow = NSStackView(views: [NSView(), bubble])
             bubbleRow.orientation = .horizontal
             bubbleRow.alignment = .top
             addArrangedSubview(bubbleRow)
+            bubble.widthAnchor.constraint(lessThanOrEqualTo: widthAnchor, multiplier: 0.88).isActive = true
         } else {
             var codeIndex = 0
             for block in MarkdownBlocks.parse(message.text) {

@@ -325,8 +325,7 @@ public enum VSCodeManifestParser {
                 guard let prop = value as? [String: Any] else { continue }
                 let defaultJSON: JSONValue?
                 if let rawDefault = prop["default"] {
-                    let data = try JSONSerialization.data(withJSONObject: rawDefault)
-                    defaultJSON = try JSONDecoder().decode(JSONValue.self, from: data)
+                    defaultJSON = JSONValue.fromFoundation(rawDefault)
                 } else {
                     defaultJSON = nil
                 }

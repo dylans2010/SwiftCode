@@ -47,7 +47,7 @@ public struct ExtensionUpdatesView: View {
                 .listStyle(.plain)
             }
         }
-        .task { await check() }
+        .onAppear { Task { await check() } }
         .alert(
             "Update failed",
             isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })

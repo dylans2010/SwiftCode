@@ -85,7 +85,7 @@ public class VisualUIBuilderSidebarViewController: NSViewController, NSOutlineVi
             scroll.leadingAnchor.constraint(equalTo: rootVisualEffectView.leadingAnchor),
             scroll.trailingAnchor.constraint(equalTo: rootVisualEffectView.trailingAnchor),
             scroll.topAnchor.constraint(equalTo: rootVisualEffectView.topAnchor, constant: 40),
-            scroll.heightAnchor.constraint(equalToConstant: 120),
+            scroll.heightAnchor.constraint(equalToConstant: 196),
 
             container.leadingAnchor.constraint(equalTo: rootVisualEffectView.leadingAnchor),
             container.trailingAnchor.constraint(equalTo: rootVisualEffectView.trailingAnchor),
@@ -108,11 +108,14 @@ public class VisualUIBuilderSidebarViewController: NSViewController, NSOutlineVi
     }
 
     private func buildSidebarNodes() -> [VisualUIBuilderSidebarNode] {
-        let group = VisualUIBuilderSidebarNode(title: "COMPONENTS", isGroup: true)
+        let group = VisualUIBuilderSidebarNode(title: "WORKSPACE", isGroup: true)
         group.children = [
             VisualUIBuilderSidebarNode(title: "Component Library", icon: "square.grid.2x2", tag: 0),
             VisualUIBuilderSidebarNode(title: "View Hierarchy", icon: "list.bullet.indent", tag: 1),
-            VisualUIBuilderSidebarNode(title: "Saved Artboards", icon: "folder.badge.plus", tag: 2)
+            VisualUIBuilderSidebarNode(title: "Saved Artboards", icon: "folder.badge.plus", tag: 2),
+            VisualUIBuilderSidebarNode(title: "Design Tokens", icon: "paintpalette", tag: 3),
+            VisualUIBuilderSidebarNode(title: "HIG & Contrast Audit", icon: "figure.roll", tag: 4),
+            VisualUIBuilderSidebarNode(title: "State & Bindings", icon: "link", tag: 5),
         ]
         return [group]
     }
@@ -124,21 +127,19 @@ public class VisualUIBuilderSidebarViewController: NSViewController, NSOutlineVi
 
         let selectedIndex = VisualUIBuilderSidebarState.shared.selectedIndex
         let swiftUIView: AnyView
-        if selectedIndex == 0 {
-            swiftUIView = AnyView(
-                VisualUIComponentLibrary(document: document)
-                    .environment(document)
-            )
-        } else if selectedIndex == 1 {
-            swiftUIView = AnyView(
-                VisualUIHierarchy(document: document)
-                    .environment(document)
-            )
-        } else {
-            swiftUIView = AnyView(
-                SavedArtboardsListView(document: document)
-                    .environment(document)
-            )
+        switch selectedIndex {
+        case 0:
+            swiftUIView = AnyView(VisualUIComponentLibrary(document: document).environment(document))
+        case 1:
+            swiftUIView = AnyView(VisualUIHierarchy(document: document).environment(document))
+        case 2:
+            swiftUIView = AnyView(SavedArtboardsListView(document: document).environment(document))
+        case 3:
+            swiftUIView = AnyView(VisualUIAssetsPanel(document: document).environment(document))
+        case 4:
+            swiftUIView = AnyView(VisualUIAccessibilityAuditView(document: document).environment(document))
+        default:
+            swiftUIView = AnyView(VisualUIBindingsPanel(document: document).environment(document))
         }
 
         let newHostingView = NSHostingView(rootView: swiftUIView)

@@ -145,10 +145,22 @@ struct VisualUIBuilderCenterWrapper: View {
             VisualUIToolbar(document: document, settings: settings)
             Divider()
 
-            if sidebarState.selectedIndex == 2 {
-                SavedArtboardsWorkspaceView(document: document)
-            } else {
-                VisualUICanvasView(document: document, settings: settings)
+            VSplitView {
+                Group {
+                    if sidebarState.selectedIndex == 2 {
+                        SavedArtboardsWorkspaceView(document: document)
+                    } else if settings.showResponsiveMatrix {
+                        VisualUIResponsiveMatrixView(document: document, settings: settings)
+                    } else {
+                        VisualUICanvasView(document: document, settings: settings)
+                    }
+                }
+                .frame(minHeight: 280)
+
+                if settings.showLiveCodeSplit {
+                    VisualUICodePanel(document: document)
+                        .frame(minHeight: 160, idealHeight: 220, maxHeight: 360)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -158,8 +170,13 @@ struct VisualUIBuilderCenterWrapper: View {
 }
 
 public enum ModernInspectorSection: String, CaseIterable, Identifiable, Sendable {
-    case general = "General"
     case properties = "Properties"
+    case modifiers = "Modifiers"
+    case animations = "Animations"
+    case bindings = "State & Bindings"
+    case code = "Live Code"
+    case audit = "Accessibility"
+    case general = "General"
     case preview = "Preview"
     case diagnostics = "Diagnostics"
     case runtime = "Runtime"
@@ -171,8 +188,13 @@ public enum ModernInspectorSection: String, CaseIterable, Identifiable, Sendable
 
     public var icon: String {
         switch self {
-        case .general: return "info.circle"
         case .properties: return "slider.horizontal.3"
+        case .modifiers: return "wand.and.rays"
+        case .animations: return "sparkles.rectangle.stack"
+        case .bindings: return "link"
+        case .code: return "curlybraces"
+        case .audit: return "figure.roll"
+        case .general: return "info.circle"
         case .preview: return "eye"
         case .diagnostics: return "waveform.path.ecg"
         case .runtime: return "play.circle"
@@ -224,6 +246,26 @@ struct VisualUIBuilderInspectorWrapper: View {
                 VisualUIInspector(document: document)
                     .opacity(selectedSection == .properties ? 1 : 0)
                     .disabled(selectedSection != .properties)
+
+                VisualUIPropertiesPanel(document: document)
+                    .opacity(selectedSection == .modifiers ? 1 : 0)
+                    .disabled(selectedSection != .modifiers)
+
+                VisualUIAnimationsPanel(document: document)
+                    .opacity(selectedSection == .animations ? 1 : 0)
+                    .disabled(selectedSection != .animations)
+
+                VisualUIBindingsPanel(document: document)
+                    .opacity(selectedSection == .bindings ? 1 : 0)
+                    .disabled(selectedSection != .bindings)
+
+                VisualUICodePanel(document: document)
+                    .opacity(selectedSection == .code ? 1 : 0)
+                    .disabled(selectedSection != .code)
+
+                VisualUIAccessibilityAuditView(document: document)
+                    .opacity(selectedSection == .audit ? 1 : 0)
+                    .disabled(selectedSection != .audit)
 
                 VStack(spacing: 12) {
                     ScrollView {

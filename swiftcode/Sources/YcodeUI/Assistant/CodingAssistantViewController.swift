@@ -46,59 +46,64 @@ public final class CodingAssistantViewController: NSViewController, NSOutlineVie
 
     public override func loadView() {
         let root = NSView()
-        newConversationButton.title = "New Conversation"
+        newConversationButton.title = "New"
+        newConversationButton.image = NSImage(systemSymbolName: "plus.bubble", accessibilityDescription: "New Conversation")
         newConversationButton.style = .split
+        newConversationButton.controlSize = .small
         newConversationButton.target = self
         newConversationButton.action = #selector(newConversationClicked)
         newConversationButton.toolTip = "Start a conversation with the coding assistant"
         newConversationButton.setAccessibilityLabel("New Conversation")
+
+        newGroupButton.title = ""
+        newGroupButton.image = NSImage(systemSymbolName: "folder.badge.plus", accessibilityDescription: "New Group")
+        newGroupButton.imagePosition = .imageOnly
         newGroupButton.bezelStyle = .rounded
+        newGroupButton.controlSize = .small
         newGroupButton.target = self
         newGroupButton.action = #selector(newGroupClicked)
         newGroupButton.toolTip = "Add a group to the conversation list"
+        newGroupButton.setAccessibilityLabel("New Group")
+
         workersButton.title = WorkersPanel.buttonTitle()
         workersButton.bezelStyle = .rounded
+        workersButton.controlSize = .small
+        workersButton.font = .systemFont(ofSize: 11, weight: .medium)
         workersButton.target = self
         workersButton.action = #selector(workersClicked)
         workersButton.toolTip = "Open the Assist Workers dashboard"
         workersButton.setAccessibilityLabel("Workers")
-        let glass = GlassBars.enabled
-        if glass { newGroupButton.isBordered = false; workersButton.isBordered = false }
+
         let titleIcon = NSImageView(image: NSImage(systemSymbolName: "sparkles", accessibilityDescription: "Assist") ?? NSImage())
-        titleIcon.symbolConfiguration = .init(pointSize: 11, weight: .semibold)
-        titleIcon.contentTintColor = .controlAccentColor
+        titleIcon.symbolConfiguration = .init(pointSize: 12, weight: .semibold)
+        titleIcon.contentTintColor = .systemIndigo
         let titleLabel = NSTextField(labelWithString: "Assist")
-        titleLabel.font = .systemFont(ofSize: 12, weight: .semibold)
+        titleLabel.font = .systemFont(ofSize: 12.5, weight: .semibold)
         let titleStack = NSStackView(views: [titleIcon, titleLabel])
         titleStack.orientation = .horizontal
-        titleStack.spacing = 4
+        titleStack.spacing = 5
         titleStack.alignment = .centerY
+
         let buttonRow = NSStackView(views: [newConversationButton, newGroupButton, workersButton])
         buttonRow.orientation = .horizontal
-        buttonRow.spacing = glass ? Self.capsuleGap + Self.capsuleOutset.newConversation + Self.capsuleOutset.newGroup + Self.capsuleOutset.workers : Self.headerSpacing
-        buttonRow.distribution = .gravityAreas
+        buttonRow.spacing = 5
+        buttonRow.alignment = .centerY
+
         let headerSpacer = NSView()
         headerSpacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         headerSpacer.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
         let header = NSStackView(views: [titleStack, headerSpacer, buttonRow])
         header.orientation = .horizontal
-        header.spacing = 8
+        header.spacing = 6
         header.alignment = .centerY
-        for (b, size) in [(newConversationButton as NSView, Self.newConversationSize), (newGroupButton, Self.newGroupSize), (workersButton, Self.workersSize)] {
-            b.translatesAutoresizingMaskIntoConstraints = false
-            let w = b.widthAnchor.constraint(equalToConstant: size.width)
-            w.priority = .defaultHigh
-            w.isActive = true
-            b.heightAnchor.constraint(equalToConstant: size.height).isActive = true
-            b.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        }
 
         let col = NSTableColumn(identifier: .init("title"))
         list.addTableColumn(col)
         list.outlineTableColumn = col
         list.headerView = nil
         list.style = .sourceList
-        list.rowSizeStyle = .default
+        list.rowSizeStyle = .small
         list.dataSource = self
         list.delegate = self
         list.target = self
@@ -120,30 +125,14 @@ public final class CodingAssistantViewController: NSViewController, NSOutlineVie
             v.translatesAutoresizingMaskIntoConstraints = false
             root.addSubview(v)
         }
-        if glass {
-            for (g, b, o) in [(newConversationGlass, newConversationButton as NSView, Self.capsuleOutset.newConversation),
-                              (newGroupGlass, newGroupButton, Self.capsuleOutset.newGroup),
-                              (workersGlass, workersButton, Self.capsuleOutset.workers)] {
-                g.translatesAutoresizingMaskIntoConstraints = false
-                root.addSubview(g, positioned: .below, relativeTo: header)
-                NSLayoutConstraint.activate([
-                    g.leadingAnchor.constraint(equalTo: b.leadingAnchor, constant: -o),
-                    g.trailingAnchor.constraint(equalTo: b.trailingAnchor, constant: o),
-                    g.centerYAnchor.constraint(equalTo: b.centerYAnchor),
-                    g.heightAnchor.constraint(equalToConstant: GlassBars.height),
-                ])
-            }
-        }
-        let headerTop = glass ? GlassBars.topOffset + (GlassBars.height - Self.newConversationSize.height) / 2 : 6
-        let headerSide = glass ? Self.capsuleGap + Self.capsuleOutset.newConversation : 8
         NSLayoutConstraint.activate([
-            header.topAnchor.constraint(equalTo: root.topAnchor, constant: headerTop),
-            header.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: headerSide),
-            header.trailingAnchor.constraint(lessThanOrEqualTo: root.trailingAnchor, constant: glass ? -(Self.capsuleGap + Self.capsuleOutset.workers) : -8),
-            listScroll.topAnchor.constraint(equalTo: header.bottomAnchor, constant: glass ? 6 + 1.5 : 6),
+            header.topAnchor.constraint(equalTo: root.topAnchor, constant: 8),
+            header.leadingAnchor.constraint(equalTo: root.leadingAnchor, constant: 10),
+            header.trailingAnchor.constraint(equalTo: root.trailingAnchor, constant: -10),
+            listScroll.topAnchor.constraint(equalTo: header.bottomAnchor, constant: 6),
             listScroll.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             listScroll.trailingAnchor.constraint(equalTo: root.trailingAnchor),
-            listScroll.heightAnchor.constraint(equalToConstant: 150),
+            listScroll.heightAnchor.constraint(equalToConstant: 100),
             separator.topAnchor.constraint(equalTo: listScroll.bottomAnchor),
             separator.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             separator.trailingAnchor.constraint(equalTo: root.trailingAnchor),

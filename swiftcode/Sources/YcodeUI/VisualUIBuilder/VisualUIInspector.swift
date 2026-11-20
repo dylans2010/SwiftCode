@@ -135,6 +135,28 @@ public struct VisualUIInspector: View {
 
                         GroupBox("Layout Constraints") {
                             VStack(alignment: .leading, spacing: 8) {
+                                if [.vStack, .hStack, .grid, .lazyVGrid, .lazyHGrid].contains(node.type) {
+                                    HStack {
+                                        Text("Spacing:")
+                                        Spacer()
+                                        TextField("8", text: Binding(
+                                            get: { node.properties["spacing"] ?? "8" },
+                                            set: { node.properties["spacing"] = $0 }
+                                        ))
+                                        .textFieldStyle(.roundedBorder)
+                                        .frame(width: 80)
+                                    }
+                                    Picker("Align:", selection: Binding(
+                                        get: { node.properties["alignment"] ?? "Center" },
+                                        set: { node.properties["alignment"] = $0 }
+                                    )) {
+                                        Text("Leading").tag("Leading")
+                                        Text("Center").tag("Center")
+                                        Text("Trailing").tag("Trailing")
+                                    }
+                                    .pickerStyle(.segmented)
+                                }
+
                                 HStack {
                                     Text("Width:")
                                     Spacer()
@@ -156,6 +178,55 @@ public struct VisualUIInspector: View {
                                     .textFieldStyle(.roundedBorder)
                                     .frame(width: 80)
                                 }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .groupBoxStyle(.liquidGlass)
+
+                        GroupBox("Typography & Transform") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Picker("Font:", selection: Binding(
+                                    get: { node.properties["fontPreset"] ?? "Body" },
+                                    set: { node.properties["fontPreset"] = $0 }
+                                )) {
+                                    ForEach(["Large Title", "Title 1", "Headline", "Body", "Subhead", "Footnote"], id: \.self) { f in
+                                        Text(f).tag(f)
+                                    }
+                                }
+
+                                HStack {
+                                    Text("Opacity")
+                                    Slider(value: Binding(
+                                        get: { Double(node.properties["opacity"] ?? "1.0") ?? 1.0 },
+                                        set: { node.properties["opacity"] = String(format: "%.2f", $0) }
+                                    ), in: 0.05...1.0)
+                                }
+
+                                HStack {
+                                    Text("Rotate")
+                                    Slider(value: Binding(
+                                        get: { Double(node.properties["rotation"] ?? "0") ?? 0 },
+                                        set: { node.properties["rotation"] = "\(Int($0))" }
+                                    ), in: -180...180)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                        .groupBoxStyle(.liquidGlass)
+
+                        GroupBox("Accessibility") {
+                            VStack(alignment: .leading, spacing: 8) {
+                                TextField("VoiceOver Label", text: Binding(
+                                    get: { node.properties["accessibilityLabel"] ?? "" },
+                                    set: { node.properties["accessibilityLabel"] = $0 }
+                                ))
+                                .textFieldStyle(.roundedBorder)
+
+                                TextField("VoiceOver Hint", text: Binding(
+                                    get: { node.properties["accessibilityHint"] ?? "" },
+                                    set: { node.properties["accessibilityHint"] = $0 }
+                                ))
+                                .textFieldStyle(.roundedBorder)
                             }
                             .padding(.vertical, 4)
                         }

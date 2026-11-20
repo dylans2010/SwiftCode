@@ -48,9 +48,17 @@ public struct VisualUIExportView: View {
                     .controlSize(.regular)
 
                     Button {
+                        saveCodeFile()
+                    } label: {
+                        Label("Save .swift File…", systemImage: "square.and.arrow.down")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.regular)
+
+                    Button {
                         exportPreview(asFormat: "PNG")
                     } label: {
-                        Label("Export PNG Preview", systemImage: "photo.badge.plus")
+                        Label("Export PNG Preview…", systemImage: "photo.badge.plus")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.regular)
@@ -81,13 +89,16 @@ public struct VisualUIExportView: View {
     }
 
     private func updateGeneratedCode(for framework: VisualUIFramework) {
-        if let activeDoc = DocumentCoordinator.shared.activeDocument {
-            generatedCode = activeDoc.content
-        } else if let path = document.filePath, let content = try? String(contentsOfFile: path) {
-            generatedCode = content
-        } else {
-            generatedCode = "// @SwiftCodeVisualUIBuilderDocument\n// Author your premium SwiftUI view here."
-        }
+        generatedCode = VisualUICodeGenerator.generate(document: document, framework: framework)
+    }
+
+    private func saveCodeFile() {
+        let panel = NSSavePanel()
+        let artName = document.scene.artboards.first { $0.id == document.scene.activeArtboardID }?.name ?? "GeneratedView"
+        panel.nameFieldStringValue = "\(VisualUICodeGenerator.sanitizedTypeName(artName))View.swift"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        try? generatedCode.write(to: url, atomically: true, encoding: .utf8)
+        VisualUISettings.shared.addLog("Saved \(activeTab.rawValue) source to \(url.path).")
     }
 
     private func copyToClipboard() {
@@ -98,7 +109,24 @@ public struct VisualUIExportView: View {
         VisualUISettings.shared.addLog("Copied generated \(activeTab.rawValue) code to system clipboard.")
     }
 
+    @MainActor
     private func exportPreview(asFormat format: String) {
-        VisualUISettings.shared.addLog("Successfully exported layout artboards as high-quality \(format) preview file.")
+        guard let artboard = document.scene.artboards.first(where: { $0.id == document.scene.activeArtboardID })
+                ?? document.scene.artboards.first else { return }
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = "\(VisualUICodeGenerator.sanitizedTypeName(artboard.name)).png"
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        let preview = VisualUIRenderer(rootNode: artboard.rootNode, document: document)
+            .frame(width: 393, height: 760)
+            .background(Color.white)
+        let renderer = ImageRenderer(content: preview)
+        renderer.scale = 2.0
+        if let img = renderer.nsImage,
+           let tiff = img.tiffRepresentation,
+           let rep = NSBitmapImageRep(data: tiff),
+           let png = rep.representation(using: .png, properties: [:]) {
+            try? png.write(to: url)
+        }
+        VisualUISettings.shared.addLog("Exported artboard preview as \(format) to \(url.lastPathComponent).")
     }
 }

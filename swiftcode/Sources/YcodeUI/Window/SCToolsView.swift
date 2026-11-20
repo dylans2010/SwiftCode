@@ -54,7 +54,7 @@ public final class SCToolsRegistry: ObservableObject {
         SCToolItem(id: "ipaPackaging", name: "IPA Packaging & Signing", description: "Build, package, sign, and export standalone iOS and macOS application archives.", icon: "shippingbox.fill", category: .deployment, actionIdentifier: "openIPAPackaging"),
         SCToolItem(id: "codingDictionary", name: "Coding Dictionary", description: "Comprehensive Apple SDK API documentation and development terminology dictionary.", icon: "character.book.closed", category: .data, actionIdentifier: "openDictionary"),
         SCToolItem(id: "ciWorkflows", name: "CI Visual Workflows", description: "Build, configure, and monitor automated continuous integration workflows.", icon: "arrow.triangle.pull", category: .development, actionIdentifier: "openCIWorkflows"),
-        SCToolItem(id: "terminal", name: "Integrated Terminal", description: "Sandboxed command-line shell with integrated process execution.", icon: "terminal", category: .development, actionIdentifier: "openTerminal"),
+        SCToolItem(id: "terminal", name: "Integrated Terminal", description: "A full terminal with tabs, splits and search, docked under the code editor.", icon: "terminal", category: .development, actionIdentifier: "openTerminal"),
         SCToolItem(id: "sourceControlWorkspace", name: "Source Control Workspace", description: "Full source control workspace: repository dashboard, branches, commits, blame, diffs, and conflict resolution.", icon: "arrow.triangle.branch", category: .development, actionIdentifier: "openSourceControlWorkspace")
     ]
 
@@ -165,7 +165,7 @@ public struct SCToolsView: View {
         case "openCIWorkflows":
             CIWorkflowWindowManager.shared.showWindow(workspaceFolder: effectiveFolder)
         case "openTerminal":
-            TerminalWindowManager.shared.showWindow(workspaceFolder: effectiveFolder)
+            IntegratedTerminal.show(fallbackFolder: effectiveFolder)
         case "openDeviceConnect":
             DeviceConnectWindowManager.shared.showWindow()
         case "openSourceControlWorkspace":

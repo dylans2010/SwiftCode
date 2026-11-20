@@ -95,9 +95,16 @@ public actor EngineRegistry {
 
     
     public func resolveDecompiler(for image: BinaryImage, required: DecompilerCapabilitiesSet,
-                                  preferredID: String? = nil) -> (any DecompilerProvider)? {
-        let capable = decompilers.filter { d in
-            d.capabilities(for: image).isSuperset(of: required)
+                                  preferredID: String? = nil) async -> (any DecompilerProvider)? {
+        var capable: [any DecompilerProvider] = []
+        for d in decompilers {
+            guard d.capabilities(for: image).isSuperset(of: required)
+                && (image.format == .unknown || d.supportedFormats.isEmpty || d.supportedFormats.contains(image.format))
+                && (image.architecture == .unknown || d.supportedArchitectures.isEmpty || d.supportedArchitectures.contains(image.architecture))
+            else { continue }
+            if await d.isAvailable() {
+                capable.append(d)
+            }
         }
         if let preferredID, let match = capable.first(where: { $0.id == preferredID }) { return match }
         return capable.first(where: \.isPrimary) ?? capable.first

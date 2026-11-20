@@ -153,22 +153,43 @@ public actor DecompilerSession {
     }
 
     
-    public func decompileFunction(at address: DecompilerAddress) async throws -> DecompilationResult {
+    public func decompileFunction(
+        at address: DecompilerAddress,
+        force: Bool = false,
+        dialect: NativeStructuralDecompiler.Dialect = .c
+    ) async throws -> DecompilationResult {
         guard let image = await store.binary else { throw DecompilerError.invalidRequest("no binary loaded") }
         guard let fn = await store.function(at: address.value) else {
             throw DecompilerError.invalidRequest("no function at \(address.hexString)")
         }
-        if let cached = await store.pseudocode(forFunctionAt: address.value) { return cached }
-        let request = DecompilationRequest(functionAddress: address, functionName: fn.name,
-                                           imagePath: image.identity.originalLocation,
-                                           architecture: image.architecture, format: image.format)
+        if !force, dialect == .c, let cached = await store.pseudocode(forFunctionAt: address.value) { return cached }
         guard let backend = await registry.resolveDecompiler(for: image,
                                                             required: [.decompileFunction],
                                                             preferredID: configuration.preferredDecompilerID) else {
             throw DecompilerError.engineUnavailable("no decompiler backend supports this binary")
         }
-        let result = try await backend.decompile(request) { p in
-            Task { await self.store.setProgress(p) }
+        let result: DecompilationResult
+        if backend.id == NativeStructuralDecompiler.engineID {
+            var ins = Array((await store.instructions).values)
+            let start = fn.address.value
+            let end = fn.endAddress?.value ?? (start + max(fn.size, 256))
+            if !ins.contains(where: { $0.address.value >= start && $0.address.value < end }) {
+                if let fresh = try? await disassembleFunction(at: address) {
+                    ins.append(contentsOf: fresh)
+                }
+            }
+            let allFns = await store.functions
+            result = NativeStructuralDecompiler.decompileFunction(
+                fn, instructions: ins, image: image, allFunctions: allFns, dialect: dialect
+            )
+        } else {
+            let request = DecompilationRequest(functionAddress: address, functionName: fn.name,
+                                               imagePath: image.identity.originalLocation,
+                                               architecture: image.architecture, format: image.format,
+                                               options: ["dialect": dialect.rawValue])
+            result = try await backend.decompile(request) { p in
+                Task { await self.store.setProgress(p) }
+            }
         }
         await store.storePseudocode(result)
         await store.recordHistory(AnalysisHistoryEntry(operation: "decompile", engineID: backend.id,
@@ -210,8 +231,30 @@ public actor DecompilerSession {
             preferredID: configuration.preferredDecompilerID) else {
             throw DecompilerError.engineUnavailable("no decompiler backend supports this binary")
         }
-        let results = try await backend.decompileBatch(requests) { p in
-            Task { await self.store.setProgress(p) }
+        let results: [DecompilationResult]
+        if backend.id == NativeStructuralDecompiler.engineID {
+            let allIns = Array((await store.instructions).values)
+            let allFns = await store.functions
+            var lifted: [DecompilationResult] = []
+            lifted.reserveCapacity(selected.count)
+            for (idx, fn) in selected.enumerated() {
+                try Task.checkCancellation()
+                await store.setProgress(AnalysisProgress(
+                    stage: .decompiling,
+                    fraction: Double(idx) / Double(max(selected.count, 1)),
+                    message: "Lifting \(fn.displayName)",
+                    itemsProcessed: idx,
+                    itemsTotal: selected.count
+                ))
+                lifted.append(NativeStructuralDecompiler.decompileFunction(
+                    fn, instructions: allIns, image: image, allFunctions: allFns
+                ))
+            }
+            results = lifted
+        } else {
+            results = try await backend.decompileBatch(requests) { p in
+                Task { await self.store.setProgress(p) }
+            }
         }
         for result in results {
             await store.storePseudocode(result)

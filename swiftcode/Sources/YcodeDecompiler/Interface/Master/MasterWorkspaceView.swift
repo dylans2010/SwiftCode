@@ -31,7 +31,7 @@ public enum MasterSidebarItem: String, CaseIterable, Identifiable, Sendable {
 
 
 public enum MasterEditorTab: String, CaseIterable, Identifiable, Sendable {
-    case disassembly, pseudocode, hex, controlFlow
+    case disassembly, pseudocode, hex, controlFlow, callGraph, types, security, patternSearch
 
     public var id: String { rawValue }
     public var title: String {
@@ -39,7 +39,11 @@ public enum MasterEditorTab: String, CaseIterable, Identifiable, Sendable {
         case .disassembly: return "Disassembly"
         case .pseudocode: return "Pseudocode"
         case .hex: return "Hex"
-        case .controlFlow: return "Control Flow"
+        case .controlFlow: return "CFG"
+        case .callGraph: return "Call Graph"
+        case .types: return "Types & Headers"
+        case .security: return "Security"
+        case .patternSearch: return "Signatures"
         }
     }
     public var systemImage: String {
@@ -48,6 +52,10 @@ public enum MasterEditorTab: String, CaseIterable, Identifiable, Sendable {
         case .pseudocode: return "chevron.left.forwardslash.chevron.right"
         case .hex: return "number"
         case .controlFlow: return "point.3.connected.trianglepath.dotted"
+        case .callGraph: return "arrow.triangle.branch"
+        case .types: return "curlybraces"
+        case .security: return "lock.shield"
+        case .patternSearch: return "magnifyingglass.circle"
         }
     }
 }
@@ -175,6 +183,14 @@ public struct MasterWorkspaceView: View {
             HexEditor(state: state)
         case .controlFlow:
             ControlFlowGraphView(state: state)
+        case .callGraph:
+            CallGraphExplorerView(state: state)
+        case .types:
+            MetadataTypeBrowserView(state: state)
+        case .security:
+            BinarySecurityScannerView(state: state)
+        case .patternSearch:
+            BytePatternScannerView(state: state)
         }
     }
 

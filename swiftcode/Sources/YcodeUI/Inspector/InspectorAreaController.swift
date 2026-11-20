@@ -177,6 +177,7 @@ public final class InspectorAreaController: NSViewController {
             sep.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             sep.trailingAnchor.constraint(equalTo: slideGuide.trailingAnchor),
         ])
+        contentScroll.frame = NSRect(x: 0, y: 0, width: 260, height: 480)
         contentScroll.translatesAutoresizingMaskIntoConstraints = true
         contentSeparator = sep
         view = root

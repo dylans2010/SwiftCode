@@ -32,7 +32,7 @@ public enum ToolbarToolRouter {
         guard let destination = ToolbarActionManager.shared.destination(for: toolID) else { return }
         switch destination {
         case .terminal:
-            TerminalWindowManager.shared.showWindow(workspaceFolder: workspaceFolder)
+            IntegratedTerminal.show(fallbackFolder: workspaceFolder)
         case .ipaBuild:
             IPABuildWindowManager.shared.showWindow()
         case .deviceConnect:

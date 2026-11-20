@@ -238,7 +238,16 @@ public final class SourceControlCoordinator {
         return owner.navigator.selectedPath ?? owner.editor.fileURL?.path
     }
 
+    private var menuStateCache: (state: IntegrateMenuState, at: Date)?
+
     public func menuState() -> IntegrateMenuState {
+        if let c = menuStateCache, Date().timeIntervalSince(c.at) < 0.5 { return c.state }
+        let s = computeMenuState()
+        menuStateCache = (s, Date())
+        return s
+    }
+
+    private func computeMenuState() -> IntegrateMenuState {
         var s = IntegrateMenuState()
         guard Preferences.shared.sourceControlEnabled, snapshot.repository != nil else {
             s.selectedFileExists = selectedFile.map { FileManager.default.fileExists(atPath: $0) } ?? false

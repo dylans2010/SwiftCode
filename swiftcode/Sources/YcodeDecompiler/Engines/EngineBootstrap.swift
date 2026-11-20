@@ -16,5 +16,6 @@ public enum EngineBootstrap {
         await registry.register(disassembler: OtoolDisassembler())
         await registry.register(decompiler: GhidraDecompiler())
         await registry.register(decompiler: AngrDecompiler())
+        await registry.register(decompiler: NativeStructuralDecompiler())
     }
 }
