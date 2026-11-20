@@ -55,12 +55,37 @@ public struct MetaSlashCommand: Identifiable, Hashable, Sendable {
     }
 }
 
+public enum MetaGuidedFlow: String, Sendable, Equatable {
+    case interview
+    case learn
+}
+
+public enum MetaAgentTask: String, Sendable, Equatable {
+    case test
+    case review
+    case audit
+    case refactor
+    case docs
+    case debug
+    case profile
+    case explain
+    case summarize
+    case onboard
+    case fix
+}
+
 public enum MetaSlashCommandEffect: Sendable, Equatable {
     case setReasoningEffort(String)
     case setModel(String)
     case clearSession
     case startLogin
     case insertText(String)
+    case setAssistMode(AssistMode)
+    case setChatMode
+    case boost(String)
+    case guidedFlow(MetaGuidedFlow, String)
+    case sendAgentPrompt(String)
+    case startDecompile(String)
 }
 
 public struct MetaSlashCommandManager: Sendable {
@@ -261,6 +286,134 @@ public struct MetaSlashCommandManager: Sendable {
                          description: "Log out, forget saved login, and exit",
                          syntax: "/logout",
                          icon: "arrow.backward.circle", category: "System"),
+        MetaSlashCommand(id: "interview", name: "/interview", title: "Interview",
+                         description: "Start a guided interview that asks structured questions before planning any work",
+                         syntax: "/interview [topic]",
+                         icon: "questionmark.bubble", category: "Agent",
+                         arguments: [.text(name: "Topic",
+                                           placeholder: "What should the interview clarify?...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "boost", name: "/boost", title: "Boost",
+                         description: "Raise reasoning to maximum, switch to Turbo mode, and orchestrate parallel subagents",
+                         syntax: "/boost [objective]",
+                         icon: "bolt.fill", category: "Agent",
+                         arguments: [.text(name: "Objective",
+                                           placeholder: "High-complexity objective to conquer...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "learn", name: "/learn", title: "Learn Rule",
+                         description: "Save a rule to User Memory, or distill rules from the recent conversation when no rule is given",
+                         syntax: "/learn [rule]",
+                         icon: "brain", category: "Agent",
+                         arguments: [.text(name: "Rule",
+                                           placeholder: "Rule or guideline to remember...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "reverse", name: "/reverse", title: "Reverse Engineer",
+                         description: "Hand a binary to DecompileAssist for symbol, string, and function analysis",
+                         syntax: "/reverse [binary]",
+                         icon: "cpu", category: "Agent",
+                         arguments: [.text(name: "Binary",
+                                           placeholder: "Path to the binary to reverse...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "decompile", name: "/decompile", title: "Decompile",
+                         description: "Decompile a binary through DecompileAssist and reconstruct its implementation",
+                         syntax: "/decompile [binary]",
+                         icon: "doc.text.magnifyingglass", category: "Agent",
+                         arguments: [.text(name: "Binary",
+                                           placeholder: "Path to the binary to decompile...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "audit", name: "/audit", title: "Security Audit",
+                         description: "Run security, access-level, and permissions audits over the workspace",
+                         syntax: "/audit [scope]",
+                         icon: "shield.checkered", category: "Agent",
+                         arguments: [.text(name: "Scope",
+                                           placeholder: "What to audit...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "review", name: "/review", title: "Code Review",
+                         description: "Run the code review tool over recent changes or a given scope",
+                         syntax: "/review [scope]",
+                         icon: "checkmark.seal", category: "Agent",
+                         arguments: [.text(name: "Scope",
+                                           placeholder: "What to review...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "explain", name: "/explain", title: "Explain Code",
+                         description: "Explain the selected code or a given file, symbol, or concept in plain terms",
+                         syntax: "/explain [target]",
+                         icon: "text.book.closed", category: "Agent",
+                         arguments: [.text(name: "Target",
+                                           placeholder: "Code, file, or symbol to explain...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "refactor", name: "/refactor", title: "Refactor",
+                         description: "Refactor the given code with the code refactor tool and verify the result builds",
+                         syntax: "/refactor [target]",
+                         icon: "arrow.triangle.2.circlepath", category: "Agent",
+                         arguments: [.text(name: "Target",
+                                           placeholder: "Code or file to refactor...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "test", name: "/test", title: "Run Tests",
+                         description: "Run the project test suite, generate missing tests, and report coverage",
+                         syntax: "/test [scope]",
+                         icon: "testtube.2", category: "Agent",
+                         arguments: [.text(name: "Scope",
+                                           placeholder: "Test scope, target, or filter...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "docs", name: "/docs", title: "Generate Docs",
+                         description: "Generate documentation for the workspace and check API documentation coverage",
+                         syntax: "/docs [scope]",
+                         icon: "book", category: "Agent",
+                         arguments: [.text(name: "Scope",
+                                           placeholder: "What to document...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "debug", name: "/debug", title: "Debug",
+                         description: "Diagnose a failure from build logs, compiler diagnostics, runtime diagnostics, or crash logs",
+                         syntax: "/debug [issue]",
+                         icon: "ant", category: "Agent",
+                         arguments: [.text(name: "Issue",
+                                           placeholder: "Failure, error, or crash to diagnose...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "profile", name: "/profile", title: "Profile Performance",
+                         description: "Benchmark performance and measure code metrics and complexity hot spots",
+                         syntax: "/profile [scope]",
+                         icon: "speedometer", category: "Agent",
+                         arguments: [.text(name: "Scope",
+                                           placeholder: "What to profile...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "plan", name: "/plan", title: "Plan Mode",
+                         description: "Switch to Plan mode: read, search, and plan only, with no file changes",
+                         syntax: "/plan",
+                         icon: "list.clipboard", category: "Agent"),
+        MetaSlashCommand(id: "turbo", name: "/turbo", title: "Turbo Mode",
+                         description: "Switch to Turbo mode: autonomous parallel work with maximum reasoning effort",
+                         syntax: "/turbo",
+                         icon: "tornado", category: "Agent"),
+        MetaSlashCommand(id: "agent", name: "/agent", title: "Agent Mode",
+                         description: "Switch to Agent mode: normal tool use with confirmations and reviewable file changes",
+                         syntax: "/agent",
+                         icon: "sparkles", category: "Agent"),
+        MetaSlashCommand(id: "chat", name: "/chat", title: "Chat Mode",
+                         description: "Switch to Chat mode: conversational answers only, with no agent tool attachment",
+                         syntax: "/chat",
+                         icon: "bubble.left.and.text.bubble.right", category: "Agent"),
+        MetaSlashCommand(id: "summarize", name: "/summarize", title: "Summarize",
+                         description: "Summarize the conversation so far into decisions, open questions, and next steps",
+                         syntax: "/summarize [focus]",
+                         icon: "text.quote", category: "Session",
+                         arguments: [.text(name: "Focus",
+                                           placeholder: "What the summary should focus on...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "onboard", name: "/onboard", title: "Onboard Workspace",
+                         description: "Explore the workspace and create or improve AGENTS.md so future sessions start grounded",
+                         syntax: "/onboard [focus]",
+                         icon: "map", category: "Agent",
+                         arguments: [.text(name: "Focus",
+                                           placeholder: "Area to focus the onboarding on...",
+                                           isOptional: true)]),
+        MetaSlashCommand(id: "fix", name: "/fix", title: "Fix Errors",
+                         description: "Diagnose build or test errors and apply automated fixes, then verify the build",
+                         syntax: "/fix [issue]",
+                         icon: "wrench", category: "Agent",
+                         arguments: [.text(name: "Issue",
+                                           placeholder: "Error or failing area to fix...",
+                                           isOptional: true)]),
     ]
 
     public static func parseSkillsList(_ stdout: String) -> [MetaSlashCommand] {
@@ -395,6 +548,44 @@ public struct MetaSlashCommandManager: Sendable {
             return ("Cleared Assist session.", .clearSession)
         case "login":
             return ("Starting Meta authentication flow...", .startLogin)
+        case "plan":
+            return ("Switched to Plan mode.", .setAssistMode(.plan))
+        case "agent":
+            return ("Switched to Agent mode.", .setAssistMode(.agent))
+        case "turbo":
+            return ("Switched to Turbo mode.", .setAssistMode(.turbo))
+        case "chat":
+            return ("Switched to Chat mode.", .setChatMode)
+        case "boost":
+            return ("Boost engaged: Turbo mode with maximum effort and parallel subagents.", .boost(argString))
+        case "interview":
+            return ("Interview started.", .guidedFlow(.interview, argString))
+        case "learn":
+            return ("Learning from this session.", .guidedFlow(.learn, argString))
+        case "reverse", "decompile":
+            return ("DecompileAssist handoff prepared.", .startDecompile(argString))
+        case "test":
+            return ("Running the project test suite.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .test, target: argString)))
+        case "review":
+            return ("Running code review.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .review, target: argString)))
+        case "audit":
+            return ("Running security audit.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .audit, target: argString)))
+        case "refactor":
+            return ("Refactoring with verification.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .refactor, target: argString)))
+        case "docs":
+            return ("Generating documentation.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .docs, target: argString)))
+        case "debug":
+            return ("Diagnosing the failure.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .debug, target: argString)))
+        case "profile":
+            return ("Profiling performance.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .profile, target: argString)))
+        case "explain":
+            return ("Explaining the code.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .explain, target: argString)))
+        case "summarize":
+            return ("Summarizing the conversation.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .summarize, target: argString)))
+        case "onboard":
+            return ("Onboarding this workspace.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .onboard, target: argString)))
+        case "fix":
+            return ("Diagnosing and fixing errors.", .sendAgentPrompt(MetaSlashCommandEffectApplier.agentPrompt(for: .fix, target: argString)))
         default:
             break
         }
