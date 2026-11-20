@@ -42,9 +42,14 @@ Rules that govern this library:
 | `Authentication.md` | Credential kinds (Google OAuth account, Gemini API key, provider keys, Antigravity auth) and matching each to its transport | Auth work, provider routing, sign-in issues |
 | `ModelProviders.md` | Provider landscape and per-path capability differences | Model selection, routing, capability questions |
 | `Streaming.md` | Streaming UX contract: incremental output, interruption, status honesty | Streaming responses, progress display |
+| `RefactoringLegacyCode.md` | Safe refactoring of legacy code: characterization tests, one change per commit, seams | Refactoring legacy code, large rewrites, dead-code removal |
+| `ReleaseNotesAndVersioning.md` | Semantic versioning, release notes, release checklist, hotfixes | Version bumps, releases, changelogs, hotfixes |
 | `ResponseFormatting.md` | Final-answer presentation: genuine Markdown, code blocks, calibrated detail | Composing the final response |
 | `ExecutionPlans.md` | Task decomposition, complexity estimation, parallel-execution rules, `plan-AskUser` user decision workflows | Multi-step or complex tasks, Plan mode |
+| `SharingAndShareSheet.md` | Sharing via NSSharingServicePicker: items, filenames, delegate, privacy | Share sheets, AirDrop/Mail sharing, export flows |
 | `Skills.md` | Skills/MCP discovery (`search_skills`) and selection discipline | Unfamiliar domains, skill-eligible tasks, MCP routing |
+| `PerformanceBudgets.md` | Performance budgets: launch, frame, latency, memory, energy numbers with enforcement | Performance targets, regressions, launch or frame-time work |
+| `PrivacyManifests.md` | Privacy manifest contents, required-reason APIs, SDK manifests, keeping it true | Privacy manifests, App Store privacy review, required-reason APIs |
 | `ProjectContext.md` | Active project workspace conventions and strict host isolation | Work inside the user's project |
 | `FileOperations.md` | File read/write/edit conventions, git safety | File or repo modifications |
 | `BuildAndTesting.md` | Build/test verification discipline | After code changes |
@@ -89,16 +94,24 @@ Rules that govern this library:
 | `KeyboardShortcutsMacOS.md` | Shortcut design: menus, conventions, conflicts, stability | Adding shortcuts, conflicts, keyboard-driven workflows |
 | `MachOFileLayoutForAssist.md` | Reading Mach-O headers, fat slices, and the segment/section map | Mach-O structure questions, layout context for other findings |
 | `MachOLoadCommands.md` | What each load command declares: entry point, libraries, paths, signing | Launch failures, dependency questions, loader behavior |
+| `MenuBarExtras.md` | Menu bar extra design: status item, menu vs. popover, lifecycle, login items | Adding a menu bar extra, status display, quick actions |
+| `NetworkingArchitecture.md` | Networking architecture: one session, request values, decoding, errors, retries, caching | Network calls, API clients, offline and retry behavior |
+| `NotificationsMacOS.md` | UserNotifications authorization, content, scheduling, response handling | Adding notifications, notification permission or delivery issues |
 | `ObjCRuntimeRecovery.md` | Objective-C classes, selectors, protocols, categories, ivars | ObjC binary structure, class/method tracing |
+| `OnboardingAndFirstRun.md` | First-run onboarding: value first, skippable steps, resumability, sample content | Onboarding flows, first-launch experience, empty states |
 | `PEAnalysisForAssist.md` | PE structure triage: COFF/optional headers, imports, exports, resources | Windows binary questions, cross-platform format work |
 | `ReverseEngineeringEthicsAndScope.md` | Lawful scope: interop and research in, bypasses and DRM out | Unclear-purpose RE requests, boundary questions |
 | `ReverseEngineeringTriage.md` | Triage for binary-analysis requests: scope, safety, inline vs. DecompileAssist routing | Any binary, crash log, or unknown-file request |
+| `SearchAndSpotlightIntegration.md` | In-app search and Core Spotlight indexing, NSUserActivity, privacy scope | Search features, Spotlight indexing, Handoff resume |
 | `SectionAndSegmentTriage.md` | Segment/section roles and protections; writable-and-executable flags | Where-something-lives questions, protection questions |
 | `StringAndConstantAnalysis.md` | Reading strings and constants to orient an investigation | Unknown-binary orientation, tracing a string/URL/path |
 | `SwiftMetadataRecovery.md` | Swift type metadata, conformances, and mangled names | Swift binary structure, demangling, type questions |
 | `SymbolicationForAssist.md` | Symbol tables, dSYM matching, and reading stripped binaries | Crash logs, bare addresses, missing-symbol questions |
+| `TestDataManagement.md` | Test data: per-test fixtures, factories, isolated stores, secrets, scale | Test fixtures, flaky tests, test data setup |
 | `ThirdPartyDependencyAudit.md` | License, security, maintenance, and scope audit of dependencies | Adding a dependency, vulnerability notices, periodic audits |
 | `TypeReconstruction.md` | Inferring data shapes from usage, with per-field confidence | Data-structure questions, reconstructed-type checks |
+| `WidgetsAndLiveActivities.md` | Widgets and Live Activities: timelines, App Groups, updates, design, privacy | Widgets, Live Activities, Lock Screen content |
+| `WindowManagementMacOS.md` | Window management: sizing, tabs, full screen, state restoration, multi-window | Window behavior, tabs, full screen, state restoration |
 | `X86_64ReadingForAssist.md` | Explaining x86-64 disassembly findings: widths, conventions, indirect flow | Intel Mac / Linux binary questions, DecompileAssist result explanation |
 
 ---
