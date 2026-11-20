@@ -1,5 +1,6 @@
 import SwiftUI
 import YcodeAssistant
+import YcodeUI
 
 public struct AssistTodoItem: Identifiable, Hashable, Sendable {
     public let id: UUID
@@ -93,13 +94,7 @@ public struct AssistTodoListCard: View {
                     listView
                 }
             }
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(Color.primary.opacity(0.12), lineWidth: 0.8)
-            )
-            .shadow(color: Color.black.opacity(0.18), radius: 10, x: 0, y: 4)
+            .liquidGlass(style: .subtle, cornerRadius: 12)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
         }

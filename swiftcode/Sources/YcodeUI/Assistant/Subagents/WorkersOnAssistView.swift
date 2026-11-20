@@ -18,7 +18,6 @@ public struct WorkersOnAssistView: View {
             EmptyView()
         } else {
             VStack(alignment: .leading, spacing: 6) {
-                // Header Bar
                 HStack(spacing: 6) {
                     ZStack {
                         Circle()
@@ -77,7 +76,6 @@ public struct WorkersOnAssistView: View {
                 .padding(.horizontal, 4)
                 .padding(.bottom, 2)
 
-                // Compact Worker Rows
                 let displayWorkers = Array(workers.prefix(4))
                 ForEach(displayWorkers) { worker in
                     Button {
@@ -105,15 +103,7 @@ public struct WorkersOnAssistView: View {
                 }
             }
             .padding(8)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                SpecularBorder(cornerRadius: 12, lineWidth: 1.0, intensity: 0.7)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1.0)
-            )
-            .shadow(color: Color.black.opacity(0.03), radius: 4, x: 0, y: 1.5)
+            .liquidGlass(style: .standard, cornerRadius: 12)
             .sheet(item: $selectedWorkerForDetails) { worker in
                 WorkersInfoView(workerID: worker.id, runtimeState: runtimeState)
             }
@@ -123,8 +113,6 @@ public struct WorkersOnAssistView: View {
         }
     }
 }
-
-// MARK: - Compact Worker Row
 
 @MainActor
 private struct CompactWorkerRow: View {
